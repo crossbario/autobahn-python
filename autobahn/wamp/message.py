@@ -32,7 +32,6 @@ import binascii
 import six
 
 import autobahn
-from autobahn import util
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
@@ -156,9 +155,9 @@ def b2a(data, max_len=40):
     if type(data) == six.text_type:
         s = data
     elif type(data) == six.binary_type:
-        s = binascii.b2a_hex(data)
+        s = binascii.b2a_hex(data).decode('ascii')
     elif data is None:
-        s = '-'
+        s = u'-'
     else:
         s = u'{}'.format(data)
     if len(s) > max_len:
@@ -279,7 +278,7 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
     return value
 
 
-class Message(util.EqualityMixin):
+class Message(object):
     """
     WAMP message base class.
 
@@ -291,9 +290,44 @@ class Message(util.EqualityMixin):
     WAMP message type code.
     """
 
+    __slots__ = (
+        '_serialized',
+    )
+
     def __init__(self):
         # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
+
+    def __eq__(self, other):
+        """
+        Compare this message to another message for equality.
+
+        :param other: The other message to compare with.
+        :type other: obj
+
+        :returns: ``True`` iff the messages are equal.
+        :rtype: bool
+        """
+        if not isinstance(other, self.__class__):
+            return False
+        # we only want the actual message data attributes (not eg _serialize)
+        for k in self.__slots__:
+            if k not in ['_serialized']:
+                if not getattr(self, k) == getattr(other, k):
+                    return False
+        return True
+
+    def __ne__(self, other):
+        """
+        Compare this message to another message for inequality.
+
+        :param other: The other message to compare with.
+        :type other: obj
+
+        :returns: ``True`` iff the messages are not equal.
+        :rtype: bool
+        """
+        return not self.__eq__(other)
 
     @staticmethod
     def parse(wmsg):
@@ -341,6 +375,18 @@ class Hello(Message):
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'realm',
+        'roles',
+        'authmethods',
+        'authid',
+        'authrole',
+        'authextra',
+        'resumable',
+        'resume_session',
+        'resume_token',
+    )
 
     def __init__(self, realm, roles, authmethods=None, authid=None, authrole=None, authextra=None, resumable=None, resume_session=None, resume_token=None):
         """
@@ -566,6 +612,21 @@ class Welcome(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'session',
+        'roles',
+        'realm',
+        'authid',
+        'authrole',
+        'authmethod',
+        'authprovider',
+        'authextra',
+        'resumed',
+        'resumable',
+        'resume_token',
+        'custom',
+    )
+
     def __init__(self, session, roles, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None, resumed=None, resumable=None, resume_token=None, custom=None):
         """
 
@@ -790,6 +851,11 @@ class Abort(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'reason',
+        'message',
+    )
+
     def __init__(self, reason, message=None):
         """
 
@@ -871,6 +937,11 @@ class Challenge(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'method',
+        'extra',
+    )
+
     def __init__(self, method, extra=None):
         """
 
@@ -940,6 +1011,11 @@ class Authenticate(Message):
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'signature',
+        'extra',
+    )
 
     def __init__(self, signature, extra=None):
         """
@@ -1015,6 +1091,12 @@ class Goodbye(Message):
     """
     Default WAMP closing reason.
     """
+
+    __slots__ = (
+        'reason',
+        'message',
+        'resumable',
+    )
 
     def __init__(self, reason=DEFAULT_REASON, message=None, resumable=None):
         """
@@ -1118,6 +1200,18 @@ class Error(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request_type',
+        'request',
+        'error',
+        'args',
+        'kwargs',
+        'payload',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
+
     def __init__(self, request_type, request, error, args=None, kwargs=None, payload=None,
                  enc_algo=None, enc_key=None, enc_serializer=None):
         """
@@ -1159,7 +1253,7 @@ class Error(Message):
         assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None and enc_serializer is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
@@ -1302,6 +1396,26 @@ class Publish(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'topic',
+        'args',
+        'kwargs',
+        'payload',
+        'acknowledge',
+        'exclude_me',
+        'exclude',
+        'exclude_authid',
+        'exclude_authrole',
+        'eligible',
+        'eligible_authid',
+        'eligible_authrole',
+        'retain',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
+
     def __init__(self,
                  request,
                  topic,
@@ -1421,7 +1535,7 @@ class Publish(Message):
                 assert(type(authrole) == six.text_type)
 
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None and enc_serializer is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
@@ -1694,6 +1808,11 @@ class Published(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'publication',
+    )
+
     def __init__(self, request, publication):
         """
 
@@ -1764,6 +1883,13 @@ class Subscribe(Message):
     MATCH_EXACT = u'exact'
     MATCH_PREFIX = u'prefix'
     MATCH_WILDCARD = u'wildcard'
+
+    __slots__ = (
+        'request',
+        'topic',
+        'match',
+        'get_retained',
+    )
 
     def __init__(self, request, topic, match=None, get_retained=None):
         """
@@ -1872,6 +1998,11 @@ class Subscribed(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'subscription',
+    )
+
     def __init__(self, request, subscription):
         """
 
@@ -1938,6 +2069,11 @@ class Unsubscribe(Message):
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'subscription',
+    )
 
     def __init__(self, request, subscription):
         """
@@ -2008,6 +2144,12 @@ class Unsubscribed(Message):
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'subscription',
+        'reason',
+    )
 
     def __init__(self, request, subscription=None, reason=None):
         """
@@ -2112,6 +2254,23 @@ class Event(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'subscription',
+        'publication',
+        'args',
+        'kwargs',
+        'payload',
+        'publisher',
+        'publisher_authid',
+        'publisher_authrole',
+        'topic',
+        'retained',
+        'x_acknowledged_delivery',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
+
     def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
                  retained=None, x_acknowledged_delivery=None,
@@ -2175,7 +2334,7 @@ class Event(Message):
         assert(retained is None or type(retained) == bool)
         assert(x_acknowledged_delivery is None or type(x_acknowledged_delivery) == bool)
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None and enc_serializer is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
@@ -2377,6 +2536,10 @@ class EventReceived(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'publication',
+    )
+
     def __init__(self, publication):
         """
 
@@ -2443,6 +2606,19 @@ class Call(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'procedure',
+        'args',
+        'kwargs',
+        'payload',
+        'timeout',
+        'receive_progress',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
+
     def __init__(self,
                  request,
                  procedure,
@@ -2503,7 +2679,7 @@ class Call(Message):
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None and enc_serializer is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
         Message.__init__(self)
         self.request = request
@@ -2662,6 +2838,11 @@ class Cancel(Message):
     ABORT = u'abort'
     KILL = u'kill'
 
+    __slots__ = (
+        'request',
+        'mode',
+    )
+
     def __init__(self, request, mode=None):
         """
 
@@ -2755,6 +2936,17 @@ class Result(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'args',
+        'kwargs',
+        'payload',
+        'progress',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
+
     def __init__(self, request, args=None, kwargs=None, payload=None, progress=None,
                  enc_algo=None, enc_key=None, enc_serializer=None):
         """
@@ -2797,7 +2989,7 @@ class Result(Message):
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None and enc_serializer is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
         Message.__init__(self)
         self.request = request
@@ -2942,6 +3134,14 @@ class Register(Message):
     INVOKE_ROUNDROBIN = u'roundrobin'
     INVOKE_RANDOM = u'random'
     INVOKE_ALL = u'all'
+
+    __slots__ = (
+        'request',
+        'procedure',
+        'match',
+        'invoke',
+        'concurrency',
+    )
 
     def __init__(self, request, procedure, match=None, invoke=None, concurrency=None):
         """
@@ -3092,6 +3292,11 @@ class Registered(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'registration',
+    )
+
     def __init__(self, request, registration):
         """
 
@@ -3158,6 +3363,11 @@ class Unregister(Message):
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'registration',
+    )
 
     def __init__(self, request, registration):
         """
@@ -3228,6 +3438,12 @@ class Unregistered(Message):
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'registration',
+        'reason',
+    )
 
     def __init__(self, request, registration=None, reason=None):
         """
@@ -3331,6 +3547,23 @@ class Invocation(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'registration',
+        'args',
+        'kwargs',
+        'payload',
+        'timeout',
+        'receive_progress',
+        'caller',
+        'caller_authid',
+        'caller_authrole',
+        'procedure',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
+
     def __init__(self,
                  request,
                  registration,
@@ -3408,7 +3641,7 @@ class Invocation(Message):
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None and enc_serializer is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
         Message.__init__(self)
         self.request = request
@@ -3620,6 +3853,11 @@ class Interrupt(Message):
     ABORT = u'abort'
     KILL = u'kill'
 
+    __slots__ = (
+        'request',
+        'mode',
+    )
+
     def __init__(self, request, mode=None):
         """
 
@@ -3713,6 +3951,17 @@ class Yield(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'args',
+        'kwargs',
+        'payload',
+        'progress',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
+
     def __init__(self, request, args=None, kwargs=None, payload=None, progress=None,
                  enc_algo=None, enc_key=None, enc_serializer=None):
         """
@@ -3751,7 +4000,7 @@ class Yield(Message):
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None and enc_serializer is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
