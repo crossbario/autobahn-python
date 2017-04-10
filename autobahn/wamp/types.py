@@ -868,8 +868,8 @@ class EncodedPayload(object):
         :type enc_key: str or None
         """
         assert(type(payload) == six.binary_type)
-        assert(type(enc_algo) == six.binary_type)
-        assert(type(enc_serializer) == six.binary_type)
+        assert(type(enc_algo) == six.text_type)
+        assert(type(enc_serializer) == six.text_type)
         assert(enc_key is None or type(enc_key) == six.text_type)
 
         self.payload = payload

@@ -200,7 +200,7 @@ class BaseSession(ObservableMixin):
                 enc_err = ApplicationError(ApplicationError.ENC_NO_PAYLOAD_CODEC, log_msg, enc_algo=msg.enc_algo)
             else:
                 try:
-                    encoded_payload = EncodedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                    encoded_payload = EncodedPayload(msg.payload, msg.enc_algo, msg.enc_serializer, msg.enc_key)
                     decrypted_error, msg.args, msg.kwargs = self._payload_codec.decode(True, msg.error, encoded_payload)
                 except Exception as e:
                     self.log.warn("failed to decrypt application payload 1: {err}", err=e)
@@ -609,7 +609,7 @@ class ApplicationSession(BaseSession):
                                 self.log.warn("received encoded payload, but no payload codec active - ignoring encrypted payload!")
                             else:
                                 try:
-                                    encoded_payload = EncodedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                                    encoded_payload = EncodedPayload(msg.payload, msg.enc_algo, msg.enc_serializer, msg.enc_key)
                                     decrypted_topic, msg.args, msg.kwargs = self._payload_codec.decode(False, topic, encoded_payload)
                                 except Exception as e:
                                     self.log.warn("failed to decrypt application payload: {error}", error=e)
@@ -717,7 +717,7 @@ class ApplicationSession(BaseSession):
                             enc_err = ApplicationError(ApplicationError.ENC_NO_PAYLOAD_CODEC, log_msg)
                         else:
                             try:
-                                encoded_payload = EncodedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                                encoded_payload = EncodedPayload(msg.payload, msg.enc_algo, msg.enc_serializer, msg.enc_key)
                                 decrypted_proc, msg.args, msg.kwargs = self._payload_codec.decode(True, proc, encoded_payload)
                             except Exception as e:
                                 self.log.warn(
@@ -814,7 +814,7 @@ class ApplicationSession(BaseSession):
                                 enc_err = ApplicationError(ApplicationError.ENC_NO_PAYLOAD_CODEC, log_msg)
                             else:
                                 try:
-                                    encoded_payload = EncodedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                                    encoded_payload = EncodedPayload(msg.payload, msg.enc_algo, msg.enc_serializer, msg.enc_key)
                                     decrypted_proc, msg.args, msg.kwargs = self._payload_codec.decode(False, proc, encoded_payload)
                                 except Exception as e:
                                     self.log.warn(
@@ -1345,7 +1345,11 @@ class ApplicationSession(BaseSession):
 
         encoded_payload = None
         if self._payload_codec:
-            encoded_payload = self._payload_codec.encode(True, procedure, args, kwargs)
+            try:
+                encoded_payload = self._payload_codec.encode(True, procedure, args, kwargs)
+            except:
+                self.log.failure()
+                raise
 
         if encoded_payload:
             if options:
