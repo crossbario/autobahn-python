@@ -606,16 +606,19 @@ class ApplicationSession(BaseSession):
                         if msg.enc_algo:
                             # FIXME: behavior in error cases (no keyring, decrypt issues, URI mismatch, ..)
                             if not self._payload_codec:
-                                self.log.warn("received encoded payload, but no payload codec active - ignoring encrypted payload!")
+                                self.log.warn("received encoded payload with enc_algo={enc_algo}, but no payload codec active - ignoring encoded payload!", enc_algo=msg.enc_algo)
+                                return
                             else:
                                 try:
                                     encoded_payload = EncodedPayload(msg.payload, msg.enc_algo, msg.enc_serializer, msg.enc_key)
-                                    decrypted_topic, msg.args, msg.kwargs = self._payload_codec.decode(False, topic, encoded_payload)
+                                    decoded_topic, msg.args, msg.kwargs = self._payload_codec.decode(False, topic, encoded_payload)
                                 except Exception as e:
-                                    self.log.warn("failed to decrypt application payload: {error}", error=e)
+                                    self.log.warn("failed to decode application payload encoded with enc_algo={enc_algo}: {error}", error=e, enc_algo=msg.enc_algo)
+                                    return
                                 else:
-                                    if topic != decrypted_topic:
-                                        self.log.warn("envelope topic URI does not match encrypted one")
+                                    if topic != decoded_topic:
+                                        self.log.warn("envelope topic URI does not match encoded one")
+                                        return
 
                         invoke_args = (handler.obj,) if handler.obj else tuple()
                         if msg.args:
