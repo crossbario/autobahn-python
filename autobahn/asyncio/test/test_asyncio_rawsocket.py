@@ -95,7 +95,10 @@ class Test(TestCase):
         server.stringReceived = receiver
 
         server.connection_made(transport)
-        hs = b'\x7F\xF1\x00\x00' + b'\x00\x00\x00\x04abcd'
+        # XXX this test was disabled for a while, and had \xF1 instead
+        # of \x51 in the second octet previously; changing it
+        # presuming the 'real' code is correct
+        hs = b'\x7F\x51\x00\x00' + b'\x00\x00\x00\x04abcd'
         server.data_received(hs)
 
         ser.assert_called_once_with(1)
