@@ -30,6 +30,7 @@ import six
 
 from autobahn.util import public
 
+
 __all__ = (
     'ComponentConfig',
     'HelloReturn',
@@ -46,6 +47,7 @@ __all__ = (
     'CallDetails',
     'CallOptions',
     'CallResult',
+    'EncodedPayload'
 )
 
 
@@ -418,29 +420,42 @@ class SubscribeOptions(object):
 
     __slots__ = (
         'match',
+        'details',
         'details_arg',
         'get_retained',
     )
 
-    def __init__(self, match=None, details_arg=None, get_retained=None):
+    def __init__(self, match=None, details=None, details_arg=None, get_retained=None):
         """
 
         :param match: The topic matching method to be used for the subscription.
         :type match: str
 
-        :param details_arg: When invoking the handler, provide event details
-          in this keyword argument to the callable.
+        :param details: When invoking the handler, provide event details in a keyword
+            parameter ``details``.
+        :type details: bool
+
+        :param details_arg: DEPCREATED (use "details" flag). When invoking the handler
+            provide event details in this keyword argument to the callable.
         :type details_arg: str
 
         :param get_retained: Whether the client wants the retained message we may have along with the subscription.
         :type get_retained: bool or None
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
+        assert(details is None or (type(details) == bool and details_arg is None))
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert(get_retained is None or type(get_retained) is bool)
 
         self.match = match
-        self.details_arg = details_arg
+        self.details = details
+
+        # FIXME: this is for backwards compat, but we'll deprecate it in the future
+        if details:
+            self.details_arg = 'details'
+        else:
+            self.details_arg = details_arg
+
         self.get_retained = get_retained
 
     def message_attr(self):
@@ -458,7 +473,7 @@ class SubscribeOptions(object):
         return options
 
     def __str__(self):
-        return u"SubscribeOptions(match={0}, details_arg={1}, get_retained={2})".format(self.match, self.details_arg, self.get_retained)
+        return u"SubscribeOptions(match={0}, details={1}, details_arg={2}, get_retained={3})".format(self.match, self.details, self.details_arg, self.get_retained)
 
 
 @public
@@ -513,7 +528,7 @@ class EventDetails(object):
         assert(publisher_authrole is None or type(publisher_authrole) == six.text_type)
         assert(topic is None or type(topic) == six.text_type)
         assert(retained is None or type(retained) is bool)
-        assert(enc_algo is None or (type(enc_algo) == six.text_type and enc_algo in [u'cryptobox']))
+        assert(enc_algo is None or type(enc_algo) == six.text_type)
 
         self.publication = publication
         self.publisher = publisher
@@ -744,7 +759,7 @@ class CallDetails(object):
         assert(caller_authid is None or type(caller_authid) == six.text_type)
         assert(caller_authrole is None or type(caller_authrole) == six.text_type)
         assert(procedure is None or type(procedure) == six.text_type)
-        assert(enc_algo is None or (type(enc_algo) == six.text_type and enc_algo in [u'cryptobox']))
+        assert(enc_algo is None or type(enc_algo) == six.text_type)
 
         self.progress = progress
         self.caller = caller
@@ -827,7 +842,7 @@ class CallResult(object):
         :type kwresults: dict
         """
         enc_algo = kwresults.pop('enc_algo', None)
-        assert(enc_algo is None or (type(enc_algo) == six.text_type and enc_algo in [u'cryptobox']))
+        assert(enc_algo is None or type(enc_algo) == six.text_type)
 
         self.enc_algo = enc_algo
         self.results = results
@@ -835,6 +850,45 @@ class CallResult(object):
 
     def __str__(self):
         return u"CallResult(results={0}, kwresults={1}, enc_algo={2})".format(self.results, self.kwresults, self.enc_algo)
+
+
+@public
+class EncodedPayload(object):
+    """
+    Wrapper holding an encoded application payload when using WAMP payload transparency.
+    """
+
+    __slots__ = (
+        'payload',
+        'enc_algo',
+        'enc_serializer',
+        'enc_key'
+    )
+
+    def __init__(self, payload, enc_algo, enc_serializer=None, enc_key=None):
+        """
+
+        :param payload: The encoded application payload.
+        :type payload: bytes
+
+        :param enc_algo: The payload transparency algorithm identifier to check.
+        :type enc_algo: str
+
+        :param enc_serializer: The payload transparency serializer identifier to check.
+        :type enc_serializer: str
+
+        :param enc_key: If using payload transparency with an encryption algorithm, the payload encryption key.
+        :type enc_key: str or None
+        """
+        assert(type(payload) == six.binary_type)
+        assert(type(enc_algo) == six.text_type)
+        assert(enc_serializer is None or type(enc_serializer) == six.text_type)
+        assert(enc_key is None or type(enc_key) == six.text_type)
+
+        self.payload = payload
+        self.enc_algo = enc_algo
+        self.enc_serializer = enc_serializer
+        self.enc_key = enc_key
 
 
 class IPublication(object):

@@ -32,7 +32,6 @@ import binascii
 import six
 
 import autobahn
-from autobahn import util
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
@@ -63,7 +62,11 @@ __all__ = ('Message',
            'Yield',
            'check_or_raise_uri',
            'check_or_raise_id',
-           'PAYLOAD_ENC_CRYPTO_BOX')
+           'is_valid_enc_algo',
+           'is_valid_enc_serializer',
+           'PAYLOAD_ENC_CRYPTO_BOX',
+           'PAYLOAD_ENC_MQTT',
+           'PAYLOAD_ENC_STANDARD_IDENTIFIERS')
 
 
 # strict URI check allowing empty URI components
@@ -92,14 +95,69 @@ _CUSTOM_ATTRIBUTE = re.compile(r"^x_([a-z][0-9a-z_]+)?$")
 # See: http://cr.yp.to/highspeed/coolnacl-20120725.pdf
 PAYLOAD_ENC_CRYPTO_BOX = u'cryptobox'
 
+# Payload transparency identifier for MQTT payloads (which are arbitrary binary).
+PAYLOAD_ENC_MQTT = u'mqtt'
+
+# Payload transparency algorithm identifiers from the WAMP spec.
+PAYLOAD_ENC_STANDARD_IDENTIFIERS = [PAYLOAD_ENC_CRYPTO_BOX, PAYLOAD_ENC_MQTT]
+
+# Payload transparency serializer identifiers from the WAMP spec.
+PAYLOAD_ENC_STANDARD_SERIALIZERS = [u'json', u'msgpack', u'cbor', u'ubjson']
+
+
+def is_valid_enc_algo(enc_algo):
+    """
+    For WAMP payload transparency mode, check if the provided ``enc_algo``
+    identifier in the WAMP message is a valid one.
+
+    Currently, the only standard defined identifier are
+
+    * ``u"cryptobox"``
+    * ``u"mqtt"``
+
+    Users can select arbitrary identifiers too, but these MUST start with ``u"x_"``.
+
+    :param enc_algo: The payload transparency algorithm identifier to check.
+    :type enc_algo: str
+
+    :returns: Returns ``True`` if and only if the payload transparency
+        algorithm identifier is valid.
+    :rtype: bool
+    """
+    return type(enc_algo) == six.text_type and (enc_algo in PAYLOAD_ENC_STANDARD_IDENTIFIERS or _CUSTOM_ATTRIBUTE.match(enc_algo))
+
+
+def is_valid_enc_serializer(enc_serializer):
+    """
+    For WAMP payload transparency mode, check if the provided ``enc_serializer``
+    identifier in the WAMP message is a valid one.
+
+    Currently, the only standard defined identifier are
+
+    * ``u"json"``
+    * ``u"msgpack"``
+    * ``u"cbor"``
+    * ``u"ubjson"``
+
+    Users can select arbitrary identifiers too, but these MUST start with ``u"x_"``.
+
+    :param enc_serializer: The payload transparency serializer identifier to check.
+    :type enc_serializer: str
+
+    :returns: Returns ``True`` if and only if the payload transparency
+        serializer identifier is valid.
+    :rtype: bool
+    """
+    return type(enc_serializer) == six.text_type and (enc_serializer in PAYLOAD_ENC_STANDARD_SERIALIZERS or _CUSTOM_ATTRIBUTE.match(enc_serializer))
+
 
 def b2a(data, max_len=40):
     if type(data) == six.text_type:
         s = data
     elif type(data) == six.binary_type:
-        s = binascii.b2a_hex(data)
+        s = binascii.b2a_hex(data).decode('ascii')
     elif data is None:
-        s = '-'
+        s = u'-'
     else:
         s = u'{}'.format(data)
     if len(s) > max_len:
@@ -116,10 +174,10 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
     Otherwise return the value.
 
     :param value: The value to check.
-    :type value: unicode or None
+    :type value: str or None
 
     :param message: Prefix for message in exception raised when value is invalid.
-    :type message: unicode
+    :type message: str
 
     :param strict: If ``True``, do a strict check on the URI (the WAMP spec SHOULD behavior).
     :type strict: bool
@@ -132,7 +190,7 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
     :type allow_none: bool
 
     :returns: The URI value (if valid).
-    :rtype: unicode
+    :rtype: str
 
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
@@ -178,7 +236,7 @@ def check_or_raise_id(value, message=u"WAMP message invalid"):
     :type value: int
 
     :param message: Prefix for message in exception raised when value is invalid.
-    :type message: unicode
+    :type message: str
 
     :returns: The ID value (if valid).
     :rtype: int
@@ -205,7 +263,7 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
     :type value: dict
 
     :param message: Prefix for message in exception raised when value is invalid.
-    :type message: unicode
+    :type message: str
 
     :returns: The extra dictionary (if valid).
     :rtype: dict
@@ -220,11 +278,11 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
     return value
 
 
-class Message(util.EqualityMixin):
+class Message(object):
     """
     WAMP message base class.
 
-    .. note:: This is not supposed to be instantiated.
+    .. note:: This is not supposed to be instantiated, but subclassed only.
     """
 
     MESSAGE_TYPE = None
@@ -232,9 +290,44 @@ class Message(util.EqualityMixin):
     WAMP message type code.
     """
 
+    __slots__ = (
+        '_serialized',
+    )
+
     def __init__(self):
         # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
+
+    def __eq__(self, other):
+        """
+        Compare this message to another message for equality.
+
+        :param other: The other message to compare with.
+        :type other: obj
+
+        :returns: ``True`` iff the messages are equal.
+        :rtype: bool
+        """
+        if not isinstance(other, self.__class__):
+            return False
+        # we only want the actual message data attributes (not eg _serialize)
+        for k in self.__slots__:
+            if k not in ['_serialized']:
+                if not getattr(self, k) == getattr(other, k):
+                    return False
+        return True
+
+    def __ne__(self, other):
+        """
+        Compare this message to another message for inequality.
+
+        :param other: The other message to compare with.
+        :type other: obj
+
+        :returns: ``True`` iff the messages are not equal.
+        :rtype: bool
+        """
+        return not self.__eq__(other)
 
     @staticmethod
     def parse(wmsg):
@@ -243,7 +336,8 @@ class Message(util.EqualityMixin):
         :func:`autobahn.interfaces.ISerializer.unserialize`) into an instance
         of this class.
 
-        :returns: obj -- An instance of this class.
+        :returns: An instance of this class.
+        :rtype: obj
         """
 
     def uncache(self):
@@ -261,7 +355,8 @@ class Message(util.EqualityMixin):
         :param serializer: The wire level serializer to use.
         :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
 
-        :returns: bytes -- The serialized bytes.
+        :returns: The serialized bytes.
+        :rtype: bytes
         """
         # only serialize if not cached ..
         if serializer not in self._serialized:
@@ -281,26 +376,38 @@ class Hello(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'realm',
+        'roles',
+        'authmethods',
+        'authid',
+        'authrole',
+        'authextra',
+        'resumable',
+        'resume_session',
+        'resume_token',
+    )
+
     def __init__(self, realm, roles, authmethods=None, authid=None, authrole=None, authextra=None, resumable=None, resume_session=None, resume_token=None):
         """
 
         :param realm: The URI of the WAMP realm to join.
-        :type realm: unicode
+        :type realm: str
 
         :param roles: The WAMP session roles and features to announce.
         :type roles: dict of :class:`autobahn.wamp.role.RoleFeatures`
 
         :param authmethods: The authentication methods to announce.
-        :type authmethods: list of unicode or None
+        :type authmethods: list of str or None
 
         :param authid: The authentication ID to announce.
-        :type authid: unicode or None
+        :type authid: str or None
 
         :param authrole: The authentication role to announce.
-        :type authrole: unicode or None
+        :type authrole: str or None
 
         :param authextra: Application-specific "extra data" to be forwarded to the client.
-        :type authextra: arbitrary or None
+        :type authextra: dict or None
 
         :param resumable: Whether the client wants this to be a session that can be later resumed.
         :type resumable: bool or None
@@ -309,7 +416,7 @@ class Hello(Message):
         :type resume_session: int or None
 
         :param resume_token: The secure authorisation token to resume the session.
-        :type resume_token: unicode or None
+        :type resume_token: str or None
         """
         assert(realm is None or isinstance(realm, six.text_type))
         assert(type(roles) == dict)
@@ -451,7 +558,8 @@ class Hello(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         details = {u'roles': {}}
         for role in self.roles.values():
@@ -504,6 +612,21 @@ class Welcome(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'session',
+        'roles',
+        'realm',
+        'authid',
+        'authrole',
+        'authmethod',
+        'authprovider',
+        'authextra',
+        'resumed',
+        'resumable',
+        'resume_token',
+        'custom',
+    )
+
     def __init__(self, session, roles, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None, resumed=None, resumable=None, resume_token=None, custom=None):
         """
 
@@ -514,19 +637,19 @@ class Welcome(Message):
         :type roles: dict of :class:`autobahn.wamp.role.RoleFeatures`
 
         :param realm: The effective realm the session is joined on.
-        :type realm: unicode or None
+        :type realm: str or None
 
         :param authid: The authentication ID assigned.
-        :type authid: unicode or None
+        :type authid: str or None
 
         :param authrole: The authentication role assigned.
-        :type authrole: unicode or None
+        :type authrole: str or None
 
         :param authmethod: The authentication method in use.
-        :type authmethod: unicode or None
+        :type authmethod: str or None
 
         :param authprovider: The authentication provided in use.
-        :type authprovider: unicode or None
+        :type authprovider: str or None
 
         :param authextra: Application-specific "extra data" to be forwarded to the client.
         :type authextra: arbitrary or None
@@ -538,7 +661,7 @@ class Welcome(Message):
         :type resumable: bool or None
 
         :param resume_token: The secure authorisation token to resume the session.
-        :type resume_token: unicode or None
+        :type resume_token: str or None
 
         :param custom: Implementation-specific "custom attributes" (`x_my_impl_attribute`) to be set.
         :type custom: dict or None
@@ -665,7 +788,8 @@ class Welcome(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         details = {}
         details.update(self.custom)
@@ -727,14 +851,19 @@ class Abort(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'reason',
+        'message',
+    )
+
     def __init__(self, reason, message=None):
         """
 
         :param reason: WAMP or application error URI for aborting reason.
-        :type reason: unicode
+        :type reason: str
 
         :param message: Optional human-readable closing message, e.g. for logging purposes.
-        :type message: unicode or None
+        :type message: str or None
         """
         assert(type(reason) == six.text_type)
         assert(message is None or type(message) == six.text_type)
@@ -780,7 +909,8 @@ class Abort(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         details = {}
         if self.message:
@@ -807,11 +937,16 @@ class Challenge(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'method',
+        'extra',
+    )
+
     def __init__(self, method, extra=None):
         """
 
         :param method: The authentication method.
-        :type method: unicode
+        :type method: str
 
         :param extra: Authentication method specific information.
         :type extra: dict or None
@@ -853,7 +988,8 @@ class Challenge(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         return [Challenge.MESSAGE_TYPE, self.method, self.extra]
 
@@ -876,11 +1012,16 @@ class Authenticate(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'signature',
+        'extra',
+    )
+
     def __init__(self, signature, extra=None):
         """
 
         :param signature: The signature for the authentication challenge.
-        :type signature: unicode
+        :type signature: str
 
         :param extra: Authentication method specific information.
         :type extra: dict or None
@@ -922,7 +1063,8 @@ class Authenticate(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         return [Authenticate.MESSAGE_TYPE, self.signature, self.extra]
 
@@ -950,14 +1092,20 @@ class Goodbye(Message):
     Default WAMP closing reason.
     """
 
+    __slots__ = (
+        'reason',
+        'message',
+        'resumable',
+    )
+
     def __init__(self, reason=DEFAULT_REASON, message=None, resumable=None):
         """
 
         :param reason: Optional WAMP or application error URI for closing reason.
-        :type reason: unicode
+        :type reason: str
 
         :param message: Optional human-readable closing message, e.g. for logging purposes.
-        :type message: unicode or None
+        :type message: str or None
 
         :param resumable: From the server: Whether the session is able to be resumed (true) or destroyed (false). From the client: Whether it should be resumable (true) or destroyed (false).
         :type resumable: bool or None
@@ -1016,7 +1164,8 @@ class Goodbye(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         details = {}
         if self.message:
@@ -1043,13 +1192,25 @@ class Error(Message):
     * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri]``
     * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list]``
     * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]``
-    * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Payload|string/binary]``
+    * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Payload|binary]``
     """
 
     MESSAGE_TYPE = 8
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request_type',
+        'request',
+        'error',
+        'args',
+        'kwargs',
+        'payload',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
 
     def __init__(self, request_type, request, error, args=None, kwargs=None, payload=None,
                  enc_algo=None, enc_key=None, enc_serializer=None):
@@ -1062,7 +1223,7 @@ class Error(Message):
         :type request: int
 
         :param error: The WAMP or application error URI for the error that occurred.
-        :type error: unicode
+        :type error: str
 
         :param args: Positional values for application-defined exception.
            Must be serializable using any serializers in use.
@@ -1072,25 +1233,29 @@ class Error(Message):
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
 
-        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
-        :type payload: unicode or bytes
+        :param payload: Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
+        :type payload: bytes or None
 
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
-        :type enc_algo: unicode
+        :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
+        :type enc_algo: str or None
 
-        :param enc_key: If using payload encryption, the message encryption key.
-        :type enc_key: unicode or binary
+        :param enc_key: If using payload transparency with an encryption algorithm, the payload encryption key.
+        :type enc_key: str or None
 
-        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
-        :type enc_serializer: unicode
+        :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
+        :type enc_serializer: str or None
         """
         assert(type(request_type) in six.integer_types)
         assert(type(request) in six.integer_types)
         assert(type(error) == six.text_type)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
+        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
         Message.__init__(self)
         self.request_type = request_type
@@ -1099,8 +1264,6 @@ class Error(Message):
         self.args = args
         self.kwargs = kwargs
         self.payload = payload
-
-        # end-to-end app payload encryption
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
@@ -1145,20 +1308,20 @@ class Error(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 6 and type(wmsg[5]) in [six.text_type, six.binary_type]:
+        if len(wmsg) == 6 and type(wmsg[5]) == six.binary_type:
 
             payload = wmsg[5]
 
             enc_algo = details.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+            if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
-            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
+            if enc_key and type(enc_key) != six.text_type:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
+            if enc_serializer and not is_valid_enc_serializer(enc_serializer):
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
 
         else:
@@ -1188,7 +1351,8 @@ class Error(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         details = {}
 
@@ -1224,13 +1388,33 @@ class Publish(Message):
     * ``[PUBLISH, Request|id, Options|dict, Topic|uri]``
     * ``[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list]``
     * ``[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list, ArgumentsKw|dict]``
-    * ``[PUBLISH, Request|id, Options|dict, Topic|uri, Payload|string/binary]``
+    * ``[PUBLISH, Request|id, Options|dict, Topic|uri, Payload|binary]``
     """
 
     MESSAGE_TYPE = 16
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'topic',
+        'args',
+        'kwargs',
+        'payload',
+        'acknowledge',
+        'exclude_me',
+        'exclude',
+        'exclude_authid',
+        'exclude_authrole',
+        'eligible',
+        'eligible_authid',
+        'eligible_authrole',
+        'retain',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
 
     def __init__(self,
                  request,
@@ -1257,7 +1441,7 @@ class Publish(Message):
 
         :param topic: The WAMP or application URI of the PubSub topic the event should
            be published to.
-        :type topic: unicode
+        :type topic: str
 
         :param args: Positional values for application-defined event payload.
            Must be serializable using any serializers in use.
@@ -1267,8 +1451,8 @@ class Publish(Message):
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
 
-        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
-        :type payload: unicode or bytes
+        :param payload: Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
+        :type payload: bytes or None
 
         :param acknowledge: If True, acknowledge the publication with a success or
            error response.
@@ -1282,37 +1466,37 @@ class Publish(Message):
         :type exclude: list of int or None
 
         :param exclude_authid: List of WAMP authids to exclude from receiving this event.
-        :type exclude_authid: list of unicode or None
+        :type exclude_authid: list of str or None
 
         :param exclude_authrole: List of WAMP authroles to exclude from receiving this event.
-        :type exclude_authrole: list of unicode or None
+        :type exclude_authrole: list of str or None
 
         :param eligible: List of WAMP session IDs eligible to receive this event.
         :type eligible: list of int or None
 
         :param eligible_authid: List of WAMP authids eligible to receive this event.
-        :type eligible_authid: list of unicode or None
+        :type eligible_authid: list of str or None
 
         :param eligible_authrole: List of WAMP authroles eligible to receive this event.
-        :type eligible_authrole: list of unicode or None
+        :type eligible_authrole: list of str or None
 
         :param retain: If ``True``, request the broker retain this event.
         :type retain: bool or None
 
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
-        :type enc_algo: unicode
+        :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
+        :type enc_algo: str or None
 
-        :param enc_key: If using payload encryption, the message encryption key.
-        :type enc_key: unicode or binary
+        :param enc_key: If using payload transparency with an encryption algorithm, the payload encryption key.
+        :type enc_key: str or None
 
-        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
-        :type enc_serializer: unicode
+        :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
+        :type enc_serializer: str or None or None
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
         assert(args is None or type(args) in [list, tuple, six.text_type, six.binary_type])
         assert(kwargs is None or type(kwargs) in [dict, six.text_type, six.binary_type])
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(retain is None or type(retain) == bool)
@@ -1350,11 +1534,10 @@ class Publish(Message):
             for authrole in eligible_authrole:
                 assert(type(authrole) == six.text_type)
 
-        # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
-        assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
+        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
         Message.__init__(self)
         self.request = request
@@ -1376,7 +1559,7 @@ class Publish(Message):
         # event retention
         self.retain = retain
 
-        # end-to-end app payload encryption
+        # payload transparency related knobs
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
@@ -1410,15 +1593,15 @@ class Publish(Message):
             payload = wmsg[4]
 
             enc_algo = options.get(u'enc_algo', None)
-            if enc_algo and enc_algo != PAYLOAD_ENC_CRYPTO_BOX:
+            if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' option in PUBLISH".format(enc_algo))
 
             enc_key = options.get(u'enc_key', None)
-            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
+            if enc_key and type(enc_key) != six.text_type:
                 raise ProtocolError("invalid type {0} for 'enc_key' option in PUBLISH".format(type(enc_key)))
 
             enc_serializer = options.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
+            if enc_serializer and not is_valid_enc_serializer(enc_serializer):
                 raise ProtocolError("invalid value {0} for 'enc_serializer' option in PUBLISH".format(enc_serializer))
 
         else:
@@ -1565,7 +1748,8 @@ class Publish(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         options = {}
 
@@ -1624,6 +1808,11 @@ class Published(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'publication',
+    )
+
     def __init__(self, request, publication):
         """
 
@@ -1667,7 +1856,8 @@ class Published(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         return [Published.MESSAGE_TYPE, self.request, self.publication]
 
@@ -1694,6 +1884,13 @@ class Subscribe(Message):
     MATCH_PREFIX = u'prefix'
     MATCH_WILDCARD = u'wildcard'
 
+    __slots__ = (
+        'request',
+        'topic',
+        'match',
+        'get_retained',
+    )
+
     def __init__(self, request, topic, match=None, get_retained=None):
         """
 
@@ -1701,10 +1898,10 @@ class Subscribe(Message):
         :type request: int
 
         :param topic: The WAMP or application URI of the PubSub topic to subscribe to.
-        :type topic: unicode
+        :type topic: str
 
         :param match: The topic matching method to be used for the subscription.
-        :type match: unicode
+        :type match: str
 
         :param get_retained: Whether the client wants the retained message we may have along with the subscription.
         :type get_retained: bool or None
@@ -1769,7 +1966,8 @@ class Subscribe(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         options = {}
 
@@ -1799,6 +1997,11 @@ class Subscribed(Message):
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'subscription',
+    )
 
     def __init__(self, request, subscription):
         """
@@ -1843,7 +2046,8 @@ class Subscribed(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         return [Subscribed.MESSAGE_TYPE, self.request, self.subscription]
 
@@ -1865,6 +2069,11 @@ class Unsubscribe(Message):
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'subscription',
+    )
 
     def __init__(self, request, subscription):
         """
@@ -1909,7 +2118,8 @@ class Unsubscribe(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         return [Unsubscribe.MESSAGE_TYPE, self.request, self.subscription]
 
@@ -1935,6 +2145,12 @@ class Unsubscribed(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'subscription',
+        'reason',
+    )
+
     def __init__(self, request, subscription=None, reason=None):
         """
 
@@ -1947,7 +2163,7 @@ class Unsubscribed(Message):
         :type subscription: int or None
 
         :param reason: The reason (an URI) for revocation.
-        :type reason: unicode or None.
+        :type reason: str or None.
         """
         assert(type(request) in six.integer_types)
         assert(subscription is None or type(subscription) in six.integer_types)
@@ -2001,7 +2217,8 @@ class Unsubscribed(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         if self.reason is not None or self.subscription is not None:
             details = {}
@@ -2029,13 +2246,30 @@ class Event(Message):
     * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict]``
     * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list]``
     * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list, PUBLISH.ArgumentsKw|dict]``
-    * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Payload|string/binary]``
+    * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Payload|binary]``
     """
 
     MESSAGE_TYPE = 36
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'subscription',
+        'publication',
+        'args',
+        'kwargs',
+        'payload',
+        'publisher',
+        'publisher_authid',
+        'publisher_authrole',
+        'topic',
+        'retained',
+        'x_acknowledged_delivery',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
 
     def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
@@ -2057,8 +2291,8 @@ class Event(Message):
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
 
-        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
-        :type payload: unicode or bytes
+        :param payload: Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
+        :type payload: bytes or None
 
         :param publisher: The WAMP session ID of the pubisher. Only filled if pubisher is disclosed.
         :type publisher: None or int
@@ -2070,7 +2304,7 @@ class Event(Message):
         :type publisher_authrole: None or unicode
 
         :param topic: For pattern-based subscriptions, the event MUST contain the actual topic published to.
-        :type topic: unicode or None
+        :type topic: str or None
 
         :param retained: Whether the message was retained by the broker on the topic, rather than just published.
         :type retained: bool or None
@@ -2078,20 +2312,20 @@ class Event(Message):
         :param x_acknowledged_delivery: Whether this Event should be acknowledged.
         :type x_acknowledged_delivery: bool or None
 
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
-        :type enc_algo: unicode
+        :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
+        :type enc_algo: str or None
 
-        :param enc_key: If using payload encryption, the message encryption key.
-        :type enc_key: unicode or binary
+        :param enc_key: If using payload transparency with an encryption algorithm, the payload encryption key.
+        :type enc_key: str or None
 
-        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
-        :type enc_serializer: unicode
+        :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
+        :type enc_serializer: str or None
         """
         assert(type(subscription) in six.integer_types)
         assert(type(publication) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(publisher is None or type(publisher) in six.integer_types)
         assert(publisher_authid is None or type(publisher_authid) == six.text_type)
@@ -2099,12 +2333,10 @@ class Event(Message):
         assert(topic is None or type(topic) == six.text_type)
         assert(retained is None or type(retained) == bool)
         assert(x_acknowledged_delivery is None or type(x_acknowledged_delivery) == bool)
-
-        # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
-        assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
+        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
         Message.__init__(self)
         self.subscription = subscription
@@ -2118,8 +2350,6 @@ class Event(Message):
         self.topic = topic
         self.retained = retained
         self.x_acknowledged_delivery = x_acknowledged_delivery
-
-        # end-to-end app payload encryption
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
@@ -2135,7 +2365,6 @@ class Event(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Event.MESSAGE_TYPE)
 
         if len(wmsg) not in (4, 5, 6):
@@ -2152,30 +2381,30 @@ class Event(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
+        if len(wmsg) == 5 and type(wmsg[4]) == six.binary_type:
 
             payload = wmsg[4]
 
             enc_algo = details.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+            if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
-            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
+            if enc_key and type(enc_key) != six.text_type:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
+            if enc_serializer and not is_valid_enc_serializer(enc_serializer):
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
 
         else:
             if len(wmsg) > 4:
                 args = wmsg[4]
-                if type(args) not in [list, six.text_type, six.binary_type]:
+                if type(args) != list:
                     raise ProtocolError("invalid type {0} for 'args' in EVENT".format(type(args)))
             if len(wmsg) > 5:
                 kwargs = wmsg[5]
-                if type(kwargs) not in [dict]:
+                if type(kwargs) != dict:
                     raise ProtocolError("invalid type {0} for 'kwargs' in EVENT".format(type(kwargs)))
 
         publisher = None
@@ -2248,7 +2477,8 @@ class Event(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         details = {}
 
@@ -2306,6 +2536,10 @@ class EventReceived(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'publication',
+    )
+
     def __init__(self, publication):
         """
 
@@ -2343,7 +2577,8 @@ class EventReceived(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         return [EventReceived.MESSAGE_TYPE, self.publication]
 
@@ -2363,13 +2598,26 @@ class Call(Message):
     * ``[CALL, Request|id, Options|dict, Procedure|uri]``
     * ``[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list]``
     * ``[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list, ArgumentsKw|dict]``
-    * ``[CALL, Request|id, Options|dict, Procedure|uri, Payload|string/binary]``
+    * ``[CALL, Request|id, Options|dict, Procedure|uri, Payload|binary]``
     """
 
     MESSAGE_TYPE = 48
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'procedure',
+        'args',
+        'kwargs',
+        'payload',
+        'timeout',
+        'receive_progress',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
 
     def __init__(self,
                  request,
@@ -2388,7 +2636,7 @@ class Call(Message):
         :type request: int
 
         :param procedure: The WAMP or application URI of the procedure which should be called.
-        :type procedure: unicode
+        :type procedure: str
 
         :param args: Positional values for application-defined call arguments.
            Must be serializable using any serializers in use.
@@ -2398,8 +2646,8 @@ class Call(Message):
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
 
-        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
-        :type payload: unicode or bytes
+        :param payload: Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
+        :type payload: bytes or None
 
         :param timeout: If present, let the callee automatically cancel
            the call after this ms.
@@ -2409,29 +2657,29 @@ class Call(Message):
            progressive call results.
         :type receive_progress: bool or None
 
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
-        :type enc_algo: unicode
+        :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
+        :type enc_algo: str or None
 
-        :param enc_key: If using payload encryption, the message encryption key.
-        :type enc_key: unicode or binary
+        :param enc_key: If using payload transparency with an encryption algorithm, the payload encryption key.
+        :type enc_key: str or None
 
-        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
-        :type enc_serializer: unicode
+        :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
+        :type enc_serializer: str or None
         """
         assert(type(request) in six.integer_types)
         assert(type(procedure) == six.text_type)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
 
-        # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
-        assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
+        # payload transparency related knobs
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
+        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
         Message.__init__(self)
         self.request = request
@@ -2442,7 +2690,7 @@ class Call(Message):
         self.timeout = timeout
         self.receive_progress = receive_progress
 
-        # end-to-end app payload encryption
+        # payload transparency related knobs
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
@@ -2479,16 +2727,16 @@ class Call(Message):
             payload = wmsg[4]
 
             enc_algo = options.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
-                raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
+            if enc_algo and not is_valid_enc_algo(enc_algo):
+                raise ProtocolError("invalid value {0} for 'enc_algo' detail in CALL".format(enc_algo))
 
             enc_key = options.get(u'enc_key', None)
-            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
-                raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
+            if enc_key and type(enc_key) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'enc_key' detail in CALL".format(type(enc_key)))
 
             enc_serializer = options.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
-                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
+            if enc_serializer and not is_valid_enc_serializer(enc_serializer):
+                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in CALL".format(enc_serializer))
 
         else:
             if len(wmsg) > 4:
@@ -2540,7 +2788,8 @@ class Call(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         options = {}
 
@@ -2589,6 +2838,11 @@ class Cancel(Message):
     ABORT = u'abort'
     KILL = u'kill'
 
+    __slots__ = (
+        'request',
+        'mode',
+    )
+
     def __init__(self, request, mode=None):
         """
 
@@ -2596,7 +2850,7 @@ class Cancel(Message):
         :type request: int
 
         :param mode: Specifies how to cancel the call (``"skip"``, ``"abort"`` or ``"kill"``).
-        :type mode: unicode or None
+        :type mode: str or None
         """
         assert(type(request) in six.integer_types)
         assert(mode is None or type(mode) == six.text_type)
@@ -2648,7 +2902,8 @@ class Cancel(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         options = {}
 
@@ -2673,13 +2928,24 @@ class Result(Message):
     * ``[RESULT, CALL.Request|id, Details|dict]``
     * ``[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list]``
     * ``[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]``
-    * ``[RESULT, CALL.Request|id, Details|dict, Payload|string/binary]``
+    * ``[RESULT, CALL.Request|id, Details|dict, Payload|binary]``
     """
 
     MESSAGE_TYPE = 50
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'args',
+        'kwargs',
+        'payload',
+        'progress',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
 
     def __init__(self, request, args=None, kwargs=None, payload=None, progress=None,
                  enc_algo=None, enc_key=None, enc_serializer=None):
@@ -2696,34 +2962,34 @@ class Result(Message):
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
 
-        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
-        :type payload: unicode or bytes
+        :param payload: Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
+        :type payload: bytes or None
 
         :param progress: If ``True``, this result is a progressive call result, and subsequent
            results (or a final error) will follow.
         :type progress: bool or None
 
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
-        :type enc_algo: unicode
+        :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
+        :type enc_algo: str or None
 
-        :param enc_key: If using payload encryption, the message encryption key.
-        :type enc_key: unicode or binary
+        :param enc_key: If using payload transparency with an encryption algorithm, the payload encryption key.
+        :type enc_key: str or None
 
-        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
-        :type enc_serializer: unicode
+        :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
+        :type enc_serializer: str or None
         """
         assert(type(request) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
 
-        # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
-        assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
+        # payload transparency related knobs
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
+        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
         Message.__init__(self)
         self.request = request
@@ -2732,7 +2998,7 @@ class Result(Message):
         self.payload = payload
         self.progress = progress
 
-        # end-to-end app payload encryption
+        # payload transparency related knobs
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
@@ -2768,16 +3034,16 @@ class Result(Message):
             payload = wmsg[3]
 
             enc_algo = details.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
-                raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
+            if enc_algo and not is_valid_enc_algo(enc_algo):
+                raise ProtocolError("invalid value {0} for 'enc_algo' detail in RESULT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
-            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
-                raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
+            if enc_key and type(enc_key) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'enc_key' detail in RESULT".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
-                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
+            if enc_serializer and not is_valid_enc_serializer(enc_serializer):
+                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in RESULT".format(enc_serializer))
 
         else:
             if len(wmsg) > 3:
@@ -2815,7 +3081,8 @@ class Result(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         details = {}
 
@@ -2868,6 +3135,14 @@ class Register(Message):
     INVOKE_RANDOM = u'random'
     INVOKE_ALL = u'all'
 
+    __slots__ = (
+        'request',
+        'procedure',
+        'match',
+        'invoke',
+        'concurrency',
+    )
+
     def __init__(self, request, procedure, match=None, invoke=None, concurrency=None):
         """
 
@@ -2875,13 +3150,13 @@ class Register(Message):
         :type request: int
 
         :param procedure: The WAMP or application URI of the RPC endpoint provided.
-        :type procedure: unicode
+        :type procedure: str
 
         :param match: The procedure matching policy to be used for the registration.
-        :type match: unicode
+        :type match: str
 
         :param invoke: The procedure invocation policy to be used for the registration.
-        :type invoke: unicode
+        :type invoke: str
 
         :param concurrency: The (maximum) concurrency to be used for the registration.
         :type concurrency: int
@@ -2982,7 +3257,8 @@ class Register(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         options = {}
 
@@ -3015,6 +3291,11 @@ class Registered(Message):
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'registration',
+    )
 
     def __init__(self, request, registration):
         """
@@ -3059,7 +3340,8 @@ class Registered(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         return [Registered.MESSAGE_TYPE, self.request, self.registration]
 
@@ -3081,6 +3363,11 @@ class Unregister(Message):
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'registration',
+    )
 
     def __init__(self, request, registration):
         """
@@ -3125,7 +3412,8 @@ class Unregister(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         return [Unregister.MESSAGE_TYPE, self.request, self.registration]
 
@@ -3151,6 +3439,12 @@ class Unregistered(Message):
     The WAMP message code for this type of message.
     """
 
+    __slots__ = (
+        'request',
+        'registration',
+        'reason',
+    )
+
     def __init__(self, request, registration=None, reason=None):
         """
 
@@ -3162,7 +3456,7 @@ class Unregistered(Message):
         :type registration: int or None
 
         :param reason: The reason (an URI) for revocation.
-        :type reason: unicode or None.
+        :type reason: str or None.
         """
         assert(type(request) in six.integer_types)
         assert(registration is None or type(registration) in six.integer_types)
@@ -3216,7 +3510,8 @@ class Unregistered(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         if self.reason is not None or self.registration is not None:
             details = {}
@@ -3244,13 +3539,30 @@ class Invocation(Message):
     * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict]``
     * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list]``
     * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list, CALL.ArgumentsKw|dict]``
-    * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Payload|string/binary]``
+    * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Payload|binary]``
     """
 
     MESSAGE_TYPE = 68
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'registration',
+        'args',
+        'kwargs',
+        'payload',
+        'timeout',
+        'receive_progress',
+        'caller',
+        'caller_authid',
+        'caller_authrole',
+        'procedure',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
 
     def __init__(self,
                  request,
@@ -3283,8 +3595,8 @@ class Invocation(Message):
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
 
-        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
-        :type payload: unicode or bytes
+        :param payload: Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
+        :type payload: bytes or None
 
         :param timeout: If present, let the callee automatically cancels
            the invocation after this ms.
@@ -3303,22 +3615,22 @@ class Invocation(Message):
         :type caller_authrole: None or unicode
 
         :param procedure: For pattern-based registrations, the invocation MUST include the actual procedure being called.
-        :type procedure: unicode or None
+        :type procedure: str or None
 
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
-        :type enc_algo: unicode
+        :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
+        :type enc_algo: str or None
 
-        :param enc_key: If using payload encryption, the message encryption key.
-        :type enc_key: unicode or binary
+        :param enc_key: If using payload transparency with an encryption algorithm, the payload encryption key.
+        :type enc_key: str or None
 
-        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
-        :type enc_serializer: unicode
+        :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
+        :type enc_serializer: str or None
         """
         assert(type(request) in six.integer_types)
         assert(type(registration) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
@@ -3326,12 +3638,10 @@ class Invocation(Message):
         assert(caller_authid is None or type(caller_authid) == six.text_type)
         assert(caller_authrole is None or type(caller_authrole) == six.text_type)
         assert(procedure is None or type(procedure) == six.text_type)
-
-        # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
-        assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
+        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
         Message.__init__(self)
         self.request = request
@@ -3345,8 +3655,6 @@ class Invocation(Message):
         self.caller_authid = caller_authid
         self.caller_authrole = caller_authrole
         self.procedure = procedure
-
-        # end-to-end app payload encryption
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
@@ -3378,21 +3686,21 @@ class Invocation(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
+        if len(wmsg) == 5 and type(wmsg[4]) == six.binary_type:
 
             payload = wmsg[4]
 
             enc_algo = details.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
-                raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
+            if enc_algo and not is_valid_enc_algo(enc_algo):
+                raise ProtocolError("invalid value {0} for 'enc_algo' detail in INVOCATION".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
-            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
-                raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
+            if enc_key and type(enc_key) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'enc_key' detail in INVOCATION".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
-                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
+            if enc_serializer and not is_valid_enc_serializer(enc_serializer):
+                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in INVOCATION".format(enc_serializer))
 
         else:
             if len(wmsg) > 4:
@@ -3484,7 +3792,8 @@ class Invocation(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         options = {}
 
@@ -3538,11 +3847,16 @@ class Interrupt(Message):
 
     MESSAGE_TYPE = 69
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     ABORT = u'abort'
     KILL = u'kill'
+
+    __slots__ = (
+        'request',
+        'mode',
+    )
 
     def __init__(self, request, mode=None):
         """
@@ -3551,7 +3865,7 @@ class Interrupt(Message):
         :type request: int
 
         :param mode: Specifies how to interrupt the invocation (``"abort"`` or ``"kill"``).
-        :type mode: unicode or None
+        :type mode: str or None
         """
         assert(type(request) in six.integer_types)
         assert(mode is None or type(mode) == six.text_type)
@@ -3603,7 +3917,8 @@ class Interrupt(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         options = {}
 
@@ -3628,13 +3943,24 @@ class Yield(Message):
     * ``[YIELD, INVOCATION.Request|id, Options|dict]``
     * ``[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list]``
     * ``[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]``
-    * ``[YIELD, INVOCATION.Request|id, Options|dict, Payload|string/binary]``
+    * ``[YIELD, INVOCATION.Request|id, Options|dict, Payload|binary]``
     """
 
     MESSAGE_TYPE = 70
     """
     The WAMP message code for this type of message.
     """
+
+    __slots__ = (
+        'request',
+        'args',
+        'kwargs',
+        'payload',
+        'progress',
+        'enc_algo',
+        'enc_key',
+        'enc_serializer',
+    )
 
     def __init__(self, request, args=None, kwargs=None, payload=None, progress=None,
                  enc_algo=None, enc_key=None, enc_serializer=None):
@@ -3651,34 +3977,32 @@ class Yield(Message):
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
 
-        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
-        :type payload: unicode or bytes
+        :param payload: Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
+        :type payload: bytes or None
 
         :param progress: If ``True``, this result is a progressive invocation result, and subsequent
            results (or a final error) will follow.
         :type progress: bool or None
 
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
-        :type enc_algo: unicode
+        :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
+        :type enc_algo: str or None
 
-        :param enc_key: If using payload encryption, the message encryption key.
-        :type enc_key: unicode or binary
+        :param enc_key: If using payload transparency with an encryption algorithm, the payload encryption key.
+        :type enc_key: str or None
 
-        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
-        :type enc_serializer: unicode
+        :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
+        :type enc_serializer: str or None
         """
         assert(type(request) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
-
-        # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
-        assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
+        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
         Message.__init__(self)
         self.request = request
@@ -3686,8 +4010,6 @@ class Yield(Message):
         self.kwargs = kwargs
         self.payload = payload
         self.progress = progress
-
-        # end-to-end app payload encryption
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
@@ -3718,21 +4040,21 @@ class Yield(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 4 and type(wmsg[3]) in [six.text_type, six.binary_type]:
+        if len(wmsg) == 4 and type(wmsg[3]) == six.binary_type:
 
             payload = wmsg[3]
 
             enc_algo = options.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
-                raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
+            if enc_algo and not is_valid_enc_algo(enc_algo):
+                raise ProtocolError("invalid value {0} for 'enc_algo' detail in YIELD".format(enc_algo))
 
             enc_key = options.get(u'enc_key', None)
-            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
-                raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
+            if enc_key and type(enc_key) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'enc_key' detail in YIELD".format(type(enc_key)))
 
             enc_serializer = options.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
-                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
+            if enc_serializer and not is_valid_enc_serializer(enc_serializer):
+                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in YIELD".format(enc_serializer))
 
         else:
             if len(wmsg) > 3:
@@ -3770,7 +4092,8 @@ class Yield(Message):
         """
         Marshal this object into a raw message for subsequent serialization to bytes.
 
-        :returns: list -- The serialized raw message.
+        :returns: The serialized raw message.
+        :rtype: list
         """
         options = {}
 
