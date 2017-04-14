@@ -1117,6 +1117,7 @@ class ApplicationSession(BaseSession):
         """
         Errback any still outstanding requests with exc.
         """
+        d = txaio.create_future_success(None)
         all_requests = [
             self._publish_reqs,
             self._subscribe_reqs,
@@ -1143,6 +1144,9 @@ class ApplicationSession(BaseSession):
                 request_type=request.__class__.__name__,
             )
             txaio.reject(request.on_reply, exc)
+            # wait for any async-ness in the error handlers for on_reply
+            txaio.add_callbacks(d, lambda _: request.on_reply, lambda _: request.on_reply)
+        return d
 
     @public
     def onLeave(self, details):
@@ -1154,10 +1158,13 @@ class ApplicationSession(BaseSession):
 
         # fire ApplicationError on any currently outstanding requests
         exc = ApplicationError(details.reason, details.message)
-        self._errback_outstanding_requests(exc)
+        d = self._errback_outstanding_requests(exc)
 
-        if self._transport:
-            self.disconnect()
+        def disconnect(_):
+            if self._transport:
+                self.disconnect()
+        txaio.add_callbacks(d, disconnect, disconnect)
+        return d
 
     @public
     def leave(self, reason=None, message=None):
