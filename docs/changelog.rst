@@ -5,6 +5,16 @@
 Changelog
 =========
 
+0.18.2
+------
+
+`Published 2017-04-14 <https://pypi.python.org/pypi/autobahn/0.18.2>`__
+
+* new: payload codec API
+* fix: make WAMP-cryptobox use new payload codec API
+* fix: automatic binary conversation for JSON
+* new: improvements to experimental component API
+
 0.18.1
 ------
 
