@@ -157,7 +157,9 @@ class ApplicationRunner(object):
     @public
     def run(self, make, start_loop=True):
         """
-        Run the application component.
+        Run the application component. Under the hood, this runs the event
+        loop (unless `start_loop=False` is passed) so won't return
+        until the program is done.
 
         :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
            when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
@@ -166,6 +168,11 @@ class ApplicationRunner(object):
         :param start_loop: When ``True`` (the default) this method
             start a new asyncio loop.
         :type start_loop: bool
+
+        :returns: None is returned, unless you specify
+            `start_loop=False` in which case the coroutine from calling
+            `loop.create_connection()` is returned. This will yield the
+            (transport, protocol) pair.
         """
         if callable(make):
             def create():
