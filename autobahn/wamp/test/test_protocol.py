@@ -78,6 +78,8 @@ if os.environ.get('USE_TWISTED', False):
                         reply = message.Published(msg.request, self._fake_router_session._request_id_gen.next())
                 elif len(msg.topic) == 0:
                     reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, u'wamp.error.invalid_uri')
+                elif msg.topic.startswith(u'noreply.'):
+                    pass
                 else:
                     reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, u'wamp.error.not_authorized')
 
@@ -189,6 +191,30 @@ if os.environ.get('USE_TWISTED', False):
 
             publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300], retain=True))
             self.assertEqual(publication, None)
+
+        @inlineCallbacks
+        def test_publish_outstanding_errors(self):
+            handler = ApplicationSession()
+            transport = MockTransport(handler)
+
+            # this publish will "hang" because 'noreply.' URI is
+            # handled specially in MockTransport; so this request will
+            # be outstanding
+            publication = handler.publish(
+                u'noreply.foo',
+                options=types.PublishOptions(acknowledge=True),
+            )
+            # "leave" the session, which should trigger errbacks on
+            # all outstanding requests.
+            details = types.CloseDetails(reason=u'testing', message=u'how are you?')
+            yield handler.onLeave(details)
+
+            # ensure we got our errback
+            try:
+                yield publication
+            except ApplicationError as e:
+                self.assertEqual(u'testing', e.error)
+                self.assertEqual(u'how are you?', e.message)
 
         @inlineCallbacks
         def test_publish_acknowledged(self):
