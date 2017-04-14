@@ -217,6 +217,47 @@ if os.environ.get('USE_TWISTED', False):
                 self.assertEqual(u'how are you?', e.message)
 
         @inlineCallbacks
+        def test_publish_outstanding_errors_async_errback(self):
+            handler = ApplicationSession()
+            transport = MockTransport(handler)
+            error_d = Deferred()
+
+            # this publish will "hang" because 'noreply.' URI is
+            # handled specially in MockTransport; so this request will
+            # be outstanding
+            publication_d = handler.publish(
+                u'noreply.foo',
+                options=types.PublishOptions(acknowledge=True),
+            )
+            # further, we add an errback that does some arbitrary async work
+            got_errors = []
+
+            def errback(fail):
+                got_errors.append(fail)
+                return error_d
+            publication_d.addErrback(errback)
+            # "leave" the session, which should trigger errbacks on
+            # all outstanding requests.
+            details = types.CloseDetails(reason=u'testing', message=u'how are you?')
+            d = handler.onLeave(details)
+
+            # since our errback is async, onLeave should not have
+            # completed yet but we should have already failed the
+            # publication
+            self.assertEqual(1, len(got_errors))
+            # ...now let the async errback continue by completing the
+            # Deferred we returned in our errback (could be fail or
+            # success, shoudln't matter)
+            error_d.callback(None)
+
+            # ensure we (now) get our errback
+            try:
+                yield publication_d
+            except ApplicationError as e:
+                self.assertEqual(u'testing', e.error)
+                self.assertEqual(u'how are you?', e.message)
+
+        @inlineCallbacks
         def test_publish_acknowledged(self):
             handler = ApplicationSession()
             MockTransport(handler)
