@@ -1131,10 +1131,11 @@ class ApplicationSession(BaseSession):
             outstanding.extend(requests.values())
             requests.clear()
 
-        self.log.info(
-            'Cancelling {count} outstanding requests',
-            count=len(outstanding),
-        )
+        if outstanding:
+            self.log.info(
+                'Cancelling {count} outstanding requests',
+                count=len(outstanding),
+            )
         for request in outstanding:
             self.log.debug(
                 'cleaning up outstanding {request_type} request {request_id}, '
