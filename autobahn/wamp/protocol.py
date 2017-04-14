@@ -1117,19 +1117,32 @@ class ApplicationSession(BaseSession):
         """
         Errback any still outstanding requests with exc.
         """
-        for requests in [self._publish_reqs,
-                         self._subscribe_reqs,
-                         self._unsubscribe_reqs,
-                         self._call_reqs,
-                         self._register_reqs,
-                         self._unregister_reqs]:
-            for request in requests.values():
-                self.log.info('cleaning up outstanding {request_type} request {request_id}, firing errback on user handler {request_on_reply}',
-                              request_on_reply=request.on_reply,
-                              request_id=request.request_id,
-                              request_type=request.__class__.__name__)
-                txaio.reject(request.on_reply, exc)
+        all_requests = [
+            self._publish_reqs,
+            self._subscribe_reqs,
+            self._unsubscribe_reqs,
+            self._call_reqs,
+            self._register_reqs,
+            self._unregister_reqs
+        ]
+        outstanding = []
+        for requests in all_requests:
+            outstanding.extend(requests.values())
             requests.clear()
+
+        self.log.info(
+            'Cancelling {count} outstanding requests',
+            count=len(outstanding),
+        )
+        for request in outstanding:
+            self.log.debug(
+                'cleaning up outstanding {request_type} request {request_id}, '
+                'firing errback on user handler {request_on_reply}',
+                request_on_reply=request.on_reply,
+                request_id=request.request_id,
+                request_type=request.__class__.__name__,
+            )
+            txaio.reject(request.on_reply, exc)
 
     @public
     def onLeave(self, details):
