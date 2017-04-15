@@ -1327,7 +1327,7 @@ class Error(Message):
         else:
             if len(wmsg) > 5:
                 args = wmsg[5]
-                if type(args) != list:
+                if args is not None and type(args) != list:
                     raise ProtocolError("invalid type {0} for 'args' in ERROR".format(type(args)))
 
             if len(wmsg) > 6:
@@ -2400,7 +2400,7 @@ class Event(Message):
         else:
             if len(wmsg) > 4:
                 args = wmsg[4]
-                if type(args) != list:
+                if args is not None and type(args) != list:
                     raise ProtocolError("invalid type {0} for 'args' in EVENT".format(type(args)))
             if len(wmsg) > 5:
                 kwargs = wmsg[5]
@@ -2741,7 +2741,7 @@ class Call(Message):
         else:
             if len(wmsg) > 4:
                 args = wmsg[4]
-                if type(args) != list:
+                if args is not None and type(args) != list:
                     raise ProtocolError("invalid type {0} for 'args' in CALL".format(type(args)))
 
             if len(wmsg) > 5:
@@ -3048,7 +3048,7 @@ class Result(Message):
         else:
             if len(wmsg) > 3:
                 args = wmsg[3]
-                if type(args) != list:
+                if args is not None and type(args) != list:
                     raise ProtocolError("invalid type {0} for 'args' in RESULT".format(type(args)))
 
             if len(wmsg) > 4:
@@ -3705,7 +3705,7 @@ class Invocation(Message):
         else:
             if len(wmsg) > 4:
                 args = wmsg[4]
-                if type(args) != list:
+                if args is not None and type(args) != list:
                     raise ProtocolError("invalid type {0} for 'args' in INVOCATION".format(type(args)))
 
             if len(wmsg) > 5:
@@ -4059,7 +4059,7 @@ class Yield(Message):
         else:
             if len(wmsg) > 3:
                 args = wmsg[3]
-                if type(args) != list:
+                if args is not None and type(args) != list:
                     raise ProtocolError("invalid type {0} for 'args' in YIELD".format(type(args)))
 
             if len(wmsg) > 4:
