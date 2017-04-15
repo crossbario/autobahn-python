@@ -195,7 +195,7 @@ if os.environ.get('USE_TWISTED', False):
         @inlineCallbacks
         def test_publish_outstanding_errors(self):
             handler = ApplicationSession()
-            transport = MockTransport(handler)
+            MockTransport(handler)
 
             # this publish will "hang" because 'noreply.' URI is
             # handled specially in MockTransport; so this request will
@@ -219,7 +219,7 @@ if os.environ.get('USE_TWISTED', False):
         @inlineCallbacks
         def test_publish_outstanding_errors_async_errback(self):
             handler = ApplicationSession()
-            transport = MockTransport(handler)
+            MockTransport(handler)
             error_d = Deferred()
 
             # this publish will "hang" because 'noreply.' URI is
@@ -239,7 +239,7 @@ if os.environ.get('USE_TWISTED', False):
             # "leave" the session, which should trigger errbacks on
             # all outstanding requests.
             details = types.CloseDetails(reason=u'testing', message=u'how are you?')
-            d = handler.onLeave(details)
+            handler.onLeave(details)
 
             # since our errback is async, onLeave should not have
             # completed yet but we should have already failed the
