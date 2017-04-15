@@ -131,6 +131,7 @@ extras_require_dev = [
     'sphinxcontrib-spelling>=2.1.2',    # BSD
     'sphinx_rtd_theme>=0.1.9',          # BSD
     'pytest_asyncio',                   # Apache 2.0
+    'pytest-aiohttp',                   # Apache 2.0
     'awscli',                           # Apache 2.0
     'qualname',                         # BSD
 ]
