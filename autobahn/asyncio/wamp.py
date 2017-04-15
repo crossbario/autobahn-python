@@ -241,12 +241,13 @@ class ApplicationRunner(object):
         txaio.use_asyncio()
         txaio.config.loop = loop
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
-        (transport, protocol) = loop.run_until_complete(coro)
 
         # start a asyncio loop
         if not start_loop:
-            return protocol
+            return coro
         else:
+            (transport, protocol) = loop.run_until_complete(coro)
+
             # start logging
             txaio.start_logging(level='info')
 
