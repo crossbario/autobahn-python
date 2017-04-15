@@ -12,7 +12,7 @@ from autobahn.asyncio.util import get_serializers
 from autobahn.wamp import message
 
 
-@pytest.mark.skipif(os.environ.get('USE_ASYNCIO', False), reason="Only for asyncio")
+@pytest.mark.skipif(os.environ.get('USE_ASYNCIO', False) is False, reason="Only for asyncio")
 class Test(TestCase):
 
     def test_sers(self):
@@ -84,7 +84,7 @@ class Test(TestCase):
 
     def test_raw_socket_server1(self):
 
-        server = RawSocketServerProtocol(max_size=10000)
+        server = RawSocketServerProtocol()
         ser = Mock(return_value=True)
         on_hs = Mock()
         transport = Mock()
@@ -95,7 +95,10 @@ class Test(TestCase):
         server.stringReceived = receiver
 
         server.connection_made(transport)
-        hs = b'\x7F\xF1\x00\x00' + b'\x00\x00\x00\x04abcd'
+        # XXX this test was disabled for a while, and had \xF1 instead
+        # of \x51 in the second octet previously; changing it
+        # presuming the 'real' code is correct
+        hs = b'\x7F\x51\x00\x00' + b'\x00\x00\x00\x04abcd'
         server.data_received(hs)
 
         ser.assert_called_once_with(1)
@@ -107,7 +110,7 @@ class Test(TestCase):
 
     def test_raw_socket_server_errors(self):
 
-        server = RawSocketServerProtocol(max_size=10000)
+        server = RawSocketServerProtocol()
         ser = Mock(return_value=True)
         on_hs = Mock()
         transport = Mock()
@@ -120,7 +123,7 @@ class Test(TestCase):
         server.data_received(b'abcdef')
         transport.close.assert_called_once_with()
 
-        server = RawSocketServerProtocol(max_size=10000)
+        server = RawSocketServerProtocol()
         ser = Mock(return_value=False)
         on_hs = Mock()
         transport = Mock(spec_set=('close', 'write', 'get_extra_info'))
