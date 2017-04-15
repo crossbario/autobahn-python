@@ -1,5 +1,6 @@
 import pytest
 import os
+import sys
 
 # because py.test tries to collect it as a test-case
 try:
@@ -16,8 +17,9 @@ from unittest import TestCase
 import txaio
 
 
+@pytest.mark.skipif(sys.version_info < (3, 3), reason="requires Python 3.3+")
+@pytest.mark.skipif(os.environ.get('USE_ASYNCIO', False) is False, reason="only for asyncio")
 @pytest.mark.usefixtures("event_loop")  # ensure we have pytest_asyncio installed
-@pytest.mark.skipif(os.environ.get('USE_ASYNCIO', False) is False, reason="Only for asyncio")
 class Test(TestCase):
 
     @pytest.mark.asyncio(forbid_global_loop=True)
