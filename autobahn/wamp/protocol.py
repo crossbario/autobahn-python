@@ -26,20 +26,21 @@
 
 from __future__ import absolute_import
 
-import six
-import txaio
 import inspect
 
+import six
+import txaio
 from autobahn import wamp
+
 from autobahn.util import public, IdGenerator, ObservableMixin
-from autobahn.wamp import uri
-from autobahn.wamp import message
-from autobahn.wamp import types
-from autobahn.wamp import role
 from autobahn.wamp import exception
-from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
-from autobahn.wamp.interfaces import ISession, IPayloadCodec  # noqa
-from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
+from autobahn.wamp import message
+from autobahn.wamp import role
+from autobahn.wamp import types
+from autobahn.wamp import uri
+from autobahn.wamp.exception import ApplicationError, ProtocolError, \
+    SessionNotReady, SerializationError
+from autobahn.wamp.interfaces import IPayloadCodec  # noqa
 from autobahn.wamp.request import \
     Publication, \
     Subscription, \
@@ -53,6 +54,7 @@ from autobahn.wamp.request import \
     InvocationRequest, \
     RegisterRequest, \
     UnregisterRequest
+from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
 
 
 def is_method_or_function(f):
@@ -1308,10 +1310,12 @@ class ApplicationSession(BaseSession):
             for k in inspect.getmembers(handler.__class__, is_method_or_function):
                 proc = k[1]
                 if "_wampuris" in proc.__dict__:
-                    for pat in proc.__dict__["_wampuris"]:
+                    for pat, proc_options in proc.__dict__["_wampuris"]:
                         if pat.is_handler():
                             uri = pat.uri()
                             subopts = options or pat.subscribe_options()
+                            if proc_options is not None:
+                                subopts = options or types.SubscribeOptions(**proc_options)
                             on_replies.append(_subscribe(handler, proc, uri, subopts))
 
             # XXX needs coverage
@@ -1468,10 +1472,13 @@ class ApplicationSession(BaseSession):
             for k in inspect.getmembers(endpoint.__class__, is_method_or_function):
                 proc = k[1]
                 if "_wampuris" in proc.__dict__:
-                    for pat in proc.__dict__["_wampuris"]:
+                    for pat, proc_options in proc.__dict__["_wampuris"]:
                         if pat.is_endpoint():
                             uri = pat.uri()
-                            on_replies.append(_register(endpoint, proc, uri, options))
+                            regopts = options
+                            if proc_options is not None:
+                                regopts = options or types.RegisterOptions(**proc_options)
+                            on_replies.append(_register(endpoint, proc, uri, regopts))
 
             # XXX neds coverage
             return txaio.gather(on_replies, consume_exceptions=True)
