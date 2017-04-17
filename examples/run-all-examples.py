@@ -104,6 +104,7 @@ def start_crossbar():
     reactor.spawnProcess(protocol, exe, args, path='.', env=env)
 
     yield launched
+    yield sleep(2)
     returnValue(protocol)
 
 
