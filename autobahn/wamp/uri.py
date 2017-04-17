@@ -28,6 +28,7 @@
 from __future__ import absolute_import
 
 import re
+
 import six
 
 from autobahn.util import public
@@ -282,7 +283,7 @@ class Pattern(object):
 
 
 @public
-def register(uri):
+def register(uri, **options):
     """
     Decorator for WAMP procedure endpoints.
     """
@@ -290,13 +291,16 @@ def register(uri):
         assert(callable(f))
         if not hasattr(f, '_wampuris'):
             f._wampuris = []
-        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_ENDPOINT))
+        f._wampuris.append((
+            Pattern(uri, Pattern.URI_TARGET_ENDPOINT),
+            options if options else None
+        ))
         return f
     return decorate
 
 
 @public
-def subscribe(uri):
+def subscribe(uri, **options):
     """
     Decorator for WAMP event handlers.
     """
@@ -304,7 +308,10 @@ def subscribe(uri):
         assert(callable(f))
         if not hasattr(f, '_wampuris'):
             f._wampuris = []
-        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER))
+        f._wampuris.append((
+            Pattern(uri, Pattern.URI_TARGET_HANDLER),
+            options if options else None
+        ))
         return f
     return decorate
 
