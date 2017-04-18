@@ -231,6 +231,17 @@ class Pattern(object):
         return self._options
 
     @public
+    @property
+    def uri_type(self):
+        """
+        Returns the URI type of this pattern
+        
+        :return: 
+        :rtype: Pattern.URI_TYPE_EXACT, Pattern.URI_TYPE_PREFIX or Pattern.URI_TYPE_WILDCARD
+        """
+        return self._type
+
+    @public
     def uri(self):
         """
         Returns the original URI (pattern) for this pattern.
@@ -239,12 +250,6 @@ class Pattern(object):
         :rtype: str
         """
         return self._uri
-
-    def subscribe_options(self):
-        if self._type == Pattern.URI_TYPE_WILDCARD:
-            return SubscribeOptions(match=u"wildcard")
-        else:
-            return SubscribeOptions(match=u"exact")
 
     def match(self, uri):
         """
