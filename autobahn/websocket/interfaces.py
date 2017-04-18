@@ -46,7 +46,8 @@ class IWebSocketServerChannelFactory(object):
     """
 
     @abc.abstractmethod
-    def __init__(url=None,
+    def __init__(self,
+                 url=None,
                  protocols=None,
                  server=None,
                  headers=None,
@@ -73,7 +74,8 @@ class IWebSocketServerChannelFactory(object):
 
     @public
     @abc.abstractmethod
-    def setSessionParameters(url=None,
+    def setSessionParameters(self,
+                             url=None,
                              protocols=None,
                              server=None,
                              headers=None,
@@ -101,7 +103,8 @@ class IWebSocketServerChannelFactory(object):
 
     @public
     @abc.abstractmethod
-    def setProtocolOptions(versions=None,
+    def setProtocolOptions(self,
+                           versions=None,
                            webStatus=None,
                            utf8validateIncoming=None,
                            maskServerFrames=None,
@@ -218,7 +221,8 @@ class IWebSocketClientChannelFactory(object):
     """
 
     @abc.abstractmethod
-    def __init__(url=None,
+    def __init__(self,
+                 url=None,
                  origin=None,
                  protocols=None,
                  useragent=None,
@@ -253,7 +257,8 @@ class IWebSocketClientChannelFactory(object):
 
     @public
     @abc.abstractmethod
-    def setSessionParameters(url=None,
+    def setSessionParameters(self,
+                             url=None,
                              origin=None,
                              protocols=None,
                              useragent=None,
@@ -285,7 +290,8 @@ class IWebSocketClientChannelFactory(object):
 
     @public
     @abc.abstractmethod
-    def setProtocolOptions(version=None,
+    def setProtocolOptions(self,
+                           version=None,
                            utf8validateIncoming=None,
                            acceptMaskedServerFrames=None,
                            maskClientFrames=None,

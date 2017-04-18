@@ -51,7 +51,7 @@ class IObjectSerializer(object):
 
     @public
     @abc.abstractproperty
-    def BINARY():
+    def BINARY(self):
         """
         Flag (read-only) to indicate if serializer requires a binary clean
         transport or if UTF8 transparency is sufficient.
@@ -59,7 +59,7 @@ class IObjectSerializer(object):
 
     @public
     @abc.abstractmethod
-    def serialize(obj):
+    def serialize(self, obj):
         """
         Serialize an object to a byte string.
 
@@ -72,7 +72,7 @@ class IObjectSerializer(object):
 
     @public
     @abc.abstractmethod
-    def unserialize(payload):
+    def unserialize(self, payload):
         """
         Unserialize objects from a byte string.
 
@@ -93,21 +93,21 @@ class ISerializer(object):
 
     @public
     @abc.abstractproperty
-    def MESSAGE_TYPE_MAP():
+    def MESSAGE_TYPE_MAP(self):
         """
         Mapping of WAMP message type codes to WAMP message classes.
         """
 
     @public
     @abc.abstractproperty
-    def SERIALIZER_ID():
+    def SERIALIZER_ID(self):
         """
         The WAMP serialization format ID.
         """
 
     @public
     @abc.abstractmethod
-    def serialize(message):
+    def serialize(self, message):
         """
         Serializes a WAMP message to bytes for sending over a transport.
 
@@ -120,7 +120,7 @@ class ISerializer(object):
 
     @public
     @abc.abstractmethod
-    def unserialize(payload, isBinary):
+    def unserialize(self, payload, isBinary):
         """
         Deserialize bytes from a transport and parse into WAMP messages.
 
@@ -144,7 +144,7 @@ class IMessage(object):
 
     @public
     @abc.abstractproperty
-    def MESSAGE_TYPE():
+    def MESSAGE_TYPE(self):
         """
         WAMP message type code.
         """
@@ -166,7 +166,7 @@ class IMessage(object):
 
     @public
     @abc.abstractmethod
-    def serialize(serializer):
+    def serialize(self, serializer):
         """
         Serialize this object into a wire level bytes representation and cache
         the resulting bytes. If the cache already contains an entry for the given
@@ -181,7 +181,7 @@ class IMessage(object):
 
     @public
     @abc.abstractmethod
-    def uncache():
+    def uncache(self):
         """
         Resets the serialization cache for this message.
         """
@@ -197,7 +197,7 @@ class ITransport(object):
 
     @public
     @abc.abstractmethod
-    def send(message):
+    def send(self, message):
         """
         Send a WAMP message over the transport to the peer. If the transport is
         not open, this raises :class:`autobahn.wamp.exception.TransportLost`.
@@ -213,7 +213,7 @@ class ITransport(object):
 
     @public
     @abc.abstractmethod
-    def isOpen():
+    def isOpen(self):
         """
         Check if the transport is open for messaging.
 
@@ -223,7 +223,7 @@ class ITransport(object):
 
     @public
     @abc.abstractmethod
-    def close():
+    def close(self):
         """
         Close the transport regularly. The transport will perform any
         closing handshake if applicable. This should be used for any
@@ -232,7 +232,7 @@ class ITransport(object):
 
     @public
     @abc.abstractmethod
-    def abort():
+    def abort(self):
         """
         Abort the transport abruptly. The transport will be destroyed as
         fast as possible, and without playing nice to the peer. This should
@@ -242,7 +242,7 @@ class ITransport(object):
 
     @public
     @abc.abstractmethod
-    def get_channel_id():
+    def get_channel_id(self):
         """
         Return the unique channel ID of the underlying transport. This is used to
         mitigate credential forwarding man-in-the-middle attacks when running
@@ -292,7 +292,7 @@ class ITransportHandler(object):
 
     @public
     @abc.abstractproperty
-    def transport():
+    def transport(self):
         """
         When the transport this handler is attached to is currently open, this property
         can be read from. The property should be considered read-only. When the transport
@@ -301,7 +301,7 @@ class ITransportHandler(object):
 
     @public
     @abc.abstractmethod
-    def onOpen(transport):
+    def onOpen(self, transport):
         """
         Callback fired when transport is open. May run asynchronously. The transport
         is considered running and is_open() would return true, as soon as this callback
@@ -313,7 +313,7 @@ class ITransportHandler(object):
 
     @public
     @abc.abstractmethod
-    def onMessage(message):
+    def onMessage(self, message):
         """
         Callback fired when a WAMP message was received. May run asynchronously. The callback
         should return or fire the returned deferred/future when it's done processing the message.
@@ -325,7 +325,7 @@ class ITransportHandler(object):
 
     @public
     @abc.abstractmethod
-    def onClose(wasClean):
+    def onClose(self, wasClean):
         """
         Callback fired when the transport has been closed.
 
@@ -342,7 +342,7 @@ class ISession(object):
     """
 
     @abc.abstractmethod
-    def __init__(config=None):
+    def __init__(self, config=None):
         """
 
         :param config: Configuration for session.
@@ -351,7 +351,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def onUserError(fail, msg):
+    def onUserError(self, fail, msg):
         """
         This is called when we try to fire a callback, but get an
         exception from user code -- for example, a registered publish
@@ -372,14 +372,15 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def onConnect():
+    def onConnect(self):
         """
         Callback fired when the transport this session will run over has been established.
         """
 
     @public
     @abc.abstractmethod
-    def join(realm,
+    def join(self,
+             realm,
              authmethods=None,
              authid=None,
              authrole=None,
@@ -393,7 +394,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def onChallenge(challenge):
+    def onChallenge(self, challenge):
         """
         Callback fired when the peer demands authentication.
 
@@ -405,7 +406,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def onJoin(details):
+    def onJoin(self, details):
         """
         Callback fired when WAMP session has been established.
 
@@ -417,7 +418,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def leave(reason=None, message=None):
+    def leave(self, reason=None, message=None):
         """
         Actively close this WAMP session.
 
@@ -434,7 +435,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def onLeave(details):
+    def onLeave(self, details):
         """
         Callback fired when WAMP session has is closed
 
@@ -444,35 +445,35 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def disconnect():
+    def disconnect(self):
         """
         Close the underlying transport.
         """
 
     @public
     @abc.abstractmethod
-    def onDisconnect():
+    def onDisconnect(self):
         """
         Callback fired when underlying transport has been closed.
         """
 
     @public
     @abc.abstractmethod
-    def is_connected():
+    def is_connected(self):
         """
         Check if the underlying transport is connected.
         """
 
     @public
     @abc.abstractmethod
-    def is_attached():
+    def is_attached(self):
         """
         Check if the session has currently joined a realm.
         """
 
     @public
     @abc.abstractmethod
-    def set_payload_codec(payload_codec):
+    def set_payload_codec(self, payload_codec):
         """
         Set a payload codec on the session. To remove a previously set payload codec,
         set the codec to ``None``.
@@ -487,7 +488,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def get_payload_codec():
+    def get_payload_codec(self):
         """
         Get the current payload codec (if any) for the session.
 
@@ -500,7 +501,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def define(exception, error=None):
+    def define(self, exception, error=None):
         """
         Defines an exception for a WAMP error in the context of this WAMP session.
 
@@ -514,7 +515,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def call(procedure, *args, **kwargs):
+    def call(self, procedure, *args, **kwargs):
         """
         Call a remote procedure.
 
@@ -551,7 +552,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def register(endpoint, procedure=None, options=None):
+    def register(self, endpoint, procedure=None, options=None):
         """
         Register a procedure for remote calling.
 
@@ -587,7 +588,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def publish(topic, *args, **kwargs):
+    def publish(self, topic, *args, **kwargs):
         """
         Publish an event to a topic.
 
@@ -624,7 +625,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def subscribe(handler, topic=None, options=None):
+    def subscribe(self, handler, topic=None, options=None):
         """
         Subscribe to a topic for receiving events.
 
@@ -664,7 +665,7 @@ class ISession(object):
 class IAuthenticator(object):
 
     @abc.abstractmethod
-    def on_challenge(session, challenge):
+    def on_challenge(self, session, challenge):
         """
         """
 
@@ -690,7 +691,7 @@ class IPayloadCodec(object):
 
     @public
     @abc.abstractmethod
-    def encode(is_originating, uri, args=None, kwargs=None):
+    def encode(self, is_originating, uri, args=None, kwargs=None):
         """
         Encodes application payload.
 
@@ -715,7 +716,7 @@ class IPayloadCodec(object):
 
     @public
     @abc.abstractmethod
-    def decode(is_originating, uri, encoded_payload):
+    def decode(self, is_originating, uri, encoded_payload):
         """
         Decode application payload.
 
