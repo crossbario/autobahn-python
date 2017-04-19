@@ -142,7 +142,7 @@ class Pattern(object):
         :param target: The target for this pattern: a procedure endpoint (a callable),
            an event handler (a callable) or an exception (a class).
         :type target: callable or obj
-        
+
         :param options: An optional options object
         :type options: None or RegisterOptions or SubscribeOptions
         """
@@ -224,7 +224,7 @@ class Pattern(object):
     def options(self):
         """
         Returns the Options instance (if present) for this pattern.
-        
+
         :return: None or the Options instance
         :rtype: None or RegisterOptions or SubscribeOptions
         """
@@ -235,8 +235,8 @@ class Pattern(object):
     def uri_type(self):
         """
         Returns the URI type of this pattern
-        
-        :return: 
+
+        :return:
         :rtype: Pattern.URI_TYPE_EXACT, Pattern.URI_TYPE_PREFIX or Pattern.URI_TYPE_WILDCARD
         """
         return self._type
@@ -312,10 +312,10 @@ class Pattern(object):
 def register(uri, options=None):
     """
     Decorator for WAMP procedure endpoints.
-    
+
     :param uri:
     :type uri: str
-    
+
     :param options:
     :type options: None or RegisterOptions
     """
@@ -332,10 +332,10 @@ def register(uri, options=None):
 def subscribe(uri, options=None):
     """
     Decorator for WAMP event handlers.
-    
+
     :param uri:
     :type uri: str
-    
+
     :param options:
     :type options: None or SubscribeOptions
     """
