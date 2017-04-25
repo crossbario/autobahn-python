@@ -99,7 +99,7 @@ class ComponentConfig(object):
             to hold a shared database connection pool.
         :type shared: dict or None
         """
-        assert(realm is None or type(realm) == six.text_type)
+        # assert(realm is None or type(realm) == six.text_type) # FIXME
         # assert(keyring is None or ...) # FIXME
 
         self.realm = realm
