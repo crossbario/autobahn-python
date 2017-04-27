@@ -1,13 +1,23 @@
-This shows how to use "retained" events.
+This shows how to use "retained" events as well as "event history".
 
-The "backend.py" will publish to 'event.foo' with "retain=True" option
-turned on. This will cause the router to remember the event.
+The "backend.py" does some publishing to two different topics:
+"com.example.history" and "com.example.no_history_here". The former
+has event-history enabled (see the example router's config in the
+"crossbardemo" realm).
 
-Now, when "frontend.py" attaches and subscribes to 'event.foo' with
-"get_retained=True" option turned on, it will get the retained event
-(even if the publisher session has already disconnected).
+When "frontend.py" attaches and subscribes to *either* of the two
+topics, it will immediately receive the latest event.
 
-Try:
+After that, the WAMP Meta API is used to retrieve the event-history
+from the "com.example.history" topic.
+
+Things to try:
 
  - run backend.py, then run frontend.py in a new shell
+
  - run backend.py, kill it, then run frontend.py
+
+ - with frontend.py running, kill and re-run backend.py several times
+
+ - ...then try starting frontend.py again (which will show more events
+   in the history

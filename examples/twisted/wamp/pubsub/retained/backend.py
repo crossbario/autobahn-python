@@ -41,14 +41,14 @@ class Component(Session):
     @inlineCallbacks
     def onJoin(self, details):
         print("session attached {}".format(details))
-        topic = u"com.example.history"
 
-        print("publishing '{}' as retained event".format(topic))
-        pub = yield self.publish(
-            topic, "some data",
-            options=PublishOptions(retain=True, acknowledge=True),
-        )
-        print("published: {}".format(pub))
+        for topic in [u"com.example.history", u"com.example.no_history_here"]:
+            print("publishing '{}' as retained event".format(topic))
+            pub = yield self.publish(
+                topic, "some data, topic was '{}'".format(topic),
+                options=PublishOptions(retain=True, acknowledge=True),
+            )
+            print("published: {}".format(pub))
 
 
 if __name__ == '__main__':

@@ -45,13 +45,16 @@ class Component(Session):
         def got_event(*args, **kw):
             print("got_event(): args={}, kwargs={}".format(args, kw))
 
-        topic = u"com.example.history"
-        print("subscribing to '{}'".format(topic))
-        pub = yield self.subscribe(
-            got_event, topic,
-            options=SubscribeOptions(get_retained=True),
-        )
-        print("id={}".format(pub.id))
+        # note: we're relying on 'com.example.history' (the one with
+        # event-history enabled) being last so that "pub" has the
+        # right ID for wamp.subscription.get_events after the loop
+        for topic in [u"com.example.no_history_here", u"com.example.history"]:
+            print("subscribing to '{}'".format(topic))
+            pub = yield self.subscribe(
+                got_event, topic,
+                options=SubscribeOptions(get_retained=True),
+            )
+            print("id={}".format(pub.id))
 
         events = yield self.call(u"wamp.subscription.get_events", pub.id)
         print("Using the WAMP Meta API:")
