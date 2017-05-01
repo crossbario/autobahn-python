@@ -5,6 +5,18 @@
 Changelog
 =========
 
+17.5.1
+------
+
+`Published 2017-05-01 <https://pypi.python.org/pypi/autobahn/17.5.1>`__
+
+* new: switched to calendar-based release/version numbering
+* new: WAMP event retention example and docs
+* new: WAMP subscribe/register options on WAMP decorators
+* fix: require all TLS dependencies on extra_require_encryption setuptools
+* new: support for X-Forwarded-For HTTP header
+* fix: ABC interface definitions where missing "self"
+
 0.18.2
 ------
 
