@@ -1313,9 +1313,14 @@ class ApplicationSession(BaseSession):
                 if "_wampuris" in proc.__dict__:
                     for pat in proc.__dict__["_wampuris"]:
                         if pat.is_handler():
-                            uri = pat.uri()
-                            subopts = options or pat.subscribe_options()
-                            on_replies.append(_subscribe(handler, proc, uri, subopts))
+                            _uri = pat.uri()
+                            subopts = pat.options or options
+                            if subopts is None:
+                                if pat.uri_type == uri.Pattern.URI_TYPE_WILDCARD:
+                                    subopts = types.SubscribeOptions(match=u"wildcard")
+                                else:
+                                    subopts = types.SubscribeOptions(match=u"exact")
+                            on_replies.append(_subscribe(handler, proc, _uri, subopts))
 
             # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)
@@ -1473,8 +1478,9 @@ class ApplicationSession(BaseSession):
                 if "_wampuris" in proc.__dict__:
                     for pat in proc.__dict__["_wampuris"]:
                         if pat.is_endpoint():
-                            uri = pat.uri()
-                            on_replies.append(_register(endpoint, proc, uri, options))
+                            _uri = pat.uri()
+                            regopts = pat.options or options
+                            on_replies.append(_register(endpoint, proc, _uri, regopts))
 
             # XXX neds coverage
             return txaio.gather(on_replies, consume_exceptions=True)

@@ -316,3 +316,49 @@ class WebSocketOriginMatching(unittest.TestCase):
         self.assertFalse(
             _is_same_origin(_url_to_origin('null'), None, 80, [])
         )
+
+
+class WebSocketXForwardedFor(unittest.TestCase):
+    """
+    Test that (only) a trusted X-Forwarded-For can replace the peer address.
+    """
+
+    def setUp(self):
+        self.factory = WebSocketServerFactory()
+        self.factory.setProtocolOptions(
+            trustXForwardedFor=2
+        )
+        self.proto = WebSocketServerProtocol()
+        self.proto.transport = StringTransport()
+        self.proto.factory = self.factory
+        self.proto.failHandshake = Mock()
+        self.proto._connectionMade()
+
+    def tearDown(self):
+        for call in [
+                self.proto.autoPingPendingCall,
+                self.proto.autoPingTimeoutCall,
+                self.proto.openHandshakeTimeoutCall,
+                self.proto.closeHandshakeTimeoutCall,
+        ]:
+            if call is not None:
+                call.cancel()
+
+    def test_trusted_addresses(self):
+        self.proto.data = b"\r\n".join([
+            b'GET /ws HTTP/1.1',
+            b'Host: www.example.com',
+            b'Origin: http://www.example.com',
+            b'Sec-WebSocket-Version: 13',
+            b'Sec-WebSocket-Extensions: permessage-deflate',
+            b'Sec-WebSocket-Key: tXAxWFUqnhi86Ajj7dRY5g==',
+            b'Connection: keep-alive, Upgrade',
+            b'Upgrade: websocket',
+            b'X-Forwarded-For: 1.2.3.4, 2.3.4.5, 111.222.33.44',
+            b'\r\n',  # last string doesn't get a \r\n from join()
+        ])
+        self.proto.consumeData()
+
+        self.assertEquals(
+            self.proto.peer, "2.3.4.5",
+            "The second address in X-Forwarded-For should have been picked as the peer address")

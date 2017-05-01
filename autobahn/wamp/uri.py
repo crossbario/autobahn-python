@@ -28,10 +28,11 @@
 from __future__ import absolute_import
 
 import re
+
 import six
 
 from autobahn.util import public
-from autobahn.wamp.types import SubscribeOptions
+from autobahn.wamp.types import RegisterOptions, SubscribeOptions
 
 __all__ = (
     'Pattern',
@@ -132,7 +133,7 @@ class Pattern(object):
         This pattern is stricter than a general WAMP URI component since a valid Python identifier is required.
     """
 
-    def __init__(self, uri, target):
+    def __init__(self, uri, target, options=None):
         """
 
         :param uri: The URI or URI pattern, e.g. ``"com.myapp.product.<product:int>.update"``.
@@ -141,11 +142,20 @@ class Pattern(object):
         :param target: The target for this pattern: a procedure endpoint (a callable),
            an event handler (a callable) or an exception (a class).
         :type target: callable or obj
+
+        :param options: An optional options object
+        :type options: None or RegisterOptions or SubscribeOptions
         """
         assert(type(uri) == six.text_type)
         assert(target in [Pattern.URI_TARGET_ENDPOINT,
                           Pattern.URI_TARGET_HANDLER,
                           Pattern.URI_TARGET_EXCEPTION])
+        if target == Pattern.URI_TARGET_ENDPOINT:
+            assert(options is None or type(options) == RegisterOptions)
+        elif target == Pattern.URI_TARGET_HANDLER:
+            assert(options is None or type(options) == SubscribeOptions)
+        else:
+            options = None
 
         components = uri.split('.')
         pl = []
@@ -207,6 +217,29 @@ class Pattern(object):
             self._names = None
         self._uri = uri
         self._target = target
+        self._options = options
+
+    @public
+    @property
+    def options(self):
+        """
+        Returns the Options instance (if present) for this pattern.
+
+        :return: None or the Options instance
+        :rtype: None or RegisterOptions or SubscribeOptions
+        """
+        return self._options
+
+    @public
+    @property
+    def uri_type(self):
+        """
+        Returns the URI type of this pattern
+
+        :return:
+        :rtype: Pattern.URI_TYPE_EXACT, Pattern.URI_TYPE_PREFIX or Pattern.URI_TYPE_WILDCARD
+        """
+        return self._type
 
     @public
     def uri(self):
@@ -217,12 +250,6 @@ class Pattern(object):
         :rtype: str
         """
         return self._uri
-
-    def subscribe_options(self):
-        if self._type == Pattern.URI_TYPE_WILDCARD:
-            return SubscribeOptions(match=u"wildcard")
-        else:
-            return SubscribeOptions(match=u"exact")
 
     def match(self, uri):
         """
@@ -282,29 +309,41 @@ class Pattern(object):
 
 
 @public
-def register(uri):
+def register(uri, options=None):
     """
     Decorator for WAMP procedure endpoints.
+
+    :param uri:
+    :type uri: str
+
+    :param options:
+    :type options: None or RegisterOptions
     """
     def decorate(f):
         assert(callable(f))
         if not hasattr(f, '_wampuris'):
             f._wampuris = []
-        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_ENDPOINT))
+        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_ENDPOINT, options))
         return f
     return decorate
 
 
 @public
-def subscribe(uri):
+def subscribe(uri, options=None):
     """
     Decorator for WAMP event handlers.
+
+    :param uri:
+    :type uri: str
+
+    :param options:
+    :type options: None or SubscribeOptions
     """
     def decorate(f):
         assert(callable(f))
         if not hasattr(f, '_wampuris'):
             f._wampuris = []
-        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER))
+        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER, options))
         return f
     return decorate
 

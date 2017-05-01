@@ -46,7 +46,8 @@ class IWebSocketServerChannelFactory(object):
     """
 
     @abc.abstractmethod
-    def __init__(url=None,
+    def __init__(self,
+                 url=None,
                  protocols=None,
                  server=None,
                  headers=None,
@@ -73,7 +74,8 @@ class IWebSocketServerChannelFactory(object):
 
     @public
     @abc.abstractmethod
-    def setSessionParameters(url=None,
+    def setSessionParameters(self,
+                             url=None,
                              protocols=None,
                              server=None,
                              headers=None,
@@ -101,7 +103,8 @@ class IWebSocketServerChannelFactory(object):
 
     @public
     @abc.abstractmethod
-    def setProtocolOptions(versions=None,
+    def setProtocolOptions(self,
+                           versions=None,
                            webStatus=None,
                            utf8validateIncoming=None,
                            maskServerFrames=None,
@@ -123,7 +126,8 @@ class IWebSocketServerChannelFactory(object):
                            flashSocketPolicy=None,
                            allowedOrigins=None,
                            allowNullOrigin=False,
-                           maxConnections=None):
+                           maxConnections=None,
+                           trustXForwardedFor=0):
         """
         Set WebSocket protocol options used as defaults for new protocol instances.
 
@@ -198,6 +202,9 @@ class IWebSocketServerChannelFactory(object):
 
         :param maxConnections: Maximum number of concurrent connections. Set to `0` to disable (default: `0`).
         :type maxConnections: int or None
+
+        :param trustXForwardedFor: Number of trusted web servers in front of this server that add their own X-Forwarded-For header (default: `0`)
+        :type trustXForwardedFor: int
         """
 
     @public
@@ -218,7 +225,8 @@ class IWebSocketClientChannelFactory(object):
     """
 
     @abc.abstractmethod
-    def __init__(url=None,
+    def __init__(self,
+                 url=None,
                  origin=None,
                  protocols=None,
                  useragent=None,
@@ -253,7 +261,8 @@ class IWebSocketClientChannelFactory(object):
 
     @public
     @abc.abstractmethod
-    def setSessionParameters(url=None,
+    def setSessionParameters(self,
+                             url=None,
                              origin=None,
                              protocols=None,
                              useragent=None,
@@ -285,7 +294,8 @@ class IWebSocketClientChannelFactory(object):
 
     @public
     @abc.abstractmethod
-    def setProtocolOptions(version=None,
+    def setProtocolOptions(self,
+                           version=None,
                            utf8validateIncoming=None,
                            acceptMaskedServerFrames=None,
                            maskClientFrames=None,

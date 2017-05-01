@@ -6,6 +6,15 @@
             "realms": [
                 {
                     "name": "crossbardemo",
+                    "store": {
+                        "type": "memory",
+                        "event-history": [
+                            {
+                                "uri": "com.example.history",
+                                "limit": 100
+                            }
+                        ]
+                    },
                     "roles": [
                         {
                             "name": "anonymous",

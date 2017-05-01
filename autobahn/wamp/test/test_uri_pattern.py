@@ -27,7 +27,7 @@
 from __future__ import absolute_import
 
 from autobahn import wamp
-from autobahn.wamp.uri import Pattern
+from autobahn.wamp.uri import Pattern, RegisterOptions, SubscribeOptions
 
 import unittest2 as unittest
 
@@ -141,6 +141,24 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(update._wampuris[0].uri(), u"com.myapp.<category:string>.<cid:int>.update")
         self.assertEqual(update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
+        @wamp.register(u"com.myapp.circle.<name:string>",
+                       RegisterOptions(match=u"wildcard", details_arg="details"))
+        def circle(name=None, details=None):
+            """ Do nothing. """
+
+        self.assertTrue(hasattr(circle, '_wampuris'))
+        self.assertTrue(type(circle._wampuris) == list)
+        self.assertEqual(len(circle._wampuris), 1)
+        self.assertIsInstance(circle._wampuris[0], Pattern)
+        self.assertIsInstance(circle._wampuris[0].options, RegisterOptions)
+        self.assertEqual(circle._wampuris[0].options.match, u"wildcard")
+        self.assertEqual(circle._wampuris[0].options.details_arg, "details")
+        self.assertTrue(circle._wampuris[0].is_endpoint())
+        self.assertFalse(circle._wampuris[0].is_handler())
+        self.assertFalse(circle._wampuris[0].is_exception())
+        self.assertEqual(circle._wampuris[0].uri(), u"com.myapp.circle.<name:string>")
+        self.assertEqual(circle._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
+
     def test_decorate_handler(self):
 
         @wamp.subscribe(u"com.myapp.on_shutdown")
@@ -184,6 +202,24 @@ class TestDecorators(unittest.TestCase):
         self.assertFalse(on_update._wampuris[0].is_exception())
         self.assertEqual(on_update._wampuris[0].uri(), u"com.myapp.<category:string>.<cid:int>.on_update")
         self.assertEqual(on_update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
+
+        @wamp.subscribe(u"com.myapp.on.<event:string>",
+                        SubscribeOptions(match=u"wildcard", details_arg="details"))
+        def on_event(event=None, details=None):
+            """ Do nothing. """
+
+        self.assertTrue(hasattr(on_event, '_wampuris'))
+        self.assertTrue(type(on_event._wampuris) == list)
+        self.assertEqual(len(on_event._wampuris), 1)
+        self.assertIsInstance(on_event._wampuris[0], Pattern)
+        self.assertIsInstance(on_event._wampuris[0].options, SubscribeOptions)
+        self.assertEqual(on_event._wampuris[0].options.match, u"wildcard")
+        self.assertEqual(on_event._wampuris[0].options.details_arg, "details")
+        self.assertFalse(on_event._wampuris[0].is_endpoint())
+        self.assertTrue(on_event._wampuris[0].is_handler())
+        self.assertFalse(on_event._wampuris[0].is_exception())
+        self.assertEqual(on_event._wampuris[0].uri(), u"com.myapp.on.<event:string>")
+        self.assertEqual(on_event._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
     def test_decorate_exception(self):
 

@@ -528,7 +528,8 @@ class WebSocketProtocol(object):
                            'allowedOrigins',
                            'allowedOriginsPatterns',
                            'allowNullOrigin',
-                           'maxConnections']
+                           'maxConnections',
+                           'trustXForwardedFor']
     """
     Configuration attributes specific to servers.
     """
@@ -2491,6 +2492,13 @@ class WebSocketServerProtocol(WebSocketProtocol):
             except Exception as e:
                 return self.failHandshake("Error during parsing of HTTP status line / request headers : {0}".format(e))
 
+            # replace self.peer if the x-forwarded-for header is present and trusted
+            #
+            if 'x-forwarded-for' in self.http_headers and self.trustXForwardedFor:
+                addresses = [x.strip() for x in self.http_headers['x-forwarded-for'].split(',')]
+                trusted_addresses = addresses[-self.trustXForwardedFor:]
+                self.peer = trusted_addresses[0]
+
             # validate WebSocket opening handshake client request
             #
             self.log.debug(
@@ -3179,6 +3187,9 @@ class WebSocketServerFactory(WebSocketFactory):
         # maximum number of concurrent connections
         self.maxConnections = 0
 
+        # number of trusted web servers in front of this server
+        self.trustXForwardedFor = 0
+
     def setProtocolOptions(self,
                            versions=None,
                            webStatus=None,
@@ -3202,7 +3213,8 @@ class WebSocketServerFactory(WebSocketFactory):
                            flashSocketPolicy=None,
                            allowedOrigins=None,
                            allowNullOrigin=False,
-                           maxConnections=None):
+                           maxConnections=None,
+                           trustXForwardedFor=None):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory.setProtocolOptions`
         """
@@ -3284,6 +3296,11 @@ class WebSocketServerFactory(WebSocketFactory):
             assert(type(maxConnections) in six.integer_types)
             assert(maxConnections >= 0)
             self.maxConnections = maxConnections
+
+        if trustXForwardedFor is not None and trustXForwardedFor != self.trustXForwardedFor:
+            assert(type(trustXForwardedFor) in six.integer_types)
+            assert(trustXForwardedFor >= 0)
+            self.trustXForwardedFor = trustXForwardedFor
 
     def getConnectionCount(self):
         """
