@@ -626,7 +626,7 @@ class ApplicationSession(BaseSession):
                         invoke_kwargs = msg.kwargs if msg.kwargs else dict()
 
                         if handler.details_arg:
-                            invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, publisher_authid=msg.publisher_authid, publisher_authrole=msg.publisher_authrole, topic=topic, retained=msg.retained, enc_algo=msg.enc_algo)
+                            invoke_kwargs[handler.details_arg] = types.EventDetails(subscription, msg.publication, publisher=msg.publisher, publisher_authid=msg.publisher_authid, publisher_authrole=msg.publisher_authrole, topic=topic, retained=msg.retained, enc_algo=msg.enc_algo)
 
                         # FIXME: https://github.com/crossbario/autobahn-python/issues/764
                         def _success(_):
@@ -887,7 +887,7 @@ class ApplicationSession(BaseSession):
                                 else:
                                     progress = None
 
-                                invoke_kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, caller_authid=msg.caller_authid, caller_authrole=msg.caller_authrole, procedure=proc, enc_algo=msg.enc_algo)
+                                invoke_kwargs[endpoint.details_arg] = types.CallDetails(registration, progress=progress, caller=msg.caller, caller_authid=msg.caller_authid, caller_authrole=msg.caller_authrole, procedure=proc, enc_algo=msg.enc_algo)
 
                             on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
 
