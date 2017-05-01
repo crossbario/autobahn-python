@@ -126,7 +126,8 @@ class IWebSocketServerChannelFactory(object):
                            flashSocketPolicy=None,
                            allowedOrigins=None,
                            allowNullOrigin=False,
-                           maxConnections=None):
+                           maxConnections=None,
+                           trustXForwardedFor=0):
         """
         Set WebSocket protocol options used as defaults for new protocol instances.
 
@@ -201,6 +202,9 @@ class IWebSocketServerChannelFactory(object):
 
         :param maxConnections: Maximum number of concurrent connections. Set to `0` to disable (default: `0`).
         :type maxConnections: int or None
+
+        :param trustXForwardedFor: Number of trusted web servers in front of this server that add their own X-Forwarded-For header (default: `0`)
+        :type trustXForwardedFor: int
         """
 
     @public
