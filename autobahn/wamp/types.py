@@ -30,6 +30,8 @@ import six
 
 from autobahn.util import public
 
+from autobahn.wamp.request import Subscription, Registration
+
 
 __all__ = (
     'ComponentConfig',
@@ -109,7 +111,7 @@ class ComponentConfig(object):
         self.shared = shared
 
     def __str__(self):
-        return u"ComponentConfig(realm=<{0}>, extra={1}, keyring={2}, controller={3}, shared={4})".format(self.realm, self.extra, self.keyring, self.controller, self.shared)
+        return u"ComponentConfig(realm=<{}>, extra={}, keyring={}, controller={}, shared={})".format(self.realm, self.extra, self.keyring, self.controller, self.shared)
 
 
 @public
@@ -170,7 +172,7 @@ class Accept(HelloReturn):
         self.authextra = authextra
 
     def __str__(self):
-        return u"Accept(realm=<{0}>, authid=<{1}>, authrole=<{2}>, authmethod={3}, authprovider={4}, authextra={5})".format(self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
+        return u"Accept(realm=<{}>, authid=<{}>, authrole=<{}>, authmethod={}, authprovider={}, authextra={})".format(self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
 
 
 @public
@@ -200,7 +202,7 @@ class Deny(HelloReturn):
         self.message = message
 
     def __str__(self):
-        return u"Deny(reason=<{0}>, message='{1}')".format(self.reason, self.message)
+        return u"Deny(reason=<{}>, message='{}')".format(self.reason, self.message)
 
 
 @public
@@ -231,7 +233,7 @@ class Challenge(HelloReturn):
         self.extra = extra or {}
 
     def __str__(self):
-        return u"Challenge(method={0}, extra={1})".format(self.method, self.extra)
+        return u"Challenge(method={}, extra={})".format(self.method, self.extra)
 
 
 @public
@@ -408,7 +410,7 @@ class CloseDetails(object):
         self.message = message
 
     def __str__(self):
-        return u"CloseDetails(reason=<{0}>, message='{1}')".format(self.reason, self.message)
+        return u"CloseDetails(reason=<{}>, message='{}')".format(self.reason, self.message)
 
 
 @public
@@ -473,7 +475,7 @@ class SubscribeOptions(object):
         return options
 
     def __str__(self):
-        return u"SubscribeOptions(match={0}, details={1}, details_arg={2}, get_retained={3})".format(self.match, self.details, self.details_arg, self.get_retained)
+        return u"SubscribeOptions(match={}, details={}, details_arg={}, get_retained={})".format(self.match, self.details, self.details_arg, self.get_retained)
 
 
 @public
@@ -484,6 +486,7 @@ class EventDetails(object):
     """
 
     __slots__ = (
+        'subscription',
         'publication',
         'publisher',
         'publisher_authid',
@@ -493,8 +496,11 @@ class EventDetails(object):
         'enc_algo',
     )
 
-    def __init__(self, publication, publisher=None, publisher_authid=None, publisher_authrole=None, topic=None, retained=None, enc_algo=None):
+    def __init__(self, subscription, publication, publisher=None, publisher_authid=None, publisher_authrole=None, topic=None, retained=None, enc_algo=None):
         """
+
+        :param subscription: The (client side) subscription object on which this event is delivered.
+        :type subscription: instance of :class:`autobahn.wamp.request.Subscription`
 
         :param publication: The publication ID of the event (always present).
         :type publication: int
@@ -505,23 +511,24 @@ class EventDetails(object):
 
         :param publisher_authid: The WAMP authid of the original publisher of this event.
             Only filled when publisher is disclosed.
-        :type publisher_authid: None or str
+        :type publisher_authid: str or None
 
         :param publisher_authrole: The WAMP authrole of the original publisher of this event.
             Only filled when publisher is disclosed.
-        :type publisher_authrole: None or str
+        :type publisher_authrole: str or None
 
         :param topic: For pattern-based subscriptions, the actual topic URI being published to.
             Only filled for pattern-based subscriptions.
-        :type topic: None or str
+        :type topic: str or None
 
         :param retained: Whether the message was retained by the broker on the topic, rather than just published.
         :type retained: bool or None
 
         :param enc_algo: Payload encryption algorithm that
             was in use (currently, either ``None`` or ``u'cryptobox'``).
-        :type enc_algo: None or str
+        :type enc_algo: str or None
         """
+        assert(isinstance(subscription, Subscription))
         assert(type(publication) in six.integer_types)
         assert(publisher is None or type(publisher) in six.integer_types)
         assert(publisher_authid is None or type(publisher_authid) == six.text_type)
@@ -530,6 +537,7 @@ class EventDetails(object):
         assert(retained is None or type(retained) is bool)
         assert(enc_algo is None or type(enc_algo) == six.text_type)
 
+        self.subscription = subscription
         self.publication = publication
         self.publisher = publisher
         self.publisher_authid = publisher_authid
@@ -539,7 +547,7 @@ class EventDetails(object):
         self.enc_algo = enc_algo
 
     def __str__(self):
-        return u"EventDetails(publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={})".format(self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo)
+        return u"EventDetails(subscription={}, publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={})".format(self.subscription, self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo)
 
 
 @public
@@ -658,7 +666,7 @@ class PublishOptions(object):
         return options
 
     def __str__(self):
-        return u"PublishOptions(acknowledge={0}, exclude_me={1}, exclude={2}, exclude_authid={3}, exclude_authrole={4}, eligible={5}, eligible_authid={6}, eligible_authrole={7}, retain={8})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain)
+        return u"PublishOptions(acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain)
 
 
 @public
@@ -710,7 +718,7 @@ class RegisterOptions(object):
         return options
 
     def __str__(self):
-        return u"RegisterOptions(match={0}, invoke={1}, concurrency={2}, details_arg={3})".format(self.match, self.invoke, self.concurrency, self.details_arg)
+        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details_arg={})".format(self.match, self.invoke, self.concurrency, self.details_arg)
 
 
 @public
@@ -721,6 +729,7 @@ class CallDetails(object):
     """
 
     __slots__ = (
+        'registration',
         'progress',
         'caller',
         'caller_authid',
@@ -729,31 +738,35 @@ class CallDetails(object):
         'enc_algo',
     )
 
-    def __init__(self, progress=None, caller=None, caller_authid=None, caller_authrole=None, procedure=None, enc_algo=None):
+    def __init__(self, registration, progress=None, caller=None, caller_authid=None, caller_authrole=None, procedure=None, enc_algo=None):
         """
 
+        :param registration: The (client side) registration object this invocation is delivered on.
+        :type registration: instance of :class:`autobahn.wamp.request.Registration`
+
         :param progress: A callable that will receive progressive call results.
-        :type progress: callable
+        :type progress: callable or None
 
         :param caller: The WAMP session ID of the caller, if the latter is disclosed.
             Only filled when caller is disclosed.
-        :type caller: int
+        :type caller: int or None
 
         :param caller_authid: The WAMP authid of the original caller of this event.
             Only filled when caller is disclosed.
-        :type caller_authid: None or str
+        :type caller_authid: str or None
 
         :param caller_authrole: The WAMP authrole of the original caller of this event.
             Only filled when caller is disclosed.
-        :type caller_authrole: None or str
+        :type caller_authrole: str or None
 
         :param procedure: For pattern-based registrations, the actual procedure URI being called.
-        :type procedure: None or str
+        :type procedure: str or None
 
         :param enc_algo: Payload encryption algorithm that
             was in use (currently, either `None` or `"cryptobox"`).
-        :type enc_algo: None or str
+        :type enc_algo: str or None
         """
+        assert(isinstance(registration, Registration))
         assert(progress is None or callable(progress))
         assert(caller is None or type(caller) in six.integer_types)
         assert(caller_authid is None or type(caller_authid) == six.text_type)
@@ -761,6 +774,7 @@ class CallDetails(object):
         assert(procedure is None or type(procedure) == six.text_type)
         assert(enc_algo is None or type(enc_algo) == six.text_type)
 
+        self.registration = registration
         self.progress = progress
         self.caller = caller
         self.caller_authid = caller_authid
@@ -769,7 +783,7 @@ class CallDetails(object):
         self.enc_algo = enc_algo
 
     def __str__(self):
-        return u"CallDetails(progress={0}, caller={1}, caller_authid={2}, caller_authrole={3}, procedure=<{4}>, enc_algo={5})".format(self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo)
+        return u"CallDetails(registration={}, progress={}, caller={}, caller_authid={}, caller_authrole={}, procedure=<{}>, enc_algo={})".format(self.registration, self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo)
 
 
 @public
@@ -816,7 +830,7 @@ class CallOptions(object):
         return options
 
     def __str__(self):
-        return u"CallOptions(on_progress={0}, timeout={1})".format(self.on_progress, self.timeout)
+        return u"CallOptions(on_progress={}, timeout={})".format(self.on_progress, self.timeout)
 
 
 @public
@@ -849,7 +863,7 @@ class CallResult(object):
         self.kwresults = kwresults
 
     def __str__(self):
-        return u"CallResult(results={0}, kwresults={1}, enc_algo={2})".format(self.results, self.kwresults, self.enc_algo)
+        return u"CallResult(results={}, kwresults={}, enc_algo={})".format(self.results, self.kwresults, self.enc_algo)
 
 
 @public
