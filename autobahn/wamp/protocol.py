@@ -648,10 +648,7 @@ class ApplicationSession(BaseSession):
                         txaio.add_callbacks(future, _success, _error)
 
                 else:
-                    if False:
-                        raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
-                    else:
-                        self.log.warn('EVENT received for non-subscribed subscription ID {subscription_id}: event={event}, subscriptions={subscriptions}', subscription_id=msg.subscription, event=msg, subscriptions=self._subscriptions)
+                    raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
 
             elif isinstance(msg, message.Published):
 
