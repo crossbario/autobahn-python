@@ -3,7 +3,7 @@ Autobahn\|Python
 
 WebSocket & WAMP for Python on Twisted and asyncio.
 
-| |Version| |Build Status| |Coverage| |Docs|
+| |Version| |Build Status| |Coverage| |Docs| |Docker|
 
 --------------
 
@@ -139,3 +139,6 @@ Above code will work on Twisted and asyncio by changing a single line
 
 .. |Docs| image:: https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat
    :target: https://autobahn.readthedocs.io/en/latest/
+
+.. |Docker| image:: https://img.shields.io/badge/docker-ready-blue.svg?style=flat
+   :target: https://hub.docker.com/r/crossbario/autobahn-python/
