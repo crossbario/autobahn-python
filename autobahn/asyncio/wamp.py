@@ -155,7 +155,7 @@ class ApplicationRunner(object):
         raise NotImplementedError()
 
     @public
-    def run(self, make, start_loop=True):
+    def run(self, make, start_loop=True, log_level='info'):
         """
         Run the application component. Under the hood, this runs the event
         loop (unless `start_loop=False` is passed) so won't return
@@ -256,7 +256,7 @@ class ApplicationRunner(object):
             (transport, protocol) = loop.run_until_complete(coro)
 
             # start logging
-            txaio.start_logging(level='info')
+            txaio.start_logging(level=log_level)
 
             try:
                 loop.add_signal_handler(signal.SIGTERM, loop.stop)
