@@ -36,6 +36,7 @@ from autobahn.wamp import uri
 from autobahn.wamp import message
 from autobahn.wamp import types
 from autobahn.wamp import role
+from autobahn.wamp import auth
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
 from autobahn.wamp.interfaces import ISession, IPayloadCodec  # noqa
@@ -342,8 +343,26 @@ class ApplicationSession(BaseSession):
     def onConnect(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
+
+        This provides a default implementation that will call
+        ``.join`` to the realm in ``self.config.realm``.
+
+        Additionally, if ``self.config.extra`` is a dict with a valid
+        ``wamp_cra`` key in it (see
+        :meth:`autobahn.wamp.protocol.ApplicationSession.onChallenge`)
+        the ``join()`` will include ``authmethods=[u'wampcra']`` and
+        ``authid=`` kwargs.
         """
-        self.join(self.config.realm)
+        authuser = None
+        authmethods = []
+        if isinstance(self.config.extra, dict) and 'wamp_cra' in self.config.extra:
+            try:
+                authuser = self.config.extra['wamp_cra']['user']
+            except KeyError:
+                raise Exception("extra['wamp_cra'] requires 'user'")
+            authmethods.append(u'wampcra')
+
+        self.join(self.config.realm, authmethods=authmethods, authid=authuser)
 
     @public
     def join(self,
@@ -1104,8 +1123,40 @@ class ApplicationSession(BaseSession):
     def onChallenge(self, challenge):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onChallenge`
+
+        This provides a default implementation which will respond
+        appropriately for WAMP-CRA authentication if your
+        ``self.config.extra`` is a ``dict`` and contains a
+        ``wamp_cra`` key. This in turn is a dict with two keys:
+        ``user`` for the authid and ``secret`` (this will go through
+        salting/hashing if the server provides those details in the
+        challenge).
         """
-        raise Exception("received authentication challenge, but onChallenge not implemented")
+        if not isinstance(self.config.extra, dict):
+            raise Exception("override onChallenge to do authentication")
+
+        wamp_cra = self.config.extra.get('wamp_cra', None)
+        if not wamp_cra:
+            raise Exception("override onChallenge or provide 'wamp_cra'"
+                            " config in 'extra'")
+
+        if not isinstance(wamp_cra, dict):
+            raise Exception("extra['wamp_cra'] should be a dict")
+        if 'secret' not in wamp_cra:
+            raise Exception("wamp_cra needs 'secret' key")
+
+        if 'salt' in challenge.extra:
+            key = auth.derive_key(
+                wamp_cra['secret'],
+                challenge.extra['salt'].encode('utf8'),
+                iterations=challenge.extra['iterations'],
+                keylen=challenge.extra['keylen'],
+            )
+        else:
+            key = wamp_cra['secret']
+
+        signature = auth.compute_wcs(key, challenge.extra['challenge'])
+        return signature.decode('ascii')
 
     @public
     def onJoin(self, details):
