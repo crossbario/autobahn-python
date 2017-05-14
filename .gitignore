@@ -35,3 +35,6 @@ node.key
 /.pydevproject
 /.venv/
 /my_tests/
+*.swp
+*.swo
+*.swn

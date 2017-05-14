@@ -868,7 +868,7 @@ class WebSocketProtocol(object):
             if self.failByDrop:
                 # brutally drop the TCP connection
                 self.wasClean = False
-                self.wasNotCleanReason = u'I failed the WebSocket connection by dropping the TCP connection'
+                self.wasNotCleanReason = u'I dropped the WebSocket TCP connection: {0}'.format(reason)
                 self.dropConnection(abort=True)
 
             else:
