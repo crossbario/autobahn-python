@@ -1744,13 +1744,7 @@ class Publish(Message):
 
         return obj
 
-    def marshal(self):
-        """
-        Marshal this object into a raw message for subsequent serialization to bytes.
-
-        :returns: The serialized raw message.
-        :rtype: list
-        """
+    def marshal_options(self):
         options = {}
 
         if self.acknowledge is not None:
@@ -1780,6 +1774,19 @@ class Publish(Message):
                 options[u'enc_key'] = self.enc_key
             if self.enc_serializer is not None:
                 options[u'enc_serializer'] = self.enc_serializer
+
+        return options
+
+    def marshal(self):
+        """
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: The serialized raw message.
+        :rtype: list
+        """
+        options = self.marshal_options()
+
+        if self.payload:
             return [Publish.MESSAGE_TYPE, self.request, options, self.topic, self.payload]
         else:
             if self.kwargs:
@@ -1962,13 +1969,7 @@ class Subscribe(Message):
 
         return obj
 
-    def marshal(self):
-        """
-        Marshal this object into a raw message for subsequent serialization to bytes.
-
-        :returns: The serialized raw message.
-        :rtype: list
-        """
+    def marshal_options(self):
         options = {}
 
         if self.match and self.match != Subscribe.MATCH_EXACT:
@@ -1977,7 +1978,16 @@ class Subscribe(Message):
         if self.get_retained is not None:
             options[u'get_retained'] = self.get_retained
 
-        return [Subscribe.MESSAGE_TYPE, self.request, options, self.topic]
+        return options
+
+    def marshal(self):
+        """
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: The serialized raw message.
+        :rtype: list
+        """
+        return [Subscribe.MESSAGE_TYPE, self.request, self.marshal_options(), self.topic]
 
     def __str__(self):
         """
@@ -2784,13 +2794,7 @@ class Call(Message):
 
         return obj
 
-    def marshal(self):
-        """
-        Marshal this object into a raw message for subsequent serialization to bytes.
-
-        :returns: The serialized raw message.
-        :rtype: list
-        """
+    def marshal_options(self):
         options = {}
 
         if self.timeout is not None:
@@ -2806,6 +2810,19 @@ class Call(Message):
                 options[u'enc_key'] = self.enc_key
             if self.enc_serializer is not None:
                 options[u'enc_serializer'] = self.enc_serializer
+
+        return options
+
+    def marshal(self):
+        """
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: The serialized raw message.
+        :rtype: list
+        """
+        options = self.marshal_options()
+
+        if self.payload:
             return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.payload]
         else:
             if self.kwargs:
@@ -3253,13 +3270,7 @@ class Register(Message):
 
         return obj
 
-    def marshal(self):
-        """
-        Marshal this object into a raw message for subsequent serialization to bytes.
-
-        :returns: The serialized raw message.
-        :rtype: list
-        """
+    def marshal_options(self):
         options = {}
 
         if self.match and self.match != Register.MATCH_EXACT:
@@ -3271,7 +3282,16 @@ class Register(Message):
         if self.concurrency:
             options[u'concurrency'] = self.concurrency
 
-        return [Register.MESSAGE_TYPE, self.request, options, self.procedure]
+        return options
+
+    def marshal(self):
+        """
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: The serialized raw message.
+        :rtype: list
+        """
+        return [Register.MESSAGE_TYPE, self.request, self.marshal_options(), self.procedure]
 
     def __str__(self):
         """
