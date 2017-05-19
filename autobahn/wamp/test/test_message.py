@@ -604,6 +604,30 @@ class TestRegisterMessage(unittest.TestCase):
         self.assertEqual(msg[2], {u'match': u'wildcard'})
         self.assertEqual(msg[3], u'com.myapp.procedure1')
 
+    def test_ctor_reregister(self):
+        e = message.Register(123456, u'com.myapp.procedure1', force_reregister=True)
+        msg = e.marshal()
+        self.assertEqual(len(msg), 4)
+        self.assertEqual(msg[0], message.Register.MESSAGE_TYPE)
+        self.assertEqual(msg[1], 123456)
+        self.assertEqual(msg[2], {u'force_reregister': True})
+        self.assertEqual(msg[3], u'com.myapp.procedure1')
+
+        e2 = message.Register.parse(msg)
+        str(e2)
+
+    def test_parse_reregister_illegal_force(self):
+        msg = [
+            message.Register.MESSAGE_TYPE,
+            123456,
+            {u'force_reregister': 'truthy'},
+            u'com.myapp.procedure1',
+        ]
+
+        with self.assertRaises(ProtocolError) as ctx:
+            message.Register.parse(msg)
+        self.assertIn("invalid type", str(ctx.exception))
+
     def test_parse_and_marshal(self):
         wmsg = [message.Register.MESSAGE_TYPE, 123456, {}, u'com.myapp.procedure1']
         msg = message.Register.parse(wmsg)

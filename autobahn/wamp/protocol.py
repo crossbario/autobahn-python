@@ -1010,7 +1010,23 @@ class ApplicationSession(BaseSession):
 
             elif isinstance(msg, message.Unregistered):
 
-                if msg.request in self._unregister_reqs:
+                if msg.request == 0:
+                    # this is a forced un-register either from a call
+                    # to the wamp.* meta-api or the force_reregister
+                    # option
+                    try:
+                        reg = self._registrations[msg.registration]
+                    except KeyError:
+                        raise ProtocolError(
+                            "UNREGISTERED received for non-existant registration"
+                            " ID {0}".format(msg.registration)
+                        )
+                    self.log.info(
+                        u"Router unregistered procedure '{proc}' with ID {id}",
+                        proc=reg.procedure,
+                        id=msg.registration,
+                    )
+                elif msg.request in self._unregister_reqs:
 
                     # get and pop outstanding subscribe request
                     request = self._unregister_reqs.pop(msg.request)

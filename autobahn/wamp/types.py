@@ -680,10 +680,12 @@ class RegisterOptions(object):
         'match',
         'invoke',
         'concurrency',
+        'force_reregister',
         'details_arg',
     )
 
-    def __init__(self, match=None, invoke=None, concurrency=None, details_arg=None):
+    def __init__(self, match=None, invoke=None, concurrency=None, details_arg=None,
+                 force_reregister=None):
         """
 
         :param details_arg: When invoking the endpoint, provide call details
@@ -694,11 +696,13 @@ class RegisterOptions(object):
         assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
         assert(concurrency is None or (type(concurrency) in six.integer_types and concurrency > 0))
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
+        assert force_reregister in [None, True, False]
 
         self.match = match
         self.invoke = invoke
         self.concurrency = concurrency
         self.details_arg = details_arg
+        self.force_reregister = force_reregister
 
     def message_attr(self):
         """
@@ -715,10 +719,13 @@ class RegisterOptions(object):
         if self.concurrency is not None:
             options[u'concurrency'] = self.concurrency
 
+        if self.force_reregister is not None:
+            options[u'force_reregister'] = self.force_reregister
+
         return options
 
     def __str__(self):
-        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details_arg={})".format(self.match, self.invoke, self.concurrency, self.details_arg)
+        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details_arg={}, force_reregister={})".format(self.match, self.invoke, self.concurrency, self.details_arg, self.force_reregister)
 
 
 @public

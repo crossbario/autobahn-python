@@ -33,6 +33,7 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.internet.defer import inlineCallbacks, Deferred, returnValue
     from twisted.internet.defer import succeed, DeferredList
     from twisted.trial import unittest
+    import twisted
     from six import PY3
 
     from autobahn import util
@@ -64,6 +65,11 @@ if os.environ.get('USE_TWISTED', False):
             msg = message.Welcome(self._my_session_id, roles)
             self._handler.onMessage(msg)
             self._fake_router_session = ApplicationSession()
+
+        def drop_registration(self, reg_id):
+            self._handler.onMessage(
+                message.Unregistered(0, reg_id)
+            )
 
         def send(self, msg):
             if self._log:
@@ -593,6 +599,34 @@ if os.environ.get('USE_TWISTED', False):
 
             registration = yield handler.register(on_call, u'com.myapp.procedure1')
             yield registration.unregister()
+
+        def test_unregister_no_such_registration(self):
+            if twisted.version.major < 14:
+                return
+            handler = ApplicationSession()
+            transport = MockTransport(handler)
+
+            with self.assertRaises(ProtocolError) as ctx:
+                transport.send(
+                    message.Unregister(0, 1234)
+                )
+            self.assertIn(
+                "UNREGISTERED received for non-existant registration",
+                str(ctx.exception)
+            )
+
+        @inlineCallbacks
+        def test_unregister_log(self):
+            handler = ApplicationSession()
+            transport = MockTransport(handler)
+
+            def on_call(*args, **kwargs):
+                on_call.called = True
+            on_call.called = False
+
+            registration = yield handler.register(on_call, u'com.myapp.procedure1')
+            transport.drop_registration(registration.id)
+            self.assertFalse(on_call.called)
 
         def test_on_disconnect_error(self):
             errors = []
