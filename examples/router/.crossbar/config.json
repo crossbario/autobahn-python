@@ -3,6 +3,9 @@
     "workers": [
         {
             "type": "router",
+            "options": {
+                "pythonpath": ["../../twisted/wamp/rpc/authorize/"]
+            },
             "realms": [
                 {
                     "name": "crossbardemo",
@@ -55,6 +58,21 @@
                                     "cache": true
                                 }
                             ]
+                        },
+                        {
+                            "name": "approver",
+                            "permissions": [
+                                {
+                                    "uri": "com.example.authorize",
+                                    "allow": {
+                                        "register": true
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "dynamic_authed",
+                            "authorizer": "com.example.authorize"
                         }
                     ]
                 }
@@ -120,6 +138,10 @@
                                             "secret": "p4ssw0rd",
                                             "role": "authenticated"
                                         },
+                                        "bob": {
+                                            "secret": "p4ssw0rd",
+                                            "role": "dynamic_authed"
+                                        },
                                         "salted": {
                                             "secret": "zFXAAAqW5nlonWfP6JLMq4KGLRYZAd8OSXWknEbckCQ=",
                                             "role": "authenticated",
@@ -174,6 +196,14 @@
                             "certificate": "server.crt"
                         }
                     }
+                }
+            ],
+            "components": [
+                {
+                    "type": "class",
+                    "classname": "authorizer.MyAuthorizer",
+                    "realm": "crossbardemo",
+                    "role": "approver"
                 }
             ]
         }
