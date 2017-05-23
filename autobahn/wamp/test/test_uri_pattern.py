@@ -49,6 +49,7 @@ class TestUris(unittest.TestCase):
                   u"123",
                   u"com.myapp.<product:int>.update",
                   u"com.myapp.<category:string>.<subcategory>.list"
+                  u"com.myapp.something..update"
                   ]:
             p = Pattern(u, Pattern.URI_TARGET_ENDPOINT)
             self.assertIsInstance(p, Pattern)
@@ -158,6 +159,23 @@ class TestDecorators(unittest.TestCase):
         self.assertFalse(circle._wampuris[0].is_exception())
         self.assertEqual(circle._wampuris[0].uri(), u"com.myapp.circle.<name:string>")
         self.assertEqual(circle._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
+
+        @wamp.register(u"com.myapp.something..update",
+                       RegisterOptions(match=u"wildcard", details_arg="details"))
+        def something(dynamic=None, details=None):
+            """ Do nothing. """
+        self.assertTrue(hasattr(something, '_wampuris'))
+        self.assertTrue(type(something._wampuris) == list)
+        self.assertEqual(len(something._wampuris), 1)
+        self.assertIsInstance(something._wampuris[0], Pattern)
+        self.assertIsInstance(something._wampuris[0].options, RegisterOptions)
+        self.assertEqual(something._wampuris[0].options.match, u"wildcard")
+        self.assertEqual(something._wampuris[0].options.details_arg, "details")
+        self.assertTrue(something._wampuris[0].is_endpoint())
+        self.assertFalse(something._wampuris[0].is_handler())
+        self.assertFalse(something._wampuris[0].is_exception())
+        self.assertEqual(something._wampuris[0].uri(), u"com.myapp.something..update")
+        self.assertEqual(something._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
     def test_decorate_handler(self):
 

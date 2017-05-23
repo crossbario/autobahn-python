@@ -147,6 +147,7 @@ class Pattern(object):
         :type options: None or RegisterOptions or SubscribeOptions
         """
         assert(type(uri) == six.text_type)
+        assert(len(uri) > 0)
         assert(target in [Pattern.URI_TARGET_ENDPOINT,
                           Pattern.URI_TARGET_HANDLER,
                           Pattern.URI_TARGET_EXCEPTION])
@@ -160,6 +161,7 @@ class Pattern(object):
         components = uri.split('.')
         pl = []
         nc = {}
+        group_count = 0
         for i in range(len(components)):
             component = components[i]
 
@@ -185,6 +187,7 @@ class Pattern(object):
                     raise Exception("logic error")
 
                 pl.append("(?P<{0}>[a-z0-9_]+)".format(name))
+                group_count += 1
                 continue
 
             match = Pattern._URI_NAMED_COMPONENT.match(component)
@@ -195,11 +198,18 @@ class Pattern(object):
 
                 nc[name] = str
                 pl.append("(?P<{0}>[a-z0-9_]+)".format(name))
+                group_count += 1
                 continue
 
             match = Pattern._URI_COMPONENT.match(component)
             if match:
                 pl.append(component)
+                continue
+
+            if component == '':
+                group_count += 1
+                pl.append("([a-z0-9][a-z0-9_\-]*)")
+                nc[group_count] = str
                 continue
 
             raise Exception("invalid URI")
