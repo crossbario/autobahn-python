@@ -49,6 +49,7 @@ class TestUris(unittest.TestCase):
                   u"123",
                   u"com.myapp.<product:int>.update",
                   u"com.myapp.<category:string>.<subcategory>.list"
+                  u"com.myapp..update"
                   ]:
             p = Pattern(u, Pattern.URI_TARGET_ENDPOINT)
             self.assertIsInstance(p, Pattern)
