@@ -147,6 +147,7 @@ class Pattern(object):
         :type options: None or RegisterOptions or SubscribeOptions
         """
         assert(type(uri) == six.text_type)
+        assert(len(uri) > 0)
         assert(target in [Pattern.URI_TARGET_ENDPOINT,
                           Pattern.URI_TARGET_HANDLER,
                           Pattern.URI_TARGET_EXCEPTION])
