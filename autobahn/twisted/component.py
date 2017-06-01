@@ -150,7 +150,16 @@ def _create_transport_factory(reactor, transport, session_factory):
     if transport.type == 'websocket':
         # FIXME: forward WebSocket options
         serializers = _create_transport_serializers(transport)
-        return WampWebSocketClientFactory(session_factory, url=transport.url, serializers=serializers)
+        factory = WampWebSocketClientFactory(session_factory, url=transport.url, serializers=serializers)
+        # set the options one at a time so we can give user better feedback
+        for k, v in transport.options.items():
+            try:
+                factory.setProtocolOptions(**{k: v})
+            except (TypeError, KeyError) as e:
+                raise Exception(
+                    "Unknown transport option: {}={}".format(k, v)
+                )
+        return factory
 
     elif transport.type == 'rawsocket':
         # FIXME: forward RawSocket options
