@@ -143,6 +143,11 @@ def _create_transport_serializers(transport):
     return serializers
 
 
+def _camel_case_from_snake_case(s):
+    parts = s.split('_')
+    return parts[0] + ''.join([s.capitalize() for s in parts[1:]])
+
+
 def _create_transport_factory(reactor, transport, session_factory):
     """
     Create a WAMP-over-XXX transport factory.
@@ -155,10 +160,18 @@ def _create_transport_factory(reactor, transport, session_factory):
         for k, v in transport.options.items():
             try:
                 factory.setProtocolOptions(**{k: v})
-            except (TypeError, KeyError) as e:
-                raise Exception(
-                    "Unknown transport option: {}={}".format(k, v)
-                )
+            except (TypeError, KeyError):
+                # this allows us to document options as snake_case
+                # until everything internally is upgraded from
+                # camelCase
+                try:
+                    factory.setProtocolOptions(
+                        **{_camel_case_from_snake_case(k): v}
+                    )
+                except (TypeError, KeyError) as e:
+                    raise Exception(
+                        "Unknown transport option: {}={}".format(k, v)
+                    )
         return factory
 
     elif transport.type == 'rawsocket':
