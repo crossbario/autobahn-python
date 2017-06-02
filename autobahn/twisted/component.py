@@ -157,7 +157,6 @@ def _create_transport_factory(reactor, transport, session_factory):
         factory = WampWebSocketClientFactory(session_factory, url=transport.url, serializers=serializers)
 
     elif transport.type == 'rawsocket':
-        # FIXME: forward RawSocket options
         serializer = _create_transport_serializer(transport.serializers[0])
         factory = WampRawSocketClientFactory(session_factory, serializer=serializer)
 
