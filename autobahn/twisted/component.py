@@ -143,8 +143,8 @@ def _create_transport_serializers(transport):
     return serializers
 
 
-def _camel_case_from_snake_case(s):
-    parts = s.split('_')
+def _camel_case_from_snake_case(snake):
+    parts = snake.split('_')
     return parts[0] + ''.join([s.capitalize() for s in parts[1:]])
 
 
@@ -175,7 +175,7 @@ def _create_transport_factory(reactor, transport, session_factory):
                 factory.setProtocolOptions(
                     **{_camel_case_from_snake_case(k): v}
                 )
-            except (TypeError, KeyError) as e:
+            except (TypeError, KeyError):
                 raise ValueError(
                     "Unknown {} transport option: {}={}".format(transport.type, k, v)
                 )
