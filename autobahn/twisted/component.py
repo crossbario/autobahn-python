@@ -143,22 +143,43 @@ def _create_transport_serializers(transport):
     return serializers
 
 
+def _camel_case_from_snake_case(snake):
+    parts = snake.split('_')
+    return parts[0] + ''.join([s.capitalize() for s in parts[1:]])
+
+
 def _create_transport_factory(reactor, transport, session_factory):
     """
     Create a WAMP-over-XXX transport factory.
     """
     if transport.type == 'websocket':
-        # FIXME: forward WebSocket options
         serializers = _create_transport_serializers(transport)
-        return WampWebSocketClientFactory(session_factory, url=transport.url, serializers=serializers)
+        factory = WampWebSocketClientFactory(session_factory, url=transport.url, serializers=serializers)
 
     elif transport.type == 'rawsocket':
-        # FIXME: forward RawSocket options
         serializer = _create_transport_serializer(transport.serializers[0])
-        return WampRawSocketClientFactory(session_factory, serializer=serializer)
+        factory = WampRawSocketClientFactory(session_factory, serializer=serializer)
 
     else:
         assert(False), 'should not arrive here'
+
+    # set the options one at a time so we can give user better feedback
+    for k, v in transport.options.items():
+        try:
+            factory.setProtocolOptions(**{k: v})
+        except (TypeError, KeyError):
+            # this allows us to document options as snake_case
+            # until everything internally is upgraded from
+            # camelCase
+            try:
+                factory.setProtocolOptions(
+                    **{_camel_case_from_snake_case(k): v}
+                )
+            except (TypeError, KeyError):
+                raise ValueError(
+                    "Unknown {} transport option: {}={}".format(transport.type, k, v)
+                )
+    return factory
 
 
 def _create_transport_endpoint(reactor, endpoint_config):

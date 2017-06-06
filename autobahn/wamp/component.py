@@ -116,7 +116,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
     if type(transport) != dict:
         raise ValueError('invalid type {} for transport configuration - must be a dict'.format(type(transport)))
 
-    valid_transport_keys = ['type', 'url', 'endpoint', 'serializer', 'serializers']
+    valid_transport_keys = ['type', 'url', 'endpoint', 'serializer', 'serializers', 'options']
     for k in transport.keys():
         if k not in valid_transport_keys:
             raise ValueError(
@@ -130,6 +130,14 @@ def _create_transport(index, transport, check_native_endpoint=None):
         kind = transport['type']
     else:
         transport['type'] = 'websocket'
+
+    options = dict()
+    if 'options' in transport:
+        options = transport['options']
+        if not isinstance(options, dict):
+            raise ValueError(
+                'options must be a dict, not {}'.format(type(options))
+            )
 
     if kind == 'websocket':
         for key in ['url']:
@@ -200,6 +208,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
         url=transport['url'],
         endpoint=endpoint_config,
         serializers=serializer_config,
+        options=options,
         **kw
     )
 
@@ -214,7 +223,8 @@ class _Transport(object):
                  max_retry_delay=300,
                  initial_retry_delay=1.5,
                  retry_delay_growth=1.5,
-                 retry_delay_jitter=0.1):
+                 retry_delay_jitter=0.1,
+                 options=dict()):
         """
         """
         self.idx = idx
@@ -222,6 +232,7 @@ class _Transport(object):
         self.type = kind
         self.url = url
         self.endpoint = endpoint
+        self.options = options
 
         self.serializers = serializers
         if self.type == 'rawsocket' and len(serializers) != 1:
