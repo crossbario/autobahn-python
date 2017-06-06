@@ -411,7 +411,7 @@ class IWebSocketChannel(object):
         :returns:
            When this callback is fired on a WebSocket server, you may return either ``None`` (in
            which case the connection is accepted with no specific WebSocket subprotocol) or
-           an instance of :class:`autobahn.websocket.types.ConnectionAccept`.
+           an str instance with the name of the WebSocket subprotocol accepted.
            When the callback is fired on a WebSocket client, this method must return ``None``.
            To deny a connection, raise an Exception.
            You can also return a Deferred/Future that resolves/rejects to the above.
