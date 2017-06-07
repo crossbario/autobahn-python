@@ -5,6 +5,18 @@
 Changelog
 =========
 
+17.6.1
+------
+
+`Published 2017-06-07 <https://pypi.python.org/pypi/autobahn/17.6.1>`__
+
+* new: allow components to pass WebSocket/RawSocket options
+* fix: register/subscribe decorators support different URI syntax from what session.register and session.subscribe support
+* new: allow for standard Crossbar a.c..d style pattern URIs to be used with Pattern
+* new: dynamic authorizer example
+* new: configurable log level in `ApplicationRunner.run` for asyncio
+* fix: forward reason of hard dropping WebSocket connection in `wasNotCleanReason`
+
 17.5.1
 ------
 
