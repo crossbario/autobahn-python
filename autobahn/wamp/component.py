@@ -151,7 +151,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
                 'type': 'tcp',
                 'host': host,
                 'port': port,
-                'tls': False if not is_secure else dict(hostname=host),
+                'tls': is_secure,
             }
         else:
             # note: we're avoiding mutating the incoming "configuration"

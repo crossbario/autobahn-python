@@ -45,6 +45,7 @@ except ImportError as e:
     if 'OpenSSL' not in str(e):
         raise
 
+import six
 import txaio
 
 from autobahn.twisted.websocket import WampWebSocketClientFactory
@@ -193,7 +194,7 @@ def _create_transport_endpoint(reactor, endpoint_config):
         if endpoint_config['type'] == 'tcp':
 
             version = int(endpoint_config.get('version', 4))
-            host = str(endpoint_config['host'])
+            host = six.text_type(endpoint_config['host'])
             port = int(endpoint_config['port'])
             timeout = int(endpoint_config.get('timeout', 10))  # in seconds
             tls = endpoint_config.get('tls', None)
@@ -207,6 +208,10 @@ def _create_transport_endpoint(reactor, endpoint_config):
                 if IOpenSSLClientConnectionCreator.providedBy(tls):
                     # eg created from twisted.internet.ssl.optionsForClientTLS()
                     context = IOpenSSLClientConnectionCreator(tls)
+
+                elif isinstance(tls, dict):
+                    hostname = tls.get('hostname', host)
+                    context = optionsForClientTLS(hostname)
 
                 elif isinstance(tls, CertificateOptions):
                     context = tls
