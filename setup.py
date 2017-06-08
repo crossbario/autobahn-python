@@ -134,7 +134,11 @@ extras_require_dev = [
     'pyenchant>=1.6.6',                 # LGPL
     'sphinxcontrib-spelling>=2.1.2',    # BSD
     'sphinx_rtd_theme>=0.1.9',          # BSD
-    'pytest_asyncio',                   # Apache 2.0
+
+    # pytest-asyncio 0.6 has dropped support for Py <3.5
+    # https://github.com/pytest-dev/pytest-asyncio/issues/57
+    'pytest_asyncio<0.6',               # Apache 2.0
+
     'pytest-aiohttp',                   # Apache 2.0
     'awscli',                           # Apache 2.0
     'qualname',                         # BSD
