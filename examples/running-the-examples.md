@@ -53,6 +53,12 @@ Some **things to try**: open a new terminal and run a second frontend;  leave th
 
 If you want to use your own local [Crossbar](http://crossbar.io) instance you must have a Python2-based virtualenv and `pip install crossbar` in it. See also [crossbar.io's platform-specific installation instructions](http://crossbar.io/docs/Local-Installation/) as you may need to install some native libraries as well.
 
+Your crossbar instance will serve the [Autobahn JS](http://autobahn.ws/js) code to browser clients. To easily download a recent release, run the following in the `./examples` directory:
+
+```shell
+curl --location -O https://github.com/crossbario/crossbar/raw/master/crossbar/templates/default/web/js/autobahn.min.js
+```
+
 Once you have crossbar installed, use the provided router configuration in `examples/router/.crossbar/config.json`. Starting your router is then:
 
 ```shell
@@ -60,7 +66,9 @@ cd ./examples/router
 crossbar start
 ```
 
-There should now be a router listening on `localhost:8080` so you can change the URI in all the demos to `ws://localhost:8080/ws` or set the environment variable `AUTOBAHN_DEMO_ROUTER=ws://localhost:8080/ws` Obviously, this environment variable isn't used by in-browser JavaScript so you'll have to change .js files by hand.
+There should now be a router listening on `localhost:8080`.
+
+By default all the examples are set up to run against this address. You may set the environment variable `AUTOBAHN_DEMO_ROUTER=ws://localhost:8080/ws` if you configured yours differently from the defaults. Obviously, this environment variable isn't used by in-browser JavaScript so you'll have to change .js files by hand.
 
 If you are running the router successfully, you should see a Crossbar page at `http://localhost:8080/`. We've added enough configuration to serve the HTML, JavaScript and README files from all the examples; you should see a list of links at the page.
 
