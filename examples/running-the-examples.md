@@ -56,7 +56,7 @@ If you want to use your own local [Crossbar](http://crossbar.io) instance you mu
 Your crossbar instance will serve the [Autobahn JS](http://autobahn.ws/js) code to browser clients. To easily download a recent release, run the following in the `./examples` directory:
 
 ```shell
-curl --location -O https://github.com/crossbario/crossbar/raw/master/crossbar/templates/default/web/js/autobahn.min.js
+curl --location -O https://github.com/crossbario/autobahn-js-built/raw/master/autobahn.min.js
 ```
 
 Once you have crossbar installed, use the provided router configuration in `examples/router/.crossbar/config.json`. Starting your router is then:

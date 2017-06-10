@@ -4,6 +4,6 @@ See [../running-the-examples.md] for more information.
 
 If you get 404 errors on autobahn.min.jgz do this:
 
-   curl --location -o ../autobahn.min.js https://github.com/crossbario/crossbar/raw/master/crossbar/templates/default/web/js/autobahn.min.js
+   curl --location -o ../autobahn.min.js https://github.com/crossbario/autobahn-js-built/raw/master/autobahn.min.js
 
-...to get the latest autobahn release in the "examples/" directory.
+... to get the latest autobahn release in the "examples/" directory.
