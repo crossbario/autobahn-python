@@ -202,11 +202,11 @@ def _create_transport_endpoint(reactor, endpoint_config):
                 raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
 
             port = endpoint_config[u'port']
-            if type(host) not in six.integer_types:
+            if type(port) not in six.integer_types:
                 raise ValueError('invalid type {} for port in client endpoint configuration'.format(type(port)))
 
             timeout = endpoint_config.get(u'timeout', 10)  # in seconds
-            if type(timeout) != six.text_type:
+            if type(timeout) not in six.integer_types:
                 raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
 
             tls = endpoint_config.get(u'tls', None)
