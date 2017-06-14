@@ -34,7 +34,7 @@ These components use either Remote Procedure Calls (RPC) or Publish/Subscribe (P
 
 For RPC, an application component registers a callable method at a URI ("endpoint"), and other components call it via that endpoint.
 
-In the Publish/Subscribe model, interested components subscribe to an event URI and when a publish to that URI happens, the event payload is routerd to all subscribers:
+In the Publish/Subscribe model, interested components subscribe to an event URI and when a publish to that URI happens, the event payload is routed to all subscribers:
 
 Hence, to create a WAMP application, you:
 
