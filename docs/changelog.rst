@@ -5,6 +5,15 @@
 Changelog
 =========
 
+17.6.2
+------
+
+`Published 2017-06-24 <https://pypi.python.org/pypi/autobahn/17.6.2>`__
+
+* new: force register option when joining realms
+* fix: TLS options in components API
+
+
 17.6.1
 ------
 
