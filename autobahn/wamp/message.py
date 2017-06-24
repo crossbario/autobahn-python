@@ -3158,9 +3158,10 @@ class Register(Message):
         'match',
         'invoke',
         'concurrency',
+        'force_reregister',
     )
 
-    def __init__(self, request, procedure, match=None, invoke=None, concurrency=None):
+    def __init__(self, request, procedure, match=None, invoke=None, concurrency=None, force_reregister=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -3185,6 +3186,7 @@ class Register(Message):
         assert(invoke is None or type(invoke) == six.text_type)
         assert(invoke is None or invoke in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM])
         assert(concurrency is None or (type(concurrency) in six.integer_types and concurrency > 0))
+        assert force_reregister in [None, True, False]
 
         Message.__init__(self)
         self.request = request
@@ -3192,6 +3194,7 @@ class Register(Message):
         self.match = match or Register.MATCH_EXACT
         self.invoke = invoke or Register.INVOKE_SINGLE
         self.concurrency = concurrency
+        self.force_reregister = force_reregister
 
     @staticmethod
     def parse(wmsg):
@@ -3215,6 +3218,7 @@ class Register(Message):
         match = Register.MATCH_EXACT
         invoke = Register.INVOKE_SINGLE
         concurrency = None
+        force_reregister = None
 
         if u'match' in options:
 
@@ -3266,7 +3270,18 @@ class Register(Message):
 
             concurrency = options_concurrency
 
-        obj = Register(request, procedure, match=match, invoke=invoke, concurrency=concurrency)
+        options_reregister = options.get(u'force_reregister', None)
+        if options_reregister not in [True, False, None]:
+            raise ProtocolError(
+                "invalid type {0} for 'force_reregister option in REGISTER".format(
+                    type(options_reregister)
+                )
+            )
+        if options_reregister is not None:
+            force_reregister = options_reregister
+
+        obj = Register(request, procedure, match=match, invoke=invoke, concurrency=concurrency,
+                       force_reregister=force_reregister)
 
         return obj
 
@@ -3281,6 +3296,9 @@ class Register(Message):
 
         if self.concurrency:
             options[u'concurrency'] = self.concurrency
+
+        if self.force_reregister is not None:
+            options[u'force_reregister'] = self.force_reregister
 
         return options
 
@@ -3297,7 +3315,7 @@ class Register(Message):
         """
         Returns string representation of this message.
         """
-        return u"Register(request={0}, procedure={1}, match={2}, invoke={3}, concurrency={4})".format(self.request, self.procedure, self.match, self.invoke, self.concurrency)
+        return u"Register(request={0}, procedure={1}, match={2}, invoke={3}, concurrency={4}, force_reregister={5})".format(self.request, self.procedure, self.match, self.invoke, self.concurrency, self.force_reregister)
 
 
 class Registered(Message):
