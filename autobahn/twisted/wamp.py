@@ -795,9 +795,9 @@ class Session(ApplicationSession):
 
         # all authids must match
         unique_authids = set([
-            a['authid']
+            a._args['authid']
             for a in self._authenticators.values()
-            if 'authid' in a
+            if 'authid' in a._args
         ])
         if len(unique_authids) > 1:
             raise ValueError(
@@ -808,9 +808,9 @@ class Session(ApplicationSession):
 
         # all authroles must match
         unique_authroles = set([
-            a['authrole']
+            a._args['authrole']
             for a in self._authenticators.values()
-            if 'authrole' in a
+            if 'authrole' in a._args
         ])
         if len(unique_authroles) > 1:
             raise ValueError(
