@@ -36,12 +36,18 @@ except ImportError:
     # noinspection PyUnresolvedReferences
     import trollius as asyncio
 
+try:
+    from functools import reduce
+except ImportError:
+    pass
+
 import txaio
 txaio.use_asyncio()  # noqa
 
 from autobahn.util import public
-from autobahn.wamp import protocol
+from autobahn.wamp import protocol, auth
 from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp.interfaces import IAuthenticator
 
 from autobahn.websocket.util import parse_url as parse_ws_url
 from autobahn.rawsocket.util import parse_url as parse_rs_url
@@ -278,3 +284,224 @@ class ApplicationRunner(object):
                 loop.run_until_complete(protocol._session.leave())
 
             loop.close()
+
+
+## XXX FIXME
+## can we unify with Twisted variants?
+
+
+
+class Session(ApplicationSession):
+    # shim that lets us present pep8 API for user-classes to override,
+    # but also backwards-compatible for existing code using
+    # ApplicationSession "directly".
+
+    # XXX note to self: if we release this as "the" API, then we can
+    # change all internal Autobahn calls to .on_join() etc, and make
+    # ApplicationSession a subclass of Session -- and it can then be
+    # separate deprecated and removed, ultimately, if desired.
+
+    #: name -> IAuthenticator
+    _authenticators = None
+
+    def onJoin(self, details):
+        return self.on_join(details)
+
+    def onConnect(self):
+        if self._authenticators:
+            # authid, authrole *must* match across all authenticators
+            # (checked in add_authenticator) so these lists are either
+            # [None] or [None, 'some_authid']
+            authid = [x._args.get('authid', None) for x in self._authenticators.values()][-1]
+            authrole = [x._args.get('authrole', None) for x in self._authenticators.values()][-1]
+            authextra = self._merged_authextra()
+            self.join(
+                self.config.realm,
+                authmethods=list(self._authenticators.keys()),
+                authid=authid or u'public',
+                authrole=authrole or u'default',
+                authextra=authextra,
+            )
+        else:
+            super(Session, self).onConnect()
+
+    def onChallenge(self, challenge):
+        try:
+            authenticator = self._authenticators[challenge.method]
+        except KeyError:
+            raise RuntimeError(
+                "Received challenge for unknown authmethod '{}'".format(
+                    challenge.method
+                )
+            )
+        return authenticator.on_challenge(self, challenge)
+
+    def onLeave(self, details):
+        return self.on_leave(details)
+
+    def onDisconnect(self):
+        return self.on_disconnect()
+
+    # experimental authentication API
+
+    def add_authenticator(self, name, **kw):
+        if self._authenticators is None:
+            self._authenticators = {}
+        try:
+            auth = {
+                'cryptosign': AuthCryptoSign,
+                'wampcra': AuthWampCra,
+            }[name](**kw)
+        except KeyError:
+            raise RuntimeError(
+                "Unknown authenticator '{}'".format(name)
+            )
+
+        # all authids must match
+        unique_authids = set([
+            a._args['authid']
+            for a in self._authenticators.values()
+            if 'authid' in a._args
+        ])
+        if len(unique_authids) > 1:
+            raise ValueError(
+                "Inconsistent authids: {}".format(
+                    ' '.join(unique_authids),
+                )
+            )
+
+        # all authroles must match
+        unique_authroles = set([
+            a._args['authrole']
+            for a in self._authenticators.values()
+            if 'authrole' in a._args
+        ])
+        if len(unique_authroles) > 1:
+            raise ValueError(
+                "Inconsistent authroles: '{}' vs '{}'".format(
+                    ' '.join(unique_authroles),
+                )
+            )
+
+        # can we do anything else other than merge all authextra keys?
+        # here we check that any duplicate keys have the same values
+        authextra = kw.get('authextra', {})
+        merged = self._merged_authextra()
+        for k, v in merged:
+            if k in authextra and authextra[k] != v:
+                raise ValueError(
+                    "Inconsistent authextra values for '{}': '{}' vs '{}'".format(
+                        k, v, authextra[k],
+                    )
+                )
+
+        # validation complete, add it
+        self._authenticators[name] = auth
+
+    def _merged_authextra(self):
+        authextras = [a._args.get('authextra', {}) for a in self._authenticators.values()]
+        # for all existing _authenticators, we've already checked that
+        # if they contain a key it has the same value as all others.
+        return {
+            k: v
+            for k, v in zip(
+                reduce(lambda x, y: x | set(y.keys()), authextras, set()),
+                reduce(lambda x, y: x | set(y.values()), authextras, set())
+            )
+        }
+
+    # these are the actual "new API" methods (i.e. snake_case)
+    #
+
+    def on_join(self, details):
+        pass
+
+    def on_leave(self, details):
+        self.disconnect()
+
+    def on_disconnect(self):
+        pass
+
+
+# experimental authentication API
+class AuthCryptoSign(object):
+
+    def __init__(self, **kw):
+        # should put in checkconfig or similar
+        for key in kw.keys():
+            if key not in [u'authextra', u'authid', u'authrole', u'privkey']:
+                raise ValueError(
+                    "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
+                )
+        for key in [u'privkey', u'authid']:
+            if key not in kw:
+                raise ValueError(
+                    "Must provide '{}' for cryptosign".format(key)
+                )
+        for key in kw.get('authextra', dict()):
+            if key not in [u'pubkey']:
+                raise ValueError(
+                    "Unexpected key '{}' in 'authextra'".format(key)
+                )
+
+        from autobahn.wamp.cryptosign import SigningKey
+        self._privkey = SigningKey.from_key_bytes(
+            binascii.a2b_hex(kw[u'privkey'])
+        )
+
+        if u'pubkey' in kw.get(u'authextra', dict()):
+            pubkey = kw[u'authextra'][u'pubkey']
+            if pubkey != self._privkey.public_key():
+                raise ValueError(
+                    "Public key doesn't correspond to private key"
+                )
+        else:
+            kw[u'authextra'] = kw.get(u'authextra', dict())
+            kw[u'authextra'][u'pubkey'] = self._privkey.public_key()
+        self._args = kw
+
+    def on_challenge(self, session, challenge):
+        return self._privkey.sign_challenge(session, challenge)
+
+
+IAuthenticator.register(AuthCryptoSign)
+
+
+class AuthWampCra(object):
+
+    def __init__(self, **kw):
+        # should put in checkconfig or similar
+        for key in kw.keys():
+            if key not in [u'authextra', u'authid', u'authrole', u'secret']:
+                raise ValueError(
+                    "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
+                )
+        for key in [u'secret', u'authid']:
+            if key not in kw:
+                raise ValueError(
+                    "Must provide '{}' for wampcra".format(key)
+                )
+
+        self._args = kw
+        self._secret = kw.pop(u'secret')
+        if not isinstance(self._secret, six.text_type):
+            self._secret = self._secret.decode('utf8')
+
+    def on_challenge(self, session, challenge):
+        key = self._secret.encode('utf8')
+        if u'salt' in challenge.extra:
+            key = auth.derive_key(
+                key,
+                challenge.extra['salt'],
+                challenge.extra['iterations'],
+                challenge.extra['keylen']
+            )
+
+        signature = auth.compute_wcs(
+            key,
+            challenge.extra['challenge'].encode('utf8')
+        )
+        return signature.decode('ascii')
+
+
+IAuthenticator.register(AuthWampCra)
