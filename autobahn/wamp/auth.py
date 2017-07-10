@@ -54,9 +54,6 @@ __all__ = (
 )
 
 
-
-
-
 # experimental authentication API
 class AuthCryptoSign(object):
 

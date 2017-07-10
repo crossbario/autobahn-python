@@ -40,9 +40,8 @@ import txaio
 txaio.use_asyncio()  # noqa
 
 from autobahn.util import public
-from autobahn.wamp import protocol, auth
+from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
-from autobahn.wamp.interfaces import IAuthenticator
 
 from autobahn.websocket.util import parse_url as parse_ws_url
 from autobahn.rawsocket.util import parse_url as parse_rs_url

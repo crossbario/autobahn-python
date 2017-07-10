@@ -171,89 +171,6 @@ def _create_transport_factory(loop, transport, session_factory):
     return factory
 
 
-def _create_transport_endpoint(loop, endpoint_config):
-    """
-    Create a Twisted client endpoint for a WAMP-over-XXX transport.
-    """
-    if IStreamClientEndpoint.providedBy(endpoint_config):
-        endpoint = IStreamClientEndpoint(endpoint_config)
-    else:
-        # create a connecting TCP socket
-        if endpoint_config[u'type'] == u'tcp':
-
-            version = endpoint_config.get(u'version', 4)
-            if version not in [4, 6]:
-                raise ValueError('invalid IP version {} in client endpoint configuration'.format(version))
-
-            host = endpoint_config[u'host']
-            if type(host) != six.text_type:
-                raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
-
-            port = endpoint_config[u'port']
-            if type(port) not in six.integer_types:
-                raise ValueError('invalid type {} for port in client endpoint configuration'.format(type(port)))
-
-            timeout = endpoint_config.get(u'timeout', 10)  # in seconds
-            if type(timeout) not in six.integer_types:
-                raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
-
-            tls = endpoint_config.get(u'tls', None)
-
-            # create a TLS enabled connecting TCP socket
-            if tls:
-                if isinstance(tls, dict):
-                    hostname = tls.get(u'hostname', host)
-                    if type(hostname) != six.text_type:
-                        raise ValueError('invalid type {} for hostname in TLS client endpoint configuration'.format(hostname))
-
-                    context = ssl.SSLContext()
-                    print("{} {}".format(context.verify_mode, context.check_hostname))
-                    context.verify_mode = ssl.CERT_REQUIRED
-                    context.check_hostname = True
-                    print("{} {}".format(context.verify_mode, context.check_hostname))
-
-                elif isinstance(tls, CertificateOptions):
-                    context = tls
-
-                elif tls is True:
-                    context = optionsForClientTLS(host)
-
-                else:
-                    raise RuntimeError('unknown type {} for "tls" configuration in transport'.format(type(tls)))
-
-                if version == 4:
-                    endpoint = SSL4ClientEndpoint(loop, host, port, context, timeout=timeout)
-                elif version == 6:
-                    # there is no SSL6ClientEndpoint!
-                    raise RuntimeError('TLS on IPv6 not implemented')
-                else:
-                    assert(False), 'should not arrive here'
-
-            # create a non-TLS connecting TCP socket
-            else:
-                if version == 4:
-                    endpoint = TCP4ClientEndpoint(loop, host, port, timeout=timeout)
-                elif version == 6:
-                    try:
-                        from twisted.internet.endpoints import TCP6ClientEndpoint
-                    except ImportError:
-                        raise RuntimeError('IPv6 is not supported (please upgrade Twisted)')
-                    endpoint = TCP6ClientEndpoint(loop, host, port, timeout=timeout)
-                else:
-                    assert(False), 'should not arrive here'
-
-        # create a connecting Unix domain socket
-        elif endpoint_config[u'type'] == u'unix':
-            path = endpoint_config[u'path']
-            timeout = int(endpoint_config.get(u'timeout', 10))  # in seconds
-            endpoint = UNIXClientEndpoint(loop, path, timeout=timeout)
-
-        else:
-            assert(False), 'should not arrive here'
-
-    return endpoint
-
-
 class Component(component.Component):
     """
     A component establishes a transport and attached a session
@@ -363,11 +280,10 @@ class Component(component.Component):
         elif transport.endpoint[u'type'] == u'unix':
             path = transport.endpoint[u'path']
             timeout = int(transport.endpoint.get(u'timeout', 10))  # in seconds
-            endpoint = UNIXClientEndpoint(loop, path, timeout=timeout)
 
-            f = loop.create_datagram_endpoint(
-                factory=factory,
-                remote_addr=(host, port),
+            f = loop.create_unix_connection(
+                protocol_factory=factory,
+                path=path,
             )
             transport, protocol = yield from asyncio.wait_for(f, timeout=timeout)
 
@@ -515,11 +431,8 @@ def run(components, log_level='info'):
     #   import signal
     #   signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    f = component._run(loop, components)
-
     @asyncio.coroutine
     def exit():
-#        yield from f
         loop.stop()
 
     def nicely_exit(signal):
@@ -532,6 +445,9 @@ def run(components, log_level='info'):
     loop.add_signal_handler(signal.SIGINT, partial(nicely_exit, 'SIGINT'))
     loop.add_signal_handler(signal.SIGTERM, partial(nicely_exit, 'SIGTERM'))
 
+    # returns a future; could run_until_complete() but see below
+    component._run(loop, components)
+
     try:
         loop.run_forever()
         # this is probably more-correct, but then you always get
@@ -539,6 +455,6 @@ def run(components, log_level='info'):
         # loop.run_until_complete(f)
     except asyncio.CancelledError:
         pass
-    finally:
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    # finally:
+    #     signal.signal(signal.SIGINT, signal.SIG_DFL)
+    #     signal.signal(signal.SIGTERM, signal.SIG_DFL)

@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import six
 import inspect
 import binascii
-from functools import reduce
 
 import txaio
 txaio.use_twisted()  # noqa

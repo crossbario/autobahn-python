@@ -29,6 +29,7 @@ from __future__ import absolute_import
 import six
 import txaio
 import inspect
+from functools import reduce
 
 from autobahn import wamp
 from autobahn.util import public, IdGenerator, ObservableMixin
@@ -54,11 +55,6 @@ from autobahn.wamp.request import \
     InvocationRequest, \
     RegisterRequest, \
     UnregisterRequest
-
-try:
-    from functools import reduce
-except ImportError:
-    pass
 
 
 def is_method_or_function(f):
