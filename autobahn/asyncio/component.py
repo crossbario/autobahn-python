@@ -52,7 +52,6 @@ from autobahn.asyncio.wamp import Session
 from autobahn.wamp.exception import ApplicationError
 
 
-
 __all__ = ('Component',)
 
 
