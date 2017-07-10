@@ -14,15 +14,17 @@ class MyAuthorizer(ApplicationSession):
            print("MyAuthorizer: failed to register authorizer procedure ({})".format(e))
            raise
 
-    def authorize(self, details, uri, action, options={}):
-        print("MyAuthorizer.authorize(uri='{}', action='{}')".format(uri, action))
+    def authorize(self, details, uri, action, options):
+        print("MyAuthorizer.authorize(uri='{}', action='{}', options='{}')".format(uri, action, options))
         print("options:")
         for k, v in options.items():
             print("  {}: {}".format(k, v))
         if False:
             print("I allow everything.")
         else:
-            if options.get(u"match", "") != u"exact":
+            if uri == u'com.foo.private':
+                return False
+            if options.get(u"match", "exact") != u"exact":
                 print("only exact-match subscriptions allowed")
                 return False
         return True
