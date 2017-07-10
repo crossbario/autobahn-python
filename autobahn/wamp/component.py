@@ -40,6 +40,7 @@ from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
 from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
 from autobahn.wamp.exception import SessionNotReady
+from autobahn.wamp.auth import create_authenticator
 
 
 __all__ = ('Connection')
@@ -476,7 +477,8 @@ class Component(ObservableMixin):
             try:
                 session = self.session_factory(cfg)
                 for auth_name, auth_config in self._authentication.items():
-                    session.add_authenticator(auth_name, **auth_config)
+                    authenticator = create_authenticator(auth_name, **auth_config)
+                    session.add_authenticator(authenticator)
 
             except Exception as e:
                 # couldn't instantiate session calls, which is fatal.

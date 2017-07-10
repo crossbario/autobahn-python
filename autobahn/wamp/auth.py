@@ -54,8 +54,32 @@ __all__ = (
 )
 
 
+def create_authenticator(name, **kwargs):
+    """
+    Accepts various keys and values to configure an authenticator. The
+    valid keys depend on the kind of authenticator but all can
+    understand: `authextra`, `authid` and `authrole`
+
+    :return: an instance implementing IAuthenticator with the given
+        configuration.
+    """
+    try:
+        klass = {
+            AuthWampCra.name: AuthWampCra,
+            AuthCryptoSign.name: AuthCryptoSign,
+        }[name]
+    except KeyError:
+        raise ValueError(
+            "Unknown authenticator '{}'".format(name)
+        )
+    # this may raise further ValueErrors if the kwargs are wrong
+    authenticator = klass(**kwargs)
+    return authenticator
+
+
 # experimental authentication API
 class AuthCryptoSign(object):
+    name = u'cryptosign'
 
     def __init__(self, **kw):
         # should put in checkconfig or similar
@@ -91,6 +115,10 @@ class AuthCryptoSign(object):
             kw[u'authextra'][u'pubkey'] = self._privkey.public_key()
         self._args = kw
 
+    @property
+    def authextra(self):
+        return self._args.get(u'authextra', dict())
+
     def on_challenge(self, session, challenge):
         return self._privkey.sign_challenge(session, challenge)
 
@@ -99,6 +127,7 @@ IAuthenticator.register(AuthCryptoSign)
 
 
 class AuthWampCra(object):
+    name = u'wampcra'
 
     def __init__(self, **kw):
         # should put in checkconfig or similar
@@ -117,6 +146,10 @@ class AuthWampCra(object):
         self._secret = kw.pop(u'secret')
         if not isinstance(self._secret, six.text_type):
             self._secret = self._secret.decode('utf8')
+
+    @property
+    def authextra(self):
+        return self._args.get(u'authextra', dict())
 
     def on_challenge(self, session, challenge):
         key = self._secret.encode('utf8')

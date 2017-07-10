@@ -40,7 +40,7 @@ from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.auth import AuthCryptoSign, AuthWampCra
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
-from autobahn.wamp.interfaces import ISession, IPayloadCodec  # noqa
+from autobahn.wamp.interfaces import ISession, IPayloadCodec, IAuthenticator  # noqa
 from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
 from autobahn.wamp.request import \
     Publication, \
@@ -1574,48 +1574,39 @@ class _SessionShim(ApplicationSession):
 
     # experimental authentication API
 
-    def add_authenticator(self, name, **kw):
+    def add_authenticator(self, authenticator):
+        assert isinstance(authenticator, IAuthenticator)
         if self._authenticators is None:
             self._authenticators = {}
-        try:
-            auth = {
-                'cryptosign': AuthCryptoSign,
-                'wampcra': AuthWampCra,
-            }[name](**kw)
-        except KeyError:
-            raise RuntimeError(
-                "Unknown authenticator '{}'".format(name)
-            )
+
+        # before adding this authenticator we need to validate that
+        # it's consistent with any other authenticators we may have --
+        # for example, they must all agree on "authid" etc because
+        # .join() only takes one value for all of those.
+
+        def at_most_one(name):
+            uni = set([
+                a._args[name]
+                for a in list(self._authenticators.values()) + [authenticator]
+                if name in a._args
+            ])
+            if len(uni) > 1:
+                raise ValueError(
+                    "Inconsistent {}s: {}".format(
+                        name,
+                        ' '.join(uni),
+                    )
+                )
 
         # all authids must match
-        unique_authids = set([
-            a._args['authid']
-            for a in self._authenticators.values()
-            if 'authid' in a._args
-        ])
-        if len(unique_authids) > 1:
-            raise ValueError(
-                "Inconsistent authids: {}".format(
-                    ' '.join(unique_authids),
-                )
-            )
+        at_most_one('authid')
 
         # all authroles must match
-        unique_authroles = set([
-            a._args['authrole']
-            for a in self._authenticators.values()
-            if 'authrole' in a._args
-        ])
-        if len(unique_authroles) > 1:
-            raise ValueError(
-                "Inconsistent authroles: '{}' vs '{}'".format(
-                    ' '.join(unique_authroles),
-                )
-            )
+        at_most_one('authrole')
 
         # can we do anything else other than merge all authextra keys?
         # here we check that any duplicate keys have the same values
-        authextra = kw.get('authextra', {})
+        authextra = authenticator.authextra
         merged = self._merged_authextra()
         for k, v in merged:
             if k in authextra and authextra[k] != v:
@@ -1626,7 +1617,7 @@ class _SessionShim(ApplicationSession):
                 )
 
         # validation complete, add it
-        self._authenticators[name] = auth
+        self._authenticators[authenticator.name] = authenticator
 
     def _merged_authextra(self):
         authextras = [a._args.get('authextra', {}) for a in self._authenticators.values()]
