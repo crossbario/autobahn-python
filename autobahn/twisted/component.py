@@ -37,7 +37,7 @@ from twisted.internet.endpoints import TCP4ClientEndpoint
 try:
     _TLS = True
     from twisted.internet.endpoints import SSL4ClientEndpoint
-    from twisted.internet.ssl import optionsForClientTLS, CertificateOptions
+    from twisted.internet.ssl import optionsForClientTLS, CertificateOptions, Certificate
     from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
     from OpenSSL import SSL
 except ImportError as e:
@@ -222,11 +222,17 @@ def _create_transport_endpoint(reactor, endpoint_config):
                     context = IOpenSSLClientConnectionCreator(tls)
 
                 elif isinstance(tls, dict):
+                    for k in tls.keys():
+                        if k not in [u"hostname", u"trust_root"]:
+                            raise ValueError("Invalid key '{}' in 'tls' config".format(k))
                     hostname = tls.get(u'hostname', host)
                     if type(hostname) != six.text_type:
                         raise ValueError('invalid type {} for hostname in TLS client endpoint configuration'.format(hostname))
-
-                    context = optionsForClientTLS(hostname)
+                    trust_root = None
+                    cert_fname = tls.get(u"trust_root", None)
+                    if cert_fname is not None:
+                        trust_root = Certificate.loadPEM(six.u(open(cert_fname, 'r').read()))
+                    context = optionsForClientTLS(hostname, trustRoot=trust_root)
 
                 elif isinstance(tls, CertificateOptions):
                     context = tls

@@ -753,7 +753,7 @@ class Session(ApplicationSession):
             authextra = self._merged_authextra()
             self.join(
                 self.config.realm,
-                authmethods=self._authenticators.keys(),
+                authmethods=list(self._authenticators.keys()),
                 authid=authid or u'public',
                 authrole=authrole or u'default',
                 authextra=authextra,
