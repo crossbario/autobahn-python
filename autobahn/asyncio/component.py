@@ -275,7 +275,7 @@ class Component(component.Component):
                 ssl=tls,
                 server_hostname=tls_hostname,
             )
-            transport, protocol = yield from asyncio.wait_for(f, timeout=timeout)
+            transport, protocol = yield from asyncio.wait_for(f, timeout=timeout)  # noqa
 
         elif transport.endpoint[u'type'] == u'unix':
             path = transport.endpoint[u'path']
