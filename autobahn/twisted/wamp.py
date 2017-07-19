@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import six
 import inspect
 import binascii
-from functools import reduce
 
 import txaio
 txaio.use_twisted()  # noqa
@@ -727,133 +726,18 @@ if service:
 
 
 # new API
-class Session(ApplicationSession):
-    # shim that lets us present pep8 API for user-classes to override,
-    # but also backwards-compatible for existing code using
-    # ApplicationSession "directly".
-
-    # XXX note to self: if we release this as "the" API, then we can
-    # change all internal Autobahn calls to .on_join() etc, and make
-    # ApplicationSession a subclass of Session -- and it can then be
-    # separate deprecated and removed, ultimately, if desired.
-
-    #: name -> IAuthenticator
-    _authenticators = None
-
-    def onJoin(self, details):
-        return self.on_join(details)
-
-    def onConnect(self):
-        if self._authenticators:
-            # authid, authrole *must* match across all authenticators
-            # (checked in add_authenticator) so these lists are either
-            # [None] or [None, 'some_authid']
-            authid = [x._args.get('authid', None) for x in self._authenticators.values()][-1]
-            authrole = [x._args.get('authrole', None) for x in self._authenticators.values()][-1]
-            authextra = self._merged_authextra()
-            self.join(
-                self.config.realm,
-                authmethods=self._authenticators.keys(),
-                authid=authid or u'public',
-                authrole=authrole or u'default',
-                authextra=authextra,
-            )
-        else:
-            super(Session, self).onConnect()
-
-    def onChallenge(self, challenge):
-        try:
-            authenticator = self._authenticators[challenge.method]
-        except KeyError:
-            raise RuntimeError(
-                "Received challenge for unknown authmethod '{}'".format(
-                    challenge.method
-                )
-            )
-        return authenticator.on_challenge(self, challenge)
-
-    def onLeave(self, details):
-        return self.on_leave(details)
-
-    def onDisconnect(self):
-        return self.on_disconnect()
-
-    # experimental authentication API
-
-    def add_authenticator(self, name, **kw):
-        if self._authenticators is None:
-            self._authenticators = {}
-        try:
-            auth = {
-                'cryptosign': AuthCryptoSign,
-                'wampcra': AuthWampCra,
-            }[name](**kw)
-        except KeyError:
-            raise RuntimeError(
-                "Unknown authenticator '{}'".format(name)
-            )
-
-        # all authids must match
-        unique_authids = set([
-            a._args['authid']
-            for a in self._authenticators.values()
-            if 'authid' in a._args
-        ])
-        if len(unique_authids) > 1:
-            raise ValueError(
-                "Inconsistent authids: {}".format(
-                    ' '.join(unique_authids),
-                )
-            )
-
-        # all authroles must match
-        unique_authroles = set([
-            a._args['authrole']
-            for a in self._authenticators.values()
-            if 'authrole' in a._args
-        ])
-        if len(unique_authroles) > 1:
-            raise ValueError(
-                "Inconsistent authroles: '{}' vs '{}'".format(
-                    ' '.join(unique_authroles),
-                )
-            )
-
-        # can we do anything else other than merge all authextra keys?
-        # here we check that any duplicate keys have the same values
-        authextra = kw.get('authextra', {})
-        merged = self._merged_authextra()
-        for k, v in merged:
-            if k in authextra and authextra[k] != v:
-                raise ValueError(
-                    "Inconsistent authextra values for '{}': '{}' vs '{}'".format(
-                        k, v, authextra[k],
-                    )
-                )
-
-        # validation complete, add it
-        self._authenticators[name] = auth
-
-    def _merged_authextra(self):
-        authextras = [a._args.get('authextra', {}) for a in self._authenticators.values()]
-        # for all existing _authenticators, we've already checked that
-        # if they contain a key it has the same value as all others.
-        return {
-            k: v
-            for k, v in zip(
-                reduce(lambda x, y: x | set(y.keys()), authextras, set()),
-                reduce(lambda x, y: x | set(y.values()), authextras, set())
-            )
-        }
-
-    # these are the actual "new API" methods (i.e. snake_case)
-    #
+class Session(protocol._SessionShim):
+    # XXX these methods are redundant, but put here for possibly
+    # better clarity; maybe a bad idea.
 
     def on_join(self, details):
         pass
 
     def on_leave(self, details):
         self.disconnect()
+
+    def on_connect(self):
+        self.join(self.config.realm)
 
     def on_disconnect(self):
         pass

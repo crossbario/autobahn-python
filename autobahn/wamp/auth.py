@@ -39,14 +39,136 @@ from struct import Struct
 from operator import xor
 from itertools import starmap
 from autobahn.util import public
+from autobahn.wamp.interfaces import IAuthenticator
+
 
 __all__ = (
+    'AuthCryptoSign',
+    'AuthWampCra',
     'pbkdf2',
     'generate_totp_secret',
     'compute_totp',
     'derive_key',
     'generate_wcs',
-    'compute_wcs')
+    'compute_wcs',
+)
+
+
+def create_authenticator(name, **kwargs):
+    """
+    Accepts various keys and values to configure an authenticator. The
+    valid keys depend on the kind of authenticator but all can
+    understand: `authextra`, `authid` and `authrole`
+
+    :return: an instance implementing IAuthenticator with the given
+        configuration.
+    """
+    try:
+        klass = {
+            AuthWampCra.name: AuthWampCra,
+            AuthCryptoSign.name: AuthCryptoSign,
+        }[name]
+    except KeyError:
+        raise ValueError(
+            "Unknown authenticator '{}'".format(name)
+        )
+    # this may raise further ValueErrors if the kwargs are wrong
+    authenticator = klass(**kwargs)
+    return authenticator
+
+
+# experimental authentication API
+class AuthCryptoSign(object):
+    name = u'cryptosign'
+
+    def __init__(self, **kw):
+        # should put in checkconfig or similar
+        for key in kw.keys():
+            if key not in [u'authextra', u'authid', u'authrole', u'privkey']:
+                raise ValueError(
+                    "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
+                )
+        for key in [u'privkey', u'authid']:
+            if key not in kw:
+                raise ValueError(
+                    "Must provide '{}' for cryptosign".format(key)
+                )
+        for key in kw.get('authextra', dict()):
+            if key not in [u'pubkey']:
+                raise ValueError(
+                    "Unexpected key '{}' in 'authextra'".format(key)
+                )
+
+        from autobahn.wamp.cryptosign import SigningKey
+        self._privkey = SigningKey.from_key_bytes(
+            binascii.a2b_hex(kw[u'privkey'])
+        )
+
+        if u'pubkey' in kw.get(u'authextra', dict()):
+            pubkey = kw[u'authextra'][u'pubkey']
+            if pubkey != self._privkey.public_key():
+                raise ValueError(
+                    "Public key doesn't correspond to private key"
+                )
+        else:
+            kw[u'authextra'] = kw.get(u'authextra', dict())
+            kw[u'authextra'][u'pubkey'] = self._privkey.public_key()
+        self._args = kw
+
+    @property
+    def authextra(self):
+        return self._args.get(u'authextra', dict())
+
+    def on_challenge(self, session, challenge):
+        return self._privkey.sign_challenge(session, challenge)
+
+
+IAuthenticator.register(AuthCryptoSign)
+
+
+class AuthWampCra(object):
+    name = u'wampcra'
+
+    def __init__(self, **kw):
+        # should put in checkconfig or similar
+        for key in kw.keys():
+            if key not in [u'authextra', u'authid', u'authrole', u'secret']:
+                raise ValueError(
+                    "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
+                )
+        for key in [u'secret', u'authid']:
+            if key not in kw:
+                raise ValueError(
+                    "Must provide '{}' for wampcra".format(key)
+                )
+
+        self._args = kw
+        self._secret = kw.pop(u'secret')
+        if not isinstance(self._secret, six.text_type):
+            self._secret = self._secret.decode('utf8')
+
+    @property
+    def authextra(self):
+        return self._args.get(u'authextra', dict())
+
+    def on_challenge(self, session, challenge):
+        key = self._secret.encode('utf8')
+        if u'salt' in challenge.extra:
+            key = derive_key(
+                key,
+                challenge.extra['salt'],
+                challenge.extra['iterations'],
+                challenge.extra['keylen']
+            )
+
+        signature = compute_wcs(
+            key,
+            challenge.extra['challenge'].encode('utf8')
+        )
+        return signature.decode('ascii')
+
+
+IAuthenticator.register(AuthWampCra)
 
 
 @public

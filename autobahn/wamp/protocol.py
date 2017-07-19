@@ -29,6 +29,7 @@ from __future__ import absolute_import
 import six
 import txaio
 import inspect
+from functools import reduce
 
 from autobahn import wamp
 from autobahn.util import public, IdGenerator, ObservableMixin
@@ -38,7 +39,7 @@ from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
-from autobahn.wamp.interfaces import ISession, IPayloadCodec  # noqa
+from autobahn.wamp.interfaces import ISession, IPayloadCodec, IAuthenticator  # noqa
 from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
 from autobahn.wamp.request import \
     Publication, \
@@ -1518,6 +1519,131 @@ class ApplicationSession(BaseSession):
 
         self._transport.send(msg)
         return on_reply
+
+
+# this is NOT public; import from either autobahn.asyncio.wamp or
+# autobahn.twisted.wamp
+class _SessionShim(ApplicationSession):
+    """
+    shim that lets us present pep8 API for user-classes to override,
+    but also backwards-compatible for existing code using
+    ApplicationSession "directly".
+    """
+
+    #: name -> IAuthenticator
+    _authenticators = None
+
+    def onJoin(self, details):
+        return self.on_join(details)
+
+    def onConnect(self):
+        if self._authenticators:
+            # authid, authrole *must* match across all authenticators
+            # (checked in add_authenticator) so these lists are either
+            # [None] or [None, 'some_authid']
+            authid = [x._args.get('authid', None) for x in self._authenticators.values()][-1]
+            authrole = [x._args.get('authrole', None) for x in self._authenticators.values()][-1]
+            authextra = self._merged_authextra()
+            self.join(
+                self.config.realm,
+                authmethods=list(self._authenticators.keys()),
+                authid=authid or u'public',
+                authrole=authrole or u'default',
+                authextra=authextra,
+            )
+        else:
+            self.on_connect()
+
+    def onChallenge(self, challenge):
+        try:
+            authenticator = self._authenticators[challenge.method]
+        except KeyError:
+            raise RuntimeError(
+                "Received challenge for unknown authmethod '{}'".format(
+                    challenge.method
+                )
+            )
+        return authenticator.on_challenge(self, challenge)
+
+    def onLeave(self, details):
+        return self.on_leave(details)
+
+    def onDisconnect(self):
+        return self.on_disconnect()
+
+    # experimental authentication API
+
+    def add_authenticator(self, authenticator):
+        assert isinstance(authenticator, IAuthenticator)
+        if self._authenticators is None:
+            self._authenticators = {}
+
+        # before adding this authenticator we need to validate that
+        # it's consistent with any other authenticators we may have --
+        # for example, they must all agree on "authid" etc because
+        # .join() only takes one value for all of those.
+
+        def at_most_one(name):
+            uni = set([
+                a._args[name]
+                for a in list(self._authenticators.values()) + [authenticator]
+                if name in a._args
+            ])
+            if len(uni) > 1:
+                raise ValueError(
+                    "Inconsistent {}s: {}".format(
+                        name,
+                        ' '.join(uni),
+                    )
+                )
+
+        # all authids must match
+        at_most_one('authid')
+
+        # all authroles must match
+        at_most_one('authrole')
+
+        # can we do anything else other than merge all authextra keys?
+        # here we check that any duplicate keys have the same values
+        authextra = authenticator.authextra
+        merged = self._merged_authextra()
+        for k, v in merged:
+            if k in authextra and authextra[k] != v:
+                raise ValueError(
+                    "Inconsistent authextra values for '{}': '{}' vs '{}'".format(
+                        k, v, authextra[k],
+                    )
+                )
+
+        # validation complete, add it
+        self._authenticators[authenticator.name] = authenticator
+
+    def _merged_authextra(self):
+        authextras = [a._args.get('authextra', {}) for a in self._authenticators.values()]
+        # for all existing _authenticators, we've already checked that
+        # if they contain a key it has the same value as all others.
+        return {
+            k: v
+            for k, v in zip(
+                reduce(lambda x, y: x | set(y.keys()), authextras, set()),
+                reduce(lambda x, y: x | set(y.values()), authextras, set())
+            )
+        }
+
+    # these are the actual "new API" methods (i.e. snake_case)
+    #
+
+    def on_join(self, details):
+        pass
+
+    def on_leave(self, details):
+        self.disconnect()
+
+    def on_connect(self):
+        self.join(self.config.realm)
+
+    def on_disconnect(self):
+        pass
 
 
 # ISession.register collides with the abc.ABCMeta.register method

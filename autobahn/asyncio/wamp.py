@@ -278,3 +278,20 @@ class ApplicationRunner(object):
                 loop.run_until_complete(protocol._session.leave())
 
             loop.close()
+
+
+class Session(protocol._SessionShim):
+    # XXX these methods are redundant, but put here for possibly
+    # better clarity; maybe a bad idea.
+
+    def on_join(self, details):
+        pass
+
+    def on_leave(self, details):
+        self.disconnect()
+
+    def on_connect(self):
+        self.join(self.config.realm)
+
+    def on_disconnect(self):
+        pass

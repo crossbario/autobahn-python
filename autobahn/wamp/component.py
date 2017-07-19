@@ -40,6 +40,7 @@ from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
 from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
 from autobahn.wamp.exception import SessionNotReady
+from autobahn.wamp.auth import create_authenticator
 
 
 __all__ = ('Connection')
@@ -476,7 +477,8 @@ class Component(ObservableMixin):
             try:
                 session = self.session_factory(cfg)
                 for auth_name, auth_config in self._authentication.items():
-                    session.add_authenticator(auth_name, **auth_config)
+                    authenticator = create_authenticator(auth_name, **auth_config)
+                    session.add_authenticator(authenticator)
 
             except Exception as e:
                 # couldn't instantiate session calls, which is fatal.
@@ -500,7 +502,7 @@ class Component(ObservableMixin):
                         "session leaving '{details.reason}'",
                         details=details,
                     )
-                    if self._entry:
+                    if self._entry and not txaio.is_called(done):
                         txaio.resolve(done, None)
                 session.on('leave', on_leave)
 
@@ -573,7 +575,7 @@ class Component(ObservableMixin):
         def on_connect_failure(err):
             transport.connect_failures += 1
             # failed to establish a connection in the first place
-            done.errback(err)
+            txaio.reject(done, err)
 
         txaio.add_callbacks(d, on_connect_sucess, None)
         txaio.add_callbacks(d, None, on_connect_failure)
@@ -665,7 +667,7 @@ def _run(reactor, components):
     def component_start(comp):
         # the future from start() errbacks if we fail, or callbacks
         # when the component is considered "done" (so maybe never)
-        d = comp.start(reactor)
+        d = txaio.as_future(comp.start, reactor)
         txaio.add_callbacks(
             d,
             partial(component_success, comp),

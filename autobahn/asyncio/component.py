@@ -27,34 +27,28 @@
 
 from __future__ import absolute_import, print_function
 
+import six
+import ssl  # XXX what Python version is this always available at?
+import signal
 import itertools
-
-from twisted.internet.defer import inlineCallbacks  # XXX FIXME?
-from twisted.internet.interfaces import IStreamClientEndpoint
-from twisted.internet.endpoints import UNIXClientEndpoint
-from twisted.internet.endpoints import TCP4ClientEndpoint
+from functools import partial
 
 try:
-    _TLS = True
-    from twisted.internet.endpoints import SSL4ClientEndpoint
-    from twisted.internet.ssl import optionsForClientTLS, CertificateOptions, Certificate
-    from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
-    from OpenSSL import SSL
-except ImportError as e:
-    _TLS = False
-    if 'OpenSSL' not in str(e):
-        raise
+    import asyncio
+except ImportError:
+    # Trollius >= 0.3 was renamed to asyncio
+    # noinspection PyUnresolvedReferences
+    import trollius as asyncio
 
-import six
 import txaio
+txaio.use_asyncio()  # noqa
 
-from autobahn.twisted.websocket import WampWebSocketClientFactory
-from autobahn.twisted.rawsocket import WampRawSocketClientFactory
+from autobahn.asyncio.websocket import WampWebSocketClientFactory
+from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
 
 from autobahn.wamp import component
 
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import Session
+from autobahn.asyncio.wamp import Session
 from autobahn.wamp.exception import ApplicationError
 
 
@@ -64,14 +58,8 @@ __all__ = ('Component',)
 def _is_ssl_error(e):
     """
     Internal helper.
-
-    This is so we can just return False if we didn't import any
-    TLS/SSL libraries. Otherwise, returns True if this is an
-    OpenSSL.SSL.Error
     """
-    if _TLS:
-        return isinstance(e, SSL.Error)
-    return False
+    return isinstance(e, ssl.SSLError)
 
 
 def _unique_list(seq):
@@ -149,7 +137,7 @@ def _camel_case_from_snake_case(snake):
     return parts[0] + ''.join([s.capitalize() for s in parts[1:]])
 
 
-def _create_transport_factory(reactor, transport, session_factory):
+def _create_transport_factory(loop, transport, session_factory):
     """
     Create a WAMP-over-XXX transport factory.
     """
@@ -183,99 +171,6 @@ def _create_transport_factory(reactor, transport, session_factory):
     return factory
 
 
-def _create_transport_endpoint(reactor, endpoint_config):
-    """
-    Create a Twisted client endpoint for a WAMP-over-XXX transport.
-    """
-    if IStreamClientEndpoint.providedBy(endpoint_config):
-        endpoint = IStreamClientEndpoint(endpoint_config)
-    else:
-        # create a connecting TCP socket
-        if endpoint_config[u'type'] == u'tcp':
-
-            version = endpoint_config.get(u'version', 4)
-            if version not in [4, 6]:
-                raise ValueError('invalid IP version {} in client endpoint configuration'.format(version))
-
-            host = endpoint_config[u'host']
-            if type(host) != six.text_type:
-                raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
-
-            port = endpoint_config[u'port']
-            if type(port) not in six.integer_types:
-                raise ValueError('invalid type {} for port in client endpoint configuration'.format(type(port)))
-
-            timeout = endpoint_config.get(u'timeout', 10)  # in seconds
-            if type(timeout) not in six.integer_types:
-                raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
-
-            tls = endpoint_config.get(u'tls', None)
-
-            # create a TLS enabled connecting TCP socket
-            if tls:
-                if not _TLS:
-                    raise RuntimeError('TLS configured in transport, but TLS support is not installed (eg OpenSSL?)')
-
-                # FIXME: create TLS context from configuration
-                if IOpenSSLClientConnectionCreator.providedBy(tls):
-                    # eg created from twisted.internet.ssl.optionsForClientTLS()
-                    context = IOpenSSLClientConnectionCreator(tls)
-
-                elif isinstance(tls, dict):
-                    for k in tls.keys():
-                        if k not in [u"hostname", u"trust_root"]:
-                            raise ValueError("Invalid key '{}' in 'tls' config".format(k))
-                    hostname = tls.get(u'hostname', host)
-                    if type(hostname) != six.text_type:
-                        raise ValueError('invalid type {} for hostname in TLS client endpoint configuration'.format(hostname))
-                    trust_root = None
-                    cert_fname = tls.get(u"trust_root", None)
-                    if cert_fname is not None:
-                        trust_root = Certificate.loadPEM(six.u(open(cert_fname, 'r').read()))
-                    context = optionsForClientTLS(hostname, trustRoot=trust_root)
-
-                elif isinstance(tls, CertificateOptions):
-                    context = tls
-
-                elif tls is True:
-                    context = optionsForClientTLS(host)
-
-                else:
-                    raise RuntimeError('unknown type {} for "tls" configuration in transport'.format(type(tls)))
-
-                if version == 4:
-                    endpoint = SSL4ClientEndpoint(reactor, host, port, context, timeout=timeout)
-                elif version == 6:
-                    # there is no SSL6ClientEndpoint!
-                    raise RuntimeError('TLS on IPv6 not implemented')
-                else:
-                    assert(False), 'should not arrive here'
-
-            # create a non-TLS connecting TCP socket
-            else:
-                if version == 4:
-                    endpoint = TCP4ClientEndpoint(reactor, host, port, timeout=timeout)
-                elif version == 6:
-                    try:
-                        from twisted.internet.endpoints import TCP6ClientEndpoint
-                    except ImportError:
-                        raise RuntimeError('IPv6 is not supported (please upgrade Twisted)')
-                    endpoint = TCP6ClientEndpoint(reactor, host, port, timeout=timeout)
-                else:
-                    assert(False), 'should not arrive here'
-
-        # create a connecting Unix domain socket
-        elif endpoint_config[u'type'] == u'unix':
-            path = endpoint_config[u'path']
-            timeout = int(endpoint_config.get(u'timeout', 10))  # in seconds
-            endpoint = UNIXClientEndpoint(reactor, path, timeout=timeout)
-
-        else:
-            assert(False), 'should not arrive here'
-
-    return endpoint
-
-
 class Component(component.Component):
     """
     A component establishes a transport and attached a session
@@ -293,21 +188,17 @@ class Component(component.Component):
     """
 
     def _check_native_endpoint(self, endpoint):
-        if IStreamClientEndpoint.providedBy(endpoint):
-            pass
-        elif isinstance(endpoint, dict):
+        if isinstance(endpoint, dict):
             if u'tls' in endpoint:
                 tls = endpoint[u'tls']
                 if isinstance(tls, (dict, bool)):
                     pass
-                elif IOpenSSLClientConnectionCreator.providedBy(tls):
-                    pass
-                elif isinstance(tls, CertificateOptions):
+                elif isinstance(tls, ssl.SSLContext):
                     pass
                 else:
                     raise ValueError(
-                        "'tls' configuration must be a dict, CertificateOptions or"
-                        " IOpenSSLClientConnectionCreator provider"
+                        "'tls' configuration must be a dict, bool or "
+                        "SSLContext instance"
                     )
         else:
             raise ValueError(
@@ -315,18 +206,92 @@ class Component(component.Component):
                 " provider"
             )
 
-    def _connect_transport(self, reactor, transport, session_factory):
+    def _connect_transport(self, loop, transport, session_factory):
+        coro = self._coro_connect_transport(loop, transport, session_factory)
+        return asyncio.Task(coro)
+
+    @asyncio.coroutine
+    def _coro_connect_transport(self, loop, transport, session_factory):
         """
         Create and connect a WAMP-over-XXX transport.
         """
-        transport_factory = _create_transport_factory(reactor, transport, session_factory)
-        transport_endpoint = _create_transport_endpoint(reactor, transport.endpoint)
-        return transport_endpoint.connect(transport_factory)
+        factory = _create_transport_factory(loop, transport, session_factory)
 
-    # XXX think: is it okay to use inlineCallbacks (in this
-    # twisted-only file) even though we're using txaio?
-    @inlineCallbacks
-    def start(self, reactor=None):
+        if transport.endpoint[u'type'] == u'tcp':
+
+            version = transport.endpoint.get(u'version', 4)
+            if version not in [4, 6]:
+                raise ValueError('invalid IP version {} in client endpoint configuration'.format(version))
+
+            host = transport.endpoint[u'host']
+            if type(host) != six.text_type:
+                raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
+
+            port = transport.endpoint[u'port']
+            if type(port) not in six.integer_types:
+                raise ValueError('invalid type {} for port in client endpoint configuration'.format(type(port)))
+
+            timeout = transport.endpoint.get(u'timeout', 10)  # in seconds
+            if type(timeout) not in six.integer_types:
+                raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
+
+            tls = transport.endpoint.get(u'tls', None)
+            tls_hostname = None
+
+            # create a TLS enabled connecting TCP socket
+            if tls:
+                if isinstance(tls, dict):
+                    for k in tls.keys():
+                        if k not in [u"hostname", u"trust_root"]:
+                            raise ValueError("Invalid key '{}' in 'tls' config".format(k))
+                    hostname = tls.get(u'hostname', host)
+                    if type(hostname) != six.text_type:
+                        raise ValueError('invalid type {} for hostname in TLS client endpoint configuration'.format(hostname))
+                    cert_fname = tls.get(u'trust_root', None)
+
+                    tls_hostname = hostname
+                    tls = True
+                    if cert_fname is not None:
+                        tls = ssl.create_default_context(
+                            purpose=ssl.Purpose.SERVER_AUTH,
+                            cafile=cert_fname,
+                        )
+
+                elif isinstance(tls, ssl.SSLContext):
+                    # tls=<an SSLContext> is valid
+                    tls_hostname = host
+
+                elif tls in [False, True]:
+                    if tls:
+                        tls_hostname = host
+
+                else:
+                    raise RuntimeError('unknown type {} for "tls" configuration in transport'.format(type(tls)))
+
+            f = loop.create_connection(
+                protocol_factory=factory,
+                host=host,
+                port=port,
+                ssl=tls,
+                server_hostname=tls_hostname,
+            )
+            transport, protocol = yield from asyncio.wait_for(f, timeout=timeout)  # noqa
+
+        elif transport.endpoint[u'type'] == u'unix':
+            path = transport.endpoint[u'path']
+            timeout = int(transport.endpoint.get(u'timeout', 10))  # in seconds
+
+            f = loop.create_unix_connection(
+                protocol_factory=factory,
+                path=path,
+            )
+            transport, protocol = yield from asyncio.wait_for(f, timeout=timeout)
+
+        else:
+            assert(False), 'should not arrive here'
+
+    @asyncio.coroutine
+    def start(self, loop=None):
         """
         This starts the Component, which means it will start connecting
         (and re-connecting) to its configured transports. A Component
@@ -340,11 +305,11 @@ class Component(component.Component):
         :returns: a Deferred that fires (with ``None``) when we are
             "done" or with a Failure if something went wrong.
         """
-        if reactor is None:
-            self.log.warn("Using default reactor")
-            from twisted.internet import reactor
+        if loop is None:
+            self.log.warn("Using default loop")
+            loop = asyncio.get_default_loop()
 
-        yield self.fire('start', reactor, self)
+        yield from self.fire('start', loop, self)
 
         # transports to try again and again ..
         transport_gen = itertools.cycle(self._transports)
@@ -366,16 +331,21 @@ class Component(component.Component):
                     transport_idx=transport.idx,
                     transport_delay=delay,
                 )
-                yield sleep(delay)
+                yield from asyncio.sleep(delay)
                 try:
                     transport.connect_attempts += 1
-                    yield self._connect_once(reactor, transport)
+                    yield from self._connect_once(loop, transport)
                     transport.connect_sucesses += 1
+
+                except asyncio.CancelledError:
+                    reconnect = False
+                    break
+
                 except Exception as e:
                     transport.connect_failures += 1
                     f = txaio.create_failure()
                     self.log.error(u'component failed: {error}', error=txaio.failure_message(f))
-                    self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))
+                    self.log.error(u'{tb}', tb=txaio.failure_format_traceback(f))
                     # If this is a "fatal error" that will never work,
                     # we bail out now
                     if isinstance(e, ApplicationError):
@@ -398,8 +368,7 @@ class Component(component.Component):
                         # and reason are all strings, describing where
                         # and what the problem is. See err(3) for more
                         # information."
-                        for (lib, fn, reason) in e.args[0]:
-                            self.log.error(u"TLS failure: {reason}", reason=reason)
+                        self.log.error(u"TLS failure: {reason}", reason=e.args[1])
                         self.log.error(u"Marking this transport as failed")
                         transport.failed()
                     else:
@@ -433,9 +402,11 @@ def run(components, log_level='info'):
     This will only return once all the components have stopped
     (including, possibly, after all re-connections have failed if you
     have re-connections enabled). Under the hood, this calls
-    :meth:`twisted.internet.reactor.run` -- if you wish to manage the
-    reactor loop yourself, use the
-    :meth:`autobahn.twisted.component.Component.start` method to start
+
+    XXX fixme for asyncio
+
+    -- if you wish to manage the loop loop yourself, use the
+    :meth:`autobahn.asyncio.component.Component.start` method to start
     each component yourself.
 
     :param components: the Component(s) you wish to run
@@ -444,15 +415,46 @@ def run(components, log_level='info'):
     :param log_level: a valid log-level (or None to avoid calling start_logging)
     :type log_level: string
     """
-    # only for Twisted > 12
-    # ...so this isn't in all Twisted versions we test against -- need
-    # to do "something else" if we can't import .. :/ (or drop some
-    # support)
-    from twisted.internet.task import react
 
     # actually, should we even let people "not start" the logging? I'm
     # not sure that's wise... (double-check: if they already called
     # txaio.start_logging() what happens if we call it again?)
     if log_level is not None:
         txaio.start_logging(level=log_level)
-    react(component._run, (components, ))
+    loop = asyncio.get_event_loop()
+    log = txaio.make_logger()
+
+    # see https://github.com/python/asyncio/issues/341 asyncio has
+    # "odd" handling of KeyboardInterrupt when using Tasks (as
+    # run_until_complete does). Another option is to just resture
+    # default SIGINT handling, which is to exit:
+    #   import signal
+    #   signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    @asyncio.coroutine
+    def exit():
+        loop.stop()
+
+    def nicely_exit(signal):
+        log.info("Shutting down due to {signal}", signal=signal)
+        for task in asyncio.Task.all_tasks():
+            task.cancel()
+        asyncio.ensure_future(exit())
+
+    print(partial(nicely_exit, 'SIGINT'))
+    loop.add_signal_handler(signal.SIGINT, partial(nicely_exit, 'SIGINT'))
+    loop.add_signal_handler(signal.SIGTERM, partial(nicely_exit, 'SIGTERM'))
+
+    # returns a future; could run_until_complete() but see below
+    component._run(loop, components)
+
+    try:
+        loop.run_forever()
+        # this is probably more-correct, but then you always get
+        # "Event loop stopped before Future completed":
+        # loop.run_until_complete(f)
+    except asyncio.CancelledError:
+        pass
+    # finally:
+    #     signal.signal(signal.SIGINT, signal.SIG_DFL)
+    #     signal.signal(signal.SIGTERM, signal.SIG_DFL)
