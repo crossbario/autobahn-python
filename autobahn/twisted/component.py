@@ -368,11 +368,8 @@ class Component(component.Component):
                 )
                 yield sleep(delay)
                 try:
-                    transport.connect_attempts += 1
                     yield self._connect_once(reactor, transport)
-                    transport.connect_sucesses += 1
                 except Exception as e:
-                    transport.connect_failures += 1
                     f = txaio.create_failure()
                     self.log.error(u'component failed: {error}', error=txaio.failure_message(f))
                     self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))

@@ -354,7 +354,6 @@ class Component(component.Component):
                             txaio.reject(done_f, fail)
                             return
 
-                        transport.connect_failures += 1
                         self.log.debug(u'component failed: {error}', error=txaio.failure_message(fail))
                         self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(fail))
                         # If this is a "fatal error" that will never work,
