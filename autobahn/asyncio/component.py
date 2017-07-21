@@ -368,6 +368,12 @@ class Component(component.Component):
                             self.log.error(u"{msg}", msg=fail.value.error_message())
                             return one_reconnect_loop(None)
 
+                        elif isinstance(fail.value, OSError):
+                            # failed to connect entirely, like nobody
+                            # listening etc.
+                            self.log.info(u"Connection failed: {msg}", msg=txaio.failure_message(fail))
+                            return one_reconnect_loop(None)
+
                         elif _is_ssl_error(fail.value):
                             # Quoting pyOpenSSL docs: "Whenever
                             # [SSL.Error] is raised directly, it has a
