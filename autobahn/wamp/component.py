@@ -529,6 +529,7 @@ class Component(ObservableMixin):
                     def main_error(err):
                         self.log.debug("main_error: {err}", err=err)
                         txaio.reject(done, err)
+                        session.disconnect()
                     txaio.add_callbacks(d, main_success, main_error)
                 if self._entry is not None:
                     session.on('join', on_join)
