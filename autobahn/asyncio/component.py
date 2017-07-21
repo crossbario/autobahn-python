@@ -206,12 +206,8 @@ class Component(component.Component):
                 " provider"
             )
 
+    # async function
     def _connect_transport(self, loop, transport, session_factory):
-        coro = self._coro_connect_transport(loop, transport, session_factory)
-        return asyncio.Task(coro)
-
-    @asyncio.coroutine
-    def _coro_connect_transport(self, loop, transport, session_factory):
         """
         Create and connect a WAMP-over-XXX transport.
         """
@@ -275,7 +271,8 @@ class Component(component.Component):
                 ssl=tls,
                 server_hostname=tls_hostname,
             )
-            transport, protocol = yield from asyncio.wait_for(f, timeout=timeout)  # noqa
+            time_f = asyncio.ensure_future(asyncio.wait_for(f, timeout=timeout))
+            return time_f
 
         elif transport.endpoint[u'type'] == u'unix':
             path = transport.endpoint[u'path']
@@ -285,12 +282,13 @@ class Component(component.Component):
                 protocol_factory=factory,
                 path=path,
             )
-            transport, protocol = yield from asyncio.wait_for(f, timeout=timeout)
+            time_f = asyncio.ensure_future(asyncio.wait_for(f, timeout=timeout))
+            return time_f
 
         else:
             assert(False), 'should not arrive here'
 
-    @asyncio.coroutine
+    # async function
     def start(self, loop=None):
         """
         This starts the Component, which means it will start connecting
@@ -302,23 +300,33 @@ class Component(component.Component):
         - ``.stop()`` was called, and completed successfully;
         - none of our transports were able to connect successfully (failure);
 
-        :returns: a Deferred that fires (with ``None``) when we are
-            "done" or with a Failure if something went wrong.
+        :returns: a Future which will resolve (to ``None``) when we are
+            "done" or with an error if something went wrong.
         """
+
         if loop is None:
             self.log.warn("Using default loop")
             loop = asyncio.get_default_loop()
 
-        yield from self.fire('start', loop, self)
+        # this future will be returned, and thus has the semantics
+        # specified in the docstring.
+        done_f = txaio.create_future()
 
         # transports to try again and again ..
         transport_gen = itertools.cycle(self._transports)
 
-        reconnect = True
+        # issue our first event, then start the reconnect loop
+        f0 = self.fire('start', loop, self)
 
-        self.log.debug('Entering re-connect loop')
+        # this is a 1-element list so we can set it from closures in
+        # this function
+        reconnect = [True]
 
-        while reconnect:
+        def one_reconnect_loop(_):
+            self.log.debug('Entering re-connect loop')
+            if not reconnect[0]:
+                return
+
             # cycle through all transports forever ..
             transport = next(transport_gen)
 
@@ -331,65 +339,76 @@ class Component(component.Component):
                     transport_idx=transport.idx,
                     transport_delay=delay,
                 )
-                yield from asyncio.sleep(delay)
-                try:
-                    transport.connect_attempts += 1
-                    yield from self._connect_once(loop, transport)
-                    transport.connect_sucesses += 1
 
-                except asyncio.CancelledError:
-                    reconnect = False
-                    break
+                delay_f = asyncio.ensure_future(txaio.sleep(delay))
 
-                except Exception as e:
-                    transport.connect_failures += 1
-                    f = txaio.create_failure()
-                    self.log.error(u'component failed: {error}', error=txaio.failure_message(f))
-                    self.log.error(u'{tb}', tb=txaio.failure_format_traceback(f))
-                    # If this is a "fatal error" that will never work,
-                    # we bail out now
-                    if isinstance(e, ApplicationError):
-                        if e.error in [u'wamp.error.no_such_realm']:
-                            reconnect = False
-                            self.log.error(u"Fatal error, not reconnecting")
-                            # The thinking here is that we really do
-                            # want to 'raise' (and thereby fail the
-                            # entire "start" / reconnect loop) because
-                            # if the realm isn't valid, we're "never"
-                            # going to succeed...
-                            raise
-                        self.log.error(u"{msg}", msg=e.error_message())
-                    elif _is_ssl_error(e):
-                        # Quoting pyOpenSSL docs: "Whenever
-                        # [SSL.Error] is raised directly, it has a
-                        # list of error messages from the OpenSSL
-                        # error queue, where each item is a tuple
-                        # (lib, function, reason). Here lib, function
-                        # and reason are all strings, describing where
-                        # and what the problem is. See err(3) for more
-                        # information."
-                        self.log.error(u"TLS failure: {reason}", reason=e.args[1])
-                        self.log.error(u"Marking this transport as failed")
-                        transport.failed()
-                    else:
-                        f = txaio.create_failure()
-                        self.log.error(
-                            u'Connection failed: {error}',
-                            error=txaio.failure_message(f),
-                        )
-                        # some types of errors should probably have
-                        # stacktraces logged immediately at error
-                        # level, e.g. SyntaxError?
-                        self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))
-                else:
-                    self.log.debug(u"Not reconnecting")
-                    reconnect = False
-            else:
+                def actual_connect(_):
+                    f = self._connect_once(loop, transport)
+
+                    def session_done(x):
+                        txaio.resolve(done_f, None)
+
+                    def connect_error(fail):
+                        if isinstance(fail.value, asyncio.CancelledError):
+                            reconnect[0] = False
+                            txaio.reject(done_f, fail)
+                            return
+
+                        transport.connect_failures += 1
+                        self.log.debug(u'component failed: {error}', error=txaio.failure_message(fail))
+                        self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(fail))
+                        # If this is a "fatal error" that will never work,
+                        # we bail out now
+                        if isinstance(fail.value, ApplicationError):
+                            if fail.value.error in [u'wamp.error.no_such_realm']:
+                                reconnect[0] = False
+                                self.log.error(u"Fatal error, not reconnecting")
+                                txaio.reject(done_f, fail)
+                                return
+
+                            self.log.error(u"{msg}", msg=fail.value.error_message())
+                            return one_reconnect_loop(None)
+
+                        elif _is_ssl_error(fail.value):
+                            # Quoting pyOpenSSL docs: "Whenever
+                            # [SSL.Error] is raised directly, it has a
+                            # list of error messages from the OpenSSL
+                            # error queue, where each item is a tuple
+                            # (lib, function, reason). Here lib, function
+                            # and reason are all strings, describing where
+                            # and what the problem is. See err(3) for more
+                            # information."
+                            self.log.error(u"TLS failure: {reason}", reason=fail.value.args[1])
+                            self.log.error(u"Marking this transport as failed")
+                            transport.failed()
+                        else:
+                            self.log.error(
+                                u'Connection failed: {error}',
+                                error=txaio.failure_message(fail),
+                            )
+                            # some types of errors should probably have
+                            # stacktraces logged immediately at error
+                            # level, e.g. SyntaxError?
+                            self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(fail))
+
+                    txaio.add_callbacks(f, session_done, connect_error)
+
+            txaio.add_callbacks(delay_f, actual_connect, error)
+
+            if False:
                 # check if there is any transport left we can use
                 # to connect
                 if not self._can_reconnect():
                     self.log.info("No remaining transports to try")
-                    reconnect = False
+                    reconnect[0] = False
+
+        def error(fail):
+            self.log.info("Internal error {msg}", msg=txaio.failure_message(fail))
+            self.log.debug("{tb}", tb=txaio.failure_format_traceback(fail))
+            txaio.reject(done_f, fail)
+
+        txaio.add_callbacks(f0, one_reconnect_loop, error)
+        return done_f
 
     def stop(self):
         return self._session.leave()
@@ -433,7 +452,7 @@ def run(components, log_level='info'):
 
     @asyncio.coroutine
     def exit():
-        loop.stop()
+        return loop.stop()
 
     def nicely_exit(signal):
         log.info("Shutting down due to {signal}", signal=signal)
@@ -441,7 +460,6 @@ def run(components, log_level='info'):
             task.cancel()
         asyncio.ensure_future(exit())
 
-    print(partial(nicely_exit, 'SIGINT'))
     loop.add_signal_handler(signal.SIGINT, partial(nicely_exit, 'SIGINT'))
     loop.add_signal_handler(signal.SIGTERM, partial(nicely_exit, 'SIGTERM'))
 
