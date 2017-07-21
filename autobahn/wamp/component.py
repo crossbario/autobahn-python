@@ -510,6 +510,7 @@ class Component(ObservableMixin):
                 # it completely (i.e. until its Deferred fires) and
                 # then disconnect this session
                 def on_join(session, details):
+                    transport.connect_sucesses += 1
                     self.log.debug("session on_join: {details}", details=details)
                     d = txaio.as_future(self._entry, reactor, session)
 
@@ -528,6 +529,7 @@ class Component(ObservableMixin):
                     def main_error(err):
                         self.log.debug("main_error: {err}", err=err)
                         txaio.reject(done, err)
+                        session.disconnect()
                     txaio.add_callbacks(d, main_success, main_error)
                 if self._entry is not None:
                     session.on('join', on_join)
