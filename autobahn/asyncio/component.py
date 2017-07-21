@@ -395,6 +395,7 @@ class Component(component.Component):
                             # stacktraces logged immediately at error
                             # level, e.g. SyntaxError?
                             self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(fail))
+                            return one_reconnect_loop(None)
 
                     txaio.add_callbacks(f, session_done, connect_error)
 
