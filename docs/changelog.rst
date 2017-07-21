@@ -5,6 +5,14 @@
 Changelog
 =========
 
+
+17.7.1
+------
+
+`Published 2017-07-21 <https://pypi.python.org/pypi/autobahn/17.7.1>`__
+
+* new: lots of improvements of components API, including asyncio support
+
 17.6.2
 ------
 
@@ -12,7 +20,6 @@ Changelog
 
 * new: force register option when joining realms
 * fix: TLS options in components API
-
 
 17.6.1
 ------
