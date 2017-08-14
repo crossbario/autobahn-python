@@ -291,12 +291,22 @@ class Message(object):
     """
 
     __slots__ = (
+        '_correlation',
         '_serialized',
     )
 
     def __init__(self):
         # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
+        self._correlation = None
+
+    @property
+    def correlation(self):
+        return self._correlation
+
+    @correlation.setter
+    def correlation(self, value):
+        self._correlation = value
 
     def __eq__(self, other):
         """
@@ -312,7 +322,7 @@ class Message(object):
             return False
         # we only want the actual message data attributes (not eg _serialize)
         for k in self.__slots__:
-            if k not in ['_serialized']:
+            if k not in ['_correlation', '_serialized']:
                 if not getattr(self, k) == getattr(other, k):
                     return False
         return True
