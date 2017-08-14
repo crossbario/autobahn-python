@@ -196,6 +196,25 @@ if os.environ.get('USE_TWISTED', False):
             reg = call.call_list()[0][1][0]
             self.assertEqual(u"com.example.prefix.method_name", reg.procedure)
 
+        def test_auto_name(self):
+
+            class Magic(ApplicationSession):
+
+                @uri.register(None)
+                def some_method(self):
+                    pass
+            session = Magic()
+
+            session._transport = mock.Mock()
+            session.register(session, prefix=u"com.example.")
+
+            # Should auto-discover name by passing uri=None above
+            self.assertEqual(1, len(session._transport.mock_calls))
+            call = session._transport.mock_calls[0]
+            self.assertEqual("send", call[0])
+            reg = call.call_list()[0][1][0]
+            self.assertEqual(u"com.example.some_method", reg.procedure)
+
     class TestPublisher(unittest.TestCase):
 
         @inlineCallbacks

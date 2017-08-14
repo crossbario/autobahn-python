@@ -331,9 +331,16 @@ def register(uri, options=None):
     """
     def decorate(f):
         assert(callable(f))
+        if uri is None:
+            if six.PY2:
+                real_uri = u'{}'.format(f.func_name)
+            else:
+                real_uri = u'{}'.format(f.__name__)
+        else:
+            real_uri = uri
         if not hasattr(f, '_wampuris'):
             f._wampuris = []
-        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_ENDPOINT, options))
+        f._wampuris.append(Pattern(real_uri, Pattern.URI_TARGET_ENDPOINT, options))
         return f
     return decorate
 

@@ -11,6 +11,7 @@ master
 **Not yet released**
 
 * new: prefix= kwarg now available on ApplicationSession.register for runtime method names
+* new: @wamp.register(None) will use the function-name as the URI
 
 
 17.7.1
