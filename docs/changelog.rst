@@ -5,6 +5,13 @@
 Changelog
 =========
 
+master
+------
+
+**Not yet released**
+
+* new: prefix= kwarg now available on ApplicationSession.register for runtime method names
+
 
 17.7.1
 ------
