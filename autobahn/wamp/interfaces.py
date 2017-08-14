@@ -552,7 +552,7 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def register(self, endpoint, procedure=None, options=None):
+    def register(self, endpoint, procedure=None, options=None, prefix=None):
         """
         Register a procedure for remote calling.
 
@@ -581,6 +581,14 @@ class ISession(object):
 
         :param options: Options for registering.
         :type options: instance of :class:`autobahn.wamp.types.RegisterOptions`.
+
+
+        :param prefix: if not None, this specifies a prefix to prepend
+            to all URIs registered for this class. So if there was an
+            @wamp.register('method_foo') on a method and
+            prefix='com.something.' then a method
+            'com.something.method_foo' would ultimately be registered.
+        :type prefix: str
 
         :returns: A registration or a list of registrations (or errors)
         :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`

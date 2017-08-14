@@ -1453,13 +1453,14 @@ class ApplicationSession(BaseSession):
         return on_reply
 
     @public
-    def register(self, endpoint, procedure=None, options=None):
+    def register(self, endpoint, procedure=None, options=None, prefix=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ICallee.register`
         """
         assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__'))
         assert(procedure is None or type(procedure) == six.text_type)
         assert(options is None or isinstance(options, types.RegisterOptions))
+        assert prefix is None or isinstance(prefix, six.text_type)
 
         if not self._transport:
             raise exception.TransportLost()
@@ -1468,6 +1469,8 @@ class ApplicationSession(BaseSession):
             request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
             endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
+            if prefix is not None:
+                procedure = u"{}{}".format(prefix, procedure)
             self._register_reqs[request_id] = RegisterRequest(request_id, on_reply, procedure, endpoint_obj)
 
             if options:

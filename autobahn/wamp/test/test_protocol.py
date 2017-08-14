@@ -27,6 +27,7 @@
 from __future__ import absolute_import
 
 import os
+import mock
 
 if os.environ.get('USE_TWISTED', False):
 
@@ -38,7 +39,7 @@ if os.environ.get('USE_TWISTED', False):
 
     from autobahn import util
     from autobahn.twisted.wamp import ApplicationSession
-    from autobahn.wamp import message, role, serializer, types
+    from autobahn.wamp import message, role, serializer, types, uri
     from autobahn.wamp.exception import ApplicationError, NotAuthorized
     from autobahn.wamp.exception import InvalidUri, ProtocolError
 
@@ -172,6 +173,28 @@ if os.environ.get('USE_TWISTED', False):
             # this should not raise an exception, but did when this
             # test-case was written
             handler.onClose(False)
+
+    class TestRegisterDecorator(unittest.TestCase):
+
+        def test_prefix(self):
+
+            class Prefix(ApplicationSession):
+
+                @uri.register(u'method_name')
+                def some_method(self):
+                    pass
+            session = Prefix()
+
+            session._transport = mock.Mock()
+            session.register(session, prefix=u"com.example.prefix.")
+
+            # we should have registered one method, with the prefix
+            # put in front
+            self.assertEqual(1, len(session._transport.mock_calls))
+            call = session._transport.mock_calls[0]
+            self.assertEqual("send", call[0])
+            reg = call.call_list()[0][1][0]
+            self.assertEqual(u"com.example.prefix.method_name", reg.procedure)
 
     class TestPublisher(unittest.TestCase):
 
