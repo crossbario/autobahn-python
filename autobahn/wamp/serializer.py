@@ -201,6 +201,8 @@ class JsonObjectSerializer(object):
     The JSON module used (now only stdlib).
     """
 
+    NAME = u'json'
+
     BINARY = False
 
     def __init__(self, batched=False):
@@ -286,6 +288,8 @@ except ImportError:
 else:
 
     class MsgPackObjectSerializer(object):
+
+        NAME = u'msgpack'
 
         BINARY = True
         """
@@ -396,6 +400,8 @@ else:
 
     class CBORObjectSerializer(object):
 
+        NAME = u'cbor'
+
         BINARY = True
         """
         Flag that indicates whether this serializer needs a binary clean transport.
@@ -504,6 +510,8 @@ except ImportError:
 else:
 
     class UBJSONObjectSerializer(object):
+
+        NAME = u'ubjson'
 
         BINARY = True
         """

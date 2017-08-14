@@ -291,12 +291,28 @@ class Message(object):
     """
 
     __slots__ = (
+        '_correlation',
         '_serialized',
+        '_uri',
     )
 
     def __init__(self):
         # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
+        self._correlation = None
+        self._uri = None
+
+    @property
+    def correlation(self):
+        return self._correlation
+
+    @correlation.setter
+    def correlation(self, value):
+        self._correlation = value
+
+    @property
+    def uri(self):
+        return self._uri
 
     def __eq__(self, other):
         """
@@ -312,7 +328,7 @@ class Message(object):
             return False
         # we only want the actual message data attributes (not eg _serialize)
         for k in self.__slots__:
-            if k not in ['_serialized']:
+            if k not in ['_correlation', '_serialized', '_uri']:
                 if not getattr(self, k) == getattr(other, k):
                     return False
         return True
@@ -872,6 +888,8 @@ class Abort(Message):
         self.reason = reason
         self.message = message
 
+        self._uri = reason
+
     @staticmethod
     def parse(wmsg):
         """
@@ -1119,6 +1137,8 @@ class Goodbye(Message):
         self.message = message
         self.resumable = resumable
 
+        self._uri = reason
+
     @staticmethod
     def parse(wmsg):
         """
@@ -1267,6 +1287,8 @@ class Error(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        self._uri = error
 
     @staticmethod
     def parse(wmsg):
@@ -1563,6 +1585,8 @@ class Publish(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        self._uri = topic
 
     @staticmethod
     def parse(wmsg):
@@ -1924,6 +1948,8 @@ class Subscribe(Message):
         self.topic = topic
         self.match = match or Subscribe.MATCH_EXACT
         self.get_retained = get_retained
+
+        self._uri = topic
 
     @staticmethod
     def parse(wmsg):
@@ -2705,6 +2731,8 @@ class Call(Message):
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
 
+        self._uri = procedure
+
     @staticmethod
     def parse(wmsg):
         """
@@ -3195,6 +3223,8 @@ class Register(Message):
         self.invoke = invoke or Register.INVOKE_SINGLE
         self.concurrency = concurrency
         self.force_reregister = force_reregister
+
+        self._uri = procedure
 
     @staticmethod
     def parse(wmsg):
