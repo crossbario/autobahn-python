@@ -67,6 +67,8 @@ class BaseSession(ObservableMixin):
     This class implements :class:`autobahn.wamp.interfaces.ISession`.
     """
 
+    log = txaio.make_logger()
+
     def __init__(self):
         """
 
