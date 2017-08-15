@@ -117,7 +117,11 @@ def _create_transport(index, transport, check_native_endpoint=None):
     if type(transport) != dict:
         raise ValueError('invalid type {} for transport configuration - must be a dict'.format(type(transport)))
 
-    valid_transport_keys = ['type', 'url', 'endpoint', 'serializer', 'serializers', 'options']
+    valid_transport_keys = [
+        'type', 'url', 'endpoint', 'serializer', 'serializers', 'options',
+        'max_retries', 'max_retry_delay', 'initial_retry_delay',
+        'retry_delay_growth', 'retry_delay_jitter',
+    ]
     for k in transport.keys():
         if k not in valid_transport_keys:
             raise ValueError(
