@@ -5,14 +5,14 @@
 Changelog
 =========
 
-master
+17.8.1
 ------
 
-**Not yet released**
+`Published 2017-08-15 <https://pypi.python.org/pypi/autobahn/17.8.1>`__
 
 * new: prefix= kwarg now available on ApplicationSession.register for runtime method names
 * new: @wamp.register(None) will use the function-name as the URI
-
+* new: correlation and uri attributes for WAMP message tracing
 
 17.7.1
 ------
