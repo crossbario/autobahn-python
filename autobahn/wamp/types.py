@@ -425,9 +425,10 @@ class SubscribeOptions(object):
         'details',
         'details_arg',
         'get_retained',
+        'correlation',
     )
 
-    def __init__(self, match=None, details=None, details_arg=None, get_retained=None):
+    def __init__(self, match=None, details=None, details_arg=None, get_retained=None, correlation=None):
         """
 
         :param match: The topic matching method to be used for the subscription.
@@ -459,6 +460,8 @@ class SubscribeOptions(object):
             self.details_arg = details_arg
 
         self.get_retained = get_retained
+
+        self.correlation = correlation
 
     def message_attr(self):
         """
@@ -567,6 +570,7 @@ class PublishOptions(object):
         'eligible_authid',
         'eligible_authrole',
         'retain',
+        'correlation',
     )
 
     def __init__(self,
@@ -578,7 +582,8 @@ class PublishOptions(object):
                  eligible=None,
                  eligible_authid=None,
                  eligible_authrole=None,
-                 retain=None):
+                 retain=None,
+                 correlation=None):
         """
 
         :param acknowledge: If ``True``, acknowledge the publication with a success or
@@ -629,6 +634,8 @@ class PublishOptions(object):
         self.eligible_authid = eligible_authid
         self.eligible_authrole = eligible_authrole
         self.retain = retain
+
+        self.correlation = correlation
 
     def message_attr(self):
         """
@@ -682,10 +689,11 @@ class RegisterOptions(object):
         'concurrency',
         'force_reregister',
         'details_arg',
+        'correlation',
     )
 
     def __init__(self, match=None, invoke=None, concurrency=None, details_arg=None,
-                 force_reregister=None):
+                 force_reregister=None, correlation=None):
         """
 
         :param details_arg: When invoking the endpoint, provide call details
@@ -703,6 +711,8 @@ class RegisterOptions(object):
         self.concurrency = concurrency
         self.details_arg = details_arg
         self.force_reregister = force_reregister
+
+        self.correlation = correlation
 
     def message_attr(self):
         """
@@ -802,11 +812,13 @@ class CallOptions(object):
     __slots__ = (
         'on_progress',
         'timeout',
+        'correlation',
     )
 
     def __init__(self,
                  on_progress=None,
-                 timeout=None):
+                 timeout=None,
+                 correlation=None):
         """
 
         :param on_progress: A callback that will be called when the remote endpoint
@@ -821,6 +833,8 @@ class CallOptions(object):
 
         self.on_progress = on_progress
         self.timeout = timeout
+
+        self.correlation = correlation
 
     def message_attr(self):
         """

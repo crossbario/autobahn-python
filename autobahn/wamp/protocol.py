@@ -1266,6 +1266,9 @@ class ApplicationSession(BaseSession):
                                       args=args,
                                       kwargs=kwargs)
 
+        if options and options.correlation:
+            msg.correlation = options.correlation
+
         if options and options.acknowledge:
             # only acknowledged publications expect a reply ..
             on_reply = txaio.create_future()
@@ -1312,6 +1315,9 @@ class ApplicationSession(BaseSession):
                 msg = message.Subscribe(request_id, topic, **options.message_attr())
             else:
                 msg = message.Subscribe(request_id, topic)
+
+            if options and options.correlation:
+                msg.correlation = options.correlation
 
             self._transport.send(msg)
             return on_reply
@@ -1428,6 +1434,9 @@ class ApplicationSession(BaseSession):
                                    args=args,
                                    kwargs=kwargs)
 
+        if options and options.correlation:
+            msg.correlation = options.correlation
+
         # FIXME: implement call canceling
         # def canceller(_d):
         #   cancel_msg = message.Cancel(request)
@@ -1479,6 +1488,9 @@ class ApplicationSession(BaseSession):
                 msg = message.Register(request_id, procedure, **options.message_attr())
             else:
                 msg = message.Register(request_id, procedure)
+
+            if options and options.correlation:
+                msg.correlation = options.correlation
 
             self._transport.send(msg)
             return on_reply
