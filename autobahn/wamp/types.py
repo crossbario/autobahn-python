@@ -425,9 +425,10 @@ class SubscribeOptions(object):
         'details',
         'details_arg',
         'get_retained',
+        'correlation',
     )
 
-    def __init__(self, match=None, details=None, details_arg=None, get_retained=None):
+    def __init__(self, match=None, details=None, details_arg=None, get_retained=None, correlation=None):
         """
 
         :param match: The topic matching method to be used for the subscription.
@@ -459,6 +460,8 @@ class SubscribeOptions(object):
             self.details_arg = details_arg
 
         self.get_retained = get_retained
+
+        self.correlation = correlation
 
     def message_attr(self):
         """
