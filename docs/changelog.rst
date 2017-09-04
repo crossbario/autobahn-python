@@ -5,6 +5,14 @@
 Changelog
 =========
 
+17.9.1
+------
+
+`Published 2017-09-04 <https://pypi.python.org/pypi/autobahn/17.9.1>`__
+
+* new: allow setting correlation ID in WAMP messages from user code
+* fix: distribute LICENSE file in all distribution formats (using setup.cfg metadata)
+
 17.8.1
 ------
 
