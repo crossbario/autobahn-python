@@ -213,7 +213,12 @@ setup(
         'twisted.plugins'
     ],
     package_data={'autobahn.asyncio': ['test/*']},
+
+    # this flag will make files from MANIFEST.in go into _source_ distributions only
+    include_package_data=True,
+
     zip_safe=False,
+
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=["License :: OSI Approved :: MIT License",
                  "Development Status :: 5 - Production/Stable",
