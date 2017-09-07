@@ -352,13 +352,20 @@ class ApplicationRunner(object):
             # this code path is automatically reconnecting ..
             self.log.debug('using t.a.i.ClientService')
 
-            if self.max_retries is not None:
+            if self.max_retries or self.initial_retry_delay or self.max_retry_delay or self.retry_delay_growth or self.retry_delay_jitter:
+                
+                kwargs = {}
+                for key, val = [('initial_retry_delay', self.initial_retry_delay),
+                                ('max_retry_delay', self.max_retry_delay),
+                                ('retry_delay_growth', self.retry_delay_growth), 
+                                ('retry_delay_jitter', self.retry_delay_jitter)]:
+                    kwargs['key'] = val
+
                 # retry policy that will only try to reconnect if we connected
                 # successfully at least once before (so it fails on host unreachable etc ..)
                 def retry(failed_attempts):
                     if self._connect_successes > 0 and (self.max_retries == -1 or failed_attempts < self.max_retries):
-                        return backoffPolicy(self.initial_retry_delay, self.max_retry_delay, 
-                                             self.retry_delay_growth, self.retry_delay_jitter)
+                        return backoffPolicy(**kwargs)
                     else:
                         self.stop()
                         return 100000000000000
