@@ -355,10 +355,10 @@ class ApplicationRunner(object):
             if self.max_retries or self.initial_retry_delay or self.max_retry_delay or self.retry_delay_growth or self.retry_delay_jitter:
                 
                 kwargs = {}
-                for key, val = [('initial_retry_delay', self.initial_retry_delay),
-                                ('max_retry_delay', self.max_retry_delay),
-                                ('retry_delay_growth', self.retry_delay_growth), 
-                                ('retry_delay_jitter', self.retry_delay_jitter)]:
+                for key, val in [('initial_retry_delay', self.initial_retry_delay),
+                                 ('max_retry_delay', self.max_retry_delay),
+                                 ('retry_delay_growth', self.retry_delay_growth), 
+                                 ('retry_delay_jitter', self.retry_delay_jitter)]:
                     kwargs['key'] = val
 
                 # retry policy that will only try to reconnect if we connected
