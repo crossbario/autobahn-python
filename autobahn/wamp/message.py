@@ -291,28 +291,47 @@ class Message(object):
     """
 
     __slots__ = (
-        '_correlation',
         '_serialized',
-        '_uri',
+        '_correlation_id',
+        '_correlation_uri',
+        '_correlation_is_anchor',
     )
 
     def __init__(self):
         # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
-        self._correlation = None
-        self._uri = None
+
+        # user attributes for message correlation (mainly for message tracing)
+        self._correlation_id = None
+        self._correlation_uri = None
+        self._correlation_is_anchor = None
 
     @property
-    def correlation(self):
-        return self._correlation
+    def correlation_id(self):
+        return self._correlation_id
 
-    @correlation.setter
-    def correlation(self, value):
-        self._correlation = value
+    @correlation_id.setter
+    def correlation_id(self, value):
+        assert(value is None or type(value) == six.text_type)
+        self._correlation_id = value
 
     @property
-    def uri(self):
-        return self._uri
+    def correlation_uri(self):
+        return self._correlation_uri
+
+    @correlation_uri.setter
+    def correlation_uri(self, value):
+        assert(value is None or type(value) == six.text_type)
+        self._correlation_uri = value
+
+    @property
+    def correlation_is_anchor(self):
+        return self._correlation_is_anchor
+
+    @correlation_is_anchor.setter
+    def correlation_is_anchor(self, value):
+        assert(value is None or type(value) == bool)
+        self._correlation_is_anchor = value
 
     def __eq__(self, other):
         """
@@ -328,7 +347,7 @@ class Message(object):
             return False
         # we only want the actual message data attributes (not eg _serialize)
         for k in self.__slots__:
-            if k not in ['_correlation', '_serialized', '_uri']:
+            if k not in ['_serialized', '_correlation_id', '_correlation_uri', '_correlation_is_anchor']:
                 if not getattr(self, k) == getattr(other, k):
                     return False
         return True
@@ -888,8 +907,6 @@ class Abort(Message):
         self.reason = reason
         self.message = message
 
-        self._uri = reason
-
     @staticmethod
     def parse(wmsg):
         """
@@ -1137,8 +1154,6 @@ class Goodbye(Message):
         self.message = message
         self.resumable = resumable
 
-        self._uri = reason
-
     @staticmethod
     def parse(wmsg):
         """
@@ -1287,8 +1302,6 @@ class Error(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
-
-        self._uri = error
 
     @staticmethod
     def parse(wmsg):
@@ -1585,8 +1598,6 @@ class Publish(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
-
-        self._uri = topic
 
     @staticmethod
     def parse(wmsg):
@@ -1949,8 +1960,6 @@ class Subscribe(Message):
         self.match = match or Subscribe.MATCH_EXACT
         self.get_retained = get_retained
 
-        self._uri = topic
-
     @staticmethod
     def parse(wmsg):
         """
@@ -2198,7 +2207,7 @@ class Unsubscribed(Message):
             of the subscription revoked.
         :type subscription: int or None
 
-        :param reason: The reason (an URI) for revocation.
+        :param reason: The reason (an URI) for an active (router initiated) revocation.
         :type reason: str or None.
         """
         assert(type(request) in six.integer_types)
@@ -2731,8 +2740,6 @@ class Call(Message):
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
 
-        self._uri = procedure
-
     @staticmethod
     def parse(wmsg):
         """
@@ -3223,8 +3230,6 @@ class Register(Message):
         self.invoke = invoke or Register.INVOKE_SINGLE
         self.concurrency = concurrency
         self.force_reregister = force_reregister
-
-        self._uri = procedure
 
     @staticmethod
     def parse(wmsg):

@@ -425,10 +425,13 @@ class SubscribeOptions(object):
         'details',
         'details_arg',
         'get_retained',
-        'correlation',
+        'correlation_id',
+        'correlation_uri',
+        'correlation_is_anchor',
     )
 
-    def __init__(self, match=None, details=None, details_arg=None, get_retained=None, correlation=None):
+    def __init__(self, match=None, details=None, details_arg=None, get_retained=None,
+                 correlation_id=None, correlation_uri=None, correlation_is_anchor=None):
         """
 
         :param match: The topic matching method to be used for the subscription.
@@ -461,7 +464,9 @@ class SubscribeOptions(object):
 
         self.get_retained = get_retained
 
-        self.correlation = correlation
+        self.correlation_id = correlation_id
+        self.correlation_uri = correlation_uri
+        self.correlation_is_anchor = correlation_is_anchor
 
     def message_attr(self):
         """
@@ -570,7 +575,9 @@ class PublishOptions(object):
         'eligible_authid',
         'eligible_authrole',
         'retain',
-        'correlation',
+        'correlation_id',
+        'correlation_uri',
+        'correlation_is_anchor',
     )
 
     def __init__(self,
@@ -583,7 +590,9 @@ class PublishOptions(object):
                  eligible_authid=None,
                  eligible_authrole=None,
                  retain=None,
-                 correlation=None):
+                 correlation_id=None,
+                 correlation_uri=None,
+                 correlation_is_anchor=None):
         """
 
         :param acknowledge: If ``True``, acknowledge the publication with a success or
@@ -635,7 +644,9 @@ class PublishOptions(object):
         self.eligible_authrole = eligible_authrole
         self.retain = retain
 
-        self.correlation = correlation
+        self.correlation_id = correlation_id
+        self.correlation_uri = correlation_uri
+        self.correlation_is_anchor = correlation_is_anchor
 
     def message_attr(self):
         """
@@ -689,11 +700,13 @@ class RegisterOptions(object):
         'concurrency',
         'force_reregister',
         'details_arg',
-        'correlation',
+        'correlation_id',
+        'correlation_uri',
+        'correlation_is_anchor',
     )
 
-    def __init__(self, match=None, invoke=None, concurrency=None, details_arg=None,
-                 force_reregister=None, correlation=None):
+    def __init__(self, match=None, invoke=None, concurrency=None, details_arg=None, force_reregister=None,
+                 correlation_id=None, correlation_uri=None, correlation_is_anchor=None):
         """
 
         :param details_arg: When invoking the endpoint, provide call details
@@ -712,7 +725,9 @@ class RegisterOptions(object):
         self.details_arg = details_arg
         self.force_reregister = force_reregister
 
-        self.correlation = correlation
+        self.correlation_id = correlation_id
+        self.correlation_uri = correlation_uri
+        self.correlation_is_anchor = correlation_is_anchor
 
     def message_attr(self):
         """
@@ -812,13 +827,17 @@ class CallOptions(object):
     __slots__ = (
         'on_progress',
         'timeout',
-        'correlation',
+        'correlation_id',
+        'correlation_uri',
+        'correlation_is_anchor',
     )
 
     def __init__(self,
                  on_progress=None,
                  timeout=None,
-                 correlation=None):
+                 correlation_id=None,
+                 correlation_uri=None,
+                 correlation_is_anchor=None):
         """
 
         :param on_progress: A callback that will be called when the remote endpoint
@@ -834,7 +853,9 @@ class CallOptions(object):
         self.on_progress = on_progress
         self.timeout = timeout
 
-        self.correlation = correlation
+        self.correlation_id = correlation_id
+        self.correlation_uri = correlation_uri
+        self.correlation_is_anchor = correlation_is_anchor
 
     def message_attr(self):
         """
