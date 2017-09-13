@@ -428,10 +428,12 @@ class SubscribeOptions(object):
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
+        'correlation_is_last',
     )
 
     def __init__(self, match=None, details=None, details_arg=None, get_retained=None,
-                 correlation_id=None, correlation_uri=None, correlation_is_anchor=None):
+                 correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
+                 correlation_is_last=None):
         """
 
         :param match: The topic matching method to be used for the subscription.
@@ -467,6 +469,7 @@ class SubscribeOptions(object):
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
         self.correlation_is_anchor = correlation_is_anchor
+        self.correlation_is_last = correlation_is_last
 
     def message_attr(self):
         """
@@ -578,6 +581,7 @@ class PublishOptions(object):
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
+        'correlation_is_last',
     )
 
     def __init__(self,
@@ -592,7 +596,8 @@ class PublishOptions(object):
                  retain=None,
                  correlation_id=None,
                  correlation_uri=None,
-                 correlation_is_anchor=None):
+                 correlation_is_anchor=None,
+                 correlation_is_last=None):
         """
 
         :param acknowledge: If ``True``, acknowledge the publication with a success or
@@ -647,6 +652,7 @@ class PublishOptions(object):
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
         self.correlation_is_anchor = correlation_is_anchor
+        self.correlation_is_last = correlation_is_last
 
     def message_attr(self):
         """
@@ -703,10 +709,12 @@ class RegisterOptions(object):
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
+        'correlation_is_last',
     )
 
     def __init__(self, match=None, invoke=None, concurrency=None, details_arg=None, force_reregister=None,
-                 correlation_id=None, correlation_uri=None, correlation_is_anchor=None):
+                 correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
+                 correlation_is_last=None):
         """
 
         :param details_arg: When invoking the endpoint, provide call details
@@ -728,6 +736,7 @@ class RegisterOptions(object):
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
         self.correlation_is_anchor = correlation_is_anchor
+        self.correlation_is_last = correlation_is_last
 
     def message_attr(self):
         """
@@ -830,6 +839,7 @@ class CallOptions(object):
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
+        'correlation_is_last',
     )
 
     def __init__(self,
@@ -837,7 +847,8 @@ class CallOptions(object):
                  timeout=None,
                  correlation_id=None,
                  correlation_uri=None,
-                 correlation_is_anchor=None):
+                 correlation_is_anchor=None,
+                 correlation_is_last=None):
         """
 
         :param on_progress: A callback that will be called when the remote endpoint
@@ -856,6 +867,7 @@ class CallOptions(object):
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
         self.correlation_is_anchor = correlation_is_anchor
+        self.correlation_is_last = correlation_is_last
 
     def message_attr(self):
         """
