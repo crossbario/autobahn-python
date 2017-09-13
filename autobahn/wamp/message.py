@@ -295,6 +295,7 @@ class Message(object):
         '_correlation_id',
         '_correlation_uri',
         '_correlation_is_anchor',
+        '_correlation_is_last',
     )
 
     def __init__(self):
@@ -305,6 +306,7 @@ class Message(object):
         self._correlation_id = None
         self._correlation_uri = None
         self._correlation_is_anchor = None
+        self._correlation_is_last = None
 
     @property
     def correlation_id(self):
@@ -333,6 +335,15 @@ class Message(object):
         assert(value is None or type(value) == bool)
         self._correlation_is_anchor = value
 
+    @property
+    def correlation_is_last(self):
+        return self._correlation_is_last
+
+    @correlation_is_last.setter
+    def correlation_is_last(self, value):
+        assert(value is None or type(value) == bool)
+        self._correlation_is_last = value
+
     def __eq__(self, other):
         """
         Compare this message to another message for equality.
@@ -347,7 +358,11 @@ class Message(object):
             return False
         # we only want the actual message data attributes (not eg _serialize)
         for k in self.__slots__:
-            if k not in ['_serialized', '_correlation_id', '_correlation_uri', '_correlation_is_anchor']:
+            if k not in ['_serialized',
+                         '_correlation_id',
+                         '_correlation_uri',
+                         '_correlation_is_anchor',
+                         '_correlation_is_last']:
                 if not getattr(self, k) == getattr(other, k):
                     return False
         return True
