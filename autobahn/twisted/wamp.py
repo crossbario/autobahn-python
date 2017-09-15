@@ -359,7 +359,8 @@ class ApplicationRunner(object):
                                  ('max_retry_delay', self.max_retry_delay),
                                  ('retry_delay_growth', self.retry_delay_growth),
                                  ('retry_delay_jitter', self.retry_delay_jitter)]:
-                    kwargs['key'] = val
+                    if val is not None:
+                        kwargs[key] = val
 
                 # retry policy that will only try to reconnect if we connected
                 # successfully at least once before (so it fails on host unreachable etc ..)
