@@ -1266,8 +1266,15 @@ class ApplicationSession(BaseSession):
                                       args=args,
                                       kwargs=kwargs)
 
-        if options and options.correlation:
-            msg.correlation = options.correlation
+        if options:
+            if options.correlation_id is not None:
+                msg.correlation_id = options.correlation_id
+            if options.correlation_uri is not None:
+                msg.correlation_uri = options.correlation_uri
+            if options.correlation_is_anchor is not None:
+                msg.correlation_is_anchor = options.correlation_is_anchor
+            if options.correlation_is_last is not None:
+                msg.correlation_is_last = options.correlation_is_last
 
         if options and options.acknowledge:
             # only acknowledged publications expect a reply ..
@@ -1316,8 +1323,15 @@ class ApplicationSession(BaseSession):
             else:
                 msg = message.Subscribe(request_id, topic)
 
-            if options and options.correlation:
-                msg.correlation = options.correlation
+            if options:
+                if options.correlation_id is not None:
+                    msg.correlation_id = options.correlation_id
+                if options.correlation_uri is not None:
+                    msg.correlation_uri = options.correlation_uri
+                if options.correlation_is_anchor is not None:
+                    msg.correlation_is_anchor = options.correlation_is_anchor
+                if options.correlation_is_last is not None:
+                    msg.correlation_is_last = options.correlation_is_last
 
             self._transport.send(msg)
             return on_reply
@@ -1434,8 +1448,15 @@ class ApplicationSession(BaseSession):
                                    args=args,
                                    kwargs=kwargs)
 
-        if options and options.correlation:
-            msg.correlation = options.correlation
+        if options:
+            if options.correlation_id is not None:
+                msg.correlation_id = options.correlation_id
+            if options.correlation_uri is not None:
+                msg.correlation_uri = options.correlation_uri
+            if options.correlation_is_anchor is not None:
+                msg.correlation_is_anchor = options.correlation_is_anchor
+            if options.correlation_is_last is not None:
+                msg.correlation_is_last = options.correlation_is_last
 
         # FIXME: implement call canceling
         # def canceller(_d):
@@ -1489,8 +1510,15 @@ class ApplicationSession(BaseSession):
             else:
                 msg = message.Register(request_id, procedure)
 
-            if options and options.correlation:
-                msg.correlation = options.correlation
+            if options:
+                if options.correlation_id is not None:
+                    msg.correlation_id = options.correlation_id
+                if options.correlation_uri is not None:
+                    msg.correlation_uri = options.correlation_uri
+                if options.correlation_is_anchor is not None:
+                    msg.correlation_is_anchor = options.correlation_is_anchor
+                if options.correlation_is_last is not None:
+                    msg.correlation_is_last = options.correlation_is_last
 
             self._transport.send(msg)
             return on_reply

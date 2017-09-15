@@ -5,6 +5,20 @@
 Changelog
 =========
 
+master (unreleased)
+-------------------
+
+* new: allow setting correlation_is_last message marker in WAMP messages from user code
+
+
+17.9.2
+------
+
+`Published 2017-09-12 <https://pypi.python.org/pypi/autobahn/17.9.2>`__
+
+* new: allow setting correlation URI and anchor flag in WAMP messages from user code
+* fix: WebSocket proxy connect on Python 3 (unicode vs bytes bug)
+
 17.9.1
 ------
 
