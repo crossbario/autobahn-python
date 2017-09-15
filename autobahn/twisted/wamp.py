@@ -29,6 +29,7 @@ from __future__ import absolute_import
 import six
 import inspect
 import binascii
+import random
 
 import txaio
 txaio.use_twisted()  # noqa
@@ -353,21 +354,21 @@ class ApplicationRunner(object):
             self.log.debug('using t.a.i.ClientService')
 
             if self.max_retries or self.initial_retry_delay or self.max_retry_delay or self.retry_delay_growth or self.retry_delay_jitter:
-
                 kwargs = {}
-                for key, val in [('initial_retry_delay', self.initial_retry_delay),
-                                 ('max_retry_delay', self.max_retry_delay),
-                                 ('retry_delay_growth', self.retry_delay_growth),
-                                 ('retry_delay_jitter', self.retry_delay_jitter)]:
-                    if val is not None:
+                for key, val in [('initialDelay', self.initial_retry_delay),
+                                 ('maxDelay', self.max_retry_delay),
+                                 ('factor', self.retry_delay_growth),
+                                 ('jitter', lambda: random.random() * self.retry_delay_jitter)]:
+                    if val:
                         kwargs[key] = val
 
                 # retry policy that will only try to reconnect if we connected
                 # successfully at least once before (so it fails on host unreachable etc ..)
                 def retry(failed_attempts):
                     if self._connect_successes > 0 and (self.max_retries == -1 or failed_attempts < self.max_retries):
-                        return backoffPolicy(**kwargs)
+                        return backoffPolicy(**kwargs)(failed_attempts)
                     else:
+                        print('hit stop')
                         self.stop()
                         return 100000000000000
             else:
