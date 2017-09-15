@@ -246,8 +246,8 @@ class ApplicationRunner(object):
         # start the client connection
         loop = asyncio.get_event_loop()
         if loop.is_closed() and start_loop:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            loop = asyncio.get_event_loop()
         txaio.use_asyncio()
         txaio.config.loop = loop
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
