@@ -29,6 +29,7 @@ from __future__ import absolute_import
 import six
 import inspect
 import binascii
+import random
 
 import txaio
 txaio.use_twisted()  # noqa
@@ -117,7 +118,12 @@ class ApplicationRunner(object):
                  serializers=None,
                  ssl=None,
                  proxy=None,
-                 headers=None):
+                 headers=None,
+                 max_retries=None,
+                 initial_retry_delay=None,
+                 max_retry_delay=None,
+                 retry_delay_growth=None,
+                 retry_delay_jitter=None):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -147,6 +153,21 @@ class ApplicationRunner(object):
 
         :param headers: Additional headers to send (only applies to WAMP-over-WebSocket).
         :type headers: dict
+
+        :param max_retries: Maximum number of reconnection attempts. Unlimited if set to -1.
+        :type max_retries: int
+
+        :param initial_retry_delay: Initial delay for reconnection attempt in seconds (Default: 1.0s).
+        :type initial_retry_delay: float
+
+        :param max_retry_delay: Maximum delay for reconnection attempts in seconds (Default: 60s).
+        :type max_retry_delay: float
+
+        :param retry_delay_growth: The growth factor applied to the retry delay between reconnection attempts (Default 1.5).
+        :type retry_delay_growth: float
+
+        :param retry_delay_jitter: A 0-argument callable that introduces nose into the delay. (Default random.random)
+        :type retry_delay_jitter: float
         """
         assert(type(url) == six.text_type)
         assert(realm is None or type(realm) == six.text_type)
@@ -160,6 +181,11 @@ class ApplicationRunner(object):
         self.ssl = ssl
         self.proxy = proxy
         self.headers = headers
+        self.max_retries = max_retries
+        self.initial_retry_delay = initial_retry_delay
+        self.max_retry_delay = max_retry_delay
+        self.retry_delay_growth = retry_delay_growth
+        self.retry_delay_jitter = retry_delay_jitter
 
         # this if for auto-reconnection when Twisted ClientService is avail
         self._client_service = None
@@ -327,19 +353,26 @@ class ApplicationRunner(object):
             # this code path is automatically reconnecting ..
             self.log.debug('using t.a.i.ClientService')
 
-            default_retry = backoffPolicy()
+            if self.max_retries or self.initial_retry_delay or self.max_retry_delay or self.retry_delay_growth or self.retry_delay_jitter:
+                kwargs = {}
+                for key, val in [('initialDelay', self.initial_retry_delay),
+                                 ('maxDelay', self.max_retry_delay),
+                                 ('factor', self.retry_delay_growth),
+                                 ('jitter', lambda: random.random() * self.retry_delay_jitter)]:
+                    if val:
+                        kwargs[key] = val
 
-            if False:
                 # retry policy that will only try to reconnect if we connected
                 # successfully at least once before (so it fails on host unreachable etc ..)
                 def retry(failed_attempts):
-                    if self._connect_successes > 0:
-                        return default_retry(failed_attempts)
+                    if self._connect_successes > 0 and (self.max_retries == -1 or failed_attempts < self.max_retries):
+                        return backoffPolicy(**kwargs)(failed_attempts)
                     else:
+                        print('hit stop')
                         self.stop()
                         return 100000000000000
             else:
-                retry = default_retry
+                retry = backoffPolicy()
 
             self._client_service = ClientService(client, transport_factory, retryPolicy=retry)
             self._client_service.startService()
