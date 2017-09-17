@@ -137,10 +137,14 @@ class _SSHPacketReader:
         return value
 
     def get_uint32(self):
-        return int.from_bytes(self.get_bytes(4), 'big')
+        return struct.unpack('>I', self.get_bytes(4))[0]
 
     def get_string(self):
         return self.get_bytes(self.get_uint32())
+
+
+def _makepad(size):
+    return ''.join(chr(x) for x in range(1, size + 1))
 
 
 def _read_ssh_ed25519_privkey(keydata):
@@ -232,7 +236,7 @@ def _read_ssh_ed25519_privkey(keydata):
     comment = packet.get_string()                             # comment
     pad = packet.get_remaining_payload()
 
-    if len(pad) >= block_size or pad != bytes(range(1, len(pad) + 1)):
+    if len(pad) >= block_size or pad != _makepad(len(pad)):
         raise Exception('invalid OpenSSH private key')
 
     # secret key (64 octets) = 32 octets seed || 32 octets secret key derived of seed
