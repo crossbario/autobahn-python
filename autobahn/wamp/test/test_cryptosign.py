@@ -28,7 +28,6 @@ from __future__ import absolute_import
 
 from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN
 
-import autobahn.wamp.cryptosign
 if HAS_CRYPTOSIGN:
     from autobahn.wamp.cryptosign import SigningKey
 
