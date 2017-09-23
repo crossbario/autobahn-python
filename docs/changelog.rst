@@ -8,6 +8,17 @@ Changelog
 master (unreleased)
 -------------------
 
+
+
+17.9.3
+------
+
+`Published 2017-09-23 <https://pypi.python.org/pypi/autobahn/17.9.3>`__
+
+* new: user configurable backoff policy
+* fix: close aio loop on exit
+* fix: some component API cleanups
+* fix: cryptosign on py2
 * new: allow setting correlation_is_last message marker in WAMP messages from user code
 
 

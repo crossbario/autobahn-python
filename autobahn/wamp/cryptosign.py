@@ -25,6 +25,7 @@
 ###############################################################################
 
 from __future__ import absolute_import
+from __future__ import print_function
 
 import binascii
 import struct
@@ -41,7 +42,7 @@ __all__ = [
 
 try:
     # try to import everything we need for WAMP-cryptosign
-    from nacl import public, encoding, signing, bindings
+    from nacl import encoding, signing, bindings
 except ImportError:
     HAS_CRYPTOSIGN = False
 else:
@@ -236,8 +237,8 @@ def _read_ssh_ed25519_privkey(keydata):
     comment = packet.get_string()                             # comment
     pad = packet.get_remaining_payload()
 
-    if len(pad) >= block_size or pad != _makepad(len(pad)):
-        raise Exception('invalid OpenSSH private key')
+    if len(pad) and (len(pad) >= block_size or pad != _makepad(len(pad))):
+        raise Exception('invalid OpenSSH private key (padlen={}, actual_pad={}, expected_pad={})'.format(len(pad), pad, _makepad(len(pad))))
 
     # secret key (64 octets) = 32 octets seed || 32 octets secret key derived of seed
     seed = sk[:bindings.crypto_sign_SEEDBYTES]
@@ -367,7 +368,7 @@ if HAS_CRYPTOSIGN:
             """
 
             :param key: A Ed25519 private signing key or a Ed25519 public verification key.
-            :type key: instance of nacl.public.VerifyKey or instance of nacl.public.SigningKey
+            :type key: instance of nacl.signing.VerifyKey or instance of nacl.signing.SigningKey
             """
             if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
                 raise Exception("invalid type {} for key".format(type(key)))
@@ -549,8 +550,8 @@ if HAS_CRYPTOSIGN:
             """
             SSH_BEGIN = u'-----BEGIN OPENSSH PRIVATE KEY-----'
 
-            with open(filename, 'r') as f:
-                keydata = f.read().strip()
+            with open(filename, 'rb') as f:
+                keydata = f.read().decode('utf-8').strip()
 
             if keydata.startswith(SSH_BEGIN):
                 # OpenSSH private key
@@ -558,7 +559,31 @@ if HAS_CRYPTOSIGN:
                 key = signing.SigningKey(keydata, encoder=encoding.RawEncoder)
             else:
                 # OpenSSH public key
-                keydata, comment = _read_ssh_ed25519_pubkey(filename)
-                key = public.PublicKey(keydata, encoder=encoding.RawEncoder)
+                keydata, comment = _read_ssh_ed25519_pubkey(keydata)
+                key = signing.VerifyKey(keydata)
 
             return cls(key, comment)
+
+if __name__ == '__main__':
+    import sys
+    if not HAS_CRYPTOSIGN:
+        print('NaCl library must be installed for this to function.', file=sys.stderr)
+        sys.exit(1)
+
+    from optparse import OptionParser
+
+    parser = OptionParser()
+    parser.add_option('-f', '--file', dest='keyfile',
+                      help='file containing ssh key')
+    parser.add_option('-p', action='store_true', dest='printpub', default=False,
+                      help='print public key information')
+
+    options, args = parser.parse_args()
+
+    if not options.printpub:
+        print("Print public key must be specified as it's the only option.")
+        parser.print_usage()
+        sys.exit(1)
+
+    key = SigningKey.from_ssh_key(options.keyfile)
+    print(key.public_key())
