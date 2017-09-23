@@ -42,6 +42,9 @@ Bm+RTIwv+7ZvYHW5bhFtAAAAFXNvbWV1c2VyQGZ1bmt0aGF0LmNvbQ==
 -----END OPENSSH PRIVATE KEY-----
 '''
 
+pubkey = '''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJVp3hjHwIQyEladzd8mFcf0YSXcmyKS3qMLB7VqTQKm someuser@example.com
+'''
+
 
 class TestKey(unittest.TestCase):
     def test_pad(self):
@@ -57,3 +60,12 @@ class TestKey(unittest.TestCase):
 
             key = autobahn.wamp.cryptosign.SigningKey.from_ssh_key(fp.name)
             self.assertEqual(key.public_key(), '1adfc8bfe1d35616e64dffbd900096f23b066f914c8c2ffbb66f6075b96e116d')
+
+    def test_pubkey(self):
+        with tempfile.NamedTemporaryFile('w+t') as fp:
+            fp.write(pubkey)
+            fp.seek(0)
+
+            key = autobahn.wamp.cryptosign.SigningKey.from_ssh_key(fp.name)
+            self.assertEqual(key.public_key(), '9569de18c7c0843212569dcddf2615c7f46125dc9b2292dea30b07b56a4d02a6')
+            self.assertEqual(key.comment(), 'someuser@example.com')
