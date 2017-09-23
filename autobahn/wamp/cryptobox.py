@@ -231,7 +231,7 @@ if HAS_CRYPTOBOX:
             if encoded_payload.enc_serializer != u'json':
                 raise Exception("received encrypted payload, but don't know how to process serializer '{}'".format(encoded_payload.enc_serializer))
 
-            payload = _json_loads(payload_ser)
+            payload = _json_loads(payload_ser.decode('utf8'))
 
             uri = payload.get(u'uri', None)
             args = payload.get(u'args', None)
