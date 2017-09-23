@@ -50,6 +50,7 @@ pubkey = '''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJVp3hjHwIQyEladzd8mFcf0YSXcmyKS
 
 
 class TestKey(unittest.TestCase):
+
     def test_pad(self):
         self.assertEqual(_makepad(0), '')
         self.assertEqual(_makepad(2), '\x01\x02')
@@ -64,6 +65,7 @@ class TestKey(unittest.TestCase):
             key = SigningKey.from_ssh_key(fp.name)
             self.assertEqual(key.public_key(), '1adfc8bfe1d35616e64dffbd900096f23b066f914c8c2ffbb66f6075b96e116d')
 
+    @unittest.skipIf(not HAS_CRYPTOSIGN, 'nacl library not present')
     def test_pubkey(self):
         with tempfile.NamedTemporaryFile('w+t') as fp:
             fp.write(pubkey)
