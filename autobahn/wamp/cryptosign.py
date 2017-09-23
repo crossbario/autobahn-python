@@ -25,6 +25,7 @@
 ###############################################################################
 
 from __future__ import absolute_import
+from __future__ import print_function
 
 import binascii
 import struct
@@ -41,7 +42,7 @@ __all__ = [
 
 try:
     # try to import everything we need for WAMP-cryptosign
-    from nacl import public, encoding, signing, bindings
+    from nacl import encoding, signing, bindings
 except ImportError:
     HAS_CRYPTOSIGN = False
 else:
@@ -367,7 +368,7 @@ if HAS_CRYPTOSIGN:
             """
 
             :param key: A Ed25519 private signing key or a Ed25519 public verification key.
-            :type key: instance of nacl.public.VerifyKey or instance of nacl.public.SigningKey
+            :type key: instance of nacl.signing.VerifyKey or instance of nacl.signing.SigningKey
             """
             if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
                 raise Exception("invalid type {} for key".format(type(key)))
@@ -558,7 +559,32 @@ if HAS_CRYPTOSIGN:
                 key = signing.SigningKey(keydata, encoder=encoding.RawEncoder)
             else:
                 # OpenSSH public key
-                keydata, comment = _read_ssh_ed25519_pubkey(filename)
-                key = public.PublicKey(keydata, encoder=encoding.RawEncoder)
+                keydata = keydata.decode('utf-8')
+                keydata, comment = _read_ssh_ed25519_pubkey(keydata)
+                key = signing.VerifyKey(keydata)
 
             return cls(key, comment)
+
+if __name__ == '__main__':
+    import sys
+    if not HAS_CRYPTOSIGN:
+        print('NaCl library must be installed for this to function.', file=sys.stderr)
+        sys.exit(1)
+
+    from optparse import OptionParser
+
+    parser = OptionParser()
+    parser.add_option('-f', '--file', dest='keyfile',
+                      help='file containing ssh key')
+    parser.add_option('-p', action='store_true', dest='printpub', default=False,
+                      help='print public key information')
+
+    options, args = parser.parse_args()
+
+    if not options.printpub:
+        print("Print public key must be specified as it's the only option.")
+        parser.print_usage()
+        sys.exit(1)
+
+    key = SigningKey.from_ssh_key(options.keyfile)
+    print(key.public_key())
