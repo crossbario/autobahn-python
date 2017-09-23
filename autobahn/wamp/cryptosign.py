@@ -237,8 +237,8 @@ def _read_ssh_ed25519_privkey(keydata):
     comment = packet.get_string()                             # comment
     pad = packet.get_remaining_payload()
 
-    if len(pad) >= block_size or pad != _makepad(len(pad)):
-        raise Exception('invalid OpenSSH private key')
+    if len(pad) and (len(pad) >= block_size or pad != _makepad(len(pad))):
+        raise Exception('invalid OpenSSH private key (padlen={}, actual_pad={}, expected_pad={})'.format(len(pad), pad, _makepad(len(pad))))
 
     # secret key (64 octets) = 32 octets seed || 32 octets secret key derived of seed
     seed = sk[:bindings.crypto_sign_SEEDBYTES]
@@ -550,8 +550,8 @@ if HAS_CRYPTOSIGN:
             """
             SSH_BEGIN = u'-----BEGIN OPENSSH PRIVATE KEY-----'
 
-            with open(filename, 'r') as f:
-                keydata = f.read().strip()
+            with open(filename, 'rb') as f:
+                keydata = f.read().decode('utf-8').strip()
 
             if keydata.startswith(SSH_BEGIN):
                 # OpenSSH private key
@@ -559,7 +559,6 @@ if HAS_CRYPTOSIGN:
                 key = signing.SigningKey(keydata, encoder=encoding.RawEncoder)
             else:
                 # OpenSSH public key
-                keydata = keydata.decode('utf-8')
                 keydata, comment = _read_ssh_ed25519_pubkey(keydata)
                 key = signing.VerifyKey(keydata)
 

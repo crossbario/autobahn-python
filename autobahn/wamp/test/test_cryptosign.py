@@ -29,6 +29,9 @@ from __future__ import absolute_import
 from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN
 
 import autobahn.wamp.cryptosign
+if HAS_CRYPTOSIGN:
+    from autobahn.wamp.cryptosign import SigningKey
+
 import tempfile
 
 import unittest2 as unittest
@@ -58,7 +61,7 @@ class TestKey(unittest.TestCase):
             fp.write(keybody)
             fp.seek(0)
 
-            key = autobahn.wamp.cryptosign.SigningKey.from_ssh_key(fp.name)
+            key = SigningKey.from_ssh_key(fp.name)
             self.assertEqual(key.public_key(), '1adfc8bfe1d35616e64dffbd900096f23b066f914c8c2ffbb66f6075b96e116d')
 
     def test_pubkey(self):
@@ -66,6 +69,6 @@ class TestKey(unittest.TestCase):
             fp.write(pubkey)
             fp.seek(0)
 
-            key = autobahn.wamp.cryptosign.SigningKey.from_ssh_key(fp.name)
+            key = SigningKey.from_ssh_key(fp.name)
             self.assertEqual(key.public_key(), '9569de18c7c0843212569dcddf2615c7f46125dc9b2292dea30b07b56a4d02a6')
             self.assertEqual(key.comment(), 'someuser@example.com')
