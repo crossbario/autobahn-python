@@ -25,6 +25,29 @@ matrix:
 
     - python: 2.7
       env:
+      - TOX_ENV=py27-twtrunk
+
+    - python: 2.7
+      env:
+      - TOX_ENV=py27-asyncio
+
+    - python: 3.6
+      env:
+      - TOX_ENV=py36-tw154
+
+    - python: 3.6
+      env:
+      - TOX_ENV=py36-twtrunk
+
+    - python: 3.6
+      env:
+      - TOX_ENV=py36-asyncio
+
+  # https://docs.travis-ci.com/user/customizing-the-build/#Rows-that-are-Allowed-to-Fail
+  allow_failures:
+
+    - python: 2.7
+      env:
       - TOX_ENV=py27-tw132
 
     - python: 2.7
@@ -34,14 +57,6 @@ matrix:
     - python: 2.7
       env:
       - TOX_ENV=py27-tw165
-
-    - python: 2.7
-      env:
-      - TOX_ENV=py27-twtrunk
-
-    - python: 2.7
-      env:
-      - TOX_ENV=py27-asyncio
 
 
     - python: pypy
@@ -139,19 +154,7 @@ matrix:
 
     - python: 3.6
       env:
-      - TOX_ENV=py36-tw154
-
-    - python: 3.6
-      env:
       - TOX_ENV=py36-tw165
-
-    - python: 3.6
-      env:
-      - TOX_ENV=py36-twtrunk
-
-    - python: 3.6
-      env:
-      - TOX_ENV=py36-asyncio
 
 
 notifications:
