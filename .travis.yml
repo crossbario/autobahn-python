@@ -1,40 +1,10 @@
+# https://docs.travis-ci.com/user/languages/python/
+
 language: python
 sudo: false
 
 install:
   - pip install tox codecov
-
-env:
-  - TOX_ENV=flake8
-
-  - TOX_ENV=py27-tw121
-  - TOX_ENV=py27-tw132
-  - TOX_ENV=py27-tw154
-  - TOX_ENV=py27-tw165
-  - TOX_ENV=py27-twtrunk
-  - TOX_ENV=py27-asyncio
-
-  - TOX_ENV=pypy-tw121
-  - TOX_ENV=pypy-tw132
-  - TOX_ENV=pypy-tw154
-  - TOX_ENV=pypy-tw165
-  - TOX_ENV=pypy-twtrunk
-  - TOX_ENV=pypy-asyncio
-
-  - TOX_ENV=py33-tw154
-  - TOX_ENV=py33-tw165
-  - TOX_ENV=py33-twtrunk
-  - TOX_ENV=py33-asyncio
-
-  - TOX_ENV=py34-tw154
-  - TOX_ENV=py34-tw165
-  - TOX_ENV=py34-twtrunk
-  - TOX_ENV=py34-asyncio
-
-  #- TOX_ENV=py35-tw154
-  #- TOX_ENV=py35-tw165
-  #- TOX_ENV=py35-twtrunk
-  #- TOX_ENV=py35-asyncio
 
 script:
   - tox -c tox.ini -e $TOX_ENV
@@ -45,23 +15,60 @@ after_script:
 matrix:
   fast_finish: true
 
-  # https://github.com/travis-ci/travis-ci/issues/4794#issuecomment-143758799
   include:
-    - python: 3.5
-      env:
-      - TOX_ENV=py35-tw154
+    - env: TOX_ENV=flake8
 
-    - python: 3.5
+    - python: 2.7
       env:
-      - TOX_ENV=py35-tw165
+      - TOX_ENV=py27-tw121
 
-    - python: 3.5
+    - python: 2.7
       env:
-      - TOX_ENV=py35-twtrunk
+      - TOX_ENV=py27-twtrunk
 
-    - python: 3.5
+    - python: 2.7
       env:
-      - TOX_ENV=py35-asyncio
+      - TOX_ENV=py27-asyncio
+
+    - python: 3.3
+      env:
+      - TOX_ENV=py33-tw154
+
+    - python: 3.3
+      env:
+      - TOX_ENV=py33-twtrunk
+
+    - python: 3.3
+      env:
+      - TOX_ENV=py33-asyncio
+
+    - python: 3.6
+      env:
+      - TOX_ENV=py36-tw154
+
+    - python: 3.6
+      env:
+      - TOX_ENV=py36-twtrunk
+
+    - python: 3.6
+      env:
+      - TOX_ENV=py36-asyncio
+
+    - python: pypy
+      env:
+      - TOX_ENV=pypy-twtrunk
+
+    - python: pypy
+      env:
+      - TOX_ENV=pypy-asyncio
+
+    - python: pypy3
+      env:
+      - TOX_ENV=pypy3-twtrunk
+
+    - python: pypy3
+      env:
+      - TOX_ENV=pypy3-asyncio
 
 notifications:
    irc:
