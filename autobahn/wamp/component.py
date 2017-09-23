@@ -43,7 +43,9 @@ from autobahn.wamp.exception import SessionNotReady
 from autobahn.wamp.auth import create_authenticator
 
 
-__all__ = ('Connection')
+__all__ = (
+    'Component'
+)
 
 
 def _validate_endpoint(endpoint, check_native_endpoint=None):
@@ -547,12 +549,13 @@ class Component(ObservableMixin):
                         was_clean=was_clean,
                     )
                     if not txaio.is_called(done):
-                        if was_clean:
-                            # eg the session has left the realm, and the transport was properly
-                            # shut down. successfully finish the connection
-                            txaio.resolve(done, None)
-                        else:
-                            txaio.reject(done, RuntimeError('transport closed uncleanly'))
+                        if not was_clean:
+                            self.log.warn(
+                                u"Session disconnected uncleanly"
+                            )
+                        # eg the session has left the realm, and the transport was properly
+                        # shut down. successfully finish the connection
+                        txaio.resolve(done, None)
                 session.on('disconnect', on_disconnect)
 
                 # return the fresh session object
