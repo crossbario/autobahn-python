@@ -3,6 +3,16 @@ Module ``autobahn.twisted``
 
 Autobahn Twisted specific classes. These are used when Twisted is run as the underlying networking framework.
 
+Component
+---------
+
+The component API provides a high-level funcional style method of defining and running WAMP components including authentication configuration
+
+.. autoclass:: autobahn.twisted.component.Component
+    :members:
+
+.. autofunction:: autobahn.twisted.component.run
+
 
 WebSocket Protocols and Factories
 ---------------------------------
