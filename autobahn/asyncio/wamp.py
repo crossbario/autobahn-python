@@ -147,6 +147,36 @@ class ApplicationRunner(object):
         self.proxy = proxy
         self.headers = headers
 
+    def set_transport_protocol_options(self, transport_factory):
+        """
+        Set default transport options
+        """
+        # client WebSocket settings - similar to:
+        # - http://crossbar.io/docs/WebSocket-Compression/#production-settings
+        # - http://crossbar.io/docs/WebSocket-Options/#production-settings
+        offers = [PerMessageDeflateOffer()]
+
+        # Function to accept permessage_delate responses from the server ..
+        def accept(response):
+            if isinstance(response, PerMessageDeflateResponse):
+                return PerMessageDeflateResponseAccept(response)
+
+        # set WebSocket options for all client connections
+        transport_factory.setProtocolOptions(maxFramePayloadSize=1048576,
+                                             maxMessagePayloadSize=1048576,
+                                             autoFragmentSize=65536,
+                                             failByDrop=False,
+                                             openHandshakeTimeout=2.5,
+                                             closeHandshakeTimeout=1.,
+                                             tcpNoDelay=True,
+                                             autoPingInterval=10.,
+                                             autoPingTimeout=5.,
+                                             autoPingSize=4,
+                                             perMessageCompressionOffers=offers,
+                                             perMessageCompressionAccept=accept)
+
+        return transport_factory
+
     @public
     def stop(self):
         """
@@ -207,31 +237,8 @@ class ApplicationRunner(object):
             # create a WAMP-over-WebSocket transport client factory
             transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
 
-            # client WebSocket settings - similar to:
-            # - http://crossbar.io/docs/WebSocket-Compression/#production-settings
-            # - http://crossbar.io/docs/WebSocket-Options/#production-settings
+            transport_factory = self.set_transport_protocol_options(transport_factory)
 
-            # The permessage-deflate extensions offered to the server ..
-            offers = [PerMessageDeflateOffer()]
-
-            # Function to accept permessage_delate responses from the server ..
-            def accept(response):
-                if isinstance(response, PerMessageDeflateResponse):
-                    return PerMessageDeflateResponseAccept(response)
-
-            # set WebSocket options for all client connections
-            transport_factory.setProtocolOptions(maxFramePayloadSize=1048576,
-                                                 maxMessagePayloadSize=1048576,
-                                                 autoFragmentSize=65536,
-                                                 failByDrop=False,
-                                                 openHandshakeTimeout=2.5,
-                                                 closeHandshakeTimeout=1.,
-                                                 tcpNoDelay=True,
-                                                 autoPingInterval=10.,
-                                                 autoPingTimeout=5.,
-                                                 autoPingSize=4,
-                                                 perMessageCompressionOffers=offers,
-                                                 perMessageCompressionAccept=accept)
         # SSL context for client connection
         if self.ssl is None:
             ssl = isSecure
