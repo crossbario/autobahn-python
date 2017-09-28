@@ -139,7 +139,7 @@ if HAS_CRYPTOBOX:
             key = PrivateKey.generate()
             priv_key = key.encode(encoder=Base64Encoder)
             pub_key = key.public_key.encode(encoder=Base64Encoder)
-            return (u'{}'.format(priv_key), u''.format(pub_key))
+            return (u'{}'.format(priv_key), u'{}'.format(pub_key))
 
         @public
         def set_key(self, uri, key):
