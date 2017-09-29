@@ -276,13 +276,15 @@ class _Transport(object):
     def can_reconnect(self):
         if self._permanent_failure:
             return False
-        return self.connect_attempts < self.max_retries
+        if self.max_retries == u'unlimited':
+            return True
+        return self.connect_attempts < self.max_retries + 1
 
     def next_delay(self):
         if self.connect_attempts == 0:
             # if we never tried before, try immediately
             return 0
-        elif self.connect_attempts >= self.max_retries:
+        elif self.max_retries != 'unlimited' and self.connect_attempts >= self.max_retries + 1:
             raise RuntimeError('max reconnects reached')
         else:
             self.retry_delay = self.retry_delay * self.retry_delay_growth
@@ -401,12 +403,13 @@ class Component(ObservableMixin):
         """
         self.set_valid_events(
             [
-                'start',        # fired by base class
+                'start',        # fired by subclass
                 'connect',      # fired by ApplicationSession
                 'join',         # fired by ApplicationSession
                 'ready',        # fired by ApplicationSession
                 'leave',        # fired by ApplicationSession
                 'disconnect',   # fired by ApplicationSession
+                'connectfailure',  # fired by subclass
             ]
         )
 

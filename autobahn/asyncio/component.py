@@ -289,7 +289,7 @@ class Component(component.Component):
             assert(False), 'should not arrive here'
 
     # async function
-    def start(self, loop=None):
+    def start(self, loop=None, log_level=None):
         """
         This starts the Component, which means it will start connecting
         (and re-connecting) to its configured transports. A Component
@@ -304,6 +304,9 @@ class Component(component.Component):
             "done" or with an error if something went wrong.
         """
 
+        if log_level is not None:
+            txaio.start_logging(level=log_level)
+
         if loop is None:
             self.log.warn("Using default loop")
             loop = asyncio.get_event_loop()
@@ -312,92 +315,108 @@ class Component(component.Component):
         # specified in the docstring.
         done_f = txaio.create_future()
 
-        # transports to try again and again ..
-        transport_gen = itertools.cycle(self._transports)
+        # this is a 1-element list so we can set it from closures in
+        # this function
+        transport_gen = [None]
+
+        # Create a generator of transports that .can_reconnect()
+        def set_valid_transports():
+            valid_transports = [tp for tp in self._transports if tp.can_reconnect()]
+            transport_gen[0] = itertools.cycle(valid_transports)
+            return len(valid_transports)
+
+        set_valid_transports()
 
         # issue our first event, then start the reconnect loop
         f0 = self.fire('start', loop, self)
 
-        # this is a 1-element list so we can set it from closures in
-        # this function
-        reconnect = [True]
-
         def one_reconnect_loop(_):
             self.log.debug('Entering re-connect loop')
-            if not reconnect[0]:
-                return
 
-            # cycle through all transports forever ..
-            transport = next(transport_gen)
+            # cycle through all connectable transports until max_retries hit
+            transport = next(transport_gen[0])
 
-            # only actually try to connect using the transport,
-            # if the transport hasn't reached max. connect count
-            if transport.can_reconnect():
-                delay = transport.next_delay()
-                self.log.debug(
-                    'trying transport {transport_idx} using connect delay {transport_delay}',
-                    transport_idx=transport.idx,
-                    transport_delay=delay,
-                )
+            delay = transport.next_delay()
+            self.log.debug(
+                'trying transport {transport_idx} using connect delay {transport_delay}',
+                transport_idx=transport.idx,
+                transport_delay=delay,
+            )
 
-                delay_f = asyncio.ensure_future(txaio.sleep(delay))
+            delay_f = asyncio.ensure_future(txaio.sleep(delay))
 
-                def actual_connect(_):
-                    f = self._connect_once(loop, transport)
+            def actual_connect(_):
+                connect_f = self._connect_once(loop, transport)
 
-                    def session_done(x):
-                        txaio.resolve(done_f, None)
+                def session_done(x):
+                    txaio.resolve(done_f, None)
 
-                    def connect_error(fail):
-                        if isinstance(fail.value, asyncio.CancelledError):
-                            reconnect[0] = False
-                            txaio.reject(done_f, fail)
-                            return
+                def connect_error(fail):
+                    unrecoverable_error = False
+                    self.fire('connectfailure', self, fail.value)
 
-                        self.log.debug(u'component failed: {error}', error=txaio.failure_message(fail))
+                    if isinstance(fail.value, asyncio.CancelledError):
+                        unrecoverable_error = True
+
+                    self.log.debug(u'component failed: {error}', error=txaio.failure_message(fail))
+                    self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(fail))
+                    # If this is a "fatal error" that will never work,
+                    # we bail out now
+                    if isinstance(fail.value, ApplicationError):
+                        if fail.value.error in [u'wamp.error.no_such_realm']:
+                            unrecoverable_error = True
+                            self.log.error(u"Fatal error, not reconnecting")
+
+                        self.log.error(u"{msg}", msg=fail.value.error_message())
+
+                    elif isinstance(fail.value, OSError):
+                        # failed to connect entirely, like nobody
+                        # listening etc.
+                        self.log.info(u"Connection failed: {msg}", msg=txaio.failure_message(fail))
+
+                    elif _is_ssl_error(fail.value):
+                        # Quoting pyOpenSSL docs: "Whenever
+                        # [SSL.Error] is raised directly, it has a
+                        # list of error messages from the OpenSSL
+                        # error queue, where each item is a tuple
+                        # (lib, function, reason). Here lib, function
+                        # and reason are all strings, describing where
+                        # and what the problem is. See err(3) for more
+                        # information."
+                        self.log.error(u"TLS failure: {reason}", reason=fail.value.args[1])
+                        self.log.error(u"Marking this transport as failed")
+                        transport.failed()
+                    else:
+                        self.log.error(
+                            u'Connection failed: {error}',
+                            error=txaio.failure_message(fail),
+                        )
+                        # some types of errors should probably have
+                        # stacktraces logged immediately at error
+                        # level, e.g. SyntaxError?
                         self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(fail))
-                        # If this is a "fatal error" that will never work,
-                        # we bail out now
-                        if isinstance(fail.value, ApplicationError):
-                            if fail.value.error in [u'wamp.error.no_such_realm']:
-                                reconnect[0] = False
-                                self.log.error(u"Fatal error, not reconnecting")
-                                txaio.reject(done_f, fail)
-                                return
 
-                            self.log.error(u"{msg}", msg=fail.value.error_message())
-                            return one_reconnect_loop(None)
+                    if not unrecoverable_error:
+                        if not transport.can_reconnect():
+                            # transport failed or max_retries hit so remove
+                            # it from valid transports
+                            if not set_valid_transports():
+                                # No more valid transports to try
+                                unrecoverable_error = True
+                                err_msg = u"Connection failed: Exhausted all transport connect attempts"
+                                self.log.info(err_msg)
+                                try:
+                                    raise RuntimeError(err_msg)
+                                except RuntimeError:
+                                    fail = txaio.create_failure()
 
-                        elif isinstance(fail.value, OSError):
-                            # failed to connect entirely, like nobody
-                            # listening etc.
-                            self.log.info(u"Connection failed: {msg}", msg=txaio.failure_message(fail))
-                            return one_reconnect_loop(None)
+                    if unrecoverable_error:
+                        txaio.reject(done_f, fail)
+                        return
 
-                        elif _is_ssl_error(fail.value):
-                            # Quoting pyOpenSSL docs: "Whenever
-                            # [SSL.Error] is raised directly, it has a
-                            # list of error messages from the OpenSSL
-                            # error queue, where each item is a tuple
-                            # (lib, function, reason). Here lib, function
-                            # and reason are all strings, describing where
-                            # and what the problem is. See err(3) for more
-                            # information."
-                            self.log.error(u"TLS failure: {reason}", reason=fail.value.args[1])
-                            self.log.error(u"Marking this transport as failed")
-                            transport.failed()
-                        else:
-                            self.log.error(
-                                u'Connection failed: {error}',
-                                error=txaio.failure_message(fail),
-                            )
-                            # This is some unknown failure, e.g. could
-                            # be SyntaxError etc so we're aborting the
-                            # whole mission
-                            txaio.reject(done_f, fail)
-                            return
+                    return one_reconnect_loop(None)
 
-                    txaio.add_callbacks(f, session_done, connect_error)
+                txaio.add_callbacks(connect_f, session_done, connect_error)
 
             txaio.add_callbacks(delay_f, actual_connect, error)
 
