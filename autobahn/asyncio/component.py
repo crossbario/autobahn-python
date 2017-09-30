@@ -351,9 +351,8 @@ class Component(component.Component):
                 def session_done(x):
                     txaio.resolve(done_f, None)
 
-                def connect_error(fail):
+                def handle_connect_error(fail):
                     unrecoverable_error = False
-                    self.fire('connectfailure', self, fail.value)
 
                     if isinstance(fail.value, asyncio.CancelledError):
                         unrecoverable_error = True
@@ -415,6 +414,20 @@ class Component(component.Component):
                         return
 
                     return one_reconnect_loop(None)
+
+                def notify_connect_error(fail):
+                    chain_f = txaio.create_future()
+                    handler_f = self.fire('connectfailure', self, fail.value)
+                    txaio.add_callbacks(
+                        handler_f,
+                        lambda _: txaio.reject(chain_f, fail),
+                        lambda _: txaio.reject(chain_f, fail)
+                    )
+                    return chain_f
+
+                def connect_error(fail):
+                    notify_f = notify_connect_error(fail)
+                    txaio.add_callbacks(notify_f, None, handle_connect_error)
 
                 txaio.add_callbacks(connect_f, session_done, connect_error)
 
