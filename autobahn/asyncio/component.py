@@ -315,17 +315,15 @@ class Component(component.Component):
         # specified in the docstring.
         done_f = txaio.create_future()
 
-        # this is a 1-element list so we can set it from closures in
-        # this function
-        transport_gen = [None]
+        connectable_transports = dict()
 
         # Create a generator of transports that .can_reconnect()
-        def set_valid_transports():
+        def set_connectable_transports():
             valid_transports = [tp for tp in self._transports if tp.can_reconnect()]
-            transport_gen[0] = itertools.cycle(valid_transports)
-            return len(valid_transports)
+            connectable_transports['count'] =  len(valid_transports)
+            connectable_transports['gen'] = itertools.cycle(valid_transports)
 
-        set_valid_transports()
+        set_connectable_transports()
 
         # issue our first event, then start the reconnect loop
         f0 = self.fire('start', loop, self)
@@ -333,23 +331,16 @@ class Component(component.Component):
         def one_reconnect_loop(_):
             self.log.debug('Entering re-connect loop')
 
-            # cycle through all connectable transports until max_retries hit
-            transport = next(transport_gen[0])
-
-            delay = transport.next_delay()
-            self.log.debug(
-                'trying transport {transport_idx} using connect delay {transport_delay}',
-                transport_idx=transport.idx,
-                transport_delay=delay,
-            )
-
-            delay_f = asyncio.ensure_future(txaio.sleep(delay))
+            if not connectable_transports['count']:
+                err_msg = u"Component failed: Exhausted all transport connect attempts"
+                self.log.info(err_msg)
+                try:
+                    raise RuntimeError(err_msg)
+                except RuntimeError as e:
+                    txaio.reject(done_f, e)
+                    return
 
             def actual_connect(_):
-                connect_f = self._connect_once(loop, transport)
-
-                def session_done(x):
-                    txaio.resolve(done_f, None)
 
                 def handle_connect_error(fail):
                     unrecoverable_error = False
@@ -395,25 +386,15 @@ class Component(component.Component):
                         # level, e.g. SyntaxError?
                         self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(fail))
 
-                    if not unrecoverable_error:
-                        if not transport.can_reconnect():
-                            # transport failed or max_retries hit so remove
-                            # it from valid transports
-                            if not set_valid_transports():
-                                # No more valid transports to try
-                                unrecoverable_error = True
-                                err_msg = u"Connection failed: Exhausted all transport connect attempts"
-                                self.log.info(err_msg)
-                                try:
-                                    raise RuntimeError(err_msg)
-                                except RuntimeError:
-                                    fail = txaio.create_failure()
-
                     if unrecoverable_error:
                         txaio.reject(done_f, fail)
                         return
 
-                    return one_reconnect_loop(None)
+                    if not transport.can_reconnect():
+                        set_connectable_transports()
+
+                    txaio.call_later(0, one_reconnect_loop, None)
+                    return
 
                 def notify_connect_error(fail):
                     chain_f = txaio.create_future()
@@ -429,8 +410,22 @@ class Component(component.Component):
                     notify_f = notify_connect_error(fail)
                     txaio.add_callbacks(notify_f, None, handle_connect_error)
 
+                def session_done(x):
+                    txaio.resolve(done_f, None)
+
+                connect_f = self._connect_once(loop, transport)
                 txaio.add_callbacks(connect_f, session_done, connect_error)
 
+            transport = next(connectable_transports['gen'])
+
+            delay = transport.next_delay()
+            self.log.debug(
+                'trying transport {transport_idx} using connect delay {transport_delay}',
+                transport_idx=transport.idx,
+                transport_delay=delay,
+            )
+
+            delay_f = asyncio.ensure_future(txaio.sleep(delay))
             txaio.add_callbacks(delay_f, actual_connect, error)
 
         def error(fail):
