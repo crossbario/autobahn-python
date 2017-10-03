@@ -276,7 +276,7 @@ class _Transport(object):
     def can_reconnect(self):
         if self._permanent_failure:
             return False
-        if self.max_retries == u'unlimited':
+        if self.max_retries == -1:
             return True
         return self.connect_attempts < self.max_retries + 1
 
@@ -284,7 +284,7 @@ class _Transport(object):
         if self.connect_attempts == 0:
             # if we never tried before, try immediately
             return 0
-        elif self.max_retries != 'unlimited' and self.connect_attempts >= self.max_retries + 1:
+        elif self.max_retries != -1 and self.connect_attempts >= self.max_retries + 1:
             raise RuntimeError('max reconnects reached')
         else:
             self.retry_delay = self.retry_delay * self.retry_delay_growth
