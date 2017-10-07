@@ -63,19 +63,6 @@ from autobahn.wamp.exception import ApplicationError
 __all__ = ('Component',)
 
 
-def _is_ssl_error(e):
-    """
-    Internal helper.
-
-    This is so we can just return False if we didn't import any
-    TLS/SSL libraries. Otherwise, returns True if this is an
-    OpenSSL.SSL.Error
-    """
-    if _TLS:
-        return isinstance(e, SSL.Error)
-    return False
-
-
 def _unique_list(seq):
     """
     Return a list with unique elements from sequence, preserving order.
@@ -294,6 +281,18 @@ class Component(component.Component):
     The factory of the session we will instantiate.
     """
 
+    def _is_ssl_error(self, e):
+        """
+        Internal helper.
+
+        This is so we can just return False if we didn't import any
+        TLS/SSL libraries. Otherwise, returns True if this is an
+        OpenSSL.SSL.Error
+        """
+        if _TLS:
+            return isinstance(e, SSL.Error)
+        return False
+
     def _check_native_endpoint(self, endpoint):
         if IStreamClientEndpoint.providedBy(endpoint):
             pass
@@ -324,109 +323,6 @@ class Component(component.Component):
         transport_factory = _create_transport_factory(reactor, transport, session_factory)
         transport_endpoint = _create_transport_endpoint(reactor, transport.endpoint)
         return transport_endpoint.connect(transport_factory)
-
-    # XXX think: is it okay to use inlineCallbacks (in this
-    # twisted-only file) even though we're using txaio?
-    @inlineCallbacks
-    def start(self, reactor=None):
-        """
-        This starts the Component, which means it will start connecting
-        (and re-connecting) to its configured transports. A Component
-        runs until it is "done", which means one of:
-
-        - There was a "main" function defined, and it completed successfully;
-        - Something called ``.leave()`` on our session, and we left successfully;
-        - ``.stop()`` was called, and completed successfully;
-        - none of our transports were able to connect successfully (failure);
-
-        :returns: a Deferred that fires (with ``None``) when we are
-            "done" or with a Failure if something went wrong.
-        """
-        if reactor is None:
-            self.log.warn("Using default reactor")
-            from twisted.internet import reactor
-
-        yield self.fire('start', reactor, self)
-
-        # transports to try again and again ..
-        transport_gen = itertools.cycle(self._transports)
-
-        reconnect = True
-        last_failure = None
-
-        self.log.debug('Entering re-connect loop')
-
-        while reconnect:
-            # cycle through all transports forever ..
-            transport = next(transport_gen)
-
-            # only actually try to connect using the transport,
-            # if the transport hasn't reached max. connect count
-            if transport.can_reconnect():
-                delay = transport.next_delay()
-                self.log.debug(
-                    'trying transport {transport_idx} using connect delay {transport_delay}',
-                    transport_idx=transport.idx,
-                    transport_delay=delay,
-                )
-                yield sleep(delay)
-                try:
-                    yield self._connect_once(reactor, transport)
-                except Exception as e:
-                    f = txaio.create_failure()
-                    last_failure = f
-                    self.log.error(u'component failed: {error}', error=txaio.failure_message(f))
-                    self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))
-                    # If this is a "fatal error" that will never work,
-                    # we bail out now
-                    if isinstance(e, ApplicationError):
-                        if e.error in [u'wamp.error.no_such_realm', u'wamp.error.no_auth_method']:
-                            reconnect = False
-                            self.log.error(u"Fatal error, not reconnecting")
-                            # The thinking here is that we really do
-                            # want to 'raise' (and thereby fail the
-                            # entire "start" / reconnect loop) because
-                            # if the realm isn't valid, we're "never"
-                            # going to succeed...
-                            raise
-                        self.log.error(u"{msg}", msg=e.error_message())
-                    elif _is_ssl_error(e):
-                        # Quoting pyOpenSSL docs: "Whenever
-                        # [SSL.Error] is raised directly, it has a
-                        # list of error messages from the OpenSSL
-                        # error queue, where each item is a tuple
-                        # (lib, function, reason). Here lib, function
-                        # and reason are all strings, describing where
-                        # and what the problem is. See err(3) for more
-                        # information."
-                        for (lib, fn, reason) in e.args[0]:
-                            self.log.error(u"TLS failure: {reason}", reason=reason)
-                        self.log.error(u"Marking this transport as failed")
-                        transport.failed()
-                    else:
-                        f = txaio.create_failure()
-                        self.log.error(
-                            u'Connection failed: {error}',
-                            error=txaio.failure_message(f),
-                        )
-                        # some types of errors should probably have
-                        # stacktraces logged immediately at error
-                        # level, e.g. SyntaxError?
-                        self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))
-                else:
-                    self.log.debug(u"Not reconnecting")
-                    reconnect = False
-            else:
-                # check if there is any transport left we can use
-                # to connect
-                if not self._can_reconnect():
-                    self.log.info("No remaining transports to try")
-                    reconnect = False
-        if last_failure is not None:
-            last_failure.raiseException()
-
-    def stop(self):
-        return self._session.leave()
 
 
 def run(components, log_level='info'):
