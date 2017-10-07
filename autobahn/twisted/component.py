@@ -324,6 +324,24 @@ class Component(component.Component):
         transport_endpoint = _create_transport_endpoint(reactor, transport.endpoint)
         return transport_endpoint.connect(transport_factory)
 
+    def start(self, reactor=None, log_level=None):
+        """
+        This starts the Component, which means it will start connecting
+        (and re-connecting) to its configured transports. A Component
+        runs until it is "done", which means one of:
+        - There was a "main" function defined, and it completed successfully;
+        - Something called ``.leave()`` on our session, and we left successfully;
+        - ``.stop()`` was called, and completed successfully;
+        - none of our transports were able to connect successfully (failure);
+        :returns: a Deferred that fires (with ``None``) when we are
+            "done" or with a Failure if something went wrong.
+        """
+        if reactor is None:
+            self.log.warn("Using default reactor")
+            from twisted.internet import reactor
+
+        return self._start(loop=reactor, log_level=log_level)
+
 
 def run(components, log_level='info'):
     """

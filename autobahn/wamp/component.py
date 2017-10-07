@@ -461,7 +461,7 @@ class Component(ObservableMixin):
                 return True
         return False
 
-    def start(self, loop=None, log_level=None):
+    def _start(self, loop=None, log_level=None):
         """
         This starts the Component, which means it will start connecting
         (and re-connecting) to its configured transports. A Component

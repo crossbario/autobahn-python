@@ -286,6 +286,26 @@ class Component(component.Component):
         else:
             assert(False), 'should not arrive here'
 
+    # async function
+    def start(self, loop=None, log_level=None):
+        """
+        This starts the Component, which means it will start connecting
+        (and re-connecting) to its configured transports. A Component
+        runs until it is "done", which means one of:
+        - There was a "main" function defined, and it completed successfully;
+        - Something called ``.leave()`` on our session, and we left successfully;
+        - ``.stop()`` was called, and completed successfully;
+        - none of our transports were able to connect successfully (failure);
+        :returns: a Future which will resolve (to ``None``) when we are
+            "done" or with an error if something went wrong.
+        """
+
+        if loop is None:
+            self.log.warn("Using default loop")
+            loop = asyncio.get_default_loop()
+
+        return self._start(loop=loop, log_level=log_level)
+
 
 def run(components, log_level='info'):
     """
