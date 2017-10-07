@@ -30,7 +30,6 @@ from __future__ import absolute_import, print_function
 import six
 import ssl  # XXX what Python version is this always available at?
 import signal
-import itertools
 from functools import partial
 
 try:
@@ -49,10 +48,10 @@ from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
 from autobahn.wamp import component
 
 from autobahn.asyncio.wamp import Session
-from autobahn.wamp.exception import ApplicationError
 
 
 __all__ = ('Component',)
+
 
 def _unique_list(seq):
     """

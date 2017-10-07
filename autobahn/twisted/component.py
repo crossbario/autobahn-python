@@ -27,9 +27,6 @@
 
 from __future__ import absolute_import, print_function
 
-import itertools
-
-from twisted.internet.defer import inlineCallbacks  # XXX FIXME?
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
@@ -55,9 +52,7 @@ from autobahn.twisted.rawsocket import WampRawSocketClientFactory
 
 from autobahn.wamp import component
 
-from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import Session
-from autobahn.wamp.exception import ApplicationError
 
 
 __all__ = ('Component',)

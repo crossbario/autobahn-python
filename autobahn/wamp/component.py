@@ -530,7 +530,8 @@ class Component(ObservableMixin):
                     # listening etc.
                     self.log.info(u"Connection failed: {msg}", msg=txaio.failure_message(fail))
 
-                elif self._is_ssl_error(fail.value): #     # Quoting pyOpenSSL docs: "Whenever
+                elif self._is_ssl_error(fail.value):
+                    # Quoting pyOpenSSL docs: "Whenever
                     # [SSL.Error] is raised directly, it has a
                     # list of error messages from the OpenSSL
                     # error queue, where each item is a tuple
@@ -540,7 +541,7 @@ class Component(ObservableMixin):
                     # information."
                     self.log.error(u"TLS failure: {reason}", reason=fail.value.args[1])
                     self.log.error(u"Marking this transport as failed")
-                    transport.failed()
+                    transport_candidate[0].failed()
                 else:
                     self.log.error(
                         u'Connection failed: {error}',
