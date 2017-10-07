@@ -46,7 +46,7 @@ if os.environ.get('USE_TWISTED', False):
         def setUp(self):
             pass
 
-        @patch('autobahn.twisted.component.sleep', return_value=succeed(None))
+        @patch('txaio.sleep', return_value=succeed(None))
         @inlineCallbacks
         def test_successful_connect(self, fake_sleep):
             endpoint = Mock()
