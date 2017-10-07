@@ -482,12 +482,6 @@ class Component(ObservableMixin):
         if log_level is not None:
             txaio.set_global_log_level(log_level)
 
-        # run() will always pass in a loop, ensure direct callers of this
-        # method do the same
-        if loop is None:
-            self.log.info("No event loop specified")
-            raise RuntimeError("An even loop must be passed to start()")
-
         # this future will be returned, and thus has the semantics
         # specified in the docstring.
         done_f = txaio.create_future()
