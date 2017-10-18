@@ -32,14 +32,15 @@ import mock
 if os.environ.get('USE_TWISTED', False):
 
     from twisted.internet.defer import inlineCallbacks, Deferred, returnValue
-    from twisted.internet.defer import succeed, DeferredList
+    from twisted.internet.defer import succeed, fail, DeferredList
     from twisted.trial import unittest
     import twisted
     from six import PY3
 
     from autobahn import util
     from autobahn.twisted.wamp import ApplicationSession
-    from autobahn.wamp import message, role, serializer, types, uri
+    from autobahn.wamp import message, role, serializer, types, uri, CloseDetails
+    from autobahn.wamp.request import CallRequest
     from autobahn.wamp.exception import ApplicationError, NotAuthorized
     from autobahn.wamp.exception import InvalidUri, ProtocolError
 
@@ -173,6 +174,15 @@ if os.environ.get('USE_TWISTED', False):
             # this should not raise an exception, but did when this
             # test-case was written
             handler.onClose(False)
+
+        def test_reject_pending(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            # This could happen if the task waiting on a request gets cancelled
+            deferred = fail(Exception())
+            handler._call_reqs[1] = CallRequest(1, 'foo', deferred, {})
+            handler.onLeave(CloseDetails())
 
     class TestRegisterDecorator(unittest.TestCase):
 

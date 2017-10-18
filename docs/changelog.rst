@@ -8,6 +8,7 @@ Changelog
 master (unreleased)
 -------------------
 
+* fix: don't try to reject cancelled futures within pending requests when closing the session
 
 
 17.9.3
