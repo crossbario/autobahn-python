@@ -1163,7 +1163,9 @@ class ApplicationSession(BaseSession):
                 request_id=request.request_id,
                 request_type=request.__class__.__name__,
             )
-            txaio.reject(request.on_reply, exc)
+            if not txaio.is_called(request.on_reply):
+                txaio.reject(request.on_reply, exc)
+
             # wait for any async-ness in the error handlers for on_reply
             txaio.add_callbacks(d, lambda _: request.on_reply, lambda _: request.on_reply)
         return d
