@@ -8,6 +8,12 @@ Changelog
 master (unreleased)
 -------------------
 
+
+17.10.1
+-------
+
+* fix: proxy support (#918)
+* fix: ensure that a future is not done before rejecting it (#919)
 * fix: don't try to reject cancelled futures within pending requests when closing the session
 
 
