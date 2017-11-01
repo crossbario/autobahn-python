@@ -187,6 +187,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         """
         self.transport.unregisterProducer()
 
+
 @public
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
     """
