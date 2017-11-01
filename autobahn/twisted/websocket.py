@@ -181,6 +181,12 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         """
         self.transport.registerProducer(producer, streaming)
 
+    def unregisterProducer(self):
+        """
+        Unregister Twisted producer with this protocol.
+        """
+        self.transport.unregisterProducer()
+
 
 @public
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
