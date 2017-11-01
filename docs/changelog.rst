@@ -8,6 +8,7 @@ Changelog
 master (unreleased)
 -------------------
 
+* fix: pass `unregisterProducer` through to twisted to complement `WebSocketAdapterProtocol.registerProducer` (#875)
 
 17.10.1
 -------

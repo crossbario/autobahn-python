@@ -190,6 +190,9 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
     def registerProducer(self, producer, streaming):
         raise Exception("not implemented")
 
+    def unregisterProducer(self):
+        raise Exception("not implemented")
+
 
 @public
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
