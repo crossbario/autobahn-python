@@ -478,7 +478,7 @@ class Component(ObservableMixin):
         def create_session():
             cfg = ComponentConfig(self._realm, self._extra)
             try:
-                session = self.session_factory(cfg)
+                self._session = session = self.session_factory(cfg)
                 for auth_name, auth_config in self._authentication.items():
                     authenticator = create_authenticator(auth_name, **auth_config)
                     session.add_authenticator(authenticator)
