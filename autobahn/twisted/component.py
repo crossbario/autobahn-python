@@ -378,7 +378,7 @@ class Component(component.Component):
                     # If this is a "fatal error" that will never work,
                     # we bail out now
                     if isinstance(e, ApplicationError):
-                        if e.error in [u'wamp.error.no_such_realm']:
+                        if e.error in [u'wamp.error.no_such_realm', u'wamp.error.no_auth_method']:
                             reconnect = False
                             self.log.error(u"Fatal error, not reconnecting")
                             # The thinking here is that we really do

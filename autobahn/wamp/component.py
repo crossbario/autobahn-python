@@ -36,7 +36,7 @@ import txaio
 from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
 from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
-from autobahn.wamp.exception import SessionNotReady
+from autobahn.wamp.exception import SessionNotReady, ApplicationError
 from autobahn.wamp.auth import create_authenticator
 
 
@@ -506,7 +506,14 @@ class Component(ObservableMixin):
                         details=details,
                     )
                     if self._entry and not txaio.is_called(done):
-                        txaio.resolve(done, None)
+                        if details.reason in [u"wamp.error.no_auth_method"]:
+                            txaio.resolve(done, txaio.create_failure(
+                                ApplicationError(
+                                    u"wamp.error.no_auth_method"
+                                )
+                            ))
+                        else:
+                            txaio.resolve(done, None)
                 session.on('leave', on_leave)
 
                 # if we were given a "main" procedure, we run through
