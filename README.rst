@@ -116,7 +116,7 @@ actions that WAMP provides:
             def add2(x, y):
                 return x + y
 
-            self.register(add2, 'com.myapp.add2');
+            self.register(add2, 'com.myapp.add2')
 
             # 4. call a remote procedure
             res = yield self.call('com.myapp.add2', 2, 3)
