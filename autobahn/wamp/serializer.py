@@ -40,6 +40,21 @@ __all__ = ['Serializer',
            'JsonSerializer']
 
 
+def _check_raw_message(raw_msg):
+    if type(raw_msg) != list:
+        raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
+
+    if len(raw_msg) == 0:
+        raise ProtocolError(u"missing message type in WAMP message")
+
+    message_type = raw_msg[0]
+
+    if type(message_type) not in six.integer_types:
+        raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
+
+    return message_type
+
+
 class Serializer(object):
     """
     Base class for WAMP serializers. A WAMP serializer is the core glue between
@@ -109,18 +124,21 @@ class Serializer(object):
 
         for raw_msg in raw_msgs:
 
-            if type(raw_msg) != list:
-                raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
+            message_type = _check_raw_message(raw_msg)
 
-            if len(raw_msg) == 0:
-                raise ProtocolError(u"missing message type in WAMP message")
+            if message_type == message.MUX_MESSAGE_TYPE:
+                if len(raw_msg) != 3:
+                    raise ProtocolError("invalid MUX message of length {}".format(len(raw_msg)))
 
-            message_type = raw_msg[0]
+                mux_session_id = raw_msg[1]
+                if type(mux_session_id) not in six.integer_types:
+                    raise ProtocolError("invalid type {0} for MUX session ID".format(type(mux_session_id)))
 
-            if type(message_type) not in six.integer_types:
-                # CBOR doesn't roundtrip number types
-                # https://bitbucket.org/bodhisnarkva/cbor/issues/6/number-types-dont-roundtrip
-                raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
+                raw_msg = raw_msg[2]
+
+                message_type = _check_raw_message(raw_msg)
+            else:
+                mux_session_id = None
 
             Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
@@ -129,6 +147,9 @@ class Serializer(object):
 
             # this might again raise `ProtocolError` ..
             msg = Klass.parse(raw_msg)
+
+            if mux_session_id:
+                msg.mux_session_id = mux_session_id
 
             msgs.append(msg)
 
