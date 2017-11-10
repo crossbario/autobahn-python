@@ -326,7 +326,12 @@ class Message(object):
     @mux_session_id.setter
     def mux_session_id(self, value):
         assert(value is None or type(value) in six.integer_types)
-        self._mux_session_id = value
+        if value != self._mux_session_id:
+            self._mux_session_id = value
+            self._serialized = {}
+            return True
+        else:
+            return False
 
     @property
     def correlation_id(self):
@@ -430,7 +435,11 @@ class Message(object):
         """
         # only serialize if not cached ..
         if serializer not in self._serialized:
-            self._serialized[serializer] = serializer.serialize(self.marshal())
+            if self._mux_session_id:
+                raw_msg = [MUX_MESSAGE_TYPE, self._mux_session_id, self.marshal()]
+            else:
+                raw_msg = self.marshal()
+            self._serialized[serializer] = serializer.serialize(raw_msg)
         return self._serialized[serializer]
 
 
