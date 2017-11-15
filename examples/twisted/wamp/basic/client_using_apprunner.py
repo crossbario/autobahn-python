@@ -18,7 +18,7 @@ class MyAppSession(ApplicationSession):
 
     def __init__(self, config):
         ApplicationSession.__init__(self, config)
-        self._countdown = 5
+        self._countdown = 2
 
     def onConnect(self):
         self.log.info('transport connected')
@@ -66,10 +66,10 @@ if __name__ == '__main__':
     session = MyAppSession(ComponentConfig(u'realm1', {}))
 
     # use WAMP-over-RawSocket
-    runner = ApplicationRunner(u'rs://localhost:8080', u'realm1')
+    #runner = ApplicationRunner(u'rs://localhost:8080', u'realm1')
 
     # alternatively, use WAMP-over-WebSocket plain (standalone, not hooked in under Twisted Web)
-    #runner = ApplicationRunner(u'ws://localhost:8080/ws', u'realm1')
+    runner = ApplicationRunner(u'ws://localhost:8080/ws', u'realm1')
 
     # alternatively, use WAMP-over-WebSocket running under Twisted Web (as a web resource)
     #runner = ApplicationRunner(u'ws://localhost:8080/twws', u'realm1')

@@ -43,8 +43,10 @@ class WampWebSocketProtocol(object):
     """
     Base class for WAMP-over-WebSocket transport mixins.
     """
-
-    _session = None  # default; self.session is set in onOpen
+    def __init__(self):
+        self._session = None
+        self._serializer = None
+        self._muxed_sessions = None
 
     def _bailout(self, code, reason=None):
         self.log.debug('Failing WAMP-over-WebSocket transport: code={code}, reason="{reason}"', code=code, reason=reason)
@@ -56,6 +58,8 @@ class WampWebSocketProtocol(object):
         """
         # WebSocket connection established. Now let the user WAMP session factory
         # create a new WAMP session and fire off session open callback.
+        if self._serializer._muxed:
+            self._muxed_sessions = {}
         try:
             self._session = self.factory._factory()
             self._session.onOpen(self)
@@ -92,7 +96,25 @@ class WampWebSocketProtocol(object):
                     session=self._session._session_id,
                     message=msg,
                 )
-                self._session.onMessage(msg)
+                if msg.mux_session_id and not self._serializer._muxed:
+                    raise ProtocolError('received MUX message on non-mux transport')
+                if msg.mux_session_id:
+                    if msg.mux_session_id not in self._muxed_sessions:
+                        if not callable(self._session):
+                            pass
+                        mux_session = self._session()
+                        try:
+                            session.onOpen(self, mux_session_id=msg.mux_session_id)
+                        except:
+                            # FIXME
+                            self.log.failure()
+                        self._muxed_sessions[msg.mux_session_id] = session
+
+                    session = self._muxed_sessions[msg.mux_session_id]
+                else:
+                    session = self._session
+
+                session.onMessage(msg)
 
         except ProtocolError as e:
             self.log.critical("{tb}", tb=traceback.format_exc())
@@ -244,6 +266,8 @@ class WampWebSocketFactory(object):
             # try CBOR WAMP serializer
             try:
                 from autobahn.wamp.serializer import CBORSerializer
+                serializers.append(CBORSerializer(batched=True, mixed=True))
+                serializers.append(CBORSerializer(mixed=True))
                 serializers.append(CBORSerializer(batched=True))
                 serializers.append(CBORSerializer())
             except ImportError:
@@ -252,6 +276,8 @@ class WampWebSocketFactory(object):
             # try MsgPack WAMP serializer
             try:
                 from autobahn.wamp.serializer import MsgPackSerializer
+                serializers.append(MsgPackSerializer(batched=True, mixed=True))
+                serializers.append(MsgPackSerializer(mixed=True))
                 serializers.append(MsgPackSerializer(batched=True))
                 serializers.append(MsgPackSerializer())
             except ImportError:
@@ -260,6 +286,8 @@ class WampWebSocketFactory(object):
             # try UBJSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import UBJSONSerializer
+                serializers.append(UBJSONSerializer(batched=True, mixed=True))
+                serializers.append(UBJSONSerializer(mixed=True))
                 serializers.append(UBJSONSerializer(batched=True))
                 serializers.append(UBJSONSerializer())
             except ImportError:
@@ -268,6 +296,8 @@ class WampWebSocketFactory(object):
             # try JSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import JsonSerializer
+                serializers.append(JsonSerializer(batched=True, mixed=True))
+                serializers.append(JsonSerializer(mixed=True))
                 serializers.append(JsonSerializer(batched=True))
                 serializers.append(JsonSerializer())
             except ImportError:

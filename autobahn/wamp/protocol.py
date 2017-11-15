@@ -287,6 +287,7 @@ class ApplicationSession(BaseSession):
 
         self._transport = None
         self._session_id = None
+        self._mux_session_id = None
         self._realm = None
 
         self._goodbye_sent = False
@@ -325,11 +326,12 @@ class ApplicationSession(BaseSession):
         return self._payload_codec
 
     @public
-    def onOpen(self, transport):
+    def onOpen(self, transport, mux_session_id=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
         """
         self._transport = transport
+        self._mux_session_id = mux_session_id
         d = self.fire('connect', self, transport)
         txaio.add_callbacks(
             d, None,
