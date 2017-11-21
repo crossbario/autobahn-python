@@ -31,9 +31,6 @@ import six
 import random
 from functools import wraps, partial
 
-from twisted.python.failure import Failure
-from twisted.internet.error import ReactorNotRunning
-
 import txaio
 
 from autobahn.util import ObservableMixin
@@ -695,11 +692,16 @@ def _run(reactor, components):
 
     def all_done(arg):
         log.debug("All components ended; stopping reactor")
-        if isinstance(arg, Failure):
-            log.error("Something went wrong: {log_failure}", failure=arg)
-        try:
+        if txaio.using_twisted:
+            from twisted.python.failure import Failure
+            from twisted.internet.error import ReactorNotRunning
+            if isinstance(arg, Failure):
+                log.error("Something went wrong: {log_failure}", failure=arg)
+            try:
+                reactor.stop()
+            except ReactorNotRunning:
+                pass
+        else:
             reactor.stop()
-        except ReactorNotRunning:
-            pass
     txaio.add_callbacks(done_d, all_done, all_done)
     return done_d
