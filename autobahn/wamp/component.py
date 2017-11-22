@@ -692,10 +692,7 @@ def _run(reactor, components, done_callback):
 
     def all_done(arg):
         log.debug("All components ended; stopping reactor")
-        if txaio.using_twisted:
-            done_callback(reactor, arg)
-        else:
-            done_callback(reactor, arg)
+        done_callback(reactor, arg)
 
     txaio.add_callbacks(done_d, all_done, all_done)
     return done_d
