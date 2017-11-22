@@ -625,7 +625,7 @@ class Component(ObservableMixin):
         self.on('ready', fn)
 
 
-def _run(reactor, components):
+def _run(reactor, components, done_callback):
     """
     Internal helper. Use "run" method from autobahn.twisted.wamp or
     autobahn.asyncio.wamp
@@ -693,15 +693,9 @@ def _run(reactor, components):
     def all_done(arg):
         log.debug("All components ended; stopping reactor")
         if txaio.using_twisted:
-            from twisted.python.failure import Failure
-            from twisted.internet.error import ReactorNotRunning
-            if isinstance(arg, Failure):
-                log.error("Something went wrong: {log_failure}", failure=arg)
-            try:
-                reactor.stop()
-            except ReactorNotRunning:
-                pass
+            done_callback(reactor, arg)
         else:
-            reactor.stop()
+            done_callback(reactor, arg)
+
     txaio.add_callbacks(done_d, all_done, all_done)
     return done_d

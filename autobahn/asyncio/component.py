@@ -469,8 +469,11 @@ def run(components, log_level='info'):
     loop.add_signal_handler(signal.SIGINT, partial(nicely_exit, 'SIGINT'))
     loop.add_signal_handler(signal.SIGTERM, partial(nicely_exit, 'SIGTERM'))
 
+    def done_callback(reactor, arg):
+        reactor.stop()
+
     # returns a future; could run_until_complete() but see below
-    component._run(loop, components)
+    component._run(loop, components, done_callback)
 
     try:
         loop.run_forever()
