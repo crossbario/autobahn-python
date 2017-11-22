@@ -67,6 +67,7 @@ def create_authenticator(name, **kwargs):
         klass = {
             AuthWampCra.name: AuthWampCra,
             AuthCryptoSign.name: AuthCryptoSign,
+            AuthAnonymous.name: AuthAnonymous,
         }[name]
     except KeyError:
         raise ValueError(
@@ -78,6 +79,25 @@ def create_authenticator(name, **kwargs):
 
 
 # experimental authentication API
+class AuthAnonymous(object):
+    name = u'anonymous'
+
+    def __init__(self, **kw):
+        self._args = kw
+
+    @property
+    def authextra(self):
+        return self._args.get(u'authextra', dict())
+
+    def on_challenge(self, session, challenge):
+        raise RuntimeError(
+            "on_challenge called on anonymous authentication"
+        )
+
+
+IAuthenticator.register(AuthAnonymous)
+
+
 class AuthCryptoSign(object):
     name = u'cryptosign'
 
