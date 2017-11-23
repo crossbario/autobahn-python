@@ -43,10 +43,10 @@ class WampWebSocketProtocol(object):
     """
     Base class for WAMP-over-WebSocket transport mixins.
     """
-    def __init__(self):
-        self._session = None
-        self._serializer = None
-        self._muxed_sessions = None
+    # default; self.session is set in onOpen
+    _session = None
+    _serializer = None
+    _muxed_sessions = None
 
     def _bailout(self, code, reason=None):
         self.log.debug('Failing WAMP-over-WebSocket transport: code={code}, reason="{reason}"', code=code, reason=reason)
