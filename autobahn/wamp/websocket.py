@@ -266,8 +266,8 @@ class WampWebSocketFactory(object):
             # try CBOR WAMP serializer
             try:
                 from autobahn.wamp.serializer import CBORSerializer
-                serializers.append(CBORSerializer(batched=True, mixed=True))
-                serializers.append(CBORSerializer(mixed=True))
+                serializers.append(CBORSerializer(batched=True, muxed=True))
+                serializers.append(CBORSerializer(muxed=True))
                 serializers.append(CBORSerializer(batched=True))
                 serializers.append(CBORSerializer())
             except ImportError:
@@ -276,8 +276,8 @@ class WampWebSocketFactory(object):
             # try MsgPack WAMP serializer
             try:
                 from autobahn.wamp.serializer import MsgPackSerializer
-                serializers.append(MsgPackSerializer(batched=True, mixed=True))
-                serializers.append(MsgPackSerializer(mixed=True))
+                serializers.append(MsgPackSerializer(batched=True, muxed=True))
+                serializers.append(MsgPackSerializer(muxed=True))
                 serializers.append(MsgPackSerializer(batched=True))
                 serializers.append(MsgPackSerializer())
             except ImportError:
@@ -286,8 +286,8 @@ class WampWebSocketFactory(object):
             # try UBJSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import UBJSONSerializer
-                serializers.append(UBJSONSerializer(batched=True, mixed=True))
-                serializers.append(UBJSONSerializer(mixed=True))
+                serializers.append(UBJSONSerializer(batched=True, muxed=True))
+                serializers.append(UBJSONSerializer(muxed=True))
                 serializers.append(UBJSONSerializer(batched=True))
                 serializers.append(UBJSONSerializer())
             except ImportError:
@@ -296,8 +296,8 @@ class WampWebSocketFactory(object):
             # try JSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import JsonSerializer
-                serializers.append(JsonSerializer(batched=True, mixed=True))
-                serializers.append(JsonSerializer(mixed=True))
+                serializers.append(JsonSerializer(batched=True, muxed=True))
+                serializers.append(JsonSerializer(muxed=True))
                 serializers.append(JsonSerializer(batched=True))
                 serializers.append(JsonSerializer())
             except ImportError:
