@@ -104,11 +104,11 @@ class WampWebSocketProtocol(object):
                             pass
                         mux_session = self._session()
                         try:
-                            session.onOpen(self, mux_session_id=msg.mux_session_id)
+                            mux_session.onOpen(self, mux_session_id=msg.mux_session_id)
                         except:
                             # FIXME
                             self.log.failure()
-                        self._muxed_sessions[msg.mux_session_id] = session
+                        self._muxed_sessions[msg.mux_session_id] = mux_session
 
                     session = self._muxed_sessions[msg.mux_session_id]
                 else:

@@ -526,7 +526,7 @@ else:
         WAMP-over-Longpoll HTTP fallback.
         """
 
-        def __init__(self, batched=False, muxed=muxed):
+        def __init__(self, batched=False, muxed=False):
             """
             Ctor.
 
