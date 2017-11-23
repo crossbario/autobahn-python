@@ -33,6 +33,8 @@ from twisted.internet.defer import inlineCallbacks  # XXX FIXME?
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
+from twisted.python.failure import Failure
+from twisted.internet.error import ReactorNotRunning
 
 try:
     _TLS = True
@@ -452,4 +454,15 @@ def run(components, log_level='info'):
     # txaio.start_logging() what happens if we call it again?)
     if log_level is not None:
         txaio.start_logging(level=log_level)
-    react(component._run, (components, ))
+
+    log = txaio.make_logger()
+
+    def done_callback(reactor, arg):
+        if isinstance(arg, Failure):
+            log.error("Something went wrong: {log_failure}", failure=arg)
+        try:
+            reactor.stop()
+        except ReactorNotRunning:
+            pass
+
+    react(component._run, (components, done_callback))
