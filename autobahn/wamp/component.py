@@ -505,7 +505,8 @@ class Component(ObservableMixin):
                         "session leaving '{details.reason}'",
                         details=details,
                     )
-                    if self._entry and not txaio.is_called(done):
+                    #if self._entry and not txaio.is_called(done):
+                    if not txaio.is_called(done):
                         if details.reason in [u"wamp.error.no_auth_method"]:
                             txaio.resolve(done, txaio.create_failure(
                                 ApplicationError(

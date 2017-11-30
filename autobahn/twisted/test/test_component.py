@@ -33,7 +33,8 @@ from mock import Mock, patch
 if os.environ.get('USE_TWISTED', False):
     from autobahn.twisted.component import Component
     from zope.interface import directlyProvides
-    from autobahn.wamp.message import Welcome, Goodbye
+    from autobahn.wamp.message import Welcome, Goodbye, Hello, Abort
+    from autobahn.wamp.exception import ApplicationError
     from autobahn.wamp.serializer import JsonSerializer
     from twisted.internet.interfaces import IStreamClientEndpoint
     from twisted.internet.defer import inlineCallbacks, succeed
@@ -112,10 +113,71 @@ if os.environ.get('USE_TWISTED', False):
             # makes this "hard".
             reactor = Clock()
             with replace_loop(reactor):
-                yield component.start()
+                yield component.start(reactor=reactor)
                 self.assertTrue(len(joins), 1)
                 # make sure we fire all our time-outs
                 reactor.advance(3600)
+
+        @patch('autobahn.twisted.component.sleep', return_value=succeed(None))
+        @inlineCallbacks
+        def test_connect_no_auth_method(self, fake_sleep):
+            endpoint = Mock()
+
+            directlyProvides(endpoint, IStreamClientEndpoint)
+            component = Component(
+                transports={
+                    "type": "websocket",
+                    "url": "ws://127.0.0.1/ws",
+                    "endpoint": endpoint,
+                }
+            )
+
+            def connect(factory, **kw):
+                proto = factory.buildProtocol('boom')
+                proto.makeConnection(Mock())
+
+                from autobahn.websocket.protocol import WebSocketProtocol
+                from base64 import b64encode
+                from hashlib import sha1
+                key = proto.websocket_key + WebSocketProtocol._WS_MAGIC
+                proto.data = (
+                    b"HTTP/1.1 101 Switching Protocols\x0d\x0a"
+                    b"Upgrade: websocket\x0d\x0a"
+                    b"Connection: upgrade\x0d\x0a"
+                    b"Sec-Websocket-Protocol: wamp.2.json\x0d\x0a"
+                    b"Sec-Websocket-Accept: " + b64encode(sha1(key).digest()) + b"\x0d\x0a\x0d\x0a"
+                )
+                proto.processHandshake()
+
+                from autobahn.wamp import role
+                subrole = role.RoleSubscriberFeatures()
+
+                msg = Hello(u"realm", roles=dict(subscriber=subrole), authmethods=[u"anonymous"])
+                serializer = JsonSerializer()
+                data, is_binary = serializer.serialize(msg)
+                proto.onMessage(data, is_binary)
+
+                msg = Abort(reason=u"wamp.error.no_auth_method")
+                proto.onMessage(*serializer.serialize(msg))
+                proto.onClose(False, 100, u"wamp.error.no_auth_method")
+
+                return succeed(proto)
+            endpoint.connect = connect
+
+            # XXX it would actually be nicer if we *could* support
+            # passing a reactor in here, but the _batched_timer =
+            # make_batched_timer() stuff (slash txaio in general)
+            # makes this "hard".
+            reactor = Clock()
+            with replace_loop(reactor):
+                with self.assertRaises(ApplicationError) as ctx:
+                    yield component.start(reactor=reactor)
+                # make sure we fire all our time-outs
+                reactor.advance(3600)
+            self.assertIn(
+                "no_auth_method",
+                str(ctx.exception)
+            )
 
     class InvalidTransportConfigs(unittest.TestCase):
 
