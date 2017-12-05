@@ -461,7 +461,7 @@ class Component(ObservableMixin):
                 return True
         return False
 
-    def _start(self, loop=None, log_level=None):
+    def _start(self, loop=None):
         """
         This starts the Component, which means it will start connecting
         (and re-connecting) to its configured transports. A Component
@@ -475,12 +475,6 @@ class Component(ObservableMixin):
         :returns: a Future/Deferred which will resolve (to ``None``) when we are
             "done" or with an error if something went wrong.
         """
-
-        # Component users self-managing loop & logging need to be able to set
-        # log_level otherwise only info level library log msgs are logged
-        # http://txaio.readthedocs.io/en/latest/programming-guide.html#starting-logging-yourself
-        if log_level is not None:
-            txaio.set_global_log_level(log_level)
 
         # this future will be returned, and thus has the semantics
         # specified in the docstring.

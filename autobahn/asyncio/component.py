@@ -286,7 +286,7 @@ class Component(component.Component):
             assert(False), 'should not arrive here'
 
     # async function
-    def start(self, loop=None, log_level=None):
+    def start(self, loop=None):
         """
         This starts the Component, which means it will start connecting
         (and re-connecting) to its configured transports. A Component
@@ -303,10 +303,10 @@ class Component(component.Component):
             self.log.warn("Using default loop")
             loop = asyncio.get_default_loop()
 
-        return self._start(loop=loop, log_level=log_level)
+        return self._start(loop=loop)
 
 
-def run(components, log_level='info'):
+def run(components):
     """
     High-level API to run a series of components.
 
@@ -322,16 +322,8 @@ def run(components, log_level='info'):
 
     :param components: the Component(s) you wish to run
     :type components: Component or list of Components
-
-    :param log_level: a valid log-level (or None to avoid calling start_logging)
-    :type log_level: string
     """
 
-    # actually, should we even let people "not start" the logging? I'm
-    # not sure that's wise... (double-check: if they already called
-    # txaio.start_logging() what happens if we call it again?)
-    if log_level is not None:
-        txaio.start_logging(level=log_level)
     loop = asyncio.get_event_loop()
     log = txaio.make_logger()
 

@@ -319,7 +319,7 @@ class Component(component.Component):
         transport_endpoint = _create_transport_endpoint(reactor, transport.endpoint)
         return transport_endpoint.connect(transport_factory)
 
-    def start(self, reactor=None, log_level=None):
+    def start(self, reactor=None):
         """
         This starts the Component, which means it will start connecting
         (and re-connecting) to its configured transports. A Component
@@ -335,10 +335,10 @@ class Component(component.Component):
             self.log.warn("Using default reactor")
             from twisted.internet import reactor
 
-        return self._start(loop=reactor, log_level=log_level)
+        return self._start(loop=reactor)
 
 
-def run(components, log_level='info'):
+def run(components):
     """
     High-level API to run a series of components.
 
@@ -352,21 +352,12 @@ def run(components, log_level='info'):
 
     :param components: the Component(s) you wish to run
     :type components: Component or list of Components
-
-    :param log_level: a valid log-level (or None to avoid calling start_logging)
-    :type log_level: string
     """
     # only for Twisted > 12
     # ...so this isn't in all Twisted versions we test against -- need
     # to do "something else" if we can't import .. :/ (or drop some
     # support)
     from twisted.internet.task import react
-
-    # actually, should we even let people "not start" the logging? I'm
-    # not sure that's wise... (double-check: if they already called
-    # txaio.start_logging() what happens if we call it again?)
-    if log_level is not None:
-        txaio.start_logging(level=log_level)
 
     log = txaio.make_logger()
 
