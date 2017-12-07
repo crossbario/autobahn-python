@@ -306,7 +306,7 @@ class Component(component.Component):
 
         if loop is None:
             self.log.warn("Using default loop")
-            loop = asyncio.get_default_loop()
+            loop = asyncio.get_event_loop()
 
         # this future will be returned, and thus has the semantics
         # specified in the docstring.
