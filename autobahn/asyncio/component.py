@@ -306,7 +306,7 @@ class Component(component.Component):
         return self._start(loop=loop)
 
 
-def run(components):
+def run(components, log_level='info'):
     """
     High-level API to run a series of components.
 
@@ -322,8 +322,16 @@ def run(components):
 
     :param components: the Component(s) you wish to run
     :type components: Component or list of Components
+
+    :param log_level: a valid log-level (or None to avoid calling start_logging)
+    :type log_level: string
     """
 
+    # actually, should we even let people "not start" the logging? I'm
+    # not sure that's wise... (double-check: if they already called
+    # txaio.start_logging() what happens if we call it again?)
+    if log_level is not None:
+        txaio.start_logging(level=log_level)
     loop = asyncio.get_event_loop()
     log = txaio.make_logger()
 
