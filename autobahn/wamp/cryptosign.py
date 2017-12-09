@@ -548,11 +548,20 @@ if HAS_CRYPTOSIGN:
             key (from a SSH private key file) or a (public) verification key (from a SSH
             public key file). A private key file must be passphrase-less.
             """
-            SSH_BEGIN = u'-----BEGIN OPENSSH PRIVATE KEY-----'
 
             with open(filename, 'rb') as f:
                 keydata = f.read().decode('utf-8').strip()
+            return cls.from_ssh_data(keydata)
 
+        @util.public
+        @classmethod
+        def from_ssh_data(cls, keydata):
+            """
+            Load an Ed25519 key from SSH key file. The key file can be a (private) signing
+            key (from a SSH private key file) or a (public) verification key (from a SSH
+            public key file). A private key file must be passphrase-less.
+            """
+            SSH_BEGIN = u'-----BEGIN OPENSSH PRIVATE KEY-----'
             if keydata.startswith(SSH_BEGIN):
                 # OpenSSH private key
                 keydata, comment = _read_ssh_ed25519_privkey(keydata)

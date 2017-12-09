@@ -306,7 +306,7 @@ class Component(component.Component):
 
         if loop is None:
             self.log.warn("Using default loop")
-            loop = asyncio.get_default_loop()
+            loop = asyncio.get_event_loop()
 
         # this future will be returned, and thus has the semantics
         # specified in the docstring.
@@ -391,22 +391,15 @@ class Component(component.Component):
                                 u'Connection failed: {error}',
                                 error=txaio.failure_message(fail),
                             )
-                            # some types of errors should probably have
-                            # stacktraces logged immediately at error
-                            # level, e.g. SyntaxError?
-                            self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(fail))
-                            return one_reconnect_loop(None)
+                            # This is some unknown failure, e.g. could
+                            # be SyntaxError etc so we're aborting the
+                            # whole mission
+                            txaio.reject(done_f, fail)
+                            return
 
                     txaio.add_callbacks(f, session_done, connect_error)
 
             txaio.add_callbacks(delay_f, actual_connect, error)
-
-            if False:
-                # check if there is any transport left we can use
-                # to connect
-                if not self._can_reconnect():
-                    self.log.info("No remaining transports to try")
-                    reconnect[0] = False
 
         def error(fail):
             self.log.info("Internal error {msg}", msg=txaio.failure_message(fail))

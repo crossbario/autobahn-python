@@ -338,7 +338,7 @@ class ApplicationSession(BaseSession):
         txaio.add_callbacks(
             d,
             lambda _: txaio.as_future(self.onConnect),
-            None,
+            lambda fail: self._swallow_error(fail, "While calling 'onConnect'")
         )
 
     @public
@@ -511,7 +511,6 @@ class ApplicationSession(BaseSession):
                 )
 
             elif isinstance(msg, message.Abort):
-
                 # fire callback and close the transport
                 details = types.CloseDetails(msg.reason, msg.message)
                 d = txaio.as_future(self.onLeave, details)
@@ -1654,7 +1653,7 @@ class _SessionShim(ApplicationSession):
         # here we check that any duplicate keys have the same values
         authextra = authenticator.authextra
         merged = self._merged_authextra()
-        for k, v in merged:
+        for k, v in merged.items():
             if k in authextra and authextra[k] != v:
                 raise ValueError(
                     "Inconsistent authextra values for '{}': '{}' vs '{}'".format(
