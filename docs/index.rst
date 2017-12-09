@@ -127,29 +127,35 @@ A sample **WAMP application component** implementing all client roles:
 
 .. code-block:: python
 
-    from autobahn.twisted.wamp import ApplicationSession
-    # or: from autobahn.asyncio.wamp import ApplicationSession
-    class MyComponent(ApplicationSession):
+    from autobahn.twisted.component import Component
+    # or: from autobahn.asyncio.component import Component
 
-       @inlineCallbacks
-       def onJoin(self, details):
+    demo = Component(
+        transports=[u"wss://demo.crossbar.io/ws"],
+    )
 
-           # 1) subscribe to a topic
-           def onevent(msg):
-               print("Got event: {}".format(msg))
-           yield self.subscribe(onevent, 'com.myapp.hello')
+    # 1. subscribe to a topic
+    @demo.subscribe(u'com.myapp.hello')
+    def hello(msg):
+        print("Got hello: {}".format(msg))
 
-           # 2) publish an event
-           self.publish('com.myapp.hello', 'Hello, world!')
+    # 2. register a procedure for remote calling
+    @demo.register(u'com.myapp.add2')
+    def add2(x, y):
+        return x + y
 
-           # 3) register a procedure for remoting
-           def add2(x, y):
-               return x + y
-           self.register(add2, 'com.myapp.add2');
+    # 3. after we've authenticated, run some code
+    @demo.on_join
+    async def joined(session, details):
+        # publish an event (won't go to "this" session by default)
+        await session.publish('com.myapp.hello', 'Hello, world!')
 
-           # 4) call a remote procedure
-           res = yield self.call('com.myapp.add2', 2, 3)
-           print("Got result: {}".format(res))
+        # 4. call a remote procedure
+        result = await session.call('com.myapp.add2', 2, 3)
+        print("com.myapp.add2(2, 3) = {}".format(result))
+
+    if __name__ == "__main__":
+        run([demo])
 
 
 Complete example code:

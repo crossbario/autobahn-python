@@ -67,6 +67,8 @@ def create_authenticator(name, **kwargs):
         klass = {
             AuthWampCra.name: AuthWampCra,
             AuthCryptoSign.name: AuthCryptoSign,
+            AuthAnonymous.name: AuthAnonymous,
+            AuthTicket.name: AuthTicket,
         }[name]
     except KeyError:
         raise ValueError(
@@ -78,6 +80,49 @@ def create_authenticator(name, **kwargs):
 
 
 # experimental authentication API
+class AuthAnonymous(object):
+    name = u'anonymous'
+
+    def __init__(self, **kw):
+        self._args = kw
+
+    @property
+    def authextra(self):
+        return self._args.get(u'authextra', dict())
+
+    def on_challenge(self, session, challenge):
+        raise RuntimeError(
+            "on_challenge called on anonymous authentication"
+        )
+
+
+IAuthenticator.register(AuthAnonymous)
+
+
+class AuthTicket(object):
+    name = u'ticket'
+
+    def __init__(self, **kw):
+        self._args = kw
+        try:
+            self._ticket = self._args.pop(u'ticket')
+        except KeyError:
+            raise ValueError(
+                "ticket authentication requires 'ticket=' kwarg"
+            )
+
+    @property
+    def authextra(self):
+        return self._args.get(u'authextra', dict())
+
+    def on_challenge(self, session, challenge):
+        assert challenge.method == u"ticket"
+        return self._ticket
+
+
+IAuthenticator.register(AuthTicket)
+
+
 class AuthCryptoSign(object):
     name = u'cryptosign'
 

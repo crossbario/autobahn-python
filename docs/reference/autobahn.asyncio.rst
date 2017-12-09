@@ -4,6 +4,17 @@ Module ``autobahn.asyncio``
 Autobahn asyncio specific classes. These are used when asyncio is run as the underlying networking framework.
 
 
+Component
+---------
+
+The component API provides a high-level funcional style method of defining and running WAMP components including authentication configuration
+
+.. autoclass:: autobahn.asyncio.component.Component
+    :members:
+
+.. autofunction:: autobahn.asyncio.component.run
+
+
 WebSocket Protocols and Factories
 ---------------------------------
 

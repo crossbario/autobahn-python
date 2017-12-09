@@ -127,7 +127,11 @@ extras_require_dev = [
     "flake8>=2.5.1",                    # MIT license
     "pyflakes>=1.0.0",                  # MIT license
     "mock>=1.3.0",                      # BSD license
-    "pytest>=2.8.6",                    # MIT license
+
+    # pytest 3.3.0 has dropped support for Python 3.3
+    # https://docs.pytest.org/en/latest/changelog.html#pytest-3-3-0-2017-11-23
+    "pytest>=2.8.6,<3.3.0",             # MIT license
+
     "unittest2>=1.1.0",                 # BSD license
     "twine>=1.6.5",                     # Apache 2.0
     'sphinx>=1.2.3',                    # BSD
@@ -146,8 +150,8 @@ extras_require_dev = [
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
 test_requirements = [
-    "pytest>=2.8.6",        # MIT license
-    "mock>=1.3.0",          # BSD license
+    "pytest>=2.8.6,<3.3.0",             # MIT license
+    "mock>=1.3.0",                      # BSD license
 ]
 
 

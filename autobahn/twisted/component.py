@@ -352,6 +352,7 @@ class Component(component.Component):
         transport_gen = itertools.cycle(self._transports)
 
         reconnect = True
+        last_failure = None
 
         self.log.debug('Entering re-connect loop')
 
@@ -373,12 +374,13 @@ class Component(component.Component):
                     yield self._connect_once(reactor, transport)
                 except Exception as e:
                     f = txaio.create_failure()
+                    last_failure = f
                     self.log.error(u'component failed: {error}', error=txaio.failure_message(f))
                     self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))
                     # If this is a "fatal error" that will never work,
                     # we bail out now
                     if isinstance(e, ApplicationError):
-                        if e.error in [u'wamp.error.no_such_realm']:
+                        if e.error in [u'wamp.error.no_such_realm', u'wamp.error.no_auth_method']:
                             reconnect = False
                             self.log.error(u"Fatal error, not reconnecting")
                             # The thinking here is that we really do
@@ -420,6 +422,8 @@ class Component(component.Component):
                 if not self._can_reconnect():
                     self.log.info("No remaining transports to try")
                     reconnect = False
+        if last_failure is not None:
+            last_failure.raiseException()
 
     def stop(self):
         return self._session.leave()

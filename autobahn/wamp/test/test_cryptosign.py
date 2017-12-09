@@ -25,11 +25,16 @@
 ###############################################################################
 
 from __future__ import absolute_import
+import hashlib
+from mock import Mock
 
 from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN
+from autobahn.wamp import types
+from autobahn.wamp.auth import create_authenticator
 
 if HAS_CRYPTOSIGN:
     from autobahn.wamp.cryptosign import SigningKey
+    from nacl.encoding import HexEncoder
 
 import tempfile
 
@@ -41,11 +46,46 @@ QyNTUxOQAAACAa38i/4dNWFuZN/72QAJbyOwZvkUyML/u2b2B1uW4RbQAAAJj4FLyB+BS8
 gQAAAAtzc2gtZWQyNTUxOQAAACAa38i/4dNWFuZN/72QAJbyOwZvkUyML/u2b2B1uW4RbQ
 AAAEBNV9l6aPVVaWYgpthJwM5YJWhRjXKet1PcfHMt4oBFEBrfyL/h01YW5k3/vZAAlvI7
 Bm+RTIwv+7ZvYHW5bhFtAAAAFXNvbWV1c2VyQGZ1bmt0aGF0LmNvbQ==
------END OPENSSH PRIVATE KEY-----
-'''
+-----END OPENSSH PRIVATE KEY-----'''
 
 pubkey = '''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJVp3hjHwIQyEladzd8mFcf0YSXcmyKS3qMLB7VqTQKm someuser@example.com
 '''
+
+
+@unittest.skipIf(not HAS_CRYPTOSIGN, 'nacl library not present')
+class TestAuth(unittest.TestCase):
+
+    def setUp(self):
+        self.key = SigningKey.from_ssh_data(keybody)
+        self.privkey_hex = self.key._key.encode(encoder=HexEncoder)
+        m = hashlib.sha256()
+        m.update("some TLS message")
+        self.channel_id = m.digest()
+
+    def test_valid(self):
+        session = Mock()
+        session._transport.get_channel_id = Mock(return_value=self.channel_id)
+        challenge = types.Challenge(u"ticket", dict(challenge="ff" * 32))
+        signed = self.key.sign_challenge(session, challenge)
+        self.assertEqual(
+            u'9b6f41540c9b95b4b7b281c3042fa9c54cef43c842d62ea3fd6030fcb66e70b3e80d49d44c29d1635da9348d02ec93f3ed1ef227dfb59a07b580095c2b82f80f9d16ca518aa0c2b707f2b2a609edeca73bca8dd59817a633f35574ac6fd80d00',
+            signed.result,
+        )
+
+    def test_authenticator(self):
+        authenticator = create_authenticator(
+            u"cryptosign",
+            authid="someone",
+            privkey=self.privkey_hex,
+        )
+        session = Mock()
+        session._transport.get_channel_id = Mock(return_value=self.channel_id)
+        challenge = types.Challenge(u"cryptosign", dict(challenge="ff" * 32))
+        reply = authenticator.on_challenge(session, challenge)
+        self.assertEqual(
+            reply.result,
+            u'9b6f41540c9b95b4b7b281c3042fa9c54cef43c842d62ea3fd6030fcb66e70b3e80d49d44c29d1635da9348d02ec93f3ed1ef227dfb59a07b580095c2b82f80f9d16ca518aa0c2b707f2b2a609edeca73bca8dd59817a633f35574ac6fd80d00',
+        )
 
 
 class TestKey(unittest.TestCase):
