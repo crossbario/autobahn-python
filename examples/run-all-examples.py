@@ -96,7 +96,7 @@ def start_crossbar():
     launched = Deferred()
     protocol = CrossbarProcessProtocol(finished, launched, Fore.YELLOW)
     exe = 'crossbar'
-    args = [exe, 'start', '--cbdir', './router/.crossbar']
+    args = [exe, 'start', '--personality', 'community', '--cbdir', './router/.crossbar']
 
     env = environ.copy()
     env["PYTHONUNBUFFERED"] = "1"

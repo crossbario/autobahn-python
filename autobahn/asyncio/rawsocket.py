@@ -497,7 +497,7 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
         if serializer is None:
             serializers = get_serializers()
             if serializers:
-                serializer = serializers[0]
+                serializer = serializers[0]()
 
         if serializer is None:
             raise Exception("could not import any WAMP serializer")
