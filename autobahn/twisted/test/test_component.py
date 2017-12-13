@@ -118,7 +118,7 @@ if os.environ.get('USE_TWISTED', False):
                 # make sure we fire all our time-outs
                 reactor.advance(3600)
 
-        @patch('autobahn.twisted.component.sleep', return_value=succeed(None))
+        @patch('txaio.sleep', return_value=succeed(None))
         @inlineCallbacks
         def test_connect_no_auth_method(self, fake_sleep):
             endpoint = Mock()

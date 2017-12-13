@@ -507,7 +507,9 @@ class Component(ObservableMixin):
                 # If this is a "fatal error" that will never work,
                 # we bail out now
                 if isinstance(fail.value, ApplicationError):
-                    if fail.value.error in [u'wamp.error.no_such_realm']:
+                    if fail.value.error in [
+                            u'wamp.error.no_such_realm',
+                            u'wamp.error.no_auth_method']:
                         unrecoverable_error = True
                         self.log.error(u"Fatal error, not reconnecting")
 
@@ -531,14 +533,14 @@ class Component(ObservableMixin):
                     self.log.error(u"Marking this transport as failed")
                     transport_candidate[0].failed()
                 else:
+                    # This is some unknown failure, e.g. could
+                    # be SyntaxError etc so we're aborting the
+                    # whole mission
                     self.log.error(
                         u'Connection failed: {error}',
                         error=txaio.failure_message(fail),
                     )
-                    # some types of errors should probably have
-                    # stacktraces logged immediately at error
-                    # level, e.g. SyntaxError?
-                    self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(fail))
+                    unrecoverable_error = True
 
                 if unrecoverable_error:
                     txaio.reject(done_f, fail)
