@@ -65,7 +65,8 @@ def install_optimal_reactor(verbose=False):
         if current_reactor != 'KQueueReactor':
             try:
                 from twisted.internet import kqreactor
-                kqreactor.install()
+                if 'twisted.internet.reactor' not in sys.modules:
+                    kqreactor.install()
             except:
                 log.critical("Running on *BSD or MacOSX, but cannot install kqueue Twisted reactor")
                 log.warn("{tb}", tb=traceback.format_exc())
