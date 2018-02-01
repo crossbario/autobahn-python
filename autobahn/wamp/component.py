@@ -91,12 +91,12 @@ def _validate_endpoint(endpoint, check_native_endpoint=None):
             for k in ['path']:
                 if k not in endpoint:
                     raise ValueError(
-                        "'{}' required for 'tcp' endpoint config".format(k)
+                        "'{}' required for 'unix' endpoint config".format(k)
                     )
             for k in ['host', 'port', 'tls']:
                 if k in endpoint:
                     raise ValueError(
-                        "'{}' not valid for in 'tcp' endpoint config".format(k)
+                        "'{}' not valid in 'unix' endpoint config".format(k)
                     )
         else:
             assert False, 'should not arrive here'
