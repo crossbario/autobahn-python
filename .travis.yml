@@ -36,10 +36,6 @@ matrix:
 
     - python: 3.3
       env:
-      - TOX_ENV=py33-twtrunk
-
-    - python: 3.3
-      env:
       - TOX_ENV=py33-asyncio
 
     - python: 3.6
