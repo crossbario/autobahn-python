@@ -8,7 +8,16 @@ Changelog
 master (unreleased)
 -------------------
 
+* ...
+
+
+18.3.1
+------
+
+* fix: endpoint configuration error messages (#942)
+* fix: various improvements to the new components API (including retries)
 * fix: pass `unregisterProducer` through to twisted to complement `WebSocketAdapterProtocol.registerProducer` (#875)
+
 
 17.10.1
 -------
