@@ -59,7 +59,7 @@ class TestAuth(unittest.TestCase):
         self.key = SigningKey.from_ssh_data(keybody)
         self.privkey_hex = self.key._key.encode(encoder=HexEncoder)
         m = hashlib.sha256()
-        m.update("some TLS message")
+        m.update("some TLS message".encode())
         self.channel_id = m.digest()
 
     def test_valid(self):
