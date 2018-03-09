@@ -151,6 +151,20 @@
                                         }
                                     }
                                 },
+                                "scram": {
+                                    "type": "static",
+                                    "principals": {
+                                        "carol": {
+    "role": "authenticated",
+    "memory": 512,
+    "cost": 4096,
+    "parallel": 2,
+    "salt": "27e569f45d4ab04810b66fb37ac76f44",
+    "stored-key": "5f88357c9070c067dd60251c0d3f11587d6dd39fd57a25e24a025d0ded5f66b6",
+    "server-key": "e32b637a4d1f3e5fd7d9f05c8b3be99f"
+                                        }
+                                    }
+                                },
                                 "anonymous": {
                                     "type": "static",
                                     "role": "anonymous"
