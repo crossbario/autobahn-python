@@ -155,13 +155,13 @@
                                     "type": "static",
                                     "principals": {
                                         "carol": {
-    "role": "authenticated",
-    "memory": 512,
-    "cost": 4096,
-    "parallel": 2,
-    "salt": "27e569f45d4ab04810b66fb37ac76f44",
-    "stored-key": "5f88357c9070c067dd60251c0d3f11587d6dd39fd57a25e24a025d0ded5f66b6",
-    "server-key": "e32b637a4d1f3e5fd7d9f05c8b3be99f"
+                                            "role": "authenticated",
+                                            "memory": 512,
+                                            "cost": 4096,
+                                            "parallel": 2,
+                                            "salt": "5fca5acd7f7c72ecf4dce05db9e09789",
+                                            "stored-key": "4a33525e3c7cfcfe441756c6c9fc9d2ce49b951aec93461b52697ac740d5fadf",
+                                            "server-key": "1ae324c43ee1985a83a45dda852e5011084a76bb45acf47e8f475cd8ce5de5e0"
                                         }
                                     }
                                 },

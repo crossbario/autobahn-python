@@ -246,10 +246,10 @@ class AuthScram(object):
 
         _, tag, ver, options, salt_data, hash_data = rawhash.split(b'$')
         salted_password = hash_data  # KDF(Normalize(password), salt, params...)
-        client_key = hmac.new(salted_password, b"Client Key").digest()
+        client_key = hmac.new(salted_password, b"Client Key", hashlib.sha256).digest()
         stored_key = hashlib.new('sha256', client_key).digest()
 
-        client_signature = hmac.new(stored_key, auth_message.encode('ascii')).digest()
+        client_signature = hmac.new(stored_key, auth_message.encode('ascii'), hashlib.sha256).digest()
         client_proof = base64.b64encode(xor(client_key, client_signature))
 
         return client_proof
