@@ -18,9 +18,16 @@ matrix:
   include:
     - env: TOX_ENV=flake8
 
+    #
+    # CPython 2.7
+    #
     - python: 2.7
       env:
-      - TOX_ENV=py27-tw121
+      - TOX_ENV=py27-tw154
+
+    - python: 2.7
+      env:
+      - TOX_ENV=py27-tw179
 
     - python: 2.7
       env:
@@ -30,17 +37,35 @@ matrix:
       env:
       - TOX_ENV=py27-asyncio
 
-    - python: 3.3
+    #
+    # CPython 3.4
+    #
+    - python: 3.4
       env:
-      - TOX_ENV=py33-tw154
+      - TOX_ENV=py34-tw154
 
-    - python: 3.3
+    - python: 3.4
       env:
-      - TOX_ENV=py33-asyncio
+      - TOX_ENV=py34-tw179
 
+    - python: 3.4
+      env:
+      - TOX_ENV=py34-twtrunk
+
+    - python: 3.4
+      env:
+      - TOX_ENV=py34-asyncio
+
+    #
+    # CPython 3.6
+    #
     - python: 3.6
       env:
       - TOX_ENV=py36-tw154
+
+    - python: 3.6
+      env:
+      - TOX_ENV=py36-tw179
 
     - python: 3.6
       env:
@@ -50,6 +75,17 @@ matrix:
       env:
       - TOX_ENV=py36-asyncio
 
+    #
+    # PyPy3
+    #
+    - python: pypy
+      env:
+      - TOX_ENV=pypy-tw154
+
+    - python: pypy
+      env:
+      - TOX_ENV=pypy-tw179
+
     - python: pypy
       env:
       - TOX_ENV=pypy-twtrunk
@@ -58,6 +94,17 @@ matrix:
       env:
       - TOX_ENV=pypy-asyncio
 
+    #
+    # PyPy3
+    #
+    - python: pypy3
+      env:
+      - TOX_ENV=pypy3-tw154
+
+    - python: pypy3
+      env:
+      - TOX_ENV=pypy3-tw179
+
     - python: pypy3
       env:
       - TOX_ENV=pypy3-twtrunk
@@ -65,6 +112,7 @@ matrix:
     - python: pypy3
       env:
       - TOX_ENV=pypy3-asyncio
+
 
 notifications:
    irc:
