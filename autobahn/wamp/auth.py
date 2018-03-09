@@ -215,8 +215,8 @@ class AuthScram(object):
     def on_challenge(self, session, challenge):
         assert challenge.method == u"scram"
         assert self._client_nonce is not None
-        required_args = ['nonce', 'salt', 'cost']
-        optional_args = ['memory', 'parallel', 'channel_binding']
+        required_args = ['nonce', 'salt', 'cost', 'memory']
+        optional_args = ['channel_binding']
         # probably want "algorithm" too, with either "argon2id-19" or
         # "pbkdf2" as values
         for k in required_args:
@@ -263,37 +263,14 @@ class AuthScram(object):
         # '$argon2i$v=19$m=512,t=2,p=2$5VtWOO3cGWYQHEMaYGbsfQ$AcmqasQgW/wI6wAHAMk4aQ'
 
         _, tag, ver, options, salt_data, hash_data = rawhash.split(b'$')
-        salted_password = hash_data
-        client_key = hmac.new(salted_password, b"Client Key", hashlib.sha256).digest()
+        salted_password = hash_data  # KDF(Normalize(password), salt, params...)
+        client_key = hmac.new(salted_password, b"Client Key").digest()
         stored_key = hashlib.new('sha256', client_key).digest()
 
-        client_signature = hmac.new(stored_key, auth_message.encode('ascii'), hashlib.sha256).digest()
-        client_proof = xor_array(client_key, client_signature)
+        client_signature = hmac.new(stored_key, auth_message.encode('ascii')).digest()
+        client_proof = base64.b64encode(xor_array(client_key, client_signature))
 
-        def confirm_server_signature(session, details):
-            """
-            When the server is satisfied, it sends a 'WELCOME' message.
-            This will cause the session to be set up and 'join' gets
-            notified. Here, we check the server-signature thus
-            authorizing the server -- if it fails we drop the
-            connection.
-            """
-            alleged_server_sig = base64.b64decode(details.authextra['scram_server_signature'])
-            server_key = hmac.new(salted_password, b"Server Key", hashlib.sha256).digest()
-            server_signature = hmac.new(server_key, auth_message.encode('ascii'), hashlib.sha256).digest()
-            if not hmac.compare_digest(server_signature, alleged_server_sig):
-                session.log.error("Verification of server SCRAM signature failed")
-                session.leave(
-                    u"wamp.error.cannot_authenticate",
-                    u"Verification of server signature failed",
-                )
-            else:
-                session.log.info(
-                    "Verification of server SCRAM signature successful"
-                )
-        session.on('join', confirm_server_signature)
-
-        return base64.b64encode(client_proof)
+        return client_proof
 
 
 IAuthenticator.register(AuthScram)
