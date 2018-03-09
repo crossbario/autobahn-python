@@ -36,14 +36,22 @@ import hmac
 import hashlib
 import random
 from struct import Struct
-from passlib.utils import saslprep
+from operator import xor
+from itertools import starmap
 
-from autobahn.util import public, xor
+from autobahn.util import public
+from autobahn.util import xor as xor_array
 from autobahn.wamp.interfaces import IAuthenticator
 
-# make optional dependency?
-from argon2.low_level import hash_secret
-from argon2 import Type
+# if we don't have argon2/passlib (see "authentication" extra) then
+# you don't get AuthScram and variants
+try:
+    from argon2.low_level import hash_secret
+    from argon2 import Type
+    from passlib.utils import saslprep
+    HAS_ARGON = True
+except ImportError:
+    HAS_ARGON = False
 
 
 __all__ = (
@@ -187,6 +195,11 @@ class AuthScram(object):
     name = u'scram'
 
     def __init__(self, **kw):
+        if not HAS_ARGON:
+            raise RuntimeError(
+                "Cannot support WAMP-SCRAM without argon2_cffi and "
+                "passlib libraries; install autobahn['scram']"
+            )
         self._args = kw
         self._client_nonce = None
 
@@ -203,7 +216,7 @@ class AuthScram(object):
         assert challenge.method == u"scram"
         assert self._client_nonce is not None
         required_args = ['nonce', 'salt', 'cost']
-        optional_args = ['memory', 'parallel']
+        optional_args = ['memory', 'parallel', 'channel_binding']
         # probably want "algorithm" too, with either "argon2id-19" or
         # "pbkdf2" as values
         for k in required_args:
@@ -212,8 +225,13 @@ class AuthScram(object):
                     "WAMP-SCRAM challenge option '{}' is "
                     " required but not specified".format(k)
                 )
+        for k in challenge.extra:
+            if k not in optional_args + required_args:
+                raise RuntimeError(
+                    "WAMP-SCRAM challenge has unknown attribute '{}'".format(k)
+                )
 
-        channel_binding = ''  # fixme
+        channel_binding = challenge.extra.get(u'channel_binding', u'')
         server_nonce = challenge.extra[u'nonce']  # base64
         salt = challenge.extra[u'salt']  # base64
         cost = int(challenge.extra[u'cost'])
@@ -250,9 +268,16 @@ class AuthScram(object):
         stored_key = hashlib.new('sha256', client_key).digest()
 
         client_signature = hmac.new(stored_key, auth_message.encode('ascii'), hashlib.sha256).digest()
-        client_proof = xor(client_key, client_signature)
+        client_proof = xor_array(client_key, client_signature)
 
         def confirm_server_signature(session, details):
+            """
+            When the server is satisfied, it sends a 'WELCOME' message.
+            This will cause the session to be set up and 'join' gets
+            notified. Here, we check the server-signature thus
+            authorizing the server -- if it fails we drop the
+            connection.
+            """
             alleged_server_sig = base64.b64decode(details.authextra['scram_server_signature'])
             server_key = hmac.new(salted_password, b"Server Key", hashlib.sha256).digest()
             server_signature = hmac.new(server_key, auth_message.encode('ascii'), hashlib.sha256).digest()
