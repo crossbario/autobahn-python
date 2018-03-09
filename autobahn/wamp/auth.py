@@ -251,7 +251,22 @@ class AuthScram(object):
 
         client_signature = hmac.new(stored_key, auth_message.encode('ascii'), hashlib.sha256).digest()
         client_proof = xor(client_key, client_signature)
-        print(client_proof)
+
+        def confirm_server_signature(session, details):
+            alleged_server_sig = base64.b64decode(details.authextra['scram_server_signature'])
+            server_key = hmac.new(salted_password, b"Server Key", hashlib.sha256).digest()
+            server_signature = hmac.new(server_key, auth_message.encode('ascii'), hashlib.sha256).digest()
+            if not hmac.compare_digest(server_signature, alleged_server_sig):
+                session.log.error("Verification of server SCRAM signature failed")
+                session.leave(
+                    u"wamp.error.cannot_authenticate",
+                    u"Verification of server signature failed",
+                )
+            else:
+                session.log.info(
+                    "Verification of server SCRAM signature successful"
+                )
+        session.on('join', confirm_server_signature)
 
         return base64.b64encode(client_proof)
 
