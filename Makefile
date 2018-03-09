@@ -94,6 +94,9 @@ test_asyncio:
 	USE_ASYNCIO=1 python -m pytest -rsx autobahn
 	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_ASYNCIO=1 python -m pytest -rsx
 
+test_cs1:
+	USE_ASYNCIO=1 python -m pytest -s -v autobahn/wamp/test/test_cryptosign.py
+
 test1:
 	USE_TWISTED=1 trial autobahn.wamp.test.test_auth
 #	USE_TWISTED=1 python -m pytest -s -v autobahn/wamp/test/test_auth.py

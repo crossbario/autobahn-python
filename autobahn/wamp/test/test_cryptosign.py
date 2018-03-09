@@ -25,8 +25,20 @@
 ###############################################################################
 
 from __future__ import absolute_import
+
 import hashlib
+import os
+
 from mock import Mock
+
+import txaio
+
+if os.environ.get('USE_TWISTED', False):
+    txaio.use_twisted()
+elif os.environ.get('USE_ASYNCIO', False):
+    txaio.use_asyncio()
+else:
+    raise Exception('no networking framework selected')
 
 from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN
 from autobahn.wamp import types
@@ -66,7 +78,7 @@ class TestAuth(unittest.TestCase):
         session = Mock()
         session._transport.get_channel_id = Mock(return_value=self.channel_id)
         challenge = types.Challenge(u"ticket", dict(challenge="ff" * 32))
-        signed = self.key.sign_challenge(session, challenge)
+        signed = yield self.key.sign_challenge(session, challenge)
         self.assertEqual(
             u'9b6f41540c9b95b4b7b281c3042fa9c54cef43c842d62ea3fd6030fcb66e70b3e80d49d44c29d1635da9348d02ec93f3ed1ef227dfb59a07b580095c2b82f80f9d16ca518aa0c2b707f2b2a609edeca73bca8dd59817a633f35574ac6fd80d00',
             signed.result,
@@ -81,7 +93,7 @@ class TestAuth(unittest.TestCase):
         session = Mock()
         session._transport.get_channel_id = Mock(return_value=self.channel_id)
         challenge = types.Challenge(u"cryptosign", dict(challenge="ff" * 32))
-        reply = authenticator.on_challenge(session, challenge)
+        reply = yield authenticator.on_challenge(session, challenge)
         self.assertEqual(
             reply.result,
             u'9b6f41540c9b95b4b7b281c3042fa9c54cef43c842d62ea3fd6030fcb66e70b3e80d49d44c29d1635da9348d02ec93f3ed1ef227dfb59a07b580095c2b82f80f9d16ca518aa0c2b707f2b2a609edeca73bca8dd59817a633f35574ac6fd80d00',
