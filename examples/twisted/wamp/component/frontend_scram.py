@@ -13,7 +13,7 @@ component = Component(
         u"scram": {
             u"authid": u"carol",
             u"authrole": u"authenticated",
-            u"password": u"password",
+            u"password": u"p4ssw0rd",
         }
     }
 )
