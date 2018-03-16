@@ -187,8 +187,40 @@ class AuthCryptoSign(object):
     def on_challenge(self, session, challenge):
         return self._privkey.sign_challenge(session, challenge)
 
+    def on_welcome(self, msg):
+        return None
+
 
 IAuthenticator.register(AuthCryptoSign)
+
+
+def _hash_argon2id13_secret(password, salt, iterations, memory):
+    """
+    Internal helper. Returns the salted/hashed password using the
+    argon2id-13 algorithm.
+    """
+    rawhash = hash_secret(
+        secret=password,
+        salt=base64.b64decode(salt),
+        time_cost=iterations,
+        memory_cost=memory,
+        parallelism=1,  # hard-coded by WAMP-SCRAM spec
+        hash_len=16,
+        type=Type.ID,
+        version=0x13,  # note this is decimal "19" which appears in places
+    )
+    # spits out stuff like:
+    # '$argon2i$v=19$m=512,t=2,p=2$5VtWOO3cGWYQHEMaYGbsfQ$AcmqasQgW/wI6wAHAMk4aQ'
+
+    _, tag, ver, options, salt_data, hash_data = rawhash.split(b'$')
+    return hash_data
+
+
+def _hash_pbkdf2_secret(password, salt, iterations):
+    """
+    Internal helper for SCRAM authentication
+    """
+    return pbkdf2(password, salt, iterations, keylen=32, hashfunc=hashlib.sha256)
 
 
 class AuthScram(object):
@@ -221,10 +253,8 @@ class AuthScram(object):
     def on_challenge(self, session, challenge):
         assert challenge.method == u"scram"
         assert self._client_nonce is not None
-        required_args = ['nonce', 'salt', 'cost', 'memory']
+        required_args = ['nonce', 'kdf', 'salt', 'iterations', 'memory']
         optional_args = ['channel_binding']
-        # probably want "algorithm" too, with either "argon2id-19" or
-        # "pbkdf2" as values
         for k in required_args:
             if k not in challenge.extra:
                 raise RuntimeError(
