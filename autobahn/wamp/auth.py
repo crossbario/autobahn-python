@@ -253,8 +253,8 @@ class AuthScram(object):
     def on_challenge(self, session, challenge):
         assert challenge.method == u"scram"
         assert self._client_nonce is not None
-        required_args = ['nonce', 'kdf', 'salt', 'iterations', 'memory']
-        optional_args = ['channel_binding']
+        required_args = ['nonce', 'kdf', 'salt', 'iterations']
+        optional_args = ['memory', 'channel_binding']
         for k in required_args:
             if k not in challenge.extra:
                 raise RuntimeError(
@@ -271,7 +271,7 @@ class AuthScram(object):
         server_nonce = challenge.extra[u'nonce']  # base64
         salt = challenge.extra[u'salt']  # base64
         iterations = int(challenge.extra[u'iterations'])
-        memory = int(challenge.extra.get(u'memory', 512))  # XXX required for argon2id, right?
+        memory = int(challenge.extra(u'memory', -1))
         password = self._args['password'].encode('utf8')  # supplied by user
         authid = saslprep(self._args['authid'])
         algorithm = challenge.extra[u'kdf']
@@ -286,6 +286,10 @@ class AuthScram(object):
         )
 
         if algorithm == u'argon2id-13':
+            if memory == -1:
+                raise ValueError(
+                    "WAMP-SCRAM 'argon2id-13' challenge requires 'memory' parameter"
+                )
             self._salted_password = _hash_argon2id13_secret(password, salt, iterations, memory)
         elif algorithm == u'pbkdf2':
             self._salted_password = _hash_pbkdf2_secret(password, salt, iterations)
