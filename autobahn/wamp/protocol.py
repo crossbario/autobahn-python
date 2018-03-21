@@ -1665,7 +1665,7 @@ class _SessionShim(ApplicationSession):
         self._authenticators[authenticator.name] = authenticator
 
     def _merged_authextra(self):
-        authextras = [a._args.get('authextra', {}) for a in self._authenticators.values()]
+        authextras = [a.authextra for a in self._authenticators.values()]
         # for all existing _authenticators, we've already checked that
         # if they contain a key it has the same value as all others.
         return {

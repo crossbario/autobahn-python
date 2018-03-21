@@ -38,11 +38,24 @@ import random
 from struct import Struct
 from operator import xor
 from itertools import starmap
+
 from autobahn.util import public
+from autobahn.util import xor as xor_array
 from autobahn.wamp.interfaces import IAuthenticator
+
+# if we don't have argon2/passlib (see "authentication" extra) then
+# you don't get AuthScram and variants
+try:
+    from argon2.low_level import hash_secret
+    from argon2 import Type
+    from passlib.utils import saslprep
+    HAS_ARGON = True
+except ImportError:
+    HAS_ARGON = False
 
 
 __all__ = (
+    'AuthScram',
     'AuthCryptoSign',
     'AuthWampCra',
     'pbkdf2',
@@ -65,8 +78,9 @@ def create_authenticator(name, **kwargs):
     """
     try:
         klass = {
-            AuthWampCra.name: AuthWampCra,
+            AuthScram.name: AuthScram,
             AuthCryptoSign.name: AuthCryptoSign,
+            AuthWampCra.name: AuthWampCra,
             AuthAnonymous.name: AuthAnonymous,
             AuthTicket.name: AuthTicket,
         }[name]
@@ -169,6 +183,120 @@ class AuthCryptoSign(object):
 
 
 IAuthenticator.register(AuthCryptoSign)
+
+
+class AuthScram(object):
+    """
+    Implements "wamp-scram" authentication for components.
+
+    NOTE: This is a prototype of a draft spec; see
+    https://github.com/wamp-proto/wamp-proto/issues/135
+    """
+    name = u'scram'
+
+    def __init__(self, **kw):
+        if not HAS_ARGON:
+            raise RuntimeError(
+                "Cannot support WAMP-SCRAM without argon2_cffi and "
+                "passlib libraries; install autobahn['scram']"
+            )
+        self._args = kw
+        self._client_nonce = None
+
+    @property
+    def authextra(self):
+        # is authextra() called exactly once per authentication?
+        if self._client_nonce is None:
+            self._client_nonce = base64.b64encode(os.urandom(16)).decode('ascii')
+        return {
+            u"nonce": self._client_nonce,
+        }
+
+    def on_challenge(self, session, challenge):
+        assert challenge.method == u"scram"
+        assert self._client_nonce is not None
+        required_args = ['nonce', 'salt', 'cost']
+        optional_args = ['memory', 'parallel', 'channel_binding']
+        # probably want "algorithm" too, with either "argon2id-19" or
+        # "pbkdf2" as values
+        for k in required_args:
+            if k not in challenge.extra:
+                raise RuntimeError(
+                    "WAMP-SCRAM challenge option '{}' is "
+                    " required but not specified".format(k)
+                )
+        for k in challenge.extra:
+            if k not in optional_args + required_args:
+                raise RuntimeError(
+                    "WAMP-SCRAM challenge has unknown attribute '{}'".format(k)
+                )
+
+        channel_binding = challenge.extra.get(u'channel_binding', u'')
+        server_nonce = challenge.extra[u'nonce']  # base64
+        salt = challenge.extra[u'salt']  # base64
+        cost = int(challenge.extra[u'cost'])
+        memory = int(challenge.extra.get(u'memory', 512))
+        parallel = int(challenge.extra.get(u'parallel', 2))
+        password = self._args['password'].encode('utf8')  # supplied by user
+        authid = saslprep(self._args['authid'])
+        client_nonce = self._client_nonce
+
+        auth_message = (
+            "{client_first_bare},{server_first},{client_final_no_proof}".format(
+                client_first_bare="n={},r={}".format(authid, client_nonce),
+                server_first="r={},s={},i={}".format(server_nonce, salt, cost),
+                client_final_no_proof="c={},r={}".format(channel_binding, server_nonce),
+            )
+        )
+
+        rawhash = hash_secret(
+            secret=password,
+            salt=base64.b64decode(salt),
+            time_cost=cost,
+            memory_cost=memory,
+            parallelism=parallel,
+            hash_len=16,  # another knob?
+            type=Type.ID,
+            version=19,
+        )
+        # spits out stuff like:
+        # '$argon2i$v=19$m=512,t=2,p=2$5VtWOO3cGWYQHEMaYGbsfQ$AcmqasQgW/wI6wAHAMk4aQ'
+
+        _, tag, ver, options, salt_data, hash_data = rawhash.split(b'$')
+        salted_password = hash_data
+        client_key = hmac.new(salted_password, b"Client Key", hashlib.sha256).digest()
+        stored_key = hashlib.new('sha256', client_key).digest()
+
+        client_signature = hmac.new(stored_key, auth_message.encode('ascii'), hashlib.sha256).digest()
+        client_proof = xor_array(client_key, client_signature)
+
+        def confirm_server_signature(session, details):
+            """
+            When the server is satisfied, it sends a 'WELCOME' message.
+            This will cause the session to be set up and 'join' gets
+            notified. Here, we check the server-signature thus
+            authorizing the server -- if it fails we drop the
+            connection.
+            """
+            alleged_server_sig = base64.b64decode(details.authextra['scram_server_signature'])
+            server_key = hmac.new(salted_password, b"Server Key", hashlib.sha256).digest()
+            server_signature = hmac.new(server_key, auth_message.encode('ascii'), hashlib.sha256).digest()
+            if not hmac.compare_digest(server_signature, alleged_server_sig):
+                session.log.error("Verification of server SCRAM signature failed")
+                session.leave(
+                    u"wamp.error.cannot_authenticate",
+                    u"Verification of server signature failed",
+                )
+            else:
+                session.log.info(
+                    "Verification of server SCRAM signature successful"
+                )
+        session.on('join', confirm_server_signature)
+
+        return base64.b64encode(client_proof)
+
+
+IAuthenticator.register(AuthScram)
 
 
 class AuthWampCra(object):
