@@ -34,8 +34,12 @@ import re
 import json
 import binascii
 import hashlib
+import base64
+from mock import Mock
 
 from autobahn.wamp import auth
+from autobahn.wamp import types
+
 
 # these test vectors are all for HMAC-SHA1
 PBKDF2_TEST_VECTORS = [
@@ -127,3 +131,56 @@ class TestWampAuthHelpers(unittest.TestCase):
         signature = auth.compute_wcs(secret.encode('utf8'), challenge)
         self.assertEqual(type(signature), bytes)
         self.assertEqual(signature, b"1njQtmmeYO41N5EWEzD2kAjjEKRZ5kPZt/TzpYXOzR0=")
+
+
+class TestScram(unittest.TestCase):
+
+    def test_argon2id_static(self):
+        # re-generate from the official argon2 tools:
+        # echo -n "p4ssw0rd" | argon2 '1234567890abcdef' -id -t 4096 -m 9 -p 1 -l 32
+        expected = binascii.unhexlify('21d60e8c6424bc463d021e4537d6b8aaaef013f44d20b3a2c44e78d3cb71d3e4')
+        raw_hash = auth._hash_argon2id13_secret(
+            b'p4ssw0rd',
+            binascii.b2a_base64('1234567890abcdef'),  # ours takes base64-encoded salt
+            4096,
+            512,  # note that the argon2 utility takes a "power of 2", so "-m 9" above == 512
+        )
+        decoded_hash = binascii.a2b_base64(raw_hash + '==\n')
+        self.assertEqual(expected, decoded_hash)
+
+    def test_pbkdf2_static(self):
+        expected = binascii.unhexlify('fb739b1b01984a0bcae1332b2d179ce68af1a45430a51c63d2dee031c7ab7850')
+        raw_hash = auth._hash_pbkdf2_secret('p4ssw0rd', '1234567890abcdef', 4096)
+        self.assertEqual(raw_hash, expected)
+
+    def test_basic(self):
+        scram = auth.AuthScram(
+            nonce='1234567890abcdef',
+            kdf='argon2id13',
+            salt=binascii.b2a_hex('1234567890abcdef'),
+            iterations=4096,
+            memory=512,
+            password=u'p4ssw0rd',
+            authid=u'username',
+        )
+        # thought: if we could import crossbar code here, we could
+        # test the "other side" of this with fewer mocks
+        # (i.e. hard-coding the client nonce)
+        scram._client_nonce = binascii.b2a_hex('1234567890abcdef')
+        self.assertEqual(
+            {'nonce': '31323334353637383930616263646566'},
+            scram.authextra,
+        )
+
+        challenge = types.Challenge(u'scram', {
+            'nonce': u'1234567890abcdeffedcba0987654321',
+            'kdf': u'argon2id-13',
+            'salt': binascii.b2a_hex('1234567890abcdef'),
+            'iterations': 4096,
+            'memory': 512,
+        })
+        reply = scram.on_challenge(Mock(), challenge)
+        self.assertEqual(
+            'Vmr0dJlmIhaMDIfPTmGqfjvYCGpFibWfbAGwHQWTQ68=',
+            reply,
+        )

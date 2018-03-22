@@ -197,7 +197,7 @@ IAuthenticator.register(AuthCryptoSign)
 def _hash_argon2id13_secret(password, salt, iterations, memory):
     """
     Internal helper. Returns the salted/hashed password using the
-    argon2id-13 algorithm.
+    argon2id-13 algorithm. The return value is base64-encoded.
     """
     rawhash = hash_secret(
         secret=password,
@@ -205,7 +205,7 @@ def _hash_argon2id13_secret(password, salt, iterations, memory):
         time_cost=iterations,
         memory_cost=memory,
         parallelism=1,  # hard-coded by WAMP-SCRAM spec
-        hash_len=16,
+        hash_len=32,
         type=Type.ID,
         version=0x13,  # note this is decimal "19" which appears in places
     )
