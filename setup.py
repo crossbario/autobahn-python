@@ -112,10 +112,17 @@ extras_require_encryption = [
     'pyqrcode>=1.1'             # BSD license
 ]
 
+# Support for WAMP-SCRAM authentication
+extras_require_scram = [
+    'argon2_cffi',              # MIT license
+    'passlib',                  # BSD license
+]
+
 # everything
 extras_require_all = extras_require_twisted + extras_require_asyncio + \
     extras_require_accelerate + extras_require_compress + \
-    extras_require_serialization + extras_require_encryption
+    extras_require_serialization + extras_require_encryption + \
+    extras_require_scram
 
 # extras_require_all += extras_require_compress
 
@@ -197,6 +204,7 @@ setup(
         'compress': extras_require_compress,
         'serialization': extras_require_serialization,
         'encryption': extras_require_encryption,
+        'scram': extras_require_scram,
         'dev': extras_require_dev,
     },
     tests_require=test_requirements,

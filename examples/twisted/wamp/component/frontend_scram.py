@@ -14,6 +14,7 @@ component = Component(
             u"authid": u"carol",
             u"authrole": u"authenticated",
             u"password": u"p4ssw0rd",
+            u"kdf": u"argon2id13",
         }
     }
 )
