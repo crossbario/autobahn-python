@@ -1594,13 +1594,16 @@ class ApplicationSession(BaseSession):
         return on_reply
 
 
-# this is NOT public; import from either autobahn.asyncio.wamp or
-# autobahn.twisted.wamp
 class _SessionShim(ApplicationSession):
     """
     shim that lets us present pep8 API for user-classes to override,
     but also backwards-compatible for existing code using
     ApplicationSession "directly".
+
+    **NOTE:** this is not public or intended for use; you should import
+    either :class:`autobahn.asyncio.wamp.Session` or
+    :class:`autobahn.twisted.wamp.Session` depending on which async
+    framework you're using.
     """
 
     #: name -> IAuthenticator
