@@ -1615,9 +1615,6 @@ class _SessionShim(ApplicationSession):
     #: name -> IAuthenticator
     _authenticators = None
 
-    def onWelcome(self, msg):
-        return self.on_welcome(msg)
-
     def onJoin(self, details):
         return self.on_join(details)
 
@@ -1656,7 +1653,7 @@ class _SessionShim(ApplicationSession):
         except KeyError:
             raise RuntimeError(
                 "Received onWelcome for unknown authmethod '{}'".format(
-                    authmethod
+                    msg.authmethod
                 )
             )
         return authenticator.on_welcome(self, msg.authextra)
