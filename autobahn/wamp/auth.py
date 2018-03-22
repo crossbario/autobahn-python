@@ -271,7 +271,7 @@ class AuthScram(object):
         server_nonce = challenge.extra[u'nonce']  # base64
         salt = challenge.extra[u'salt']  # base64
         iterations = int(challenge.extra[u'iterations'])
-        memory = int(challenge.extra(u'memory', -1))
+        memory = int(challenge.extra.get(u'memory', -1))
         password = self._args['password'].encode('utf8')  # supplied by user
         authid = saslprep(self._args['authid'])
         algorithm = challenge.extra[u'kdf']
