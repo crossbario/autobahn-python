@@ -1158,6 +1158,12 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
         """
 
+    @public
+    def onWelcome(self, msg):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISession.onWelcome`
+        """
+
     def _errback_outstanding_requests(self, exc):
         """
         Errback any still outstanding requests with exc.
