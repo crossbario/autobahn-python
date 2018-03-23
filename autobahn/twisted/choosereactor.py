@@ -33,6 +33,7 @@ import txaio
 txaio.use_twisted()
 
 from twisted.python import reflect
+from twisted.internet.error import ReactorAlreadyInstalledError
 
 __all__ = (
     'install_optimal_reactor',
@@ -52,7 +53,7 @@ def current_reactor_klass():
     return current_reactor
 
 
-def install_optimal_reactor():
+def install_optimal_reactor(require_optimal_reactor=True):
     """
     Try to install the optimal Twisted reactor for this platform:
 
@@ -70,6 +71,12 @@ def install_optimal_reactor():
       all importing.
 
     See: http://twistedmatrix.com/documents/current/core/howto/choosing-reactor.html#reactor-functionality
+
+    :param require_optimal_reactor: If ``True`` and the desired reactor could not be installed,
+        raise ``ReactorAlreadyInstalledError``, else fallback to another reactor.
+    :type require_optimal_reactor: bool
+
+    :returns: The Twisted reactor in place (`twisted.internet.reactor`).
     """
     log = txaio.make_logger()
 
@@ -94,6 +101,8 @@ def install_optimal_reactor():
                     log.debug('Running on *BSD or MacOSX and optimal reactor (kqueue) was installed.')
             else:
                 log.warn('Running on *BSD or MacOSX, but cannot install kqueue Twisted reactor, because another reactor ({klass}) is already installed.', klass=current_reactor)
+                if require_optimal_reactor:
+                    raise ReactorAlreadyInstalledError()
         else:
             log.debug('Running on *BSD or MacOSX and optimal reactor (kqueue) already installed.')
 
@@ -112,6 +121,8 @@ def install_optimal_reactor():
                     log.debug('Running on Windows and optimal reactor (ICOP) was installed.')
             else:
                 log.warn('Running on Windows, but cannot install IOCP Twisted reactor, because another reactor ({klass}) is already installed.', klass=current_reactor)
+                if require_optimal_reactor:
+                    raise ReactorAlreadyInstalledError()
         else:
             log.debug('Running on Windows and optimal reactor (ICOP) already installed.')
 
@@ -130,6 +141,8 @@ def install_optimal_reactor():
                     log.debug('Running on Linux and optimal reactor (epoll) was installed.')
             else:
                 log.warn('Running on Linux, but cannot install Epoll Twisted reactor, because another reactor ({klass}) is already installed.', klass=current_reactor)
+                if require_optimal_reactor:
+                    raise ReactorAlreadyInstalledError()
         else:
             log.debug('Running on Linux and optimal reactor (epoll) already installed.')
 
@@ -150,6 +163,8 @@ def install_optimal_reactor():
                     log.debug('Running on "{platform}" and optimal reactor (Select) was installed.', platform=sys.platform)
             else:
                 log.warn('Running on "{platform}", but cannot install Select Twisted reactor, because another reactor ({klass}) is already installed.', klass=current_reactor, platform=sys.platform)
+                if require_optimal_reactor:
+                    raise ReactorAlreadyInstalledError()
         else:
             log.debug('Running on "{platform}" and optimal reactor (Select) already installed.', platform=sys.platform)
 
@@ -159,25 +174,36 @@ def install_optimal_reactor():
     return reactor
 
 
-def install_reactor(explicit_reactor=None, verbose=False):
+def install_reactor(explicit_reactor=None, verbose=False, log=None, require_optimal_reactor=True):
     """
     Install Twisted reactor.
 
     :param explicit_reactor: If provided, install this reactor. Else, install
         the optimal reactor.
     :type explicit_reactor: obj
-    :param verbose: If ``True``, print what happens.
-    :type verbose: bool
-    """
-    import sys
 
-    log = txaio.make_logger()
+    :param verbose: If ``True``, log (at level "info") the reactor that is
+        in place afterwards.
+    :type verbose: bool
+
+    :param log: Explicit logging to this txaio logger object.
+    :type log: obj
+
+    :param require_optimal_reactor: If ``True`` and the desired reactor could not be installed,
+        raise ``ReactorAlreadyInstalledError``, else fallback to another reactor.
+    :type require_optimal_reactor: bool
+
+    :returns: The Twisted reactor in place (`twisted.internet.reactor`).
+    """
+    if not log:
+        log = txaio.make_logger()
 
     if explicit_reactor:
         # install explicitly given reactor
         #
         from twisted.application.reactors import installReactor
-        log.info('Trying to install explicitly specified Twisted reactor "{reactor}"', reactor=explicit_reactor)
+        if verbose:
+            log.info('Trying to install explicitly specified Twisted reactor "{reactor}" ..', reactor=explicit_reactor)
         try:
             installReactor(explicit_reactor)
         except:
@@ -187,8 +213,9 @@ def install_reactor(explicit_reactor=None, verbose=False):
     else:
         # automatically choose optimal reactor
         #
-        log.debug('Automatically choosing optimal Twisted reactor')
-        install_optimal_reactor(verbose)
+        if verbose:
+            log.info('Automatically choosing optimal Twisted reactor ..')
+        install_optimal_reactor(require_optimal_reactor)
 
     # now the reactor is installed, import it
     from twisted.internet import reactor
@@ -196,6 +223,6 @@ def install_reactor(explicit_reactor=None, verbose=False):
 
     if verbose:
         from twisted.python.reflect import qual
-        log.debug('Running Twisted reactor {reactor}', reactor=qual(reactor.__class__))
+        log.info('Running on Twisted reactor {reactor}', reactor=qual(reactor.__class__))
 
     return reactor
