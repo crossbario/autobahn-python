@@ -29,14 +29,14 @@ from __future__ import absolute_import
 import sys
 
 import twisted.internet
-from twisted.trial.unittest import TestCase
+from twisted.trial import unittest
 
 from mock import Mock
 
 from autobahn.twisted import choosereactor
 
 
-class ChooseReactorTests(TestCase):
+class ChooseReactorTests(unittest.TestCase):
 
     def patch_reactor(self, name, new_reactor):
         """
@@ -72,7 +72,7 @@ class ChooseReactorTests(TestCase):
         unable to detect the platform it is running on.
         """
         reactor_mock = Mock()
-        self.patch_reactor("default", reactor_mock)
+        self.patch_reactor("selectreactor", reactor_mock)
         self.patch(sys, "platform", "unknown")
 
         # Emulate that a reactor has not been installed
@@ -89,6 +89,37 @@ class ChooseReactorTests(TestCase):
         reactor_mock = Mock()
         self.patch_reactor("kqreactor", reactor_mock)
         self.patch(sys, "platform", "darwin")
+
+        # Emulate that a reactor has not been installed
+        self.patch_modules()
+
+        choosereactor.install_optimal_reactor()
+        reactor_mock.install.assert_called_once_with()
+
+    def test_win(self):
+        """
+        ``install_optimal_reactor`` will install IOCPReactor on Windows.
+        """
+        if sys.platform != 'win32':
+            raise unittest.SkipTest('unit test requires Windows')
+
+        reactor_mock = Mock()
+        self.patch_reactor("iocpreactor", reactor_mock)
+        self.patch(sys, "platform", "win32")
+
+        # Emulate that a reactor has not been installed
+        self.patch_modules()
+
+        choosereactor.install_optimal_reactor()
+        reactor_mock.install.assert_called_once_with()
+
+    def test_bsd(self):
+        """
+        ``install_optimal_reactor`` will install KQueueReactor on BSD.
+        """
+        reactor_mock = Mock()
+        self.patch_reactor("kqreactor", reactor_mock)
+        self.patch(sys, "platform", "freebsd11")
 
         # Emulate that a reactor has not been installed
         self.patch_modules()
