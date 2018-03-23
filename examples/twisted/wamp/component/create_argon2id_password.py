@@ -7,7 +7,6 @@ import hashlib
 import base64
 import binascii
 from passlib.utils import saslprep
-from pprint import pprint
 from argon2.low_level import hash_secret
 from argon2.low_level import Type
 
@@ -23,7 +22,7 @@ hash_data = hash_secret(
     salt=salt,
     time_cost=4096,
     memory_cost=512,
-    parallelism=2,
+    parallelism=1,
     hash_len=16,
     type=Type.ID,
     version=19,
@@ -31,7 +30,7 @@ hash_data = hash_secret(
 
 _, tag, v, params, othersalt, salted_password = hash_data.decode('ascii').split('$')
 assert tag == 'argon2id'
-assert v == 'v=19'
+assert v == 'v=19'  # argon's version 1.3 is represented as 0x13, which is 19 decimal...
 params = {
     k: v
     for k, v in
@@ -47,8 +46,8 @@ server_key = hmac.new(salted_password, b"Server Key", hashlib.sha256).digest()
 # static-configured scram principal; see the example router config
 key = {
     "memory": int(params['m']),
-    "cost": int(params['t']),
-    "parallel": int(params['p']),
+    "kdf": "argon2id-13",
+    "iterations": int(params['t']),
     "salt": binascii.b2a_hex(salt).decode('ascii'),
     "stored-key": binascii.b2a_hex(stored_key).decode('ascii'),
     "server-key": binascii.b2a_hex(server_key).decode('ascii'),

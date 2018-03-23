@@ -273,7 +273,7 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
     if type(value) != dict:
         raise ProtocolError(u"{0}: invalid type {1}".format(message, type(value)))
     for k in value.keys():
-        if type(k) != six.text_type:
+        if not isinstance(k, six.text_type):
             raise ProtocolError(u"{0}: invalid type {1} for key '{2}'".format(message, type(k), k))
     return value
 

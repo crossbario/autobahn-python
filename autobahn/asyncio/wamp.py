@@ -287,6 +287,9 @@ class Session(protocol._SessionShim):
     # XXX these methods are redundant, but put here for possibly
     # better clarity; maybe a bad idea.
 
+    def on_welcome(self, welcome_msg):
+        pass
+
     def on_join(self, details):
         pass
 
