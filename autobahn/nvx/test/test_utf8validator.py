@@ -286,14 +286,30 @@ class TestNvxUtf8Validator(unittest.TestCase):
         Test standard implementation of UTF8 validator.
         """
         validator = StandardUtf8Validator()
-        self._test_utf8(validator)
+        return self._test_utf8(validator)
 
     def test_nvx_utf8validator(self):
         """
         Test NVX implementation of UTF8 validator.
         """
         validator = NvxUtf8Validator()
-        self._test_utf8(validator)
+        return self._test_utf8(validator)
+
+    def test_standard_utf8validator_incremental(self):
+        """
+        Test standard implementation of UTF8 validator in incremental mode.
+        """
+        validator = StandardUtf8Validator()
+        return self._test_utf8_incremental(validator)
+
+    # NVX UTF8 validator lack incremental mode implementation
+    @unittest.expectedFailure
+    def test_nvx_utf8validator_incremental(self):
+        """
+        Test NVX implementation of UTF8 validator in incremental mode.
+        """
+        validator = NvxUtf8Validator()
+        return self._test_utf8_incremental(validator)
 
     def _test_utf8(self, validator):
         for s in self._TEST_SEQUENCES:
@@ -305,34 +321,14 @@ class TestNvxUtf8Validator(unittest.TestCase):
 
             self.assertEqual(res, s[0])
 
-    def test_standard_utf8validator_incremental(self):
-        """
-        Test standard implementation of UTF8 validator in incremental mode.
-        """
-        validator = StandardUtf8Validator()
-        self._test_utf8_incremental(validator)
-
-    # NVX UTF8 validator lack incremental mode implementation
-    @unittest.expectedFailure
-    def test_nvx_utf8validator_incremental(self):
-        """
-        Test NVX implementation of UTF8 validator in incremental mode.
-        """
-        validator = NvxUtf8Validator()
-        self._test_utf8_incremental(validator)
-
     def _test_utf8_incremental(self, validator, withPositions=True):
         # These tests verify that the UTF-8 decoder/validator can operate incrementally.
         if withPositions:
+            # testing validator 4 on incremental detection with positions
             k = 4
-            print(
-                "testing validator %s on incremental detection with positions" %
-                validator)
         else:
+            # testing validator 2 on incremental detection without positions
             k = 2
-            print(
-                "testing validator %s on incremental detection without positions" %
-                validator)
 
         validator.reset()
         self.assertEqual((True, True, 15, 15)[:k], validator.validate('µ@ßöäüàá'.encode('utf8'))[:k])

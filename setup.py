@@ -157,6 +157,7 @@ extras_require_dev = [
     'pytest-aiohttp',                   # Apache 2.0
     'awscli',                           # Apache 2.0
     'qualname',                         # BSD
+    'passlib',                          # BSD license
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
@@ -232,7 +233,8 @@ setup(
         'autobahn.asyncio',
         'autobahn.twisted',
         'twisted.plugins',
-        'autobahn.nvx'
+        'autobahn.nvx',
+        'autobahn.nvx.test',
     ],
     package_data={'autobahn.asyncio': ['test/*']},
 
