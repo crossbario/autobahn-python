@@ -55,8 +55,8 @@ spelling:
 	cd docs && sphinx-build -b spelling . _spelling
 
 
-test_ueberschall:
-	python autobahn/ueberschall/test/test_validator.py
+test_nvx:
+	python autobahn/nvx/test/test_utf8validator.py
 
 #check_ueberschall:
 #	cc -march=native -dM -E - < /dev/null | egrep "SSE|AVX" | sort

@@ -26,6 +26,6 @@
 
 from __future__ import absolute_import
 
-from autobahn.ueberschall._utf8validator import Utf8Validator  # noqa
+from autobahn.nvx._utf8validator import Utf8Validator  # noqa
 
 __all__ = ('Utf8Validator',)
