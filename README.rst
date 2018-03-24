@@ -44,6 +44,19 @@ Features
 -  supports TLS (secure WebSocket) and proxies
 -  Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`__)
 
+---
+
+
+Native vector extensions (NVX)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Autobahn contains **NVX**, a network accelerator library that provides SIMD accelerated native vector code for WebSocket (XOR masking) and UTF-8 validation.
+
+> NVX lives in namespace `autobahn.nvx` and currently requires a x86-86 CPU with at least SSE2 and makes use of SSE4.1 if available. The code is written using vector instrinsics, should compile with both GCC and Clang,and interfaces with Python using CFFI, and hence runs fast on PyPy.
+
+---
+
+
 Show me some code
 -----------------
 

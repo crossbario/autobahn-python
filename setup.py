@@ -118,11 +118,15 @@ extras_require_scram = [
     'passlib',                  # BSD license
 ]
 
+extras_require_nvx = [
+    'cffi>=1.0.0'
+]
+
 # everything
 extras_require_all = extras_require_twisted + extras_require_asyncio + \
     extras_require_accelerate + extras_require_compress + \
     extras_require_serialization + extras_require_encryption + \
-    extras_require_scram
+    extras_require_scram + extras_require_nvx
 
 # extras_require_all += extras_require_compress
 
@@ -153,6 +157,7 @@ extras_require_dev = [
     'pytest-aiohttp',                   # Apache 2.0
     'awscli',                           # Apache 2.0
     'qualname',                         # BSD
+    'passlib',                          # BSD license
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
@@ -195,6 +200,10 @@ setup(
     install_requires=[
         'six>=1.10.0',      # MIT license
         'txaio>=2.7.0',     # MIT license
+        'cffi>=1.0.0'
+    ],
+    setup_requires=[
+        'cffi>=1.0.0'
     ],
     extras_require={
         'all': extras_require_all,
@@ -205,6 +214,7 @@ setup(
         'serialization': extras_require_serialization,
         'encryption': extras_require_encryption,
         'scram': extras_require_scram,
+        'nvx': extras_require_nvx,
         'dev': extras_require_dev,
     },
     tests_require=test_requirements,
@@ -222,9 +232,15 @@ setup(
         'autobahn.rawsocket.test',
         'autobahn.asyncio',
         'autobahn.twisted',
-        'twisted.plugins'
+        'twisted.plugins',
+        'autobahn.nvx',
+        'autobahn.nvx.test',
     ],
     package_data={'autobahn.asyncio': ['test/*']},
+
+    cffi_modules=[
+        'autobahn/nvx/_utf8validator.py:ffi'
+    ],
 
     # this flag will make files from MANIFEST.in go into _source_ distributions only
     include_package_data=True,
