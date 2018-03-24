@@ -33,7 +33,7 @@ import six
 from autobahn.websocket.utf8validator import Utf8Validator
 
 
-def createUtf8TestSequences():
+def create_utf8_test_sequences():
     """
     Create test sequences for UTF-8 decoder tests from
     http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
@@ -228,25 +228,25 @@ def createUtf8TestSequences():
     return UTF8_TEST_SEQUENCES
 
 
-def createValidUtf8TestSequences():
+def create_valid_utf8_test_sequences():
     """
     Generate some exotic, but valid UTF8 test strings.
     """
     VALID_UTF8_TEST_SEQUENCES = []
-    for test in createUtf8TestSequences():
+    for test in create_utf8_test_sequences():
         valids = [x[1] for x in test[1] if x[0]]
         if len(valids) > 0:
             VALID_UTF8_TEST_SEQUENCES.append([test[0], valids])
     return VALID_UTF8_TEST_SEQUENCES
 
 
-def test_utf8(validator):
+def _test_utf8(validator):
     """
     These tests verify the UTF-8 decoder/validator on the various test cases from
     http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
     """
     vs = []
-    for k in createUtf8TestSequences():
+    for k in create_utf8_test_sequences():
         vs.extend(k[1])
 
     # All Unicode code points
@@ -284,7 +284,7 @@ def test_utf8(validator):
     print("")
 
 
-def test_utf8_incremental(validator, withPositions=True):
+def _test_utf8_incremental(validator, withPositions=True):
     """
     These tests verify that the UTF-8 decoder/validator can operate incrementally.
     """
