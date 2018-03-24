@@ -1,14 +1,35 @@
 # coding=utf-8
 
-##############################################################################
-##
-# Crossbar.io Fabric ("Ueberschall")
-# Copyright (C) Crossbar.io Technologies GmbH. All rights reserved.
-##
-##############################################################################
+###############################################################################
+#
+# The MIT License (MIT)
+#
+# Copyright (c) Crossbar.io Technologies GmbH
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+###############################################################################
 
-import binascii
-from case import Case
+from __future__ import absolute_import
+
+import six
+
 from autobahn.websocket.utf8validator import Utf8Validator
 
 
@@ -91,10 +112,6 @@ def createUtf8TestSequences():
     vs[1].append((False, b'\x80\xbf\x80\xbf\x80'))
     vs[1].append((False, b'\x80\xbf\x80\xbf\x80\xbf'))
     s = b""
-    # for i in range(0x80, 0xbf):
-    #   s += chr(i)
-    #vs[1].append((False, s))
-    # UTF8_TEST_SEQUENCES.append(vs)
 
     # 3.2  Lonely start characters
     vs = [b"Lonely start characters", []]
@@ -236,21 +253,21 @@ def test_utf8(validator):
     for i in range(
             0, 0xffff):  # should by 0x10ffff, but non-wide Python build is limited to 16-bits
         if i < 0xD800 or i > 0xDFFF:  # filter surrogate code points, which are disallowed to encode in UTF-8
-            vs.append((True, unichr(i).encode("utf-8")))
+            vs.append((True, six.unichr(i).encode("utf-8")))
 
     # 5.1 Single UTF-16 surrogates
     for i in range(0xD800, 0xDBFF):  # high-surrogate
-        ss = unichr(i).encode("utf-8")
+        ss = six.unichr(i).encode("utf-8")
         vs.append((False, ss))
     for i in range(0xDC00, 0xDFFF):  # low-surrogate
-        ss = unichr(i).encode("utf-8")
+        ss = six.unichr(i).encode("utf-8")
         vs.append((False, ss))
 
     # 5.2 Paired UTF-16 surrogates
     for i in range(0xD800, 0xDBFF):  # high-surrogate
         for j in range(0xDC00, 0xDFFF):  # low-surrogate
-            ss1 = unichr(i).encode("utf-8")
-            ss2 = unichr(j).encode("utf-8")
+            ss1 = six.unichr(i).encode("utf-8")
+            ss2 = six.unichr(j).encode("utf-8")
             vs.append((False, ss1 + ss2))
             vs.append((False, ss2 + ss1))
 
