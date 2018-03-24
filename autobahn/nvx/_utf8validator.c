@@ -50,13 +50,13 @@ typedef struct {
 #define UTF8_VALIDATOR_SSE41_DFA 4
 
 
-int ueberschall_utf8vld_get_impl (void* utf8vld) {
+int nvx_utf8vld_get_impl (void* utf8vld) {
    utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
 
    return vld->impl;
 }
 
-int ueberschall_utf8vld_set_impl (void* utf8vld, int impl) {
+int nvx_utf8vld_set_impl (void* utf8vld, int impl) {
    utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
 
    if (impl) {
@@ -96,7 +96,7 @@ int ueberschall_utf8vld_set_impl (void* utf8vld, int impl) {
 }
 
 
-void ueberschall_utf8vld_reset (void* utf8vld) {
+void nvx_utf8vld_reset (void* utf8vld) {
    utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
 
    vld->state = 0;
@@ -105,15 +105,15 @@ void ueberschall_utf8vld_reset (void* utf8vld) {
 }
 
 
-void* ueberschall_utf8vld_new () {
+void* nvx_utf8vld_new () {
    void* p = malloc(sizeof(utf8_validator_t));
-   ueberschall_utf8vld_reset(p);
-   ueberschall_utf8vld_set_impl(p, 0);
+   nvx_utf8vld_reset(p);
+   nvx_utf8vld_set_impl(p, 0);
    return p;
 }
 
 
-void ueberschall_utf8vld_free (void* utf8vld) {
+void nvx_utf8vld_free (void* utf8vld) {
    free (utf8vld);
 }
 
@@ -140,7 +140,7 @@ static const uint8_t UTF8VALIDATOR_DFA[] __attribute__((aligned(64))) =
 };
 
 
-int _ueberschall_utf8vld_validate_table (void* utf8vld, const uint8_t* data, size_t length) {
+int _nvx_utf8vld_validate_table (void* utf8vld, const uint8_t* data, size_t length) {
 
    utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
 
@@ -241,7 +241,7 @@ int _ueberschall_utf8vld_validate_table (void* utf8vld, const uint8_t* data, siz
    }
 
 
-int _ueberschall_utf8vld_validate_unrolled (void* utf8vld, const uint8_t* data, size_t length) {
+int _nvx_utf8vld_validate_unrolled (void* utf8vld, const uint8_t* data, size_t length) {
 
    utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
 
@@ -310,7 +310,7 @@ int _ueberschall_utf8vld_validate_unrolled (void* utf8vld, const uint8_t* data, 
 */
 
 #ifdef __SSE2__
-int _ueberschall_utf8vld_validate_sse2 (void* utf8vld, const uint8_t* data, size_t length) {
+int _nvx_utf8vld_validate_sse2 (void* utf8vld, const uint8_t* data, size_t length) {
 
    utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
 
@@ -474,7 +474,7 @@ int _ueberschall_utf8vld_validate_sse2 (void* utf8vld, const uint8_t* data, size
 
 
 #ifdef __SSE4_1__
-int _ueberschall_utf8vld_validate_sse4 (void* utf8vld, const uint8_t* data, size_t length) {
+int _nvx_utf8vld_validate_sse4 (void* utf8vld, const uint8_t* data, size_t length) {
 
    utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
 
@@ -623,24 +623,24 @@ int _ueberschall_utf8vld_validate_sse4 (void* utf8vld, const uint8_t* data, size
 #endif
 
 
-int ueberschall_utf8vld_validate (void* utf8vld, const uint8_t* data, size_t length) {
+int nvx_utf8vld_validate (void* utf8vld, const uint8_t* data, size_t length) {
 
    utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
 
    switch (vld->impl) {
       case UTF8_VALIDATOR_TABLE_DFA:
-         return _ueberschall_utf8vld_validate_table(utf8vld, data, length);
+         return _nvx_utf8vld_validate_table(utf8vld, data, length);
       case UTF8_VALIDATOR_UNROLLED_DFA:
-         return _ueberschall_utf8vld_validate_unrolled(utf8vld, data, length);
+         return _nvx_utf8vld_validate_unrolled(utf8vld, data, length);
 #ifdef __SSE2__
       case UTF8_VALIDATOR_SSE2_DFA:
-         return _ueberschall_utf8vld_validate_table(utf8vld, data, length);
+         return _nvx_utf8vld_validate_table(utf8vld, data, length);
 #endif
 #ifdef __SSE4_1__
       case UTF8_VALIDATOR_SSE41_DFA:
-         return _ueberschall_utf8vld_validate_table(utf8vld, data, length);
+         return _nvx_utf8vld_validate_table(utf8vld, data, length);
 #endif
       default:
-         return _ueberschall_utf8vld_validate_table(utf8vld, data, length);
+         return _nvx_utf8vld_validate_table(utf8vld, data, length);
    }
 }
