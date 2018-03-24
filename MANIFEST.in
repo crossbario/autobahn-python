@@ -1,2 +1,2 @@
 include LICENSE
-include autobahn/nvx/_validator.c
+include autobahn/nvx/_utf8validator.c

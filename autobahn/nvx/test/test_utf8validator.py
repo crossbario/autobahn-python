@@ -33,7 +33,7 @@ import six
 from autobahn.websocket.utf8validator import Utf8Validator
 
 
-def create_utf8_test_sequences():
+def _create_utf8_test_sequences():
     """
     Create test sequences for UTF-8 decoder tests from
     http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
@@ -228,7 +228,7 @@ def create_utf8_test_sequences():
     return UTF8_TEST_SEQUENCES
 
 
-def create_valid_utf8_test_sequences():
+def _create_valid_utf8_test_sequences():
     """
     Generate some exotic, but valid UTF8 test strings.
     """
