@@ -24,23 +24,24 @@ upload: clean
 
 # cleanup everything
 clean:
-	rm -rf ./docs/build
-	rm -rf ./.cache
-	rm -rf ./autobahn.egg-info
-	rm -rf ./build
-	rm -rf ./dist
-	rm -rf ./temp
-	rm -rf ./_trial_temp
-	rm -rf ./.tox
-	rm -rf ./.eggs
-	rm -f  ./twisted/plugins/dropin.cache
-	find . -name "*dropin.cache.new" -type f -exec rm -f {} \;
-	find . -name "*.tar.gz" -type f -exec rm -f {} \;
-	find . -name "*.egg" -type f -exec rm -f {} \;
-	find . -name "*.pyc" -type f -exec rm -f {} \;
+	-rm -f ./*.so
+	-rm -rf ./docs/build
+	-rm -rf ./.cache
+	-rm -rf ./autobahn.egg-info
+	-rm -rf ./build
+	-rm -rf ./dist
+	-rm -rf ./temp
+	-rm -rf ./_trial_temp
+	-rm -rf ./.tox
+	-rm -rf ./.eggs
+	-rm -f  ./twisted/plugins/dropin.cache
+	-find . -name "*dropin.cache.new" -type f -exec rm -f {} \;
+	-find . -name "*.tar.gz" -type f -exec rm -f {} \;
+	-find . -name "*.egg" -type f -exec rm -f {} \;
+	-find . -name "*.pyc" -type f -exec rm -f {} \;
 
 	# Learn to love the shell! http://unix.stackexchange.com/a/115869/52500
-	find . \( -name "*__pycache__" -type d \) -prune -exec rm -rf {} +
+	-find . \( -name "*__pycache__" -type d \) -prune -exec rm -rf {} +
 
 # publish to PyPI
 publish: clean
@@ -52,6 +53,13 @@ docs:
 
 spelling:
 	cd docs && sphinx-build -b spelling . _spelling
+
+
+test_ueberschall:
+	python autobahn/ueberschall/test/test_validator.py
+
+#check_ueberschall:
+#	cc -march=native -dM -E - < /dev/null | egrep "SSE|AVX" | sort
 
 test_styleguide:
 	flake8 --statistics --max-line-length=119 -qq autobahn
