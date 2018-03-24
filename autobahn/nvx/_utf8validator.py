@@ -61,7 +61,7 @@ class Utf8Validator:
     def __init__(self):
         self.ffi = ffi
 
-        from _nvx_validator import lib
+        from _nvx_utf8validator import lib
         self.lib = lib
 
         self._vld = self.ffi.gc(self.lib.nvx_utf8vld_new(), self.lib.nvx_utf8vld_free)

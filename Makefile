@@ -56,10 +56,8 @@ spelling:
 
 
 test_nvx:
-	python autobahn/nvx/test/test_utf8validator.py
-
-#check_ueberschall:
-#	cc -march=native -dM -E - < /dev/null | egrep "SSE|AVX" | sort
+	python -m pytest -rsx autobahn/nvx/test
+	USE_TWISTED=1 trial autobahn.nvx.test.test_utf8validator
 
 test_styleguide:
 	flake8 --statistics --max-line-length=119 -qq autobahn

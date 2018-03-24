@@ -29,8 +29,12 @@
 from __future__ import absolute_import
 
 import six
+import struct
 
-from autobahn.websocket.utf8validator import Utf8Validator
+import unittest2 as unittest
+
+from autobahn.websocket.utf8validator import Utf8Validator as StandardUtf8Validator
+from autobahn.nvx import Utf8Validator as NvxUtf8Validator
 
 
 def _create_utf8_test_sequences():
@@ -55,7 +59,7 @@ def _create_utf8_test_sequences():
     vs = [
         b"All prefixes of a valid UTF-8 string that contains multi-byte code points",
         []]
-    v = Utf8Validator()
+    v = StandardUtf8Validator()
     for i in range(1, len(vss) + 1):
         v.reset()
         res = v.validate(vss[:i])
@@ -111,16 +115,17 @@ def _create_utf8_test_sequences():
     vs[1].append((False, b'\x80\xbf\x80\xbf'))
     vs[1].append((False, b'\x80\xbf\x80\xbf\x80'))
     vs[1].append((False, b'\x80\xbf\x80\xbf\x80\xbf'))
-    s = b""
+    s = b''
 
     # 3.2  Lonely start characters
     vs = [b"Lonely start characters", []]
     m = [(0xc0, 0xdf), (0xe0, 0xef), (0xf0, 0xf7), (0xf8, 0xfb), (0xfc, 0xfd)]
     for mm in m:
-        s = ''
+        s = b''
         for i in range(mm[0], mm[1]):
-            s += chr(i)
-            s += chr(0x20)
+            s += struct.pack('BB', i, 0x20)
+            # s += chr(i)
+            # s += chr(0x20)
         vs[1].append((False, s))
     UTF8_TEST_SEQUENCES.append(vs)
 
@@ -233,95 +238,117 @@ def _create_valid_utf8_test_sequences():
     Generate some exotic, but valid UTF8 test strings.
     """
     VALID_UTF8_TEST_SEQUENCES = []
-    for test in create_utf8_test_sequences():
+    for test in _create_utf8_test_sequences():
         valids = [x[1] for x in test[1] if x[0]]
         if len(valids) > 0:
             VALID_UTF8_TEST_SEQUENCES.append([test[0], valids])
     return VALID_UTF8_TEST_SEQUENCES
 
 
-def _test_utf8(validator):
-    """
-    These tests verify the UTF-8 decoder/validator on the various test cases from
-    http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
-    """
-    vs = []
-    for k in create_utf8_test_sequences():
-        vs.extend(k[1])
+class TestNvxUtf8Validator(unittest.TestCase):
 
-    # All Unicode code points
-    for i in range(
-            0, 0xffff):  # should by 0x10ffff, but non-wide Python build is limited to 16-bits
-        if i < 0xD800 or i > 0xDFFF:  # filter surrogate code points, which are disallowed to encode in UTF-8
-            vs.append((True, six.unichr(i).encode("utf-8")))
+    def setUp(self):
+        # These tests verify the UTF-8 decoder/validator on the various test cases from
+        # http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
+        vs = []
+        for k in _create_utf8_test_sequences():
+            vs.extend(k[1])
 
-    # 5.1 Single UTF-16 surrogates
-    for i in range(0xD800, 0xDBFF):  # high-surrogate
-        ss = six.unichr(i).encode("utf-8")
-        vs.append((False, ss))
-    for i in range(0xDC00, 0xDFFF):  # low-surrogate
-        ss = six.unichr(i).encode("utf-8")
-        vs.append((False, ss))
+        # All Unicode code points
+        for i in range(
+                0, 0xffff):  # should by 0x10ffff, but non-wide Python build is limited to 16-bits
+            if i < 0xD800 or i > 0xDFFF:  # filter surrogate code points, which are disallowed to encode in UTF-8
+                vs.append((True, six.unichr(i).encode("utf-8")))
 
-    # 5.2 Paired UTF-16 surrogates
-    for i in range(0xD800, 0xDBFF):  # high-surrogate
-        for j in range(0xDC00, 0xDFFF):  # low-surrogate
-            ss1 = six.unichr(i).encode("utf-8")
-            ss2 = six.unichr(j).encode("utf-8")
-            vs.append((False, ss1 + ss2))
-            vs.append((False, ss2 + ss1))
+        # FIXME: UnicodeEncodeError: 'utf-8' codec can't encode character '\ud800'
+        #        in position 0: surrogates not allowed
+        if False:
+            # 5.1 Single UTF-16 surrogates
+            for i in range(0xD800, 0xDBFF):  # high-surrogate
+                ss = six.unichr(i).encode("utf-8")
+                vs.append((False, ss))
+            for i in range(0xDC00, 0xDFFF):  # low-surrogate
+                ss = six.unichr(i).encode("utf-8")
+                vs.append((False, ss))
 
-    print("testing validator %s on %d UTF8 sequences" % (validator, len(vs)))
+            # 5.2 Paired UTF-16 surrogates
+            for i in range(0xD800, 0xDBFF):  # high-surrogate
+                for j in range(0xDC00, 0xDFFF):  # low-surrogate
+                    ss1 = six.unichr(i).encode("utf-8")
+                    ss2 = six.unichr(j).encode("utf-8")
+                    vs.append((False, ss1 + ss2))
+                    vs.append((False, ss2 + ss1))
 
-    # now test and assert ..
-    for s in vs:
+        self._TEST_SEQUENCES = vs
+
+    def test_standard_utf8validator(self):
+        """
+        Test standard implementation of UTF8 validator.
+        """
+        validator = StandardUtf8Validator()
+        self._test_utf8(validator)
+
+    def test_nvx_utf8validator(self):
+        """
+        Test NVX implementation of UTF8 validator.
+        """
+        validator = NvxUtf8Validator()
+        self._test_utf8(validator)
+
+    def _test_utf8(self, validator):
+        for s in self._TEST_SEQUENCES:
+            validator.reset()
+            r = validator.validate(s[1])
+
+            # no UTF-8 decode error _and_ everything consumed
+            res = r[0] and r[1]
+
+            self.assertEqual(res, s[0])
+
+    def test_standard_utf8validator_incremental(self):
+        """
+        Test standard implementation of UTF8 validator in incremental mode.
+        """
+        validator = StandardUtf8Validator()
+        self._test_utf8_incremental(validator)
+
+    # NVX UTF8 validator lack incremental mode implementation
+    @unittest.expectedFailure
+    def test_nvx_utf8validator_incremental(self):
+        """
+        Test NVX implementation of UTF8 validator in incremental mode.
+        """
+        validator = NvxUtf8Validator()
+        self._test_utf8_incremental(validator)
+
+    def _test_utf8_incremental(self, validator, withPositions=True):
+        # These tests verify that the UTF-8 decoder/validator can operate incrementally.
+        if withPositions:
+            k = 4
+            print(
+                "testing validator %s on incremental detection with positions" %
+                validator)
+        else:
+            k = 2
+            print(
+                "testing validator %s on incremental detection without positions" %
+                validator)
+
         validator.reset()
-        r = validator.validate(s[1])
-        res = r[0] and r[1]  # no UTF-8 decode error and everything consumed
-        assert res == s[0]
+        self.assertEqual((True, True, 15, 15)[:k], validator.validate('µ@ßöäüàá'.encode('utf8'))[:k])
 
-    print("ok, validator works!")
-    print("")
+        validator.reset()
+        self.assertEqual((False, False, 0, 0)[:k], validator.validate(b"\xF5")[:k])
 
+        # the following 3 all fail on eating byte 7 (0xA0)
+        validator.reset()
+        self.assertEqual((True, True, 6, 6)[:k], validator.validate(b"\x65\x64\x69\x74\x65\x64")[:k])
+        self.assertEqual((False, False, 1, 7)[:k], validator.validate(b"\xED\xA0\x80")[:k])
 
-def _test_utf8_incremental(validator, withPositions=True):
-    """
-    These tests verify that the UTF-8 decoder/validator can operate incrementally.
-    """
-    if withPositions:
-        k = 4
-        print(
-            "testing validator %s on incremental detection with positions" %
-            validator)
-    else:
-        k = 2
-        print(
-            "testing validator %s on incremental detection without positions" %
-            validator)
+        validator.reset()
+        self.assertEqual((True, True, 4, 4)[:k], validator.validate(b"\x65\x64\x69\x74")[:k])
+        self.assertEqual((False, False, 3, 7)[:k], validator.validate(b"\x65\x64\xED\xA0\x80")[:k])
 
-    validator.reset()
-    assert (True, True, 15, 15)[:k] == validator.validate("µ@ßöäüàá")[:k]
-
-    validator.reset()
-    assert (False, False, 0, 0)[:k] == validator.validate("\xF5")[:k]
-
-    # the following 3 all fail on eating byte 7 (0xA0)
-    validator.reset()
-    assert (True, True, 6, 6)[:k] == validator.validate(
-        "\x65\x64\x69\x74\x65\x64")[:k]
-    assert (False, False, 1, 7)[:k] == validator.validate("\xED\xA0\x80")[:k]
-
-    validator.reset()
-    assert (True, True, 4, 4)[:k] == validator.validate("\x65\x64\x69\x74")[:k]
-    assert (
-        False, False, 3, 7)[
-        :k] == validator.validate("\x65\x64\xED\xA0\x80")[
-            :k]
-
-    validator.reset()
-    assert (True, False, 7, 7)[:k] == validator.validate(
-        "\x65\x64\x69\x74\x65\x64\xED")[:k]
-    assert (False, False, 0, 7)[:k] == validator.validate("\xA0\x80")[:k]
-
-    print("ok, validator works!")
-    print("")
+        validator.reset()
+        self.assertEqual((True, False, 7, 7)[:k], validator.validate(b"\x65\x64\x69\x74\x65\x64\xED")[:k])
+        self.assertEqual((False, False, 0, 7)[:k], validator.validate(b"\xA0\x80")[:k])
