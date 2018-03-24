@@ -13,8 +13,7 @@ all:
 # install locally
 install:
 	# enforce use of bundled libsodium
-	export SODIUM_INSTALL=bundled
-	pip install --upgrade -e .[twisted,asyncio,serialization,encryption,dev]
+	SODIUM_INSTALL=bundled pip install -e .[all,dev]
 
 # upload to our internal deployment system
 upload: clean
