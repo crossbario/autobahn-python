@@ -141,23 +141,23 @@ class TestScram(unittest.TestCase):
         expected = binascii.unhexlify('21d60e8c6424bc463d021e4537d6b8aaaef013f44d20b3a2c44e78d3cb71d3e4')
         raw_hash = auth._hash_argon2id13_secret(
             b'p4ssw0rd',
-            binascii.b2a_base64('1234567890abcdef'),  # ours takes base64-encoded salt
+            binascii.b2a_base64(b'1234567890abcdef'),  # ours takes base64-encoded salt
             4096,
             512,  # note that the argon2 utility takes a "power of 2", so "-m 9" above == 512
         )
-        decoded_hash = binascii.a2b_base64(raw_hash + '==\n')
+        decoded_hash = binascii.a2b_base64(raw_hash + b'==\n')
         self.assertEqual(expected, decoded_hash)
 
     def test_pbkdf2_static(self):
         expected = binascii.unhexlify('fb739b1b01984a0bcae1332b2d179ce68af1a45430a51c63d2dee031c7ab7850')
-        raw_hash = auth._hash_pbkdf2_secret('p4ssw0rd', '1234567890abcdef', 4096)
+        raw_hash = auth._hash_pbkdf2_secret(b'p4ssw0rd', b'1234567890abcdef', 4096)
         self.assertEqual(raw_hash, expected)
 
     def test_basic(self):
         scram = auth.AuthScram(
             nonce='1234567890abcdef',
             kdf='argon2id13',
-            salt=binascii.b2a_hex('1234567890abcdef'),
+            salt=binascii.b2a_hex(b'1234567890abcdef'),
             iterations=4096,
             memory=512,
             password=u'p4ssw0rd',
@@ -166,16 +166,16 @@ class TestScram(unittest.TestCase):
         # thought: if we could import crossbar code here, we could
         # test the "other side" of this with fewer mocks
         # (i.e. hard-coding the client nonce)
-        scram._client_nonce = binascii.b2a_hex('1234567890abcdef')
+        scram._client_nonce = binascii.b2a_hex(b'1234567890abcdef')
         self.assertEqual(
-            {'nonce': '31323334353637383930616263646566'},
+            {'nonce': b'31323334353637383930616263646566'},
             scram.authextra,
         )
 
         challenge = types.Challenge(u'scram', {
             'nonce': u'1234567890abcdeffedcba0987654321',
             'kdf': u'argon2id-13',
-            'salt': binascii.b2a_hex('1234567890abcdef'),
+            'salt': binascii.b2a_hex(b'1234567890abcdef'),
             'iterations': 4096,
             'memory': 512,
         })
@@ -184,3 +184,59 @@ class TestScram(unittest.TestCase):
             'Vmr0dJlmIhaMDIfPTmGqfjvYCGpFibWfbAGwHQWTQ68=',
             reply,
         )
+
+        print(dir(scram))
+        authextra = dict(
+            scram_server_signature=b'Vmr0dJlmIhaMDIfPTmGqfjvYCGpFibWfbAGwHQWTQ68=',
+        )
+        scram.on_welcome(Mock(), authextra)
+
+    def test_no_memory_arg(self):
+        scram = auth.AuthScram(
+            nonce='1234567890abcdef',
+            kdf='argon2id13',
+            salt=binascii.b2a_hex(b'1234567890abcdef'),
+            iterations=4096,
+            memory=512,
+            password=u'p4ssw0rd',
+            authid=u'username',
+        )
+        scram.authextra
+
+        with self.assertRaises(ValueError) as ctx:
+            challenge = types.Challenge(u'scram', {
+                'nonce': u'1234567890abcdeffedcba0987654321',
+                'kdf': u'argon2id-13',
+                'salt': binascii.b2a_hex(b'1234567890abcdef'),
+                'iterations': 4096,
+                # no 'memory' key
+            })
+            scram.on_challenge(Mock(), challenge)
+        self.assertIn(
+            "requires 'memory' parameter",
+            str(ctx.exception)
+        )
+
+    def test_unknown_arg(self):
+        scram = auth.AuthScram(
+            nonce='1234567890abcdef',
+            kdf='argon2id13',
+            salt=binascii.b2a_hex(b'1234567890abcdef'),
+            iterations=4096,
+            memory=512,
+            password=u'p4ssw0rd',
+            authid=u'username',
+        )
+        scram.authextra
+
+        with self.assertRaises(RuntimeError) as ctx:
+            challenge = types.Challenge(u'scram', {
+                'nonce': u'1234567890abcdeffedcba0987654321',
+                'kdf': u'argon2id-13',
+                'salt': binascii.b2a_hex(b'1234567890abcdef'),
+                'iterations': 4096,
+                'memory': 512,
+                'an_invalid_key': None
+            })
+            scram.on_challenge(Mock(), challenge)
+        self.assertIn("an_invalid_key", str(ctx.exception))
