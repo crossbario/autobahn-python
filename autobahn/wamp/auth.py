@@ -268,7 +268,7 @@ class AuthScram(object):
                 )
 
         channel_binding = challenge.extra.get(u'channel_binding', u'')
-        server_nonce = challenge.extra[u'nonce']  # base64
+        server_nonce = challenge.extra[u'nonce'].encode('ascii')  # base64
         salt = challenge.extra[u'salt']  # base64
         iterations = int(challenge.extra[u'iterations'])
         memory = int(challenge.extra.get(u'memory', -1))
@@ -278,10 +278,10 @@ class AuthScram(object):
         client_nonce = self._client_nonce
 
         self._auth_message = (
-            "{client_first_bare},{server_first},{client_final_no_proof}".format(
-                client_first_bare="n={},r={}".format(authid, client_nonce),
-                server_first="r={},s={},i={}".format(server_nonce, salt, iterations),
-                client_final_no_proof="c={},r={}".format(channel_binding, server_nonce),
+            u"{client_first_bare},{server_first},{client_final_no_proof}".format(
+                client_first_bare=u"n={},r={}".format(authid, client_nonce),
+                server_first=u"r={},s={},i={}".format(server_nonce.decode('ascii'), salt.decode('ascii'), iterations),
+                client_final_no_proof=u"c={},r={}".format(channel_binding, server_nonce.decode('ascii')),
             ).encode('ascii')
         )
 

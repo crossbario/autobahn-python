@@ -166,9 +166,9 @@ class TestScram(unittest.TestCase):
         # thought: if we could import crossbar code here, we could
         # test the "other side" of this with fewer mocks
         # (i.e. hard-coding the client nonce)
-        scram._client_nonce = binascii.b2a_hex(b'1234567890abcdef')
+        scram._client_nonce = binascii.b2a_hex(b'1234567890abcdef').decode('ascii')
         self.assertEqual(
-            {'nonce': b'31323334353637383930616263646566'},
+            {'nonce': u'31323334353637383930616263646566'},
             scram.authextra,
         )
 
@@ -181,7 +181,7 @@ class TestScram(unittest.TestCase):
         })
         reply = scram.on_challenge(Mock(), challenge)
         self.assertEqual(
-            'Vmr0dJlmIhaMDIfPTmGqfjvYCGpFibWfbAGwHQWTQ68=',
+            b'Vmr0dJlmIhaMDIfPTmGqfjvYCGpFibWfbAGwHQWTQ68=',
             reply,
         )
 
