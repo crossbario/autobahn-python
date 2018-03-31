@@ -34,7 +34,6 @@ import re
 import json
 import binascii
 import hashlib
-import base64
 from mock import Mock
 
 from autobahn.wamp import auth
@@ -137,20 +136,21 @@ class TestScram(unittest.TestCase):
 
     def test_argon2id_static(self):
         # re-generate from the official argon2 tools:
-        # echo -n "p4ssw0rd" | argon2 '1234567890abcdef' -id -t 4096 -m 9 -p 1 -l 32
-        expected = binascii.unhexlify('21d60e8c6424bc463d021e4537d6b8aaaef013f44d20b3a2c44e78d3cb71d3e4')
+        # echo -n "p4ssw0rd" | argon2 '1234567890abcdef' -id -t 32 -m 9 -p 1 -l 32
+        expected = binascii.unhexlify('ee4a8acf9d5958354fb79a95ae20692d05e42591ba49fae85eb6700e8b0ed293')
         raw_hash = auth._hash_argon2id13_secret(
             b'p4ssw0rd',
             binascii.b2a_base64(b'1234567890abcdef'),  # ours takes base64-encoded salt
-            4096,
+            32,  # this is WAY TOO SMALL; for production, use 4096 or higher
             512,  # note that the argon2 utility takes a "power of 2", so "-m 9" above == 512
         )
         decoded_hash = binascii.a2b_base64(raw_hash + b'==\n')
         self.assertEqual(expected, decoded_hash)
 
     def test_pbkdf2_static(self):
-        expected = binascii.unhexlify('fb739b1b01984a0bcae1332b2d179ce68af1a45430a51c63d2dee031c7ab7850')
-        raw_hash = auth._hash_pbkdf2_secret(b'p4ssw0rd', b'1234567890abcdef', 4096)
+        expected = binascii.unhexlify('f6991a28c75f43751e0d75499fd7b8649f659118ddc1d61cee5883af547d15f5')
+        # 8 iterations is WAY TOO FEW for production; this is a test
+        raw_hash = auth._hash_pbkdf2_secret(b'p4ssw0rd', b'1234567890abcdef', 8)
         self.assertEqual(raw_hash, expected)
 
     def test_basic(self):
@@ -158,7 +158,7 @@ class TestScram(unittest.TestCase):
             nonce='1234567890abcdef',
             kdf='argon2id13',
             salt=binascii.b2a_hex(b'1234567890abcdef'),
-            iterations=4096,
+            iterations=32,  # far too few; use 4096 or more for production
             memory=512,
             password=u'p4ssw0rd',
             authid=u'username',
@@ -176,18 +176,17 @@ class TestScram(unittest.TestCase):
             'nonce': u'1234567890abcdeffedcba0987654321',
             'kdf': u'argon2id-13',
             'salt': binascii.b2a_hex(b'1234567890abcdef'),
-            'iterations': 4096,
+            'iterations': 32,
             'memory': 512,
         })
         reply = scram.on_challenge(Mock(), challenge)
         self.assertEqual(
-            b'Vmr0dJlmIhaMDIfPTmGqfjvYCGpFibWfbAGwHQWTQ68=',
+            b'f5r3loERzGVSuimE+lvO0bWna2zyswBo0HrZkaaEy38=',
             reply,
         )
 
-        print(dir(scram))
         authextra = dict(
-            scram_server_signature=b'Vmr0dJlmIhaMDIfPTmGqfjvYCGpFibWfbAGwHQWTQ68=',
+            scram_server_signature=b'f5r3loERzGVSuimE+lvO0bWna2zyswBo0HrZkaaEy38=',
         )
         scram.on_welcome(Mock(), authextra)
 
