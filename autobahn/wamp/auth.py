@@ -197,7 +197,7 @@ IAuthenticator.register(AuthCryptoSign)
 def _hash_argon2id13_secret(password, salt, iterations, memory):
     """
     Internal helper. Returns the salted/hashed password using the
-    argon2id-13 algorithm.
+    argon2id-13 algorithm. The return value is base64-encoded.
     """
     rawhash = hash_secret(
         secret=password,
@@ -205,7 +205,7 @@ def _hash_argon2id13_secret(password, salt, iterations, memory):
         time_cost=iterations,
         memory_cost=memory,
         parallelism=1,  # hard-coded by WAMP-SCRAM spec
-        hash_len=16,
+        hash_len=32,
         type=Type.ID,
         version=0x13,  # note this is decimal "19" which appears in places
     )
@@ -268,7 +268,7 @@ class AuthScram(object):
                 )
 
         channel_binding = challenge.extra.get(u'channel_binding', u'')
-        server_nonce = challenge.extra[u'nonce']  # base64
+        server_nonce = challenge.extra[u'nonce'].encode('ascii')  # base64
         salt = challenge.extra[u'salt']  # base64
         iterations = int(challenge.extra[u'iterations'])
         memory = int(challenge.extra.get(u'memory', -1))
@@ -278,10 +278,10 @@ class AuthScram(object):
         client_nonce = self._client_nonce
 
         self._auth_message = (
-            "{client_first_bare},{server_first},{client_final_no_proof}".format(
-                client_first_bare="n={},r={}".format(authid, client_nonce),
-                server_first="r={},s={},i={}".format(server_nonce, salt, iterations),
-                client_final_no_proof="c={},r={}".format(channel_binding, server_nonce),
+            u"{client_first_bare},{server_first},{client_final_no_proof}".format(
+                client_first_bare=u"n={},r={}".format(authid, client_nonce),
+                server_first=u"r={},s={},i={}".format(server_nonce.decode('ascii'), salt.decode('ascii'), iterations),
+                client_final_no_proof=u"c={},r={}".format(channel_binding, server_nonce.decode('ascii')),
             ).encode('ascii')
         )
 
