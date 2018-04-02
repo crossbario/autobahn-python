@@ -362,7 +362,8 @@ class Component(ObservableMixin):
             self.on('join', do_registration)
         return decorator
 
-    def __init__(self, main=None, transports=None, config=None, realm=u'default', extra=None, authentication=None):
+    def __init__(self, main=None, transports=None, config=None, realm=u'default', extra=None,
+                 authentication=None, session_factory=None):
         """
         :param main: After a transport has been connected and a session
             has been established and joined to a realm, this (async)
@@ -401,6 +402,11 @@ class Component(ObservableMixin):
 
         :param authentication: configuration of authenticators
         :type authentication: dict mapping auth_type to dict
+
+        :param session_factory: if None, ``ApplicationSession`` is
+            used, otherwise a callable taking a single ``config`` argument
+            that is used to create a new `ApplicationSession` instance.
+        :type session_factory: callable
         """
         self.set_valid_events(
             [
@@ -415,8 +421,7 @@ class Component(ObservableMixin):
         )
 
         if main is not None and not callable(main):
-            raise RuntimeError('"main" must be a callable if given')
-
+            raise ValueError('"main" must be a callable if given')
         self._entry = main
 
         # use WAMP-over-WebSocket to localhost when no transport is specified at all
@@ -451,6 +456,8 @@ class Component(ObservableMixin):
         # XXX should have some checkconfig support
         self._authentication = authentication or {}
 
+        if session_factory:
+            self.session_factory = session_factory
         self._realm = realm
         self._extra = extra
 
