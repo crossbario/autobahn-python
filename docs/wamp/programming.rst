@@ -139,6 +139,29 @@ The configuration of the component is specified when you construct it; the above
    A *Realm* is a routing namespace and an administrative domain for WAMP. For example, a single WAMP router can manage multiple *Realms*, and those realms are completely separate: an event published to topic T on a Realm R1 is NOT received by a subscribe to T on Realm R2.
 
 
+Running Subclass-Style Components
+---------------------------------
+
+You can use the same "component" APIs to run a component based on subclassing `ApplicationSession`. In older code it's common to see :class:`autobahn.twisted.wamp.ApplicationRunner` or :class:`autobahn.asyncio.wamp.ApplicationRunner`. This runner lacks many of the options of the :func:`autobahn.twisted.component.run` or :func:`autobahn.asyncio.component.run` functions, so although it can still be useful you like want to upgrade to `run`.
+
+All you need to do is set the `session_factory` of a :class:`autobahn.twisted.component.Component` instance to your :class:`autobahn.twisted.wamp.ApplicationSession` subclass.
+
+
+Other Patterns
+--------------
+
+Many of the examples in this documentation use a decorator style with fixed, static WAMP URIs for registrations and subscriptions. If you have a more complex application, you might want to create URIs at run-time or link several `Commponents` together.
+
+It is important to remember that `Component` handles re-connection which implies there are times when your component is **not** connected. The `on_join` handlers are run whenever a fresh WAMP session is started, so this is the appropriate way to hook in "initialization"-style code (`on_leave` is where "un-initialization" code goes).
+
+Here's a slightly more complex example that is a simple `Klein`_ Web application that publishes to a WAMP session when a certian URL is requested (note that the Crossbario.io router supports `various REST-style integrations <https://crossbar.io/docs/HTTP-Bridge/>`_ already). Using a similar pattern, you could tie together two or more `Component` instances (even connecting to two or more *different* WAMP routers).
+
+.. _Klein: https://github.com/twisted/klein
+
+
+Longer Example
+--------------
+
 Here is a more-complete example showing some of the options you can pass when setting up a `Component`. This example can be run against the Crossbar.io router configuration that comes with |ab| -- just run `crossbar start` in  `examples/router/` in your clone.
 
 **Twisted**:
