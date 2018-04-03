@@ -80,7 +80,7 @@ whereas when you are using **asyncio**
     def joined(session, details):
         print("session ready")
 
-As can be seen, the only difference between Twisted and asyncio is the import (line 1). The rest of the code is identical. For Twisted, you can use ``@inlineCallbacks`` or return ``Deferred`` from methods decorated with ``on_join``; in Python 3 you would use coroutines (``async def``).
+As can be seen, the only difference between Twisted and asyncio is the import (line 1). The rest of the code is identical. For Twisted, you can use ``@inlineCallbacks`` or return ``Deferred`` from methods decorated with ``on_join``; in Python 3 (with asyncio or Twisted) you would use coroutines (``async def``).
 
 There are four "life cycle" events that |ab| will trigger on your components: ``connect``, ``join``, ``leave``, and ``disconnect``. These all have corresponding decorators (or you can use code like ``comp.on('join', the_callback)`` if you prefer). We go over these events later.
 
@@ -91,7 +91,7 @@ Running Components
 ------------------
 
 To actually make use of an application components, the component needs to connect to a WAMP router.
-|Ab| includes a *runner* that does the heavy lifting for you.
+|Ab| includes a :func:`run` function that does the heavy lifting for you.
 
 .. code-block:: python
    :emphasize-lines: 1-2
@@ -133,7 +133,7 @@ and with **asyncio**:
 
 As can be seen, the only difference between Twisted and asyncio is the import (line 1 and 2). The rest of the code is identical.
 
-The configuration of the component is specified when you construct it; the above is the bare minimum -- you can specify many transports (which will be tried and re-tried in order) as well as authentication options, the realm to join, etcetera. See the :class:`autobahn.wamp.component.Component` documentation for details. A single Python program can run many different ``Component`` instances at once and you can interconnect these as you see fit -- so a single program can have multiple WAMP connections (e.g. to different Realms) at once.
+The configuration of the component is specified when you construct it; the above is the bare minimum -- you can specify many transports (which will be tried and re-tried in order) as well as authentication options, the realm to join, re-connection parameters, etcetera. See :ref:`component_config` for details. A single Python program can run many different ``Component`` instances at once and you can interconnect these as you see fit -- so a single program can have multiple WAMP connections (e.g. to different Realms or different WAMP routers) at once.
 
 .. tip::
    A *Realm* is a routing namespace and an administrative domain for WAMP. For example, a single WAMP router can manage multiple *Realms*, and those realms are completely separate: an event published to topic T on a Realm R1 is NOT received by a subscribe to T on Realm R2.
@@ -142,24 +142,25 @@ The configuration of the component is specified when you construct it; the above
 Running Subclass-Style Components
 ---------------------------------
 
-You can use the same "component" APIs to run a component based on subclassing `ApplicationSession`. In older code it's common to see :class:`autobahn.twisted.wamp.ApplicationRunner` or :class:`autobahn.asyncio.wamp.ApplicationRunner`. This runner lacks many of the options of the :func:`autobahn.twisted.component.run` or :func:`autobahn.asyncio.component.run` functions, so although it can still be useful you like want to upgrade to :func:`run`.
+You can use the same "component" APIs to run a component based on subclassing `ApplicationSession`. In older code it's common to see :class:`autobahn.twisted.wamp.ApplicationRunner` or :class:`autobahn.asyncio.wamp.ApplicationRunner`. This runner lacks many of the options of the :func:`autobahn.twisted.component.run` or :func:`autobahn.asyncio.component.run` functions, so although it can still be useful you likely want to upgrade to :func:`run`.
 
-All you need to do is set the `session_factory` of a :class:`autobahn.twisted.component.Component` instance to your :class:`autobahn.twisted.wamp.ApplicationSession` subclass.
+All you need to do is set the `session_factory` of a :class:`autobahn.twisted.component.Component` instance to your :class:`autobahn.twisted.wamp.ApplicationSession` subclass (or pass it as a ``kwarg`` when creating the :class:`Component`)
 
 .. code-block:: python
 
-    comp = Component(...)
-    comp.session_factory = MyApplicationSession
+    comp = Component(
+        session_factory=MyApplicationSession,
+    )
 
 
 Patterns for More Complicated Applications
 ------------------------------------------
 
-Many of the examples in this documentation use a decorator style with fixed, static WAMP URIs for registrations and subscriptions. If you have a more complex application, you might want to create URIs at run-time or link several `Commponents` together.
+Many of the examples in this documentation use a decorator style with fixed, static WAMP URIs for registrations and subscriptions. If you have a more complex application, you might want to create URIs at run-time or link several :class:`Component` instances together.
 
-It is important to remember that :class:`Component` handles re-connection which implies there are times when your component is **not** connected. The `on_join` handlers are run whenever a fresh WAMP session is started, so this is the appropriate way to hook in "initialization"-style code (`on_leave` is where "un-initialization" code goes).
+It is important to remember that :class:`Component` handles re-connection  -- this implies there are times when your component is **not** connected. The `on_join` handlers are run whenever a fresh WAMP session is started, so this is the appropriate way to hook in "initialization"-style code (`on_leave` is where "un-initialization" code goes). Note that each new WAMP session will use a new instance of :class:`ApplicationSession`.
 
-Here's a slightly more complex example that is a simple `Klein`_ Web application that publishes to a WAMP session when a certian URL is requested (note that the Crossbario.io router supports `various REST-style integrations <https://crossbar.io/docs/HTTP-Bridge/>`_ already). Using a similar pattern, you could tie together two or more :class:`Component` instances (even connecting to two or more *different* WAMP routers).
+Here's a slightly more complex example that is a small `Klein`_ Web application that publishes to a WAMP session when a certian URL is requested (note that the Crossbario.io router supports `various REST-style integrations <https://crossbar.io/docs/HTTP-Bridge/>`_ already). Using a similar pattern, you could tie together two or more :class:`Component` instances (even connecting to two or more *different* WAMP routers).
 
 .. _Klein: https://github.com/twisted/klein
 
@@ -186,6 +187,7 @@ The Python3 / asyncio version of the same example is nearly identical except for
     :emphasize-lines: 1
     :language: python
 
+.. _component_config:
 
 Component Configuration Options
 ===============================
@@ -227,7 +229,7 @@ Each WAMP Session is associated with precisely one realm, and so is each `Compon
 session_factory=
 ----------------
 
-You may pass an :class:`ApplicationSession` subclass here (or even a callable that takes a single ``config`` argument and returns an instance implementing :class:`.IApplicationSession`) or leave it as ``None``. This can be used by users of the "subclass"-style API who still want to take advantage of the configuration of :class:`Component`. and :func:`run()`. The ``session`` argument passed in many of the callbacks will be an instance of this (see also :ref:`session_lifecycle`).
+Leaving this as ``None`` should be fine for most users. You may pass an :class:`ApplicationSession` subclass here (or even a callable that takes a single ``config`` argument and returns an instance implementing :class:`.IApplicationSession`) to create new session objects. This can be used by users of the "subclass"-style API who still want to take advantage of the configuration of :class:`Component` and :func:`run()`. The ``session`` argument passed in many of the callbacks will be an instance of this (see also :ref:`session_lifecycle`).
 
 
 authentication=
@@ -237,15 +239,19 @@ This contains a ``dict`` mapping an authenticator name to its configuration. You
 
 Typically the administrator of your WAMP router will decide which authentication methods are allowed. See for example `Crossbar.io's authentication documentation <https://crossbar.io/docs/Authentication/>`_ for some discussion of the various methods.
 
-``anonymous`` accepts no options. Most methods accept options for: ``authextra`` (application-specific information), ``authid`` (unicode username), ``authrole`` (the desired role inside the realm).
+``anonymous`` accepts no options. Most methods accept options for:
+
+  - ``authextra``: application-specific information
+  - ``authid``: unicode username
+  - ``authrole``: the desired role inside the realm
 
 The other authentication methods take additional options as indicated
 below:
 
-- **wampcra**: also accepts  ``secret`` (the password)
-- **cryptosign** (experimental): also accepts ``privkey``, the hex-encoded ed25519 private key
-- **scram** (experimental): also requires ``nonce`` (hex-encoded), ``kdf`` (``"argon2id-13"`` or ``"pbkdf2"``), ``salt`` (hex-encoded), ``iterations`` (integer) and optionally ``memory`` (integer) and ``channel_binding`` (currently ignored).
-- **ticket**: accepts only the ``ticket`` option
+  - **wampcra**: also accepts  ``secret`` (the password)
+  - **cryptosign** (experimental): also accepts ``privkey``, the hex-encoded ed25519 private key
+  - **scram** (experimental): also requires ``nonce`` (hex-encoded), ``kdf`` (``"argon2id-13"`` or ``"pbkdf2"``), ``salt`` (hex-encoded), ``iterations`` (integer) and optionally ``memory`` (integer) and ``channel_binding`` (currently ignored).
+  - **ticket**: accepts only the ``ticket`` option
 
 
 Running a WAMP Router
@@ -255,7 +261,7 @@ The component we've created attempts to connect to a **WAMP router** running loc
 
 Our suggested way is to use `Crossbar.io <http://crossbar.io>`_ as your WAMP router. There are `other WAMP routers <http://wamp.ws/implementations#routers>`_ besides Crossbar.io as well.
 
-Once you've `installed Crossbar.io <http://crossbar.io/docs/Quick-Start/>`_, run the example configuration from `examples/router` in your |ab| clone. If you want to start fresh, you can instead do this:
+Once you've `installed Crossbar.io <http://crossbar.io/docs/Quick-Start/>`_, run the example configuration from ``examples/router`` in your |ab| clone. If you want to start fresh, you can instead do this:
 
 .. code-block:: sh
 
@@ -267,7 +273,7 @@ This will create the default Crossbar.io node configuration ``./.crossbar/config
 
    crossbar start
 
-**Note**: The defaults in the above will not work with the examples in the repository nor this documentation; please use the example router configuration that ships with |ab|.
+**Note**: The defaults in the above will not work with the examples in the repository nor this documentation; please use the example router configuration that ships with |ab| (in ``examples/router/.crossbar/``).
 
 
 .. _remote-procedure-calls:
