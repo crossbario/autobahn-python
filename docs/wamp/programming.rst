@@ -51,9 +51,9 @@ Creating Components
 
 There are two ways to create components using |ab|. One is based on deriving from a particular class and overriding methods and the other is based on functions and decorators. The latter is the recommended approach (but note that many examples and existing code use the subclassing approach). Both are fine and end up calling the same code under the hood.
 
-For both approaches you get to decide if you prefer to use **Twisted** or **asyncio** and express this through ``import``. This is :class:`autobahn.twisted.component` versus :class:`autobahn.asyncio.component`
+For both approaches you get to decide if you prefer to use **Twisted** or **asyncio** and express this through ``import``. This is :mod:`autobahn.twisted.*` versus :mod:`autobahn.asyncio.*`
 
-When using **Twisted** you import from ``autobahn.twisted.*``:
+When using **Twisted** you import from ``autobahn.twisted.component``:
 
 .. code-block:: python
     :emphasize-lines: 1
@@ -67,7 +67,7 @@ When using **Twisted** you import from ``autobahn.twisted.*``:
         print("session ready")
 
 
-whereas when you are using **asyncio**
+whereas when you are using **asyncio**:
 
 .. code-block:: python
    :emphasize-lines: 1
