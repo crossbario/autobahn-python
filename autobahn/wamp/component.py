@@ -379,7 +379,7 @@ class Component(ObservableMixin):
             containing the following configuration keys:
 
                 - ``type`` (optional): ``websocket`` (default) or ``rawsocket``
-                - ``url``: the WAMP URL
+                - ``url``: the router URL
                 - ``endpoint`` (optional, derived from URL if not provided):
                     - ``type``: "tcp" or "unix"
                     - ``host``, ``port``: only for TCP

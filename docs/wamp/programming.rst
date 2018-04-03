@@ -187,6 +187,66 @@ The Python3 / asyncio version of the same example is nearly identical except for
     :language: python
 
 
+Component Configuration Options
+===============================
+
+Most of the arguments given when creating a new :class:`Component` are a series of ``dict`` instances containing "configuration"-style information. These are documented in :class:`autobahn.wamp.component.Component` so we go through the most important ones here:
+
+transports=
+-----------
+
+You may define any number of transports; these are tried in round-robin order when doing connections (and subsequent re-connections). If the ``is_fatal=`` predicate is used and returns ``True`` for any errors, that transport won't be used any more (and when no transports remain, the :class:`Component` has "failed").
+
+Each transport is defined similarly to `"connecting transports" <https://crossbar.io/docs/WebSocket-Transport/#connecting-transports>`_ in Crossbar.io but as a simplification a plain unicode URI may be used, for example ``transports=u"ws://example.com/ws"`` or ``transports=[u"ws://example.com/ws"]``. If using a ``dict`` instead of a string you can specify the following keys:
+
+- ``type``: ``"websocket"`` (default) or ``"rawsocket"``
+- ``url``: the URL of the router to connect to (very often, this will be the same as the "endpoint" host but not always)
+- ``endpoint``: (optional; can be inferred from above)
+  - ``type``: ``"tcp"`` or ``"unix"``
+  - ``host``, ``port``: only for ``type="tcp"``
+  - ``path``: only for ``type="unix"``
+  - ``tls``: bool (advanced Twisted users can pass :class:`CertificateOptions`); this is also inferred from a ``wss:`` scheme.
+
+In addition, each transport may have some options related to re-connections:
+
+- ``max_retries``: (default 15) -1 means "try forever", or a hard limit.
+- ``max_retry_delay``: (default 300)
+- ``initial_retry_delay``: (default 1.5) how long we wait to re-connect the first time
+- ``retry_delay_growth``: (default 1.5) a multiplier expanding our delay each try (so the second re-connect we wait ``retry_delay_growth * initial_retry_delay`` seconds).
+- ``retry_delay_jitter``: (default 0.1) percent of total retry delay to add/subtract as jitter
+
+After a successful connection, all re-connection values are set back to their original values.
+
+
+realm=
+------
+
+Each WAMP Session is associated with precisely one realm, and so is each `Component`. A "realm" is a logically separated WAMP URI space (and is isolated from all other realms that may exist on a WAMP router). You must pass a unicode string here.
+
+
+session_factory=
+----------------
+
+You may pass an :class:`ApplicationSession` subclass here (or even a callable that takes a single ``config`` argument and returns an instance implementing :class:`.IApplicationSession`) or leave it as ``None``. This can be used by users of the "subclass"-style API who still want to take advantage of the configuration of :class:`Component`. and :func:`run()`. The ``session`` argument passed in many of the callbacks will be an instance of this (see also :ref:`session_lifecycle`).
+
+
+authentication=
+---------------
+
+This contains a ``dict`` mapping an authenticator name to its configuration. You do not have to have any authentication information, in which case ``anonymous`` will be used. Currently valid authenticators are: ``anonymous``, ``ticket``, ``wampcra``, ``cryptosign`` (experimental) and ``scram`` (experimental).
+
+Typically the administrator of your WAMP router will decide which authentication methods are allowed. See for example `Crossbar.io's authentication documentation <https://crossbar.io/docs/Authentication/>`_ for some discussion of the various methods.
+
+``anonymous`` accepts no options. Most methods accept options for: ``authextra`` (application-specific information), ``authid`` (unicode username), ``authrole`` (the desired role inside the realm).
+
+The other authentication methods take additional options as indicated
+below:
+
+- **wampcra**: also accepts  ``secret`` (the password)
+- **cryptosign** (experimental): also accepts ``privkey``, the hex-encoded ed25519 private key
+- **scram** (experimental): also requires ``nonce`` (hex-encoded), ``kdf`` (``"argon2id-13"`` or ``"pbkdf2"``), ``salt`` (hex-encoded), ``iterations`` (integer) and optionally ``memory`` (integer) and ``channel_binding`` (currently ignored).
+- **ticket**: accepts only the ``ticket`` option
+
 
 Running a WAMP Router
 =====================
@@ -541,7 +601,7 @@ A WAMP application component has this lifecycle:
 5. session closed (realm left, :meth:`ISession.onLeave <autobahn.wamp.interfaces.ISession.onLeave>` called)
 6. transport disconnected (:meth:`ISession.onDisconnect <autobahn.wamp.interfaces.ISession.onDisconnect>` called)
 
-In the ``Component`` API, there are similar corresponding events. The biggest difference is the lack of "challenge" events (you pass authentication configuration instead) and the addition of a "ready" event. Tou can subscribe to these events directly using a "listener" style API or via decorators. The events are:
+In the ``Component`` API, there are similar corresponding events. The biggest difference is the lack of "challenge" events (you pass authentication configuration instead) and the addition of a "ready" event. You can subscribe to these events directly using a "listener" style API or via decorators. The events are:
 
 1. "connect": transport connected
 2. "join": session has successfully joined a realm
