@@ -362,7 +362,7 @@ class Component(ObservableMixin):
             self.on('join', do_registration)
         return decorator
 
-    def __init__(self, main=None, transports=None, config=None, realm=u'default', extra=None, authentication=None):
+    def __init__(self, main=None, transports=None, realm=u'default', extra=None, authentication=None):
         """
         :param main: After a transport has been connected and a session
             has been established and joined to a realm, this (async)
@@ -392,9 +392,6 @@ class Component(ObservableMixin):
                       ``CertificateOptions`` instance.
 
         :type transports: None or unicode or list of dicts
-
-        :param config: Session configuration (currently unused?)
-        :type config: None or dict
 
         :param realm: the realm to join
         :type realm: unicode
