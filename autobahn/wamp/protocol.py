@@ -1648,7 +1648,8 @@ class _SessionShim(ApplicationSession):
         return authenticator.on_challenge(self, challenge)
 
     def onWelcome(self, msg):
-        if msg.authmethod is None:  # no authentication
+        if msg.authmethod is None or self._authenticators is None:
+            # no authentication
             return
         try:
             authenticator = self._authenticators[msg.authmethod]
