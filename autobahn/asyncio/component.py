@@ -333,6 +333,10 @@ def run(components, log_level='info'):
     if log_level is not None:
         txaio.start_logging(level=log_level)
     loop = asyncio.get_event_loop()
+    if loop.is_closed():
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        loop = asyncio.get_event_loop()
+        txaio.config.loop = loop
     log = txaio.make_logger()
 
     # see https://github.com/python/asyncio/issues/341 asyncio has
