@@ -278,6 +278,25 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
     return value
 
 
+def _validate_kwargs(kwargs):
+    """
+    Internal helper. Takes a kwargs dict and either returns it, or a
+    new instance that has unicode keys.
+
+    This exists because u-msgpack will turn str() instances into bytes
+    in Python2, but if you used kwargs in 'the natural way', the dict
+    will contain str->whatever mappings and end up as bytes->whatever
+    on the other side (and if that side is Python3, it'll blow up if
+    you try to do **kwargs with the dict)
+    """
+    if kwargs is not None and six.PY2:
+        return {
+            unicode(k): v
+            for k, v in kwargs.iteritems()
+        }
+    return kwargs
+
+
 class Message(object):
     """
     WAMP message base class.
@@ -1312,7 +1331,7 @@ class Error(Message):
         self.request = request
         self.error = error
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.enc_algo = enc_algo
         self.enc_key = enc_key
@@ -1593,7 +1612,7 @@ class Publish(Message):
         self.request = request
         self.topic = topic
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.acknowledge = acknowledge
 
@@ -2402,7 +2421,7 @@ class Event(Message):
         self.subscription = subscription
         self.publication = publication
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.publisher = publisher
         self.publisher_authid = publisher_authid
@@ -2745,7 +2764,7 @@ class Call(Message):
         self.request = request
         self.procedure = procedure
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.timeout = timeout
         self.receive_progress = receive_progress
@@ -3061,7 +3080,7 @@ class Result(Message):
         Message.__init__(self)
         self.request = request
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.progress = progress
 
@@ -3735,7 +3754,7 @@ class Invocation(Message):
         self.request = request
         self.registration = registration
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.timeout = timeout
         self.receive_progress = receive_progress
@@ -4095,7 +4114,7 @@ class Yield(Message):
         Message.__init__(self)
         self.request = request
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.progress = progress
         self.enc_algo = enc_algo
