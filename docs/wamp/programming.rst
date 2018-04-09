@@ -51,9 +51,9 @@ Creating Components
 
 There are two ways to create components using |ab|. One is based on deriving from a particular class and overriding methods and the other is based on functions and decorators. The latter is the recommended approach (but note that many examples and existing code use the subclassing approach). Both are fine and end up calling the same code under the hood.
 
-For both approaches you get to decide if you prefer to use **Twisted** or **asyncio** and express this through ``import``. This is :class:`autobahn.twisted.component` versus :class:`autobahn.asyncio.component`
+For both approaches you get to decide if you prefer to use **Twisted** or **asyncio** and express this through ``import``. This is :mod:`autobahn.twisted.*` versus :mod:`autobahn.asyncio.*`
 
-When using **Twisted** you import from ``autobahn.twisted.*``:
+When using **Twisted** you import from ``autobahn.twisted.component``:
 
 .. code-block:: python
     :emphasize-lines: 1
@@ -67,7 +67,7 @@ When using **Twisted** you import from ``autobahn.twisted.*``:
         print("session ready")
 
 
-whereas when you are using **asyncio**
+whereas when you are using **asyncio**:
 
 .. code-block:: python
    :emphasize-lines: 1
@@ -80,7 +80,7 @@ whereas when you are using **asyncio**
     def joined(session, details):
         print("session ready")
 
-As can be seen, the only difference between Twisted and asyncio is the import (line 1). The rest of the code is identical. For Twisted, you can use ``@inlineCallbacks`` or return ``Deferred`` from methods decorated with ``on_join``; in Python 3 you would use coroutines (``async def``).
+As can be seen, the only difference between Twisted and asyncio is the import (line 1). The rest of the code is identical. For Twisted, you can use ``@inlineCallbacks`` or return ``Deferred`` from methods decorated with ``on_join``; in Python 3 (with asyncio or Twisted) you would use coroutines (``async def``).
 
 There are four "life cycle" events that |ab| will trigger on your components: ``connect``, ``join``, ``leave``, and ``disconnect``. These all have corresponding decorators (or you can use code like ``comp.on('join', the_callback)`` if you prefer). We go over these events later.
 
@@ -91,7 +91,7 @@ Running Components
 ------------------
 
 To actually make use of an application components, the component needs to connect to a WAMP router.
-|Ab| includes a *runner* that does the heavy lifting for you.
+|Ab| includes a :func:`run` function that does the heavy lifting for you.
 
 .. code-block:: python
    :emphasize-lines: 1-2
@@ -133,159 +133,125 @@ and with **asyncio**:
 
 As can be seen, the only difference between Twisted and asyncio is the import (line 1 and 2). The rest of the code is identical.
 
-The configuration of the component is specified when you construct it; the above is the bare minimum -- you can specify many transports (which will be tried and re-tried in order) as well as authentication options, the realm to join, etcetera. See the :class:`autobahn.wamp.component.Component` documentation for details. A single Python program can run many different ``Component`` instances at once and you can interconnect these as you see fit -- so a single program can have multiple WAMP connections (e.g. to different Realms) at once.
+The configuration of the component is specified when you construct it; the above is the bare minimum -- you can specify many transports (which will be tried and re-tried in order) as well as authentication options, the realm to join, re-connection parameters, etcetera. See :ref:`component_config` for details. A single Python program can run many different ``Component`` instances at once and you can interconnect these as you see fit -- so a single program can have multiple WAMP connections (e.g. to different Realms or different WAMP routers) at once.
 
 .. tip::
    A *Realm* is a routing namespace and an administrative domain for WAMP. For example, a single WAMP router can manage multiple *Realms*, and those realms are completely separate: an event published to topic T on a Realm R1 is NOT received by a subscribe to T on Realm R2.
 
 
+Running Subclass-Style Components
+---------------------------------
+
+You can use the same "component" APIs to run a component based on subclassing `ApplicationSession`. In older code it's common to see :class:`autobahn.twisted.wamp.ApplicationRunner` or :class:`autobahn.asyncio.wamp.ApplicationRunner`. This runner lacks many of the options of the :func:`autobahn.twisted.component.run` or :func:`autobahn.asyncio.component.run` functions, so although it can still be useful you likely want to upgrade to :func:`run`.
+
+All you need to do is set the `session_factory` of a :class:`autobahn.twisted.component.Component` instance to your :class:`autobahn.twisted.wamp.ApplicationSession` subclass (or pass it as a ``kwarg`` when creating the :class:`Component`)
+
+.. code-block:: python
+
+    comp = Component(
+        session_factory=MyApplicationSession,
+    )
+
+
+Patterns for More Complicated Applications
+------------------------------------------
+
+Many of the examples in this documentation use a decorator style with fixed, static WAMP URIs for registrations and subscriptions. If you have a more complex application, you might want to create URIs at run-time or link several :class:`Component` instances together.
+
+It is important to remember that :class:`Component` handles re-connection  -- this implies there are times when your component is **not** connected. The `on_join` handlers are run whenever a fresh WAMP session is started, so this is the appropriate way to hook in "initialization"-style code (`on_leave` is where "un-initialization" code goes). Note that each new WAMP session will use a new instance of :class:`ApplicationSession`.
+
+Here's a slightly more complex example that is a small `Klein`_ Web application that publishes to a WAMP session when a certian URL is requested (note that the Crossbario.io router supports `various REST-style integrations <https://crossbar.io/docs/HTTP-Bridge/>`_ already). Using a similar pattern, you could tie together two or more :class:`Component` instances (even connecting to two or more *different* WAMP routers).
+
+.. _Klein: https://github.com/twisted/klein
+
+.. literalinclude:: ../listings/webapp.py
+   :language: python
+
+
+Longer Example
+--------------
+
 Here is a more-complete example showing some of the options you can pass when setting up a `Component`. This example can be run against the Crossbar.io router configuration that comes with |ab| -- just run `crossbar start` in  `examples/router/` in your clone.
 
 **Twisted**:
 
-.. code-block:: python
+.. literalinclude:: ../listings/tx_complete.py
+   :language: python
 
-    from autobahn.twisted.component import Component, run
-    from autobahn.twisted.util import sleep
-    from autobahn.wamp.types import RegisterOptions
-    from twisted.internet.defer import inlineCallbacks, returnValue
-
-    # to see how this works on the Crossbar.io side, see the example
-    # router configuration in:
-    # https://github.com/crossbario/autobahn-python/blob/master/examples/router/.crossbar/config.json
-
-    component = Component(
-        # you can configure multiple transports; here we use two different
-        # transports which both exist in the demo router
-        transports=[
-            {
-                u"type": u"websocket",
-                u"url": u"ws://localhost:8080/auth_ws",
-                u"endpoint": {
-                    u"type": u"tcp",
-                    u"host": u"localhost",
-                    u"port": 8080,
-                },
-                # you can set various websocket options here if you want
-                u"options": {
-                    u"open_handshake_timeout": 100,
-                }
-            },
-        ],
-        # authentication can also be configured (this will only work on
-        # the demo router on the first transport above)
-        authentication={
-            u"cryptosign": {
-                u'authid': u'alice',
-                # this key should be loaded from disk, database etc never burned into code like this...
-                u'privkey': '6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c',
-            }
-        },
-        # must provide a realm
-        realm=u"crossbardemo",
-    )
-
-
-    @component.on_join
-    @inlineCallbacks
-    def join(session, details):
-        print("joined {}: {}".format(session, details))
-        yield sleep(1)
-        print("Calling 'com.example'")
-        res = yield session.call(u"example.foo", 42, something="nothing")
-        print("Result: {}".format(res))
-        yield session.leave()
-
-
-    @component.register(
-        u"example.foo",
-        options=RegisterOptions(details_arg='details'),
-    )
-    @inlineCallbacks
-    def foo(*args, **kw):
-        print("foo called: {}, {}".format(args, kw))
-        for x in range(5, 0, -1):
-            print("  returning in {}".format(x))
-            yield sleep(1)
-        print("returning '42'")
-        returnValue(42)
-
-
-    if __name__ == "__main__":
-        run([component])
 
 The Python3 / asyncio version of the same example is nearly identical except for some imports (and the use of `async def` instead of Twisted's decorators):
 
 **asyncio**:
 
-.. code-block:: python
+.. literalinclude:: ../listings/aio_complete.py
     :emphasize-lines: 1
+    :language: python
 
-    from autobahn.asyncio.component import Component, run
-    from asyncio import sleep
-    from autobahn.wamp.types import RegisterOptions
+.. _component_config:
 
-    # to see how this works on the Crossbar.io side, see the example
-    # router configuration in:
-    # https://github.com/crossbario/autobahn-python/blob/master/examples/router/.crossbar/config.json
+Component Configuration Options
+===============================
 
-    component = Component(
-        # you can configure multiple transports; here we use two different
-        # transports which both exist in the demo router
-        transports=[
-            {
-                u"type": u"websocket",
-                u"url": u"ws://localhost:8080/auth_ws",
-                u"endpoint": {
-                    u"type": u"tcp",
-                    u"host": u"localhost",
-                    u"port": 8080,
-                },
-                # you can set various websocket options here if you want
-                u"options": {
-                    u"open_handshake_timeout": 100,
-                }
-            },
-        ],
-        # authentication can also be configured (this will only work on
-        # the demo router on the first transport above)
-        authentication={
-            u"cryptosign": {
-                u'authid': u'alice',
-                # this key should be loaded from disk, database etc never burned into code like this...
-                u'privkey': '6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c',
-            }
-        },
-        # must provide a realm
-        realm=u"crossbardemo",
-    )
+Most of the arguments given when creating a new :class:`Component` are a series of ``dict`` instances containing "configuration"-style information. These are documented in :class:`autobahn.wamp.component.Component` so we go through the most important ones here:
+
+transports=
+-----------
+
+You may define any number of transports; these are tried in round-robin order when doing connections (and subsequent re-connections). If the ``is_fatal=`` predicate is used and returns ``True`` for any errors, that transport won't be used any more (and when no transports remain, the :class:`Component` has "failed").
+
+Each transport is defined similarly to `"connecting transports" <https://crossbar.io/docs/WebSocket-Transport/#connecting-transports>`_ in Crossbar.io but as a simplification a plain unicode URI may be used, for example ``transports=u"ws://example.com/ws"`` or ``transports=[u"ws://example.com/ws"]``. If using a ``dict`` instead of a string you can specify the following keys:
+
+- ``type``: ``"websocket"`` (default) or ``"rawsocket"``
+- ``url``: the URL of the router to connect to (very often, this will be the same as the "endpoint" host but not always)
+- ``endpoint``: (optional; can be inferred from above)
+  - ``type``: ``"tcp"`` or ``"unix"``
+  - ``host``, ``port``: only for ``type="tcp"``
+  - ``path``: only for ``type="unix"``
+  - ``tls``: bool (advanced Twisted users can pass :class:`CertificateOptions`); this is also inferred from a ``wss:`` scheme.
+
+In addition, each transport may have some options related to re-connections:
+
+- ``max_retries``: (default 15) -1 means "try forever", or a hard limit.
+- ``max_retry_delay``: (default 300)
+- ``initial_retry_delay``: (default 1.5) how long we wait to re-connect the first time
+- ``retry_delay_growth``: (default 1.5) a multiplier expanding our delay each try (so the second re-connect we wait ``retry_delay_growth * initial_retry_delay`` seconds).
+- ``retry_delay_jitter``: (default 0.1) percent of total retry delay to add/subtract as jitter
+
+After a successful connection, all re-connection values are set back to their original values.
 
 
-    @component.on_join
-    async def join(session, details):
-        print("joined {}: {}".format(session, details))
-        await sleep(1)
-        print("Calling 'com.example'")
-        res = await session.call(u"example.foo", 42, something="nothing")
-        print("Result: {}".format(res))
-        await session.leave()
+realm=
+------
+
+Each WAMP Session is associated with precisely one realm, and so is each `Component`. A "realm" is a logically separated WAMP URI space (and is isolated from all other realms that may exist on a WAMP router). You must pass a unicode string here.
 
 
-    @component.register(
-        u"example.foo",
-        options=RegisterOptions(details_arg='details'),
-    )
-    async def foo(*args, **kw):
-        print("foo called: {}, {}".format(args, kw))
-        for x in range(5, 0, -1):
-            print("  returning in {}".format(x))
-            await sleep(1)
-        print("returning '42'")
-        return 42
+session_factory=
+----------------
+
+Leaving this as ``None`` should be fine for most users. You may pass an :class:`ApplicationSession` subclass here (or even a callable that takes a single ``config`` argument and returns an instance implementing :class:`.IApplicationSession`) to create new session objects. This can be used by users of the "subclass"-style API who still want to take advantage of the configuration of :class:`Component` and :func:`run()`. The ``session`` argument passed in many of the callbacks will be an instance of this (see also :ref:`session_lifecycle`).
 
 
-    if __name__ == "__main__":
-        run([component])
+authentication=
+---------------
+
+This contains a ``dict`` mapping an authenticator name to its configuration. You do not have to have any authentication information, in which case ``anonymous`` will be used. Currently valid authenticators are: ``anonymous``, ``ticket``, ``wampcra``, ``cryptosign`` (experimental) and ``scram`` (experimental).
+
+Typically the administrator of your WAMP router will decide which authentication methods are allowed. See for example `Crossbar.io's authentication documentation <https://crossbar.io/docs/Authentication/>`_ for some discussion of the various methods.
+
+``anonymous`` accepts no options. Most methods accept options for:
+
+  - ``authextra``: application-specific information
+  - ``authid``: unicode username
+  - ``authrole``: the desired role inside the realm
+
+The other authentication methods take additional options as indicated
+below:
+
+  - **wampcra**: also accepts  ``secret`` (the password)
+  - **cryptosign** (experimental): also accepts ``privkey``, the hex-encoded ed25519 private key
+  - **scram** (experimental): also requires ``nonce`` (hex-encoded), ``kdf`` (``"argon2id-13"`` or ``"pbkdf2"``), ``salt`` (hex-encoded), ``iterations`` (integer) and optionally ``memory`` (integer) and ``channel_binding`` (currently ignored).
+  - **ticket**: accepts only the ``ticket`` option
 
 
 Running a WAMP Router
@@ -295,7 +261,7 @@ The component we've created attempts to connect to a **WAMP router** running loc
 
 Our suggested way is to use `Crossbar.io <http://crossbar.io>`_ as your WAMP router. There are `other WAMP routers <http://wamp.ws/implementations#routers>`_ besides Crossbar.io as well.
 
-Once you've `installed Crossbar.io <http://crossbar.io/docs/Quick-Start/>`_, run the example configuration from `examples/router` in your |ab| clone. If you want to start fresh, you can instead do this:
+Once you've `installed Crossbar.io <http://crossbar.io/docs/Quick-Start/>`_, run the example configuration from ``examples/router`` in your |ab| clone. If you want to start fresh, you can instead do this:
 
 .. code-block:: sh
 
@@ -307,7 +273,7 @@ This will create the default Crossbar.io node configuration ``./.crossbar/config
 
    crossbar start
 
-**Note**: The defaults in the above will not work with the examples in the repository nor this documentation; please use the example router configuration that ships with |ab|.
+**Note**: The defaults in the above will not work with the examples in the repository nor this documentation; please use the example router configuration that ships with |ab| (in ``examples/router/.crossbar/``).
 
 
 .. _remote-procedure-calls:
@@ -641,7 +607,7 @@ A WAMP application component has this lifecycle:
 5. session closed (realm left, :meth:`ISession.onLeave <autobahn.wamp.interfaces.ISession.onLeave>` called)
 6. transport disconnected (:meth:`ISession.onDisconnect <autobahn.wamp.interfaces.ISession.onDisconnect>` called)
 
-In the ``Component`` API, there are similar corresponding events. The biggest difference is the lack of "challenge" events (you pass authentication configuration instead) and the addition of a "ready" event. Tou can subscribe to these events directly using a "listener" style API or via decorators. The events are:
+In the ``Component`` API, there are similar corresponding events. The biggest difference is the lack of "challenge" events (you pass authentication configuration instead) and the addition of a "ready" event. You can subscribe to these events directly using a "listener" style API or via decorators. The events are:
 
 1. "connect": transport connected
 2. "join": session has successfully joined a realm
