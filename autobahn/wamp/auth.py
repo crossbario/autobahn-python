@@ -109,7 +109,7 @@ class AuthAnonymous(object):
             "on_challenge called on anonymous authentication"
         )
 
-    def on_welcome(self, msg):
+    def on_welcome(self, msg, authextra):
         return None
 
 
@@ -136,7 +136,7 @@ class AuthTicket(object):
         assert challenge.method == u"ticket"
         return self._ticket
 
-    def on_welcome(self, msg):
+    def on_welcome(self, msg, authextra):
         return None
 
 
@@ -187,7 +187,7 @@ class AuthCryptoSign(object):
     def on_challenge(self, session, challenge):
         return self._privkey.sign_challenge(session, challenge)
 
-    def on_welcome(self, msg):
+    def on_welcome(self, msg, authextra):
         return None
 
 

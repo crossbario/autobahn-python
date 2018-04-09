@@ -673,7 +673,21 @@ class ApplicationSession(BaseSession):
                                 handler.fn, msg.subscription)
                             return self._swallow_error(e, errmsg)
 
-                        future = txaio.as_future(handler.fn, *invoke_args, **invoke_kwargs)
+                        try:
+                            future = txaio.as_future(handler.fn, *invoke_args, **invoke_kwargs)
+                        except TypeError:
+                            # if we have a python2 caller on the other end,
+                            # and they are using msgpack, and kwargs came from
+                            # a call like: call("foo", key="word") then the
+                            # 'key' will be a bytes here, so we convert .. and
+                            # just hope they were using utf8? (This is fixed
+                            # on the other end too, in marshal() in Call but
+                            # an older Autobahn could trigger it)
+                            str_invoke_kwargs = {
+                                k.decode('utf8'): v
+                                for k, v in invoke_kwargs.items()
+                            }
+                            future = txaio.as_future(handler.fn, *invoke_args, **str_invoke_kwargs)
                         txaio.add_callbacks(future, _success, _error)
 
                 else:
@@ -918,7 +932,21 @@ class ApplicationSession(BaseSession):
 
                                 invoke_kwargs[endpoint.details_arg] = types.CallDetails(registration, progress=progress, caller=msg.caller, caller_authid=msg.caller_authid, caller_authrole=msg.caller_authrole, procedure=proc, enc_algo=msg.enc_algo)
 
-                            on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
+                            try:
+                                on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
+                            except TypeError:
+                                # if we have a python2 caller on the other end,
+                                # and they are using msgpack, and kwargs came from
+                                # a call like: call("foo", key="word") then the
+                                # 'key' will be a bytes here, so we convert .. and
+                                # just hope they were using utf8? (This is fixed
+                                # on the other end too, in marshal() in Call but
+                                # an older Autobahn could trigger it)
+                                str_invoke_kwargs = {
+                                    k.decode('utf8'): v
+                                    for k, v in invoke_kwargs.items()
+                                }
+                                on_reply = txaio.as_future(endpoint.fn, *invoke_args, **str_invoke_kwargs)
 
                             def success(res):
                                 del self._invocations[msg.request]
@@ -1648,7 +1676,8 @@ class _SessionShim(ApplicationSession):
         return authenticator.on_challenge(self, challenge)
 
     def onWelcome(self, msg):
-        if msg.authmethod is None:  # no authentication
+        if msg.authmethod is None or self._authenticators is None:
+            # no authentication
             return
         try:
             authenticator = self._authenticators[msg.authmethod]
