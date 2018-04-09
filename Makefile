@@ -45,7 +45,7 @@ clean:
 
 # publish to PyPI
 publish: clean
-	python setup.py sdist bdist_wheel
+	python setup.py sdist bdist_wheel --universal
 	twine upload dist/*
 
 docs:

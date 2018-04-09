@@ -114,12 +114,14 @@ extras_require_encryption = [
 
 # Support for WAMP-SCRAM authentication
 extras_require_scram = [
-    'argon2_cffi',              # MIT license
-    'passlib',                  # BSD license
+    'cffi>=1.11.5',             # MIT license
+    'argon2_cffi>=18.1.0',      # MIT license
+    'passlib>=1.7.1',           # BSD license
 ]
 
+# Support native vector (SIMD) acceleration included with Autobahn
 extras_require_nvx = [
-    'cffi>=1.0.0'
+    'cffi>=1.11.5',             # MIT license
 ]
 
 # everything
@@ -153,6 +155,7 @@ extras_require_dev = [
     'awscli',                           # Apache 2.0
     'qualname',                         # BSD
     'passlib',                          # BSD license
+    'wheel',                            # MIT license
 ]
 
 if PY3:
@@ -203,10 +206,6 @@ setup(
     install_requires=[
         'six>=1.10.0',      # MIT license
         'txaio>=2.10.0',    # MIT license
-        'cffi>=1.0.0',      # MIT license
-    ],
-    setup_requires=[
-        'cffi>=1.0.0'
     ],
     extras_require={
         'all': extras_require_all,
@@ -242,7 +241,12 @@ setup(
     package_data={'autobahn.asyncio': ['test/*']},
 
     cffi_modules=[
-        'autobahn/nvx/_utf8validator.py:ffi'
+        # FIXME: building this extension will make the wheel
+        # produced no longer unniversal (as in "autobahn-18.4.1-py2.py3-none-any.whl").
+        # on the other hand, I don't know how to selectively include this
+        # based on the install flavor the user has chosen (eg pip install autobahn[nvx]
+        # should make the following be included)
+        # 'autobahn/nvx/_utf8validator.py:ffi'
     ],
 
     # this flag will make files from MANIFEST.in go into _source_ distributions only
