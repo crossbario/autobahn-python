@@ -363,7 +363,7 @@ class Component(ObservableMixin):
         return decorator
 
     def __init__(self, main=None, transports=None, config=None, realm=u'default', extra=None,
-                 authentication=None, session_factory=None):
+                 authentication=None, session_factory=None, is_fatal=None):
         """
         :param main: After a transport has been connected and a session
             has been established and joined to a realm, this (async)
@@ -407,6 +407,13 @@ class Component(ObservableMixin):
             used, otherwise a callable taking a single ``config`` argument
             that is used to create a new `ApplicationSession` instance.
         :type session_factory: callable
+
+        :param is_fatal: a callable taking a single argument, an
+            ``Exception`` instance. The callable should return ``True`` if
+            this error is "fatal", meaning we should not try connecting to
+            the current transport again. The default behavior (on None) is
+            to always return ``False``
+        :type is_fatal: callable taking one arg, or None
         """
         self.set_valid_events(
             [
@@ -419,6 +426,10 @@ class Component(ObservableMixin):
                 'connectfailure',   # fired by base class
             ]
         )
+
+        if is_fatal is not None and not callable(is_fatal):
+            raise ValueError('"is_fatal" must be a callable or None')
+        self._is_fatal = is_fatal
 
         if main is not None and not callable(main):
             raise ValueError('"main" must be a callable if given')
@@ -502,8 +513,6 @@ class Component(ObservableMixin):
         def attempt_connect(_):
 
             def handle_connect_error(fail):
-                unrecoverable_error = False
-
                 # FIXME - make txaio friendly
                 # Can connect_f ever be in a cancelled state?
                 # if txaio.using_asyncio and isinstance(fail.value, asyncio.CancelledError):
@@ -514,12 +523,6 @@ class Component(ObservableMixin):
                 # If this is a "fatal error" that will never work,
                 # we bail out now
                 if isinstance(fail.value, ApplicationError):
-                    if fail.value.error in [
-                            u'wamp.error.no_such_realm',
-                            u'wamp.error.no_auth_method']:
-                        unrecoverable_error = True
-                        self.log.error(u"Fatal error, not reconnecting")
-
                     self.log.error(u"{msg}", msg=fail.value.error_message())
 
                 elif isinstance(fail.value, OSError):
@@ -537,27 +540,29 @@ class Component(ObservableMixin):
                     # and what the problem is. See err(3) for more
                     # information."
                     self.log.error(u"TLS failure: {reason}", reason=fail.value.args[1])
-                    self.log.error(u"Marking this transport as failed")
-                    transport_candidate[0].failed()
                 else:
-                    # This is some unknown failure, e.g. could
-                    # be SyntaxError etc so we're aborting the
-                    # whole mission
                     self.log.error(
                         u'Connection failed: {error}',
                         error=txaio.failure_message(fail),
                     )
-                    unrecoverable_error = True
 
-                if unrecoverable_error:
-                    txaio.reject(done_f, fail)
-                    return
+                if self._is_fatal is None:
+                    is_fatal = False
+                else:
+                    is_fatal = self._is_fatal(fail.value)
+                if is_fatal:
+                    self.log.info("Error was fatal; failing transport")
+                    transport_candidate[0].failed()
 
                 txaio.call_later(0, transport_check, None)
                 return
 
             def notify_connect_error(fail):
                 chain_f = txaio.create_future()
+                # hmm, if connectfailure took a _Transport instead of
+                # (or in addition to?) self it could .failed() the
+                # transport and we could do away with the is_fatal
+                # listener?
                 handler_f = self.fire('connectfailure', self, fail.value)
                 txaio.add_callbacks(
                     handler_f,
@@ -657,14 +662,13 @@ class Component(ObservableMixin):
                         details=details,
                     )
                     if not txaio.is_called(done):
-                        if details.reason in [u"wamp.error.no_auth_method"]:
-                            txaio.resolve(done, txaio.create_failure(
-                                ApplicationError(
-                                    u"wamp.error.no_auth_method"
-                                )
-                            ))
-                        else:
+                        if details.reason in [u"wamp.close.normal"]:
                             txaio.resolve(done, None)
+                        else:
+                            f = txaio.create_failure(
+                                ApplicationError(details.reason)
+                            )
+                            txaio.reject(done, f)
                 session.on('leave', on_leave)
 
                 # if we were given a "main" procedure, we run through
@@ -708,9 +712,10 @@ class Component(ObservableMixin):
                             self.log.warn(
                                 u"Session disconnected uncleanly"
                             )
-                        # eg the session has left the realm, and the transport was properly
-                        # shut down. successfully finish the connection
-                        txaio.resolve(done, None)
+                        else:
+                            # eg the session has left the realm, and the transport was properly
+                            # shut down. successfully finish the connection
+                            txaio.resolve(done, None)
                 session.on('disconnect', on_disconnect)
 
                 # return the fresh session object
