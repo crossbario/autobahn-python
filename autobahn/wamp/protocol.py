@@ -673,21 +673,7 @@ class ApplicationSession(BaseSession):
                                 handler.fn, msg.subscription)
                             return self._swallow_error(e, errmsg)
 
-                        try:
-                            future = txaio.as_future(handler.fn, *invoke_args, **invoke_kwargs)
-                        except TypeError:
-                            # if we have a python2 caller on the other end,
-                            # and they are using msgpack, and kwargs came from
-                            # a call like: call("foo", key="word") then the
-                            # 'key' will be a bytes here, so we convert .. and
-                            # just hope they were using utf8? (This is fixed
-                            # on the other end too, in marshal() in Call but
-                            # an older Autobahn could trigger it)
-                            str_invoke_kwargs = {
-                                k.decode('utf8'): v
-                                for k, v in invoke_kwargs.items()
-                            }
-                            future = txaio.as_future(handler.fn, *invoke_args, **str_invoke_kwargs)
+                        future = txaio.as_future(handler.fn, *invoke_args, **invoke_kwargs)
                         txaio.add_callbacks(future, _success, _error)
 
                 else:
@@ -932,21 +918,7 @@ class ApplicationSession(BaseSession):
 
                                 invoke_kwargs[endpoint.details_arg] = types.CallDetails(registration, progress=progress, caller=msg.caller, caller_authid=msg.caller_authid, caller_authrole=msg.caller_authrole, procedure=proc, enc_algo=msg.enc_algo)
 
-                            try:
-                                on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
-                            except TypeError:
-                                # if we have a python2 caller on the other end,
-                                # and they are using msgpack, and kwargs came from
-                                # a call like: call("foo", key="word") then the
-                                # 'key' will be a bytes here, so we convert .. and
-                                # just hope they were using utf8? (This is fixed
-                                # on the other end too, in marshal() in Call but
-                                # an older Autobahn could trigger it)
-                                str_invoke_kwargs = {
-                                    k.decode('utf8'): v
-                                    for k, v in invoke_kwargs.items()
-                                }
-                                on_reply = txaio.as_future(endpoint.fn, *invoke_args, **str_invoke_kwargs)
+                            on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
 
                             def success(res):
                                 del self._invocations[msg.request]
@@ -1285,13 +1257,21 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
         """
         assert(type(topic) == six.text_type)
-
-        if not self._transport:
-            raise exception.TransportLost()
+        assert(args is None or type(args) in (list, tuple))
+        assert(kwargs is None or type(kwargs) == dict)
 
         options = kwargs.pop('options', None)
         if options and not isinstance(options, types.PublishOptions):
             raise Exception("options must be of type a.w.t.PublishOptions")
+
+        if kwargs and six.PY2:
+            kwargs = {
+                k.decode('utf8'): v
+                for k, v in kwargs.iteritems()
+            }
+
+        if not self._transport:
+            raise exception.TransportLost()
 
         request_id = self._request_id_gen.next()
 
@@ -1463,13 +1443,21 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ICaller.call`
         """
         assert(type(procedure) == six.text_type)
-
-        if not self._transport:
-            raise exception.TransportLost()
+        assert(args is None or type(args) in (list, tuple))
+        assert(kwargs is None or type(kwargs) == dict)
 
         options = kwargs.pop('options', None)
         if options and not isinstance(options, types.CallOptions):
             raise Exception("options must be of type a.w.t.CallOptions")
+
+        if kwargs and six.PY2:
+            kwargs = {
+                k.decode('utf8'): v
+                for k, v in kwargs.iteritems()
+            }
+
+        if not self._transport:
+            raise exception.TransportLost()
 
         request_id = self._request_id_gen.next()
 
