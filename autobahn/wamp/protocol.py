@@ -893,6 +893,15 @@ class ApplicationSession(BaseSession):
                                 if msg.receive_progress:
 
                                     def progress(*args, **kwargs):
+                                        assert(args is None or type(args) in (list, tuple))
+                                        assert(kwargs is None or type(kwargs) == dict)
+
+                                        if kwargs and six.PY2:
+                                            kwargs = {
+                                                k.decode('utf8'): v
+                                                for k, v in kwargs.iteritems()
+                                            }
+
                                         encoded_payload = None
                                         if msg.enc_algo:
                                             if not self._payload_codec:
