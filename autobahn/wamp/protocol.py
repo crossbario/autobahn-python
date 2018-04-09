@@ -153,9 +153,9 @@ class BaseSession(ObservableMixin):
 
         if tb:
             if kwargs:
-                kwargs['traceback'] = tb
+                kwargs[u'traceback'] = tb
             else:
-                kwargs = {'traceback': tb}
+                kwargs = {u'traceback': tb}
 
         if isinstance(exc, exception.ApplicationError):
             error = exc.error if type(exc.error) == six.text_type else six.u(exc.error)
