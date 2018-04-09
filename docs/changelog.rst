@@ -8,6 +8,7 @@ Changelog
 master (unreleased)
 -------------------
 
+* fix: kwarg keys sometimes are bytes on Python2 (#980)
 * ...
 
 
