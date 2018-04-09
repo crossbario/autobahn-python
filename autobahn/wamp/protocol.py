@@ -145,6 +145,12 @@ class BaseSession(ObservableMixin):
         if hasattr(exc, 'kwargs'):
             kwargs = exc.kwargs
 
+        if kwargs and six.PY2:
+            kwargs = {
+                k.decode('utf8'): v
+                for k, v in kwargs.iteritems()
+            }
+
         if tb:
             if kwargs:
                 kwargs['traceback'] = tb
