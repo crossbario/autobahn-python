@@ -150,15 +150,18 @@ extras_require_dev = [
     'sphinxcontrib-spelling>=2.1.2',    # BSD
     'sphinx_rtd_theme>=0.1.9',          # BSD
 
-    # pytest-asyncio 0.6 has dropped support for Py <3.5
-    # https://github.com/pytest-dev/pytest-asyncio/issues/57
-    'pytest_asyncio<0.6',               # Apache 2.0
-
-    'pytest-aiohttp',                   # Apache 2.0
     'awscli',                           # Apache 2.0
     'qualname',                         # BSD
     'passlib',                          # BSD license
 ]
+
+if PY3:
+    extras_require_dev.extend([
+        # pytest-asyncio 0.6 has dropped support for Py <3.5
+        # https://github.com/pytest-dev/pytest-asyncio/issues/57
+        'pytest_asyncio<0.6',               # Apache 2.0
+        'pytest-aiohttp',                   # Apache 2.0
+    ])
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
 test_requirements = [
