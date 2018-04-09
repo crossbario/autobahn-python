@@ -271,30 +271,47 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
     if type(value) != dict:
-        raise ProtocolError(u"{0}: invalid type {1}".format(message, type(value)))
+        raise ProtocolError(u"{0}: invalid type {1} for WAMP extra".format(message, type(value)))
     for k in value.keys():
         if not isinstance(k, six.text_type):
-            raise ProtocolError(u"{0}: invalid type {1} for key '{2}'".format(message, type(k), k))
+            raise ProtocolError(u"{0}: invalid type {1} for key in WAMP extra ('{2}')".format(message, type(k), k))
     return value
 
 
-def _validate_kwargs(kwargs):
+def _validate_kwargs(kwargs, message=u"WAMP message invalid"):
     """
-    Internal helper. Takes a kwargs dict and either returns it, or a
-    new instance that has unicode keys.
+    Check a value for being a valid WAMP kwargs dictionary.
 
-    This exists because u-msgpack will turn str() instances into bytes
-    in Python2, but if you used kwargs in 'the natural way', the dict
-    will contain str->whatever mappings and end up as bytes->whatever
-    on the other side (and if that side is Python3, it'll blow up if
-    you try to do **kwargs with the dict)
+    If the value is not a valid WAMP kwargs dictionary,
+    raises :class:`autobahn.wamp.exception.ProtocolError`.
+    Otherwise return the kwargs.
+
+    The WAMP spec requires that the keys in kwargs are proper
+    strings (unicode), not bytes. Note that the WAMP spec
+    says nothing about keys in application payload. Key in the
+    latter can be potentially of other type (if that is really
+    wanted).
+
+    :param kwargs: The keyword arguments to check.
+    :type kwargs: dict
+
+    :param message: Prefix for message in exception raised when
+        value is invalid.
+    :type message: str
+
+    :returns: The kwargs dictionary (if valid).
+    :rtype: dict
+
+    :raises: instance of
+        :class:`autobahn.wamp.exception.ProtocolError`
     """
-    if kwargs is not None and six.PY2:
-        return {
-            unicode(k): v
-            for k, v in kwargs.iteritems()
-        }
-    return kwargs
+    if kwargs:
+        if type(kwargs) != dict:
+            raise ProtocolError(u"{0}: invalid type {1} for WAMP kwargs".format(message, type(kwargs)))
+        for k in kwargs.keys():
+            if not isinstance(k, six.text_type):
+                raise ProtocolError(u"{0}: invalid type {1} for key in WAMP kwargs ('{2}')".format(message, type(k), k))
+        return kwargs
 
 
 class Message(object):
