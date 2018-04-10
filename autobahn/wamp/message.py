@@ -66,7 +66,13 @@ __all__ = ('Message',
            'is_valid_enc_serializer',
            'PAYLOAD_ENC_CRYPTO_BOX',
            'PAYLOAD_ENC_MQTT',
-           'PAYLOAD_ENC_STANDARD_IDENTIFIERS')
+           'PAYLOAD_ENC_STANDARD_IDENTIFIERS',
+           'MUX_MESSAGE_TYPE')
+
+
+# NOTE: Implementation-specific message! Should be 255 on ratification.
+# https://github.com/wamp-proto/wamp-proto/blob/master/rfc/text/basic/bp_messages.md#extension-messages
+MUX_MESSAGE_TYPE = 256
 
 
 # strict URI check allowing empty URI components
@@ -328,6 +334,7 @@ class Message(object):
 
     __slots__ = (
         '_serialized',
+        '_mux_session_id',
         '_correlation_id',
         '_correlation_uri',
         '_correlation_is_anchor',
@@ -338,11 +345,29 @@ class Message(object):
         # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
 
+        # when this message is from a muxed WAMP transport, this is the WAMP session ID
+        # the message is muxed for on the transport
+        self._mux_session_id = None
+
         # user attributes for message correlation (mainly for message tracing)
         self._correlation_id = None
         self._correlation_uri = None
         self._correlation_is_anchor = None
         self._correlation_is_last = None
+
+    @property
+    def mux_session_id(self):
+        return self._mux_session_id
+
+    @mux_session_id.setter
+    def mux_session_id(self, value):
+        assert(value is None or type(value) in six.integer_types)
+        if value != self._mux_session_id:
+            self._mux_session_id = value
+            self._serialized = {}
+            return True
+        else:
+            return False
 
     @property
     def correlation_id(self):
@@ -446,7 +471,11 @@ class Message(object):
         """
         # only serialize if not cached ..
         if serializer not in self._serialized:
-            self._serialized[serializer] = serializer.serialize(self.marshal())
+            if self._mux_session_id:
+                raw_msg = [MUX_MESSAGE_TYPE, self._mux_session_id, self.marshal()]
+            else:
+                raw_msg = self.marshal()
+            self._serialized[serializer] = serializer.serialize(raw_msg)
         return self._serialized[serializer]
 
 

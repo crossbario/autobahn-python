@@ -40,6 +40,21 @@ __all__ = ['Serializer',
            'JsonSerializer']
 
 
+def _check_raw_message(raw_msg):
+    if type(raw_msg) != list:
+        raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
+
+    if len(raw_msg) == 0:
+        raise ProtocolError(u"missing message type in WAMP message")
+
+    message_type = raw_msg[0]
+
+    if type(message_type) not in six.integer_types:
+        raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
+
+    return message_type
+
+
 class Serializer(object):
     """
     Base class for WAMP serializers. A WAMP serializer is the core glue between
@@ -77,7 +92,7 @@ class Serializer(object):
     Mapping of WAMP message type codes to WAMP message classes.
     """
 
-    def __init__(self, serializer):
+    def __init__(self, serializer, muxed=False):
         """
         Constructor.
 
@@ -85,11 +100,13 @@ class Serializer(object):
         :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
         """
         self._serializer = serializer
+        self._muxed = muxed
 
     def serialize(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.serialize`
         """
+        assert(not (msg.mux_session_id and not self._muxed))
         return msg.serialize(self._serializer), self._serializer.BINARY
 
     def unserialize(self, payload, isBinary=None):
@@ -109,18 +126,24 @@ class Serializer(object):
 
         for raw_msg in raw_msgs:
 
-            if type(raw_msg) != list:
-                raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
+            message_type = _check_raw_message(raw_msg)
 
-            if len(raw_msg) == 0:
-                raise ProtocolError(u"missing message type in WAMP message")
+            if message_type == message.MUX_MESSAGE_TYPE:
+                if not self._muxed:
+                    raise ProtocolError("MUX messages not supported on this serializer")
 
-            message_type = raw_msg[0]
+                if len(raw_msg) != 3:
+                    raise ProtocolError("invalid MUX message of length {}".format(len(raw_msg)))
 
-            if type(message_type) not in six.integer_types:
-                # CBOR doesn't roundtrip number types
-                # https://bitbucket.org/bodhisnarkva/cbor/issues/6/number-types-dont-roundtrip
-                raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
+                mux_session_id = raw_msg[1]
+                if type(mux_session_id) not in six.integer_types:
+                    raise ProtocolError("invalid type {0} for MUX session ID".format(type(mux_session_id)))
+
+                raw_msg = raw_msg[2]
+
+                message_type = _check_raw_message(raw_msg)
+            else:
+                mux_session_id = None
 
             Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
@@ -129,6 +152,9 @@ class Serializer(object):
 
             # this might again raise `ProtocolError` ..
             msg = Klass.parse(raw_msg)
+
+            if mux_session_id:
+                msg.mux_session_id = mux_session_id
 
             msgs.append(msg)
 
@@ -262,16 +288,24 @@ class JsonSerializer(Serializer):
     WAMP-over-Longpoll HTTP fallback.
     """
 
-    def __init__(self, batched=False):
+    def __init__(self, batched=False, muxed=False):
         """
         Ctor.
 
         :param batched: Flag to control whether to put this serialized into batched mode.
         :type batched: bool
         """
-        Serializer.__init__(self, JsonObjectSerializer(batched=batched))
+        Serializer.__init__(self, JsonObjectSerializer(batched=batched), muxed=muxed)
         if batched:
-            self.SERIALIZER_ID = u"json.batched"
+            if muxed:
+                self.SERIALIZER_ID = u"json.muxed.batched"
+            else:
+                self.SERIALIZER_ID = u"json.batched"
+        else:
+            if muxed:
+                self.SERIALIZER_ID = u"json.muxed"
+            else:
+                self.SERIALIZER_ID = u"json"
 
 
 ISerializer.register(JsonSerializer)
@@ -372,16 +406,24 @@ else:
         WAMP-over-Longpoll HTTP fallback.
         """
 
-        def __init__(self, batched=False):
+        def __init__(self, batched=False, muxed=False):
             """
             Ctor.
 
             :param batched: Flag to control whether to put this serialized into batched mode.
             :type batched: bool
             """
-            Serializer.__init__(self, MsgPackObjectSerializer(batched=batched))
+            Serializer.__init__(self, MsgPackObjectSerializer(batched=batched), muxed=muxed)
             if batched:
-                self.SERIALIZER_ID = u"msgpack.batched"
+                if muxed:
+                    self.SERIALIZER_ID = u"msgpack.muxed.batched"
+                else:
+                    self.SERIALIZER_ID = u"msgpack.batched"
+            else:
+                if muxed:
+                    self.SERIALIZER_ID = u"msgpack.muxed"
+                else:
+                    self.SERIALIZER_ID = u"msgpack"
 
     ISerializer.register(MsgPackSerializer)
 
@@ -484,16 +526,24 @@ else:
         WAMP-over-Longpoll HTTP fallback.
         """
 
-        def __init__(self, batched=False):
+        def __init__(self, batched=False, muxed=False):
             """
             Ctor.
 
             :param batched: Flag to control whether to put this serialized into batched mode.
             :type batched: bool
             """
-            Serializer.__init__(self, CBORObjectSerializer(batched=batched))
+            Serializer.__init__(self, CBORObjectSerializer(batched=batched), muxed=muxed)
             if batched:
-                self.SERIALIZER_ID = u"cbor.batched"
+                if muxed:
+                    self.SERIALIZER_ID = u"cbor.muxed.batched"
+                else:
+                    self.SERIALIZER_ID = u"cbor.batched"
+            else:
+                if muxed:
+                    self.SERIALIZER_ID = u"cbor.muxed"
+                else:
+                    self.SERIALIZER_ID = u"cbor"
 
     ISerializer.register(CBORSerializer)
 
@@ -594,16 +644,24 @@ else:
         WAMP-over-Longpoll HTTP fallback.
         """
 
-        def __init__(self, batched=False):
+        def __init__(self, batched=False, muxed=False):
             """
             Ctor.
 
             :param batched: Flag to control whether to put this serialized into batched mode.
             :type batched: bool
             """
-            Serializer.__init__(self, UBJSONObjectSerializer(batched=batched))
+            Serializer.__init__(self, UBJSONObjectSerializer(batched=batched), muxed=muxed)
             if batched:
-                self.SERIALIZER_ID = u"ubjson.batched"
+                if muxed:
+                    self.SERIALIZER_ID = u"ubjson.muxed.batched"
+                else:
+                    self.SERIALIZER_ID = u"ubjson.batched"
+            else:
+                if muxed:
+                    self.SERIALIZER_ID = u"ubjson.muxed"
+                else:
+                    self.SERIALIZER_ID = u"ubjson"
 
     ISerializer.register(UBJSONSerializer)
 

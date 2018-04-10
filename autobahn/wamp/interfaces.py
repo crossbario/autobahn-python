@@ -194,6 +194,11 @@ class ITransport(object):
     A WAMP transport is a bidirectional, full-duplex, reliable, ordered,
     message-based channel.
     """
+    @public
+    @abc.abstractmethod
+    def open_mux_transport(self, mux_transport_id, mux_transport_handler):
+        """
+        """
 
     @public
     @abc.abstractmethod

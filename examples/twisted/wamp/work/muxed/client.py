@@ -18,7 +18,6 @@ class MyAppSession(ApplicationSession):
 
     def __init__(self, config):
         ApplicationSession.__init__(self, config)
-        self._countdown = 2
 
     def onConnect(self):
         self.log.info('transport connected')
@@ -34,11 +33,12 @@ class MyAppSession(ApplicationSession):
     def onJoin(self, details):
         self.log.info('session joined: {}'.format(details))
 
-        yield self.register(add2, u'com.example.add2')
+        if False:
+            yield self.register(add2, u'com.example.add2')
 
-        for i in range(10):
-            res = yield self.call(u'com.example.add2', 23, i * self._countdown)
-            self.log.info('result: {}'.format(res))
+            for i in range(10):
+                res = yield self.call(u'com.example.add2', 23, i)
+                self.log.info('result: {}'.format(res))
 
         yield self.leave()
 
@@ -48,14 +48,10 @@ class MyAppSession(ApplicationSession):
 
     def onDisconnect(self):
         self.log.info('transport disconnected')
-        # this is to clean up stuff. it is not our business to
-        # possibly reconnect the underlying connection
-        self._countdown -= 1
-        if self._countdown <= 0:
-            try:
-                reactor.stop()
-            except ReactorNotRunning:
-                pass
+        try:
+            reactor.stop()
+        except ReactorNotRunning:
+            pass
 
 
 if __name__ == '__main__':
