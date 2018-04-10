@@ -356,8 +356,12 @@ def run(components, log_level='info'):
             task.cancel()
         asyncio.ensure_future(exit())
 
-    loop.add_signal_handler(signal.SIGINT, partial(nicely_exit, 'SIGINT'))
-    loop.add_signal_handler(signal.SIGTERM, partial(nicely_exit, 'SIGTERM'))
+    try:
+        loop.add_signal_handler(signal.SIGINT, partial(nicely_exit, 'SIGINT'))
+        loop.add_signal_handler(signal.SIGTERM, partial(nicely_exit, 'SIGTERM'))
+    except NotImplementedError:
+        # signals are not available on Windows
+        pass
 
     def done_callback(loop, arg):
         loop.stop()
