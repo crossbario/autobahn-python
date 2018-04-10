@@ -82,7 +82,7 @@ class McuComponent(ApplicationSession):
 
     @inlineCallbacks
     def onJoin(self, details):
-        print("MyComponent ready! Configuration: {}".format(self.config.extra))
+        print("Component ready! Configuration: {}".format(self.config.extra))
 
         port = self.config.extra['port']
         baudrate = self.config.extra['baudrate']

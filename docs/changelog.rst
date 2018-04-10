@@ -11,6 +11,20 @@ master (unreleased)
 * ...
 
 
+18.4.1
+------
+
+* new: WAMP-SCRAM authentication
+* new: native vector extensions (NVX)
+* fix: improve choosereactor (#965, #963)
+* new: lots of new and improved documentation, component API and more
+* new: Docker image tooling now in this repo
+* fix: "fatal errors" in Component (#977)
+* fix: AIO/Component: create a new loop if already closed
+* fix: kwarg keys sometimes are bytes on Python2 (#980)
+* fix: various improvements to new component API
+
+
 18.3.1
 ------
 

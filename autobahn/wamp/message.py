@@ -277,11 +277,47 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
     if type(value) != dict:
-        raise ProtocolError(u"{0}: invalid type {1}".format(message, type(value)))
+        raise ProtocolError(u"{0}: invalid type {1} for WAMP extra".format(message, type(value)))
     for k in value.keys():
-        if type(k) != six.text_type:
-            raise ProtocolError(u"{0}: invalid type {1} for key '{2}'".format(message, type(k), k))
+        if not isinstance(k, six.text_type):
+            raise ProtocolError(u"{0}: invalid type {1} for key in WAMP extra ('{2}')".format(message, type(k), k))
     return value
+
+
+def _validate_kwargs(kwargs, message=u"WAMP message invalid"):
+    """
+    Check a value for being a valid WAMP kwargs dictionary.
+
+    If the value is not a valid WAMP kwargs dictionary,
+    raises :class:`autobahn.wamp.exception.ProtocolError`.
+    Otherwise return the kwargs.
+
+    The WAMP spec requires that the keys in kwargs are proper
+    strings (unicode), not bytes. Note that the WAMP spec
+    says nothing about keys in application payload. Key in the
+    latter can be potentially of other type (if that is really
+    wanted).
+
+    :param kwargs: The keyword arguments to check.
+    :type kwargs: dict
+
+    :param message: Prefix for message in exception raised when
+        value is invalid.
+    :type message: str
+
+    :returns: The kwargs dictionary (if valid).
+    :rtype: dict
+
+    :raises: instance of
+        :class:`autobahn.wamp.exception.ProtocolError`
+    """
+    if kwargs is not None:
+        if type(kwargs) != dict:
+            raise ProtocolError(u"{0}: invalid type {1} for WAMP kwargs".format(message, type(kwargs)))
+        for k in kwargs.keys():
+            if not isinstance(k, six.text_type):
+                raise ProtocolError(u"{0}: invalid type {1} for key in WAMP kwargs ('{2}')".format(message, type(k), k))
+        return kwargs
 
 
 class Message(object):
@@ -1341,7 +1377,7 @@ class Error(Message):
         self.request = request
         self.error = error
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.enc_algo = enc_algo
         self.enc_key = enc_key
@@ -1622,7 +1658,7 @@ class Publish(Message):
         self.request = request
         self.topic = topic
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.acknowledge = acknowledge
 
@@ -2431,7 +2467,7 @@ class Event(Message):
         self.subscription = subscription
         self.publication = publication
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.publisher = publisher
         self.publisher_authid = publisher_authid
@@ -2774,7 +2810,7 @@ class Call(Message):
         self.request = request
         self.procedure = procedure
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.timeout = timeout
         self.receive_progress = receive_progress
@@ -3090,7 +3126,7 @@ class Result(Message):
         Message.__init__(self)
         self.request = request
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.progress = progress
 
@@ -3764,7 +3800,7 @@ class Invocation(Message):
         self.request = request
         self.registration = registration
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.timeout = timeout
         self.receive_progress = receive_progress
@@ -4124,7 +4160,7 @@ class Yield(Message):
         Message.__init__(self)
         self.request = request
         self.args = args
-        self.kwargs = kwargs
+        self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
         self.progress = progress
         self.enc_algo = enc_algo

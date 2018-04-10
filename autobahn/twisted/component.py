@@ -41,8 +41,8 @@ try:
     from OpenSSL import SSL
 except ImportError as e:
     _TLS = False
-    if 'OpenSSL' not in str(e):
-        raise
+    # there's no optionsForClientTLS in older Twisteds or we might be
+    # missing OpenSSL entirely.
 
 import six
 import txaio

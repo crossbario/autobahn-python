@@ -151,6 +151,20 @@
                                         }
                                     }
                                 },
+                                "scram": {
+                                    "type": "static",
+                                    "principals": {
+                                        "carol": {
+                                            "role": "authenticated",
+                                            "memory": 512,
+                                            "kdf": "argon2id-13",
+                                            "iterations": 4096,
+                                            "salt": "accaa46d16de59a12db736c8ed2cc90c",
+                                            "stored-key": "6524cf40c287834819a9c46a591f75be42d67f253aec73fe97d55736d1a928bd",
+                                            "server-key": "877b77c9fb3e12c13948812d9db909ceb794de9a7ec8a0c025f57ad8dff24ab8"
+                                        }
+                                    }
+                                },
                                 "anonymous": {
                                     "type": "static",
                                     "role": "anonymous"

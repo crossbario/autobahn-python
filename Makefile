@@ -13,8 +13,7 @@ all:
 # install locally
 install:
 	# enforce use of bundled libsodium
-	export SODIUM_INSTALL=bundled
-	pip install --upgrade -e .[twisted,asyncio,serialization,encryption,dev]
+	SODIUM_INSTALL=bundled pip install -e .[all,dev]
 
 # upload to our internal deployment system
 upload: clean
@@ -25,27 +24,28 @@ upload: clean
 
 # cleanup everything
 clean:
-	rm -rf ./docs/build
-	rm -rf ./.cache
-	rm -rf ./autobahn.egg-info
-	rm -rf ./build
-	rm -rf ./dist
-	rm -rf ./temp
-	rm -rf ./_trial_temp
-	rm -rf ./.tox
-	rm -rf ./.eggs
-	rm -f  ./twisted/plugins/dropin.cache
-	find . -name "*dropin.cache.new" -type f -exec rm -f {} \;
-	find . -name "*.tar.gz" -type f -exec rm -f {} \;
-	find . -name "*.egg" -type f -exec rm -f {} \;
-	find . -name "*.pyc" -type f -exec rm -f {} \;
+	-rm -f ./*.so
+	-rm -rf ./docs/build
+	-rm -rf ./.cache
+	-rm -rf ./autobahn.egg-info
+	-rm -rf ./build
+	-rm -rf ./dist
+	-rm -rf ./temp
+	-rm -rf ./_trial_temp
+	-rm -rf ./.tox
+	-rm -rf ./.eggs
+	-rm -f  ./twisted/plugins/dropin.cache
+	-find . -name "*dropin.cache.new" -type f -exec rm -f {} \;
+	-find . -name "*.tar.gz" -type f -exec rm -f {} \;
+	-find . -name "*.egg" -type f -exec rm -f {} \;
+	-find . -name "*.pyc" -type f -exec rm -f {} \;
 
 	# Learn to love the shell! http://unix.stackexchange.com/a/115869/52500
-	find . \( -name "*__pycache__" -type d \) -prune -exec rm -rf {} +
+	-find . \( -name "*__pycache__" -type d \) -prune -exec rm -rf {} +
 
 # publish to PyPI
 publish: clean
-	python setup.py sdist bdist_wheel
+	python setup.py sdist bdist_wheel --universal
 	twine upload dist/*
 
 docs:
@@ -53,6 +53,11 @@ docs:
 
 spelling:
 	cd docs && sphinx-build -b spelling . _spelling
+
+
+test_nvx:
+	python -m pytest -rsx autobahn/nvx/test
+	USE_TWISTED=1 trial autobahn.nvx.test.test_utf8validator
 
 test_styleguide:
 	flake8 --statistics --max-line-length=119 -qq autobahn
@@ -72,8 +77,11 @@ test_twisted:
 	USE_TWISTED=1 trial autobahn
 	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_TWISTED=1 trial autobahn
 
-test_serializer:
+test_tx_serializer:
 	USE_TWISTED=1 trial autobahn.wamp.test.test_serializer
+
+test_tx_choosereactor:
+	USE_TWISTED=1 trial autobahn.twisted.test.test_choosereactor
 
 test_twisted_coverage:
 	-rm .coverage
@@ -93,6 +101,9 @@ test_coverage:
 test_asyncio:
 	USE_ASYNCIO=1 python -m pytest -rsx autobahn
 	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_ASYNCIO=1 python -m pytest -rsx
+
+test_cs1:
+	USE_ASYNCIO=1 python -m pytest -s -v autobahn/wamp/test/test_cryptosign.py
 
 test1:
 	USE_TWISTED=1 trial autobahn.wamp.test.test_auth

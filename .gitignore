@@ -1,3 +1,4 @@
+.qemu
 *.mp4
 *.pyc
 *.pyo
@@ -38,3 +39,4 @@ node.key
 *.swp
 *.swo
 *.swn
+*.so

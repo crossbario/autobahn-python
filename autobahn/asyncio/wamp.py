@@ -248,6 +248,8 @@ class ApplicationRunner(object):
         if loop.is_closed() and start_loop:
             asyncio.set_event_loop(asyncio.new_event_loop())
             loop = asyncio.get_event_loop()
+            if hasattr(transport_factory, 'loop'):
+                transport_factory.loop = loop
         txaio.use_asyncio()
         txaio.config.loop = loop
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
@@ -286,6 +288,9 @@ class ApplicationRunner(object):
 class Session(protocol._SessionShim):
     # XXX these methods are redundant, but put here for possibly
     # better clarity; maybe a bad idea.
+
+    def on_welcome(self, welcome_msg):
+        pass
 
     def on_join(self, details):
         pass

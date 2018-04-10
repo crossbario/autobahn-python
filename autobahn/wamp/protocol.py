@@ -145,11 +145,17 @@ class BaseSession(ObservableMixin):
         if hasattr(exc, 'kwargs'):
             kwargs = exc.kwargs
 
+        if kwargs and six.PY2:
+            kwargs = {
+                k.decode('utf8'): v
+                for k, v in kwargs.iteritems()
+            }
+
         if tb:
             if kwargs:
-                kwargs['traceback'] = tb
+                kwargs[u'traceback'] = tb
             else:
-                kwargs = {'traceback': tb}
+                kwargs = {u'traceback': tb}
 
         if isinstance(exc, exception.ApplicationError):
             error = exc.error if type(exc.error) == six.text_type else six.u(exc.error)
@@ -461,56 +467,83 @@ class ApplicationSession(BaseSession):
             # the first message must be WELCOME, ABORT or CHALLENGE ..
             if isinstance(msg, message.Welcome):
 
-                if msg.realm:
-                    self._realm = msg.realm
+                # before we let user code see the session -- that is,
+                # before we fire "join" -- we give authentication
+                # instances a chance to abort the session. Usually
+                # this would be for "mutual authentication"
+                # scenarios. For example, WAMP-SCRAM uses this to
+                # confirm the server-signature
+                d = txaio.as_future(self.onWelcome, msg)
 
-                self._session_id = msg.session
-                self._router_roles = msg.roles
+                def success(res):
+                    if res is not None:
+                        self.log.info("Session denied by onWelcome")
+                        reply = message.Abort(
+                            u"wamp.error.cannot_authenticate", u"{0}".format(res)
+                        )
+                        self._transport.send(reply)
+                        return
 
-                details = SessionDetails(realm=self._realm,
-                                         session=self._session_id,
-                                         authid=msg.authid,
-                                         authrole=msg.authrole,
-                                         authmethod=msg.authmethod,
-                                         authprovider=msg.authprovider,
-                                         authextra=msg.authextra,
-                                         resumed=msg.resumed,
-                                         resumable=msg.resumable,
-                                         resume_token=msg.resume_token)
-                # firing 'join' *before* running onJoin, so that the
-                # idiom where you "do stuff" in onJoin -- possibly
-                # including self.leave() -- works properly. Besides,
-                # there's "ready" that fires after 'join' and onJoin
-                # have all completed...
-                d = self.fire('join', self, details)
-                # add a logging errback first, which will ignore any
-                # errors from fire()
-                txaio.add_callbacks(
-                    d, None,
-                    lambda e: self._swallow_error(e, "While notifying 'join'")
-                )
-                # this should run regardless
-                txaio.add_callbacks(
-                    d,
-                    lambda _: txaio.as_future(self.onJoin, details),
-                    None
-                )
-                # ignore any errors from onJoin (XXX or, should that be fatal?)
-                txaio.add_callbacks(
-                    d, None,
-                    lambda e: self._swallow_error(e, "While firing onJoin")
-                )
-                # this instance is now "ready"...
-                txaio.add_callbacks(
-                    d,
-                    lambda _: self.fire('ready', self),
-                    None
-                )
-                # ignore any errors from 'ready'
-                txaio.add_callbacks(
-                    d, None,
-                    lambda e: self._swallow_error(e, "While notifying 'ready'")
-                )
+                    if msg.realm:
+                        self._realm = msg.realm
+
+                    self._session_id = msg.session
+                    self._router_roles = msg.roles
+
+                    details = SessionDetails(
+                        realm=self._realm,
+                        session=self._session_id,
+                        authid=msg.authid,
+                        authrole=msg.authrole,
+                        authmethod=msg.authmethod,
+                        authprovider=msg.authprovider,
+                        authextra=msg.authextra,
+                        resumed=msg.resumed,
+                        resumable=msg.resumable,
+                        resume_token=msg.resume_token,
+                    )
+                    # firing 'join' *before* running onJoin, so that
+                    # the idiom where you "do stuff" in onJoin --
+                    # possibly including self.leave() -- works
+                    # properly. Besides, there's "ready" that fires
+                    # after 'join' and onJoin have all completed...
+                    d = self.fire('join', self, details)
+                    # add a logging errback first, which will ignore any
+                    # errors from fire()
+                    txaio.add_callbacks(
+                        d, None,
+                        lambda e: self._swallow_error(e, "While notifying 'join'")
+                    )
+                    # this should run regardless
+                    txaio.add_callbacks(
+                        d,
+                        lambda _: txaio.as_future(self.onJoin, details),
+                        None
+                    )
+                    # ignore any errors from onJoin (XXX or, should that be fatal?)
+                    txaio.add_callbacks(
+                        d, None,
+                        lambda e: self._swallow_error(e, "While firing onJoin")
+                    )
+                    # this instance is now "ready"...
+                    txaio.add_callbacks(
+                        d,
+                        lambda _: self.fire('ready', self),
+                        None
+                    )
+                    # ignore any errors from 'ready'
+                    txaio.add_callbacks(
+                        d, None,
+                        lambda e: self._swallow_error(e, "While notifying 'ready'")
+                    )
+
+                def error(e):
+                    reply = message.Abort(
+                        u"wamp.error.cannot_authenticate", u"Error calling onWelcome handler"
+                    )
+                    self._transport.send(reply)
+                    return self._swallow_error(e, "While firing onWelcome")
+                txaio.add_callbacks(d, success, error)
 
             elif isinstance(msg, message.Abort):
                 # fire callback and close the transport
@@ -868,6 +901,15 @@ class ApplicationSession(BaseSession):
                                 if msg.receive_progress:
 
                                     def progress(*args, **kwargs):
+                                        assert(args is None or type(args) in (list, tuple))
+                                        assert(kwargs is None or type(kwargs) == dict)
+
+                                        if kwargs and six.PY2:
+                                            kwargs = {
+                                                k.decode('utf8'): v
+                                                for k, v in kwargs.iteritems()
+                                            }
+
                                         encoded_payload = None
                                         if msg.enc_algo:
                                             if not self._payload_codec:
@@ -1133,6 +1175,12 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
         """
 
+    @public
+    def onWelcome(self, msg):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISession.onWelcome`
+        """
+
     def _errback_outstanding_requests(self, exc):
         """
         Errback any still outstanding requests with exc.
@@ -1226,13 +1274,21 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
         """
         assert(type(topic) == six.text_type)
-
-        if not self._transport:
-            raise exception.TransportLost()
+        assert(args is None or type(args) in (list, tuple))
+        assert(kwargs is None or type(kwargs) == dict)
 
         options = kwargs.pop('options', None)
         if options and not isinstance(options, types.PublishOptions):
             raise Exception("options must be of type a.w.t.PublishOptions")
+
+        if kwargs and six.PY2:
+            kwargs = {
+                k.decode('utf8'): v
+                for k, v in kwargs.iteritems()
+            }
+
+        if not self._transport:
+            raise exception.TransportLost()
 
         request_id = self._request_id_gen.next()
 
@@ -1404,13 +1460,21 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ICaller.call`
         """
         assert(type(procedure) == six.text_type)
-
-        if not self._transport:
-            raise exception.TransportLost()
+        assert(args is None or type(args) in (list, tuple))
+        assert(kwargs is None or type(kwargs) == dict)
 
         options = kwargs.pop('options', None)
         if options and not isinstance(options, types.CallOptions):
             raise Exception("options must be of type a.w.t.CallOptions")
+
+        if kwargs and six.PY2:
+            kwargs = {
+                k.decode('utf8'): v
+                for k, v in kwargs.iteritems()
+            }
+
+        if not self._transport:
+            raise exception.TransportLost()
 
         request_id = self._request_id_gen.next()
 
@@ -1569,13 +1633,16 @@ class ApplicationSession(BaseSession):
         return on_reply
 
 
-# this is NOT public; import from either autobahn.asyncio.wamp or
-# autobahn.twisted.wamp
 class _SessionShim(ApplicationSession):
     """
     shim that lets us present pep8 API for user-classes to override,
     but also backwards-compatible for existing code using
     ApplicationSession "directly".
+
+    **NOTE:** this is not public or intended for use; you should import
+    either :class:`autobahn.asyncio.wamp.Session` or
+    :class:`autobahn.twisted.wamp.Session` depending on which async
+    framework you're using.
     """
 
     #: name -> IAuthenticator
@@ -1612,6 +1679,20 @@ class _SessionShim(ApplicationSession):
                 )
             )
         return authenticator.on_challenge(self, challenge)
+
+    def onWelcome(self, msg):
+        if msg.authmethod is None or self._authenticators is None:
+            # no authentication
+            return
+        try:
+            authenticator = self._authenticators[msg.authmethod]
+        except KeyError:
+            raise RuntimeError(
+                "Received onWelcome for unknown authmethod '{}'".format(
+                    msg.authmethod
+                )
+            )
+        return authenticator.on_welcome(self, msg.authextra)
 
     def onLeave(self, details):
         return self.on_leave(details)
@@ -1667,7 +1748,7 @@ class _SessionShim(ApplicationSession):
         self._authenticators[authenticator.name] = authenticator
 
     def _merged_authextra(self):
-        authextras = [a._args.get('authextra', {}) for a in self._authenticators.values()]
+        authextras = [a.authextra for a in self._authenticators.values()]
         # for all existing _authenticators, we've already checked that
         # if they contain a key it has the same value as all others.
         return {

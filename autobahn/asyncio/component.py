@@ -333,6 +333,10 @@ def run(components, log_level='info'):
     if log_level is not None:
         txaio.start_logging(level=log_level)
     loop = asyncio.get_event_loop()
+    if loop.is_closed():
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        loop = asyncio.get_event_loop()
+        txaio.config.loop = loop
     log = txaio.make_logger()
 
     # see https://github.com/python/asyncio/issues/341 asyncio has
@@ -352,8 +356,12 @@ def run(components, log_level='info'):
             task.cancel()
         asyncio.ensure_future(exit())
 
-    loop.add_signal_handler(signal.SIGINT, partial(nicely_exit, 'SIGINT'))
-    loop.add_signal_handler(signal.SIGTERM, partial(nicely_exit, 'SIGTERM'))
+    try:
+        loop.add_signal_handler(signal.SIGINT, partial(nicely_exit, 'SIGINT'))
+        loop.add_signal_handler(signal.SIGTERM, partial(nicely_exit, 'SIGTERM'))
+    except NotImplementedError:
+        # signals are not available on Windows
+        pass
 
     def done_callback(loop, arg):
         loop.stop()

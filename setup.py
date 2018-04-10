@@ -112,10 +112,23 @@ extras_require_encryption = [
     'pyqrcode>=1.1'             # BSD license
 ]
 
+# Support for WAMP-SCRAM authentication
+extras_require_scram = [
+    'cffi>=1.11.5',             # MIT license
+    'argon2_cffi>=18.1.0',      # MIT license
+    'passlib>=1.7.1',           # BSD license
+]
+
+# Support native vector (SIMD) acceleration included with Autobahn
+extras_require_nvx = [
+    'cffi>=1.11.5',             # MIT license
+]
+
 # everything
 extras_require_all = extras_require_twisted + extras_require_asyncio + \
     extras_require_accelerate + extras_require_compress + \
-    extras_require_serialization + extras_require_encryption
+    extras_require_serialization + extras_require_encryption + \
+    extras_require_scram + extras_require_nvx
 
 # extras_require_all += extras_require_compress
 
@@ -139,14 +152,19 @@ extras_require_dev = [
     'sphinxcontrib-spelling>=2.1.2',    # BSD
     'sphinx_rtd_theme>=0.1.9',          # BSD
 
-    # pytest-asyncio 0.6 has dropped support for Py <3.5
-    # https://github.com/pytest-dev/pytest-asyncio/issues/57
-    'pytest_asyncio<0.6',               # Apache 2.0
-
-    'pytest-aiohttp',                   # Apache 2.0
     'awscli',                           # Apache 2.0
     'qualname',                         # BSD
+    'passlib',                          # BSD license
+    'wheel',                            # MIT license
 ]
+
+if PY3:
+    extras_require_dev.extend([
+        # pytest-asyncio 0.6 has dropped support for Py <3.5
+        # https://github.com/pytest-dev/pytest-asyncio/issues/57
+        'pytest_asyncio<0.6',               # Apache 2.0
+        'pytest-aiohttp',                   # Apache 2.0
+    ])
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
 test_requirements = [
@@ -187,7 +205,7 @@ setup(
     platforms='Any',
     install_requires=[
         'six>=1.10.0',      # MIT license
-        'txaio>=2.7.0',     # MIT license
+        'txaio>=2.10.0',    # MIT license
     ],
     extras_require={
         'all': extras_require_all,
@@ -197,6 +215,8 @@ setup(
         'compress': extras_require_compress,
         'serialization': extras_require_serialization,
         'encryption': extras_require_encryption,
+        'scram': extras_require_scram,
+        'nvx': extras_require_nvx,
         'dev': extras_require_dev,
     },
     tests_require=test_requirements,
@@ -214,9 +234,20 @@ setup(
         'autobahn.rawsocket.test',
         'autobahn.asyncio',
         'autobahn.twisted',
-        'twisted.plugins'
+        'twisted.plugins',
+        'autobahn.nvx',
+        'autobahn.nvx.test',
     ],
     package_data={'autobahn.asyncio': ['test/*']},
+
+    cffi_modules=[
+        # FIXME: building this extension will make the wheel
+        # produced no longer unniversal (as in "autobahn-18.4.1-py2.py3-none-any.whl").
+        # on the other hand, I don't know how to selectively include this
+        # based on the install flavor the user has chosen (eg pip install autobahn[nvx]
+        # should make the following be included)
+        # 'autobahn/nvx/_utf8validator.py:ffi'
+    ],
 
     # this flag will make files from MANIFEST.in go into _source_ distributions only
     include_package_data=True,

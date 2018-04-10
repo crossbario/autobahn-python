@@ -38,11 +38,24 @@ import random
 from struct import Struct
 from operator import xor
 from itertools import starmap
+
 from autobahn.util import public
+from autobahn.util import xor as xor_array
 from autobahn.wamp.interfaces import IAuthenticator
+
+# if we don't have argon2/passlib (see "authentication" extra) then
+# you don't get AuthScram and variants
+try:
+    from argon2.low_level import hash_secret
+    from argon2 import Type
+    from passlib.utils import saslprep
+    HAS_ARGON = True
+except ImportError:
+    HAS_ARGON = False
 
 
 __all__ = (
+    'AuthScram',
     'AuthCryptoSign',
     'AuthWampCra',
     'pbkdf2',
@@ -65,8 +78,9 @@ def create_authenticator(name, **kwargs):
     """
     try:
         klass = {
-            AuthWampCra.name: AuthWampCra,
+            AuthScram.name: AuthScram,
             AuthCryptoSign.name: AuthCryptoSign,
+            AuthWampCra.name: AuthWampCra,
             AuthAnonymous.name: AuthAnonymous,
             AuthTicket.name: AuthTicket,
         }[name]
@@ -95,6 +109,9 @@ class AuthAnonymous(object):
             "on_challenge called on anonymous authentication"
         )
 
+    def on_welcome(self, msg, authextra):
+        return None
+
 
 IAuthenticator.register(AuthAnonymous)
 
@@ -118,6 +135,9 @@ class AuthTicket(object):
     def on_challenge(self, session, challenge):
         assert challenge.method == u"ticket"
         return self._ticket
+
+    def on_welcome(self, msg, authextra):
+        return None
 
 
 IAuthenticator.register(AuthTicket)
@@ -167,8 +187,146 @@ class AuthCryptoSign(object):
     def on_challenge(self, session, challenge):
         return self._privkey.sign_challenge(session, challenge)
 
+    def on_welcome(self, msg, authextra):
+        return None
+
 
 IAuthenticator.register(AuthCryptoSign)
+
+
+def _hash_argon2id13_secret(password, salt, iterations, memory):
+    """
+    Internal helper. Returns the salted/hashed password using the
+    argon2id-13 algorithm. The return value is base64-encoded.
+    """
+    rawhash = hash_secret(
+        secret=password,
+        salt=base64.b64decode(salt),
+        time_cost=iterations,
+        memory_cost=memory,
+        parallelism=1,  # hard-coded by WAMP-SCRAM spec
+        hash_len=32,
+        type=Type.ID,
+        version=0x13,  # note this is decimal "19" which appears in places
+    )
+    # spits out stuff like:
+    # '$argon2i$v=19$m=512,t=2,p=2$5VtWOO3cGWYQHEMaYGbsfQ$AcmqasQgW/wI6wAHAMk4aQ'
+
+    _, tag, ver, options, salt_data, hash_data = rawhash.split(b'$')
+    return hash_data
+
+
+def _hash_pbkdf2_secret(password, salt, iterations):
+    """
+    Internal helper for SCRAM authentication
+    """
+    return pbkdf2(password, salt, iterations, keylen=32, hashfunc=hashlib.sha256)
+
+
+class AuthScram(object):
+    """
+    Implements "wamp-scram" authentication for components.
+
+    NOTE: This is a prototype of a draft spec; see
+    https://github.com/wamp-proto/wamp-proto/issues/135
+    """
+    name = u'scram'
+
+    def __init__(self, **kw):
+        if not HAS_ARGON:
+            raise RuntimeError(
+                "Cannot support WAMP-SCRAM without argon2_cffi and "
+                "passlib libraries; install autobahn['scram']"
+            )
+        self._args = kw
+        self._client_nonce = None
+
+    @property
+    def authextra(self):
+        # is authextra() called exactly once per authentication?
+        if self._client_nonce is None:
+            self._client_nonce = base64.b64encode(os.urandom(16)).decode('ascii')
+        return {
+            u"nonce": self._client_nonce,
+        }
+
+    def on_challenge(self, session, challenge):
+        assert challenge.method == u"scram"
+        assert self._client_nonce is not None
+        required_args = ['nonce', 'kdf', 'salt', 'iterations']
+        optional_args = ['memory', 'channel_binding']
+        for k in required_args:
+            if k not in challenge.extra:
+                raise RuntimeError(
+                    "WAMP-SCRAM challenge option '{}' is "
+                    " required but not specified".format(k)
+                )
+        for k in challenge.extra:
+            if k not in optional_args + required_args:
+                raise RuntimeError(
+                    "WAMP-SCRAM challenge has unknown attribute '{}'".format(k)
+                )
+
+        channel_binding = challenge.extra.get(u'channel_binding', u'')
+        server_nonce = challenge.extra[u'nonce'].encode('ascii')  # base64
+        salt = challenge.extra[u'salt']  # base64
+        iterations = int(challenge.extra[u'iterations'])
+        memory = int(challenge.extra.get(u'memory', -1))
+        password = self._args['password'].encode('utf8')  # supplied by user
+        authid = saslprep(self._args['authid'])
+        algorithm = challenge.extra[u'kdf']
+        client_nonce = self._client_nonce
+
+        self._auth_message = (
+            u"{client_first_bare},{server_first},{client_final_no_proof}".format(
+                client_first_bare=u"n={},r={}".format(authid, client_nonce),
+                server_first=u"r={},s={},i={}".format(server_nonce.decode('ascii'), salt.decode('ascii'), iterations),
+                client_final_no_proof=u"c={},r={}".format(channel_binding, server_nonce.decode('ascii')),
+            ).encode('ascii')
+        )
+
+        if algorithm == u'argon2id-13':
+            if memory == -1:
+                raise ValueError(
+                    "WAMP-SCRAM 'argon2id-13' challenge requires 'memory' parameter"
+                )
+            self._salted_password = _hash_argon2id13_secret(password, salt, iterations, memory)
+        elif algorithm == u'pbkdf2':
+            self._salted_password = _hash_pbkdf2_secret(password, salt, iterations)
+        else:
+            raise RuntimeError(
+                "WAMP-SCRAM specified unknown KDF '{}'".format(algorithm)
+            )
+
+        client_key = hmac.new(self._salted_password, b"Client Key", hashlib.sha256).digest()
+        stored_key = hashlib.new('sha256', client_key).digest()
+
+        client_signature = hmac.new(stored_key, self._auth_message, hashlib.sha256).digest()
+        client_proof = xor_array(client_key, client_signature)
+
+        return base64.b64encode(client_proof)
+
+    def on_welcome(self, session, authextra):
+        """
+        When the server is satisfied, it sends a 'WELCOME' message.
+
+        This hook allows us an opportunity to deny the session right
+        before it gets set up -- we check the server-signature thus
+        authorizing the server and if it fails we drop the connection.
+        """
+        alleged_server_sig = base64.b64decode(authextra['scram_server_signature'])
+        server_key = hmac.new(self._salted_password, b"Server Key", hashlib.sha256).digest()
+        server_signature = hmac.new(server_key, self._auth_message, hashlib.sha256).digest()
+        if not hmac.compare_digest(server_signature, alleged_server_sig):
+            session.log.error("Verification of server SCRAM signature failed")
+            return "Verification of server SCRAM signature failed"
+        session.log.info(
+            "Verification of server SCRAM signature successful"
+        )
+        return None
+
+
+IAuthenticator.register(AuthScram)
 
 
 class AuthWampCra(object):
