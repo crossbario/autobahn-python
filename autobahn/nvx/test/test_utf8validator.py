@@ -34,7 +34,14 @@ import struct
 import unittest2 as unittest
 
 from autobahn.websocket.utf8validator import Utf8Validator as StandardUtf8Validator
-from autobahn.nvx import Utf8Validator as NvxUtf8Validator
+
+try:
+    from _nvx_utf8validator import lib  # noqa
+    from autobahn.nvx import Utf8Validator as NvxUtf8Validator
+except ImportError:
+    HAS_NVX = False
+else:
+    HAS_NVX = True
 
 
 def _create_utf8_test_sequences():
@@ -245,6 +252,7 @@ def _create_valid_utf8_test_sequences():
     return VALID_UTF8_TEST_SEQUENCES
 
 
+@unittest.skipIf(not HAS_NVX, 'NVX native extensions not present')
 class TestNvxUtf8Validator(unittest.TestCase):
 
     def setUp(self):
