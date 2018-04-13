@@ -224,7 +224,7 @@ class _Transport(object):
     """
 
     def __init__(self, idx, kind, url, endpoint, serializers,
-                 max_retries=15,
+                 max_retries=-1,
                  max_retry_delay=300,
                  initial_retry_delay=1.5,
                  retry_delay_growth=1.5,

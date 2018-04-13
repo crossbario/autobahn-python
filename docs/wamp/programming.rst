@@ -211,7 +211,7 @@ Each transport is defined similarly to `"connecting transports" <https://crossba
 
 In addition, each transport may have some options related to re-connections:
 
-- ``max_retries``: (default 15) -1 means "try forever", or a hard limit.
+- ``max_retries``: (default -1, "try forever") or a hard limit.
 - ``max_retry_delay``: (default 300)
 - ``initial_retry_delay``: (default 1.5) how long we wait to re-connect the first time
 - ``retry_delay_growth``: (default 1.5) a multiplier expanding our delay each try (so the second re-connect we wait ``retry_delay_growth * initial_retry_delay`` seconds).

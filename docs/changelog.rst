@@ -8,6 +8,7 @@ Changelog
 master (unreleased)
 -------------------
 
+* new: ``max_retries`` now defaults to -1 ("try forever")
 * ...
 
 
