@@ -370,6 +370,9 @@ class AuthWampCra(object):
         )
         return signature.decode('ascii')
 
+    def on_welcome(self, msg, authextra):
+        return None
+
 
 IAuthenticator.register(AuthWampCra)
 
