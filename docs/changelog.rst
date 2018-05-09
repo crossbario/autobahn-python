@@ -8,8 +8,17 @@ Changelog
 master (unreleased)
 -------------------
 
-* new: ``max_retries`` now defaults to -1 ("try forever")
 * ...
+
+
+18.5.1
+------
+
+* fix: asyncio/rawsocket buffer processing
+* fix: example failures due to pypy longer startup time (#996)
+* fix: add on_welcome for AuthWampCra (#992)
+* fix: make run() of multiple components work on Windows (#986)
+* new: `max_retries` now defaults to -1 ("try forever")
 
 
 18.4.1
