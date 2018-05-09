@@ -146,7 +146,7 @@ class PrefixProtocol(asyncio.Protocol):
                 self._header = frame_type, frame_length
                 break
 
-        self._buffer = self._buffer[:remaining]
+        self._buffer = self._buffer[pos:]
 
     def stringReceived(self, data):
         raise NotImplementedError()
