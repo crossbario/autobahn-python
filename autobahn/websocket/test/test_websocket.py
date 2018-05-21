@@ -39,6 +39,7 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.twisted.websocket import WebSocketServerFactory
     from autobahn.twisted.websocket import WebSocketClientProtocol
     from autobahn.twisted.websocket import WebSocketClientFactory
+    from autobahn.websocket.compress_deflate import PerMessageDeflate
 
     from mock import MagicMock, patch
     from txaio.testutil import replace_loop
@@ -81,6 +82,32 @@ if os.environ.get('USE_TWISTED', False):
     mock_handshake_client = b'GET / HTTP/1.1\r\nUser-Agent: AutobahnPython/0.10.2\r\nHost: localhost:80\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nSec-WebSocket-Key: 6Jid6RgXpH0RVegaNSs/4g==\r\nSec-WebSocket-Protocol: wamp.2.json\r\nSec-WebSocket-Version: 13\r\n\r\n'
 
     mock_handshake_server = b'HTTP/1.1 101 Switching Protocols\r\nServer: AutobahnPython/0.10.2\r\nX-Powered-By: AutobahnPython/0.10.2\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Protocol: wamp.2.json\r\nSec-WebSocket-Accept: QIatSt9QkZPyS4QQfdufO8TgkL0=\r\n\r\n\x81~\x02\x19[1,"crossbar",{"roles":{"subscriber":{"features":{"publisher_identification":true,"pattern_based_subscription":true,"subscription_revocation":true}},"publisher":{"features":{"publisher_identification":true,"publisher_exclusion":true,"subscriber_blackwhite_listing":true}},"caller":{"features":{"caller_identification":true,"progressive_call_results":true}},"callee":{"features":{"progressive_call_results":true,"pattern_based_registration":true,"registration_revocation":true,"shared_registration":true,"caller_identification":true}}}}]\x18'
+
+
+    class TestDeflate(unittest.TestCase):
+
+        def test_max_size(self):
+            decoder = PerMessageDeflate(
+                is_server=False,
+                server_no_context_takeover=False,
+                client_no_context_takeover=False,
+                server_max_window_bits=11,
+                client_max_window_bits=11,
+                mem_level=None,
+                max_message_size=10,
+            )
+
+            compressed_data = b'JL\xc4\x04\x00\x00'
+
+            decoder.start_decompress_message()
+            if True:#with self.assertRaises(Exception) as ctx:
+                decoder.decompress_message_data(compressed_data)
+            data = decoder.end_decompress_message()
+            print("DING {}".format(data))
+
+            self.assertEqual(str(ctx.exception), "foo")
+
+
 
     class TestClient(unittest.TestCase):
         def setUp(self):

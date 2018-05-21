@@ -587,7 +587,8 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                  client_no_context_takeover,
                  server_max_window_bits,
                  client_max_window_bits,
-                 mem_level):
+                 mem_level,
+                 max_message_size=None):
         self._is_server = is_server
 
         self.server_no_context_takeover = server_no_context_takeover
@@ -597,6 +598,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
         self.client_max_window_bits = client_max_window_bits if client_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
 
         self.mem_level = mem_level if mem_level else self.DEFAULT_MEM_LEVEL
+        self.max_message_size = max_message_size  # None means "no limit"
 
         self._compressor = None
         self._decompressor = None
@@ -640,6 +642,8 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                 self._decompressor = zlib.decompressobj(-self.server_max_window_bits)
 
     def decompress_message_data(self, data):
+#        if self.max_message_size is not None:
+#            return self._decompressor.decompress(data, max_length=self.max_message_size)
         return self._decompressor.decompress(data)
 
     def end_decompress_message(self):
