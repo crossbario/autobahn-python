@@ -642,8 +642,8 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                 self._decompressor = zlib.decompressobj(-self.server_max_window_bits)
 
     def decompress_message_data(self, data):
-#        if self.max_message_size is not None:
-#            return self._decompressor.decompress(data, max_length=self.max_message_size)
+        if self.max_message_size is not None:
+            return self._decompressor.decompress(data, self.max_message_size)
         return self._decompressor.decompress(data)
 
     def end_decompress_message(self):
