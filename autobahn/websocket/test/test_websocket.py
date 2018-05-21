@@ -91,21 +91,39 @@ if os.environ.get('USE_TWISTED', False):
                 is_server=False,
                 server_no_context_takeover=False,
                 client_no_context_takeover=False,
-                server_max_window_bits=11,
-                client_max_window_bits=11,
-                mem_level=None,
+                server_max_window_bits=15,
+                client_max_window_bits=15,
+                mem_level=8,
                 max_message_size=10,
             )
 
-            compressed_data = b'JL\xc4\x04\x00\x00'
+            # 2000 'x' characters compressed
+            compressed_data = b'\xab\xa8\x18\x05\xa3`\x14\x8c\x82Q0\nF\xc1P\x07\x00\xcf@\xa9\xae'
 
             decoder.start_decompress_message()
-            if True:#with self.assertRaises(Exception) as ctx:
-                decoder.decompress_message_data(compressed_data)
-            data = decoder.end_decompress_message()
-            print("DING {}".format(data))
+            data = decoder.decompress_message_data(compressed_data)
 
-            self.assertEqual(str(ctx.exception), "foo")
+            # since we set max_message_size, we should only get that
+            # many bytes back.
+            self.assertEqual(data, "x" * 10)
+
+        def test_no_max_size(self):
+            decoder = PerMessageDeflate(
+                is_server=False,
+                server_no_context_takeover=False,
+                client_no_context_takeover=False,
+                server_max_window_bits=15,
+                client_max_window_bits=15,
+                mem_level=None,
+            )
+
+            # 2000 'x' characters compressed
+            compressed_data = b'\xab\xa8\x18\x05\xa3`\x14\x8c\x82Q0\nF\xc1P\x07\x00\xcf@\xa9\xae'
+
+            decoder.start_decompress_message()
+            data = decoder.decompress_message_data(compressed_data)
+
+            self.assertEqual(data, "x" * 2000)
 
 
 
