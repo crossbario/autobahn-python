@@ -3096,6 +3096,7 @@ class WebSocketServerFactory(WebSocketFactory):
         self._batched_timer = txaio.make_batched_timer(
             bucket_seconds=0.200,
             chunk_size=1000,
+            loop=getattr(self, 'loop', None),
         )
 
         # seed RNG which is used for WS frame masks generation
