@@ -8,6 +8,11 @@ Changelog
 master (unreleased)
 -------------------
 
+* fix: security (DoS amplification): a WebSocket server with
+  permessage-deflate turned on could be induced to waste extra memory
+  through a "zip-bomb" style attack. Setting a max-message-size will
+  now stop deflating compressed data when the max is reached (instead
+  of consuming all compressed data first).
 * ...
 
 
