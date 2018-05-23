@@ -12,7 +12,9 @@ master (unreleased)
   permessage-deflate turned on could be induced to waste extra memory
   through a "zip-bomb" style attack. Setting a max-message-size will
   now stop deflating compressed data when the max is reached (instead
-  of consuming all compressed data first).
+  of consuming all compressed data first). This could be used by a
+  malicious client to make the server waste much more memory than the
+  bandwidth the client uses.
 * ...
 
 
