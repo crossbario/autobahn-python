@@ -83,7 +83,6 @@ if os.environ.get('USE_TWISTED', False):
 
     mock_handshake_server = b'HTTP/1.1 101 Switching Protocols\r\nServer: AutobahnPython/0.10.2\r\nX-Powered-By: AutobahnPython/0.10.2\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Protocol: wamp.2.json\r\nSec-WebSocket-Accept: QIatSt9QkZPyS4QQfdufO8TgkL0=\r\n\r\n\x81~\x02\x19[1,"crossbar",{"roles":{"subscriber":{"features":{"publisher_identification":true,"pattern_based_subscription":true,"subscription_revocation":true}},"publisher":{"features":{"publisher_identification":true,"publisher_exclusion":true,"subscriber_blackwhite_listing":true}},"caller":{"features":{"caller_identification":true,"progressive_call_results":true}},"callee":{"features":{"progressive_call_results":true,"pattern_based_registration":true,"registration_revocation":true,"shared_registration":true,"caller_identification":true}}}}]\x18'
 
-
     class TestDeflate(unittest.TestCase):
 
         def test_max_size(self):
@@ -124,8 +123,6 @@ if os.environ.get('USE_TWISTED', False):
             data = decoder.decompress_message_data(compressed_data)
 
             self.assertEqual(data, "x" * 2000)
-
-
 
     class TestClient(unittest.TestCase):
         def setUp(self):

@@ -342,14 +342,15 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
         :returns: JSON serializable representation.
         :rtype: dict
         """
-        return {'extension': self.EXTENSION_NAME,
-                'offer': self.offer.__json__(),
-                'request_no_context_takeover': self.request_no_context_takeover,
-                'request_max_window_bits': self.request_max_window_bits,
-                'no_context_takeover': self.no_context_takeover,
-                'window_bits': self.window_bits,
-                'mem_level': self.mem_level,
-                'max_message_size': self.max_message_size,
+        return {
+            'extension': self.EXTENSION_NAME,
+            'offer': self.offer.__json__(),
+            'request_no_context_takeover': self.request_no_context_takeover,
+            'request_max_window_bits': self.request_max_window_bits,
+            'no_context_takeover': self.no_context_takeover,
+            'window_bits': self.window_bits,
+            'mem_level': self.mem_level,
+            'max_message_size': self.max_message_size,
         }
 
     def __repr__(self):
@@ -568,13 +569,14 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
     @classmethod
     def create_from_response_accept(cls, is_server, accept):
         # accept: instance of PerMessageDeflateResponseAccept
-        pmce = cls(is_server,
-                   accept.response.server_no_context_takeover,
-                   accept.no_context_takeover if accept.no_context_takeover is not None else accept.response.client_no_context_takeover,
-                   accept.response.server_max_window_bits,
-                   accept.window_bits if accept.window_bits is not None else accept.response.client_max_window_bits,
-                   accept.mem_level,
-                   accept.max_message_size,
+        pmce = cls(
+            is_server,
+            accept.response.server_no_context_takeover,
+            accept.no_context_takeover if accept.no_context_takeover is not None else accept.response.client_no_context_takeover,
+            accept.response.server_max_window_bits,
+            accept.window_bits if accept.window_bits is not None else accept.response.client_max_window_bits,
+            accept.mem_level,
+            accept.max_message_size,
         )
         return pmce
 
