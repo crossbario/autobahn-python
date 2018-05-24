@@ -104,7 +104,7 @@ if os.environ.get('USE_TWISTED', False):
 
             # since we set max_message_size, we should only get that
             # many bytes back.
-            self.assertEqual(data, "x" * 10)
+            self.assertEqual(data, b"x" * 10)
 
         def test_no_max_size(self):
             decoder = PerMessageDeflate(
@@ -122,7 +122,7 @@ if os.environ.get('USE_TWISTED', False):
             decoder.start_decompress_message()
             data = decoder.decompress_message_data(compressed_data)
 
-            self.assertEqual(data, "x" * 2000)
+            self.assertEqual(data, b"x" * 2000)
 
     class TestClient(unittest.TestCase):
         def setUp(self):
