@@ -251,7 +251,8 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
                  request_max_window_bits=0,
                  no_context_takeover=None,
                  window_bits=None,
-                 mem_level=None):
+                 mem_level=None,
+                 max_message_size=None):
         """
 
         :param offer: The offer being accepted.
@@ -314,6 +315,7 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
                 raise Exception("invalid value %s for mem_level - permissible values %s" % (mem_level, self.MEM_LEVEL_PERMISSIBLE_VALUES))
 
         self.mem_level = mem_level
+        self.max_message_size = max_message_size  # clamp/check values..?
 
     def get_extension_string(self):
         """
@@ -340,13 +342,16 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
         :returns: JSON serializable representation.
         :rtype: dict
         """
-        return {'extension': self.EXTENSION_NAME,
-                'offer': self.offer.__json__(),
-                'request_no_context_takeover': self.request_no_context_takeover,
-                'request_max_window_bits': self.request_max_window_bits,
-                'no_context_takeover': self.no_context_takeover,
-                'window_bits': self.window_bits,
-                'mem_level': self.mem_level}
+        return {
+            'extension': self.EXTENSION_NAME,
+            'offer': self.offer.__json__(),
+            'request_no_context_takeover': self.request_no_context_takeover,
+            'request_max_window_bits': self.request_max_window_bits,
+            'no_context_takeover': self.no_context_takeover,
+            'window_bits': self.window_bits,
+            'mem_level': self.mem_level,
+            'max_message_size': self.max_message_size,
+        }
 
     def __repr__(self):
         """
@@ -355,7 +360,7 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
         :returns: Python string representation.
         :rtype: str
         """
-        return "PerMessageDeflateOfferAccept(offer = %s, request_no_context_takeover = %s, request_max_window_bits = %s, no_context_takeover = %s, window_bits = %s, mem_level = %s)" % (self.offer.__repr__(), self.request_no_context_takeover, self.request_max_window_bits, self.no_context_takeover, self.window_bits, self.mem_level)
+        return "PerMessageDeflateOfferAccept(offer = %s, request_no_context_takeover = %s, request_max_window_bits = %s, no_context_takeover = %s, window_bits = %s, mem_level = %s, max_message_size = %s)" % (self.offer.__repr__(), self.request_no_context_takeover, self.request_max_window_bits, self.no_context_takeover, self.window_bits, self.mem_level, self.max_message_size)
 
 
 @public
@@ -487,7 +492,8 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
                  response,
                  no_context_takeover=None,
                  window_bits=None,
-                 mem_level=None):
+                 mem_level=None,
+                 max_message_size=None):
         """
 
         :param response: The response being accepted.
@@ -527,6 +533,7 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
                 raise Exception("invalid value %s for mem_level - permissible values %s" % (mem_level, self.MEM_LEVEL_PERMISSIBLE_VALUES))
 
         self.mem_level = mem_level
+        self.max_message_size = max_message_size
 
     def __json__(self):
         """
@@ -562,12 +569,15 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
     @classmethod
     def create_from_response_accept(cls, is_server, accept):
         # accept: instance of PerMessageDeflateResponseAccept
-        pmce = cls(is_server,
-                   accept.response.server_no_context_takeover,
-                   accept.no_context_takeover if accept.no_context_takeover is not None else accept.response.client_no_context_takeover,
-                   accept.response.server_max_window_bits,
-                   accept.window_bits if accept.window_bits is not None else accept.response.client_max_window_bits,
-                   accept.mem_level)
+        pmce = cls(
+            is_server,
+            accept.response.server_no_context_takeover,
+            accept.no_context_takeover if accept.no_context_takeover is not None else accept.response.client_no_context_takeover,
+            accept.response.server_max_window_bits,
+            accept.window_bits if accept.window_bits is not None else accept.response.client_max_window_bits,
+            accept.mem_level,
+            accept.max_message_size,
+        )
         return pmce
 
     @classmethod
@@ -578,7 +588,8 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                    accept.request_no_context_takeover,
                    accept.window_bits if accept.window_bits is not None else accept.offer.request_max_window_bits,
                    accept.request_max_window_bits,
-                   accept.mem_level)
+                   accept.mem_level,
+                   accept.max_message_size,)
         return pmce
 
     def __init__(self,
@@ -587,7 +598,8 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                  client_no_context_takeover,
                  server_max_window_bits,
                  client_max_window_bits,
-                 mem_level):
+                 mem_level,
+                 max_message_size=None):
         self._is_server = is_server
 
         self.server_no_context_takeover = server_no_context_takeover
@@ -597,6 +609,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
         self.client_max_window_bits = client_max_window_bits if client_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
 
         self.mem_level = mem_level if mem_level else self.DEFAULT_MEM_LEVEL
+        self.max_message_size = max_message_size  # None means "no limit"
 
         self._compressor = None
         self._decompressor = None
@@ -640,6 +653,8 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                 self._decompressor = zlib.decompressobj(-self.server_max_window_bits)
 
     def decompress_message_data(self, data):
+        if self.max_message_size is not None:
+            return self._decompressor.decompress(data, self.max_message_size)
         return self._decompressor.decompress(data)
 
     def end_decompress_message(self):
