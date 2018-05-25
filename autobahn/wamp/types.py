@@ -716,10 +716,24 @@ class RegisterOptions(object):
                  correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
                  correlation_is_last=None):
         """
+        :param match: Type of matching to use on the URI (`exact`, `prefix` or `wildcard`)
+
+        :param invoke: Type of invoke mechanism to use (`single`, `first`, `last`, `roundrobin`, `random`)
+
+        :param concurrency: if used, the number of times a particular
+            endpoint may be called concurrently (e.g. if this is 3, and
+            there are already 3 calls in-progress a 4th call will receive
+            an error)
 
         :param details_arg: When invoking the endpoint, provide call details
-           in this keyword argument to the callable.
+            in this keyword argument to the callable.
         :type details_arg: str
+
+        :param force_reregister: if True, any other session that has
+            already registered this URI will be 'kicked out' and this
+            session will become the one that's registered (the previous
+            session must have used `force_reregister=True` as well)
+
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
         assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
