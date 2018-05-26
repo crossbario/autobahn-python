@@ -132,6 +132,7 @@ class TestWampAuthHelpers(unittest.TestCase):
         self.assertEqual(signature, b"1njQtmmeYO41N5EWEzD2kAjjEKRZ5kPZt/TzpYXOzR0=")
 
 
+@unittest.skipIf(not auth.HAS_ARGON, 'no Argon2 library')
 class TestScram(unittest.TestCase):
 
     def test_argon2id_static(self):
