@@ -123,8 +123,8 @@ notifications:
     #on_start: always    # options: [always|never|change] default: always
     channels:
       - "irc.freenode.org#crossbar-ci"
-    use_notice: true
-    skip_join: true
+    use_notice: false
+    skip_join: false
 
   # Gitter: activity feed on https://gitter.im/crossbario/ci
   webhooks:
