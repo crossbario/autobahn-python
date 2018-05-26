@@ -117,27 +117,30 @@ matrix:
 # CI notifications
 notifications:
   # IRC: chat messages on #crossbar-ci @ freenode
-   irc:
-      channels:
-         - "irc.freenode.org#crossbar-ci"
-      use_notice: true
-      skip_join: true
+  irc:
+    #on_success: always  # options: [always|never|change] default: always
+    #on_failure: always  # options: [always|never|change] default: always
+    #on_start: always    # options: [always|never|change] default: always
+    channels:
+      - "irc.freenode.org#crossbar-ci"
+    use_notice: true
+    skip_join: true
 
   # Gitter: activity feed on https://gitter.im/crossbario/ci
   webhooks:
-    on_success: always  # options: [always|never|change] default: always
-    on_failure: always  # options: [always|never|change] default: always
-    on_start: always    # options: [always|never|change] default: always
+    #on_success: always  # options: [always|never|change] default: always
+    #on_failure: always  # options: [always|never|change] default: always
+    #on_start: always    # options: [always|never|change] default: always
     urls:
       # travis encrypt "https://webhooks.gitter.im/e/7ef..." --org --repo crossbario/autobahn-python
-      - secure: "Ik+ULNHCIZGJ6Mwojd6q5xuLu/M8W91EPh5ePVe0DzF8rjNC8Cn6EXz8+dKYig13nh0szpVO8TW8krlTtGHw9zR+ZtnnXEHz/sJCeJsPxH7ZniP8jCja+WX5FhY0GnG6NgZwNZlYfKYpStrpC2F9p2AtsP0fg5HyKsAlbtAytgs="
+      - secure: Ik+ULNHCIZGJ6Mwojd6q5xuLu/M8W91EPh5ePVe0DzF8rjNC8Cn6EXz8+dKYig13nh0szpVO8TW8krlTtGHw9zR+ZtnnXEHz/sJCeJsPxH7ZniP8jCja+WX5FhY0GnG6NgZwNZlYfKYpStrpC2F9p2AtsP0fg5HyKsAlbtAytgs=
 
   # Slack: post feed on https://crossbario.slack.com/messages/CAT527K8D
   # https://crossbario.slack.com/services/
   slack:
-    on_success: always  # options: [always|never|change] default: always
-    on_failure: always  # options: [always|never|change] default: always
-    on_start: always    # options: [always|never|change] default: always
+    #on_success: always  # options: [always|never|change] default: always
+    #on_failure: always  # options: [always|never|change] default: always
+    #on_start: always    # options: [always|never|change] default: always
     rooms:
       # travis encrypt "crossbario:FYg..." --org --repo crossbario/autobahn-python
-      - secure: "SFGFqyBRM0seIIjHeb/XY6ncdpyxMIEhrd/k3Ni/qq4CFxsCwBJIaatW05Jl6GLk5ykLMeYSSh9TtakIExZ4R068g4VhSH5be0PNjGxnvRkmoF5GmQGJcu87w7a5C4O0J+hmcH5iWBu4IWP0w3rPRiFmMGbCaH7g6qfoPqIW95Q="
+      - secure: SFGFqyBRM0seIIjHeb/XY6ncdpyxMIEhrd/k3Ni/qq4CFxsCwBJIaatW05Jl6GLk5ykLMeYSSh9TtakIExZ4R068g4VhSH5be0PNjGxnvRkmoF5GmQGJcu87w7a5C4O0J+hmcH5iWBu4IWP0w3rPRiFmMGbCaH7g6qfoPqIW95Q=
