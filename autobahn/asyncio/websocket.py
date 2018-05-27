@@ -121,9 +121,11 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         if not self.waiter.done():
             self.waiter.set_result(None)
 
-    # noinspection PyUnusedLocal
     def _closeConnection(self, abort=False):
-        self.transport.close()
+        if abort and hasattr(self.transport, 'abort'):
+            self.transport.abort()
+        else:
+            self.transport.close()
 
     def _onOpen(self):
         res = self.onOpen()
