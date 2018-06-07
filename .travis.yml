@@ -1,7 +1,14 @@
-# https://docs.travis-ci.com/user/languages/python/
+sudo: false
+dist: trusty
 
 language: python
-sudo: false
+
+before_install:
+  # AWS tools are installed here eg
+  - export PATH=$PATH:$HOME/.local/bin
+
+  # build ID (eg, "20180513-28114a1")
+  - export BUILD_ID="$(date --utc "+%Y%m%d")-$(git rev-parse --short ${TRAVIS_COMMIT})"
 
 install:
   - pip install tox codecov
@@ -11,6 +18,10 @@ script:
 
 after_script:
   - codecov
+
+cache:
+  directories:
+    - $HOME/.cache/pip
 
 matrix:
   fast_finish: true
@@ -132,7 +143,7 @@ notifications:
     #on_failure: always  # options: [always|never|change] default: always
     #on_start: always    # options: [always|never|change] default: always
     urls:
-      # travis encrypt "https://webhooks.gitter.im/e/7ef..." --org --repo crossbario/autobahn-python
+      # travis encrypt --org --repo crossbario/autobahn-python "https://webhooks.gitter.im/e/7ef..."
       - secure: Ik+ULNHCIZGJ6Mwojd6q5xuLu/M8W91EPh5ePVe0DzF8rjNC8Cn6EXz8+dKYig13nh0szpVO8TW8krlTtGHw9zR+ZtnnXEHz/sJCeJsPxH7ZniP8jCja+WX5FhY0GnG6NgZwNZlYfKYpStrpC2F9p2AtsP0fg5HyKsAlbtAytgs=
 
   # Slack: post feed on https://crossbario.slack.com/messages/CAT527K8D
@@ -142,5 +153,5 @@ notifications:
     #on_failure: always  # options: [always|never|change] default: always
     #on_start: always    # options: [always|never|change] default: always
     rooms:
-      # travis encrypt "crossbario:FYg..." --org --repo crossbario/autobahn-python
+      # travis encrypt --org --repo crossbario/autobahn-python "crossbario:FYg..."
       - secure: SFGFqyBRM0seIIjHeb/XY6ncdpyxMIEhrd/k3Ni/qq4CFxsCwBJIaatW05Jl6GLk5ykLMeYSSh9TtakIExZ4R068g4VhSH5be0PNjGxnvRkmoF5GmQGJcu87w7a5C4O0J+hmcH5iWBu4IWP0w3rPRiFmMGbCaH7g6qfoPqIW95Q=
