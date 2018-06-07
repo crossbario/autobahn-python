@@ -10,6 +10,11 @@ master (unreleased)
 
 * ...
 
+18.6.1
+------
+
+* fix: implement abort argument for asyncio in WebSocketAdapterProtocol._closeConnection (#1012)
+
 
 18.5.2
 ------
