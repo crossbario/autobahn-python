@@ -38,7 +38,7 @@ from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
 from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
 from autobahn.wamp.exception import SessionNotReady, ApplicationError
-from autobahn.wamp.auth import create_authenticator
+from autobahn.wamp.auth import create_authenticator, IAuthenticator
 
 
 __all__ = (
@@ -633,8 +633,11 @@ class Component(ObservableMixin):
             try:
                 self._session = session = self.session_factory(cfg)
                 for auth_name, auth_config in self._authentication.items():
-                    authenticator = create_authenticator(auth_name, **auth_config)
-                    session.add_authenticator(authenticator)
+                    if isinstance(auth_config, IAuthenticator):
+                        session.add_authenticator(auth_config)
+                    else:
+                        authenticator = create_authenticator(auth_name, **auth_config)
+                        session.add_authenticator(authenticator)
 
             except Exception as e:
                 # couldn't instantiate session calls, which is fatal.
