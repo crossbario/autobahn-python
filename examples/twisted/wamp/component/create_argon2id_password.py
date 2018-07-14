@@ -10,12 +10,16 @@ from passlib.utils import saslprep
 from argon2.low_level import hash_secret
 from argon2.low_level import Type
 
-if len(sys.argv) != 2:
+if len(sys.argv) not in (2, 3):
     print("usage: {} password".format(sys.argv[0]))
     sys.exit(2)
 
 password = sys.argv[1].encode('ascii')
-salt = os.urandom(16)
+if len(sys.argv) == 3:
+    salt = binascii.a2b_hex(sys.argv[2].encode('ascii'))
+    assert len(salt) == 16
+else:
+    salt = os.urandom(16)
 
 hash_data = hash_secret(
     secret=password,
