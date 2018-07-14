@@ -23,7 +23,7 @@ hash_data = hash_secret(
     time_cost=4096,
     memory_cost=512,
     parallelism=1,
-    hash_len=16,
+    hash_len=32,
     type=Type.ID,
     version=19,
 )

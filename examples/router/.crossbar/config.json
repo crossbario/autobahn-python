@@ -160,8 +160,8 @@
                                             "kdf": "argon2id-13",
                                             "iterations": 4096,
                                             "salt": "accaa46d16de59a12db736c8ed2cc90c",
-                                            "stored-key": "6524cf40c287834819a9c46a591f75be42d67f253aec73fe97d55736d1a928bd",
-                                            "server-key": "877b77c9fb3e12c13948812d9db909ceb794de9a7ec8a0c025f57ad8dff24ab8"
+                                            "stored-key": "e699c745cc9e9876d8b61f9a14496bf6805a3391f5ecfbf7ae348a0034876485",
+                                            "server-key": "92519a86d68146f15dffe50e27a6e479e41e5e40363b8714773dd8a4066ebb6c"
                                         }
                                     }
                                 },
