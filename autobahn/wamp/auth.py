@@ -278,10 +278,10 @@ class AuthScram(object):
         client_nonce = self._client_nonce
 
         self._auth_message = (
-            "{client_first_bare},{server_first},{client_final_no_proof}".format(
-                client_first_bare="n={},r={}".format(authid, client_nonce),
-                server_first="r={},s={},i={}".format(server_nonce, salt, iterations),
-                client_final_no_proof="c={},r={}".format(channel_binding, server_nonce),
+            u"{client_first_bare},{server_first},{client_final_no_proof}".format(
+                client_first_bare=u"n={},r={}".format(authid, client_nonce),
+                server_first=u"r={},s={},i={}".format(server_nonce, salt, iterations),
+                client_final_no_proof=u"c={},r={}".format(channel_binding, server_nonce),
             )
         ).encode('ascii')
 
