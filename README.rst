@@ -32,7 +32,7 @@ Features
 --------
 
 -  framework for `WebSocket <http://tools.ietf.org/html/rfc6455>`__ and `WAMP <http://wamp-proto.org/>`__ clients and servers
--  compatible with Python 2.7 and 3.3 or later
+-  compatible with Python 2.7 and 3.4 or later (including 3.7)
 -  runs on `CPython <http://python.org/>`__, `PyPy <http://pypy.org/>`__ and `Jython <http://jython.org/>`__
 -  runs under `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__ - implements WebSocket
    `RFC6455 <http://tools.ietf.org/html/rfc6455>`__ and Draft Hybi-10+
