@@ -156,9 +156,9 @@ class TestScram(unittest.TestCase):
 
     def test_basic(self):
         scram = auth.AuthScram(
-            nonce='1234567890abcdef',
-            kdf='argon2id13',
-            salt=binascii.b2a_hex(b'1234567890abcdef'),
+            nonce=u'1234567890abcdef',
+            kdf=u'argon2id13',
+            salt=binascii.b2a_hex(b'1234567890abcdef').decode('ascii'),
             iterations=32,  # far too few; use 4096 or more for production
             memory=512,
             password=u'p4ssw0rd',
@@ -176,7 +176,7 @@ class TestScram(unittest.TestCase):
         challenge = types.Challenge(u'scram', {
             'nonce': u'1234567890abcdeffedcba0987654321',
             'kdf': u'argon2id-13',
-            'salt': binascii.b2a_hex(b'1234567890abcdef'),
+            'salt': binascii.b2a_hex(b'1234567890abcdef').decode('ascii'),
             'iterations': 32,
             'memory': 512,
         })
@@ -193,9 +193,9 @@ class TestScram(unittest.TestCase):
 
     def test_no_memory_arg(self):
         scram = auth.AuthScram(
-            nonce='1234567890abcdef',
-            kdf='argon2id13',
-            salt=binascii.b2a_hex(b'1234567890abcdef'),
+            nonce=u'1234567890abcdef',
+            kdf=u'argon2id13',
+            salt=binascii.b2a_hex(b'1234567890abcdef').decode('ascii'),
             iterations=4096,
             memory=512,
             password=u'p4ssw0rd',
