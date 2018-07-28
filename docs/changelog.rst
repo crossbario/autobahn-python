@@ -5,10 +5,13 @@
 Changelog
 =========
 
-master (unreleased)
--------------------
+18.7.1
+------
 
-* ...
+* new: Python 3.7 supported and integrated into CI
+* new: WAMP-SCRAM examples
+* fix: glitches in WAMP-SCRAM
+
 
 18.6.1
 ------
