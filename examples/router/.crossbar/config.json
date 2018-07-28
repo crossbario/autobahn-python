@@ -67,6 +67,12 @@
                                     "allow": {
                                         "register": true
                                     }
+                                },
+                                {
+                                    "uri": "com.example.scram_auth",
+                                    "allow": {
+                                        "register": true
+                                    }
                                 }
                             ]
                         },
@@ -152,18 +158,8 @@
                                     }
                                 },
                                 "scram": {
-                                    "type": "static",
-                                    "principals": {
-                                        "carol": {
-                                            "role": "authenticated",
-                                            "memory": 512,
-                                            "kdf": "argon2id-13",
-                                            "iterations": 4096,
-                                            "salt": "accaa46d16de59a12db736c8ed2cc90c",
-                                            "stored-key": "e699c745cc9e9876d8b61f9a14496bf6805a3391f5ecfbf7ae348a0034876485",
-                                            "server-key": "92519a86d68146f15dffe50e27a6e479e41e5e40363b8714773dd8a4066ebb6c"
-                                        }
-                                    }
+                                    "type": "dynamic",
+                                    "authenticator": "com.example.scram_auth"
                                 },
                                 "anonymous": {
                                     "type": "static",
