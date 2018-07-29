@@ -4,10 +4,6 @@ import sys
 
 # because py.test tries to collect it as a test-case
 try:
-    from asyncio.test_utils import TestLoop as AsyncioTestLoop
-except ImportError:
-    from trollius.test_utils import TestLoop as AsyncioTestLoop
-try:
     from unittest.mock import Mock
 except ImportError:
     from mock import Mock
