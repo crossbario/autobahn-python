@@ -27,9 +27,11 @@
 import sys
 
 from twisted.internet import reactor, ssl
+from twisted.internet.endpoints import SSL4ServerEndpoint
 from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
+from OpenSSL import crypto
 
 from autobahn.twisted.websocket import WebSocketServerFactory, \
     WebSocketServerProtocol
@@ -47,10 +49,13 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
-                                                      'keys/server.crt')
+    cert = ssl.Certificate.loadPEM(open('keys/server.crt', 'r').read())
+    key = ssl.KeyPair.load(open('keys/server.key', 'r').read(), format=crypto.FILETYPE_PEM)
+    private_cert = ssl.PrivateCertificate.fromCertificateAndKeyPair(cert, key)
+    contextFactory = private_cert.options()
+    options = dict()
 
-    factory = WebSocketServerFactory(u"wss://127.0.0.1:8080")
+    factory = WebSocketServerFactory(u"wss://127.0.0.1:8881")
     factory.protocol = EchoServerProtocol
 
     resource = WebSocketResource(factory)
@@ -65,6 +70,7 @@ if __name__ == '__main__':
     # both under one Twisted Web Site
     site = Site(root)
 
-    reactor.listenSSL(8080, site, contextFactory)
+    ep = SSL4ServerEndpoint(reactor, 8881, contextFactory, interface='127.0.0.1')
+    ep.listen(site)
 
     reactor.run()
