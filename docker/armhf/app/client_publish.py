@@ -44,8 +44,8 @@ class ClientSession(ApplicationSession):
         print("session attached")
         counter = 0
         while True:
-            print('backend publishing com.myapp.topic1', counter)
-            self.publish(u'com.myapp.topic1', "Hello World %d"%counter)
+            print('backend publishing com.myapp.hello', counter)
+            self.publish(u'com.myapp.hello', "Hello World %d"%counter)
             counter += 1
             yield sleep(1)
 

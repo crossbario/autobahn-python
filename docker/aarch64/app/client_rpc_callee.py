@@ -47,7 +47,7 @@ class ClientSession(ApplicationSession):
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         try:
-            yield self.register(utcnow, u'com.timeservice.now')
+            yield self.register(utcnow, u'my.com.date')
         except Exception as e:
             print("failed to register procedure: {}".format(e))
         else:
