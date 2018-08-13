@@ -37,7 +37,7 @@ import txaio
 from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
 from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
-from autobahn.wamp.exception import SessionNotReady, ApplicationError
+from autobahn.wamp.exception import SessionNotReady, ApplicationError, TransportLost
 from autobahn.wamp.auth import create_authenticator, IAuthenticator
 
 
@@ -726,6 +726,7 @@ class Component(ObservableMixin):
         d = self._connect_transport(reactor, transport, create_session)
 
         def on_connect_sucess(proto):
+
             # if e.g. an SSL handshake fails, we will have
             # successfully connected (i.e. get here) but need to
             # 'listen' for the "connectionLost" from the underlying
@@ -738,7 +739,9 @@ class Component(ObservableMixin):
             def lost(fail):
                 rtn = orig(fail)
                 if not txaio.is_called(done):
-                    txaio.reject(done, fail)
+                    # we must wrap the failure reason (can be None) in an actual
+                    # Wamp exception
+                    txaio.reject(done, TransportLost(fail))
                 return rtn
             proto.connectionLost = lost
 
