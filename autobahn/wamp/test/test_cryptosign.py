@@ -50,7 +50,7 @@ if HAS_CRYPTOSIGN:
 
 import tempfile
 
-import unittest2 as unittest
+import unittest
 
 keybody = '''-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
