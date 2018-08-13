@@ -726,7 +726,7 @@ class Component(ObservableMixin):
         d = self._connect_transport(reactor, transport, create_session)
 
         def on_connect_sucess(proto):
-                        
+
             # if e.g. an SSL handshake fails, we will have
             # successfully connected (i.e. get here) but need to
             # 'listen' for the "connectionLost" from the underlying

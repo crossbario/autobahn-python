@@ -285,19 +285,20 @@ class Component(component.Component):
         else:
             assert(False), 'should not arrive here'
 
-
-    # The result of asyncio's AbstractEventLoop.create_connection() and 
-    # AbstractEventLoop.create_unix_connection() is a (transport, protocol) pair, 
-    # while in the Twisted counterpart, the IStreamClientEndpoint.connect() method 
-    # only returns a protocol object. We need to reconcile the two, since the
-    # the transport connection success callback in wamp.component expects only the protocol
     def _wrap_connection_future(self, conn):
+
+        # The result of asyncio's AbstractEventLoop.create_connection() and
+        # AbstractEventLoop.create_unix_connection() is a (transport, protocol) pair,
+        # while in the Twisted counterpart, the IStreamClientEndpoint.connect() method
+        # only returns a protocol object. We need to reconcile the two, since the
+        # the transport connection success callback in wamp.component expects only the protocol
+
         f = txaio.create_future()
 
         def on_success(result):
             (transport, proto) = result
             txaio.resolve(f, proto)
-        
+
         def on_failure(err):
             txaio.reject(f, err)
 
