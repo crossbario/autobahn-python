@@ -29,7 +29,7 @@ from __future__ import absolute_import
 from autobahn import wamp
 from autobahn.wamp.uri import Pattern, RegisterOptions, SubscribeOptions
 
-import unittest2 as unittest
+import unittest
 
 
 class TestUris(unittest.TestCase):

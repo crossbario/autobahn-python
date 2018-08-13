@@ -27,7 +27,7 @@
 from __future__ import absolute_import, print_function
 
 import os
-import unittest2 as unittest
+import unittest
 from txaio.testutil import replace_loop
 
 if os.environ.get('USE_TWISTED', False):
