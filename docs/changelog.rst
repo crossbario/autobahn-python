@@ -5,6 +5,14 @@
 Changelog
 =========
 
+18.8.1
+------
+
+* fix: Python 3.7 compatibility
+* fix: remove Python 2.6 support leftovers
+* new: getting started docker-based examples in matching with docs
+
+
 18.7.1
 ------
 
