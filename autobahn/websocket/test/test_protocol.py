@@ -28,7 +28,7 @@ from __future__ import absolute_import, print_function
 
 from hashlib import sha1
 from base64 import b64encode
-import unittest2 as unittest
+import unittest
 
 from autobahn.websocket.protocol import WebSocketServerProtocol
 from autobahn.websocket.protocol import WebSocketServerFactory

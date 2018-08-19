@@ -24,7 +24,7 @@
 #
 ###############################################################################
 
-from unittest2 import TestCase
+from unittest import TestCase
 from six import PY3
 
 from autobahn.wamp.exception import ApplicationError

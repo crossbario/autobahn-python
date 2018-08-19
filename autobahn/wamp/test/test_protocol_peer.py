@@ -41,7 +41,7 @@ from autobahn.wamp import message
 from autobahn.wamp import exception
 from autobahn.wamp import protocol
 
-import unittest2 as unittest
+import unittest
 
 
 class TestPeerExceptions(unittest.TestCase):

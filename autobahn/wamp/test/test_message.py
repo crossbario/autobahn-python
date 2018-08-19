@@ -30,7 +30,7 @@ from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
 
-import unittest2 as unittest
+import unittest
 
 
 class Foo(object):

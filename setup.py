@@ -145,7 +145,6 @@ extras_require_dev = [
     # https://docs.pytest.org/en/latest/changelog.html#pytest-3-3-0-2017-11-23
     "pytest>=2.8.6,<3.3.0",             # MIT license
 
-    "unittest2>=1.1.0",                 # BSD license
     "twine>=1.6.5",                     # Apache 2.0
     'sphinx>=1.2.3',                    # BSD
     'pyenchant>=1.6.6',                 # LGPL

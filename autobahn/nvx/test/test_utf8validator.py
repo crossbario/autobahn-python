@@ -30,8 +30,7 @@ from __future__ import absolute_import
 
 import six
 import struct
-
-import unittest2 as unittest
+import unittest
 
 from autobahn.websocket.utf8validator import Utf8Validator as StandardUtf8Validator
 
