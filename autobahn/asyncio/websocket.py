@@ -97,6 +97,10 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         self._connectionMade()
 
     def connection_lost(self, exc):
+        self.connectionLost(exc)
+
+    # keep naming consistent with the corresponding function in twisted/websocket.py
+    def connectionLost(self, exc):
         self._connectionLost(exc)
         # according to asyncio docs, connection_lost(None) is called
         # if something else called transport.close()
