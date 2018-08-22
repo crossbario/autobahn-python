@@ -27,6 +27,8 @@
 
 from __future__ import absolute_import, print_function
 
+from functools import wraps
+
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint

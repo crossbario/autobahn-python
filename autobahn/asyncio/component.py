@@ -302,6 +302,7 @@ class Component(component.Component):
             # XXX double-check that asyncio behavior on TLS handshake
             # failures is in fact as described above
             orig = proto.connection_lost
+
             @wraps(orig)
             def lost(fail):
                 rtn = orig(fail)

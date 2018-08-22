@@ -733,8 +733,10 @@ class Component(ObservableMixin):
             caller has is the 'done' future
             """
             transport.connect_failures += 1
-            # failed to establish a connection in the first place
-            txaio.reject(done, err)
+            # something bad has happened, and maybe didn't get caught
+            # upstream yet
+            if not txaio.is_called(done):
+                txaio.reject(done, err)
         txaio.add_callbacks(d, None, on_error)
 
         return done
