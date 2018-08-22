@@ -30,14 +30,14 @@ from __future__ import absolute_import
 import itertools
 import six
 import random
-from functools import wraps, partial
+from functools import partial
 
 import txaio
 
 from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
 from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
-from autobahn.wamp.exception import SessionNotReady, ApplicationError, TransportLost
+from autobahn.wamp.exception import SessionNotReady, ApplicationError
 from autobahn.wamp.auth import create_authenticator, IAuthenticator
 
 
@@ -724,6 +724,19 @@ class Component(ObservableMixin):
         transport.connect_attempts += 1
 
         d = self._connect_transport(reactor, transport, create_session, done)
+
+        def on_error(err):
+            """
+            this may seem redundant after looking at _connect_transport, but
+            it will handle a case where something goes wrong in
+            _connect_transport itself -- as the only connect our
+            caller has is the 'done' future
+            """
+            transport.connect_failures += 1
+            # failed to establish a connection in the first place
+            txaio.reject(done, err)
+        txaio.add_callbacks(d, None, on_error)
+
         return done
 
     def on_join(self, fn):
