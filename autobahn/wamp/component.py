@@ -723,36 +723,7 @@ class Component(ObservableMixin):
 
         transport.connect_attempts += 1
 
-        d = self._connect_transport(reactor, transport, create_session)
-
-        def on_connect_sucess(proto):
-
-            # if e.g. an SSL handshake fails, we will have
-            # successfully connected (i.e. get here) but need to
-            # 'listen' for the "connectionLost" from the underlying
-            # protocol in case of handshake failure .. so we wrap
-            # it. Also, we don't increment transport.success_count
-            # here on purpose (because we might not succeed).
-            orig = proto.connectionLost
-
-            @wraps(orig)
-            def lost(fail):
-                rtn = orig(fail)
-                if not txaio.is_called(done):
-                    # we must wrap the failure reason (can be None) in an actual
-                    # Wamp exception
-                    txaio.reject(done, TransportLost(fail))
-                return rtn
-            proto.connectionLost = lost
-
-        def on_connect_failure(err):
-            transport.connect_failures += 1
-            # failed to establish a connection in the first place
-            txaio.reject(done, err)
-
-        txaio.add_callbacks(d, on_connect_sucess, None)
-        txaio.add_callbacks(d, None, on_connect_failure)
-
+        d = self._connect_transport(reactor, transport, create_session, done)
         return done
 
     def on_join(self, fn):
