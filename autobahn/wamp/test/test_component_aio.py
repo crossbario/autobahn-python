@@ -62,7 +62,7 @@ if os.environ.get('USE_ASYNCIO', False):
             txaio.config.loop = orig_loop
         txaio.call_later(1.0, fail)
 
-        def _done(f):
+        def done(f):
             try:
                 f.result()
                 finished.set_exception(AssertionError("should get an error"))
@@ -71,5 +71,5 @@ if os.environ.get('USE_ASYNCIO', False):
                     finished.set_exception(AssertionError("wrong exception caught"))
             finished.set_result(None)
             txaio.config.loop = orig_loop
-        f.add_done_callback(_done)
+        f.add_done_callback(done)
         return finished
