@@ -27,13 +27,14 @@
 from __future__ import absolute_import
 
 import os
+import sys
 import pytest
 import txaio
 
 if os.environ.get('USE_ASYNCIO', False):
-    from asyncio import ensure_future
     from autobahn.asyncio.component import Component
 
+    @pytest.mark.skipif(sys.version_info < (3, 5), reason="requires Python 3.5+")
     @pytest.mark.asyncio(forbid_global_loop=True)
     def test_asyncio_component(event_loop):
         txaio.config.loop = event_loop
