@@ -31,10 +31,11 @@ import pytest
 import txaio
 
 if os.environ.get('USE_ASYNCIO', False):
+    from asyncio import ensure_future
     from autobahn.asyncio.component import Component
 
     @pytest.mark.asyncio(forbid_global_loop=True)
-    async def test_asyncio_component(event_loop):
+    def test_asyncio_component(event_loop):
         txaio.config.loop = event_loop
 
         comp = Component(
@@ -50,8 +51,17 @@ if os.environ.get('USE_ASYNCIO', False):
         # if having trouble, try starting some logging (and use
         # "py.test -s" to get real-time output)
         # txaio.start_logging(level="debug")
-        try:
-            await comp.start(loop=event_loop)
-            assert False, "should get an error"
-        except RuntimeError as e:
-            assert 'Exhausted all transport connect attempts' in str(e)
+        f = comp.start(loop=event_loop)
+        txaio.config.loop = event_loop
+        finished = txaio.create_future()
+
+        def _done(f):
+            try:
+                f.result()
+                finished.set_exception(AssertionError("should get an error"))
+            except RuntimeError as e:
+                if 'Exhausted all transport connect attempts' not in str(e):
+                    finished.set_exception(AssertionError("wrong exception caught"))
+            finished.set_result(None)
+        f.add_done_callback(_done)
+        return finished
