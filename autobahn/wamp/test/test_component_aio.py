@@ -37,12 +37,13 @@ if os.environ.get('USE_ASYNCIO', False):
     @pytest.mark.skipif(sys.version_info < (3, 5), reason="requires Python 3.5+")
     @pytest.mark.asyncio(forbid_global_loop=True)
     def test_asyncio_component(event_loop):
+        orig_loop = txaio.config.loop
         txaio.config.loop = event_loop
 
         comp = Component(
             transports=[
                 {
-                    u"url": u"ws://localhost:9999/bogus",
+                    u"url": u"ws://localhost:12/bogus",
                     u"max_retries": 1,
                     u"max_retry_delay": 0.1,
                 }
@@ -56,6 +57,11 @@ if os.environ.get('USE_ASYNCIO', False):
         txaio.config.loop = event_loop
         finished = txaio.create_future()
 
+        def fail():
+            finished.set_exception(AssertionError("timed out"))
+            txaio.config.loop = orig_loop
+        txaio.call_later(1.0, fail)
+
         def _done(f):
             try:
                 f.result()
@@ -64,5 +70,6 @@ if os.environ.get('USE_ASYNCIO', False):
                 if 'Exhausted all transport connect attempts' not in str(e):
                     finished.set_exception(AssertionError("wrong exception caught"))
             finished.set_result(None)
+            txaio.config.loop = orig_loop
         f.add_done_callback(_done)
         return finished
