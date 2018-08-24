@@ -88,8 +88,10 @@ if os.environ.get('USE_ASYNCIO', False):
         class FakeTransport(object):
             def close(self):
                 pass
+
             def write(self, data):
                 pass
+
         fake_transport = FakeTransport()
         actual_protocol = [None]  # set in a closure below
 
