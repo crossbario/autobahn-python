@@ -77,7 +77,6 @@ if os.environ.get('USE_ASYNCIO', False):
 
     @pytest.mark.skipif(sys.version_info < (3, 5), reason="requires Python 3.5+")
     @pytest.mark.asyncio(forbid_global_loop=True)
-    @pytest.mark.skip("not working on Travis for py35, pypy3")
     def test_asyncio_component_404(event_loop):
         """
         If something connects but then gets aborted, it should still try
@@ -133,14 +132,14 @@ if os.environ.get('USE_ASYNCIO', False):
 
             def nuke_transport():
                 actual_protocol[0].connection_lost(None)  # asyncio can call this with None
-            txaio.call_later(0.001, nuke_transport)
+            txaio.call_later(0.1, nuke_transport)
 
             finished = txaio.create_future()
 
             def fail():
                 finished.set_exception(AssertionError("timed out"))
                 txaio.config.loop = orig_loop
-            txaio.call_later(4.0, fail)
+            txaio.call_later(1.0, fail)
 
             def done(f):
                 try:
