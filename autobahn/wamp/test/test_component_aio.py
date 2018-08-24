@@ -60,7 +60,7 @@ if os.environ.get('USE_ASYNCIO', False):
         def fail():
             finished.set_exception(AssertionError("timed out"))
             txaio.config.loop = orig_loop
-        txaio.call_later(1.0, fail)
+        txaio.call_later(4.0, fail)
 
         def done(f):
             try:
@@ -137,7 +137,7 @@ if os.environ.get('USE_ASYNCIO', False):
         def fail():
             finished.set_exception(AssertionError("timed out"))
             txaio.config.loop = orig_loop
-        txaio.call_later(1.0, fail)
+        txaio.call_later(4.0, fail)
 
         def done(f):
             try:
