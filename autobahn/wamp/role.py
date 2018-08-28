@@ -31,15 +31,17 @@ import json
 from autobahn import util
 from autobahn.wamp.exception import ProtocolError
 
-__all__ = ('RoleFeatures',
-           'RoleBrokerFeatures',
-           'RoleSubscriberFeatures',
-           'RolePublisherFeatures',
-           'RoleDealerFeatures',
-           'RoleCallerFeatures',
-           'RoleCalleeFeatures',
-           'ROLE_NAME_TO_CLASS',
-           'DEFAULT_CLIENT_ROLES')
+__all__ = (
+    'RoleFeatures',
+    'RoleBrokerFeatures',
+    'RoleSubscriberFeatures',
+    'RolePublisherFeatures',
+    'RoleDealerFeatures',
+    'RoleCallerFeatures',
+    'RoleCalleeFeatures',
+    'ROLE_NAME_TO_CLASS',
+    'DEFAULT_CLIENT_ROLES',
+)
 
 
 class RoleFeatures(util.EqualityMixin):
@@ -270,8 +272,36 @@ ROLE_NAME_TO_CLASS = {
 
 # default role features for client roles supported
 DEFAULT_CLIENT_ROLES = {
-    u'subscriber': RoleSubscriberFeatures(publisher_identification=True, pattern_based_subscription=True, subscription_revocation=True, payload_transparency=True, payload_encryption_cryptobox=True),
-    u'publisher': RolePublisherFeatures(publisher_identification=True, subscriber_blackwhite_listing=True, publisher_exclusion=True, payload_transparency=True, x_acknowledged_event_delivery=True, payload_encryption_cryptobox=True),
-    u'caller': RoleCallerFeatures(caller_identification=True, progressive_call_results=True, payload_transparency=True, payload_encryption_cryptobox=True, call_canceling=True),
-    u'callee': RoleCalleeFeatures(caller_identification=True, pattern_based_registration=True, shared_registration=True, progressive_call_results=True, registration_revocation=True, payload_transparency=True, payload_encryption_cryptobox=True, call_canceling=True),
+    u'subscriber': RoleSubscriberFeatures(
+        publisher_identification=True,
+        pattern_based_subscription=True,
+        subscription_revocation=True,
+        payload_transparency=True,
+        payload_encryption_cryptobox=True,
+    ),
+    u'publisher': RolePublisherFeatures(
+        publisher_identification=True,
+        subscriber_blackwhite_listing=True,
+        publisher_exclusion=True,
+        payload_transparency=True,
+        x_acknowledged_event_delivery=True,
+        payload_encryption_cryptobox=True,
+    ),
+    u'caller': RoleCallerFeatures(
+        caller_identification=True,
+        progressive_call_results=True,
+        payload_transparency=True,
+        payload_encryption_cryptobox=True,
+        call_canceling=True,
+    ),
+    u'callee': RoleCalleeFeatures(
+        caller_identification=True,
+        pattern_based_registration=True,
+        shared_registration=True,
+        progressive_call_results=True,
+        registration_revocation=True,
+        payload_transparency=True,
+        payload_encryption_cryptobox=True,
+        call_canceling=True,
+    ),
 }
