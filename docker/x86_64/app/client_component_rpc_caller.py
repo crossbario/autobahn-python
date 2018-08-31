@@ -17,7 +17,7 @@ component = Component(transports=url, realm=realmv)
 def joined(session, details):
     print("session ready")
     try:
-        res = yield session.call(u'my.com.date')
+        res = yield session.call(u'com.myapp.date')
         print("\ncall result: {}\n".format(res))
     except Exception as e:
         print("call error: {0}".format(e))
@@ -25,7 +25,7 @@ def joined(session, details):
 
 
 if __name__ == "__main__":
-    run([component])        
+    run([component])
 
 
 
