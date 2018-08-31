@@ -1109,7 +1109,8 @@ class ApplicationSession(BaseSession):
                     on_reply = self._unregister_reqs.pop(msg.request).on_reply
 
                 if on_reply:
-                    txaio.reject(on_reply, self._exception_from_message(msg))
+                    if not txaio.is_called(on_reply):
+                        txaio.reject(on_reply, self._exception_from_message(msg))
                 else:
                     raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {0} and request ID {1}".format(msg.request_type, msg.request))
 
