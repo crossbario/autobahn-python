@@ -8,8 +8,20 @@ Changelog
 master
 ------
 
+* ...
+
+
+18.8.2
+------
+
+* new: WAMP call cancel support
+* fix: getting started documentation and general docs improvements
+* fix: WebSocket auto-reconnect on opening handshake failure
+* fix: more Python 3.7 compatibility and CI
+* fix: Docker image building using multi-arch, size optimizations and more
 * fix: asyncio failed to re-connect under some circumstances (#1040,
   #1041, #1010, #1030)
+
 
 18.8.1
 ------
