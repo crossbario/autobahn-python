@@ -17,14 +17,14 @@ def joined(session, details):
         print("event received: {0}", count)
 
     try:
-        yield session.subscribe(oncounter, u'com.myapp.topic1')
+        yield session.subscribe(oncounter, u'com.myapp.hello')
         print("subscribed to topic")
     except Exception as e:
         print("could not subscribe to topic: {0}".format(e))
 
 
 if __name__ == "__main__":
-    run([component])        
+    run([component])
 
 
 
