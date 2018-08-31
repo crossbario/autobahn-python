@@ -27,14 +27,14 @@ def joined(session, details):
         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     try:
-        yield session.register(utcnow, u'my.com.date')
+        yield session.register(utcnow, u'com.myapp.date')
         print("procedure registered")
     except Exception as e:
         print("could not register procedure: {0}".format(e))
 
 
 if __name__ == "__main__":
-    run([component])        
+    run([component])
 
 
 

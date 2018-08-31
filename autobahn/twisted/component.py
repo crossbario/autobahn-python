@@ -27,6 +27,8 @@
 
 from __future__ import absolute_import, print_function
 
+from functools import wraps
+
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
@@ -311,13 +313,44 @@ class Component(component.Component):
                 " provider"
             )
 
-    def _connect_transport(self, reactor, transport, session_factory):
+    def _connect_transport(self, reactor, transport, session_factory, done):
         """
         Create and connect a WAMP-over-XXX transport.
+
+        :param done: is a Deferred/Future from the parent which we
+            should signal upon error if it is not done yet (XXX maybe an
+            "on_error" callable instead?)
         """
         transport_factory = _create_transport_factory(reactor, transport, session_factory)
         transport_endpoint = _create_transport_endpoint(reactor, transport.endpoint)
-        return transport_endpoint.connect(transport_factory)
+        d = transport_endpoint.connect(transport_factory)
+
+        def on_connect_success(proto):
+
+            # if e.g. an SSL handshake fails, we will have
+            # successfully connected (i.e. get here) but need to
+            # 'listen' for the "connectionLost" from the underlying
+            # protocol in case of handshake failure .. so we wrap
+            # it. Also, we don't increment transport.success_count
+            # here on purpose (because we might not succeed).
+            orig = proto.connectionLost
+
+            @wraps(orig)
+            def lost(fail):
+                rtn = orig(fail)
+                if not txaio.is_called(done):
+                    txaio.reject(done, fail)
+                return rtn
+            proto.connectionLost = lost
+
+        def on_connect_failure(err):
+            transport.connect_failures += 1
+            # failed to establish a connection in the first place
+            txaio.reject(done, err)
+
+        txaio.add_callbacks(d, on_connect_success, None)
+        txaio.add_callbacks(d, None, on_connect_failure)
+        return d
 
     def start(self, reactor=None):
         """

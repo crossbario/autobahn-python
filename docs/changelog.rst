@@ -5,6 +5,12 @@
 Changelog
 =========
 
+master
+------
+
+* fix: asyncio failed to re-connect under some circumstances (#1040,
+  #1041, #1010, #1030)
+
 18.8.1
 ------
 

@@ -30,7 +30,7 @@ from __future__ import absolute_import
 import itertools
 import six
 import random
-from functools import wraps, partial
+from functools import partial
 
 import txaio
 
@@ -723,32 +723,21 @@ class Component(ObservableMixin):
 
         transport.connect_attempts += 1
 
-        d = self._connect_transport(reactor, transport, create_session)
+        d = self._connect_transport(reactor, transport, create_session, done)
 
-        def on_connect_sucess(proto):
-            # if e.g. an SSL handshake fails, we will have
-            # successfully connected (i.e. get here) but need to
-            # 'listen' for the "connectionLost" from the underlying
-            # protocol in case of handshake failure .. so we wrap
-            # it. Also, we don't increment transport.success_count
-            # here on purpose (because we might not succeed).
-            orig = proto.connectionLost
-
-            @wraps(orig)
-            def lost(fail):
-                rtn = orig(fail)
-                if not txaio.is_called(done):
-                    txaio.reject(done, fail)
-                return rtn
-            proto.connectionLost = lost
-
-        def on_connect_failure(err):
+        def on_error(err):
+            """
+            this may seem redundant after looking at _connect_transport, but
+            it will handle a case where something goes wrong in
+            _connect_transport itself -- as the only connect our
+            caller has is the 'done' future
+            """
             transport.connect_failures += 1
-            # failed to establish a connection in the first place
-            txaio.reject(done, err)
-
-        txaio.add_callbacks(d, on_connect_sucess, None)
-        txaio.add_callbacks(d, None, on_connect_failure)
+            # something bad has happened, and maybe didn't get caught
+            # upstream yet
+            if not txaio.is_called(done):
+                txaio.reject(done, err)
+        txaio.add_callbacks(d, None, on_error)
 
         return done
 

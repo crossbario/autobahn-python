@@ -18,14 +18,14 @@ def joined(session, details):
     counter = 0
     while True:
         # publish() only returns a Deferred if we asked for an acknowledgement
-        session.publish(u'com.myapp.topic1', "Hello World %d"%counter)
+        session.publish(u'com.myapp.hello', "Hello World {0}".format(counter))
         counter += 1
         yield sleep(1)
 
 
 
 if __name__ == "__main__":
-    run([component])        
+    run([component])
 
 
 
