@@ -536,7 +536,10 @@ class Component(ObservableMixin):
                     # and reason are all strings, describing where
                     # and what the problem is. See err(3) for more
                     # information."
-                    self.log.error(u"TLS failure: {reason}", reason=fail.value.args[1])
+                    # (and 'args' is a 1-tuple containing the above
+                    # 3-tuple...)
+                    ssl_lib, ssl_func, ssl_reason = fail.value.args[0][0]
+                    self.log.error(u"TLS failure: {reason}", reason=ssl_reason)
                 else:
                     self.log.error(
                         u'Connection failed: {error}',

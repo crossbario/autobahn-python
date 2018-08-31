@@ -1019,20 +1019,14 @@ class ApplicationSession(BaseSession):
                 if msg.request not in self._invocations:
                     raise ProtocolError("INTERRUPT received for non-pending invocation {0}".format(msg.request))
                 else:
-                    # noinspection PyBroadException
+                    invoked = self._invocations[msg.request]
                     try:
-                        self._invocations[msg.request].cancel()
-                    except Exception:
-                        # XXX can .cancel() return a Deferred/Future?
-                        try:
-                            self.onUserError(
-                                txaio.create_failure(),
-                                "While cancelling call.",
-                            )
-                        except:
-                            pass
+                        txaio.cancel(invoked.on_reply)
                     finally:
-                        del self._invocations[msg.request]
+                        try:
+                            del self._invocations[msg.request]
+                        except KeyError:
+                            pass  # why? is the .cancel() handling cleaning this out somehow?
 
             elif isinstance(msg, message.Registered):
 
@@ -1523,13 +1517,14 @@ class ApplicationSession(BaseSession):
             if options.correlation_is_last is not None:
                 msg.correlation_is_last = options.correlation_is_last
 
-        # FIXME: implement call canceling
-        # def canceller(_d):
-        #   cancel_msg = message.Cancel(request)
-        #   self._transport.send(cancel_msg)
-        # d = Deferred(canceller)
+        def canceller(d):
+            cancel_msg = message.Cancel(request_id)
+            self._transport.send(cancel_msg)
+            # since we announced support for cancelling, we should
+            # definitely get an Error back for our Cancel which will
+            # clean up this invocation
 
-        on_reply = txaio.create_future()
+        on_reply = txaio.create_future(canceller=canceller)
         self._call_reqs[request_id] = CallRequest(request_id, procedure, on_reply, options)
 
         try:
