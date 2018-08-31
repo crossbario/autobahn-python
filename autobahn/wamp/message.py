@@ -2940,6 +2940,7 @@ class Cancel(Message):
     SKIP = u'skip'
     ABORT = u'abort'
     KILL = u'kill'
+    KILLNOWAIT = u'killnowait'
 
     __slots__ = (
         'request',
@@ -3976,6 +3977,7 @@ class Interrupt(Message):
 
     ABORT = u'abort'
     KILL = u'kill'
+    KILLNOWAIT = u'killnowait'
 
     __slots__ = (
         'request',
