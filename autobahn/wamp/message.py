@@ -2938,8 +2938,8 @@ class Cancel(Message):
     """
 
     SKIP = u'skip'
-    ABORT = u'abort'
     KILL = u'kill'
+    KILLNOWAIT = u'killnowait'
 
     __slots__ = (
         'request',
@@ -2952,12 +2952,12 @@ class Cancel(Message):
         :param request: The WAMP request ID of the original `CALL` to cancel.
         :type request: int
 
-        :param mode: Specifies how to cancel the call (``"skip"``, ``"abort"`` or ``"kill"``).
+        :param mode: Specifies how to cancel the call (``"skip"``, ``"killnowait"`` or ``"kill"``).
         :type mode: str or None
         """
         assert(type(request) in six.integer_types)
         assert(mode is None or type(mode) == six.text_type)
-        assert(mode in [None, self.SKIP, self.ABORT, self.KILL])
+        assert(mode in [None, self.SKIP, self.KILLNOWAIT, self.KILL])
 
         Message.__init__(self)
         self.request = request
@@ -2992,7 +2992,7 @@ class Cancel(Message):
             if type(option_mode) != six.text_type:
                 raise ProtocolError("invalid type {0} for 'mode' option in CANCEL".format(type(option_mode)))
 
-            if option_mode not in [Cancel.SKIP, Cancel.ABORT, Cancel.KILL]:
+            if option_mode not in [Cancel.SKIP, Cancel.KILLNOWAIT, Cancel.KILL]:
                 raise ProtocolError("invalid value '{0}' for 'mode' option in CANCEL".format(option_mode))
 
             mode = option_mode
@@ -3974,8 +3974,8 @@ class Interrupt(Message):
     The WAMP message code for this type of message.
     """
 
-    ABORT = u'abort'
     KILL = u'kill'
+    KILLNOWAIT = u'killnowait'
 
     __slots__ = (
         'request',
@@ -3988,12 +3988,12 @@ class Interrupt(Message):
         :param request: The WAMP request ID of the original ``INVOCATION`` to interrupt.
         :type request: int
 
-        :param mode: Specifies how to interrupt the invocation (``"abort"`` or ``"kill"``).
+        :param mode: Specifies how to interrupt the invocation (``"killnowait"`` or ``"kill"``).
         :type mode: str or None
         """
         assert(type(request) in six.integer_types)
         assert(mode is None or type(mode) == six.text_type)
-        assert(mode is None or mode in [self.ABORT, self.KILL])
+        assert(mode is None or mode in [self.KILL, self.KILLNOWAIT])
 
         Message.__init__(self)
         self.request = request
@@ -4028,7 +4028,7 @@ class Interrupt(Message):
             if type(option_mode) != six.text_type:
                 raise ProtocolError("invalid type {0} for 'mode' option in INTERRUPT".format(type(option_mode)))
 
-            if option_mode not in [Interrupt.ABORT, Interrupt.KILL]:
+            if option_mode not in [Interrupt.KILL, Interrupt.KILLNOWAIT]:
                 raise ProtocolError("invalid value '{0}' for 'mode' option in INTERRUPT".format(option_mode))
 
             mode = option_mode
