@@ -2930,6 +2930,8 @@ class Cancel(Message):
     A WAMP ``CANCEL`` message.
 
     Format: ``[CANCEL, CALL.Request|id, Options|dict]``
+
+    See: https://wamp-proto.org/static/rfc/draft-oberstet-hybi-crossbar-wamp.html#rfc.section.14.3.4
     """
 
     MESSAGE_TYPE = 49
@@ -3967,6 +3969,8 @@ class Interrupt(Message):
     A WAMP ``INTERRUPT`` message.
 
     Format: ``[INTERRUPT, INVOCATION.Request|id, Options|dict]``
+
+    See: https://wamp-proto.org/static/rfc/draft-oberstet-hybi-crossbar-wamp.html#rfc.section.14.3.4
     """
 
     MESSAGE_TYPE = 69
@@ -3980,24 +3984,37 @@ class Interrupt(Message):
     __slots__ = (
         'request',
         'mode',
+        'reason',
     )
 
-    def __init__(self, request, mode=None):
+    def __init__(self, request, mode=None, reason=None):
         """
 
         :param request: The WAMP request ID of the original ``INVOCATION`` to interrupt.
         :type request: int
 
         :param mode: Specifies how to interrupt the invocation (``"killnowait"`` or ``"kill"``).
+            With ``"kill"``, the router will wait for the callee to return an ERROR before
+            proceeding (sending back an ERROR to the original caller). With ``"killnowait"`` the
+            router will immediately proceed (on the caller side returning an ERROR) - but still
+            expects the callee to send an ERROR to conclude the message exchange for the inflight
+            call.
         :type mode: str or None
+
+        :param reason: The reason (an URI) for the invocation interrupt, eg actively
+            triggered by the caller (``"wamp.error.canceled"`` - ApplicationError.CANCELED) or
+            passively because of timeout (``"wamp.error.timeout"`` - ApplicationError.TIMEOUT).
+        :type reason: str or None.
         """
         assert(type(request) in six.integer_types)
         assert(mode is None or type(mode) == six.text_type)
         assert(mode is None or mode in [self.KILL, self.KILLNOWAIT])
+        assert(reason is None or type(reason) == six.text_type)
 
         Message.__init__(self)
         self.request = request
         self.mode = mode
+        self.reason = reason
 
     @staticmethod
     def parse(wmsg):
@@ -4021,6 +4038,7 @@ class Interrupt(Message):
         # options
         #
         mode = None
+        reason = None
 
         if u'mode' in options:
 
@@ -4033,7 +4051,10 @@ class Interrupt(Message):
 
             mode = option_mode
 
-        obj = Interrupt(request, mode=mode)
+        if u'reason' in options:
+            reason = check_or_raise_uri(options[u'reason'], u'"reason" in INTERRUPT')
+
+        obj = Interrupt(request, mode=mode, reason=reason)
 
         return obj
 
@@ -4049,13 +4070,16 @@ class Interrupt(Message):
         if self.mode is not None:
             options[u'mode'] = self.mode
 
+        if self.reason is not None:
+            options[u'reason'] = self.reason
+
         return [Interrupt.MESSAGE_TYPE, self.request, options]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return u"Interrupt(request={0}, mode={1})".format(self.request, self.mode)
+        return u"Interrupt(request={0}, mode={1}, reason={2})".format(self.request, self.mode, self.reason)
 
 
 class Yield(Message):
