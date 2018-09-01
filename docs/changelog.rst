@@ -8,10 +8,6 @@ Changelog
 master
 ------
 
-* fix: Cancel and Interrupt gets ``"killnowait"`` mode
-* new: Cancel and Interrupt do not have ``ABORT/"abort"`` (there is
-  backwards-compatibility wrapper so code using ``Cancel.ABORT`` will
-  end up using ``killnowait`` on the wire instead).
 * ...
 
 
