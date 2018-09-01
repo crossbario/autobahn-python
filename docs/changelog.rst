@@ -8,6 +8,8 @@ Changelog
 master
 ------
 
+* fix: Cancel and Interrupt gets ``"killnowait"`` mode
+* new: Cancel and Interrupt no longer have ``ABORT/"abort"``
 * ...
 
 
