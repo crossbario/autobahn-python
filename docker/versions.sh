@@ -3,7 +3,7 @@
 #
 # CHANGE FOR NEW RELEASES (these need to be proper Git tags in the respective repo):
 #
-export AUTOBAHN_PYTHON_VERSION='18.8.1'
+export AUTOBAHN_PYTHON_VERSION='18.9.1'
 #
 # END OF CONFIG
 #
