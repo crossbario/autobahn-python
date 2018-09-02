@@ -8,6 +8,12 @@ Changelog
 master
 ------
 
+* ...
+
+
+18.9.1
+------
+
 * new: Interrupt has Options.reason to signal detailed origin of call cancelation (active cancel vs passive timeout)
 * fix: Cancel and Interrupt gets ``"killnowait"`` mode
 * new: Cancel and Interrupt no longer have ``ABORT/"abort"``
