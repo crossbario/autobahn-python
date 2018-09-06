@@ -54,6 +54,7 @@ from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, create_xor_masker
 from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 from autobahn.websocket.util import parse_url
+from autobahn.util import _maybe_tls_reason
 
 from six.moves import urllib
 import txaio
@@ -1092,7 +1093,11 @@ class WebSocketProtocol(object):
         else:
             if not self.wasClean:
                 if not self.droppedByMe and self.wasNotCleanReason is None:
-                    self.wasNotCleanReason = u'peer dropped the TCP connection without previous WebSocket closing handshake'
+                    reason_string = _maybe_tls_reason(reason.value)
+                    if reason_string:
+                        self.wasNotCleanReason = reason_string
+                    else:
+                        self.wasNotCleanReason = u'peer dropped the TCP connection without previous WebSocket closing handshake'
                 self._onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
             else:
                 self._onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)

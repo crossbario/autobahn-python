@@ -39,6 +39,7 @@ from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
 
 from autobahn.util import public
+from autobahn.util import _is_tls_error, _maybe_tls_reason
 from autobahn.wamp import websocket
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
 from autobahn.websocket import protocol
@@ -105,6 +106,9 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         if isinstance(reason.value, ConnectionDone):
             self.log.debug("Connection to/from {peer} was closed cleanly",
                            peer=self.peer)
+
+        elif _is_tls_error(reason.value):
+            self.log.error(_maybe_tls_reason(reason.value))
 
         elif isinstance(reason.value, ConnectionAborted):
             self.log.debug("Connection to/from {peer} was aborted locally",
