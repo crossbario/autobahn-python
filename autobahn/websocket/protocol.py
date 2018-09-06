@@ -3673,7 +3673,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
                         self._perMessageCompress = PMCE['PMCE'].create_from_response_accept(self.factory.isServer, accept)
 
                         self.websocket_extensions_in_use.append(self._perMessageCompress)
-                        print("PER MESSAGE COMPRESS {}".format(self._perMessageCompress))
 
                     else:
                         return self.failHandshake("server wants to use extension '%s' we did not request, haven't implemented or did not enable" % extension)
