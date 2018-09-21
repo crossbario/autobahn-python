@@ -3,7 +3,7 @@ import asyncio
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
-class MyComponent(ApplicationSession):
+class Component(ApplicationSession):
     async def onJoin(self, details):
         # listening for the corresponding message from the "backend"
         # (any session that .publish()es to this topic).
