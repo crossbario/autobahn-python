@@ -35,7 +35,7 @@ from functools import partial
 import txaio
 
 from autobahn.util import ObservableMixin
-from autobahn.websocket.util import parse_url
+from autobahn.websocket.util import parse_url, urlparse
 from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
 from autobahn.wamp.exception import SessionNotReady, ApplicationError
 from autobahn.wamp.auth import create_authenticator, IAuthenticator
@@ -186,8 +186,18 @@ def _create_transport(index, transport, check_native_endpoint=None):
 
     elif kind == 'rawsocket':
         if 'endpoint' not in transport:
-            raise ValueError("Missing 'endpoint' in transport")
-        endpoint_config = transport['endpoint']
+            parsed = urlparse.urlparse(transport['url'])
+            if not parsed.hostname:
+                raise Exception("invalid RawSocket URL: missing hostname")
+            if not parsed.port:
+                raise Exception("invalid RawSocket URL: missing port")
+            endpoint_config = {
+                'type': 'tcp',
+                'host': parsed.hostname,
+                'port': parsed.port,
+            }
+        else:
+            endpoint_config = transport['endpoint']
         if 'serializers' in transport:
             raise ValueError("'serializers' is only for websocket; use 'serializer'")
         # always a list; len == 1 for rawsocket
