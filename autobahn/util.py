@@ -712,7 +712,7 @@ def wildcards2patterns(wildcards):
     # match. Without this, e.g. a prefix will match:
     # re.match('.*good\\.com', 'good.com.evil.com')  # match!
     # re.match('.*good\\.com$', 'good.com.evil.com') # no match!
-    return [re.compile('^' + wc.replace('.', '\.').replace('*', '.*') + '$') for wc in wildcards]
+    return [re.compile('^' + wc.replace('.', r'\.').replace('*', '.*') + '$') for wc in wildcards]
 
 
 class ObservableMixin(object):
