@@ -1093,7 +1093,8 @@ class WebSocketProtocol(object):
         else:
             if not self.wasClean:
                 if not self.droppedByMe and self.wasNotCleanReason is None:
-                    reason_string = None if reason is None else _maybe_tls_reason(reason.value)
+                    reason_value = getattr(reason, 'value', None)
+                    reason_string = None if not reason_value else _maybe_tls_reason(reason_value)
                     if reason_string:
                         self.wasNotCleanReason = reason_string
                     else:
