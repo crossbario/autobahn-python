@@ -787,14 +787,11 @@ class ApplicationSession(BaseSession):
                             else:
                                 kw = msg.kwargs or dict()
                                 args = msg.args or tuple()
-                                try:
-                                    # XXX what if on_progress returns a Deferred/Future?
-                                    call_request.options.on_progress(*args, **kw)
-                                except Exception:
-                                    try:
-                                        self.onUserError(txaio.create_failure(), "While firing on_progress")
-                                    except:
-                                        pass
+
+                                def _error(fail):
+                                    self.onUserError(fail, "While firing on_progress")
+                                prog_d = txaio.as_future(call_request.options.on_progress, *args, **kw)
+                                txaio.add_callbacks(prog_d, None, _error)
 
                     else:
                         # process final call result
