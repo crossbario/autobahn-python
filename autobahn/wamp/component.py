@@ -505,6 +505,7 @@ class Component(ObservableMixin):
         transport_candidate = [0]
 
         def error(fail):
+            self._delay_f = None
             self.log.info("Internal error {msg}", msg=txaio.failure_message(fail))
             self.log.debug("{tb}", tb=txaio.failure_format_traceback(fail))
             txaio.reject(done_f, fail)
