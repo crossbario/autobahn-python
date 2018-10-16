@@ -605,8 +605,8 @@ class Component(ObservableMixin):
                 transport_delay=delay,
             )
 
-            delay_f = txaio.sleep(delay)
-            txaio.add_callbacks(delay_f, attempt_connect, error)
+            self._delay_f = txaio.sleep(delay)
+            txaio.add_callbacks(self._delay_f, attempt_connect, error)
 
         # issue our first event, then start the reconnect loop
         start_f = self.fire('start', loop, self)
@@ -614,7 +614,11 @@ class Component(ObservableMixin):
         return done_f
 
     def stop(self):
-        return self._session.leave()
+        if self._session.is_attached():
+            return self._session.leave()
+        else:
+            if getattr(self, '_delay_f', None):
+                return txaio.as_future(txaio.cancel, self._delay_f)
 
     def _connect_once(self, reactor, transport):
 
