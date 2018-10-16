@@ -469,6 +469,8 @@ class Component(ObservableMixin):
         self._realm = realm
         self._extra = extra
 
+        self._delay_f = None
+
     def _can_reconnect(self):
         # check if any of our transport has any reconnect attempt left
         for transport in self._transports:
@@ -617,8 +619,8 @@ class Component(ObservableMixin):
         if self._session.is_attached():
             return self._session.leave()
         else:
-            if getattr(self, '_delay_f', None):
-                return txaio.as_future(txaio.cancel, self._delay_f)
+            if self._delay_f:
+                txaio.cancel(self._delay_f)
 
     def _connect_once(self, reactor, transport):
 
