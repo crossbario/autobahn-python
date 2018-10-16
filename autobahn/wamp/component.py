@@ -621,7 +621,7 @@ class Component(ObservableMixin):
             return self._session.leave()
         else:
             if self._delay_f:
-                txaio.cancel(self._delay_f)
+                return txaio.as_future(txaio.cancel, self._delay_f)
 
     def _connect_once(self, reactor, transport):
 
