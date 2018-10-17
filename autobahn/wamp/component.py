@@ -621,6 +621,8 @@ class Component(ObservableMixin):
             return self._session.leave()
         else:
             if self._delay_f:
+                # This cancel request will actually call the "error" callback of
+                # the _delay_f Future. Nothing to worry about.
                 return txaio.as_future(txaio.cancel, self._delay_f)
 
     def _connect_once(self, reactor, transport):
