@@ -5,10 +5,53 @@
 Changelog
 =========
 
-master (unreleased)
--------------------
+master
+------
 
 * ...
+
+
+18.9.2
+------
+
+* fix: TLS error logging (#1052)
+
+
+18.9.1
+------
+
+* new: Interrupt has Options.reason to signal detailed origin of call cancelation (active cancel vs passive timeout)
+* fix: Cancel and Interrupt gets ``"killnowait"`` mode
+* new: Cancel and Interrupt no longer have ``ABORT/"abort"``
+
+
+18.8.2
+------
+
+* new: WAMP call cancel support
+* fix: getting started documentation and general docs improvements
+* fix: WebSocket auto-reconnect on opening handshake failure
+* fix: more Python 3.7 compatibility and CI
+* fix: Docker image building using multi-arch, size optimizations and more
+* fix: asyncio failed to re-connect under some circumstances (#1040,
+  #1041, #1010, #1030)
+
+
+18.8.1
+------
+
+* fix: Python 3.7 compatibility
+* fix: remove Python 2.6 support leftovers
+* new: getting started docker-based examples in matching with docs
+
+
+18.7.1
+------
+
+* new: Python 3.7 supported and integrated into CI
+* new: WAMP-SCRAM examples
+* fix: glitches in WAMP-SCRAM
+
 
 18.6.1
 ------

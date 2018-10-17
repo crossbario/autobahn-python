@@ -3,7 +3,7 @@ import asyncio
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
-class MyComponent(ApplicationSession):
+class Component(ApplicationSession):
     async def onJoin(self, details):
         # a remote procedure; see frontend.py for a Python front-end
         # that calls this. Any language with WAMP bindings can now call

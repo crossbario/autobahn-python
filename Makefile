@@ -92,7 +92,7 @@ test_twisted_coverage:
 
 test_coverage:
 	-rm .coverage
-	tox -e py27-twcurrent,py27-trollius,py34-asyncio
+	tox -e py27-twtrunk,py27-asyncio,py36-asyncio
 	coverage combine
 	coverage html
 	coverage report --show-missing

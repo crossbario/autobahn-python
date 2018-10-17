@@ -49,7 +49,7 @@ except ImportError:
 if hasattr(asyncio, 'ensure_future'):
     ensure_future = asyncio.ensure_future
 else:  # Deprecated since Python 3.4.4
-    ensure_future = asyncio.async
+    ensure_future = getattr(asyncio, 'async')
 
 __all__ = (
     'WebSocketServerProtocol',

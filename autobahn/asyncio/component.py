@@ -30,7 +30,7 @@ from __future__ import absolute_import, print_function
 import six
 import ssl  # XXX what Python version is this always available at?
 import signal
-from functools import partial
+from functools import partial, wraps
 
 try:
     import asyncio
@@ -46,6 +46,7 @@ from autobahn.asyncio.websocket import WampWebSocketClientFactory
 from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
 
 from autobahn.wamp import component
+from autobahn.wamp.exception import TransportLost
 
 from autobahn.asyncio.wamp import Session
 
@@ -204,7 +205,7 @@ class Component(component.Component):
             )
 
     # async function
-    def _connect_transport(self, loop, transport, session_factory):
+    def _connect_transport(self, loop, transport, session_factory, done):
         """
         Create and connect a WAMP-over-XXX transport.
         """
@@ -269,7 +270,7 @@ class Component(component.Component):
                 server_hostname=tls_hostname,
             )
             time_f = asyncio.ensure_future(asyncio.wait_for(f, timeout=timeout))
-            return time_f
+            return self._wrap_connection_future(transport, done, time_f)
 
         elif transport.endpoint[u'type'] == u'unix':
             path = transport.endpoint[u'path']
@@ -280,10 +281,51 @@ class Component(component.Component):
                 path=path,
             )
             time_f = asyncio.ensure_future(asyncio.wait_for(f, timeout=timeout))
-            return time_f
+            return self._wrap_connection_future(transport, done, time_f)
 
         else:
             assert(False), 'should not arrive here'
+
+    def _wrap_connection_future(self, transport, done, conn_f):
+
+        def on_connect_success(result):
+            # async connect call returns a 2-tuple
+            transport, proto = result
+
+            # if e.g. an SSL handshake fails, we will have
+            # successfully connected (i.e. get here) but need to
+            # 'listen' for the "connection_lost" from the underlying
+            # protocol in case of handshake failure .. so we wrap
+            # it. Also, we don't increment transport.success_count
+            # here on purpose (because we might not succeed).
+
+            # XXX double-check that asyncio behavior on TLS handshake
+            # failures is in fact as described above
+            orig = proto.connection_lost
+
+            @wraps(orig)
+            def lost(fail):
+                rtn = orig(fail)
+                if not txaio.is_called(done):
+                    # asyncio will call connection_lost(None) in case of
+                    # a transport failure, in which case we create an
+                    # appropriate exception
+                    if fail is None:
+                        fail = TransportLost("failed to complete connection")
+                    txaio.reject(done, fail)
+                return rtn
+            proto.connection_lost = lost
+
+        def on_connect_failure(err):
+            transport.connect_failures += 1
+            # failed to establish a connection in the first place
+            txaio.reject(done, err)
+
+        txaio.add_callbacks(conn_f, on_connect_success, None)
+        # the errback is added as a second step so it gets called if
+        # there as an error in on_connect_success itself.
+        txaio.add_callbacks(conn_f, None, on_connect_failure)
+        return conn_f
 
     # async function
     def start(self, loop=None):

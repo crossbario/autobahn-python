@@ -30,15 +30,15 @@ from __future__ import absolute_import
 import itertools
 import six
 import random
-from functools import wraps, partial
+from functools import partial
 
 import txaio
 
 from autobahn.util import ObservableMixin
-from autobahn.websocket.util import parse_url
+from autobahn.websocket.util import parse_url, urlparse
 from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
 from autobahn.wamp.exception import SessionNotReady, ApplicationError
-from autobahn.wamp.auth import create_authenticator
+from autobahn.wamp.auth import create_authenticator, IAuthenticator
 
 
 __all__ = (
@@ -186,8 +186,18 @@ def _create_transport(index, transport, check_native_endpoint=None):
 
     elif kind == 'rawsocket':
         if 'endpoint' not in transport:
-            raise ValueError("Missing 'endpoint' in transport")
-        endpoint_config = transport['endpoint']
+            parsed = urlparse.urlparse(transport['url'])
+            if not parsed.hostname:
+                raise Exception("invalid RawSocket URL: missing hostname")
+            if not parsed.port:
+                raise Exception("invalid RawSocket URL: missing port")
+            endpoint_config = {
+                'type': 'tcp',
+                'host': parsed.hostname,
+                'port': parsed.port,
+            }
+        else:
+            endpoint_config = transport['endpoint']
         if 'serializers' in transport:
             raise ValueError("'serializers' is only for websocket; use 'serializer'")
         # always a list; len == 1 for rawsocket
@@ -539,7 +549,10 @@ class Component(ObservableMixin):
                     # and reason are all strings, describing where
                     # and what the problem is. See err(3) for more
                     # information."
-                    self.log.error(u"TLS failure: {reason}", reason=fail.value.args[1])
+                    # (and 'args' is a 1-tuple containing the above
+                    # 3-tuple...)
+                    ssl_lib, ssl_func, ssl_reason = fail.value.args[0][0]
+                    self.log.error(u"TLS failure: {reason}", reason=ssl_reason)
                 else:
                     self.log.error(
                         u'Connection failed: {error}',
@@ -642,8 +655,11 @@ class Component(ObservableMixin):
             try:
                 self._session = session = self.session_factory(cfg)
                 for auth_name, auth_config in self._authentication.items():
-                    authenticator = create_authenticator(auth_name, **auth_config)
-                    session.add_authenticator(authenticator)
+                    if isinstance(auth_config, IAuthenticator):
+                        session.add_authenticator(auth_config)
+                    else:
+                        authenticator = create_authenticator(auth_name, **auth_config)
+                        session.add_authenticator(authenticator)
 
             except Exception as e:
                 # couldn't instantiate session calls, which is fatal.
@@ -729,32 +745,21 @@ class Component(ObservableMixin):
 
         transport.connect_attempts += 1
 
-        d = self._connect_transport(reactor, transport, create_session)
+        d = self._connect_transport(reactor, transport, create_session, done)
 
-        def on_connect_sucess(proto):
-            # if e.g. an SSL handshake fails, we will have
-            # successfully connected (i.e. get here) but need to
-            # 'listen' for the "connectionLost" from the underlying
-            # protocol in case of handshake failure .. so we wrap
-            # it. Also, we don't increment transport.success_count
-            # here on purpose (because we might not succeed).
-            orig = proto.connectionLost
-
-            @wraps(orig)
-            def lost(fail):
-                rtn = orig(fail)
-                if not txaio.is_called(done):
-                    txaio.reject(done, fail)
-                return rtn
-            proto.connectionLost = lost
-
-        def on_connect_failure(err):
+        def on_error(err):
+            """
+            this may seem redundant after looking at _connect_transport, but
+            it will handle a case where something goes wrong in
+            _connect_transport itself -- as the only connect our
+            caller has is the 'done' future
+            """
             transport.connect_failures += 1
-            # failed to establish a connection in the first place
-            txaio.reject(done, err)
-
-        txaio.add_callbacks(d, on_connect_sucess, None)
-        txaio.add_callbacks(d, None, on_connect_failure)
+            # something bad has happened, and maybe didn't get caught
+            # upstream yet
+            if not txaio.is_called(done):
+                txaio.reject(done, err)
+        txaio.add_callbacks(d, None, on_error)
 
         return done
 

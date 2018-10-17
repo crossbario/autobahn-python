@@ -3,7 +3,8 @@
 #
 # CHANGE FOR NEW RELEASES (these need to be proper Git tags in the respective repo):
 #
-export AUTOBAHN_PYTHON_VERSION='18.4.1'
+#export AUTOBAHN_PYTHON_VERSION='18.9.2'
+export AUTOBAHN_PYTHON_VERSION=$(grep -E '^(__version__)' ../autobahn/_version.py | cut -d ' ' -f3 | sed -e 's|[u"'\'']||g')
 #
 # END OF CONFIG
 #

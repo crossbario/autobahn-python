@@ -145,7 +145,6 @@ extras_require_dev = [
     # https://docs.pytest.org/en/latest/changelog.html#pytest-3-3-0-2017-11-23
     "pytest>=2.8.6,<3.3.0",             # MIT license
 
-    "unittest2>=1.1.0",                 # BSD license
     "twine>=1.6.5",                     # Apache 2.0
     'sphinx>=1.2.3',                    # BSD
     'pyenchant>=1.6.6',                 # LGPL
@@ -204,8 +203,8 @@ setup(
     url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
-        'six>=1.10.0',      # MIT license
-        'txaio>=2.10.0',    # MIT license
+        'six>=1.11.0',      # MIT license
+        'txaio>=18.8.1',    # MIT license
     ],
     extras_require={
         'all': extras_require_all,
@@ -265,10 +264,10 @@ setup(
                  "Programming Language :: Python :: 2",
                  "Programming Language :: Python :: 2.7",
                  "Programming Language :: Python :: 3",
-                 "Programming Language :: Python :: 3.3",
                  "Programming Language :: Python :: 3.4",
                  "Programming Language :: Python :: 3.5",
                  "Programming Language :: Python :: 3.6",
+                 "Programming Language :: Python :: 3.7",
                  "Programming Language :: Python :: Implementation :: CPython",
                  "Programming Language :: Python :: Implementation :: PyPy",
                  "Programming Language :: Python :: Implementation :: Jython",

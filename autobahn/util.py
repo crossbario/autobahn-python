@@ -43,6 +43,12 @@ import six
 
 import txaio
 
+try:
+    _TLS = True
+    from OpenSSL import SSL
+except ImportError:
+    _TLS = False
+
 
 __all__ = ("public",
            "encode_truncate",
@@ -706,7 +712,7 @@ def wildcards2patterns(wildcards):
     # match. Without this, e.g. a prefix will match:
     # re.match('.*good\\.com', 'good.com.evil.com')  # match!
     # re.match('.*good\\.com$', 'good.com.evil.com') # no match!
-    return [re.compile('^' + wc.replace('.', '\.').replace('*', '.*') + '$') for wc in wildcards]
+    return [re.compile('^' + wc.replace('.', r'\.').replace('*', '.*') + '$') for wc in wildcards]
 
 
 class ObservableMixin(object):
@@ -835,3 +841,27 @@ class _LazyHexFormatter(object):
 
     def __str__(self):
         return binascii.hexlify(self.obj).decode('ascii')
+
+
+def _is_tls_error(instance):
+    """
+    :returns: True if we have TLS support and 'instance' is an
+        instance of :class:`OpenSSL.SSL.Error` otherwise False
+    """
+    if _TLS:
+        return isinstance(instance, SSL.Error)
+    return False
+
+
+def _maybe_tls_reason(instance):
+    """
+    :returns: a TLS error-message, or empty-string if 'instance' is
+        not a TLS error.
+    """
+    if _is_tls_error(instance):
+        ssl_error = instance.args[0][0]
+        return u"SSL error: {msg} (in {func})".format(
+            func=ssl_error[1],
+            msg=ssl_error[2],
+        )
+    return u""

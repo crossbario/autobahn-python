@@ -202,10 +202,14 @@ class ApplicationError(Error):
     A *Peer* was authenticated for an authid that does not or longer exists.
     """
 
-    # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     CANCELED = u"wamp.error.canceled"
     """
     A Dealer or Callee canceled a call previously issued (WAMP AP).
+    """
+
+    TIMEOUT = u"wamp.error.timeout"
+    """
+    A pending (in-flight) call was timed out.
     """
 
     # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!

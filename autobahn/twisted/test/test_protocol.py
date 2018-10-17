@@ -26,7 +26,7 @@
 
 from __future__ import absolute_import, print_function
 
-import unittest2 as unittest
+import unittest
 from mock import Mock
 
 from autobahn.util import wildcards2patterns

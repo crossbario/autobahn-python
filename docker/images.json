@@ -1,0 +1,115 @@
+{
+    "images": [
+        {
+            "package": "crossbar",
+            "architectures": [
+                "x86_64",
+                "armhf",
+                "aarch64"
+            ],
+            "github": "https://github.com/crossbario/crossbar",
+            "name": "crossbario/crossbar",
+            "tags": [
+                "latest",
+                "cpy3",
+                "cpy3-{version}",
+                "pypy3",
+                "pypy3-{version}"
+            ]
+        },
+        {
+            "package": "crossbar-fabric",
+            "architectures": [
+                "x86_64",
+                "armhf",
+                "aarch64"
+            ],
+            "github": "https://github.com/crossbario/crossbar-fabric",
+            "name": "crossbario/crossbar-fabric",
+            "tags": [
+                "latest",
+                "{version}"
+            ]
+        },
+        {
+            "package": "autobahn-js",
+            "architectures": [
+                "x86_64",
+                "armhf",
+                "aarch64"
+            ],
+            "github": "https://github.com/crossbario/autobahn-js",
+            "name": "crossbario/autobahn-js",
+            "tags": [
+                "latest",
+                "full",
+                "full-{version}",
+                "alpine",
+                "alpine-{version}"
+            ]
+        },
+        {
+            "package": "autobahn-java",
+            "architectures": [
+                "x86_64"
+            ],
+            "github": "https://github.com/crossbario/autobahn-java",
+            "name": "crossbario/autobahn-java",
+            "tags": [
+                "latest",
+                "netty",
+                "netty-{version}"
+            ]
+        },
+        {
+            "package": "autobahn-python",
+            "architectures": [
+                "x86_64",
+                "armhf",
+                "aarch64"
+            ],
+            "github": "https://github.com/crossbario/autobahn-python",
+            "name": "crossbario/autobahn-python",
+            "tags": [
+                "latest",
+                "cpy3",
+                "cpy3-{version}",
+                "pypy3",
+                "pypy3-{version}",
+                "cpy3-alpine",
+                "cpy3-alpine-{version}",
+                "cpy3-minimal-aio",
+                "cpy3-minimal-aio-{version}",
+                "cpy3-minimal-tx",
+                "cpy3-minimal-tx-{version}",
+                "cpy2",
+                "cpy2-{version}",
+                "cpy2-alpine",
+                "cpy2-alpine-{version}",
+                "cpy2-minimal-aio",
+                "cpy2-minimal-aio-{version}",
+                "cpy2-minimal-tx",
+                "cpy2-minimal-tx-{version}",
+                "pypy2",
+                "pypy2-{version}"
+            ]
+        },
+        {
+            "package": "autobahn-cpp",
+            "architectures": [
+                "x86_64",
+                "armhf",
+                "aarch64"
+            ],
+            "github": "https://github.com/crossbario/autobahn-cpp",
+            "name": "crossbario/autobahn-cpp",
+            "tags": [
+                "latest",
+                "gcc",
+                "gcc-{version}",
+                "clang",
+                "clang-{version}"
+            ]
+        }
+    ]
+}

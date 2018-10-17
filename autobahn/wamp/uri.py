@@ -208,7 +208,7 @@ class Pattern(object):
 
             if component == '':
                 group_count += 1
-                pl.append("([a-z0-9][a-z0-9_\-]*)")
+                pl.append(r"([a-z0-9][a-z0-9_\-]*)")
                 nc[group_count] = str
                 continue
 
@@ -217,7 +217,7 @@ class Pattern(object):
         if nc:
             # URI pattern
             self._type = Pattern.URI_TYPE_WILDCARD
-            p = "^" + "\.".join(pl) + "$"
+            p = "^" + r"\.".join(pl) + "$"
             self._pattern = re.compile(p)
             self._names = nc
         else:
