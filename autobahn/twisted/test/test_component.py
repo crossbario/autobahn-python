@@ -37,7 +37,7 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.wamp.exception import ApplicationError
     from autobahn.wamp.serializer import JsonSerializer
     from twisted.internet.interfaces import IStreamClientEndpoint
-    from twisted.internet.defer import inlineCallbacks, succeed
+    from twisted.internet.defer import inlineCallbacks, succeed, Deferred
     from twisted.internet.task import Clock
     from txaio.testutil import replace_loop
 
@@ -117,6 +117,80 @@ if os.environ.get('USE_TWISTED', False):
                 self.assertTrue(len(joins), 1)
                 # make sure we fire all our time-outs
                 reactor.advance(3600)
+
+        @patch('txaio.sleep', return_value=succeed(None))
+        @inlineCallbacks
+        def test_cancel(self, fake_sleep):
+            """
+            if we start a component but call .stop before it connects, ever,
+            it should still exit properly
+            """
+            endpoint = Mock()
+            directlyProvides(endpoint, IStreamClientEndpoint)
+            component = Component(
+                transports={
+                    "type": "websocket",
+                    "url": "ws://127.0.0.1/ws",
+                    "endpoint": endpoint,
+                }
+            )
+
+            def connect(factory, **kw):
+                return Deferred()
+            endpoint.connect = connect
+
+            # XXX it would actually be nicer if we *could* support
+            # passing a reactor in here, but the _batched_timer =
+            # make_batched_timer() stuff (slash txaio in general)
+            # makes this "hard".
+            reactor = Clock()
+            with replace_loop(reactor):
+                d = component.start(reactor=reactor)
+                component.stop()
+                yield d
+
+        @inlineCallbacks
+        def test_cancel_while_waiting(self):
+            """
+            if we start a component but call .stop before it connects, ever,
+            it should still exit properly -- even if we're 'between'
+            connection attempts
+            """
+            endpoint = Mock()
+            directlyProvides(endpoint, IStreamClientEndpoint)
+            component = Component(
+                transports={
+                    "type": "websocket",
+                    "url": "ws://127.0.0.1/ws",
+                    "endpoint": endpoint,
+                    u"max_retries": 0,
+                    u"max_retry_delay": 5,
+                    u"initial_retry_delay": 5,
+                },
+            )
+
+            # XXX it would actually be nicer if we *could* support
+            # passing a reactor in here, but the _batched_timer =
+            # make_batched_timer() stuff (slash txaio in general)
+            # makes this "hard".
+            reactor = Clock()
+            with replace_loop(reactor):
+
+                def connect(factory, **kw):
+                    d = Deferred()
+                    reactor.callLater(10, d.errback(RuntimeError("no connect for you")))
+                    return d
+                endpoint.connect = connect
+
+                d0 = component.start(reactor=reactor)
+                assert component._delay_f is not None
+                assert not component._done_f.called
+
+                d1 = component.stop()
+                assert component._done_f.called
+
+                yield d1
+                yield d0
 
         @patch('txaio.sleep', return_value=succeed(None))
         @inlineCallbacks
