@@ -5,11 +5,15 @@
 Changelog
 =========
 
-master
-------
+18.10.1
+-------
 
-* ...
-
+* Don't eat Component.stop() request when crossbar not connected (#1066)
+* handle async on_progress callbacks properly (#1061)
+* fix attribute error when ConnectionResetError does not contain "reason" attribute (#1059)
+* infer rawsocket host, port from URL (#1056)
+* fix error on connection lost if no reason (reason = None) (#1055)
+* fixed typo on class name (#1054)
 
 18.9.2
 ------
