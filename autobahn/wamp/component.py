@@ -511,8 +511,10 @@ class Component(ObservableMixin):
         # that fires when our "real" _done_f is completed.
         if self._done_f is not None:
             d = txaio.create_future()
+
             def _cb(arg):
                 txaio.resolve(d, arg)
+
             txaio.add_callbacks(self._done_f, _cb, _cb)
             return d
 
