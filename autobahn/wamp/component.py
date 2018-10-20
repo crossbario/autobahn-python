@@ -479,6 +479,11 @@ class Component(ObservableMixin):
         self._realm = realm
         self._extra = extra
 
+        self._delay_f = None
+        self._done_f = None
+        self._session = None
+        self._stopping = False
+
     def _can_reconnect(self):
         # check if any of our transport has any reconnect attempt left
         for transport in self._transports:
@@ -501,9 +506,19 @@ class Component(ObservableMixin):
             "done" or with an error if something went wrong.
         """
 
+        # we can only be "start()ed" once before we stop .. but that
+        # doesn't have to be an error we can give back another future
+        # that fires when our "real" _done_f is completed.
+        if self._done_f is not None:
+            d = txaio.create_future()
+            def _cb(arg):
+                txaio.resolve(d, arg)
+            txaio.add_callbacks(self._done_f, _cb, _cb)
+            return d
+
         # this future will be returned, and thus has the semantics
         # specified in the docstring.
-        done_f = txaio.create_future()
+        self._done_f = txaio.create_future()
 
         # Create a generator of transports that .can_reconnect()
         transport_gen = itertools.cycle(self._transports)
@@ -513,11 +528,20 @@ class Component(ObservableMixin):
         transport_candidate = [0]
 
         def error(fail):
-            self.log.info("Internal error {msg}", msg=txaio.failure_message(fail))
-            self.log.debug("{tb}", tb=txaio.failure_format_traceback(fail))
-            txaio.reject(done_f, fail)
+            self._delay_f = None
+            if self._stopping:
+                # might be better to add framework-specific checks in
+                # subclasses to see if this is CancelledError (for
+                # Twisted) and whatever asyncio does .. but tracking
+                # if we're in the shutdown path is fine too
+                txaio.resolve(self._done_f, None)
+            else:
+                self.log.info("Internal error {msg}", msg=txaio.failure_message(fail))
+                self.log.debug("{tb}", tb=txaio.failure_format_traceback(fail))
+                txaio.reject(self._done_f, fail)
 
         def attempt_connect(_):
+            self._delay_f = None
 
             def handle_connect_error(fail):
                 # FIXME - make txaio friendly
@@ -586,7 +610,7 @@ class Component(ObservableMixin):
                 txaio.add_callbacks(notify_f, None, handle_connect_error)
 
             def session_done(x):
-                txaio.resolve(done_f, None)
+                txaio.resolve(self._done_f, None)
 
             connect_f = self._connect_once(loop, transport_candidate[0])
             txaio.add_callbacks(connect_f, session_done, connect_error)
@@ -600,7 +624,7 @@ class Component(ObservableMixin):
                 try:
                     raise RuntimeError(err_msg)
                 except RuntimeError as e:
-                    txaio.reject(done_f, e)
+                    txaio.reject(self._done_f, e)
                     return
 
             while True:
@@ -618,16 +642,29 @@ class Component(ObservableMixin):
                 transport_delay=delay,
             )
 
-            delay_f = txaio.sleep(delay)
-            txaio.add_callbacks(delay_f, attempt_connect, error)
+            self._delay_f = txaio.sleep(delay)
+            txaio.add_callbacks(self._delay_f, attempt_connect, error)
 
         # issue our first event, then start the reconnect loop
         start_f = self.fire('start', loop, self)
         txaio.add_callbacks(start_f, transport_check, error)
-        return done_f
+        return self._done_f
 
     def stop(self):
-        return self._session.leave()
+        self._stopping = True
+        if self._session and self._session.is_attached():
+            return self._session.leave()
+        elif self._delay_f:
+            # This cancel request will actually call the "error" callback of
+            # the _delay_f future. Nothing to worry about.
+            return txaio.as_future(txaio.cancel, self._delay_f)
+        # if (for some reason -- should we log warning here to figure
+        # out if this can evern happen?) we've not fired _done_f, we
+        # do that now (causing our "main" to exit, and thus react() to
+        # quit)
+        if not txaio.is_called(self._done_f):
+            txaio.resolve(self._done_f, None)
+        return txaio.create_future_success(None)
 
     def _connect_once(self, reactor, transport):
 
