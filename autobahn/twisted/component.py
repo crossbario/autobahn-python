@@ -41,7 +41,7 @@ try:
     from twisted.internet.ssl import optionsForClientTLS, CertificateOptions, Certificate
     from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
     from OpenSSL import SSL
-except ImportError as e:
+except ImportError:
     _TLS = False
     # there's no optionsForClientTLS in older Twisteds or we might be
     # missing OpenSSL entirely.

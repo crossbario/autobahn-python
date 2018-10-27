@@ -215,8 +215,8 @@ def _create_utf8_test_sequences():
     # non-characters: F[0-7] [89AB]F BF [BE-BF]
     for z1 in [b'\xf0', b'\xf1', b'\xf2', b'\xf3', b'\xf4']:
         for z2 in [b'\x8f', b'\x9f', b'\xaf', b'\xbf']:
-            if not (z1 == b'\xf4' and z2 !=
-                    b'\x8f'):  # those encode codepoints >U+10FFFF
+            # those encode codepoints >U+10FFFF
+            if not (z1 == b'\xf4' and z2 != b'\x8f'):
                 for z3 in [b'\xbe', b'\xbf']:
                     zz = z1 + z2 + b'\xbf' + z3
                     if zz not in [b'\xf0\x8f\xbf\xbe',

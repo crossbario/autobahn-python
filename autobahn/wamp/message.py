@@ -2603,8 +2603,8 @@ class Event(Message):
             if type(x_acknowledged_delivery) != bool:
                 raise ProtocolError("invalid type {0} for 'x_acknowledged_delivery' detail in EVENT".format(type(x_acknowledged_delivery)))
 
-        if u'forward_for' in options:
-            forward_for = options[u'forward_for']
+        if u'forward_for' in details:
+            forward_for = details[u'forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
