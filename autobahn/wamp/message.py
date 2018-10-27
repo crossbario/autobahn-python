@@ -1500,6 +1500,7 @@ class Publish(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'forward_for',
     )
 
     def __init__(self,
@@ -1519,7 +1520,8 @@ class Publish(Message):
                  retain=None,
                  enc_algo=None,
                  enc_key=None,
-                 enc_serializer=None):
+                 enc_serializer=None,
+                 forward_for=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1577,6 +1579,9 @@ class Publish(Message):
 
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None or None
+
+        :param forward_for: When this Publish is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
@@ -1625,6 +1630,14 @@ class Publish(Message):
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         Message.__init__(self)
         self.request = request
         self.topic = topic
@@ -1649,6 +1662,9 @@ class Publish(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # message forwarding
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -1706,7 +1722,6 @@ class Publish(Message):
             enc_serializer = None
 
         acknowledge = None
-
         exclude_me = None
         exclude = None
         exclude_authid = None
@@ -1714,8 +1729,8 @@ class Publish(Message):
         eligible = None
         eligible_authid = None
         eligible_authrole = None
-
         retain = None
+        forward_for = None
 
         if u'acknowledge' in options:
 
@@ -1810,6 +1825,24 @@ class Publish(Message):
             if type(retain) != bool:
                 raise ProtocolError("invalid type {0} for 'retain' option in PUBLISH".format(type(retain)))
 
+        if u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
         obj = Publish(request,
                       topic,
                       args=args,
@@ -1826,7 +1859,8 @@ class Publish(Message):
                       retain=retain,
                       enc_algo=enc_algo,
                       enc_key=enc_key,
-                      enc_serializer=enc_serializer)
+                      enc_serializer=enc_serializer,
+                      forward_for=forward_for)
 
         return obj
 
@@ -1860,6 +1894,9 @@ class Publish(Message):
                 options[u'enc_key'] = self.enc_key
             if self.enc_serializer is not None:
                 options[u'enc_serializer'] = self.enc_serializer
+
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
 
         return options
 
@@ -2365,12 +2402,13 @@ class Event(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'forward_for',
     )
 
     def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
                  retained=None, x_acknowledged_delivery=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None):
+                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -2416,6 +2454,9 @@ class Event(Message):
 
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
+
+        :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(subscription) in six.integer_types)
         assert(type(publication) in six.integer_types)
@@ -2434,6 +2475,14 @@ class Event(Message):
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         Message.__init__(self)
         self.subscription = subscription
         self.publication = publication
@@ -2449,6 +2498,7 @@ class Event(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -2508,6 +2558,7 @@ class Event(Message):
         publisher_authrole = None
         topic = None
         retained = None
+        forward_for = None
         x_acknowledged_delivery = None
 
         if u'publisher' in details:
@@ -2552,6 +2603,24 @@ class Event(Message):
             if type(x_acknowledged_delivery) != bool:
                 raise ProtocolError("invalid type {0} for 'x_acknowledged_delivery' detail in EVENT".format(type(x_acknowledged_delivery)))
 
+        if u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
         obj = Event(subscription,
                     publication,
                     args=args,
@@ -2565,7 +2634,8 @@ class Event(Message):
                     x_acknowledged_delivery=x_acknowledged_delivery,
                     enc_algo=enc_algo,
                     enc_key=enc_key,
-                    enc_serializer=enc_serializer)
+                    enc_serializer=enc_serializer,
+                    forward_for=forward_for)
 
         return obj
 
@@ -2595,6 +2665,9 @@ class Event(Message):
 
         if self.x_acknowledged_delivery is not None:
             details[u'x_acknowledged_delivery'] = self.x_acknowledged_delivery
+
+        if self.forward_for is not None:
+            details[u'forward_for'] = self.forward_for
 
         if self.payload:
             if self.enc_algo is not None:

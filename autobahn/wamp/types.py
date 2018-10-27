@@ -578,6 +578,7 @@ class PublishOptions(object):
         'eligible_authid',
         'eligible_authrole',
         'retain',
+        'forward_for',
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
@@ -594,6 +595,7 @@ class PublishOptions(object):
                  eligible_authid=None,
                  eligible_authrole=None,
                  retain=None,
+                 forward_for=None,
                  correlation_id=None,
                  correlation_uri=None,
                  correlation_is_anchor=None,
@@ -628,6 +630,9 @@ class PublishOptions(object):
 
         :param retain: If ``True``, request the broker retain this event.
         :type retain: bool or None
+
+        :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(exclude_me is None or type(exclude_me) == bool)
@@ -638,6 +643,13 @@ class PublishOptions(object):
         assert(eligible_authid is None or type(eligible_authid) == six.text_type or (type(eligible_authid) == list and all(type(x) == six.text_type for x in eligible_authid)))
         assert(eligible_authrole is None or type(eligible_authrole) == six.text_type or (type(eligible_authrole) == list and all(type(x) == six.text_type for x in eligible_authrole)))
         assert(retain is None or type(retain) == bool)
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.acknowledge = acknowledge
         self.exclude_me = exclude_me
@@ -648,6 +660,7 @@ class PublishOptions(object):
         self.eligible_authid = eligible_authid
         self.eligible_authrole = eligible_authrole
         self.retain = retain
+        self.forward_for = forward_for
 
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
@@ -686,6 +699,9 @@ class PublishOptions(object):
 
         if self.retain is not None:
             options[u'retain'] = self.retain
+
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
 
         return options
 
