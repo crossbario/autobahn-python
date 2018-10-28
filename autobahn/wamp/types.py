@@ -505,9 +505,11 @@ class EventDetails(object):
         'topic',
         'retained',
         'enc_algo',
+        'forward_for',
     )
 
-    def __init__(self, subscription, publication, publisher=None, publisher_authid=None, publisher_authrole=None, topic=None, retained=None, enc_algo=None):
+    def __init__(self, subscription, publication, publisher=None, publisher_authid=None, publisher_authrole=None,
+                 topic=None, retained=None, enc_algo=None, forward_for=None):
         """
 
         :param subscription: The (client side) subscription object on which this event is delivered.
@@ -538,6 +540,9 @@ class EventDetails(object):
         :param enc_algo: Payload encryption algorithm that
             was in use (currently, either ``None`` or ``u'cryptobox'``).
         :type enc_algo: str or None
+
+        :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(isinstance(subscription, Subscription))
         assert(type(publication) in six.integer_types)
@@ -547,6 +552,13 @@ class EventDetails(object):
         assert(topic is None or type(topic) == six.text_type)
         assert(retained is None or type(retained) is bool)
         assert(enc_algo is None or type(enc_algo) == six.text_type)
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.subscription = subscription
         self.publication = publication
@@ -556,6 +568,7 @@ class EventDetails(object):
         self.topic = topic
         self.retained = retained
         self.enc_algo = enc_algo
+        self.forward_for = forward_for
 
     def __str__(self):
         return u"EventDetails(subscription={}, publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={})".format(self.subscription, self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo)
