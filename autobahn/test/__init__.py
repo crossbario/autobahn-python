@@ -38,3 +38,11 @@ class FakeTransport(object):
 
     def loseConnection(self):
         self._open = False
+
+    def registerProducer(self, producer, streaming):
+        # https://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IConsumer.html
+        raise NotImplementedError
+
+    def unregisterProducer(self):
+        # do nothing is correct! until we fake implement registerProducer ..;)
+        pass
