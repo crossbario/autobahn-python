@@ -838,6 +838,7 @@ class WebSocketProtocol(object):
         """
         Drop the underlying TCP connection.
         """
+        self.unregisterProducer()
         if self.state != WebSocketProtocol.STATE_CLOSED:
 
             if self.wasClean:
