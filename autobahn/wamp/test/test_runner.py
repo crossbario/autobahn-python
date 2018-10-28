@@ -166,9 +166,9 @@ else:
                 loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
                 runner = ApplicationRunner(u'ws://127.0.0.1:8080/wss', u'realm',
                                            ssl=True)
-                error = ('^ssl argument value passed to ApplicationRunner '
-                         'conflicts with the "ws:" prefix of the url '
-                         'argument\. Did you mean to use "wss:"\?$')
+                error = (r'^ssl argument value passed to ApplicationRunner '
+                         r'conflicts with the "ws:" prefix of the url '
+                         r'argument\. Did you mean to use "wss:"\?$')
                 self._assertRaisesRegex(Exception, error, runner.run, '_unused_')
 
         def test_conflict_SSLContext_with_ws_url(self):
@@ -198,7 +198,7 @@ else:
                 loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
                 runner = ApplicationRunner(u'ws://127.0.0.1:8080/wss', u'realm',
                                            ssl=context)
-                error = ('^ssl argument value passed to ApplicationRunner '
-                         'conflicts with the "ws:" prefix of the url '
-                         'argument\. Did you mean to use "wss:"\?$')
+                error = (r'^ssl argument value passed to ApplicationRunner '
+                         r'conflicts with the "ws:" prefix of the url '
+                         r'argument\. Did you mean to use "wss:"\?$')
                 self._assertRaisesRegex(Exception, error, runner.run, '_unused_')

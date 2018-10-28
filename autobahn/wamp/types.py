@@ -505,9 +505,11 @@ class EventDetails(object):
         'topic',
         'retained',
         'enc_algo',
+        'forward_for',
     )
 
-    def __init__(self, subscription, publication, publisher=None, publisher_authid=None, publisher_authrole=None, topic=None, retained=None, enc_algo=None):
+    def __init__(self, subscription, publication, publisher=None, publisher_authid=None, publisher_authrole=None,
+                 topic=None, retained=None, enc_algo=None, forward_for=None):
         """
 
         :param subscription: The (client side) subscription object on which this event is delivered.
@@ -538,6 +540,9 @@ class EventDetails(object):
         :param enc_algo: Payload encryption algorithm that
             was in use (currently, either ``None`` or ``u'cryptobox'``).
         :type enc_algo: str or None
+
+        :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(isinstance(subscription, Subscription))
         assert(type(publication) in six.integer_types)
@@ -547,6 +552,13 @@ class EventDetails(object):
         assert(topic is None or type(topic) == six.text_type)
         assert(retained is None or type(retained) is bool)
         assert(enc_algo is None or type(enc_algo) == six.text_type)
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.subscription = subscription
         self.publication = publication
@@ -556,9 +568,10 @@ class EventDetails(object):
         self.topic = topic
         self.retained = retained
         self.enc_algo = enc_algo
+        self.forward_for = forward_for
 
     def __str__(self):
-        return u"EventDetails(subscription={}, publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={})".format(self.subscription, self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo)
+        return u"EventDetails(subscription={}, publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={}, forward_for={})".format(self.subscription, self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.forward_for)
 
 
 @public
@@ -578,6 +591,7 @@ class PublishOptions(object):
         'eligible_authid',
         'eligible_authrole',
         'retain',
+        'forward_for',
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
@@ -594,6 +608,7 @@ class PublishOptions(object):
                  eligible_authid=None,
                  eligible_authrole=None,
                  retain=None,
+                 forward_for=None,
                  correlation_id=None,
                  correlation_uri=None,
                  correlation_is_anchor=None,
@@ -628,6 +643,9 @@ class PublishOptions(object):
 
         :param retain: If ``True``, request the broker retain this event.
         :type retain: bool or None
+
+        :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(exclude_me is None or type(exclude_me) == bool)
@@ -639,6 +657,14 @@ class PublishOptions(object):
         assert(eligible_authrole is None or type(eligible_authrole) == six.text_type or (type(eligible_authrole) == list and all(type(x) == six.text_type for x in eligible_authrole)))
         assert(retain is None or type(retain) == bool)
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         self.acknowledge = acknowledge
         self.exclude_me = exclude_me
         self.exclude = exclude
@@ -648,6 +674,7 @@ class PublishOptions(object):
         self.eligible_authid = eligible_authid
         self.eligible_authrole = eligible_authrole
         self.retain = retain
+        self.forward_for = forward_for
 
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
@@ -687,10 +714,13 @@ class PublishOptions(object):
         if self.retain is not None:
             options[u'retain'] = self.retain
 
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
+
         return options
 
     def __str__(self):
-        return u"PublishOptions(acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain)
+        return u"PublishOptions(acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, forward_for={})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.forward_for)
 
 
 @public
@@ -791,9 +821,11 @@ class CallDetails(object):
         'caller_authrole',
         'procedure',
         'enc_algo',
+        'forward_for',
     )
 
-    def __init__(self, registration, progress=None, caller=None, caller_authid=None, caller_authrole=None, procedure=None, enc_algo=None):
+    def __init__(self, registration, progress=None, caller=None, caller_authid=None,
+                 caller_authrole=None, procedure=None, enc_algo=None, forward_for=None):
         """
 
         :param registration: The (client side) registration object this invocation is delivered on.
@@ -820,6 +852,9 @@ class CallDetails(object):
         :param enc_algo: Payload encryption algorithm that
             was in use (currently, either `None` or `"cryptobox"`).
         :type enc_algo: str or None
+
+        :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(isinstance(registration, Registration))
         assert(progress is None or callable(progress))
@@ -829,6 +864,14 @@ class CallDetails(object):
         assert(procedure is None or type(procedure) == six.text_type)
         assert(enc_algo is None or type(enc_algo) == six.text_type)
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         self.registration = registration
         self.progress = progress
         self.caller = caller
@@ -836,9 +879,10 @@ class CallDetails(object):
         self.caller_authrole = caller_authrole
         self.procedure = procedure
         self.enc_algo = enc_algo
+        self.forward_for = forward_for
 
     def __str__(self):
-        return u"CallDetails(registration={}, progress={}, caller={}, caller_authid={}, caller_authrole={}, procedure=<{}>, enc_algo={})".format(self.registration, self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo)
+        return u"CallDetails(registration={}, progress={}, caller={}, caller_authid={}, caller_authrole={}, procedure=<{}>, enc_algo={}, forward_for={})".format(self.registration, self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo, self.forward_for)
 
 
 @public
@@ -850,6 +894,7 @@ class CallOptions(object):
     __slots__ = (
         'on_progress',
         'timeout',
+        'forward_for',
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
@@ -859,6 +904,7 @@ class CallOptions(object):
     def __init__(self,
                  on_progress=None,
                  timeout=None,
+                 forward_for=None,
                  correlation_id=None,
                  correlation_uri=None,
                  correlation_is_anchor=None,
@@ -871,12 +917,24 @@ class CallOptions(object):
 
         :param timeout: Time in seconds after which the call should be automatically canceled.
         :type timeout: float
+
+        :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(on_progress is None or callable(on_progress))
         assert(timeout is None or (type(timeout) in list(six.integer_types) + [float] and timeout > 0))
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         self.on_progress = on_progress
         self.timeout = timeout
+        self.forward_for = forward_for
 
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
@@ -895,10 +953,13 @@ class CallOptions(object):
         if self.on_progress is not None:
             options[u'receive_progress'] = True
 
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
+
         return options
 
     def __str__(self):
-        return u"CallOptions(on_progress={}, timeout={})".format(self.on_progress, self.timeout)
+        return u"CallOptions(on_progress={}, timeout={}, forward_for={})".format(self.on_progress, self.timeout, self.forward_for)
 
 
 @public
@@ -912,6 +973,7 @@ class CallResult(object):
         'results',
         'kwresults',
         'enc_algo',
+        'forward_for',
     )
 
     def __init__(self, *results, **kwresults):
@@ -926,12 +988,23 @@ class CallResult(object):
         enc_algo = kwresults.pop('enc_algo', None)
         assert(enc_algo is None or type(enc_algo) == six.text_type)
 
+        forward_for = kwresults.pop('forward_for', None)
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         self.enc_algo = enc_algo
+        self.forward_for = forward_for
+
         self.results = results
         self.kwresults = kwresults
 
     def __str__(self):
-        return u"CallResult(results={}, kwresults={}, enc_algo={})".format(self.results, self.kwresults, self.enc_algo)
+        return u"CallResult(results={}, kwresults={}, enc_algo={}, forward_for={})".format(self.results, self.kwresults, self.enc_algo, self.forward_for)
 
 
 @public

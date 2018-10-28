@@ -1296,10 +1296,11 @@ class Error(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'forward_for',
     )
 
     def __init__(self, request_type, request, error, args=None, kwargs=None, payload=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None):
+                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None):
         """
 
         :param request_type: The WAMP message type code for the original request.
@@ -1330,6 +1331,9 @@ class Error(Message):
 
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
+
+        :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(request_type) in six.integer_types)
         assert(type(request) in six.integer_types)
@@ -1343,6 +1347,14 @@ class Error(Message):
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         Message.__init__(self)
         self.request_type = request_type
         self.request = request
@@ -1353,6 +1365,9 @@ class Error(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # message forwarding
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -1393,6 +1408,7 @@ class Error(Message):
         enc_algo = None
         enc_key = None
         enc_serializer = None
+        forward_for = None
 
         if len(wmsg) == 6 and type(wmsg[5]) == six.binary_type:
 
@@ -1421,6 +1437,24 @@ class Error(Message):
                 if type(kwargs) != dict:
                     raise ProtocolError("invalid type {0} for 'kwargs' in ERROR".format(type(kwargs)))
 
+        if u'forward_for' in details:
+            forward_for = details[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
         obj = Error(request_type,
                     request,
                     error,
@@ -1429,7 +1463,8 @@ class Error(Message):
                     payload=payload,
                     enc_algo=enc_algo,
                     enc_key=enc_key,
-                    enc_serializer=enc_serializer)
+                    enc_serializer=enc_serializer,
+                    forward_for=forward_for)
 
         return obj
 
@@ -1441,6 +1476,9 @@ class Error(Message):
         :rtype: list
         """
         details = {}
+
+        if self.forward_for is not None:
+            details[u'forward_for'] = self.forward_for
 
         if self.payload:
             if self.enc_algo is not None:
@@ -1500,6 +1538,7 @@ class Publish(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'forward_for',
     )
 
     def __init__(self,
@@ -1519,7 +1558,8 @@ class Publish(Message):
                  retain=None,
                  enc_algo=None,
                  enc_key=None,
-                 enc_serializer=None):
+                 enc_serializer=None,
+                 forward_for=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1577,6 +1617,9 @@ class Publish(Message):
 
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None or None
+
+        :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
@@ -1625,6 +1668,14 @@ class Publish(Message):
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         Message.__init__(self)
         self.request = request
         self.topic = topic
@@ -1649,6 +1700,9 @@ class Publish(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # message forwarding
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -1706,7 +1760,6 @@ class Publish(Message):
             enc_serializer = None
 
         acknowledge = None
-
         exclude_me = None
         exclude = None
         exclude_authid = None
@@ -1714,8 +1767,8 @@ class Publish(Message):
         eligible = None
         eligible_authid = None
         eligible_authrole = None
-
         retain = None
+        forward_for = None
 
         if u'acknowledge' in options:
 
@@ -1810,6 +1863,24 @@ class Publish(Message):
             if type(retain) != bool:
                 raise ProtocolError("invalid type {0} for 'retain' option in PUBLISH".format(type(retain)))
 
+        if u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
         obj = Publish(request,
                       topic,
                       args=args,
@@ -1826,7 +1897,8 @@ class Publish(Message):
                       retain=retain,
                       enc_algo=enc_algo,
                       enc_key=enc_key,
-                      enc_serializer=enc_serializer)
+                      enc_serializer=enc_serializer,
+                      forward_for=forward_for)
 
         return obj
 
@@ -1861,6 +1933,9 @@ class Publish(Message):
             if self.enc_serializer is not None:
                 options[u'enc_serializer'] = self.enc_serializer
 
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
+
         return options
 
     def marshal(self):
@@ -1886,7 +1961,7 @@ class Publish(Message):
         """
         Returns string representation of this message.
         """
-        return u"Publish(request={}, topic={}, args={}, kwargs={}, acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Publish(request={}, topic={}, args={}, kwargs={}, acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
 
 
 class Published(Message):
@@ -2365,12 +2440,13 @@ class Event(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'forward_for',
     )
 
     def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
                  retained=None, x_acknowledged_delivery=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None):
+                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -2416,6 +2492,9 @@ class Event(Message):
 
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
+
+        :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(subscription) in six.integer_types)
         assert(type(publication) in six.integer_types)
@@ -2434,6 +2513,14 @@ class Event(Message):
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         Message.__init__(self)
         self.subscription = subscription
         self.publication = publication
@@ -2449,6 +2536,7 @@ class Event(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -2508,6 +2596,7 @@ class Event(Message):
         publisher_authrole = None
         topic = None
         retained = None
+        forward_for = None
         x_acknowledged_delivery = None
 
         if u'publisher' in details:
@@ -2552,6 +2641,24 @@ class Event(Message):
             if type(x_acknowledged_delivery) != bool:
                 raise ProtocolError("invalid type {0} for 'x_acknowledged_delivery' detail in EVENT".format(type(x_acknowledged_delivery)))
 
+        if u'forward_for' in details:
+            forward_for = details[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
         obj = Event(subscription,
                     publication,
                     args=args,
@@ -2565,7 +2672,8 @@ class Event(Message):
                     x_acknowledged_delivery=x_acknowledged_delivery,
                     enc_algo=enc_algo,
                     enc_key=enc_key,
-                    enc_serializer=enc_serializer)
+                    enc_serializer=enc_serializer,
+                    forward_for=forward_for)
 
         return obj
 
@@ -2596,6 +2704,9 @@ class Event(Message):
         if self.x_acknowledged_delivery is not None:
             details[u'x_acknowledged_delivery'] = self.x_acknowledged_delivery
 
+        if self.forward_for is not None:
+            details[u'forward_for'] = self.forward_for
+
         if self.payload:
             if self.enc_algo is not None:
                 details[u'enc_algo'] = self.enc_algo
@@ -2616,7 +2727,7 @@ class Event(Message):
         """
         Returns string representation of this message.
         """
-        return u"Event(subscription={}, publication={}, args={}, kwargs={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic={}, retained={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Event(subscription={}, publication={}, args={}, kwargs={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic={}, retained={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
 
 
 class EventReceived(Message):
@@ -2713,6 +2824,7 @@ class Call(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'forward_for',
     )
 
     def __init__(self,
@@ -2725,7 +2837,8 @@ class Call(Message):
                  receive_progress=None,
                  enc_algo=None,
                  enc_key=None,
-                 enc_serializer=None):
+                 enc_serializer=None,
+                 forward_for=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -2761,6 +2874,9 @@ class Call(Message):
 
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
+
+        :param forward_for: When this Publish is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(type(procedure) == six.text_type)
@@ -2777,6 +2893,14 @@ class Call(Message):
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         Message.__init__(self)
         self.request = request
         self.procedure = procedure
@@ -2790,6 +2914,9 @@ class Call(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # message forwarding
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -2847,6 +2974,7 @@ class Call(Message):
 
         timeout = None
         receive_progress = None
+        forward_for = None
 
         if u'timeout' in options:
 
@@ -2867,6 +2995,24 @@ class Call(Message):
 
             receive_progress = option_receive_progress
 
+        if u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
         obj = Call(request,
                    procedure,
                    args=args,
@@ -2876,7 +3022,8 @@ class Call(Message):
                    receive_progress=receive_progress,
                    enc_algo=enc_algo,
                    enc_key=enc_key,
-                   enc_serializer=enc_serializer)
+                   enc_serializer=enc_serializer,
+                   forward_for=forward_for)
 
         return obj
 
@@ -2896,6 +3043,9 @@ class Call(Message):
                 options[u'enc_key'] = self.enc_key
             if self.enc_serializer is not None:
                 options[u'enc_serializer'] = self.enc_serializer
+
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
 
         return options
 
@@ -2922,7 +3072,7 @@ class Call(Message):
         """
         Returns string representation of this message.
         """
-        return u"Call(request={0}, procedure={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, enc_algo={6}, enc_key={7}, enc_serializer={8}, payload={9})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Call(request={}, procedure={}, args={}, kwargs={}, timeout={}, receive_progress={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
 
 
 class Cancel(Message):
@@ -2946,9 +3096,10 @@ class Cancel(Message):
     __slots__ = (
         'request',
         'mode',
+        'forward_for',
     )
 
-    def __init__(self, request, mode=None):
+    def __init__(self, request, mode=None, forward_for=None):
         """
 
         :param request: The WAMP request ID of the original `CALL` to cancel.
@@ -2956,14 +3107,28 @@ class Cancel(Message):
 
         :param mode: Specifies how to cancel the call (``"skip"``, ``"killnowait"`` or ``"kill"``).
         :type mode: str or None
+
+        :param forward_for: When this Cancel is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(mode is None or type(mode) == six.text_type)
         assert(mode in [None, self.SKIP, self.KILLNOWAIT, self.KILL])
+        assert(forward_for is None or type(forward_for) == list)
+
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
         self.request = request
         self.mode = mode
+
+        # message forwarding
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -2987,6 +3152,7 @@ class Cancel(Message):
         # options
         #
         mode = None
+        forward_for = None
 
         if u'mode' in options:
 
@@ -2999,7 +3165,25 @@ class Cancel(Message):
 
             mode = option_mode
 
-        obj = Cancel(request, mode=mode)
+        if u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
+        obj = Cancel(request, mode=mode, forward_for=forward_for)
 
         return obj
 
@@ -3014,6 +3198,8 @@ class Cancel(Message):
 
         if self.mode is not None:
             options[u'mode'] = self.mode
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
 
         return [Cancel.MESSAGE_TYPE, self.request, options]
 
@@ -3050,10 +3236,11 @@ class Result(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'forward_for',
     )
 
     def __init__(self, request, args=None, kwargs=None, payload=None, progress=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None):
+                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None):
         """
 
         :param request: The request ID of the original `CALL` request.
@@ -3082,6 +3269,9 @@ class Result(Message):
 
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
+
+        :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
@@ -3096,6 +3286,14 @@ class Result(Message):
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         Message.__init__(self)
         self.request = request
         self.args = args
@@ -3107,6 +3305,9 @@ class Result(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # message forwarding
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -3162,6 +3363,7 @@ class Result(Message):
                     raise ProtocolError("invalid type {0} for 'kwargs' in RESULT".format(type(kwargs)))
 
         progress = None
+        forward_for = None
 
         if u'progress' in details:
 
@@ -3171,6 +3373,24 @@ class Result(Message):
 
             progress = detail_progress
 
+        if u'forward_for' in details:
+            forward_for = details[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
         obj = Result(request,
                      args=args,
                      kwargs=kwargs,
@@ -3178,7 +3398,8 @@ class Result(Message):
                      progress=progress,
                      enc_algo=enc_algo,
                      enc_key=enc_key,
-                     enc_serializer=enc_serializer)
+                     enc_serializer=enc_serializer,
+                     forward_for=forward_for)
 
         return obj
 
@@ -3193,6 +3414,8 @@ class Result(Message):
 
         if self.progress is not None:
             details[u'progress'] = self.progress
+        if self.forward_for is not None:
+            details[u'forward_for'] = self.forward_for
 
         if self.payload:
             if self.enc_algo is not None:
@@ -3688,6 +3911,7 @@ class Invocation(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'forward_for',
     )
 
     def __init__(self,
@@ -3704,7 +3928,8 @@ class Invocation(Message):
                  procedure=None,
                  enc_algo=None,
                  enc_key=None,
-                 enc_serializer=None):
+                 enc_serializer=None,
+                 forward_for=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -3751,6 +3976,9 @@ class Invocation(Message):
 
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
+
+        :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(type(registration) in six.integer_types)
@@ -3769,6 +3997,14 @@ class Invocation(Message):
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         Message.__init__(self)
         self.request = request
         self.registration = registration
@@ -3784,6 +4020,9 @@ class Invocation(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # message forwarding
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -3845,6 +4084,7 @@ class Invocation(Message):
         caller_authid = None
         caller_authrole = None
         procedure = None
+        forward_for = None
 
         if u'timeout' in details:
 
@@ -3897,6 +4137,24 @@ class Invocation(Message):
 
             procedure = detail_procedure
 
+        if u'forward_for' in details:
+            forward_for = details[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
         obj = Invocation(request,
                          registration,
                          args=args,
@@ -3910,7 +4168,8 @@ class Invocation(Message):
                          procedure=procedure,
                          enc_algo=enc_algo,
                          enc_key=enc_key,
-                         enc_serializer=enc_serializer)
+                         enc_serializer=enc_serializer,
+                         forward_for=forward_for)
 
         return obj
 
@@ -3985,9 +4244,10 @@ class Interrupt(Message):
         'request',
         'mode',
         'reason',
+        'forward_for',
     )
 
-    def __init__(self, request, mode=None, reason=None):
+    def __init__(self, request, mode=None, reason=None, forward_for=None):
         """
 
         :param request: The WAMP request ID of the original ``INVOCATION`` to interrupt.
@@ -4005,16 +4265,30 @@ class Interrupt(Message):
             triggered by the caller (``"wamp.error.canceled"`` - ApplicationError.CANCELED) or
             passively because of timeout (``"wamp.error.timeout"`` - ApplicationError.TIMEOUT).
         :type reason: str or None.
+
+        :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(mode is None or type(mode) == six.text_type)
         assert(mode is None or mode in [self.KILL, self.KILLNOWAIT])
         assert(reason is None or type(reason) == six.text_type)
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         Message.__init__(self)
         self.request = request
         self.mode = mode
         self.reason = reason
+
+        # message forwarding
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -4039,6 +4313,7 @@ class Interrupt(Message):
         #
         mode = None
         reason = None
+        forward_for = None
 
         if u'mode' in options:
 
@@ -4054,7 +4329,25 @@ class Interrupt(Message):
         if u'reason' in options:
             reason = check_or_raise_uri(options[u'reason'], u'"reason" in INTERRUPT')
 
-        obj = Interrupt(request, mode=mode, reason=reason)
+        if u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
+        obj = Interrupt(request, mode=mode, reason=reason, forward_for=forward_for)
 
         return obj
 
@@ -4072,6 +4365,9 @@ class Interrupt(Message):
 
         if self.reason is not None:
             options[u'reason'] = self.reason
+
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
 
         return [Interrupt.MESSAGE_TYPE, self.request, options]
 
@@ -4108,10 +4404,11 @@ class Yield(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'forward_for',
     )
 
     def __init__(self, request, args=None, kwargs=None, payload=None, progress=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None):
+                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None):
         """
 
         :param request: The WAMP request ID of the original call.
@@ -4140,6 +4437,9 @@ class Yield(Message):
 
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
+
+        :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
@@ -4152,6 +4452,14 @@ class Yield(Message):
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         Message.__init__(self)
         self.request = request
         self.args = args
@@ -4161,6 +4469,9 @@ class Yield(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # message forwarding
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -4216,6 +4527,7 @@ class Yield(Message):
                     raise ProtocolError("invalid type {0} for 'kwargs' in YIELD".format(type(kwargs)))
 
         progress = None
+        forward_for = None
 
         if u'progress' in options:
 
@@ -4225,6 +4537,24 @@ class Yield(Message):
 
             progress = option_progress
 
+        if u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
         obj = Yield(request,
                     args=args,
                     kwargs=kwargs,
@@ -4232,7 +4562,8 @@ class Yield(Message):
                     progress=progress,
                     enc_algo=enc_algo,
                     enc_key=enc_key,
-                    enc_serializer=enc_serializer)
+                    enc_serializer=enc_serializer,
+                    forward_for=forward_for)
 
         return obj
 
@@ -4247,6 +4578,8 @@ class Yield(Message):
 
         if self.progress is not None:
             options[u'progress'] = self.progress
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
 
         if self.payload:
             if self.enc_algo is not None:
