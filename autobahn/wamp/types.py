@@ -41,6 +41,7 @@ __all__ = (
     'Challenge',
     'HelloDetails',
     'SessionDetails',
+    'SessionIdent',
     'CloseDetails',
     'SubscribeOptions',
     'EventDetails',
@@ -377,6 +378,110 @@ class SessionDetails(object):
 
     def __str__(self):
         return u"SessionDetails(realm=<{}>, session={}, authid=<{}>, authrole=<{}>, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
+
+
+@public
+class SessionIdent(object):
+    """
+    WAMP session identification information.
+
+    A WAMP session joined on a realm on a WAMP router is identified technically
+    by its session ID (``session``) already.
+
+    The permissions the session has are tied to the WAMP authentication role (``authrole``).
+
+    The subject behind the session, eg the user or the application component is identified
+    by the WAMP authentication ID (``authid``). One session is always authenticated under/as
+    one specific ``authid``, but a given ``authid`` might have zero, one or many sessions
+    joined on a router at the same time.
+    """
+
+    __slots__ = (
+        'session',
+        'authid',
+        'authrole',
+    )
+
+    def __init__(self, session=None, authid=None, authrole=None):
+        """
+
+        :param session: WAMP session ID of the session.
+        :type session: int
+
+        :param authid: The WAMP authid of the session.
+        :type authid: str
+
+        :param authrole: The WAMP authrole of the session.
+        :type authrole: str
+        """
+        assert(session is None or type(session) in six.integer_types)
+        assert(authid is None or type(authid) == six.text_type)
+        assert(type(authrole) == six.text_type)
+
+        self.session = session
+        self.authid = authid
+        self.authrole = authrole
+
+    def __str__(self):
+        return u"SessionIdent(session={}, authid={}, authrole={})".format(self.session, self.authid, self.authrole)
+
+    def marshal(self):
+        obj = {
+            'session': self.session,
+            'authid': self.authid,
+            'authrole': self.authrole,
+        }
+        return obj
+
+    @staticmethod
+    def from_calldetails(call_details):
+        """
+        Create a new session identification object from the caller information
+        in the call details provided.
+
+        :param call_details: Details of a WAMP call.
+        :type call_details: :class:`autobahn.wamp.types.CallDetails`
+
+        :returns: New session identification object.
+        :rtype: :class:`autobahn.wamp.types.SessionIdent`
+        """
+        assert isinstance(call_details, CallDetails)
+
+        if call_details.forward_for:
+            caller = call_details.forward_for[0]
+            session_ident = SessionIdent(caller['session'],
+                                         caller['authid'],
+                                         caller['authrole'])
+        else:
+            session_ident = SessionIdent(call_details.caller,
+                                         call_details.caller_authid,
+                                         call_details.caller_authrole)
+        return session_ident
+
+    @staticmethod
+    def from_eventdetails(event_details):
+        """
+        Create a new session identification object from the publisher information
+        in the event details provided.
+
+        :param event_details: Details of a WAMP event.
+        :type event_details: :class:`autobahn.wamp.types.EventDetails`
+
+        :returns: New session identification object.
+        :rtype: :class:`autobahn.wamp.types.SessionIdent`
+        """
+        assert isinstance(event_details, EventDetails)
+
+        if event_details.forward_for:
+            publisher = event_details.forward_for[0]
+            session_ident = SessionIdent(publisher['session'],
+                                         publisher['authid'],
+                                         publisher['authrole'])
+        else:
+            session_ident = SessionIdent(event_details.publisher,
+                                         event_details.publisher_authid,
+                                         event_details.publisher_authrole)
+        return session_ident
 
 
 @public
