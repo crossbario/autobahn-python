@@ -105,7 +105,8 @@ class WampRawSocketProtocol(Int32StringReceiver):
         txaio.resolve(self.is_closed, self)
         try:
             wasClean = isinstance(reason.value, ConnectionDone)
-            self._session.onClose(wasClean)
+            if self._session:
+                self._session.onClose(wasClean)
         except Exception as e:
             # silently ignore exceptions raised here ..
             self.log.warn("WampRawSocketProtocol: ApplicationSession.onClose raised ({err})", err=e)
@@ -131,7 +132,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
         Implements :func:`autobahn.wamp.interfaces.ITransport.send`
         """
         if self.isOpen():
-            self.log.trace("WampRawSocketProtocol: TX WAMP message: {msg}", msg=msg)
+            self.log.info("WampRawSocketProtocol (serializer={serializer}): TX WAMP message: {msg}", msg=msg, serializer=self._serializer)
             try:
                 payload, _ = self._serializer.serialize(msg)
             except Exception as e:
@@ -198,7 +199,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
                 )
 
                 if ord(self._handshake_bytes[0:1]) != 0x7f:
-                    self.log.error(
+                    self.log.warn(
                         "WampRawSocketProtocol: invalid magic byte (octet 1) in"
                         " opening handshake: was 0x{magic}, but expected 0x7f",
                         magic=_LazyHexFormatter(self._handshake_bytes[0]),
@@ -223,7 +224,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
                         serializer=ser_id,
                     )
                 else:
-                    self.log.debug(
+                    self.log.warn(
                         "WampRawSocketProtocol: opening handshake - no suitable serializer found (client requested {serializer}, and we have {serializers}",
                         serializer=ser_id,
                         serializers=self.factory._serializers.keys(),
@@ -246,7 +247,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
 
                 self._on_handshake_complete()
 
-                self.log.debug(
+                self.log.info(
                     "WampRawSocketProtocol: opening handshake completed: {serializer}",
                     serializer=self._serializer,
                 )

@@ -111,6 +111,14 @@ if HAS_CRYPTOBOX:
                 raise Exception("insufficient keys provided for at least originator or responder role")
 
     @public
+    class SymKey(object):
+        """
+        Holds a symmetric key for an URI.
+        """
+        def __init__(self, raw=None):
+            pass
+
+    @public
     class KeyRing(object):
         """
         A keyring holds (cryptobox) public-private key pairs for use with WAMP-cryptobox payload
@@ -158,6 +166,14 @@ if HAS_CRYPTOBOX:
                         del self._uri_to_key[uri]
                 else:
                     self._uri_to_key[uri] = key
+
+        @public
+        def rotate_key(self, uri):
+            assert(type(uri) == six.text_type)
+            if uri in self._uri_to_key:
+                self._uri_to_key[uri].rotate()
+            else:
+                self._uri_to_key[uri].rotate()
 
         def _get_box(self, is_originating, uri, match_exact=False):
             try:

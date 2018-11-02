@@ -40,6 +40,10 @@ __all__ = ['Serializer',
            'JsonSerializer']
 
 
+SERID_TO_OBJSER = {}
+SERID_TO_SER = {}
+
+
 class Serializer(object):
     """
     Base class for WAMP serializers. A WAMP serializer is the core glue between
@@ -240,6 +244,7 @@ class JsonObjectSerializer(object):
 
 
 IObjectSerializer.register(JsonObjectSerializer)
+SERID_TO_OBJSER[JsonObjectSerializer.NAME] = JsonObjectSerializer
 
 
 class JsonSerializer(Serializer):
@@ -275,6 +280,7 @@ class JsonSerializer(Serializer):
 
 
 ISerializer.register(JsonSerializer)
+SERID_TO_SER[JsonSerializer.SERIALIZER_ID] = JsonSerializer
 
 
 # MsgPack serialization depends on the `u-msgpack` package being available
@@ -351,6 +357,7 @@ else:
     IObjectSerializer.register(MsgPackObjectSerializer)
 
     __all__.append('MsgPackObjectSerializer')
+    SERID_TO_OBJSER[MsgPackObjectSerializer.NAME] = MsgPackObjectSerializer
 
     class MsgPackSerializer(Serializer):
 
@@ -384,6 +391,7 @@ else:
                 self.SERIALIZER_ID = u"msgpack.batched"
 
     ISerializer.register(MsgPackSerializer)
+    SERID_TO_SER[MsgPackSerializer.SERIALIZER_ID] = MsgPackSerializer
 
     __all__.append('MsgPackSerializer')
 
@@ -461,6 +469,7 @@ else:
                 return [unpacked]
 
     IObjectSerializer.register(CBORObjectSerializer)
+    SERID_TO_OBJSER[CBORObjectSerializer.NAME] = CBORObjectSerializer
 
     __all__.append('CBORObjectSerializer')
 
@@ -496,6 +505,7 @@ else:
                 self.SERIALIZER_ID = u"cbor.batched"
 
     ISerializer.register(CBORSerializer)
+    SERID_TO_SER[CBORSerializer.SERIALIZER_ID] = CBORSerializer
 
     __all__.append('CBORSerializer')
 
@@ -571,6 +581,7 @@ else:
                 return [unpacked]
 
     IObjectSerializer.register(UBJSONObjectSerializer)
+    SERID_TO_OBJSER[UBJSONObjectSerializer.NAME] = UBJSONObjectSerializer
 
     __all__.append('UBJSONObjectSerializer')
 
@@ -606,5 +617,30 @@ else:
                 self.SERIALIZER_ID = u"ubjson.batched"
 
     ISerializer.register(UBJSONSerializer)
+    SERID_TO_SER[UBJSONSerializer.SERIALIZER_ID] = UBJSONSerializer
 
     __all__.append('UBJSONSerializer')
+
+
+def create_transport_serializer(serializer_id):
+    batched = False
+    if '.' in serializer_id:
+        l = serializer_id.split('.')
+        serializer_id = l[0]
+        if len(l) > 1 and l[1] == 'batched':
+            batched = True
+
+    if serializer_id in SERID_TO_SER:
+        return SERID_TO_SER[serializer_id](batched=batched)
+    else:
+        raise RuntimeError('could not create serializer for "{}"'.format(serializer_id))
+
+
+def create_transport_serializers(transport):
+    """
+    Create a list of serializers to use with a WAMP protocol factory.
+    """
+    serializers = []
+    for serializer_id in transport.serializers:
+        serializers.append(create_transport_serializer(serializer_id))
+    return serializers

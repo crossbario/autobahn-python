@@ -63,12 +63,14 @@ def create_url(hostname, port=None, isSecure=False):
     """
     Create a RawSocket URL from components.
 
-    :param hostname: RawSocket server hostname.
+    :param hostname: RawSocket server hostname (for TCP/IP sockets) or
+        filesystem path (for Unix domain sockets).
     :type hostname: str
 
-    :param port: RawSocket service port or None (to select default
-        ports ``80`` or ``443`` depending on ``isSecure``.
-    :type port: int
+    :param port: For TCP/IP sockets, RawSocket service port or ``None`` (to select default
+        ports ``80`` or ``443`` depending on ``isSecure``. When ``hostname=="unix"``,
+        this defines the path to the Unix domain socket instead of a TCP/IP network socket.
+    :type port: int or str
 
     :param isSecure: Set ``True`` for secure RawSocket (``rss`` scheme).
     :type isSecure: bool
@@ -76,34 +78,53 @@ def create_url(hostname, port=None, isSecure=False):
     :returns: Constructed RawSocket URL.
     :rtype: str
     """
-    if port is not None:
-        netloc = "%s:%d" % (hostname, port)
+    assert type(hostname) == six.text_type
+    assert type(isSecure) == bool
+
+    if hostname == 'unix':
+        assert type(port) == six.text_type
+
+        netloc = "unix:%s" % port
     else:
-        if isSecure:
-            netloc = u"{}:443".format(hostname)
+        assert port is None or (type(port) in six.integer_types and port in range(0, 65535))
+
+        if port is not None:
+            netloc = "%s:%d" % (hostname, port)
         else:
-            netloc = u"{}:80".format(hostname)
+            if isSecure:
+                netloc = u"{}:443".format(hostname)
+            else:
+                netloc = u"{}:80".format(hostname)
     if isSecure:
         scheme = u"rss"
     else:
         scheme = u"rs"
+
     return u"{}://{}".format(scheme, netloc)
 
 
 @public
 def parse_url(url):
     """
-    Parses as RawSocket URL into it's components and returns a tuple (isSecure, host, port).
+    Parses as RawSocket URL into it's components and returns a tuple:
 
      - ``isSecure`` is a flag which is ``True`` for ``rss`` URLs.
      - ``host`` is the hostname or IP from the URL.
+
+    and for TCP/IP sockets:
+
      - ``port`` is the port from the URL or standard port derived from
        scheme (``rs`` => ``80``, ``rss`` => ``443``).
 
-    :param url: A valid RawSocket URL, i.e. ``rs://localhost:9000``
+    or for Unix domain sockets:
+
+     - ``path`` is the path on the local host filesystem.
+
+    :param url: A valid RawSocket URL, i.e. ``rs://localhost:9000`` for TCP/IP sockets or
+        ``rs://unix:/tmp/file.sock`` for Unix domain sockets (UDS).
     :type url: str
 
-    :returns: A tuple ``(isSecure, host, port)``.
+    :returns: A 3-tuple ``(isSecure, host, port)`` (TCP/IP) or ``(isSecure, host, path)`` (UDS).
     :rtype: tuple
     """
     parsed = urlparse.urlparse(url)
@@ -114,24 +135,39 @@ def parse_url(url):
     if not parsed.hostname or parsed.hostname == "":
         raise Exception("invalid RawSocket URL: missing hostname")
 
-    if parsed.path is not None and parsed.path != "":
-        raise Exception("invalid RawSocket URL: non-empty path '{}'".format(parsed.path))
-
     if parsed.query is not None and parsed.query != "":
         raise Exception("invalid RawSocket URL: non-empty query '{}'".format(parsed.query))
 
     if parsed.fragment is not None and parsed.fragment != "":
         raise Exception("invalid RawSocket URL: non-empty fragment '{}'".format(parsed.fragment))
 
-    if parsed.port is None or parsed.port == "":
-        if parsed.scheme == "rs":
-            port = 80
-        else:
-            port = 443
+    if parsed.hostname == u"unix":
+        # Unix domain sockets sockets
+
+        # rs://unix:/tmp/file.sock => unix:/tmp/file.sock => /tmp/file.sock
+        fp = parsed.netloc + parsed.path
+        path = fp.split(':')[1]
+
+        # note: we don't interpret "path" in any further way: it needs to be
+        # a path on the local host with a listening Unix domain sockets at the other end ..
+
+        return parsed.scheme == "rss", parsed.hostname, path
+
     else:
-        port = int(parsed.port)
+        # TCP/IP sockets
 
-    if port < 1 or port > 65535:
-        raise Exception("invalid port {}".format(port))
+        if parsed.path is not None and parsed.path != "":
+            raise Exception("invalid RawSocket URL: non-empty path '{}'".format(parsed.path))
 
-    return parsed.scheme == "rss", parsed.hostname, port
+        if parsed.port is None or parsed.port == "":
+            if parsed.scheme == "rs":
+                port = 80
+            else:
+                port = 443
+        else:
+            port = int(parsed.port)
+
+        if port < 1 or port > 65535:
+            raise Exception("invalid port {}".format(port))
+
+        return parsed.scheme == "rss", parsed.hostname, port
