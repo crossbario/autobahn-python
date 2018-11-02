@@ -84,25 +84,39 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
 
     :returns: str -- Constructed WebSocket URL.
     """
-    if port is not None:
-        netloc = "%s:%d" % (hostname, port)
+    assert type(hostname) == six.text_type
+    assert type(isSecure) == bool
+
+    if hostname == 'unix':
+        # assert type(port) == six.text_type
+
+        netloc = u"unix:%s" % port
     else:
-        if isSecure:
-            netloc = "%s:443" % hostname
+        assert port is None or (type(port) in six.integer_types and port in range(0, 65535))
+
+        if port is not None:
+            netloc = u"%s:%d" % (hostname, port)
         else:
-            netloc = "%s:80" % hostname
+            if isSecure:
+                netloc = u"%s:443" % hostname
+            else:
+                netloc = u"%s:80" % hostname
+
     if isSecure:
-        scheme = "wss"
+        scheme = u"wss"
     else:
-        scheme = "ws"
+        scheme = u"ws"
+
     if path is not None:
         ppath = urllib.parse.quote(path)
     else:
-        ppath = "/"
+        ppath = u"/"
+
     if params is not None:
         query = urllib.parse.urlencode(params)
     else:
         query = None
+
     return urllib.parse.urlunparse((scheme, netloc, ppath, None, query, None))
 
 

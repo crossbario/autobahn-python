@@ -82,19 +82,20 @@ def create_url(hostname, port=None, isSecure=False):
     assert type(isSecure) == bool
 
     if hostname == 'unix':
-        assert type(port) == six.text_type
+        # assert type(port) == six.text_type
 
-        netloc = "unix:%s" % port
+        netloc = u"unix:%s" % port
     else:
         assert port is None or (type(port) in six.integer_types and port in range(0, 65535))
 
         if port is not None:
-            netloc = "%s:%d" % (hostname, port)
+            netloc = u"%s:%d" % (hostname, port)
         else:
             if isSecure:
                 netloc = u"{}:443".format(hostname)
             else:
                 netloc = u"{}:80".format(hostname)
+
     if isSecure:
         scheme = u"rss"
     else:
