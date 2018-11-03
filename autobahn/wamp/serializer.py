@@ -633,7 +633,7 @@ def create_transport_serializer(serializer_id):
     if serializer_id in SERID_TO_SER:
         return SERID_TO_SER[serializer_id](batched=batched)
     else:
-        raise RuntimeError('could not create serializer for "{}"'.format(serializer_id))
+        raise RuntimeError('could not create serializer for "{}" (available: {})'.format(serializer_id, sorted(SERID_TO_SER.keys())))
 
 
 def create_transport_serializers(transport):

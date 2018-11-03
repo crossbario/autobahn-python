@@ -41,6 +41,7 @@ from autobahn.rawsocket.util import parse_url as parse_rs_url
 from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
 from autobahn.wamp.exception import SessionNotReady, ApplicationError
 from autobahn.wamp.auth import create_authenticator, IAuthenticator
+from autobahn.wamp.serializer import SERID_TO_SER
 
 
 __all__ = (
@@ -175,7 +176,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
                     isinstance(s, (six.text_type, str))
                     for s in transport['serializers']]):
                 raise ValueError("'serializers' must be a list of strings")
-            valid_serializers = ('msgpack', 'json')
+            valid_serializers = SERID_TO_SER.keys()
             for serial in transport['serializers']:
                 if serial not in valid_serializers:
                     raise ValueError(
@@ -184,7 +185,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
                             ', '.join([repr(s) for s in valid_serializers]),
                         )
                     )
-        serializer_config = transport.get('serializers', [u'msgpack', u'json'])
+        serializer_config = transport.get('serializers', [u'cbor', u'json'])
 
     elif kind == 'rawsocket':
         if 'endpoint' not in transport:
@@ -219,7 +220,6 @@ def _create_transport(index, transport, check_native_endpoint=None):
             serializer_config = [transport['serializer']]
         else:
             serializer_config = [u'cbor']
-        print('*' * 100, serializer_config, transport)
 
     else:
         assert False, 'should not arrive here'

@@ -132,7 +132,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
         Implements :func:`autobahn.wamp.interfaces.ITransport.send`
         """
         if self.isOpen():
-            self.log.info("WampRawSocketProtocol (serializer={serializer}): TX WAMP message: {msg}", msg=msg, serializer=self._serializer)
+            self.log.trace("WampRawSocketProtocol (serializer={serializer}): TX WAMP message: {msg}", msg=msg, serializer=self._serializer)
             try:
                 payload, _ = self._serializer.serialize(msg)
             except Exception as e:
@@ -247,7 +247,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
 
                 self._on_handshake_complete()
 
-                self.log.info(
+                self.log.debug(
                     "WampRawSocketProtocol: opening handshake completed: {serializer}",
                     serializer=self._serializer,
                 )
