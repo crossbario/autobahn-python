@@ -668,7 +668,7 @@ class Component(ObservableMixin):
     def stop(self):
         self._stopping = True
         if self._session and self._session.is_attached():
-            return self._session.leave()
+            self._session.leave()
         elif self._delay_f:
             # This cancel request will actually call the "error" callback of
             # the _delay_f future. Nothing to worry about.
