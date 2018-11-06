@@ -78,11 +78,10 @@ def create_url(hostname, port=None, isSecure=False):
     :returns: Constructed RawSocket URL.
     :rtype: str
     """
-    assert type(hostname) == six.text_type
+    # assert type(hostname) == six.text_type
     assert type(isSecure) == bool
 
     if hostname == 'unix':
-        # assert type(port) == six.text_type
 
         netloc = u"unix:%s" % port
     else:
@@ -125,7 +124,7 @@ def parse_url(url):
         ``rs://unix:/tmp/file.sock`` for Unix domain sockets (UDS).
     :type url: str
 
-    :returns: A 3-tuple ``(isSecure, host, port)`` (TCP/IP) or ``(isSecure, host, path)`` (UDS).
+    :returns: A 3-tuple ``(isSecure, host, tcp_port)`` (TCP/IP) or ``(isSecure, host, uds_path)`` (UDS).
     :rtype: tuple
     """
     parsed = urlparse.urlparse(url)
@@ -147,12 +146,12 @@ def parse_url(url):
 
         # rs://unix:/tmp/file.sock => unix:/tmp/file.sock => /tmp/file.sock
         fp = parsed.netloc + parsed.path
-        path = fp.split(':')[1]
+        uds_path = fp.split(':')[1]
 
-        # note: we don't interpret "path" in any further way: it needs to be
+        # note: we don't interpret "uds_path" in any further way: it needs to be
         # a path on the local host with a listening Unix domain sockets at the other end ..
 
-        return parsed.scheme == "rss", parsed.hostname, path
+        return parsed.scheme == "rss", parsed.hostname, uds_path
 
     else:
         # TCP/IP sockets
@@ -162,13 +161,13 @@ def parse_url(url):
 
         if parsed.port is None or parsed.port == "":
             if parsed.scheme == "rs":
-                port = 80
+                tcp_port = 80
             else:
-                port = 443
+                tcp_port = 443
         else:
-            port = int(parsed.port)
+            tcp_port = int(parsed.port)
 
-        if port < 1 or port > 65535:
-            raise Exception("invalid port {}".format(port))
+        if tcp_port < 1 or tcp_port > 65535:
+            raise Exception("invalid port {}".format(tcp_port))
 
-        return parsed.scheme == "rss", parsed.hostname, port
+        return parsed.scheme == "rss", parsed.hostname, tcp_port
