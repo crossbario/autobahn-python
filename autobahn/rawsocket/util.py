@@ -113,12 +113,12 @@ def parse_url(url):
 
     and for TCP/IP sockets:
 
-     - ``port`` is the port from the URL or standard port derived from
+     - ``tcp_port`` is the port from the URL or standard port derived from
        scheme (``rs`` => ``80``, ``rss`` => ``443``).
 
     or for Unix domain sockets:
 
-     - ``path`` is the path on the local host filesystem.
+     - ``uds_path`` is the path on the local host filesystem.
 
     :param url: A valid RawSocket URL, i.e. ``rs://localhost:9000`` for TCP/IP sockets or
         ``rs://unix:/tmp/file.sock`` for Unix domain sockets (UDS).
