@@ -5,6 +5,15 @@
 Changelog
 =========
 
+18.11.1
+-------
+
+* new: forward_for WAMP message attribute (for Crossbar.io Router-to-Router federation)
+* new: support RawSocket URLs (eg "rs://localhost:5000" or "rs://unix:/tmp/file.sock")
+* new: support WAMP-over-Unix sockets for WAMP components ("new API")
+* fix: use same WAMP serializer construction code for WAMP components ("new API") and ApplicationSession/Runner
+* fix: memory leak with Twisted/WebSocket, dropConnection and producer
+
 18.10.1
 -------
 
