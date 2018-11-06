@@ -185,9 +185,6 @@ def parse_url(url):
     else:
         # TCP/IP sockets
 
-        if parsed.path is not None and parsed.path != "":
-            raise Exception("invalid RawSocket URL: non-empty path '{}'".format(parsed.path))
-
         if parsed.port is None or parsed.port == "":
             if parsed.scheme == "ws":
                 tcp_port = 80
