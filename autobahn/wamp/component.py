@@ -35,10 +35,13 @@ from functools import partial
 import txaio
 
 from autobahn.util import ObservableMixin
-from autobahn.websocket.util import parse_url, urlparse
+from autobahn.websocket.util import parse_url as parse_ws_url
+from autobahn.rawsocket.util import parse_url as parse_rs_url
+
 from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
 from autobahn.wamp.exception import SessionNotReady, ApplicationError
 from autobahn.wamp.auth import create_authenticator, IAuthenticator
+from autobahn.wamp.serializer import SERID_TO_SER
 
 
 __all__ = (
@@ -151,7 +154,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
         # endpoint not required; we will deduce from URL if it's not provided
         # XXX not in the branch I rebased; can this go away? (is it redundant??)
         if 'endpoint' not in transport:
-            is_secure, host, port, resource, path, params = parse_url(transport['url'])
+            is_secure, host, port, resource, path, params = parse_ws_url(transport['url'])
             endpoint_config = {
                 'type': 'tcp',
                 'host': host,
@@ -173,7 +176,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
                     isinstance(s, (six.text_type, str))
                     for s in transport['serializers']]):
                 raise ValueError("'serializers' must be a list of strings")
-            valid_serializers = ('msgpack', 'json')
+            valid_serializers = SERID_TO_SER.keys()
             for serial in transport['serializers']:
                 if serial not in valid_serializers:
                     raise ValueError(
@@ -182,20 +185,30 @@ def _create_transport(index, transport, check_native_endpoint=None):
                             ', '.join([repr(s) for s in valid_serializers]),
                         )
                     )
-        serializer_config = transport.get('serializers', [u'msgpack', u'json'])
+        serializer_config = transport.get('serializers', [u'cbor', u'json'])
 
     elif kind == 'rawsocket':
         if 'endpoint' not in transport:
-            parsed = urlparse.urlparse(transport['url'])
-            if not parsed.hostname:
-                raise Exception("invalid RawSocket URL: missing hostname")
-            if not parsed.port:
-                raise Exception("invalid RawSocket URL: missing port")
-            endpoint_config = {
-                'type': 'tcp',
-                'host': parsed.hostname,
-                'port': parsed.port,
-            }
+            if transport['url'].startswith('rs'):
+                # # try to parse RawSocket URL ..
+                isSecure, host, port = parse_rs_url(transport['url'])
+            elif transport['url'].startswith('ws'):
+                # try to parse WebSocket URL ..
+                isSecure, host, port, resource, path, params = parse_ws_url(transport['url'])
+            else:
+                raise RuntimeError()
+            if host == 'unix':
+                # here, "port" is actually holding the path on the host, eg "/tmp/file.sock"
+                endpoint_config = {
+                    'type': 'unix',
+                    'path': port,
+                }
+            else:
+                endpoint_config = {
+                    'type': 'tcp',
+                    'host': host,
+                    'port': port,
+                }
         else:
             endpoint_config = transport['endpoint']
         if 'serializers' in transport:
@@ -206,7 +219,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
                 raise ValueError("'serializer' must be a string")
             serializer_config = [transport['serializer']]
         else:
-            serializer_config = [u'msgpack']
+            serializer_config = [u'cbor']
 
     else:
         assert False, 'should not arrive here'

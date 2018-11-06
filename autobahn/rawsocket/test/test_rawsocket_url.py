@@ -48,6 +48,24 @@ class TestCreateRsUrl(unittest.TestCase):
     def test_create_url05(self):
         self.assertEqual(create_url("localhost", isSecure=True, port=80), "rss://localhost:80")
 
+    def test_create_url06(self):
+        self.assertEqual(create_url("unix", port="file.sock"), "rs://unix:file.sock")
+
+    def test_create_url07(self):
+        self.assertEqual(create_url("unix", port="/tmp/file.sock"), "rs://unix:/tmp/file.sock")
+
+    def test_create_url08(self):
+        self.assertEqual(create_url("unix", port="../file.sock"), "rs://unix:../file.sock")
+
+    def test_create_url09(self):
+        self.assertEqual(create_url("unix", isSecure=True, port="file.sock"), "rss://unix:file.sock")
+
+    def test_create_url10(self):
+        self.assertEqual(create_url("unix", isSecure=True, port="/tmp/file.sock"), "rss://unix:/tmp/file.sock")
+
+    def test_create_url11(self):
+        self.assertEqual(create_url("unix", isSecure=True, port="../file.sock"), "rss://unix:../file.sock")
+
 
 class TestParseWsUrl(unittest.TestCase):
 
@@ -88,3 +106,21 @@ class TestParseWsUrl(unittest.TestCase):
 
     def test_parse_url12(self):
         self.assertRaises(Exception, parse_url, "rs://")
+
+    def test_parse_url13(self):
+        self.assertEqual(parse_url("rs://unix:file.sock"), (False, 'unix', 'file.sock'))
+
+    def test_parse_url14(self):
+        self.assertEqual(parse_url("rs://unix:/tmp/file.sock"), (False, 'unix', '/tmp/file.sock'))
+
+    def test_parse_url15(self):
+        self.assertEqual(parse_url("rs://unix:../file.sock"), (False, 'unix', '../file.sock'))
+
+    def test_parse_url16(self):
+        self.assertEqual(parse_url("rss://unix:file.sock"), (True, 'unix', 'file.sock'))
+
+    def test_parse_url17(self):
+        self.assertEqual(parse_url("rss://unix:/tmp/file.sock"), (True, 'unix', '/tmp/file.sock'))
+
+    def test_parse_url18(self):
+        self.assertEqual(parse_url("rss://unix:../file.sock"), (True, 'unix', '../file.sock'))

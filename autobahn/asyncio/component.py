@@ -49,6 +49,7 @@ from autobahn.wamp import component
 from autobahn.wamp.exception import TransportLost
 
 from autobahn.asyncio.wamp import Session
+from autobahn.wamp.serializer import create_transport_serializers, create_transport_serializer
 
 
 __all__ = ('Component',)
@@ -62,68 +63,6 @@ def _unique_list(seq):
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 
-def _create_transport_serializer(serializer_id):
-    if serializer_id in [u'msgpack', u'mgspack.batched']:
-        # try MsgPack WAMP serializer
-        try:
-            from autobahn.wamp.serializer import MsgPackSerializer
-        except ImportError:
-            pass
-        else:
-            if serializer_id == u'mgspack.batched':
-                return MsgPackSerializer(batched=True)
-            else:
-                return MsgPackSerializer()
-
-    if serializer_id in [u'json', u'json.batched']:
-        # try JSON WAMP serializer
-        try:
-            from autobahn.wamp.serializer import JsonSerializer
-        except ImportError:
-            pass
-        else:
-            if serializer_id == u'json.batched':
-                return JsonSerializer(batched=True)
-            else:
-                return JsonSerializer()
-
-    raise RuntimeError('could not create serializer for "{}"'.format(serializer_id))
-
-
-def _create_transport_serializers(transport):
-    """
-    Create a list of serializers to use with a WAMP protocol factory.
-    """
-    serializers = []
-    for serializer_id in transport.serializers:
-        if serializer_id == u'msgpack':
-            # try MsgPack WAMP serializer
-            try:
-                from autobahn.wamp.serializer import MsgPackSerializer
-            except ImportError:
-                pass
-            else:
-                serializers.append(MsgPackSerializer(batched=True))
-                serializers.append(MsgPackSerializer())
-
-        elif serializer_id == u'json':
-            # try JSON WAMP serializer
-            try:
-                from autobahn.wamp.serializer import JsonSerializer
-            except ImportError:
-                pass
-            else:
-                serializers.append(JsonSerializer(batched=True))
-                serializers.append(JsonSerializer())
-
-        else:
-            raise RuntimeError(
-                "Unknown serializer '{}'".format(serializer_id)
-            )
-
-    return serializers
-
-
 def _camel_case_from_snake_case(snake):
     parts = snake.split('_')
     return parts[0] + ''.join([s.capitalize() for s in parts[1:]])
@@ -134,11 +73,11 @@ def _create_transport_factory(loop, transport, session_factory):
     Create a WAMP-over-XXX transport factory.
     """
     if transport.type == u'websocket':
-        serializers = _create_transport_serializers(transport)
+        serializers = create_transport_serializers(transport)
         factory = WampWebSocketClientFactory(session_factory, url=transport.url, serializers=serializers)
 
     elif transport.type == u'rawsocket':
-        serializer = _create_transport_serializer(transport.serializers[0])
+        serializer = create_transport_serializer(transport.serializers[0])
         factory = WampRawSocketClientFactory(session_factory, serializer=serializer)
 
     else:

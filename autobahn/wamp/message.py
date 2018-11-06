@@ -98,11 +98,14 @@ PAYLOAD_ENC_CRYPTO_BOX = u'cryptobox'
 # Payload transparency identifier for MQTT payloads (which are arbitrary binary).
 PAYLOAD_ENC_MQTT = u'mqtt'
 
+# Payload transparency identifier for XBR payloads
+PAYLOAD_ENC_XBR = u'xbr'
+
 # Payload transparency algorithm identifiers from the WAMP spec.
-PAYLOAD_ENC_STANDARD_IDENTIFIERS = [PAYLOAD_ENC_CRYPTO_BOX, PAYLOAD_ENC_MQTT]
+PAYLOAD_ENC_STANDARD_IDENTIFIERS = [PAYLOAD_ENC_CRYPTO_BOX, PAYLOAD_ENC_MQTT, PAYLOAD_ENC_XBR]
 
 # Payload transparency serializer identifiers from the WAMP spec.
-PAYLOAD_ENC_STANDARD_SERIALIZERS = [u'json', u'msgpack', u'cbor', u'ubjson']
+PAYLOAD_ENC_STANDARD_SERIALIZERS = [u'json', u'msgpack', u'cbor', u'ubjson', u'flatbuffers']
 
 
 def is_valid_enc_algo(enc_algo):
@@ -110,10 +113,11 @@ def is_valid_enc_algo(enc_algo):
     For WAMP payload transparency mode, check if the provided ``enc_algo``
     identifier in the WAMP message is a valid one.
 
-    Currently, the only standard defined identifier are
+    Currently defined standard identifiers are:
 
-    * ``u"cryptobox"``
-    * ``u"mqtt"``
+    * ``"cryptobox"``
+    * ``"mqtt"``
+    * ``"xbr"``
 
     Users can select arbitrary identifiers too, but these MUST start with ``u"x_"``.
 
@@ -134,10 +138,11 @@ def is_valid_enc_serializer(enc_serializer):
 
     Currently, the only standard defined identifier are
 
-    * ``u"json"``
-    * ``u"msgpack"``
-    * ``u"cbor"``
-    * ``u"ubjson"``
+    * ``"json"``
+    * ``"msgpack"``
+    * ``"cbor"``
+    * ``"ubjson"``
+    * ``"flatbuffers"``
 
     Users can select arbitrary identifiers too, but these MUST start with ``u"x_"``.
 
