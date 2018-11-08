@@ -223,7 +223,7 @@ class JsonObjectSerializer(object):
         :param batched: Flag that controls whether serializer operates in batched mode.
         :type batched: bool
 
-        :param dumps_default: Function that gets called for objects that can’t otherwise be serialized to JSON
+        :param dumps_default: Function that gets called for objects that can't otherwise be serialized to JSON
         :type dumps_default: callable
         """
         self._batched = batched
@@ -285,7 +285,7 @@ class JsonSerializer(Serializer):
         :param batched: Flag to control whether to put this serialized into batched mode.
         :type batched: bool
 
-        :param dumps_default: Function that gets called for objects that can’t otherwise be serialized to JSON
+        :param dumps_default: Function that gets called for objects that can't otherwise be serialized to JSON
         :type dumps_default: callable
         """
         Serializer.__init__(self, JsonObjectSerializer(batched=batched, dumps_default=dumps_default))
