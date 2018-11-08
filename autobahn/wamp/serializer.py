@@ -145,13 +145,20 @@ import json
 import base64
 
 
-class _WAMPJsonEncoder(json.JSONEncoder):
+class _JsonDefaultDumper(object):
+    def __init__(self, custom_dumps=None):
+        self._custom_dumps = custom_dumps
 
-    def default(self, obj):
+    def __call__(self, obj):
+        if self._custom_dumps:
+            try:
+                return self._custom_dumps(obj)
+            except TypeError:
+                pass
         if isinstance(obj, six.binary_type):
             return u'\x00' + base64.b64encode(obj).decode('ascii')
         else:
-            return json.JSONEncoder.default(self, obj)
+            raise TypeError("Object of type '%s' is not JSON serializable" % type(obj).__name__)
 
 
 #
@@ -187,12 +194,12 @@ def _loads(s):
     return json.loads(s, cls=_WAMPJsonDecoder)
 
 
-def _dumps(obj):
+def _dumps(obj, dumps_default=None):
     return json.dumps(obj,
                       separators=(',', ':'),
                       ensure_ascii=False,
                       sort_keys=False,
-                      cls=_WAMPJsonEncoder)
+                      default=_JsonDefaultDumper(dumps_default))
 
 
 _json = json
@@ -209,20 +216,24 @@ class JsonObjectSerializer(object):
 
     BINARY = False
 
-    def __init__(self, batched=False):
+    def __init__(self, batched=False, dumps_default=None):
         """
         Ctor.
 
         :param batched: Flag that controls whether serializer operates in batched mode.
         :type batched: bool
+
+        :param dumps_default: Function that gets called for objects that can’t otherwise be serialized to JSON
+        :type dumps_default: callable
         """
         self._batched = batched
+        self._dumps_default = dumps_default
 
     def serialize(self, obj):
         """
         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
         """
-        s = _dumps(obj)
+        s = _dumps(obj, self._dumps_default)
         if isinstance(s, six.text_type):
             s = s.encode('utf8')
         if self._batched:
@@ -267,14 +278,17 @@ class JsonSerializer(Serializer):
     WAMP-over-Longpoll HTTP fallback.
     """
 
-    def __init__(self, batched=False):
+    def __init__(self, batched=False, dumps_default=None):
         """
         Ctor.
 
         :param batched: Flag to control whether to put this serialized into batched mode.
         :type batched: bool
+
+        :param dumps_default: Function that gets called for objects that can’t otherwise be serialized to JSON
+        :type dumps_default: callable
         """
-        Serializer.__init__(self, JsonObjectSerializer(batched=batched))
+        Serializer.__init__(self, JsonObjectSerializer(batched=batched, dumps_default=dumps_default))
         if batched:
             self.SERIALIZER_ID = u"json.batched"
 
