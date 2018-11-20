@@ -13,7 +13,7 @@ If you do not yet have a `virtualenv` to run the examples with, you can do somet
 
 ```shell
 git clone https://github.com/crossbario/autobahn-python.git
-cd ./AutobahnPython/
+cd ./autobahn-python/
 virtualenv venv-autobahn
 source venv-autobahn/bin/activate
 pip install -e ./
