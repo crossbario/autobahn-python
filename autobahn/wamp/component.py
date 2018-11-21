@@ -233,7 +233,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
     return _Transport(
         index,
         kind=kind,
-        url=transport['url'],
+        url=transport.get('url', None),
         endpoint=endpoint_config,
         serializers=serializer_config,
         options=options,
