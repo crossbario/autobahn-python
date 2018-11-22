@@ -193,7 +193,12 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         raise Exception("not implemented")
 
     def unregisterProducer(self):
-        raise Exception("not implemented")
+        # note that generic websocket/protocol.py code calls
+        # .unregisterProducer whenever we dropConnection -- that's
+        # correct behavior on Twisted so either we'd have to
+        # try/except there, or special-case Twisted, ..or just make
+        # this "not an error"
+        pass
 
 
 @public
