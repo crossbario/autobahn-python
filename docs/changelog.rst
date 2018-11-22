@@ -8,9 +8,9 @@ Changelog
 18.11.2
 -------
 
+* fix: asyncio unregisterProducer raises exception (#1079)
 * fix: URL is not required in RawSocket configuration items with WAMP component API
 * fix: revert PR https://github.com/crossbario/autobahn-python/pull/1075
-
 
 18.11.1
 -------
