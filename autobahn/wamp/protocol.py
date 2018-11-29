@@ -1017,13 +1017,10 @@ class ApplicationSession(BaseSession):
                     raise ProtocolError("INTERRUPT received for non-pending invocation {0}".format(msg.request))
                 else:
                     invoked = self._invocations[msg.request]
-                    try:
-                        txaio.cancel(invoked.on_reply)
-                    finally:
-                        try:
-                            del self._invocations[msg.request]
-                        except KeyError:
-                            pass  # why? is the .cancel() handling cleaning this out somehow?
+                    # this will result in a CancelledError which will
+                    # be captured by the error handler around line 979
+                    # to delete the invocation..
+                    txaio.cancel(invoked.on_reply)
 
             elif isinstance(msg, message.Registered):
 
