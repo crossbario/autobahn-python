@@ -148,6 +148,7 @@ class AuthCryptoSign(object):
 
     def __init__(self, **kw):
         # should put in checkconfig or similar
+
         for key in kw.keys():
             if key not in [u'authextra', u'authid', u'authrole', u'privkey']:
                 raise ValueError(
@@ -159,11 +160,12 @@ class AuthCryptoSign(object):
                     "Must provide '{}' for cryptosign".format(key)
                 )
         for key in kw.get('authextra', dict()):
-            if key not in [u'pubkey']:
+            if key not in [u'pubkey', u'activation_code']:
                 raise ValueError(
                     "Unexpected key '{}' in 'authextra'".format(key)
                 )
 
+        activation_code = kw.get('authextra', {}).get('activation_code')
         from autobahn.wamp.cryptosign import SigningKey
         self._privkey = SigningKey.from_key_bytes(
             binascii.a2b_hex(kw[u'privkey'])
@@ -178,6 +180,10 @@ class AuthCryptoSign(object):
         else:
             kw[u'authextra'] = kw.get(u'authextra', dict())
             kw[u'authextra'][u'pubkey'] = self._privkey.public_key()
+
+        if activation_code:
+            kw[u'authextra'][u'activation_code'] = activation_code
+
         self._args = kw
 
     @property
