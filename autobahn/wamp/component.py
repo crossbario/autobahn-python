@@ -535,6 +535,15 @@ class Component(ObservableMixin):
         # specified in the docstring.
         self._done_f = txaio.create_future()
 
+        def _reset(arg):
+            """
+            if the _done_f future is resolved (good or bad), we want to set it
+            to None in our class
+            """
+            self._done_f = None
+            return arg
+        txaio.add_callbacks(self._done_f, _reset, _reset)
+
         # Create a generator of transports that .can_reconnect()
         transport_gen = itertools.cycle(self._transports)
 

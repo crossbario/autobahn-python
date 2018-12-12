@@ -72,6 +72,7 @@ if os.environ.get('USE_ASYNCIO', False):
                     finished.set_exception(AssertionError("wrong exception caught"))
             finished.set_result(None)
             txaio.config.loop = orig_loop
+            assert comp._done_f is None
         f.add_done_callback(done)
         return finished
 
