@@ -27,7 +27,6 @@
 from __future__ import absolute_import
 
 import os
-import unittest
 from mock import Mock, patch
 
 if os.environ.get('USE_TWISTED', False):
@@ -39,6 +38,7 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.internet.interfaces import IStreamClientEndpoint
     from twisted.internet.defer import inlineCallbacks, succeed, Deferred
     from twisted.internet.task import Clock
+    from twisted.trial import unittest
     from txaio.testutil import replace_loop
 
     class ConnectionTests(unittest.TestCase):
@@ -117,6 +117,59 @@ if os.environ.get('USE_TWISTED', False):
                 self.assertTrue(len(joins), 1)
                 # make sure we fire all our time-outs
                 reactor.advance(3600)
+
+        @patch('txaio.sleep', return_value=succeed(None))
+        def test_successful_proxy_connect(self, fake_sleep):
+            endpoint = Mock()
+            joins = []
+
+            def joined(session, details):
+                joins.append((session, details))
+                return session.leave()
+            directlyProvides(endpoint, IStreamClientEndpoint)
+            component = Component(
+                transports={
+                    "type": "websocket",
+                    "url": "ws://127.0.0.1/ws",
+                    "endpoint": endpoint,
+                    "proxy": {
+                        "host": "10.0.0.0",
+                        "port": 65000,
+                    }
+                }
+            )
+            component.on('join', joined)
+
+            def connect(factory, **kw):
+                return succeed(Mock())
+            endpoint.connect = connect
+
+            # XXX it would actually be nicer if we *could* support
+            # passing a reactor in here, but the _batched_timer =
+            # make_batched_timer() stuff (slash txaio in general)
+            # makes this "hard".
+            reactor = Clock()
+
+            got_proxy_connect = Deferred()
+
+            def _tcp(host, port, factory, **kw):
+                self.assertEqual("10.0.0.0", host)
+                self.assertEqual(port, 65000)
+                got_proxy_connect.callback(None)
+                return endpoint.connect(factory._wrappedFactory)
+            reactor.connectTCP = _tcp
+
+            with replace_loop(reactor):
+                d = component.start(reactor=reactor)
+
+                def done(x):
+                    if not got_proxy_connect.called:
+                        got_proxy_connect.callback(x)
+                    self.assertTrue(len(joins), 1)
+                    # make sure we fire all our time-outs
+                d.addCallbacks(done, done)
+                reactor.advance(3600)
+                return got_proxy_connect
 
         @patch('txaio.sleep', return_value=succeed(None))
         @inlineCallbacks
@@ -203,7 +256,8 @@ if os.environ.get('USE_TWISTED', False):
                     "type": "websocket",
                     "url": "ws://127.0.0.1/ws",
                     "endpoint": endpoint,
-                }
+                },
+                is_fatal=lambda e: True,
             )
 
             def connect(factory, **kw):
@@ -244,12 +298,13 @@ if os.environ.get('USE_TWISTED', False):
             # makes this "hard".
             reactor = Clock()
             with replace_loop(reactor):
-                with self.assertRaises(ApplicationError) as ctx:
-                    yield component.start(reactor=reactor)
-                # make sure we fire all our time-outs
-                reactor.advance(3600)
+                with self.assertRaises(RuntimeError) as ctx:
+                    d = component.start(reactor=reactor)
+                    # make sure we fire all our time-outs
+                    reactor.advance(3600)
+                    yield d
             self.assertIn(
-                "no_auth_method",
+                "Exhausted all transport",
                 str(ctx.exception)
             )
 
