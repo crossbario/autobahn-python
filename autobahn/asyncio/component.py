@@ -74,7 +74,12 @@ def _create_transport_factory(loop, transport, session_factory):
     """
     if transport.type == u'websocket':
         serializers = create_transport_serializers(transport)
-        factory = WampWebSocketClientFactory(session_factory, url=transport.url, serializers=serializers)
+        factory = WampWebSocketClientFactory(
+            session_factory,
+            url=transport.url,
+            serializers=serializers,
+            proxy=transport.proxy,  # either None or a dict with host, port
+        )
 
     elif transport.type == u'rawsocket':
         serializer = create_transport_serializer(transport.serializers[0])

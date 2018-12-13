@@ -123,7 +123,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
     valid_transport_keys = [
         'type', 'url', 'endpoint', 'serializer', 'serializers', 'options',
         'max_retries', 'max_retry_delay', 'initial_retry_delay',
-        'retry_delay_growth', 'retry_delay_jitter',
+        'retry_delay_growth', 'retry_delay_jitter', 'proxy',
     ]
     for k in transport.keys():
         if k not in valid_transport_keys:
@@ -138,6 +138,23 @@ def _create_transport(index, transport, check_native_endpoint=None):
         kind = transport['type']
     else:
         transport['type'] = 'websocket'
+
+    if 'proxy' in transport and kind != 'websocket':
+        raise ValueError(
+            "proxy= only supported for type=websocket transports"
+        )
+    proxy = transport.get("proxy", None)
+    if proxy is not None:
+        for k in proxy.keys():
+            if k not in ['host', 'port']:
+                raise ValueError(
+                    "Unknown key '{}' in proxy config".format(k)
+                )
+        for k in ['host', 'port']:
+            if k not in proxy:
+                raise ValueError(
+                    "Proxy config requires '{}'".formaT(k)
+                )
 
     options = dict()
     if 'options' in transport:
@@ -236,6 +253,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
         url=transport.get('url', None),
         endpoint=endpoint_config,
         serializers=serializer_config,
+        proxy=proxy,
         options=options,
         **kw
     )
@@ -252,6 +270,7 @@ class _Transport(object):
                  initial_retry_delay=1.5,
                  retry_delay_growth=1.5,
                  retry_delay_jitter=0.1,
+                 proxy=None,
                  options=dict()):
         """
         """
@@ -273,6 +292,7 @@ class _Transport(object):
         self.initial_retry_delay = initial_retry_delay
         self.retry_delay_growth = retry_delay_growth
         self.retry_delay_jitter = retry_delay_jitter
+        self.proxy = proxy  # this is a dict of proxy config
 
         # used via can_reconnect() and failed() to record this
         # transport is never going to work

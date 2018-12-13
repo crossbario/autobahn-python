@@ -79,7 +79,12 @@ def _create_transport_factory(reactor, transport, session_factory):
     """
     if transport.type == u'websocket':
         serializers = create_transport_serializers(transport)
-        factory = WampWebSocketClientFactory(session_factory, url=transport.url, serializers=serializers)
+        factory = WampWebSocketClientFactory(
+            session_factory,
+            url=transport.url,
+            serializers=serializers,
+            proxy=transport.proxy,  # either None or a dict with host, port
+        )
 
     elif transport.type == u'rawsocket':
         serializer = create_transport_serializer(transport.serializers[0])
@@ -260,7 +265,17 @@ class Component(component.Component):
             "on_error" callable instead?)
         """
         transport_factory = _create_transport_factory(reactor, transport, session_factory)
-        transport_endpoint = _create_transport_endpoint(reactor, transport.endpoint)
+        if transport.proxy:
+            transport_endpoint = _create_transport_endpoint(
+                reactor,
+                {
+                    "type": "tcp",
+                    "host": transport.proxy["host"],
+                    "port": transport.proxy["port"],
+                }
+            )
+        else:
+            transport_endpoint = _create_transport_endpoint(reactor, transport.endpoint)
         d = transport_endpoint.connect(transport_factory)
 
         def on_connect_success(proto):
