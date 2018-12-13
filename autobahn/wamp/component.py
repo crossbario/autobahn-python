@@ -647,7 +647,10 @@ class Component(ObservableMixin):
             def session_done(x):
                 txaio.resolve(self._done_f, None)
 
-            connect_f = self._connect_once(loop, transport_candidate[0])
+            connect_f = txaio.as_future(
+                self._connect_once,
+                loop, transport_candidate[0],
+            )
             txaio.add_callbacks(connect_f, session_done, connect_error)
 
         def transport_check(_):
@@ -808,7 +811,10 @@ class Component(ObservableMixin):
 
         transport.connect_attempts += 1
 
-        d = self._connect_transport(reactor, transport, create_session, done)
+        d = txaio.as_future(
+            self._connect_transport,
+            reactor, transport, create_session, done,
+        )
 
         def on_error(err):
             """

@@ -33,7 +33,6 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.twisted.component import Component
     from zope.interface import directlyProvides
     from autobahn.wamp.message import Welcome, Goodbye, Hello, Abort
-    from autobahn.wamp.exception import ApplicationError
     from autobahn.wamp.serializer import JsonSerializer
     from twisted.internet.interfaces import IStreamClientEndpoint
     from twisted.internet.defer import inlineCallbacks, succeed, Deferred
@@ -121,24 +120,24 @@ if os.environ.get('USE_TWISTED', False):
         @patch('txaio.sleep', return_value=succeed(None))
         def test_successful_proxy_connect(self, fake_sleep):
             endpoint = Mock()
-            joins = []
-
-            def joined(session, details):
-                joins.append((session, details))
-                return session.leave()
             directlyProvides(endpoint, IStreamClientEndpoint)
             component = Component(
                 transports={
-                    "type": "websocket",
-                    "url": "ws://127.0.0.1/ws",
-                    "endpoint": endpoint,
-                    "proxy": {
-                        "host": "10.0.0.0",
-                        "port": 65000,
-                    }
-                }
+                    u"type": u"websocket",
+                    u"url": u"ws://127.0.0.1/ws",
+                    u"endpoint": endpoint,
+                    u"proxy": {
+                        u"host": u"10.0.0.0",
+                        u"port": 65000,
+                    },
+                    u"max_retries": 0,
+                },
+                is_fatal=lambda _: True,
             )
-            component.on('join', joined)
+
+            @component.on_join
+            def joined(session, details):
+                return session.leave()
 
             def connect(factory, **kw):
                 return succeed(Mock())
@@ -165,8 +164,7 @@ if os.environ.get('USE_TWISTED', False):
                 def done(x):
                     if not got_proxy_connect.called:
                         got_proxy_connect.callback(x)
-                    self.assertTrue(len(joins), 1)
-                    # make sure we fire all our time-outs
+                # make sure we fire all our time-outs
                 d.addCallbacks(done, done)
                 reactor.advance(3600)
                 return got_proxy_connect
