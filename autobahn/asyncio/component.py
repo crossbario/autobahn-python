@@ -74,7 +74,12 @@ def _create_transport_factory(loop, transport, session_factory):
     """
     if transport.type == u'websocket':
         serializers = create_transport_serializers(transport)
-        factory = WampWebSocketClientFactory(session_factory, url=transport.url, serializers=serializers)
+        factory = WampWebSocketClientFactory(
+            session_factory,
+            url=transport.url,
+            serializers=serializers,
+            proxy=transport.proxy,  # either None or a dict with host, port
+        )
 
     elif transport.type == u'rawsocket':
         serializer = create_transport_serializer(transport.serializers[0])
@@ -150,7 +155,24 @@ class Component(component.Component):
         """
         factory = _create_transport_factory(loop, transport, session_factory)
 
-        if transport.endpoint[u'type'] == u'tcp':
+        # XXX the rest of this should probably be factored into its
+        # own method (or three!)...
+
+        if transport.proxy:
+            timeout = transport.endpoint.get(u'timeout', 10)  # in seconds
+            if type(timeout) not in six.integer_types:
+                raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
+            # do we support HTTPS proxies?
+
+            f = loop.create_connection(
+                protocol_factory=factory,
+                host=transport.proxy['host'],
+                port=transport.proxy['port'],
+            )
+            time_f = asyncio.ensure_future(asyncio.wait_for(f, timeout=timeout))
+            return self._wrap_connection_future(transport, done, time_f)
+
+        elif transport.endpoint[u'type'] == u'tcp':
 
             version = transport.endpoint.get(u'version', 4)
             if version not in [4, 6]:
