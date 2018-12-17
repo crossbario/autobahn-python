@@ -187,7 +187,8 @@ if os.environ.get('USE_TWISTED', False):
                 assert not component._done_f.called
 
                 d1 = component.stop()
-                assert component._done_f.called
+                assert component._done_f is None
+                assert d0.called
 
                 yield d1
                 yield d0
