@@ -5,6 +5,14 @@
 Changelog
 =========
 
+18.12.1
+-------
+
+* fix: return the wrapped function from component decorators (#1093)
+* new: add proxy= support for Component transports (#1091)
+* fix: Ticket1077 stop start (#1090)
+* fix: cleanup cancel handling (#1087)
+
 18.11.2
 -------
 
