@@ -381,6 +381,7 @@ class Component(ObservableMixin):
             def do_subscription(session, details):
                 return session.subscribe(fn, topic=topic, options=options)
             self.on('join', do_subscription)
+            return fn
         return decorator
 
     def register(self, uri, options=None):
@@ -403,6 +404,7 @@ class Component(ObservableMixin):
             def do_registration(session, details):
                 return session.register(fn, procedure=uri, options=options)
             self.on('join', do_registration)
+            return fn
         return decorator
 
     def __init__(self, main=None, transports=None, config=None, realm=u'default', extra=None,
