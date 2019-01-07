@@ -376,6 +376,21 @@ class SessionDetails(object):
         self.resumable = resumable
         self.resume_token = resume_token
 
+    def marshal(self):
+        obj = {
+            u'realm': self.realm,
+            u'session': self.session,
+            u'authid': self.authid,
+            u'authrole': self.authrole,
+            u'authmethod': self.authmethod,
+            u'authprovider': self.authprovider,
+            u'authextra': self.authextra,
+            u'resumed': self.resumed,
+            u'resumable': self.resumable,
+            u'resume_token': self.resume_token
+        }
+        return obj
+
     def __str__(self):
         return u"SessionDetails(realm=<{}>, session={}, authid=<{}>, authrole=<{}>, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
 
@@ -427,9 +442,9 @@ class SessionIdent(object):
 
     def marshal(self):
         obj = {
-            'session': self.session,
-            'authid': self.authid,
-            'authrole': self.authrole,
+            u'session': self.session,
+            u'authid': self.authid,
+            u'authrole': self.authrole,
         }
         return obj
 
@@ -513,6 +528,13 @@ class CloseDetails(object):
 
         self.reason = reason
         self.message = message
+
+    def marshal(self):
+        obj = {
+            u'reason': self.reason,
+            u'message': self.message
+        }
+        return obj
 
     def __str__(self):
         return u"CloseDetails(reason=<{}>, message='{}')".format(self.reason, self.message)
