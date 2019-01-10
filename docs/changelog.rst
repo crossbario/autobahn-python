@@ -5,6 +5,11 @@
 Changelog
 =========
 
+19.1.1
+------
+
+* new: adding marshal on SessionDetails
+
 18.12.1
 -------
 
