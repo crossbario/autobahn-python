@@ -204,7 +204,7 @@ class ApplicationRunner(object):
             return succeed(None)
 
     @public
-    def run(self, make, start_reactor=True, auto_reconnect=False, log_level='info'):
+    def run(self, make, start_reactor=True, auto_reconnect=False, log_level='info', endpoint=None, reactor=None):
         """
         Run the application component.
 
@@ -295,32 +295,35 @@ class ApplicationRunner(object):
         # supress pointless log noise
         transport_factory.noisy = False
 
-        # if user passed ssl= but isn't using isSecure, we'll never
-        # use the ssl argument which makes no sense.
-        context_factory = None
-        if self.ssl is not None:
-            if not isSecure:
-                raise RuntimeError(
-                    'ssl= argument value passed to %s conflicts with the "ws:" '
-                    'prefix of the url argument. Did you mean to use "wss:"?' %
-                    self.__class__.__name__)
-            context_factory = self.ssl
-        elif isSecure:
-            from twisted.internet.ssl import optionsForClientTLS
-            context_factory = optionsForClientTLS(host)
-
-        from twisted.internet import reactor
-        if self.proxy is not None:
-            from twisted.internet.endpoints import TCP4ClientEndpoint
-            client = TCP4ClientEndpoint(reactor, self.proxy['host'], self.proxy['port'])
-            transport_factory.contextFactory = context_factory
-        elif isSecure:
-            from twisted.internet.endpoints import SSL4ClientEndpoint
-            assert context_factory is not None
-            client = SSL4ClientEndpoint(reactor, host, port, context_factory)
+        if endpoint:
+            client = endpoint
         else:
-            from twisted.internet.endpoints import TCP4ClientEndpoint
-            client = TCP4ClientEndpoint(reactor, host, port)
+            # if user passed ssl= but isn't using isSecure, we'll never
+            # use the ssl argument which makes no sense.
+            context_factory = None
+            if self.ssl is not None:
+                if not isSecure:
+                    raise RuntimeError(
+                        'ssl= argument value passed to %s conflicts with the "ws:" '
+                        'prefix of the url argument. Did you mean to use "wss:"?' %
+                        self.__class__.__name__)
+                context_factory = self.ssl
+            elif isSecure:
+                from twisted.internet.ssl import optionsForClientTLS
+                context_factory = optionsForClientTLS(host)
+
+            from twisted.internet import reactor
+            if self.proxy is not None:
+                from twisted.internet.endpoints import TCP4ClientEndpoint
+                client = TCP4ClientEndpoint(reactor, self.proxy['host'], self.proxy['port'])
+                transport_factory.contextFactory = context_factory
+            elif isSecure:
+                from twisted.internet.endpoints import SSL4ClientEndpoint
+                assert context_factory is not None
+                client = SSL4ClientEndpoint(reactor, host, port, context_factory)
+            else:
+                from twisted.internet.endpoints import TCP4ClientEndpoint
+                client = TCP4ClientEndpoint(reactor, host, port)
 
         # as the reactor shuts down, we wish to wait until we've sent
         # out our "Goodbye" message; leave() returns a Deferred that
