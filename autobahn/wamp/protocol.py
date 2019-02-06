@@ -425,11 +425,14 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onUserError`
         """
-        if False and isinstance(fail.value, exception.ApplicationError):
-            self.log.error(fail.value.error_message())
+        if isinstance(fail.value, exception.ApplicationError):
+            self.log.warn('{klass}.onUserError(): "{msg}"',
+                          klass=self.__class__.__name__,
+                          msg=fail.value.error_message())
         else:
             self.log.error(
-                u'{msg}: {traceback}',
+                '{klass}.onUserError(): "{msg}"\n{traceback}',
+                klass=self.__class__.__name__,
                 msg=msg,
                 traceback=txaio.failure_format_traceback(fail),
             )
