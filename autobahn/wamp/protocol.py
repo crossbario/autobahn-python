@@ -291,6 +291,9 @@ class ApplicationSession(BaseSession):
         BaseSession.__init__(self)
         self.config = config or types.ComponentConfig(realm=u"default")
 
+        # set client role features supported and announced
+        self._session_roles = role.DEFAULT_CLIENT_ROLES
+
         self._transport = None
         self._session_id = None
         self._realm = None
@@ -388,7 +391,7 @@ class ApplicationSession(BaseSession):
 
         # send HELLO message to router
         msg = message.Hello(realm=realm,
-                            roles=role.DEFAULT_CLIENT_ROLES,
+                            roles=self._session_roles,
                             authmethods=authmethods,
                             authid=authid,
                             authrole=authrole,
