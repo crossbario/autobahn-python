@@ -197,7 +197,7 @@ class ApplicationRunner(object):
         """
         Stop reconnecting, if auto-reconnecting was enabled.
         """
-        self.log.info('{klass}.stop()', klass=self.__class__.__name__)
+        self.log.debug('{klass}.stop()', klass=self.__class__.__name__)
 
         if self._client_service:
             return self._client_service.stopService()
@@ -225,7 +225,7 @@ class ApplicationRunner(object):
             an IProtocol instance, which will actually be an instance
             of :class:`WampWebSocketClientProtocol`
         """
-        self.log.info('{klass}.run()', klass=self.__class__.__name__)
+        self.log.debug('{klass}.run()', klass=self.__class__.__name__)
 
         if start_reactor:
             # only select framework, set loop and start logging when we are asked
