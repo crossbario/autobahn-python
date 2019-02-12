@@ -407,7 +407,7 @@ class Component(ObservableMixin):
             return fn
         return decorator
 
-    def __init__(self, main=None, transports=None, config=None, realm=u'default', extra=None,
+    def __init__(self, main=None, transports=None, config=None, realm=u'realm1', extra=None,
                  authentication=None, session_factory=None, is_fatal=None):
         """
         :param main: After a transport has been connected and a session

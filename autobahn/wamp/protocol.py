@@ -289,7 +289,7 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession`
         """
         BaseSession.__init__(self)
-        self.config = config or types.ComponentConfig(realm=u"default")
+        self.config = config or types.ComponentConfig(realm=u"realm1")
 
         # set client role features supported and announced
         self._session_roles = role.DEFAULT_CLIENT_ROLES
@@ -1789,7 +1789,7 @@ class ApplicationSessionFactory(object):
         :param config: The default component configuration.
         :type config: instance of :class:`autobahn.wamp.types.ComponentConfig`
         """
-        self.config = config or types.ComponentConfig(realm=u"default")
+        self.config = config or types.ComponentConfig(realm=u"realm1")
 
     def __call__(self):
         """
