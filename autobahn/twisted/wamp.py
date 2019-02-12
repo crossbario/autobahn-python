@@ -198,6 +198,7 @@ class ApplicationRunner(object):
         Stop reconnecting, if auto-reconnecting was enabled.
         """
         self.log.debug('{klass}.stop()', klass=self.__class__.__name__)
+
         if self._client_service:
             return self._client_service.stopService()
         else:
@@ -224,6 +225,8 @@ class ApplicationRunner(object):
             an IProtocol instance, which will actually be an instance
             of :class:`WampWebSocketClientProtocol`
         """
+        self.log.debug('{klass}.run()', klass=self.__class__.__name__)
+
         if start_reactor:
             # only select framework, set loop and start logging when we are asked
             # start the reactor - otherwise we are running in a program that likely
@@ -236,7 +239,7 @@ class ApplicationRunner(object):
         if callable(make):
             # factory for use ApplicationSession
             def create():
-                cfg = ComponentConfig(self.realm, self.extra)
+                cfg = ComponentConfig(self.realm, self.extra, runner=self)
                 try:
                     session = make(cfg)
                 except Exception:
