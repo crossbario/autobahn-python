@@ -66,10 +66,11 @@ class ComponentConfig(object):
         'extra',
         'keyring',
         'controller',
-        'shared'
+        'shared',
+        'runner',
     )
 
-    def __init__(self, realm=None, extra=None, keyring=None, controller=None, shared=None):
+    def __init__(self, realm=None, extra=None, keyring=None, controller=None, shared=None, runner=None):
         """
 
         :param realm: The realm the session would like to join or ``None`` to let the router
@@ -101,6 +102,9 @@ class ComponentConfig(object):
             this feature can introduce coupling between components. A valid use case would be
             to hold a shared database connection pool.
         :type shared: dict or None
+
+        :param runner: Instance of ApplicationRunner when run under this.
+        :type runner: :class:`autobahn.twisted.wamp.ApplicationRunner`
         """
         assert(realm is None or type(realm) == six.text_type)
         # assert(keyring is None or ...) # FIXME
@@ -110,9 +114,10 @@ class ComponentConfig(object):
         self.keyring = keyring
         self.controller = controller
         self.shared = shared
+        self.runner = runner
 
     def __str__(self):
-        return u"ComponentConfig(realm=<{}>, extra={}, keyring={}, controller={}, shared={})".format(self.realm, self.extra, self.keyring, self.controller, self.shared)
+        return u"ComponentConfig(realm=<{}>, extra={}, keyring={}, controller={}, shared={}, runner={})".format(self.realm, self.extra, self.keyring, self.controller, self.shared, self.runner)
 
 
 @public
