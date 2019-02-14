@@ -1,7 +1,7 @@
-sudo: false
-dist: trusty
-
 language: python
+python: 3.7
+dist: xenial
+sudo: true
 
 before_install:
   # AWS tools are installed here eg
@@ -11,7 +11,8 @@ before_install:
   - export BUILD_ID="$(date --utc "+%Y%m%d")-$(git rev-parse --short ${TRAVIS_COMMIT})"
 
 install:
-  - pip install tox codecov
+  - pip install setuptools wheel tox codecov
+  - pip install --force-reinstall -U "pip<19"
 
 script:
   - tox -c tox.ini -e $TOX_ENV
@@ -27,7 +28,7 @@ matrix:
   fast_finish: true
 
   include:
-    - python: 3.6
+    - python: 3.7
       env:
       - TOX_ENV=flake8
 
@@ -40,7 +41,7 @@ matrix:
 
     - python: 2.7
       env:
-      - TOX_ENV=py27-tw187
+      - TOX_ENV=py27-tw189
 
     - python: 2.7
       env:
@@ -51,88 +52,42 @@ matrix:
       - TOX_ENV=py27-asyncio
 
     #
-    # CPython 3.4
+    # CPython 3.5
     #
-    - python: 3.4
+    - python: 3.5
       env:
-      - TOX_ENV=py34-tw154
+      - TOX_ENV=py35-tw154
 
-    - python: 3.4
+    - python: 3.5
       env:
-      - TOX_ENV=py34-tw187
+      - TOX_ENV=py35-tw189
 
-    - python: 3.4
+    - python: 3.5
       env:
-      - TOX_ENV=py34-twtrunk
+      - TOX_ENV=py35-twtrunk
 
-    - python: 3.4
+    - python: 3.5
       env:
-      - TOX_ENV=py34-asyncio
-
-    #
-    # CPython 3.6
-    #
-    - python: 3.6
-      env:
-      - TOX_ENV=py36-tw154
-
-    - python: 3.6
-      env:
-      - TOX_ENV=py36-tw187
-
-    - python: 3.6
-      env:
-      - TOX_ENV=py36-twtrunk
-
-    - python: 3.6
-      env:
-      - TOX_ENV=py36-asyncio
+      - TOX_ENV=py35-asyncio
 
     #
     # CPython 3.7
     #
     - python: 3.7
-      dist: xenial
-      sudo: required
       env:
       - TOX_ENV=py37-tw154
 
     - python: 3.7
-      dist: xenial
-      sudo: required
       env:
-      - TOX_ENV=py37-tw187
+      - TOX_ENV=py37-tw189
 
     - python: 3.7
-      dist: xenial
-      sudo: required
       env:
       - TOX_ENV=py37-twtrunk
 
     - python: 3.7
-      dist: xenial
-      sudo: required
       env:
       - TOX_ENV=py37-asyncio
-
-    #
-    # PyPy3
-    #
-    - python: pypy
-      env:
-      - TOX_ENV=pypy-tw154
-
-    - python: pypy
-      env:
-      - TOX_ENV=pypy-tw187
-
-    - python: pypy
-      env:
-      - TOX_ENV=pypy-twtrunk
-
-    - python: pypy
-      env:
-      - TOX_ENV=pypy-asyncio
 
     #
     # PyPy3
@@ -143,7 +98,7 @@ matrix:
 
     - python: pypy3
       env:
-      - TOX_ENV=pypy3-tw187
+      - TOX_ENV=pypy3-tw189
 
     - python: pypy3
       env:
