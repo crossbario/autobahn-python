@@ -5,6 +5,14 @@
 Changelog
 =========
 
+19.2.1
+------
+
+* fix: set announced roles on appsession object (#1109)
+* new: lower log noise on ApplicationErrors (#1107)
+* new: allow explicit passing of tx endpoint and reactor (#1103)
+* new: add attribute to forward applicationrunner to applicationsession via componentconfig
+
 19.1.1
 ------
 
