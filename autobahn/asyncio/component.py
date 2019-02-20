@@ -30,7 +30,7 @@ from __future__ import absolute_import, print_function
 import six
 import ssl  # XXX what Python version is this always available at?
 import signal
-from functools import partial, wraps
+from functools import wraps
 
 try:
     import asyncio
@@ -319,7 +319,7 @@ def run(components, log_level='info'):
 
     XXX fixme for asyncio
 
-    -- if you wish to manage the loop loop yourself, use the
+    -- if you wish to manage the loop yourself, use the
     :meth:`autobahn.asyncio.component.Component.start` method to start
     each component yourself.
 
@@ -350,18 +350,31 @@ def run(components, log_level='info'):
     #   signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     @asyncio.coroutine
-    def exit():
-        return loop.stop()
-
     def nicely_exit(signal):
         log.info("Shutting down due to {signal}", signal=signal)
-        for task in asyncio.Task.all_tasks():
-            task.cancel()
-        asyncio.ensure_future(exit())
+
+        tasks = asyncio.Task.all_tasks()
+        for task in tasks:
+            # Do not cancel the current task.
+            if task is not asyncio.Task.current_task():
+                task.cancel()
+
+        def cancel_all_callback(fut):
+            try:
+                fut.result()
+            except asyncio.CancelledError:
+                log.debug("All task cancelled")
+            except Exception as e:
+                log.error("Error while shutting down: {exception}", exception=e)
+            finally:
+                loop.stop()
+
+        fut = asyncio.gather(*tasks)
+        fut.add_done_callback(cancel_all_callback)
 
     try:
-        loop.add_signal_handler(signal.SIGINT, partial(nicely_exit, 'SIGINT'))
-        loop.add_signal_handler(signal.SIGTERM, partial(nicely_exit, 'SIGTERM'))
+        loop.add_signal_handler(signal.SIGINT, lambda: asyncio.ensure_future(nicely_exit("SIGINT")))
+        loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.ensure_future(nicely_exit("SIGTERM")))
     except NotImplementedError:
         # signals are not available on Windows
         pass
