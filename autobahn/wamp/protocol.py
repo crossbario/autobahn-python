@@ -973,6 +973,10 @@ class ApplicationSession(BaseSession):
                                         reply = message.Yield(msg.request,
                                                               args=[res])
 
+                                if self._transport is None:
+                                    self.log.debug('Skipping result of "{}", request {} because transport disconnected.'.format(registration.procedure, msg.request))
+                                    return
+
                                 try:
                                     self._transport.send(reply)
                                 except SerializationError as e:
