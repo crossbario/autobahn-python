@@ -1778,7 +1778,7 @@ class WebSocketProtocol(object):
             if len(payload) < 1:
                 raise Exception("cannot construct repeated payload with length %d from payload of length %d" % (payload_len, len(payload)))
             l = payload_len
-            pl = b''.join([payload for _ in range(payload_len / len(payload))]) + payload[:payload_len % len(payload)]
+            pl = b''.join([payload for _ in range(payload_len // len(payload))]) + payload[:payload_len % len(payload)]
         else:
             l = len(payload)
             pl = payload
