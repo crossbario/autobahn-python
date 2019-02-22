@@ -816,8 +816,15 @@ class ObservableMixin(object):
 
         self._check_event(event)
         res = []
+
         for handler in self._listeners.get(event, []):
             future = txaio.as_future(handler, *args, **kwargs)
+
+            if txaio.using_asyncio:
+                def consume_result(fut):
+                    return fut.result()
+                future.add_callbacks(consume_result)
+
             res.append(future)
         if self._parent is not None:
             res.append(self._parent.fire(event, *args, **kwargs))
