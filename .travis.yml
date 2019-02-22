@@ -107,6 +107,20 @@ matrix:
       env:
       - TOX_ENV=py27-asyncio
 
+    #
+    # Build wheel and upload to S3
+    # https://docs.travis-ci.com/user/build-stages/matrix-expansion/
+    #
+    - stage: deploy
+      python: "3.7"
+      if: repo = crossbario/autobahn-python AND branch = master AND type != pull_request
+      #on:
+      #  repo: crossbario/autobahn-python
+      #  branch: master
+      #  # tags: true
+      skip_cleanup: true
+      provider: script
+      script: pwd && ls -la && sh .travis-deploy.sh
 
 # CI notifications
 notifications:
