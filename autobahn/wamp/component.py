@@ -466,6 +466,7 @@ class Component(ObservableMixin):
                 'leave',        # fired by ApplicationSession
                 'disconnect',   # fired by ApplicationSession
                 'connectfailure',   # fired by base class
+                'error'
             ]
         )
 
@@ -669,6 +670,7 @@ class Component(ObservableMixin):
 
             if not self._can_reconnect():
                 err_msg = u"Component failed: Exhausted all transport connect attempts"
+                self.fire('error', err_msg)
                 self.log.info(err_msg)
                 try:
                     raise RuntimeError(err_msg)
@@ -879,6 +881,11 @@ class Component(ObservableMixin):
         """
         self.on('ready', fn)
 
+    def on_error(self, fn):
+        """
+        A decorator as a shortcut for listening for 'ready' events.
+        """
+        self.on('error', fn)
 
 def _run(reactor, components, done_callback):
     """
