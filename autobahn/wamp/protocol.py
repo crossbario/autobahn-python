@@ -1024,7 +1024,8 @@ class ApplicationSession(BaseSession):
             elif isinstance(msg, message.Interrupt):
 
                 if msg.request not in self._invocations:
-                    raise ProtocolError("INTERRUPT received for non-pending invocation {0}".format(msg.request))
+                    # raise ProtocolError("INTERRUPT received for non-pending invocation {0}".format(msg.request))
+                    self.log.debug('INTERRUPT received for non-pending invocation {request}', request=msg.request)
                 else:
                     invoked = self._invocations[msg.request]
                     # this will result in a CancelledError which will
@@ -1248,11 +1249,12 @@ class ApplicationSession(BaseSession):
             msg = wamp.message.Goodbye(reason=reason, message=message)
             self._transport.send(msg)
             self._goodbye_sent = True
-            # deferred that fires when transport actually hits CLOSED
-            is_closed = self._transport is None or self._transport.is_closed
-            return is_closed
         else:
-            raise SessionNotReady(u"session was alread requested to leave")
+            self.log.warn('session was already requested to leave - not sending GOODBYE again')
+
+        is_closed = self._transport is None or self._transport.is_closed
+
+        return is_closed
 
     @public
     def onDisconnect(self):
