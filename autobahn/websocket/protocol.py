@@ -1051,7 +1051,7 @@ class WebSocketProtocol(object):
         self.autoPingPendingCall = None
 
         # set opening handshake timeout handler
-        if self.openHandshakeTimeout > 0:
+        if False and self.openHandshakeTimeout > 0:
             self.openHandshakeTimeoutCall = self.factory._batched_timer.call_later(
                 self.openHandshakeTimeout,
                 self.onOpenHandshakeTimeout,
@@ -1728,7 +1728,7 @@ class WebSocketProtocol(object):
                         self.autoPingPending = None
                         self.autoPingTimeoutCall = None
 
-                        if self.autoPingInterval:
+                        if False and self.autoPingInterval:
                             self.autoPingPendingCall = self.factory._batched_timer.call_later(
                                 self.autoPingInterval,
                                 self._sendAutoPing,
@@ -2993,7 +2993,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
         # automatic ping/pong
         #
-        if self.autoPingInterval:
+        if False and self.autoPingInterval:
             self.autoPingPendingCall = self.factory._batched_timer.call_later(
                 self.autoPingInterval,
                 self._sendAutoPing,
@@ -3722,7 +3722,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             # automatic ping/pong
             #
-            if self.autoPingInterval:
+            if False and self.autoPingInterval:
                 self.autoPingPendingCall = self.factory._batched_timer.call_later(
                     self.autoPingInterval,
                     self._sendAutoPing,
