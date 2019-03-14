@@ -106,6 +106,7 @@ else:
     ])
 
 extras_require_serialization.extend([
+    'cbor2>=4.1.2',             # MIT license
     'cbor>=1.0.0',              # Apache 2.0 license
     'py-ubjson>=0.8.4'          # Apache 2.0 license
 ])
@@ -115,11 +116,11 @@ extras_require_serialization.extend([
 # WAMP-cryptosign authentication
 os.environ['SODIUM_INSTALL'] = 'bundled'  # enforce use of bundled libsodium
 extras_require_encryption = [
-    'pyopenssl>=16.2.0',        # Apache 2.0 license
-    'service_identity>=16.0.0', # MIT license
-    'pynacl>=1.0.1',            # Apache license
-    'pytrie>=0.2',              # BSD license
-    'pyqrcode>=1.1'             # BSD license
+    'pyopenssl>=16.2.0',            # Apache 2.0 license
+    'service_identity>=16.0.0',     # MIT license
+    'pynacl>=1.0.1',                # Apache license
+    'pytrie>=0.2',                  # BSD license
+    'pyqrcode>=1.1'                 # BSD license
 ]
 
 # Support for WAMP-SCRAM authentication

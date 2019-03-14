@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import
 
+import os
 import six
 import struct
 import platform
@@ -141,21 +142,25 @@ class Serializer(object):
 
 
 # JSON serialization is always supported
-
-try:
-    import ujson
-    _HAS_UJSON = True
-except ImportError:
+_USE_UJSON = False
+if platform.python_implementation() == u'CPython':
+    try:
+        import ujson
+        _USE_UJSON = True
+    except ImportError:
+        import json
+        _USE_UJSON = False
+else:
     import json
-    _HAS_UJSON = False
 
 
-if _HAS_UJSON:
+if _USE_UJSON:
+    # print('Warning: Autobahn is using ujson accelerated JSON module - will run faster, but loose ability to transport binary payload transparently!')
     _loads = ujson.loads
     _dumps = ujson.dumps
     _json = ujson
-    print('Warning: Autobahn is using ujson accelerated JSON module - will run faster, but loose ability to transport binary payload transparently!')
 else:
+    # print('Notice: Autobahn is using json built-in standard library module for JSON serialization')
     import base64
 
     class _WAMPJsonEncoder(json.JSONEncoder):
@@ -303,7 +308,7 @@ if platform.python_implementation() == u'CPython':
         _HAS_MSGPACK = True
         _packb = msgpack.packb
         _unpackb = msgpack.unpackb
-        print('Notice: Autobahn is using msgpack library (with native extension, best on CPython) for MessagePack serialization')
+        # print('Notice: Autobahn is using msgpack library (with native extension, best on CPython) for MessagePack serialization')
 else:
     try:
         # on PyPy in particular, use a pure python impl.:
@@ -316,7 +321,7 @@ else:
         _HAS_MSGPACK = True
         _packb = umsgpack.packb
         _unpackb = umsgpack.unpackb
-        print('Notice: Autobahn is using umsgpack library (pure Python, best on PyPy) for MessagePack serialization')
+        # print('Notice: Autobahn is using umsgpack library (pure Python, best on PyPy) for MessagePack serialization')
 
 
 if _HAS_MSGPACK:
@@ -424,15 +429,34 @@ if _HAS_MSGPACK:
     __all__.append('MsgPackSerializer')
 
 
-# CBOR serialization depends on the `cbor` package being available
-# https://pypi.python.org/pypi/cbor
-# https://bitbucket.org/bodhisnarkva/cbor
-#
-try:
-    import cbor
-except ImportError:
-    pass
+_HAS_CBOR = False
+if 'AUTOBAHN_USE_CBOR2' in os.environ:
+    try:
+        # https://pypi.org/project/cbor2/
+        # https://github.com/agronholm/cbor2
+        import cbor2
+    except ImportError:
+        pass
+    else:
+        _HAS_CBOR = True
+        _cbor_loads = cbor2.loads
+        _cbor_dumps = cbor2.dumps
+        # print('Notice: Autobahn is using cbor2 library for CBOR serialization')
 else:
+    try:
+        # https://pypi.python.org/pypi/cbor
+        # https://bitbucket.org/bodhisnarkva/cbor
+        import cbor
+    except ImportError:
+        pass
+    else:
+        _HAS_CBOR = True
+        _cbor_loads = cbor.loads
+        _cbor_dumps = cbor.dumps
+        # print('Notice: Autobahn is using cbor library for CBOR serialization')
+
+
+if _HAS_CBOR:
 
     class CBORObjectSerializer(object):
 
@@ -456,7 +480,7 @@ else:
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
             """
-            data = cbor.dumps(obj)
+            data = _cbor_dumps(obj)
             if self._batched:
                 return struct.pack("!L", len(data)) + data
             else:
@@ -483,7 +507,7 @@ else:
                     data = payload[i + 4:i + 4 + l]
 
                     # append parsed raw message
-                    msgs.append(cbor.loads(data))
+                    msgs.append(_cbor_loads(data))
 
                     # advance until everything consumed
                     i = i + 4 + l
@@ -493,7 +517,7 @@ else:
                 return msgs
 
             else:
-                unpacked = cbor.loads(payload)
+                unpacked = _cbor_loads(payload)
                 return [unpacked]
 
     IObjectSerializer.register(CBORObjectSerializer)
@@ -546,6 +570,7 @@ try:
 except ImportError:
     pass
 else:
+    # print('Notice: Autobahn is using ubjson module for UBJSON serialization')
 
     class UBJSONObjectSerializer(object):
 
