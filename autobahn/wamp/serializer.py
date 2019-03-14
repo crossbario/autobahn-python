@@ -307,8 +307,8 @@ if platform.python_implementation() == u'CPython':
         pass
     else:
         _HAS_MSGPACK = True
-        _packb = lambda obj: msgpack.packb(obj, use_bin_type=True)
-        _unpackb = lambda data: msgpack.unpackb(data, raw=False)
+        _packb = lambda obj: msgpack.packb(obj, use_bin_type=True)  # noqa
+        _unpackb = lambda data: msgpack.unpackb(data, raw=False)  # noqa
         # print('Notice: Autobahn is using msgpack library (with native extension, best on CPython) for MessagePack serialization')
 else:
     try:
