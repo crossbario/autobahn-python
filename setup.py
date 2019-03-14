@@ -92,24 +92,35 @@ extras_require_compress = [
     "lz4>=0.7.0"                # BSD license
 ]
 
-# non-JSON WAMP serialization support (namely MsgPack, CBOR and UBJSON)
-os.environ['PYUBJSON_NO_EXTENSION'] = '1'  # enforce use of pure Python py-ubjson (no Cython)
-extras_require_serialization = [
-    "u-msgpack-python>=2.1",    # MIT license
-    "cbor>=1.0.0",              # Apache 2.0 license
-    "py-ubjson>=0.8.4"          # Apache 2.0 license
-]
+# accelerated JSON and non-JSON WAMP serialization support (namely MessagePack, CBOR and UBJSON)
+extras_require_serialization = []
+if CPY:
+    extras_require_serialization.extend([
+        'msgpack>=0.6.1',       # Apache 2.0 license
+        'ujson>=1.35',          # BSD license
+    ])
+else:
+    os.environ['PYUBJSON_NO_EXTENSION'] = '1'  # enforce use of pure Python py-ubjson (no Cython)
+    extras_require_serialization.extend([
+        'u-msgpack-python>=2.1',    # MIT license
+    ])
+
+extras_require_serialization.extend([
+    'cbor2>=4.1.2',             # MIT license
+    'cbor>=1.0.0',              # Apache 2.0 license
+    'py-ubjson>=0.8.4'          # Apache 2.0 license
+])
 
 # TLS transport encryption
 # WAMP-cryptosign end-to-end encryption
 # WAMP-cryptosign authentication
 os.environ['SODIUM_INSTALL'] = 'bundled'  # enforce use of bundled libsodium
 extras_require_encryption = [
-    'pyopenssl>=16.2.0',        # Apache 2.0 license
-    'service_identity>=16.0.0', # MIT license
-    'pynacl>=1.0.1',            # Apache license
-    'pytrie>=0.2',              # BSD license
-    'pyqrcode>=1.1'             # BSD license
+    'pyopenssl>=16.2.0',            # Apache 2.0 license
+    'service_identity>=16.0.0',     # MIT license
+    'pynacl>=1.0.1',                # Apache license
+    'pytrie>=0.2',                  # BSD license
+    'pyqrcode>=1.1'                 # BSD license
 ]
 
 # Support for WAMP-SCRAM authentication
