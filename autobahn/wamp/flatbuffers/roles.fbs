@@ -1,0 +1,127 @@
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//   FlatBuffers schema for WAMP v2 messages
+//   Copyright (c) Crossbar.io Technologies GmbH and contributors
+//   Licensed under the Apache 2.0 license
+//
+//////////////////////////////////////////////////////////////////////////////
+
+include "types.fbs";
+
+namespace wamp.proto;
+
+
+// Features from the WAMP advanced profile a **Broker** might support.
+table BrokerFeatures
+{
+    publisher_identification: bool;
+    publisher_exclusion: bool;
+    subscriber_blackwhite_listing: bool;
+    pattern_based_subscription: bool;
+    publication_trustlevels: bool;
+    subscription_revocation: bool;
+    session_meta_api: bool;
+    subscription_meta_api: bool;
+    event_retention: bool;
+    event_history: bool;
+    acknowledge_event_received: bool;
+    acknowledge_subscriber_received: bool;
+    payload_transparency: bool;
+    payload_encryption_cryptobox: bool;
+}
+
+
+// Features from the WAMP advanced profile a **Publisher** might support.
+// Note: this is a subset of the feature brokers can support.
+table PublisherFeatures
+{
+    publisher_identification: bool;
+    publisher_exclusion: bool;
+    subscriber_blackwhite_listing: bool;
+    acknowledge_event_received: bool;
+    payload_transparency: bool;
+    payload_encryption_cryptobox: bool;
+}
+
+
+// Features from the WAMP advanced profile a **Subscriber** might support.
+// Note: this is a subset of the feature brokers can support.
+table SubscriberFeatures
+{
+    publisher_identification: bool;
+    pattern_based_subscription: bool;
+    publication_trustlevels: bool;
+    subscription_revocation: bool;
+    event_history: bool;
+    acknowledge_subscriber_received: bool;
+    payload_transparency: bool;
+    payload_encryption_cryptobox: bool;
+}
+
+
+// Features from the WAMP advanced profile a **Dealer** might support.
+table DealerFeatures
+{
+    caller_identification: bool;
+    call_trustlevels: bool;
+    call_timeout: bool;
+    call_canceling: bool;
+    progressive_call_results: bool;
+    registration_revocation: bool;
+    pattern_based_registration: bool;
+    shared_registration: bool;
+    session_meta_api: bool;
+    registration_meta_api: bool;
+    testament_meta_api: bool;
+    payload_transparency: bool;
+    payload_encryption_cryptobox: bool;
+}
+
+
+// Features from the WAMP advanced profile a **Caller** might support.
+// Note: this is a subset of the feature dealers can support.
+table CallerFeatures
+{
+    caller_identification: bool;
+    call_timeout: bool;
+    call_canceling: bool;
+    progressive_call_results: bool;
+    payload_transparency: bool;
+    payload_encryption_cryptobox : bool;
+}
+
+
+// Features from the WAMP advanced profile a **Callee** might support.
+// Note: this is a subset of the feature dealers can support.
+table CalleeFeatures
+{
+    caller_identification: bool;
+    call_trustlevels: bool;
+    call_timeout: bool;
+    call_canceling: bool;
+    progressive_call_results: bool;
+    registration_revocation: bool;
+    pattern_based_registration: bool;
+    shared_registration: bool;
+    payload_transparency: bool;
+    payload_encryption_cryptobox: bool;
+}
+
+
+// WAMP roles a **Client** might support (it must support at least one).
+table ClientRoles
+{
+    publisher: PublisherFeatures;
+    subscriber: SubscriberFeatures;
+    caller: CallerFeatures;
+    callee: CalleeFeatures;
+}
+
+
+// WAMP roles a **Router** might support (it must support at least one).
+table RouterRoles
+{
+    broker: BrokerFeatures;
+    dealer: DealerFeatures;
+}

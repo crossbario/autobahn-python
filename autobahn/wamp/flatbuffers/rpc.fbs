@@ -1,0 +1,206 @@
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//   FlatBuffers schema for WAMP v2 messages
+//   Copyright (c) Crossbar.io Technologies GmbH and contributors
+//   Licensed under the Apache 2.0 license
+//
+//////////////////////////////////////////////////////////////////////////////
+
+include "types.fbs";
+
+namespace wamp.proto;
+
+
+// CALL message (message_type = 48): [CALL, Request|id, Options|dict, Procedure|uri, Payload|binary]
+table Call
+{
+    // The WAMP request ID of this request.
+    request: uint64 (key);
+
+    // The WAMP or application URI of the procedure which should be called.
+    procedure: string (required, uri);
+
+    // Raw application payload: call arguments. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    payload: [uint8];
+
+    // The encoding algorithm that was used to encode the payload.
+    enc_algo: Payload;
+
+    // The payload object serializer that was used encoding the payload.
+    enc_serializer: Serializer;
+
+    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
+    enc_key: [uint8];
+
+    // If present, cancel the call after this duration in ms.
+    timeout: uint32;
+
+    // When set, indicates that the caller wants to receive progressive call results.
+    receive_progress: bool;
+}
+
+
+// CANCEL message (message_type = 49): [CANCEL, CALL.Request|id, Options|dict]
+table Cancel
+{
+    // The request ID of the original CALL request.
+    request: uint64 (key);
+
+    // Specifies how to cancel the call.
+    mode: CancelMode = SKIP;
+}
+
+
+// RESULT message (message_type = 50): [RESULT, CALL.Request|id, Details|dict, Payload|binary]
+table Result
+{
+    // The request ID of the original CALL request.
+    request: uint64 (key);
+
+    // Raw application payload: call result. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    payload: [uint8];
+
+    // The encoding algorithm that was used to encode the payload.
+    enc_algo: Payload;
+
+    // The payload object serializer that was used encoding the payload.
+    enc_serializer: Serializer;
+
+    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
+    enc_key: [uint8];
+
+    // If true, this result is a progressive call result, and subsequent results (or a final error) will follow.
+    progress: bool;
+}
+
+
+// REGISTER message (message_type = 64): [REGISTER, Request|id, Options|dict, Procedure|uri]
+table Register
+{
+    // The WAMP request ID of this request.
+    request: uint64 (key);
+
+    // The WAMP or application URI of the RPC endpoint provided.
+    procedure: string (required, uri_pattern);
+
+    // The procedure matching policy to be used for the registration.
+    match: Match = EXACT;
+
+    // The procedure invocation policy to be used for the registration.
+    invoke: InvocationPolicy;
+
+    // The (maximum) concurrency to be used for the registration.
+    concurrency: uint16;
+
+    // Force registration of procedure (kicking any existing registration).
+    force_reregister: bool;
+}
+
+
+// REGISTERED message (message_type = 65): [REGISTERED, REGISTER.Request|id, Registration|id]
+table Registered
+{
+    // The request ID of the original ``REGISTER`` request.
+    request: uint64 (key);
+
+    // The registration ID for the registered procedure (or procedure pattern).
+    registration: uint64;
+}
+
+
+// UNREGISTER message (message_type = 66): [UNREGISTER, Request|id, REGISTERED.Registration|id]
+table Unregister
+{
+    // The request ID of the original ``REGISTER`` request.
+    request: uint64 (key);
+
+    // The registration ID for the registration to unregister.
+    registration: uint64;
+}
+
+
+// UNREGISTERED message (message_type = 67): [UNREGISTERED, UNREGISTER.Request|id, Details|dict]
+table Unregistered
+{
+    // The request ID of the original UNREGISTER request.
+    request: uint64 (key);
+
+    // If unregister was actively triggered by router, the ID of the registration revoked.
+    registration: uint64;
+
+    // The reason (an URI) for revocation.
+    reason: string (uri);
+}
+
+
+// INVOCATION message (message_type = 68): [INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Payload|binary]
+table Invocation
+{
+    // The WAMP request ID of this request.
+    request: uint64 (key);
+
+    // The registration ID of the endpoint to be invoked.
+    registration: uint64;
+
+    // Raw application payload: call arguments. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    payload: [uint8];
+
+    // The encoding algorithm that was used to encode the payload.
+    enc_algo: Payload;
+
+    // The payload object serializer that was used encoding the payload.
+    enc_serializer: Serializer;
+
+    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
+    enc_key: [uint8];
+
+    // For pattern-based registrations (not for exact matching registrations, the invocation MUST include the actual procedure being called.
+    procedure: string (uri);
+
+    // If present, let the callee automatically cancels the invocation after this ms.
+    timeout: uint32;
+
+    // Indicates if the callee should produce progressive results.
+    receive_progress: bool;
+
+    // The WAMP session ID of the caller. Only filled if caller is disclosed.
+    caller: uint64;
+
+    // The WAMP authid of the caller. Only filled if caller is disclosed.
+    caller_authid: string (principal);
+
+    // The WAMP authrole of the caller. Only filled if caller is disclosed.
+    caller_authrole: string (principal);
+}
+
+
+// INTERRUPT message (message_type = 69): [INTERRUPT, INVOCATION.Request|id, Options|dict]
+table Interrupt
+{
+    // The WAMP request ID of this request.
+    request: uint64 (key);
+
+    // Specifies how to interrupt the invocation.
+    mode: CancelMode = ABORT;
+}
+
+
+// YIELD message (message_type = 70): [YIELD, INVOCATION.Request|id, Options|dict, Payload|binary]
+table Yield
+{
+    // The WAMP request ID of this request.
+    request: uint64 (key);
+
+    // Raw application payload: call result. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    payload: [uint8];
+
+    // The encoding algorithm that was used to encode the payload.
+    enc_algo: Payload;
+
+    // The payload object serializer that was used encoding the payload.
+    enc_serializer: Serializer;
+
+    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
+    enc_key: [uint8];
+}

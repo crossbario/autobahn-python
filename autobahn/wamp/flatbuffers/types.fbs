@@ -1,0 +1,183 @@
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//   FlatBuffers schema for WAMP v2 messages
+//   Copyright (c) Crossbar.io Technologies GmbH and contributors
+//   Licensed under the Apache 2.0 license
+//
+//////////////////////////////////////////////////////////////////////////////
+
+// Define custom attributes to hint a string subtypes:
+attribute "uri";
+attribute "uri_pattern";
+attribute "principal";
+attribute "hex";
+attribute "base64";
+
+
+// Namespace for WAMP.
+namespace wamp;
+
+
+// Simple mapping, from string keys to string values.
+table Map {
+    // Key, which must match the regular expression `[A-Za-z_][A-Za-z0-9_]*`. That
+    // makes keys a valid identified in FlatBuffers (and most programming languages)
+    key: string (required, key);
+
+    // Value, which may be any (UTF8 encoded Unicode) string.
+    value: string;
+}
+
+// Void type (table based) for use with services.
+table Void
+{
+    // nothing here!
+}
+
+
+// Namespace for WAMP protocol.
+namespace wamp.proto;
+
+
+// WAMP message type IDs.
+enum MessageType: uint16
+{
+    // No valid message type
+    NULL = 0,
+
+    // Session opening, authentication and closing
+    HELLO = 1,
+    WELCOME = 2,
+    ABORT = 3,
+    CHALLENGE = 4,
+    AUTHENTICATE = 5,
+    GOODBYE = 6,
+
+    // Used in both PubSub and RPC
+    ERROR = 8,
+
+    // Publish & Subscribe (PubSub)
+    PUBLISH = 16,
+    PUBLISHED = 17,
+    SUBSCRIBER_RECEIVED = 18,   // NEW: for "survey mode" PubSub (receiving app level
+                                // feedback from event receivers)
+    SUBSCRIBE = 32,
+    SUBSCRIBED = 33,
+    UNSUBSCRIBE = 34,
+    UNSUBSCRIBED = 35,
+    EVENT = 36,
+    EVENT_RECEIVED = 37,        // NEW: for QoS level 2 PubSub ("exactly once delivery")
+                                // as well as "survey mode" PubSub response carrying
+
+    // Remote Procedure Calls (RPC)
+    CALL = 48,
+    CANCEL = 49,
+    RESULT = 50,
+    REGISTER = 64,
+    REGISTERED = 65,
+    UNREGISTER = 66,
+    UNREGISTERED = 67,
+    INVOCATION = 68,
+    INTERRUPT = 69,
+    YIELD = 70
+}
+
+
+// Application payload type.
+enum Payload: uint8
+{
+    // Plain WAMP application payload.
+    PLAIN = 0,
+
+    // Encrypted WAMP application payload. This is using WAMP-cryptobox (Curve25519 / Cryptobox).
+    CRYPTOBOX = 1,
+
+    // Raw pass-through of app payload, uninterpreted in any way.
+    OPAQUE = 2
+}
+
+
+// Application payload serializer types.
+enum Serializer: uint8
+{
+    // Use same (dynamic) serializer for the app payload as on the transport.
+    // This will be one of JSON, MSGPACK, CBOR or UBJSON.
+    TRANSPORT = 0,
+    
+    // Use JSON serializer (for dynamically typed app payload).
+    JSON = 1,
+
+    // Use MsgPack serializer (for dynamically typed app payload).
+    MSGPACK = 2,
+
+    // Use CBOR serializer (for dynamically typed app payload).
+    CBOR = 3,
+
+    // Use UBJSON serializer (for dynamically typed app payload).
+    UBJSON = 4,
+
+    // Raw pass-through of app payload, uninterpreted in any way.
+    OPAQUE = 5,
+
+    // Explicit use of FlatBuffers also for (statically typed) payload.
+    FLATBUFFERS = 6
+}
+
+
+// Subscription topic matching method.
+enum Match: uint8
+{
+    // Match URI exact.
+    EXACT = 0,
+
+    // Match URI by prefix.
+    PREFIX = 1,
+
+    // Match URI by wildcard.
+    WILDCARD = 2
+}
+
+
+// Remote procedure invocation policy, for use with shared registrations.
+enum InvocationPolicy: uint8
+{
+    // Standard invocation policy: a procedure may only be registered by at most
+    // one callee at a time. This is the default.
+    SINGLE = 0,
+
+    // First callee invocation policy: all calls to a procedure are forwarded to
+    // the callee that first registered. Should that callee unregister, calls
+    // are forwarded to the callee that registered next after the former.
+    FIRST = 1,
+
+    // Last callee invocation policy: all calls to a procedure are forwwrded to
+    // the callee that last registered. Should that callee unregister, calls
+    // are forwarded to the callee that registered next before the former.
+    LAST = 2,
+
+    // Round-robin invocation policy: calls are forward to all registered callees
+    // in a round-robin fashion. Callees that unregister are removed from the
+    // round-robin list, and new callees registering will get calls immediately
+    // in the next dispatching round.
+    ROUNDROBIN = 3,
+
+    // Random invocation policy: calls are forwarded to all registered callees
+    // in a random fashion. Callees that unregister are removed from the set
+    // of callees randomly drawn from to dispatch incoming calls.
+    RANDOM = 4
+}
+
+
+// Call cancel mode.
+enum CancelMode: uint8
+{
+    // Skip running invocation call.
+    SKIP = 0,
+
+    // Abort running invocation and call.
+    ABORT = 1,
+
+    // Kill running invocation and call.
+    KILL = 2
+}

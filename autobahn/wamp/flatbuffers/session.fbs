@@ -1,0 +1,158 @@
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//   FlatBuffers schema for WAMP v2 messages
+//   Copyright (c) Crossbar.io Technologies GmbH and contributors
+//   Licensed under the Apache 2.0 license
+//
+//////////////////////////////////////////////////////////////////////////////
+
+include "types.fbs";
+include "roles.fbs";
+include "auth.fbs";
+
+namespace wamp.proto;
+
+
+// HELLO message (message_type = 1): [HELLO, Realm|uri, Details|dict]
+table Hello
+{
+    // The WAMP session roles and client library features to announce.
+    roles: ClientRoles (required);
+
+    // The URI of the WAMP realm the client wants to join.
+    realm: string (uri);
+
+    // The authentication methods to announce.
+    authmethods: [AuthMethod];
+
+    // The (client) authentication ID to announce.
+    authid: string (principal);
+
+    // The (client) authentication role to announce.
+    authrole: string (principal);
+
+    // authmethod specific extra data to be forwarded to the client.
+    authextra: Map;
+
+    // Whether the client wants this to be a session that can be
+    // later resumed (HELLO.Details.resumable).
+    resumable: bool;
+
+    // The session the client would like to resume (HELLO.Details.resume_session).
+    resume_session: uint64;
+
+    // The secure authorisation token to resume the session (HELLO.Details.resume_token).
+    resume_token: string;
+}
+
+
+// WELCOME message (message_type = 2): [WELCOME, Session|id, Details|dict]
+table Welcome
+{
+    // The WAMP roles to announce.
+    roles: RouterRoles (required);
+
+    // The WAMP session ID the other peer is assigned.
+    session: uint64;
+
+    // The effective realm the session is joined on.
+    realm: string (required, uri);
+
+    // The authentication ID assigned.
+    authid: string (required, principal);
+
+    // The authentication method in use.
+    authrole: string (required, principal);
+
+    // The authentication method in use.
+    authmethod: AuthMethod;
+
+    // The authentication provided in use.
+    authprovider: string;
+
+    // Application-specific "extra data" to be forwarded to the client.
+    authextra: Map;
+
+    // Whether the session is a resumed one.
+    resumed: bool;
+
+    // Whether this session can be resumed later.
+    resumable: bool;
+
+    // The secure authorisation token to resume the session.
+    resume_token: string;
+}
+
+
+// ABORT message (message_type = 3): [ABORT, Details|dict, Reason|uri]
+table Abort
+{
+    // WAMP or application error URI for aborting reason.
+    reason: string (required, uri);
+
+    // Optional human-readable closing message, e.g. for logging purposes.
+    message: string;
+}
+
+
+// CHALLENGE message (message_type = 4): [CHALLENGE, Method|string, Extra|dict]
+table Challenge
+{
+    // The challenge method.
+    method: AuthMethod;
+
+    // Challenge method specific information.
+    extra: Map;
+}
+
+
+// AUTHENTICATE message (message_type = 5): [AUTHENTICATE, Signature|string, Extra|dict]
+table Authenticate
+{
+    // The signature for the authentication challenge.
+    signature: string (required);
+
+    // Authentication method specific information.
+    extra: Map;
+}
+
+
+// GOODBYE message (message_type = 6): [GOODBYE, Details|dict, Reason|uri]
+table Goodbye
+{
+    // Optional WAMP or application error URI for closing reason.
+    reason: string (required, uri);
+
+    // Optional human-readable closing message, e.g. for logging purposes.
+    message: string;
+
+    // From the server: Whether the session is able to be resumed (true) or destroyed (false). From the client: Whether it should be resumable (true) or destroyed (false).
+    resumable: bool;
+}
+
+
+// ERROR message (message_type = 8): [ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Payload|binary]
+table Error
+{
+    // The WAMP message type code for the original request.
+    request_type: MessageType;
+
+    // The WAMP request ID of the original request (CALL, SUBSCRIBE, ...) this error occurred for.
+    request: uint64 (key);
+
+    // The WAMP or application error URI for the error that occurred.
+    error: string (required, uri);
+
+    // Raw application payload: error arguments. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    payload: [uint8];
+
+    // The encoding algorithm that was used to encode the payload.
+    enc_algo: Payload;
+
+    // The payload object serializer that was used encoding the payload.
+    enc_serializer: Serializer;
+
+    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
+    enc_key: [uint8];
+}

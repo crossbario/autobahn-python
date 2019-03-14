@@ -188,3 +188,25 @@ gource:
 	-threads 0 \
 	-bf 0 \
 	autobahn-python.mp4
+
+#
+# generate (a special set of) WAMP message classes from FlatBuffers schema
+#
+
+# input .fbs files for schema
+FBSFILES=./autobahn/wamp/flatbuffers/*.fbs
+
+# flatc compiler to use
+FLATC=flatc
+
+clean_fbs:
+	-rm -rf ./autobahn/wamp/gen/
+
+build_fbs:
+	# generate schema type library (*.bfbs files)
+	$(FLATC) -o ./autobahn/wamp/gen/schema/ --binary --schema --bfbs-comments --bfbs-builtins $(FBSFILES)
+	@find ./autobahn/wamp/gen/schema/ -name "*.bfbs" | wc -l
+
+	# generate schema Python bindings (*.py files)
+	$(FLATC) -o ./autobahn/wamp/gen/ --python $(FBSFILES)
+	@find ./autobahn/wamp/gen/ -name "*.py" | wc -l
