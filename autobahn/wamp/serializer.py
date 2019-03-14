@@ -28,6 +28,7 @@ from __future__ import absolute_import
 
 import six
 import struct
+import platform
 
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
@@ -141,61 +142,67 @@ class Serializer(object):
 
 # JSON serialization is always supported
 
-import json
-import base64
+try:
+    import ujson
+    _HAS_UJSON = True
+except ImportError:
+    import json
+    _HAS_UJSON = False
 
 
-class _WAMPJsonEncoder(json.JSONEncoder):
+if _HAS_UJSON:
+    _loads = ujson.loads
+    _dumps = ujson.dumps
+    _json = ujson
+    print('Warning: Autobahn is using ujson accelerated JSON module - will run faster, but loose ability to transport binary payload transparently!')
+else:
+    import base64
 
-    def default(self, obj):
-        if isinstance(obj, six.binary_type):
-            return u'\x00' + base64.b64encode(obj).decode('ascii')
-        else:
-            return json.JSONEncoder.default(self, obj)
+    class _WAMPJsonEncoder(json.JSONEncoder):
 
+        def default(self, obj):
+            if isinstance(obj, six.binary_type):
+                return u'\x00' + base64.b64encode(obj).decode('ascii')
+            else:
+                return json.JSONEncoder.default(self, obj)
 
-#
-# the following is a hack. see http://bugs.python.org/issue29992
-#
+    #
+    # the following is a hack. see http://bugs.python.org/issue29992
+    #
 
-from json import scanner
-from json.decoder import scanstring
+    from json import scanner
+    from json.decoder import scanstring
 
+    def _parse_string(*args, **kwargs):
+        s, idx = scanstring(*args, **kwargs)
+        if s and s[0] == u'\x00':
+            s = base64.b64decode(s[1:])
+        return s, idx
 
-def _parse_string(*args, **kwargs):
-    s, idx = scanstring(*args, **kwargs)
-    if s and s[0] == u'\x00':
-        s = base64.b64decode(s[1:])
-    return s, idx
+    class _WAMPJsonDecoder(json.JSONDecoder):
 
+        def __init__(self, *args, **kwargs):
+            json.JSONDecoder.__init__(self, *args, **kwargs)
+            self.parse_string = _parse_string
 
-class _WAMPJsonDecoder(json.JSONDecoder):
+            # we need to recreate the internal scan function ..
+            self.scan_once = scanner.py_make_scanner(self)
 
-    def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, *args, **kwargs)
-        self.parse_string = _parse_string
+            # .. and we have to explicitly use the Py version,
+            # not the C version, as the latter won't work
+            # self.scan_once = scanner.make_scanner(self)
 
-        # we need to recreate the internal scan function ..
-        self.scan_once = scanner.py_make_scanner(self)
+    def _loads(s):
+        return json.loads(s, cls=_WAMPJsonDecoder)
 
-        # .. and we have to explicitly use the Py version,
-        # not the C version, as the latter won't work
-        # self.scan_once = scanner.make_scanner(self)
+    def _dumps(obj):
+        return json.dumps(obj,
+                          separators=(',', ':'),
+                          ensure_ascii=False,
+                          sort_keys=False,
+                          cls=_WAMPJsonEncoder)
 
-
-def _loads(s):
-    return json.loads(s, cls=_WAMPJsonDecoder)
-
-
-def _dumps(obj):
-    return json.dumps(obj,
-                      separators=(',', ':'),
-                      ensure_ascii=False,
-                      sort_keys=False,
-                      cls=_WAMPJsonEncoder)
-
-
-_json = json
+    _json = json
 
 
 class JsonObjectSerializer(object):
@@ -283,15 +290,36 @@ ISerializer.register(JsonSerializer)
 SERID_TO_SER[JsonSerializer.SERIALIZER_ID] = JsonSerializer
 
 
-# MsgPack serialization depends on the `u-msgpack` package being available
-# https://pypi.python.org/pypi/u-msgpack-python
-# https://github.com/vsergeev/u-msgpack-python
-#
-try:
-    import umsgpack
-except ImportError:
-    pass
+_HAS_MSGPACK = False
+if platform.python_implementation() == u'CPython':
+    try:
+        # on CPython, use an impl. with native extension:
+        # https://pypi.org/project/msgpack/
+        # https://github.com/msgpack/msgpack-python
+        import msgpack
+    except ImportError:
+        pass
+    else:
+        _HAS_MSGPACK = True
+        _packb = msgpack.packb
+        _unpackb = msgpack.unpackb
+        print('Notice: Autobahn is using msgpack library (with native extension, best on CPython) for MessagePack serialization')
 else:
+    try:
+        # on PyPy in particular, use a pure python impl.:
+        # https://pypi.python.org/pypi/u-msgpack-python
+        # https://github.com/vsergeev/u-msgpack-python
+        import umsgpack
+    except ImportError:
+        pass
+    else:
+        _HAS_MSGPACK = True
+        _packb = umsgpack.packb
+        _unpackb = umsgpack.unpackb
+        print('Notice: Autobahn is using umsgpack library (pure Python, best on PyPy) for MessagePack serialization')
+
+
+if _HAS_MSGPACK:
 
     class MsgPackObjectSerializer(object):
 
@@ -314,7 +342,7 @@ else:
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
             """
-            data = umsgpack.packb(obj)
+            data = _packb(obj)
             if self._batched:
                 return struct.pack("!L", len(data)) + data
             else:
@@ -341,7 +369,7 @@ else:
                     data = payload[i + 4:i + 4 + l]
 
                     # append parsed raw message
-                    msgs.append(umsgpack.unpackb(data))
+                    msgs.append(_unpackb(data))
 
                     # advance until everything consumed
                     i = i + 4 + l
@@ -351,7 +379,7 @@ else:
                 return msgs
 
             else:
-                unpacked = umsgpack.unpackb(payload)
+                unpacked = _unpackb(payload)
                 return [unpacked]
 
     IObjectSerializer.register(MsgPackObjectSerializer)
