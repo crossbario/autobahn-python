@@ -155,6 +155,7 @@ else:
 
 
 if _USE_UJSON:
+    import ujson
     # ujson doesn't support plugging into the JSON string parsing machinery ..
     print('WARNING: Autobahn is using ujson accelerated JSON module - will run faster, but loose ability to transport binary payload transparently!')
     _loads = ujson.loads
