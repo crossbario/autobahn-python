@@ -143,7 +143,7 @@ class Serializer(object):
 
 # JSON serialization is always supported
 _USE_UJSON = 'AUTOBAHN_USE_UJSON' in os.environ
-if _USE_UJSON and platform.python_implementation() == u'CPython':
+if _USE_UJSON:
     try:
         import ujson
         _USE_UJSON = True
@@ -155,9 +155,8 @@ else:
 
 
 if _USE_UJSON:
-    import ujson
     # ujson doesn't support plugging into the JSON string parsing machinery ..
-    print('WARNING: Autobahn is using ujson accelerated JSON module - will run faster, but loose ability to transport binary payload transparently!')
+    print('WARNING: Autobahn is using ujson accelerated JSON module - will run faster,\nbut only on CPython and will loose ability to transport binary payload transparently!')
     _loads = ujson.loads
     _dumps = ujson.dumps
     _json = ujson
