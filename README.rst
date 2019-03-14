@@ -44,7 +44,7 @@ Features
 -  supports TLS (secure WebSocket) and proxies
 -  Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`__)
 
----
+-----
 
 
 Native vector extensions (NVX)
@@ -52,9 +52,58 @@ Native vector extensions (NVX)
 
 Autobahn contains **NVX**, a network accelerator library that provides SIMD accelerated native vector code for WebSocket (XOR masking) and UTF-8 validation.
 
-> NVX lives in namespace `autobahn.nvx` and currently requires a x86-86 CPU with at least SSE2 and makes use of SSE4.1 if available. The code is written using vector instrinsics, should compile with both GCC and Clang,and interfaces with Python using CFFI, and hence runs fast on PyPy.
+.. note:
 
----
+    NVX lives in namespace `autobahn.nvx` and currently requires a x86-86 CPU with at least SSE2 and makes use of SSE4.1 if available. The code is written using vector instrinsics, should compile with both GCC and Clang,and interfaces with Python using CFFI, and hence runs fast on PyPy.
+
+-----
+
+
+WAMP Serializers
+~~~~~~~~~~~~~~~~
+
+**Above is for avanced uses. In general we recommend to use CBOR where you can,
+and JSON (from the standard library) otherwise.**
+
+-----
+
+To install Autobahn with all available serializers:
+
+.. code:: console
+
+    pip install autobahn[serializers]
+
+or (development install)
+
+.. code:: console
+
+    pip install -e .[serializers]
+
+Further, to speed up JSON on CPython using ``ujson``, set the environment variable:
+
+.. code:: console
+
+    AUTOBAHN_USE_UJSON=1
+
+.. warning::
+
+    Using ``ujson`` (on both CPython and PyPy) will break the ability of Autobahn
+    to transport and translate binary application payloads in WAMP transparently.
+    This ability depends on features of the regular JSON standard library module
+    not available on ``ujson``.
+
+To use ``cbor2``, an alternative, highly flexible and standards complicant CBOR
+implementation, set the environment variable:
+
+.. code:: console
+
+    AUTOBAHN_USE_CBOR2=1
+
+.. note::
+
+    ``cbor2`` is not used by default, because it is significantly slower currently
+    in our benchmarking for WAMP message serialization on both CPython and PyPy
+    compared to ``cbor``.
 
 
 Show me some code

@@ -142,8 +142,8 @@ class Serializer(object):
 
 
 # JSON serialization is always supported
-_USE_UJSON = False
-if platform.python_implementation() == u'CPython':
+_USE_UJSON = 'AUTOBAHN_USE_UJSON' in os.environ
+if _USE_UJSON and platform.python_implementation() == u'CPython':
     try:
         import ujson
         _USE_UJSON = True
@@ -155,7 +155,8 @@ else:
 
 
 if _USE_UJSON:
-    # print('Warning: Autobahn is using ujson accelerated JSON module - will run faster, but loose ability to transport binary payload transparently!')
+    # ujson doesn't support plugging into the JSON string parsing machinery ..
+    print('WARNING: Autobahn is using ujson accelerated JSON module - will run faster, but loose ability to transport binary payload transparently!')
     _loads = ujson.loads
     _dumps = ujson.dumps
     _json = ujson
@@ -306,8 +307,8 @@ if platform.python_implementation() == u'CPython':
         pass
     else:
         _HAS_MSGPACK = True
-        _packb = msgpack.packb
-        _unpackb = msgpack.unpackb
+        _packb = lambda obj: msgpack.packb(obj, use_bin_type=True)
+        _unpackb = lambda data: msgpack.unpackb(data, raw=False)
         # print('Notice: Autobahn is using msgpack library (with native extension, best on CPython) for MessagePack serialization')
 else:
     try:
