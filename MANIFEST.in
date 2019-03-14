@@ -1,2 +1,3 @@
 include LICENSE
 include autobahn/nvx/_utf8validator.c
+recursive-include autobahn/wamp/gen/schema *
