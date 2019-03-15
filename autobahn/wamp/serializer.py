@@ -676,6 +676,88 @@ else:
     __all__.append('UBJSONSerializer')
 
 
+_HAS_FLATBUFFERS = False
+try:
+    import flatbuffers  # noqa
+except ImportError:
+    pass
+else:
+    _HAS_FLATBUFFERS = True
+
+
+if _HAS_FLATBUFFERS:
+
+    class FlatBuffersObjectSerializer(object):
+
+        NAME = u'flatbuffers'
+
+        BINARY = True
+        """
+        Flag that indicates whether this serializer needs a binary clean transport.
+        """
+
+        def __init__(self, batched=False):
+            """
+
+            :param batched: Flag that controls whether serializer operates in batched mode.
+            :type batched: bool
+            """
+            assert not batched, 'WAMP-FlatBuffers serialization does not support message batching currently'
+            self._batched = batched
+
+        def serialize(self, obj):
+            """
+            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
+            """
+            raise NotImplementedError()
+
+        def unserialize(self, payload):
+            """
+            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
+            """
+            raise NotImplementedError()
+
+    IObjectSerializer.register(FlatBuffersObjectSerializer)
+
+    __all__.append('FlatBuffersObjectSerializer')
+    SERID_TO_OBJSER[FlatBuffersObjectSerializer.NAME] = FlatBuffersObjectSerializer
+
+    class FlatBuffersSerializer(Serializer):
+
+        SERIALIZER_ID = u"flatbuffers"
+        """
+        ID used as part of the WebSocket subprotocol name to identify the
+        serializer with WAMP-over-WebSocket.
+        """
+
+        RAWSOCKET_SERIALIZER_ID = 5
+        """
+        ID used in lower four bits of second octet in RawSocket opening
+        handshake identify the serializer with WAMP-over-RawSocket.
+        """
+
+        MIME_TYPE = u"application/x-flatbuffers"
+        """
+        MIME type announced in HTTP request/response headers when running
+        WAMP-over-Longpoll HTTP fallback.
+        """
+
+        def __init__(self, batched=False):
+            """
+
+            :param batched: Flag to control whether to put this serialized into batched mode.
+            :type batched: bool
+            """
+            Serializer.__init__(self, FlatBuffersObjectSerializer(batched=batched))
+            if batched:
+                self.SERIALIZER_ID = u"flatbuffers.batched"
+
+    ISerializer.register(FlatBuffersSerializer)
+    SERID_TO_SER[FlatBuffersSerializer.SERIALIZER_ID] = FlatBuffersSerializer
+
+    __all__.append('FlatBuffersSerializer')
+
+
 def create_transport_serializer(serializer_id):
     batched = False
     if '.' in serializer_id:

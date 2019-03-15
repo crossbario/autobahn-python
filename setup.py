@@ -108,7 +108,8 @@ else:
 extras_require_serialization.extend([
     'cbor2>=4.1.2',             # MIT license
     'cbor>=1.0.0',              # Apache 2.0 license
-    'py-ubjson>=0.8.4'          # Apache 2.0 license
+    'py-ubjson>=0.8.4',         # Apache 2.0 license
+    'flatbuffers>=1.10',        # Apache 2.0 license
 ])
 
 # TLS transport encryption
@@ -135,13 +136,21 @@ extras_require_nvx = [
     'cffi>=1.11.5',             # MIT license
 ]
 
+# cffi based extension modules to build, currently only NVX
+cffi_modules = []
+if 'AUTOBAHN_USE_NVX' in os.environ:
+    # FIXME: building this extension will make the wheel
+    # produced no longer universal (as in "autobahn-18.4.1-py2.py3-none-any.whl").
+    # on the other hand, I don't know how to selectively include this
+    # based on the install flavor the user has chosen (eg pip install autobahn[nvx]
+    # should make the following be included)
+    cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
+
 # everything
 extras_require_all = extras_require_twisted + extras_require_asyncio + \
     extras_require_accelerate + extras_require_compress + \
     extras_require_serialization + extras_require_encryption + \
     extras_require_scram + extras_require_nvx
-
-# extras_require_all += extras_require_compress
 
 # development dependencies
 extras_require_dev = [
@@ -249,15 +258,7 @@ setup(
         'autobahn.nvx.test',
     ],
     package_data={'autobahn.asyncio': ['test/*']},
-
-    cffi_modules=[
-        # FIXME: building this extension will make the wheel
-        # produced no longer unniversal (as in "autobahn-18.4.1-py2.py3-none-any.whl").
-        # on the other hand, I don't know how to selectively include this
-        # based on the install flavor the user has chosen (eg pip install autobahn[nvx]
-        # should make the following be included)
-        # 'autobahn/nvx/_utf8validator.py:ffi'
-    ],
+    cffi_modules=cffi_modules,
 
     # this flag will make files from MANIFEST.in go into _source_ distributions only
     include_package_data=True,

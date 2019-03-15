@@ -120,33 +120,56 @@ def generate_test_messages_binary():
     return [(True, msg) for msg in msgs]
 
 
+def create_serializers():
+    _serializers = []
+
+    _serializers.append(serializer.JsonSerializer())
+    _serializers.append(serializer.JsonSerializer(batched=True))
+
+    _serializers.append(serializer.MsgPackSerializer())
+    _serializers.append(serializer.MsgPackSerializer(batched=True))
+
+    _serializers.append(serializer.CBORSerializer())
+    _serializers.append(serializer.CBORSerializer(batched=True))
+
+    _serializers.append(serializer.UBJSONSerializer())
+    _serializers.append(serializer.UBJSONSerializer(batched=True))
+
+    # FIXME: implement full FlatBuffers serializer for WAMP
+    # _serializers.append(serializer.FlatBuffersSerializer())
+    # _serializers.append(serializer.FlatBuffersSerializer(batched=True))
+
+    return _serializers
+
+
+@unittest.skip('FlatBuffers serializer not yet implemented')
+class TestFlatBuffersSerializer(unittest.TestCase):
+
+    def test_basic(self):
+        messages = [
+            message.Event(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'})
+        ]
+
+        ser = serializer.FlatBuffersSerializer()
+
+        for msg in messages:
+
+            # serialize message
+            payload, binary = ser.serialize(msg)
+
+            # unserialize message again
+            msg2 = ser.unserialize(payload, binary)
+
+            # must be equal: message roundtrips via the serializer
+            self.assertEqual([msg], msg2)
+
+
 class TestSerializer(unittest.TestCase):
 
     def setUp(self):
         self._test_messages = generate_test_messages() + generate_test_messages_binary()
-
-        self._test_serializers = []
-
-        # JSON serializer is always available
-        self._test_serializers.append(serializer.JsonSerializer())
-        self._test_serializers.append(serializer.JsonSerializer(batched=True))
-
-        # MsgPack serializer is optional
-        if hasattr(serializer, 'MsgPackSerializer'):
-            self._test_serializers.append(serializer.MsgPackSerializer())
-            self._test_serializers.append(serializer.MsgPackSerializer(batched=True))
-
-        # CBOR serializer is optional
-        if hasattr(serializer, 'CBORSerializer'):
-            self._test_serializers.append(serializer.CBORSerializer())
-            self._test_serializers.append(serializer.CBORSerializer(batched=True))
-
-        # UBJSON serializer is optional
-        if hasattr(serializer, 'UBJSONSerializer'):
-            self._test_serializers.append(serializer.UBJSONSerializer())
-            self._test_serializers.append(serializer.UBJSONSerializer(batched=True))
-
-        print('Testing WAMP serializers {} with {} WAMP test messages'.format([ser.SERIALIZER_ID for ser in self._test_serializers], len(self._test_messages)))
+        self._test_serializers = create_serializers()
+        # print('Testing WAMP serializers {} with {} WAMP test messages'.format([ser.SERIALIZER_ID for ser in self._test_serializers], len(self._test_messages)))
 
     def test_deep_equal(self):
         """

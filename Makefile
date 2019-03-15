@@ -1,4 +1,4 @@
-.PHONY: test docs pep8
+.PHONY: test docs pep8 build
 
 all:
 	@echo "Targets:"
@@ -12,12 +12,20 @@ all:
 
 # install locally
 install:
+	-pip uninstall -y pytest_asyncio # remove the broken shit
+	-pip uninstall -y pytest_cov # remove the broken shit
 	# enforce use of bundled libsodium
-	SODIUM_INSTALL=bundled pip install -e .[all,dev]
+	AUTOBAHN_USE_NVX=1 SODIUM_INSTALL=bundled pip install -e .[all,dev]
+
+build:
+	-rm -f dist/*
+	# python setup.py sdist bdist_wheel --universal
+	AUTOBAHN_USE_NVX=1 python setup.py sdist bdist_wheel
+	ls -la dist
 
 # upload to our internal deployment system
 upload: clean
-	python setup.py bdist_wheel
+	python setup.py sdist bdist_wheel --universal
 	aws s3 cp --acl public-read \
 		dist/autobahn-*.whl \
 		s3://fabric-deploy/autobahn/
@@ -70,7 +78,10 @@ test_pytest:
 test_setuptools:
 	python setup.py test
 
-test: flake8 test_twisted test_asyncio
+test:
+	tox -e flake8,yapf,mypy,py37-twtrunk,py37-asyncio
+
+#test: flake8 test_twisted test_asyncio
 
 # test under Twisted
 test_twisted:
