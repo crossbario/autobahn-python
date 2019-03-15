@@ -142,12 +142,16 @@ def create_serializers():
     return _serializers
 
 
-@unittest.skip('FlatBuffers serializer not yet implemented')
 class TestFlatBuffersSerializer(unittest.TestCase):
 
     def test_basic(self):
         messages = [
-            message.Event(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'})
+            message.Event(123456,
+                          789123,
+                          args=[1, 2, 3],
+                          kwargs={u'foo': 23, u'bar': u'hello'},
+                          publisher=666,
+                          retained=False)
         ]
 
         ser = serializer.FlatBuffersSerializer()
@@ -158,10 +162,12 @@ class TestFlatBuffersSerializer(unittest.TestCase):
             payload, binary = ser.serialize(msg)
 
             # unserialize message again
-            msg2 = ser.unserialize(payload, binary)
+            msg2 = ser.unserialize(payload, binary)[0]
 
             # must be equal: message roundtrips via the serializer
             self.assertEqual([msg], msg2)
+            # self.assertEqual(msg.subscription, msg2.subscription)
+            # self.assertEqual(msg.publication, msg2.publication)
 
 
 class TestSerializer(unittest.TestCase):

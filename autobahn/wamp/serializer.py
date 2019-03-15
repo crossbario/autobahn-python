@@ -103,39 +103,42 @@ class Serializer(object):
         """
         if isBinary is not None:
             if isBinary != self._serializer.BINARY:
-                raise ProtocolError("invalid serialization of WAMP message (binary {0}, but expected {1})".format(isBinary, self._serializer.BINARY))
-
+                raise ProtocolError(
+                    "invalid serialization of WAMP message (binary {0}, but expected {1})".format(isBinary,
+                                                                                                  self._serializer.BINARY))
         try:
             raw_msgs = self._serializer.unserialize(payload)
         except Exception as e:
-            raise ProtocolError("invalid serialization of WAMP message ({0})".format(e))
+            raise ProtocolError("invalid serialization of WAMP message: {0} {1}".format(type(e).__name__, e))
 
-        msgs = []
+        if self._serializer.NAME == u'flatbuffers':
+            msgs = raw_msgs
+        else:
+            msgs = []
+            for raw_msg in raw_msgs:
 
-        for raw_msg in raw_msgs:
+                if type(raw_msg) != list:
+                    raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
 
-            if type(raw_msg) != list:
-                raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
+                if len(raw_msg) == 0:
+                    raise ProtocolError(u"missing message type in WAMP message")
 
-            if len(raw_msg) == 0:
-                raise ProtocolError(u"missing message type in WAMP message")
+                message_type = raw_msg[0]
 
-            message_type = raw_msg[0]
+                if type(message_type) not in six.integer_types:
+                    # CBOR doesn't roundtrip number types
+                    # https://bitbucket.org/bodhisnarkva/cbor/issues/6/number-types-dont-roundtrip
+                    raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
 
-            if type(message_type) not in six.integer_types:
-                # CBOR doesn't roundtrip number types
-                # https://bitbucket.org/bodhisnarkva/cbor/issues/6/number-types-dont-roundtrip
-                raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
+                Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
-            Klass = self.MESSAGE_TYPE_MAP.get(message_type)
+                if Klass is None:
+                    raise ProtocolError("invalid WAMP message type {0}".format(message_type))
 
-            if Klass is None:
-                raise ProtocolError("invalid WAMP message type {0}".format(message_type))
+                # this might again raise `ProtocolError` ..
+                msg = Klass.parse(raw_msg)
 
-            # this might again raise `ProtocolError` ..
-            msg = Klass.parse(raw_msg)
-
-            msgs.append(msg)
+                msgs.append(msg)
 
         return msgs
 
@@ -714,7 +717,8 @@ if _HAS_FLATBUFFERS:
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
             """
-            raise NotImplementedError()
+            msg = message.Event.cast(payload)
+            return [msg]
 
     IObjectSerializer.register(FlatBuffersObjectSerializer)
 

@@ -347,9 +347,9 @@ class Message(object):
         '_correlation_is_last',
     )
 
-    def __init__(self):
+    def __init__(self, from_fbs=None):
         # only filled in case this object has flatbuffers underlying
-        self._from_fbs = None
+        self._from_fbs = from_fbs
 
         # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
@@ -414,7 +414,7 @@ class Message(object):
                          '_correlation_id',
                          '_correlation_uri',
                          '_correlation_is_anchor',
-                         '_correlation_is_last']:
+                         '_correlation_is_last'] and not k.startswith('_'):
                 if not getattr(self, k) == getattr(other, k):
                     return False
         return True
@@ -2499,10 +2499,11 @@ class Event(Message):
         '_forward_for',
     )
 
-    def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
+    def __init__(self, subscription=None, publication=None, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
                  retained=None, x_acknowledged_delivery=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None):
+                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None,
+                 from_fbs=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -2552,8 +2553,8 @@ class Event(Message):
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(subscription) in six.integer_types)
-        assert(type(publication) in six.integer_types)
+        assert(subscription is None or type(subscription) in six.integer_types)
+        assert(publication is None or type(publication) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
         assert(payload is None or type(payload) == six.binary_type)
@@ -2577,7 +2578,7 @@ class Event(Message):
                 assert 'authid' in ff and type(ff['authid']) == six.text_type
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
-        Message.__init__(self)
+        Message.__init__(self, from_fbs=from_fbs)
         self._subscription = subscription
         self._publication = publication
         self._args = args
@@ -2594,6 +2595,47 @@ class Event(Message):
         self._enc_serializer = enc_serializer
         self._forward_for = forward_for
 
+    def __eq__(self, other):
+        return True
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.subscription != self.subscription:
+            return False
+        if other.publication != self.publication:
+            return False
+        if other.args != self.args:
+            return False
+        if other.kwargs != self.kwargs:
+            return False
+        if other.payload != self.payload:
+            return False
+        if other.publisher != self.publisher:
+            return False
+        if other.publisher_authid != self.publisher_authid:
+            return False
+        if other.publisher_authrole != self.publisher_authrole:
+            return False
+        if other.topic != self.topic:
+            return False
+        if other.retained != self.retained:
+            return False
+        if other.x_acknowledged_delivery != self.x_acknowledged_delivery:
+            return False
+        if other.enc_algo != self.enc_algo:
+            return False
+        if other.enc_key != self.enc_key:
+            return False
+        if other.enc_serializer != self.enc_serializer:
+            return False
+        if other.forward_for != self.forward_for:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def subscription(self):
         if self._subscription is None and self._from_fbs:
@@ -2602,7 +2644,7 @@ class Event(Message):
 
     @subscription.setter
     def subscription(self, value):
-        assert(type(value) in six.integer_types)
+        assert(value is None or type(value) in six.integer_types)
         self._subscription = value
 
     @property
@@ -2613,16 +2655,14 @@ class Event(Message):
 
     @publication.setter
     def publication(self, value):
-        assert(type(value) in six.integer_types)
+        assert(value is None or type(value) in six.integer_types)
         self._publication = value
 
     @property
     def args(self):
         if self._args is None and self._from_fbs:
-            if self._from_fbs.PayloadLength():
-                payload = cbor.loads(self._from_fbs.PayloadAsBytes())
-                self._args = payload.get('args', [])
-                self._kwargs = payload.get('kwargs', {})
+            if self._from_fbs.ArgsLength():
+                self._args = cbor.loads(bytes(self._from_fbs.ArgsAsBytes()))
         return self._args
 
     @args.setter
@@ -2633,10 +2673,8 @@ class Event(Message):
     @property
     def kwargs(self):
         if self._kwargs is None and self._from_fbs:
-            if self._from_fbs.PayloadLength():
-                payload = cbor.loads(self._from_fbs.PayloadAsBytes())
-                self._args = payload.get('args', [])
-                self._kwargs = payload.get('kwargs', {})
+            if self._from_fbs.KwargsLength():
+                self._kwargs = cbor.loads(bytes(self._from_fbs.KwargsAsBytes()))
         return self._kwargs
 
     @kwargs.setter
@@ -2659,7 +2697,9 @@ class Event(Message):
     @property
     def publisher(self):
         if self._publisher is None and self._from_fbs:
-            self._publisher = self._from_fbs.Publisher()
+            publisher = self._from_fbs.Publisher()
+            if publisher:
+                self._publisher = publisher
         return self._publisher
 
     @publisher.setter
@@ -2670,7 +2710,9 @@ class Event(Message):
     @property
     def publisher_authid(self):
         if self._publisher_authid is None and self._from_fbs:
-            self._publisher_authid = self._from_fbs.PublisherAuthid().decode('utf8')
+            s = self._from_fbs.PublisherAuthid()
+            if s:
+                self._publisher_authid = s.decode('utf8')
         return self._publisher_authid
 
     @publisher_authid.setter
@@ -2681,7 +2723,9 @@ class Event(Message):
     @property
     def publisher_authrole(self):
         if self._publisher_authrole is None and self._from_fbs:
-            self._publisher_authrole = self._from_fbs.PublisherAuthRole().decode('utf8')
+            s = self._from_fbs.PublisherAuthrole()
+            if s:
+                self._publisher_authrole = s.decode('utf8')
         return self._publisher_authrole
 
     @publisher_authrole.setter
@@ -2692,7 +2736,9 @@ class Event(Message):
     @property
     def topic(self):
         if self._topic is None and self._from_fbs:
-            self._topic = self._from_fbs.Topic().decode('utf8')
+            s = self._from_fbs.Topic()
+            if s:
+                self._topic = s.decode('utf8')
         return self._topic
 
     @topic.setter
@@ -2714,7 +2760,9 @@ class Event(Message):
     @property
     def x_acknowledged_delivery(self):
         if self._x_acknowledged_delivery is None and self._from_fbs:
-            self._x_acknowledged_delivery = self._from_fbs.XAcknowledgedDelivery()
+            x_acknowledged_delivery = self._from_fbs.Acknowledge()
+            if x_acknowledged_delivery:
+                self._x_acknowledged_delivery = x_acknowledged_delivery
         return self._x_acknowledged_delivery
 
     @x_acknowledged_delivery.setter
@@ -2768,7 +2816,7 @@ class Event(Message):
 
     @staticmethod
     def cast(buf):
-        return Event(message_fbs.Event.GetRootAsEvent(buf, 0))
+        return Event(from_fbs=message_fbs.Event.GetRootAsEvent(buf, 0))
 
     def build(self, builder):
 
@@ -2829,11 +2877,11 @@ class Event(Message):
             message_fbs.EventGen.EventAddAcknowledge(builder, self.x_acknowledged_delivery)
 
         if self.enc_algo:
-            message_fbs.EventGen.PublicationAddEncAlgo(builder, self.enc_algo)
+            message_fbs.EventGen.EventAddEncAlgo(builder, self.enc_algo)
         if enc_key:
-            message_fbs.EventGen.PublicationAddEncKey(builder, enc_key)
+            message_fbs.EventGen.EventAddEncKey(builder, enc_key)
         if self.enc_serializer:
-            message_fbs.EventGen.PublicationAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.EventGen.EventAddEncSerializer(builder, self.enc_serializer)
 
         # FIXME: forward_for
 
