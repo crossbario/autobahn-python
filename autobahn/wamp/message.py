@@ -34,6 +34,7 @@ import six
 import autobahn
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
+from autobahn.wamp import message_fbs
 
 try:
     import cbor
@@ -2757,14 +2758,88 @@ class Event(Message):
 
     @property
     def forward_for(self):
-        if self._forward_for is None and self._from_fbs:
-            self._forward_for = self._from_fbs.EncSerializer()
-        return self._forward_for
+        # FIXME
+        return None
 
     @forward_for.setter
     def forward_for(self, value):
-        assert value is None or type(value) == dict
-        self._forward_for = value
+        # FIXME
+        pass
+
+    @staticmethod
+    def cast(buf):
+        return Event(message_fbs.Event.GetRootAsEvent(buf, 0))
+
+    def build(self, builder):
+
+        args = self.args
+        if args:
+            args = builder.CreateByteVector(cbor.dumps(args))
+
+        kwargs = self.kwargs
+        if kwargs:
+            kwargs = builder.CreateByteVector(cbor.dumps(kwargs))
+
+        payload = self.payload
+        if payload:
+            payload = builder.CreateByteVector(payload)
+
+        publisher_authid = self.publisher_authid
+        if publisher_authid:
+            publisher_authid = builder.CreateString(publisher_authid)
+
+        publisher_authrole = self.publisher_authrole
+        if publisher_authrole:
+            publisher_authrole = builder.CreateString(publisher_authrole)
+
+        topic = self.topic
+        if topic:
+            topic = builder.CreateString(topic)
+
+        enc_key = self.enc_key
+        if enc_key:
+            enc_key = builder.CreateByteVector(enc_key)
+
+        message_fbs.EventGen.EventStart(builder)
+
+        if self.subscription:
+            message_fbs.EventGen.EventAddSubscription(builder, self.subscription)
+        if self.publication:
+            message_fbs.EventGen.EventAddPublication(builder, self.publication)
+
+        if args:
+            message_fbs.EventGen.EventAddArgs(builder, args)
+        if kwargs is not None:
+            message_fbs.EventGen.EventAddKwargs(builder, kwargs)
+        if payload is not None:
+            message_fbs.EventGen.EventAddPayload(builder, payload)
+
+        if self.publisher:
+            message_fbs.EventGen.EventAddPublisher(builder, self.publisher)
+        if publisher_authid:
+            message_fbs.EventGen.EventAddPublisherAuthid(builder, publisher_authid)
+        if publisher_authrole:
+            message_fbs.EventGen.EventAddPublisherAuthrole(builder, publisher_authrole)
+
+        if topic:
+            message_fbs.EventGen.EventAddTopic(builder, topic)
+        if self.retained is not None:
+            message_fbs.EventGen.EventAddRetained(builder, self.retained)
+        if self.x_acknowledged_delivery is not None:
+            message_fbs.EventGen.EventAddAcknowledge(builder, self.x_acknowledged_delivery)
+
+        if self.enc_algo:
+            message_fbs.EventGen.PublicationAddEncAlgo(builder, self.enc_algo)
+        if enc_key:
+            message_fbs.EventGen.PublicationAddEncKey(builder, enc_key)
+        if self.enc_serializer:
+            message_fbs.EventGen.PublicationAddEncSerializer(builder, self.enc_serializer)
+
+        # FIXME: forward_for
+
+        final = message_fbs.EventGen.EventEnd(builder)
+
+        return final
 
     @staticmethod
     def parse(wmsg):

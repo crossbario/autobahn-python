@@ -135,7 +135,13 @@ table Event
     // The publication ID of the dispatched event.
     publication: uint64;
 
-    // Alternative, transparent payload. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    /// Positional values for application-defined event payload.
+    args: [uint8];
+
+    /// Keyword values for application-defined event payload.
+    kwargs: [uint8];
+
+    /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
     // The encoding algorithm that was used to encode the payload.
