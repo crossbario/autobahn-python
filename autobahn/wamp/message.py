@@ -34,6 +34,8 @@ import six
 import autobahn
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
+from autobahn.wamp.serializer import FlatBuffersObjectSerializer
+
 
 __all__ = ('Message',
            'Hello',
@@ -332,6 +334,7 @@ class Message(object):
     """
 
     __slots__ = (
+        '_from_fbs',
         '_serialized',
         '_correlation_id',
         '_correlation_uri',
@@ -340,6 +343,9 @@ class Message(object):
     )
 
     def __init__(self):
+        # only filled in case this object has flatbuffers underlying
+        self._from_fbs = None
+
         # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
 
@@ -430,6 +436,17 @@ class Message(object):
         :returns: An instance of this class.
         :rtype: obj
         """
+        raise NotImplementedError()
+
+    def marshal(self):
+        raise NotImplementedError()
+
+    @staticmethod
+    def cast(buf):
+        raise NotImplementedError()
+
+    def build(self, builder):
+        raise NotImplementedError()
 
     def uncache(self):
         """
@@ -451,7 +468,23 @@ class Message(object):
         """
         # only serialize if not cached ..
         if serializer not in self._serialized:
-            self._serialized[serializer] = serializer.serialize(self.marshal())
+            if isinstance(serializer, FlatBuffersObjectSerializer):
+                # flatbuffers get special treatment ..
+                import flatbuffers
+                builder = flatbuffers.Builder(0)
+
+                # this is the core method writing out this message (self) to a (new) flatbuffer
+                # FIXME: implement this method for all classes derived from Message
+                obj = self.build(builder)
+
+                builder.Finish(obj)
+                buf = builder.Output()
+                self._serialized[serializer] = bytes(buf)
+            else:
+                # all other serializers first marshal() the object and then serialize the latter
+                self._serialized[serializer] = serializer.serialize(self.marshal())
+
+        # cache is filled now: return serialized, cached bytes
         return self._serialized[serializer]
 
 

@@ -85,7 +85,6 @@ class Serializer(object):
 
     def __init__(self, serializer):
         """
-        Constructor.
 
         :param serializer: The object serializer to use for WAMP wire-level serialization.
         :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
