@@ -91,6 +91,9 @@ test_twisted:
 test_tx_serializer:
 	USE_TWISTED=1 trial autobahn.wamp.test.test_serializer
 
+test_tx_cryptobox:
+	USE_TWISTED=1 trial autobahn.wamp.test.test_cryptobox
+
 test_tx_choosereactor:
 	USE_TWISTED=1 trial autobahn.twisted.test.test_choosereactor
 
