@@ -34,6 +34,7 @@ import platform
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
+from autobahn.wamp import message_fbs
 
 # note: __all__ must be a list here, since we dynamically
 # extend it depending on availability of more serializers
@@ -85,7 +86,6 @@ class Serializer(object):
 
     def __init__(self, serializer):
         """
-        Constructor.
 
         :param serializer: The object serializer to use for WAMP wire-level serialization.
         :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
@@ -104,39 +104,42 @@ class Serializer(object):
         """
         if isBinary is not None:
             if isBinary != self._serializer.BINARY:
-                raise ProtocolError("invalid serialization of WAMP message (binary {0}, but expected {1})".format(isBinary, self._serializer.BINARY))
-
+                raise ProtocolError(
+                    "invalid serialization of WAMP message (binary {0}, but expected {1})".format(isBinary,
+                                                                                                  self._serializer.BINARY))
         try:
             raw_msgs = self._serializer.unserialize(payload)
         except Exception as e:
-            raise ProtocolError("invalid serialization of WAMP message ({0})".format(e))
+            raise ProtocolError("invalid serialization of WAMP message: {0} {1}".format(type(e).__name__, e))
 
-        msgs = []
+        if self._serializer.NAME == u'flatbuffers':
+            msgs = raw_msgs
+        else:
+            msgs = []
+            for raw_msg in raw_msgs:
 
-        for raw_msg in raw_msgs:
+                if type(raw_msg) != list:
+                    raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
 
-            if type(raw_msg) != list:
-                raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
+                if len(raw_msg) == 0:
+                    raise ProtocolError(u"missing message type in WAMP message")
 
-            if len(raw_msg) == 0:
-                raise ProtocolError(u"missing message type in WAMP message")
+                message_type = raw_msg[0]
 
-            message_type = raw_msg[0]
+                if type(message_type) not in six.integer_types:
+                    # CBOR doesn't roundtrip number types
+                    # https://bitbucket.org/bodhisnarkva/cbor/issues/6/number-types-dont-roundtrip
+                    raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
 
-            if type(message_type) not in six.integer_types:
-                # CBOR doesn't roundtrip number types
-                # https://bitbucket.org/bodhisnarkva/cbor/issues/6/number-types-dont-roundtrip
-                raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
+                Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
-            Klass = self.MESSAGE_TYPE_MAP.get(message_type)
+                if Klass is None:
+                    raise ProtocolError("invalid WAMP message type {0}".format(message_type))
 
-            if Klass is None:
-                raise ProtocolError("invalid WAMP message type {0}".format(message_type))
+                # this might again raise `ProtocolError` ..
+                msg = Klass.parse(raw_msg)
 
-            # this might again raise `ProtocolError` ..
-            msg = Klass.parse(raw_msg)
-
-            msgs.append(msg)
+                msgs.append(msg)
 
         return msgs
 
@@ -674,6 +677,104 @@ else:
     SERID_TO_SER[UBJSONSerializer.SERIALIZER_ID] = UBJSONSerializer
 
     __all__.append('UBJSONSerializer')
+
+
+_HAS_FLATBUFFERS = False
+try:
+    import flatbuffers  # noqa
+except ImportError:
+    pass
+else:
+    _HAS_FLATBUFFERS = True
+
+
+if _HAS_FLATBUFFERS:
+
+    class FlatBuffersObjectSerializer(object):
+
+        NAME = u'flatbuffers'
+
+        BINARY = True
+        """
+        Flag that indicates whether this serializer needs a binary clean transport.
+        """
+
+        MESSAGE_TYPE_MAP = {
+            message_fbs.MessageType.EVENT: (message_fbs.Event, message.Event),
+            message_fbs.MessageType.PUBLISH: (message_fbs.Publish, message.Publish),
+        }
+
+        def __init__(self, batched=False):
+            """
+
+            :param batched: Flag that controls whether serializer operates in batched mode.
+            :type batched: bool
+            """
+            assert not batched, 'WAMP-FlatBuffers serialization does not support message batching currently'
+            self._batched = batched
+
+        def serialize(self, obj):
+            """
+            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
+            """
+            raise NotImplementedError()
+
+        def unserialize(self, payload):
+            """
+            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
+            """
+            union_msg = message_fbs.Message.Message.GetRootAsMessage(payload, 0)
+            msg_type = union_msg.MsgType()
+
+            if msg_type in self.MESSAGE_TYPE_MAP:
+                fbs_klass, wamp_klass = self.MESSAGE_TYPE_MAP[msg_type]
+                fbs_msg = fbs_klass()
+                _tab = union_msg.Msg()
+                fbs_msg.Init(_tab.Bytes, _tab.Pos)
+                msg = wamp_klass(from_fbs=fbs_msg)
+                return [msg]
+            else:
+                raise NotImplementedError('message type {} not yet implemented for WAMP-FlatBuffers'.format(msg_type))
+
+    IObjectSerializer.register(FlatBuffersObjectSerializer)
+
+    __all__.append('FlatBuffersObjectSerializer')
+    SERID_TO_OBJSER[FlatBuffersObjectSerializer.NAME] = FlatBuffersObjectSerializer
+
+    class FlatBuffersSerializer(Serializer):
+
+        SERIALIZER_ID = u"flatbuffers"
+        """
+        ID used as part of the WebSocket subprotocol name to identify the
+        serializer with WAMP-over-WebSocket.
+        """
+
+        RAWSOCKET_SERIALIZER_ID = 5
+        """
+        ID used in lower four bits of second octet in RawSocket opening
+        handshake identify the serializer with WAMP-over-RawSocket.
+        """
+
+        MIME_TYPE = u"application/x-flatbuffers"
+        """
+        MIME type announced in HTTP request/response headers when running
+        WAMP-over-Longpoll HTTP fallback.
+        """
+
+        def __init__(self, batched=False):
+            """
+
+            :param batched: Flag to control whether to put this serialized into batched mode.
+            :type batched: bool
+            """
+            Serializer.__init__(self, FlatBuffersObjectSerializer(batched=batched))
+            if batched:
+                self.SERIALIZER_ID = u"flatbuffers.batched"
+
+    ISerializer.register(FlatBuffersSerializer)
+    SERID_TO_SER[FlatBuffersSerializer.SERIALIZER_ID] = FlatBuffersSerializer
+
+    __all__.append('FlatBuffersSerializer')
 
 
 def create_transport_serializer(serializer_id):

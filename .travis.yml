@@ -16,9 +16,6 @@ install:
 script:
   - tox -c tox.ini -e $TOX_ENV
 
-after_script:
-  - codecov
-
 cache:
   directories:
     - $HOME/.cache/pip
@@ -106,6 +103,11 @@ matrix:
     - python: "2.7"
       env:
       - TOX_ENV=py27-asyncio
+
+
+    - python: "3.7"
+      skip_cleanup: true
+      env: TOX_ENV=coverage
 
     #
     # Build wheel and upload to S3

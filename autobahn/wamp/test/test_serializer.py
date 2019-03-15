@@ -120,35 +120,78 @@ def generate_test_messages_binary():
     return [(True, msg) for msg in msgs]
 
 
+def create_serializers():
+    _serializers = []
+
+    _serializers.append(serializer.JsonSerializer())
+    _serializers.append(serializer.JsonSerializer(batched=True))
+
+    _serializers.append(serializer.MsgPackSerializer())
+    _serializers.append(serializer.MsgPackSerializer(batched=True))
+
+    _serializers.append(serializer.CBORSerializer())
+    _serializers.append(serializer.CBORSerializer(batched=True))
+
+    _serializers.append(serializer.UBJSONSerializer())
+    _serializers.append(serializer.UBJSONSerializer(batched=True))
+
+    # FIXME: implement full FlatBuffers serializer for WAMP
+    if six.PY3:
+        # WAMP-FlatBuffers currently only supports Python 3
+        # _serializers.append(serializer.FlatBuffersSerializer())
+        # _serializers.append(serializer.FlatBuffersSerializer(batched=True))
+        pass
+
+    return _serializers
+
+
+@unittest.skipIf(not six.PY3, 'WAMP-FlatBuffers currently only supports Python 3')
+class TestFlatBuffersSerializer(unittest.TestCase):
+
+    def test_basic(self):
+        messages = [
+            message.Event(123456,
+                          789123,
+                          args=[1, 2, 3],
+                          kwargs={u'foo': 23, u'bar': u'hello'},
+                          publisher=666,
+                          retained=True),
+            message.Publish(123456,
+                            'com.example.topic1',
+                            args=[1, 2, 3],
+                            kwargs={u'foo': 23, u'bar': u'hello'},
+                            retain=True)
+        ]
+
+        ser = serializer.FlatBuffersSerializer()
+
+        # from pprint import pprint
+
+        for msg in messages:
+
+            # serialize message
+            payload, binary = ser.serialize(msg)
+
+            # unserialize message again
+            msg2 = ser.unserialize(payload, binary)[0]
+
+            # pprint(msg.marshal())
+            # pprint(msg2.marshal())
+
+            # must be equal: message roundtrips via the serializer
+            self.assertEqual(msg, msg2)
+            # self.assertEqual(msg.subscription, msg2.subscription)
+            # self.assertEqual(msg.publication, msg2.publication)
+
+
 class TestSerializer(unittest.TestCase):
 
     def setUp(self):
         self._test_messages = generate_test_messages() + generate_test_messages_binary()
+        self._test_serializers = create_serializers()
+        # print('Testing WAMP serializers {} with {} WAMP test messages'.format([ser.SERIALIZER_ID for ser in self._test_serializers], len(self._test_messages)))
 
-        self._test_serializers = []
-
-        # JSON serializer is always available
-        self._test_serializers.append(serializer.JsonSerializer())
-        self._test_serializers.append(serializer.JsonSerializer(batched=True))
-
-        # MsgPack serializer is optional
-        if hasattr(serializer, 'MsgPackSerializer'):
-            self._test_serializers.append(serializer.MsgPackSerializer())
-            self._test_serializers.append(serializer.MsgPackSerializer(batched=True))
-
-        # CBOR serializer is optional
-        if hasattr(serializer, 'CBORSerializer'):
-            self._test_serializers.append(serializer.CBORSerializer())
-            self._test_serializers.append(serializer.CBORSerializer(batched=True))
-
-        # UBJSON serializer is optional
-        if hasattr(serializer, 'UBJSONSerializer'):
-            self._test_serializers.append(serializer.UBJSONSerializer())
-            self._test_serializers.append(serializer.UBJSONSerializer(batched=True))
-
-        print('Testing WAMP serializers {} with {} WAMP test messages'.format([ser.SERIALIZER_ID for ser in self._test_serializers], len(self._test_messages)))
-
-    def test_deep_equal(self):
+    def test_deep_equal_msg(self):
         """
         Test deep object equality assert (because I am paranoid).
         """
@@ -157,7 +200,7 @@ class TestSerializer(unittest.TestCase):
         o2 = [1, 2, {u'goo': {u'moo': [1, 2, 3]}, u'bar': v, u'baz': [9, 3, 2], u'foo': u'bar'}, v]
         self.assertEqual(o1, o2)
 
-    def test_roundtrip(self):
+    def test_roundtrip_msg(self):
         """
         Test round-tripping over each serializer.
         """
@@ -175,7 +218,7 @@ class TestSerializer(unittest.TestCase):
                     # must be equal: message roundtrips via the serializer
                     self.assertEqual([msg], msg2)
 
-    def test_crosstrip(self):
+    def test_crosstrip_msg(self):
         """
         Test cross-tripping over 2 serializers (as is done by WAMP routers).
         """
@@ -204,7 +247,7 @@ class TestSerializer(unittest.TestCase):
                             # the serializers ser1 -> ser2
                             self.assertEqual([msg], msg2)
 
-    def test_caching(self):
+    def test_cache_msg(self):
         """
         Test message serialization caching.
         """

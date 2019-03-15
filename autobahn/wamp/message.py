@@ -34,6 +34,18 @@ import six
 import autobahn
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
+from autobahn.wamp import message_fbs
+
+try:
+    import cbor
+except ImportError:
+    pass
+
+try:
+    import flatbuffers
+except ImportError:
+    pass
+
 
 __all__ = ('Message',
            'Hello',
@@ -106,6 +118,19 @@ PAYLOAD_ENC_STANDARD_IDENTIFIERS = [PAYLOAD_ENC_CRYPTO_BOX, PAYLOAD_ENC_MQTT, PA
 
 # Payload transparency serializer identifiers from the WAMP spec.
 PAYLOAD_ENC_STANDARD_SERIALIZERS = [u'json', u'msgpack', u'cbor', u'ubjson', u'flatbuffers']
+
+ENC_ALGO_NONE = 0
+ENC_ALGO_CRYPTOBOX = 1
+ENC_ALGO_MQTT = 2
+ENC_ALGO_XBR = 3
+
+ENC_SER_NONE = 0
+ENC_SER_JSON = 1
+ENC_SER_MSGPACK = 2
+ENC_SER_CBOR = 3
+ENC_SER_UBJSON = 4
+ENC_SER_OPAQUE = 5
+ENC_SER_FLATBUFFERS = 6
 
 
 def is_valid_enc_algo(enc_algo):
@@ -332,6 +357,7 @@ class Message(object):
     """
 
     __slots__ = (
+        '_from_fbs',
         '_serialized',
         '_correlation_id',
         '_correlation_uri',
@@ -339,7 +365,10 @@ class Message(object):
         '_correlation_is_last',
     )
 
-    def __init__(self):
+    def __init__(self, from_fbs=None):
+        # only filled in case this object has flatbuffers underlying
+        self._from_fbs = from_fbs
+
         # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
 
@@ -403,7 +432,7 @@ class Message(object):
                          '_correlation_id',
                          '_correlation_uri',
                          '_correlation_is_anchor',
-                         '_correlation_is_last']:
+                         '_correlation_is_last'] and not k.startswith('_'):
                 if not getattr(self, k) == getattr(other, k):
                     return False
         return True
@@ -430,6 +459,17 @@ class Message(object):
         :returns: An instance of this class.
         :rtype: obj
         """
+        raise NotImplementedError()
+
+    def marshal(self):
+        raise NotImplementedError()
+
+    @staticmethod
+    def cast(buf):
+        raise NotImplementedError()
+
+    def build(self, builder):
+        raise NotImplementedError()
 
     def uncache(self):
         """
@@ -451,7 +491,22 @@ class Message(object):
         """
         # only serialize if not cached ..
         if serializer not in self._serialized:
-            self._serialized[serializer] = serializer.serialize(self.marshal())
+            if serializer.NAME == u'flatbuffers':
+                # flatbuffers get special treatment ..
+                builder = flatbuffers.Builder(1024)
+
+                # this is the core method writing out this message (self) to a (new) flatbuffer
+                # FIXME: implement this method for all classes derived from Message
+                obj = self.build(builder)
+
+                builder.Finish(obj)
+                buf = builder.Output()
+                self._serialized[serializer] = bytes(buf)
+            else:
+                # all other serializers first marshal() the object and then serialize the latter
+                self._serialized[serializer] = serializer.serialize(self.marshal())
+
+        # cache is filled now: return serialized, cached bytes
         return self._serialized[serializer]
 
 
@@ -1526,29 +1581,29 @@ class Publish(Message):
     """
 
     __slots__ = (
-        'request',
-        'topic',
-        'args',
-        'kwargs',
-        'payload',
-        'acknowledge',
-        'exclude_me',
-        'exclude',
-        'exclude_authid',
-        'exclude_authrole',
-        'eligible',
-        'eligible_authid',
-        'eligible_authrole',
-        'retain',
-        'enc_algo',
-        'enc_key',
-        'enc_serializer',
-        'forward_for',
+        '_request',
+        '_topic',
+        '_args',
+        '_kwargs',
+        '_payload',
+        '_acknowledge',
+        '_exclude_me',
+        '_exclude',
+        '_exclude_authid',
+        '_exclude_authrole',
+        '_eligible',
+        '_eligible_authid',
+        '_eligible_authrole',
+        '_retain',
+        '_enc_algo',
+        '_enc_key',
+        '_enc_serializer',
+        '_forward_for',
     )
 
     def __init__(self,
-                 request,
-                 topic,
+                 request=None,
+                 topic=None,
                  args=None,
                  kwargs=None,
                  payload=None,
@@ -1564,7 +1619,8 @@ class Publish(Message):
                  enc_algo=None,
                  enc_key=None,
                  enc_serializer=None,
-                 forward_for=None):
+                 forward_for=None,
+                 from_fbs=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1626,8 +1682,8 @@ class Publish(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
-        assert(type(topic) == six.text_type)
+        assert(request is None or type(request) in six.integer_types)
+        assert(topic is None or type(topic) == six.text_type)
         assert(args is None or type(args) in [list, tuple, six.text_type, six.binary_type])
         assert(kwargs is None or type(kwargs) in [dict, six.text_type, six.binary_type])
         assert(payload is None or type(payload) == six.binary_type)
@@ -1681,33 +1737,475 @@ class Publish(Message):
                 assert 'authid' in ff and type(ff['authid']) == six.text_type
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
-        Message.__init__(self)
-        self.request = request
-        self.topic = topic
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
-        self.acknowledge = acknowledge
+        Message.__init__(self, from_fbs=from_fbs)
+        self._request = request
+        self._topic = topic
+        self._args = args
+        self._kwargs = _validate_kwargs(kwargs)
+        self._payload = payload
+        self._acknowledge = acknowledge
 
         # publisher exlusion and black-/whitelisting
-        self.exclude_me = exclude_me
-        self.exclude = exclude
-        self.exclude_authid = exclude_authid
-        self.exclude_authrole = exclude_authrole
-        self.eligible = eligible
-        self.eligible_authid = eligible_authid
-        self.eligible_authrole = eligible_authrole
+        self._exclude_me = exclude_me
+        self._exclude = exclude
+        self._exclude_authid = exclude_authid
+        self._exclude_authrole = exclude_authrole
+        self._eligible = eligible
+        self._eligible_authid = eligible_authid
+        self._eligible_authrole = eligible_authrole
 
         # event retention
-        self.retain = retain
+        self._retain = retain
 
         # payload transparency related knobs
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
+        self._enc_algo = enc_algo
+        self._enc_key = enc_key
+        self._enc_serializer = enc_serializer
 
         # message forwarding
-        self.forward_for = forward_for
+        self._forward_for = forward_for
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.request != self.request:
+            return False
+        if other.topic != self.topic:
+            return False
+        if other.args != self.args:
+            return False
+        if other.kwargs != self.kwargs:
+            return False
+        if other.payload != self.payload:
+            return False
+        if other.acknowledge != self.acknowledge:
+            return False
+        if other.exclude_me != self.exclude_me:
+            return False
+        if other.exclude != self.exclude:
+            return False
+        if other.exclude_authid != self.exclude_authid:
+            return False
+        if other.exclude_authrole != self.exclude_authrole:
+            return False
+        if other.eligible != self.eligible:
+            return False
+        if other.eligible_authid != self.eligible_authid:
+            return False
+        if other.eligible_authrole != self.eligible_authrole:
+            return False
+        if other.retain != self.retain:
+            return False
+        if other.enc_algo != self.enc_algo:
+            return False
+        if other.enc_key != self.enc_key:
+            return False
+        if other.enc_serializer != self.enc_serializer:
+            return False
+        if other.forward_for != self.forward_for:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert(value is None or type(value) in six.integer_types)
+        self._request = value
+
+    @property
+    def topic(self):
+        if self._topic is None and self._from_fbs:
+            s = self._from_fbs.Topic()
+            if s:
+                self._topic = s.decode('utf8')
+        return self._topic
+
+    @topic.setter
+    def topic(self, value):
+        assert value is None or type(value) == str
+        self._topic = value
+
+    @property
+    def args(self):
+        if self._args is None and self._from_fbs:
+            if self._from_fbs.ArgsLength():
+                self._args = cbor.loads(bytes(self._from_fbs.ArgsAsBytes()))
+        return self._args
+
+    @args.setter
+    def args(self, value):
+        assert(value is None or type(value) in [list, tuple])
+        self._args = value
+
+    @property
+    def kwargs(self):
+        if self._kwargs is None and self._from_fbs:
+            if self._from_fbs.KwargsLength():
+                self._kwargs = cbor.loads(bytes(self._from_fbs.KwargsAsBytes()))
+        return self._kwargs
+
+    @kwargs.setter
+    def kwargs(self, value):
+        assert(value is None or type(value) == dict)
+        self._kwargs = value
+
+    @property
+    def payload(self):
+        if self._payload is None and self._from_fbs:
+            if self._from_fbs.PayloadLength():
+                self._payload = self._from_fbs.PayloadAsBytes()
+        return self._payload
+
+    @payload.setter
+    def payload(self, value):
+        assert value is None or type(value) == bytes
+        self._payload = value
+
+    @property
+    def acknowledge(self):
+        if self._acknowledge is None and self._from_fbs:
+            acknowledge = self._from_fbs.Acknowledge()
+            if acknowledge:
+                self._acknowledge = acknowledge
+        return self._acknowledge
+
+    @acknowledge.setter
+    def acknowledge(self, value):
+        assert value is None or type(value) == bool
+        self._acknowledge = value
+
+    @property
+    def exclude_me(self):
+        if self._exclude_me is None and self._from_fbs:
+            exclude_me = self._from_fbs.ExcludeMe()
+            if exclude_me is False:
+                self._exclude_me = exclude_me
+        return self._exclude_me
+
+    @exclude_me.setter
+    def exclude_me(self, value):
+        assert value is None or type(value) == bool
+        self._exclude_me = value
+
+    @property
+    def exclude(self):
+        if self._exclude is None and self._from_fbs:
+            if self._from_fbs.ExcludeLength():
+                exclude = []
+                for j in range(self._from_fbs.ExcludeLength()):
+                    exclude.append(self._from_fbs.Exclude(j))
+                self._exclude = exclude
+        return self._exclude
+
+    @exclude.setter
+    def exclude(self, value):
+        assert value is None or type(value) == list
+        if value:
+            for x in value:
+                assert type(x) == int
+        self._exclude = value
+
+    @property
+    def exclude_authid(self):
+        if self._exclude_authid is None and self._from_fbs:
+            if self._from_fbs.ExcludeAuthidLength():
+                exclude_authid = []
+                for j in range(self._from_fbs.ExcludeAuthidLength()):
+                    exclude_authid.append(self._from_fbs.ExcludeAuthid(j).decode('utf8'))
+                self._exclude_authid = exclude_authid
+        return self._exclude_authid
+
+    @exclude_authid.setter
+    def exclude_authid(self, value):
+        assert value is None or type(value) == list
+        if value:
+            for x in value:
+                assert type(x) == str
+        self._exclude_authid = value
+
+    @property
+    def exclude_authrole(self):
+        if self._exclude_authrole is None and self._from_fbs:
+            if self._from_fbs.ExcludeAuthroleLength():
+                exclude_authrole = []
+                for j in range(self._from_fbs.ExcludeAuthroleLength()):
+                    exclude_authrole.append(self._from_fbs.ExcludeAuthrole(j).decode('utf8'))
+                self._exclude_authrole = exclude_authrole
+        return self._exclude_authrole
+
+    @exclude_authrole.setter
+    def exclude_authrole(self, value):
+        assert value is None or type(value) == list
+        if value:
+            for x in value:
+                assert type(x) == str
+        self._exclude_authrole = value
+
+    @property
+    def eligible(self):
+        if self._eligible is None and self._from_fbs:
+            if self._from_fbs.EligibleLength():
+                eligible = []
+                for j in range(self._from_fbs.EligibleLength()):
+                    eligible.append(self._from_fbs.Eligible(j))
+                self._eligible = eligible
+        return self._eligible
+
+    @eligible.setter
+    def eligible(self, value):
+        assert value is None or type(value) == list
+        if value:
+            for x in value:
+                assert type(x) == int
+        self._eligible = value
+
+    @property
+    def eligible_authid(self):
+        if self._eligible_authid is None and self._from_fbs:
+            if self._from_fbs.EligibleAuthidLength():
+                eligible_authid = []
+                for j in range(self._from_fbs.EligibleAuthidLength()):
+                    eligible_authid.append(self._from_fbs.EligibleAuthid(j).decode('utf8'))
+                self._eligible_authid = eligible_authid
+        return self._eligible_authid
+
+    @eligible_authid.setter
+    def eligible_authid(self, value):
+        assert value is None or type(value) == list
+        if value:
+            for x in value:
+                assert type(x) == str
+        self._eligible_authid = value
+
+    @property
+    def eligible_authrole(self):
+        if self._eligible_authrole is None and self._from_fbs:
+            if self._from_fbs.EligibleAuthroleLength():
+                eligible_authrole = []
+                for j in range(self._from_fbs.EligibleAuthroleLength()):
+                    eligible_authrole.append(self._from_fbs.EligibleAuthrole(j).decode('utf8'))
+                self._eligible_authrole = eligible_authrole
+        return self._eligible_authrole
+
+    @eligible_authrole.setter
+    def eligible_authrole(self, value):
+        assert value is None or type(value) == list
+        if value:
+            for x in value:
+                assert type(x) == str
+        self._eligible_authrole = value
+
+    @property
+    def retain(self):
+        if self._retain is None and self._from_fbs:
+            retain = self._from_fbs.Retain()
+            if retain:
+                self._retain = retain
+        return self._retain
+
+    @retain.setter
+    def retain(self, value):
+        assert value is None or type(value) == bool
+        self._retain = value
+
+    @property
+    def enc_algo(self):
+        if self._enc_algo is None and self._from_fbs:
+            enc_algo = self._from_fbs.EncAlgo()
+            if enc_algo:
+                self._enc_algo = enc_algo
+        return self._enc_algo
+
+    @enc_algo.setter
+    def enc_algo(self, value):
+        assert value is None or value in [ENC_ALGO_CRYPTOBOX, ENC_ALGO_MQTT, ENC_ALGO_XBR]
+        self._enc_algo = value
+
+    @property
+    def enc_key(self):
+        if self._enc_key is None and self._from_fbs:
+            if self._from_fbs.EncKeyLength():
+                self._enc_key = self._from_fbs.EncKeyAsBytes()
+        return self._enc_key
+
+    @enc_key.setter
+    def enc_key(self, value):
+        assert value is None or type(value) == bytes
+        self._enc_key = value
+
+    @property
+    def enc_serializer(self):
+        if self._enc_serializer is None and self._from_fbs:
+            enc_serializer = self._from_fbs.EncSerializer()
+            if enc_serializer:
+                self._enc_serializer = enc_serializer
+        return self._enc_serializer
+
+    @enc_serializer.setter
+    def enc_serializer(self, value):
+        assert value is None or value in [ENC_SER_JSON, ENC_SER_MSGPACK, ENC_SER_CBOR, ENC_SER_UBJSON]
+        self._enc_serializer = value
+
+    @property
+    def forward_for(self):
+        # FIXME
+        return None
+
+    @forward_for.setter
+    def forward_for(self, value):
+        # FIXME
+        pass
+
+    @staticmethod
+    def cast(buf):
+        return Publish(from_fbs=message_fbs.Publish.GetRootAsPublish(buf, 0))
+
+    def build(self, builder):
+
+        args = self.args
+        if args:
+            args = builder.CreateByteVector(cbor.dumps(args))
+
+        kwargs = self.kwargs
+        if kwargs:
+            kwargs = builder.CreateByteVector(cbor.dumps(kwargs))
+
+        payload = self.payload
+        if payload:
+            payload = builder.CreateByteVector(payload)
+
+        topic = self.topic
+        if topic:
+            topic = builder.CreateString(topic)
+
+        enc_key = self.enc_key
+        if enc_key:
+            enc_key = builder.CreateByteVector(enc_key)
+
+        # exclude: [int]
+        exclude = self.exclude
+        if exclude:
+            message_fbs.PublishGen.PublishStartExcludeAuthidVector(builder, len(exclude))
+            for session in reversed(exclude):
+                builder.PrependUint64(session)
+            exclude = builder.EndVector(len(exclude))
+
+        # exclude_authid: [string]
+        exclude_authid = self.exclude_authid
+        if exclude_authid:
+            _exclude_authid = []
+            for authid in exclude_authid:
+                _exclude_authid.append(builder.CreateString(authid))
+            message_fbs.PublishGen.PublishStartExcludeAuthidVector(builder, len(_exclude_authid))
+            for o in reversed(_exclude_authid):
+                builder.PrependUOffsetTRelative(o)
+            exclude_authid = builder.EndVector(len(_exclude_authid))
+
+        # exclude_authrole: [string]
+        exclude_authrole = self.exclude_authrole
+        if exclude_authid:
+            _exclude_authrole = []
+            for authrole in exclude_authrole:
+                _exclude_authrole.append(builder.CreateString(authrole))
+            message_fbs.PublishGen.PublishStartExcludeAuthroleVector(builder, len(_exclude_authrole))
+            for o in reversed(_exclude_authrole):
+                builder.PrependUOffsetTRelative(o)
+            exclude_authrole = builder.EndVector(len(_exclude_authrole))
+
+        # eligible: [int]
+        eligible = self.eligible
+        if eligible:
+            message_fbs.PublishGen.PublishStartEligibleAuthidVector(builder, len(eligible))
+            for session in reversed(eligible):
+                builder.PrependUint64(session)
+            eligible = builder.EndVector(len(eligible))
+
+        # eligible_authid: [string]
+        eligible_authid = self.eligible_authid
+        if eligible_authid:
+            _eligible_authid = []
+            for authid in eligible_authid:
+                _eligible_authid.append(builder.CreateString(authid))
+            message_fbs.PublishGen.PublishStartEligibleAuthidVector(builder, len(_eligible_authid))
+            for o in reversed(_eligible_authid):
+                builder.PrependUOffsetTRelative(o)
+            eligible_authid = builder.EndVector(len(_eligible_authid))
+
+        # eligible_authrole: [string]
+        eligible_authrole = self.eligible_authrole
+        if eligible_authrole:
+            _eligible_authrole = []
+            for authrole in eligible_authrole:
+                _eligible_authrole.append(builder.CreateString(authrole))
+            message_fbs.PublishGen.PublishStartEligibleAuthroleVector(builder, len(_eligible_authrole))
+            for o in reversed(_eligible_authrole):
+                builder.PrependUOffsetTRelative(o)
+            eligible_authrole = builder.EndVector(len(_eligible_authrole))
+
+        # now start and build a new object ..
+        message_fbs.PublishGen.PublishStart(builder)
+
+        if self.request is not None:
+            message_fbs.PublishGen.PublishAddRequest(builder, self.request)
+
+        if topic:
+            message_fbs.PublishGen.PublishAddTopic(builder, topic)
+
+        if args:
+            message_fbs.PublishGen.PublishAddArgs(builder, args)
+        if kwargs is not None:
+            message_fbs.PublishGen.PublishAddKwargs(builder, kwargs)
+        if payload is not None:
+            message_fbs.PublishGen.PublishAddPayload(builder, payload)
+
+        if self.acknowledge is not None:
+            message_fbs.PublishGen.PublishAddAcknowledge(builder, self.acknowledge)
+        if self.retain is not None:
+            message_fbs.PublishGen.PublishAddRetain(builder, self.retain)
+        if self.exclude_me is not None:
+            message_fbs.PublishGen.PublishAddExcludeMe(builder, self.exclude_me)
+
+        if exclude:
+            message_fbs.PublishGen.PublishAddExclude(builder, exclude)
+        if exclude_authid:
+            message_fbs.PublishGen.PublishAddExcludeAuthid(builder, exclude_authid)
+        if exclude_authrole:
+            message_fbs.PublishGen.PublishAddExcludeAuthrole(builder, exclude_authrole)
+
+        if eligible:
+            message_fbs.PublishGen.PublishAddEligible(builder, eligible)
+        if eligible_authid:
+            message_fbs.PublishGen.PublishAddEligibleAuthid(builder, eligible_authid)
+        if eligible_authrole:
+            message_fbs.PublishGen.PublishAddEligibleAuthrole(builder, eligible_authrole)
+
+        if self.enc_algo:
+            message_fbs.PublishGen.PublishAddEncAlgo(builder, self.enc_algo)
+        if enc_key:
+            message_fbs.PublishGen.PublishAddEncKey(builder, enc_key)
+        if self.enc_serializer:
+            message_fbs.PublishGen.PublishAddEncSerializer(builder, self.enc_serializer)
+
+        # FIXME: add forward_for
+
+        msg = message_fbs.PublishGen.PublishEnd(builder)
+
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.PUBLISH)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -2431,27 +2929,28 @@ class Event(Message):
     """
 
     __slots__ = (
-        'subscription',
-        'publication',
-        'args',
-        'kwargs',
-        'payload',
-        'publisher',
-        'publisher_authid',
-        'publisher_authrole',
-        'topic',
-        'retained',
-        'x_acknowledged_delivery',
-        'enc_algo',
-        'enc_key',
-        'enc_serializer',
-        'forward_for',
+        '_subscription',
+        '_publication',
+        '_args',
+        '_kwargs',
+        '_payload',
+        '_publisher',
+        '_publisher_authid',
+        '_publisher_authrole',
+        '_topic',
+        '_retained',
+        '_x_acknowledged_delivery',
+        '_enc_algo',
+        '_enc_key',
+        '_enc_serializer',
+        '_forward_for',
     )
 
-    def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
+    def __init__(self, subscription=None, publication=None, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
                  retained=None, x_acknowledged_delivery=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None):
+                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None,
+                 from_fbs=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -2501,8 +3000,8 @@ class Event(Message):
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(subscription) in six.integer_types)
-        assert(type(publication) in six.integer_types)
+        assert(subscription is None or type(subscription) in six.integer_types)
+        assert(publication is None or type(publication) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
         assert(payload is None or type(payload) == six.binary_type)
@@ -2526,22 +3025,324 @@ class Event(Message):
                 assert 'authid' in ff and type(ff['authid']) == six.text_type
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
-        Message.__init__(self)
-        self.subscription = subscription
-        self.publication = publication
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
-        self.publisher = publisher
-        self.publisher_authid = publisher_authid
-        self.publisher_authrole = publisher_authrole
-        self.topic = topic
-        self.retained = retained
-        self.x_acknowledged_delivery = x_acknowledged_delivery
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
-        self.forward_for = forward_for
+        Message.__init__(self, from_fbs=from_fbs)
+        self._subscription = subscription
+        self._publication = publication
+        self._args = args
+        self._kwargs = _validate_kwargs(kwargs)
+        self._payload = payload
+        self._publisher = publisher
+        self._publisher_authid = publisher_authid
+        self._publisher_authrole = publisher_authrole
+        self._topic = topic
+        self._retained = retained
+        self._x_acknowledged_delivery = x_acknowledged_delivery
+        self._enc_algo = enc_algo
+        self._enc_key = enc_key
+        self._enc_serializer = enc_serializer
+        self._forward_for = forward_for
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.subscription != self.subscription:
+            return False
+        if other.publication != self.publication:
+            return False
+        if other.args != self.args:
+            return False
+        if other.kwargs != self.kwargs:
+            return False
+        if other.payload != self.payload:
+            return False
+        if other.publisher != self.publisher:
+            return False
+        if other.publisher_authid != self.publisher_authid:
+            return False
+        if other.publisher_authrole != self.publisher_authrole:
+            return False
+        if other.topic != self.topic:
+            return False
+        if other.retained != self.retained:
+            return False
+        if other.x_acknowledged_delivery != self.x_acknowledged_delivery:
+            return False
+        if other.enc_algo != self.enc_algo:
+            return False
+        if other.enc_key != self.enc_key:
+            return False
+        if other.enc_serializer != self.enc_serializer:
+            return False
+        if other.forward_for != self.forward_for:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    @property
+    def subscription(self):
+        if self._subscription is None and self._from_fbs:
+            self._subscription = self._from_fbs.Subscription()
+        return self._subscription
+
+    @subscription.setter
+    def subscription(self, value):
+        assert(value is None or type(value) in six.integer_types)
+        self._subscription = value
+
+    @property
+    def publication(self):
+        if self._publication is None and self._from_fbs:
+            self._publication = self._from_fbs.Publication()
+        return self._publication
+
+    @publication.setter
+    def publication(self, value):
+        assert(value is None or type(value) in six.integer_types)
+        self._publication = value
+
+    @property
+    def args(self):
+        if self._args is None and self._from_fbs:
+            if self._from_fbs.ArgsLength():
+                self._args = cbor.loads(bytes(self._from_fbs.ArgsAsBytes()))
+        return self._args
+
+    @args.setter
+    def args(self, value):
+        assert(value is None or type(value) in [list, tuple])
+        self._args = value
+
+    @property
+    def kwargs(self):
+        if self._kwargs is None and self._from_fbs:
+            if self._from_fbs.KwargsLength():
+                self._kwargs = cbor.loads(bytes(self._from_fbs.KwargsAsBytes()))
+        return self._kwargs
+
+    @kwargs.setter
+    def kwargs(self, value):
+        assert(value is None or type(value) == dict)
+        self._kwargs = value
+
+    @property
+    def payload(self):
+        if self._payload is None and self._from_fbs:
+            if self._from_fbs.PayloadLength():
+                self._payload = self._from_fbs.PayloadAsBytes()
+        return self._payload
+
+    @payload.setter
+    def payload(self, value):
+        assert value is None or type(value) == bytes
+        self._payload = value
+
+    @property
+    def publisher(self):
+        if self._publisher is None and self._from_fbs:
+            publisher = self._from_fbs.Publisher()
+            if publisher:
+                self._publisher = publisher
+        return self._publisher
+
+    @publisher.setter
+    def publisher(self, value):
+        assert value is None or type(value) == int
+        self._publisher = value
+
+    @property
+    def publisher_authid(self):
+        if self._publisher_authid is None and self._from_fbs:
+            s = self._from_fbs.PublisherAuthid()
+            if s:
+                self._publisher_authid = s.decode('utf8')
+        return self._publisher_authid
+
+    @publisher_authid.setter
+    def publisher_authid(self, value):
+        assert value is None or type(value) == str
+        self._publisher_authid = value
+
+    @property
+    def publisher_authrole(self):
+        if self._publisher_authrole is None and self._from_fbs:
+            s = self._from_fbs.PublisherAuthrole()
+            if s:
+                self._publisher_authrole = s.decode('utf8')
+        return self._publisher_authrole
+
+    @publisher_authrole.setter
+    def publisher_authrole(self, value):
+        assert value is None or type(value) == str
+        self._publisher_authrole = value
+
+    @property
+    def topic(self):
+        if self._topic is None and self._from_fbs:
+            s = self._from_fbs.Topic()
+            if s:
+                self._topic = s.decode('utf8')
+        return self._topic
+
+    @topic.setter
+    def topic(self, value):
+        assert value is None or type(value) == str
+        self._topic = value
+
+    @property
+    def retained(self):
+        if self._retained is None and self._from_fbs:
+            self._retained = self._from_fbs.Retained()
+        return self._retained
+
+    @retained.setter
+    def retained(self, value):
+        assert value is None or type(value) == bool
+        self._retained = value
+
+    @property
+    def x_acknowledged_delivery(self):
+        if self._x_acknowledged_delivery is None and self._from_fbs:
+            x_acknowledged_delivery = self._from_fbs.Acknowledge()
+            if x_acknowledged_delivery:
+                self._x_acknowledged_delivery = x_acknowledged_delivery
+        return self._x_acknowledged_delivery
+
+    @x_acknowledged_delivery.setter
+    def x_acknowledged_delivery(self, value):
+        assert value is None or type(value) == bool
+        self._x_acknowledged_delivery = value
+
+    @property
+    def enc_algo(self):
+        if self._enc_algo is None and self._from_fbs:
+            enc_algo = self._from_fbs.EncAlgo()
+            if enc_algo:
+                self._enc_algo = enc_algo
+        return self._enc_algo
+
+    @enc_algo.setter
+    def enc_algo(self, value):
+        assert value is None or value in [ENC_ALGO_CRYPTOBOX, ENC_ALGO_MQTT, ENC_ALGO_XBR]
+        self._enc_algo = value
+
+    @property
+    def enc_key(self):
+        if self._enc_key is None and self._from_fbs:
+            if self._from_fbs.EncKeyLength():
+                self._enc_key = self._from_fbs.EncKeyAsBytes()
+        return self._enc_key
+
+    @enc_key.setter
+    def enc_key(self, value):
+        assert value is None or type(value) == bytes
+        self._enc_key = value
+
+    @property
+    def enc_serializer(self):
+        if self._enc_serializer is None and self._from_fbs:
+            enc_serializer = self._from_fbs.EncSerializer()
+            if enc_serializer:
+                self._enc_serializer = enc_serializer
+        return self._enc_serializer
+
+    @enc_serializer.setter
+    def enc_serializer(self, value):
+        assert value is None or value in [ENC_SER_JSON, ENC_SER_MSGPACK, ENC_SER_CBOR, ENC_SER_UBJSON]
+        self._enc_serializer = value
+
+    @property
+    def forward_for(self):
+        # FIXME
+        return None
+
+    @forward_for.setter
+    def forward_for(self, value):
+        # FIXME
+        pass
+
+    @staticmethod
+    def cast(buf):
+        return Event(from_fbs=message_fbs.Event.GetRootAsEvent(buf, 0))
+
+    def build(self, builder):
+
+        args = self.args
+        if args:
+            args = builder.CreateByteVector(cbor.dumps(args))
+
+        kwargs = self.kwargs
+        if kwargs:
+            kwargs = builder.CreateByteVector(cbor.dumps(kwargs))
+
+        payload = self.payload
+        if payload:
+            payload = builder.CreateByteVector(payload)
+
+        publisher_authid = self.publisher_authid
+        if publisher_authid:
+            publisher_authid = builder.CreateString(publisher_authid)
+
+        publisher_authrole = self.publisher_authrole
+        if publisher_authrole:
+            publisher_authrole = builder.CreateString(publisher_authrole)
+
+        topic = self.topic
+        if topic:
+            topic = builder.CreateString(topic)
+
+        enc_key = self.enc_key
+        if enc_key:
+            enc_key = builder.CreateByteVector(enc_key)
+
+        message_fbs.EventGen.EventStart(builder)
+
+        if self.subscription:
+            message_fbs.EventGen.EventAddSubscription(builder, self.subscription)
+        if self.publication:
+            message_fbs.EventGen.EventAddPublication(builder, self.publication)
+
+        if args:
+            message_fbs.EventGen.EventAddArgs(builder, args)
+        if kwargs is not None:
+            message_fbs.EventGen.EventAddKwargs(builder, kwargs)
+        if payload is not None:
+            message_fbs.EventGen.EventAddPayload(builder, payload)
+
+        if self.publisher:
+            message_fbs.EventGen.EventAddPublisher(builder, self.publisher)
+        if publisher_authid:
+            message_fbs.EventGen.EventAddPublisherAuthid(builder, publisher_authid)
+        if publisher_authrole:
+            message_fbs.EventGen.EventAddPublisherAuthrole(builder, publisher_authrole)
+
+        if topic:
+            message_fbs.EventGen.EventAddTopic(builder, topic)
+        if self.retained is not None:
+            message_fbs.EventGen.EventAddRetained(builder, self.retained)
+        if self.x_acknowledged_delivery is not None:
+            message_fbs.EventGen.EventAddAcknowledge(builder, self.x_acknowledged_delivery)
+
+        if self.enc_algo:
+            message_fbs.EventGen.EventAddEncAlgo(builder, self.enc_algo)
+        if enc_key:
+            message_fbs.EventGen.EventAddEncKey(builder, enc_key)
+        if self.enc_serializer:
+            message_fbs.EventGen.EventAddEncSerializer(builder, self.enc_serializer)
+
+        # FIXME: add forward_for
+
+        msg = message_fbs.EventGen.EventEnd(builder)
+
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.EVENT)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
