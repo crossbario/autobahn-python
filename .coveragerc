@@ -1,12 +1,7 @@
 [run]
 source = autobahn
-branch = True
+include =
+    */autobahn/*.py
 
-[report]
-precision = 2
-exclude_lines =
-    def __repr__
-    raise AssertionError
-    pragma: no cover
-    if self\._debug
-    raise NotImplementedError
+omit =
+    */test/*.py

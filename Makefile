@@ -79,7 +79,7 @@ test_setuptools:
 	python setup.py test
 
 test:
-	tox -e flake8,yapf,mypy,py37-twtrunk,py37-asyncio
+	tox -e flake8,yapf,mypy,py37-twtrunk,py37-asyncio,coverage
 
 #test: flake8 test_twisted test_asyncio
 
