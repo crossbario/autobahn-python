@@ -1,7 +1,3 @@
 [run]
-source = autobahn
-include =
-    */autobahn/*.py
-
 omit =
     */test/*.py
