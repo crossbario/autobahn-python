@@ -40,3 +40,4 @@ node.key
 *.swo
 *.swn
 *.so
+coverage.xml

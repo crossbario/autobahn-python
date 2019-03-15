@@ -42,6 +42,11 @@ clean:
 	-rm -rf ./_trial_temp
 	-rm -rf ./.tox
 	-rm -rf ./.eggs
+	-rm -rf ./htmlcov
+	-rm -f ./.coverage
+	-rm -f ./coverage.xml
+	-rm -f ./.coverage.*
+	-rm -rf ~/coverage
 	-rm -f  ./twisted/plugins/dropin.cache
 	-find . -name "*dropin.cache.new" -type f -exec rm -f {} \;
 	-find . -name "*.tar.gz" -type f -exec rm -f {} \;

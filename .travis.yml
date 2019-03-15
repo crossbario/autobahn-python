@@ -16,9 +16,6 @@ install:
 script:
   - tox -c tox.ini -e $TOX_ENV
 
-after_success:
-  - codecov
-
 cache:
   directories:
     - $HOME/.cache/pip
