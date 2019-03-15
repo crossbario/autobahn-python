@@ -1,0 +1,85 @@
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//   FlatBuffers schema for WAMP v2 messages
+//   Copyright (c) Crossbar.io Technologies GmbH and contributors
+//   Licensed under the MIT License (MIT)
+//
+//////////////////////////////////////////////////////////////////////////////
+
+include "types.fbs";
+include "roles.fbs";
+include "auth.fbs";
+include "session.fbs";
+include "pubsub.fbs";
+include "rpc.fbs";
+
+
+// Web Application Message Protocol (WAMP) namespace.
+//
+// WAMP at the application level exposes 4 roles:
+// 
+// - Caller and Callee
+// - Publisher and Subscriber
+// 
+// To decouple each pair of roles (or actors), WAMP uses an intermediary
+// that may implement two additional roles:
+// 
+// - Dealer, to forward calls from Callers to Callees
+// - Broker, to dispatch events from Publishers to Subscribers
+// 
+// WAMP is then defined in terms of message flow between those 6 roles.
+// There 26 WAMP messages at the wire level, and these are defined
+// (structurally) using FlatBuffers in this namespace.
+namespace wamp.proto;
+
+
+// A WAMP message is of exactly one of the following 26 concrete message types.
+union AnyMessage
+{
+    // Session
+    Hello,
+    Welcome,
+    Abort,
+    Challenge,
+    Authenticate,
+    Goodbye,
+
+    // Common
+    Error,
+
+    // PubSub
+    Publish,
+    Published,
+    SubscriberReceived,     // NEW
+    Subscribe,
+    Subscribed,
+    Unsubscribe,
+    Unsubscribed,
+    Event,
+    EventReceived,          // NEW
+
+    // RPC
+    Call,
+    Cancel,
+    Result,
+    Register,
+    Registered,
+    Unregister,
+    Unregistered,
+    Invocation,
+    Interrupt,
+    Yield
+}
+
+
+// A WAMP message container.
+table Message
+{
+    // The WAMP message, one of the 26 different message types.
+    msg: AnyMessage (required);
+}
+
+
+// The FlatBuffers root type is our WAMP message container type.
+root_type Message;
