@@ -41,6 +41,11 @@ try:
 except ImportError:
     pass
 
+try:
+    import flatbuffers
+except ImportError:
+    pass
+
 
 __all__ = ('Message',
            'Hello',
@@ -475,8 +480,7 @@ class Message(object):
         if serializer not in self._serialized:
             if serializer.NAME == u'flatbuffers':
                 # flatbuffers get special treatment ..
-                import flatbuffers
-                builder = flatbuffers.Builder(0)
+                builder = flatbuffers.Builder(1024)
 
                 # this is the core method writing out this message (self) to a (new) flatbuffer
                 # FIXME: implement this method for all classes derived from Message

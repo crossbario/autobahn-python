@@ -723,7 +723,8 @@ if _HAS_FLATBUFFERS:
 
             if msg_type == message_fbs.MessageType.EVENT:
                 fbs_msg = message_fbs.Event()
-                fbs_msg.Init(union_msg.Msg().Bytes, union_msg.Msg().Pos)
+                _tab = union_msg.Msg()
+                fbs_msg.Init(_tab.Bytes, _tab.Pos)
                 msg = message.Event(from_fbs=fbs_msg)
                 return [msg]
             else:

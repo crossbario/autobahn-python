@@ -136,12 +136,16 @@ def create_serializers():
     _serializers.append(serializer.UBJSONSerializer(batched=True))
 
     # FIXME: implement full FlatBuffers serializer for WAMP
-    # _serializers.append(serializer.FlatBuffersSerializer())
-    # _serializers.append(serializer.FlatBuffersSerializer(batched=True))
+    if six.PY3:
+        # WAMP-FlatBuffers currently only supports Python 3
+        # _serializers.append(serializer.FlatBuffersSerializer())
+        # _serializers.append(serializer.FlatBuffersSerializer(batched=True))
+        pass
 
     return _serializers
 
 
+@unittest.skipIf(not six.PY3, 'WAMP-FlatBuffers currently only supports Python 3')
 class TestFlatBuffersSerializer(unittest.TestCase):
 
     def test_basic(self):
