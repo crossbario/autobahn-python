@@ -74,7 +74,13 @@ table Publish
     // The WAMP or application URI of the PubSub topic the event should be published to.
     topic: string (required, uri);
 
-    // Raw application payload: error arguments. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    /// Positional values for application-defined event payload.
+    args: [uint8];
+
+    /// Keyword values for application-defined event payload.
+    kwargs: [uint8];
+
+    /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
     // The encoding algorithm that was used to encode the payload.

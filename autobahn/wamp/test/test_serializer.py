@@ -156,14 +156,16 @@ class TestFlatBuffersSerializer(unittest.TestCase):
                           kwargs={u'foo': 23, u'bar': u'hello'},
                           publisher=666,
                           retained=True),
-            # message.Publish(123456,
-            #                'com.example.topic1',
-            #                args=[1, 2, 3],
-            #                kwargs={u'foo': 23, u'bar': u'hello'},
-            #                retain=True)
+            message.Publish(123456,
+                            'com.example.topic1',
+                            args=[1, 2, 3],
+                            kwargs={u'foo': 23, u'bar': u'hello'},
+                            retain=True)
         ]
 
         ser = serializer.FlatBuffersSerializer()
+
+        # from pprint import pprint
 
         for msg in messages:
 
@@ -172,6 +174,9 @@ class TestFlatBuffersSerializer(unittest.TestCase):
 
             # unserialize message again
             msg2 = ser.unserialize(payload, binary)[0]
+
+            # pprint(msg.marshal())
+            # pprint(msg2.marshal())
 
             # must be equal: message roundtrips via the serializer
             self.assertEqual(msg, msg2)
@@ -186,7 +191,7 @@ class TestSerializer(unittest.TestCase):
         self._test_serializers = create_serializers()
         # print('Testing WAMP serializers {} with {} WAMP test messages'.format([ser.SERIALIZER_ID for ser in self._test_serializers], len(self._test_messages)))
 
-    def test_deep_equal(self):
+    def test_deep_equal_msg(self):
         """
         Test deep object equality assert (because I am paranoid).
         """
@@ -195,7 +200,7 @@ class TestSerializer(unittest.TestCase):
         o2 = [1, 2, {u'goo': {u'moo': [1, 2, 3]}, u'bar': v, u'baz': [9, 3, 2], u'foo': u'bar'}, v]
         self.assertEqual(o1, o2)
 
-    def test_roundtrip(self):
+    def test_roundtrip_msg(self):
         """
         Test round-tripping over each serializer.
         """
@@ -213,7 +218,7 @@ class TestSerializer(unittest.TestCase):
                     # must be equal: message roundtrips via the serializer
                     self.assertEqual([msg], msg2)
 
-    def test_crosstrip(self):
+    def test_crosstrip_msg(self):
         """
         Test cross-tripping over 2 serializers (as is done by WAMP routers).
         """
@@ -242,7 +247,7 @@ class TestSerializer(unittest.TestCase):
                             # the serializers ser1 -> ser2
                             self.assertEqual([msg], msg2)
 
-    def test_caching(self):
+    def test_cache_msg(self):
         """
         Test message serialization caching.
         """

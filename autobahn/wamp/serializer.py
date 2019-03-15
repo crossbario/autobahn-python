@@ -699,6 +699,11 @@ if _HAS_FLATBUFFERS:
         Flag that indicates whether this serializer needs a binary clean transport.
         """
 
+        MESSAGE_TYPE_MAP = {
+            message_fbs.MessageType.EVENT: (message_fbs.Event, message.Event),
+            message_fbs.MessageType.PUBLISH: (message_fbs.Publish, message.Publish),
+        }
+
         def __init__(self, batched=False):
             """
 
@@ -721,11 +726,12 @@ if _HAS_FLATBUFFERS:
             union_msg = message_fbs.Message.Message.GetRootAsMessage(payload, 0)
             msg_type = union_msg.MsgType()
 
-            if msg_type == message_fbs.MessageType.EVENT:
-                fbs_msg = message_fbs.Event()
+            if msg_type in self.MESSAGE_TYPE_MAP:
+                fbs_klass, wamp_klass = self.MESSAGE_TYPE_MAP[msg_type]
+                fbs_msg = fbs_klass()
                 _tab = union_msg.Msg()
                 fbs_msg.Init(_tab.Bytes, _tab.Pos)
-                msg = message.Event(from_fbs=fbs_msg)
+                msg = wamp_klass(from_fbs=fbs_msg)
                 return [msg]
             else:
                 raise NotImplementedError('message type {} not yet implemented for WAMP-FlatBuffers'.format(msg_type))
