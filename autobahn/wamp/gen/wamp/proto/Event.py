@@ -132,7 +132,28 @@ class Event(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def EventStart(builder): builder.StartObject(12)
+    # Event
+    def ForwardFor(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # Event
+    def ForwardForAuthid(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Event
+    def ForwardForAuthrole(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+def EventStart(builder): builder.StartObject(15)
 def EventAddSubscription(builder, subscription): builder.PrependUint64Slot(0, subscription, 0)
 def EventAddPublication(builder, publication): builder.PrependUint64Slot(1, publication, 0)
 def EventAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
@@ -147,4 +168,7 @@ def EventAddPublisherAuthrole(builder, publisherAuthrole): builder.PrependUOffse
 def EventAddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
 def EventAddRetained(builder, retained): builder.PrependBoolSlot(10, retained, 0)
 def EventAddAcknowledge(builder, acknowledge): builder.PrependBoolSlot(11, acknowledge, 0)
+def EventAddForwardFor(builder, forwardFor): builder.PrependUint64Slot(12, forwardFor, 0)
+def EventAddForwardForAuthid(builder, forwardForAuthid): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(forwardForAuthid), 0)
+def EventAddForwardForAuthrole(builder, forwardForAuthrole): builder.PrependUOffsetTRelativeSlot(14, flatbuffers.number_types.UOffsetTFlags.py_type(forwardForAuthrole), 0)
 def EventEnd(builder): return builder.EndObject()

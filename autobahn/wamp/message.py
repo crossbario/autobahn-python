@@ -34,7 +34,11 @@ import six
 import autobahn
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
-from autobahn.wamp.serializer import FlatBuffersObjectSerializer
+
+try:
+    import cbor
+except ImportError:
+    pass
 
 
 __all__ = ('Message',
@@ -468,7 +472,7 @@ class Message(object):
         """
         # only serialize if not cached ..
         if serializer not in self._serialized:
-            if isinstance(serializer, FlatBuffersObjectSerializer):
+            if serializer.NAME == u'flatbuffers':
                 # flatbuffers get special treatment ..
                 import flatbuffers
                 builder = flatbuffers.Builder(0)
@@ -2463,22 +2467,35 @@ class Event(Message):
     The WAMP message code for this type of message.
     """
 
+    ENC_ALGO_NONE = 0
+    ENC_ALGO_CRYPTOBOX = 1
+    ENC_ALGO_MQTT = 2
+    ENC_ALGO_XBR = 3
+
+    ENC_SER_NONE = 0
+    ENC_SER_JSON = 1
+    ENC_SER_MSGPACK = 2
+    ENC_SER_CBOR = 3
+    ENC_SER_UBJSON = 4
+    ENC_SER_OPAQUE = 5
+    ENC_SER_FLATBUFFERS = 6
+
     __slots__ = (
-        'subscription',
-        'publication',
-        'args',
-        'kwargs',
-        'payload',
-        'publisher',
-        'publisher_authid',
-        'publisher_authrole',
-        'topic',
-        'retained',
-        'x_acknowledged_delivery',
-        'enc_algo',
-        'enc_key',
-        'enc_serializer',
-        'forward_for',
+        '_subscription',
+        '_publication',
+        '_args',
+        '_kwargs',
+        '_payload',
+        '_publisher',
+        '_publisher_authid',
+        '_publisher_authrole',
+        '_topic',
+        '_retained',
+        '_x_acknowledged_delivery',
+        '_enc_algo',
+        '_enc_key',
+        '_enc_serializer',
+        '_forward_for',
     )
 
     def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
@@ -2560,21 +2577,194 @@ class Event(Message):
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
-        self.subscription = subscription
-        self.publication = publication
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
-        self.publisher = publisher
-        self.publisher_authid = publisher_authid
-        self.publisher_authrole = publisher_authrole
-        self.topic = topic
-        self.retained = retained
-        self.x_acknowledged_delivery = x_acknowledged_delivery
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
-        self.forward_for = forward_for
+        self._subscription = subscription
+        self._publication = publication
+        self._args = args
+        self._kwargs = _validate_kwargs(kwargs)
+        self._payload = payload
+        self._publisher = publisher
+        self._publisher_authid = publisher_authid
+        self._publisher_authrole = publisher_authrole
+        self._topic = topic
+        self._retained = retained
+        self._x_acknowledged_delivery = x_acknowledged_delivery
+        self._enc_algo = enc_algo
+        self._enc_key = enc_key
+        self._enc_serializer = enc_serializer
+        self._forward_for = forward_for
+
+    @property
+    def subscription(self):
+        if self._subscription is None and self._from_fbs:
+            self._subscription = self._from_fbs.Subscription()
+        return self._subscription
+
+    @subscription.setter
+    def subscription(self, value):
+        assert(type(value) in six.integer_types)
+        self._subscription = value
+
+    @property
+    def publication(self):
+        if self._publication is None and self._from_fbs:
+            self._publication = self._from_fbs.Publication()
+        return self._publication
+
+    @publication.setter
+    def publication(self, value):
+        assert(type(value) in six.integer_types)
+        self._publication = value
+
+    @property
+    def args(self):
+        if self._args is None and self._from_fbs:
+            if self._from_fbs.PayloadLength():
+                payload = cbor.loads(self._from_fbs.PayloadAsBytes())
+                self._args = payload.get('args', [])
+                self._kwargs = payload.get('kwargs', {})
+        return self._args
+
+    @args.setter
+    def args(self, value):
+        assert(value is None or type(value) in [list, tuple])
+        self._args = value
+
+    @property
+    def kwargs(self):
+        if self._kwargs is None and self._from_fbs:
+            if self._from_fbs.PayloadLength():
+                payload = cbor.loads(self._from_fbs.PayloadAsBytes())
+                self._args = payload.get('args', [])
+                self._kwargs = payload.get('kwargs', {})
+        return self._kwargs
+
+    @kwargs.setter
+    def kwargs(self, value):
+        assert(value is None or type(value) == dict)
+        self._kwargs = value
+
+    @property
+    def payload(self):
+        if self._payload is None and self._from_fbs:
+            if self._from_fbs.PayloadLength():
+                self._payload = self._from_fbs.PayloadAsBytes()
+        return self._payload
+
+    @payload.setter
+    def payload(self, value):
+        assert value is None or type(value) == bytes
+        self._payload = value
+
+    @property
+    def publisher(self):
+        if self._publisher is None and self._from_fbs:
+            self._publisher = self._from_fbs.Publisher()
+        return self._publisher
+
+    @publisher.setter
+    def publisher(self, value):
+        assert value is None or type(value) == int
+        self._publisher = value
+
+    @property
+    def publisher_authid(self):
+        if self._publisher_authid is None and self._from_fbs:
+            self._publisher_authid = self._from_fbs.PublisherAuthid().decode('utf8')
+        return self._publisher_authid
+
+    @publisher_authid.setter
+    def publisher_authid(self, value):
+        assert value is None or type(value) == str
+        self._publisher_authid = value
+
+    @property
+    def publisher_authrole(self):
+        if self._publisher_authrole is None and self._from_fbs:
+            self._publisher_authrole = self._from_fbs.PublisherAuthRole().decode('utf8')
+        return self._publisher_authrole
+
+    @publisher_authrole.setter
+    def publisher_authrole(self, value):
+        assert value is None or type(value) == str
+        self._publisher_authrole = value
+
+    @property
+    def topic(self):
+        if self._topic is None and self._from_fbs:
+            self._topic = self._from_fbs.Topic().decode('utf8')
+        return self._topic
+
+    @topic.setter
+    def topic(self, value):
+        assert value is None or type(value) == str
+        self._topic = value
+
+    @property
+    def retained(self):
+        if self._retained is None and self._from_fbs:
+            self._retained = self._from_fbs.Retained()
+        return self._retained
+
+    @retained.setter
+    def retained(self, value):
+        assert value is None or type(value) == bool
+        self._retained = value
+
+    @property
+    def x_acknowledged_delivery(self):
+        if self._x_acknowledged_delivery is None and self._from_fbs:
+            self._x_acknowledged_delivery = self._from_fbs.XAcknowledgedDelivery()
+        return self._x_acknowledged_delivery
+
+    @x_acknowledged_delivery.setter
+    def x_acknowledged_delivery(self, value):
+        assert value is None or type(value) == bool
+        self._x_acknowledged_delivery = value
+
+    @property
+    def enc_algo(self):
+        if self._enc_algo is None and self._from_fbs:
+            self._enc_algo = self._from_fbs.EncAlgo()
+        return self._enc_algo
+
+    @enc_algo.setter
+    def enc_algo(self, value):
+        assert value is None or value in [self.ENC_ALGO_CRYPTOBOX, self.ENC_ALGO_MQTT, self.ENC_ALGO_XBR]
+        self._enc_algo = value
+
+    @property
+    def enc_key(self):
+        if self._enc_key is None and self._from_fbs:
+            if self._from_fbs.EncKeyLength():
+                self._enc_key = self._from_fbs.EncKeyAsBytes()
+        return self._enc_key
+
+    @enc_key.setter
+    def enc_key(self, value):
+        assert value is None or type(value) == bytes
+        self._enc_key = value
+
+    @property
+    def enc_serializer(self):
+        if self._enc_serializer is None and self._from_fbs:
+            self._enc_serializer = self._from_fbs.EncSerializer()
+        return self._enc_serializer
+
+    @enc_serializer.setter
+    def enc_serializer(self, value):
+        assert value is None or value in [self.ENC_SER_JSON, self.ENC_SER_MSGPACK, self.ENC_SER_CBOR, self.ENC_SER_UBJSON]
+        self._enc_serializer = value
+
+    @property
+    def forward_for(self):
+        if self._forward_for is None and self._from_fbs:
+            self._forward_for = self._from_fbs.EncSerializer()
+        return self._forward_for
+
+    @forward_for.setter
+    def forward_for(self, value):
+        assert value is None or type(value) == dict
+        self._forward_for = value
 
     @staticmethod
     def parse(wmsg):
