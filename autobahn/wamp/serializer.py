@@ -34,6 +34,7 @@ import platform
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
+from autobahn.wamp import message_fbs
 
 # note: __all__ must be a list here, since we dynamically
 # extend it depending on availability of more serializers
@@ -717,8 +718,16 @@ if _HAS_FLATBUFFERS:
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
             """
-            msg = message.Event.cast(payload)
-            return [msg]
+            union_msg = message_fbs.Message.Message.GetRootAsMessage(payload, 0)
+            msg_type = union_msg.MsgType()
+
+            if msg_type == message_fbs.MessageType.EVENT:
+                fbs_msg = message_fbs.Event()
+                fbs_msg.Init(union_msg.Msg().Bytes, union_msg.Msg().Pos)
+                msg = message.Event(from_fbs=fbs_msg)
+                return [msg]
+            else:
+                raise NotImplementedError('message type {} not yet implemented for WAMP-FlatBuffers'.format(msg_type))
 
     IObjectSerializer.register(FlatBuffersObjectSerializer)
 

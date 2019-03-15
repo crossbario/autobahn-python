@@ -2596,7 +2596,6 @@ class Event(Message):
         self._forward_for = forward_for
 
     def __eq__(self, other):
-        return True
         if not isinstance(other, self.__class__):
             return False
         if not Message.__eq__(self, other):
@@ -2773,7 +2772,9 @@ class Event(Message):
     @property
     def enc_algo(self):
         if self._enc_algo is None and self._from_fbs:
-            self._enc_algo = self._from_fbs.EncAlgo()
+            enc_algo = self._from_fbs.EncAlgo()
+            if enc_algo:
+                self._enc_algo = enc_algo
         return self._enc_algo
 
     @enc_algo.setter
@@ -2796,7 +2797,9 @@ class Event(Message):
     @property
     def enc_serializer(self):
         if self._enc_serializer is None and self._from_fbs:
-            self._enc_serializer = self._from_fbs.EncSerializer()
+            enc_serializer = self._from_fbs.EncSerializer()
+            if enc_serializer:
+                self._enc_serializer = enc_serializer
         return self._enc_serializer
 
     @enc_serializer.setter
@@ -2885,9 +2888,14 @@ class Event(Message):
 
         # FIXME: forward_for
 
-        final = message_fbs.EventGen.EventEnd(builder)
+        msg = message_fbs.EventGen.EventEnd(builder)
 
-        return final
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.EVENT)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):

@@ -29,6 +29,15 @@ from __future__ import absolute_import
 import flatbuffers
 from autobahn.wamp.gen.wamp.proto import Event as EventGen
 
+from autobahn.wamp.gen.wamp.proto import Message
+from autobahn.wamp.gen.wamp.proto.MessageType import MessageType
+
+__all__ = (
+    'Event',
+    'Message',
+    'MessageType',
+)
+
 
 class Event(EventGen.Event):
     """
@@ -43,6 +52,9 @@ class Event(EventGen.Event):
         x = Event()
         x.Init(buf, n + offset)
         return x
+
+    def Init(self, buf, pos):
+        self._tab = flatbuffers.table.Table(buf, pos)
 
     def ArgsAsBytes(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))

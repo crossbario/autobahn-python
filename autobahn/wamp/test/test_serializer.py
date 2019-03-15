@@ -151,7 +151,12 @@ class TestFlatBuffersSerializer(unittest.TestCase):
                           args=[1, 2, 3],
                           kwargs={u'foo': 23, u'bar': u'hello'},
                           publisher=666,
-                          retained=False)
+                          retained=True),
+            # message.Publish(123456,
+            #                'com.example.topic1',
+            #                args=[1, 2, 3],
+            #                kwargs={u'foo': 23, u'bar': u'hello'},
+            #                retain=True)
         ]
 
         ser = serializer.FlatBuffersSerializer()
@@ -165,7 +170,7 @@ class TestFlatBuffersSerializer(unittest.TestCase):
             msg2 = ser.unserialize(payload, binary)[0]
 
             # must be equal: message roundtrips via the serializer
-            self.assertEqual([msg], msg2)
+            self.assertEqual(msg, msg2)
             # self.assertEqual(msg.subscription, msg2.subscription)
             # self.assertEqual(msg.publication, msg2.publication)
 
