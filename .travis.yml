@@ -2,6 +2,17 @@ language: python
 dist: xenial
 sudo: true
 
+addons:
+  apt:
+    update: true
+    packages:
+      # needed for compression
+      - libbz2-dev
+      - libsnappy-dev
+
+      # needed for vmprof
+      - libunwind-dev
+
 before_install:
   # AWS tools are installed here eg
   - export PATH=$PATH:$HOME/.local/bin
