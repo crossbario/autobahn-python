@@ -97,6 +97,8 @@ class BaseSession(ObservableMixin):
         }
 
         # session authentication information
+        self._realm = None
+        self._session_id = None
         self._authid = None
         self._authrole = None
         self._authmethod = None
@@ -107,6 +109,30 @@ class BaseSession(ObservableMixin):
 
         # generator for WAMP request IDs
         self._request_id_gen = IdGenerator()
+
+    @property
+    def realm(self):
+        return self._realm
+
+    @property
+    def session_id(self):
+        return self._session_id
+
+    @property
+    def authid(self):
+        return self._authid
+
+    @property
+    def authrole(self):
+        return self._authrole
+
+    @property
+    def authmethod(self):
+        return self._authmethod
+
+    @property
+    def authprovider(self):
+        return self._authprovider
 
     def define(self, exception, error=None):
         """
@@ -490,17 +516,20 @@ class ApplicationSession(BaseSession):
 
                     if msg.realm:
                         self._realm = msg.realm
-
                     self._session_id = msg.session
+                    self._authid = msg.authid
+                    self._authrole = msg.authrole
+                    self._authmethod = msg.authmethod
+                    self._authprovider = msg.authprovider
                     self._router_roles = msg.roles
 
                     details = SessionDetails(
                         realm=self._realm,
                         session=self._session_id,
-                        authid=msg.authid,
-                        authrole=msg.authrole,
-                        authmethod=msg.authmethod,
-                        authprovider=msg.authprovider,
+                        authid=self._authid,
+                        authrole=self._authrole,
+                        authmethod=self._authmethod,
+                        authprovider=self._authprovider,
                         authextra=msg.authextra,
                         resumed=msg.resumed,
                         resumable=msg.resumable,
