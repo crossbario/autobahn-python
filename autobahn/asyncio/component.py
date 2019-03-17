@@ -52,7 +52,7 @@ from autobahn.asyncio.wamp import Session
 from autobahn.wamp.serializer import create_transport_serializers, create_transport_serializer
 
 
-__all__ = ('Component',)
+__all__ = ('Component', 'run')
 
 
 def _unique_list(seq):
