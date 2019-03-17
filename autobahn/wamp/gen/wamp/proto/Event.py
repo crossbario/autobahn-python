@@ -180,27 +180,26 @@ class Event(object):
         return False
 
     # Event
-    def ForwardFor(self):
+    def ForwardFor(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            x = self._tab.Vector(o)
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
+            x = self._tab.Indirect(x)
+            from .Principal import Principal
+            obj = Principal()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # Event
+    def ForwardForLength(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
+        if o != 0:
+            return self._tab.VectorLen(o)
         return 0
 
-    # Event
-    def ForwardForAuthid(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-    # Event
-    def ForwardForAuthrole(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(36))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-def EventStart(builder): builder.StartObject(17)
+def EventStart(builder): builder.StartObject(15)
 def EventAddSubscription(builder, subscription): builder.PrependUint64Slot(0, subscription, 0)
 def EventAddPublication(builder, publication): builder.PrependUint64Slot(1, publication, 0)
 def EventAddArgs(builder, args): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(args), 0)
@@ -219,7 +218,6 @@ def EventAddPublisherAuthrole(builder, publisherAuthrole): builder.PrependUOffse
 def EventAddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
 def EventAddRetained(builder, retained): builder.PrependBoolSlot(12, retained, 0)
 def EventAddAcknowledge(builder, acknowledge): builder.PrependBoolSlot(13, acknowledge, 0)
-def EventAddForwardFor(builder, forwardFor): builder.PrependUint64Slot(14, forwardFor, 0)
-def EventAddForwardForAuthid(builder, forwardForAuthid): builder.PrependUOffsetTRelativeSlot(15, flatbuffers.number_types.UOffsetTFlags.py_type(forwardForAuthid), 0)
-def EventAddForwardForAuthrole(builder, forwardForAuthrole): builder.PrependUOffsetTRelativeSlot(16, flatbuffers.number_types.UOffsetTFlags.py_type(forwardForAuthrole), 0)
+def EventAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(14, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def EventStartForwardForVector(builder, numElems): return builder.StartVector(4, numElems, 4)
 def EventEnd(builder): return builder.EndObject()

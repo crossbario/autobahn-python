@@ -262,7 +262,27 @@ class Publish(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def PublishStart(builder): builder.StartObject(17)
+    # Publish
+    def ForwardFor(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(38))
+        if o != 0:
+            x = self._tab.Vector(o)
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
+            x = self._tab.Indirect(x)
+            from .Principal import Principal
+            obj = Principal()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # Publish
+    def ForwardForLength(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(38))
+        if o != 0:
+            return self._tab.VectorLen(o)
+        return 0
+
+def PublishStart(builder): builder.StartObject(18)
 def PublishAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
 def PublishAddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
 def PublishAddArgs(builder, args): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(args), 0)
@@ -290,4 +310,6 @@ def PublishStartEligibleAuthidVector(builder, numElems): return builder.StartVec
 def PublishAddEligibleAuthrole(builder, eligibleAuthrole): builder.PrependUOffsetTRelativeSlot(15, flatbuffers.number_types.UOffsetTFlags.py_type(eligibleAuthrole), 0)
 def PublishStartEligibleAuthroleVector(builder, numElems): return builder.StartVector(4, numElems, 4)
 def PublishAddRetain(builder, retain): builder.PrependBoolSlot(16, retain, 0)
+def PublishAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(17, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def PublishStartForwardForVector(builder, numElems): return builder.StartVector(4, numElems, 4)
 def PublishEnd(builder): return builder.EndObject()

@@ -84,6 +84,14 @@ enum MessageType: uint16
 }
 
 
+table Principal
+{
+    session: uint64;
+    authid: string (principal);
+    authrole: string (principal);
+}
+
+
 // Application payload type.
 enum Payload: uint8
 {
