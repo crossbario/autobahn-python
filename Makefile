@@ -231,3 +231,7 @@ build_fbs:
 	# generate schema Python bindings (*.py files)
 	$(FLATC) -o ./autobahn/wamp/gen/ --python $(FBSFILES)
 	@find ./autobahn/wamp/gen/ -name "*.py" | wc -l
+
+	# generate schema C++ bindings (*.cpp/hpp files)
+	# $(FLATC) -o /tmp/gen/ --cpp $(FBSFILES)
+	# @find /tmp/gen/

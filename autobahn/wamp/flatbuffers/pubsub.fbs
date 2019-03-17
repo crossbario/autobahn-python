@@ -118,6 +118,9 @@ table Publish
 
     // If true, request the broker retain this event.
     retain: bool;
+
+    // When this message is forwarded in router-to-router traffic, the route of the message in tuples of (session, authid, authrole) beginning with the publisher session followed by a series of router-link sessions.
+    forward_for: [Principal];
 }
 
 
@@ -177,14 +180,8 @@ table Event
     // Hint to request acknowledgement of the reception of this Event by a subscriber.
     acknowledge: bool;
 
-    // The WAMP session ID of the pubisher. Only filled when the publisher is disclosed.
-    forward_for: uint64;
-
-    // The WAMP authrole of the publisher. Only filled when publisher is disclosed.
-    forward_for_authid: string (principal);
-
-    // The WAMP authrole of the publisher. Only filled when publisher is disclosed.
-    forward_for_authrole: string (principal);
+    // When this message is forwarded in router-to-router traffic, the route of the message in tuples of (session, authid, authrole) beginning with the publisher session followed by a series of router-link sessions.
+    forward_for: [Principal];
 }
 
 

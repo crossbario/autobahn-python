@@ -124,6 +124,15 @@ ENC_ALGO_CRYPTOBOX = 1
 ENC_ALGO_MQTT = 2
 ENC_ALGO_XBR = 3
 
+ENC_ALGOS = {
+    ENC_ALGO_NONE: u'null',
+    ENC_ALGO_CRYPTOBOX: u'cryptobox',
+    ENC_ALGO_MQTT: u'mqtt',
+    ENC_ALGO_XBR: u'xbr',
+}
+
+ENC_ALGOS_FROMSTR = {key: value for value, key in ENC_ALGOS.items()}
+
 ENC_SER_NONE = 0
 ENC_SER_JSON = 1
 ENC_SER_MSGPACK = 2
@@ -131,6 +140,18 @@ ENC_SER_CBOR = 3
 ENC_SER_UBJSON = 4
 ENC_SER_OPAQUE = 5
 ENC_SER_FLATBUFFERS = 6
+
+ENC_SERS = {
+    ENC_SER_NONE: u'null',
+    ENC_SER_JSON: u'json',
+    ENC_SER_MSGPACK: u'msgpack',
+    ENC_SER_CBOR: u'cbor',
+    ENC_SER_UBJSON: u'ubjson',
+    ENC_SER_OPAQUE: u'opaque',
+    ENC_SER_FLATBUFFERS: u'flatbuffers',
+}
+
+ENC_SERS_FROMSTR = {key: value for value, key in ENC_SERS.items()}
 
 
 def is_valid_enc_algo(enc_algo):
@@ -1581,23 +1602,58 @@ class Publish(Message):
     """
 
     __slots__ = (
+        # uint64 (key)
         '_request',
+
+        # string (required, uri)
         '_topic',
+
+        # [uint8]
         '_args',
+
+        # [uint8]
         '_kwargs',
+
+        # [uint8]
         '_payload',
-        '_acknowledge',
-        '_exclude_me',
-        '_exclude',
-        '_exclude_authid',
-        '_exclude_authrole',
-        '_eligible',
-        '_eligible_authid',
-        '_eligible_authrole',
-        '_retain',
+
+        # Payload => uint8
         '_enc_algo',
-        '_enc_key',
+
+        # Serializer => uint8
         '_enc_serializer',
+
+        # [uint8]
+        '_enc_key',
+
+        # bool
+        '_acknowledge',
+
+        # bool
+        '_exclude_me',
+
+        # [uint64]
+        '_exclude',
+
+        # [string] (principal)
+        '_exclude_authid',
+
+        # [string] (principal)
+        '_exclude_authrole',
+
+        # [uint64]
+        '_eligible',
+
+        # [string] (principal)
+        '_eligible_authid',
+
+        # [string] (principal)
+        '_eligible_authrole',
+
+        # bool
+        '_retain',
+
+        # [Principal]
         '_forward_for',
     )
 
@@ -2059,12 +2115,12 @@ class Publish(Message):
     @property
     def forward_for(self):
         # FIXME
-        return None
+        return self._forward_for
 
     @forward_for.setter
     def forward_for(self, value):
         # FIXME
-        pass
+        self._forward_for = value
 
     @staticmethod
     def cast(buf):
@@ -2163,9 +2219,9 @@ class Publish(Message):
 
         if args:
             message_fbs.PublishGen.PublishAddArgs(builder, args)
-        if kwargs is not None:
+        if kwargs:
             message_fbs.PublishGen.PublishAddKwargs(builder, kwargs)
-        if payload is not None:
+        if payload:
             message_fbs.PublishGen.PublishAddPayload(builder, payload)
 
         if self.acknowledge is not None:
@@ -2929,20 +2985,49 @@ class Event(Message):
     """
 
     __slots__ = (
+        # uint64
         '_subscription',
+
+        # uint64
         '_publication',
+
+        # [uint8]
         '_args',
+
+        # [uint8]
         '_kwargs',
+
+        # [uint8]
         '_payload',
-        '_publisher',
-        '_publisher_authid',
-        '_publisher_authrole',
-        '_topic',
-        '_retained',
-        '_x_acknowledged_delivery',
+
+        # Payload => uint8
         '_enc_algo',
-        '_enc_key',
+
+        # Serializer => uint8
         '_enc_serializer',
+
+        # [uint8]
+        '_enc_key',
+
+        # uint64
+        '_publisher',
+
+        # string (principal)
+        '_publisher_authid',
+
+        # string (principal)
+        '_publisher_authrole',
+
+        # string (uri)
+        '_topic',
+
+        # bool
+        '_retained',
+
+        # bool - FIXME: rename to "acknowledge"
+        '_x_acknowledged_delivery',
+
+        # [Principal]
         '_forward_for',
     )
 
@@ -3257,12 +3342,12 @@ class Event(Message):
     @property
     def forward_for(self):
         # FIXME
-        return None
+        return self._forward_for
 
     @forward_for.setter
     def forward_for(self, value):
         # FIXME
-        pass
+        self._forward_for = value
 
     @staticmethod
     def cast(buf):
@@ -3307,9 +3392,9 @@ class Event(Message):
 
         if args:
             message_fbs.EventGen.EventAddArgs(builder, args)
-        if kwargs is not None:
+        if kwargs:
             message_fbs.EventGen.EventAddKwargs(builder, kwargs)
-        if payload is not None:
+        if payload:
             message_fbs.EventGen.EventAddPayload(builder, payload)
 
         if self.publisher:
