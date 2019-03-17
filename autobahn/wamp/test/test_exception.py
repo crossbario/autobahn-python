@@ -50,5 +50,6 @@ class ApplicationErrorTestCase(TestCase):
         """
         error = ApplicationError(u"some.url", u"\u2603")
         if PY3:
+            # on py27-tw189: exceptions.UnicodeEncodeError: 'ascii' codec can't encode character u'\u2603' in position 10: ordinal not in
             print(error.error_message())
         self.assertIn(u"\u2603", error.error_message())
