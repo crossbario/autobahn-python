@@ -49,5 +49,6 @@ class ApplicationErrorTestCase(TestCase):
         the error_message method is called.
         """
         error = ApplicationError(u"some.url", u"\u2603")
-        print(error.error_message())
+        if PY3:
+            print(error.error_message())
         self.assertIn(u"\u2603", error.error_message())
