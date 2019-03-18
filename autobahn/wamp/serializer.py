@@ -34,7 +34,6 @@ import platform
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
-from autobahn.wamp import message_fbs
 
 # note: __all__ must be a list here, since we dynamically
 # extend it depending on availability of more serializers
@@ -682,6 +681,7 @@ else:
 _HAS_FLATBUFFERS = False
 try:
     import flatbuffers  # noqa
+    from autobahn.wamp import message_fbs
 except ImportError:
     pass
 else:

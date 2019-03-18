@@ -34,18 +34,15 @@ import six
 import autobahn
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
-from autobahn.wamp import message_fbs
 
 try:
     import cbor
-except ImportError:
-    pass
-
-try:
     import flatbuffers
+    from autobahn.wamp import message_fbs
 except ImportError:
-    pass
-
+    _HAS_WAMP_FLATBUFFERS = False
+else:
+    _HAS_WAMP_FLATBUFFERS = True
 
 __all__ = ('Message',
            'Hello',
