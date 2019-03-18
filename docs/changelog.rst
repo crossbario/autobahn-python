@@ -5,6 +5,11 @@
 Changelog
 =========
 
+19.3.2
+------
+
+* fix: import guards for flatbuffers (missed in CI as we run with "all deps installed" there)
+
 19.3.1
 ------
 
