@@ -789,13 +789,16 @@ class PublishOptions(object):
         assert(eligible_authrole is None or type(eligible_authrole) == six.text_type or (type(eligible_authrole) == list and all(type(x) == six.text_type for x in eligible_authrole)))
         assert(retain is None or type(retain) == bool)
 
-        assert(forward_for is None or type(forward_for) == list)
+        assert(forward_for is None or type(forward_for) == list), 'forward_for, when present, must have list type - was {}'.format(type(forward_for))
         if forward_for:
             for ff in forward_for:
-                assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert type(ff) == dict, 'forward_for must be type dict - was {}'.format(type(ff))
+                assert 'session' in ff, 'forward_for must have session attribute'
+                assert type(ff['session']) in six.integer_types, 'forward_for.session must have integer type - was {}'.format(type(ff['session']))
+                assert 'authid' in ff, 'forward_for must have authid attributed'
+                assert type(ff['authid']) == six.text_type, 'forward_for.authid must have str type - was {}'.format(type(ff['authid']))
+                assert 'authrole' in ff, 'forward_for must have authrole attribute'
+                assert type(ff['authrole']) == six.text_type, 'forward_for.authrole must have str type - was {}'.format(type(ff['authrole']))
 
         self.acknowledge = acknowledge
         self.exclude_me = exclude_me

@@ -5,6 +5,17 @@
 Changelog
 =========
 
+19.3.1
+------
+
+* new: add experimental support for WAMP-FlatBuffers serializer: EVENT and PUBLISH messages for now only
+* new: add FlatBuffers schema for WAMP messages
+* fix: improve serializer package preference behavior depending on CPy vs PyPy
+* fix: relax protocol violations: ignore unknown INTERRUPT and GOODBYE already sent; reduce log noise
+* fix: skipping Yield message if transport gets closed before success callback is called (#1119)
+* fix: integer division in logging in py3 (#1120)
+* fix: Await tasks after they've been cancelled in `autobahn.asycio.component.nicely_exit` (#1116)
+
 19.2.1
 ------
 
