@@ -1374,11 +1374,26 @@ class Error(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'callee',
+        'callee_authid',
+        'callee_authrole',
         'forward_for',
     )
 
-    def __init__(self, request_type, request, error, args=None, kwargs=None, payload=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None):
+    def __init__(self,
+                 request_type,
+                 request,
+                 error,
+                 args=None,
+                 kwargs=None,
+                 payload=None,
+                 enc_algo=None,
+                 enc_key=None,
+                 enc_serializer=None,
+                 callee=None,
+                 callee_authid=None,
+                 callee_authrole=None,
+                 forward_for=None):
         """
 
         :param request_type: The WAMP message type code for the original request.
@@ -1410,7 +1425,16 @@ class Error(Message):
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
 
-        :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
+        :param callee: The WAMP session ID of the effective callee that responded with the error. Only filled if callee is disclosed.
+        :type callee: None or int
+
+        :param callee_authid: The WAMP authid of the responding callee. Only filled if callee is disclosed.
+        :type callee_authid: None or unicode
+
+        :param callee_authrole: The WAMP authrole of the responding callee. Only filled if callee is disclosed.
+        :type callee_authrole: None or unicode
+
+        :param forward_for: When this Error is forwarded for a client/callee (or from an intermediary router).
         :type forward_for: list[dict]
         """
         assert(type(request_type) in six.integer_types)
@@ -1420,10 +1444,15 @@ class Error(Message):
         assert(kwargs is None or type(kwargs) == dict)
         assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
+
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
+
+        assert(callee is None or type(callee) in six.integer_types)
+        assert(callee_authid is None or type(callee_authid) == six.text_type)
+        assert(callee_authrole is None or type(callee_authrole) == six.text_type)
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
@@ -1440,9 +1469,16 @@ class Error(Message):
         self.args = args
         self.kwargs = _validate_kwargs(kwargs)
         self.payload = payload
+
+        # payload transparency related knobs
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # effective callee that responded with the error
+        self.callee = callee
+        self.callee_authid = callee_authid
+        self.callee_authrole = callee_authrole
 
         # message forwarding
         self.forward_for = forward_for
@@ -1486,6 +1522,9 @@ class Error(Message):
         enc_algo = None
         enc_key = None
         enc_serializer = None
+        callee = None
+        callee_authid = None
+        callee_authrole = None
         forward_for = None
 
         if len(wmsg) == 6 and type(wmsg[5]) == six.binary_type:
@@ -1515,6 +1554,30 @@ class Error(Message):
                 if type(kwargs) != dict:
                     raise ProtocolError("invalid type {0} for 'kwargs' in ERROR".format(type(kwargs)))
 
+        if u'callee' in details:
+
+            detail_callee = details[u'callee']
+            if type(detail_callee) not in six.integer_types:
+                raise ProtocolError("invalid type {0} for 'callee' detail in RESULT".format(type(detail_callee)))
+
+            callee = detail_callee
+
+        if u'callee_authid' in details:
+
+            detail_callee_authid = details[u'callee_authid']
+            if type(detail_callee_authid) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'callee_authid' detail in RESULT".format(type(detail_callee_authid)))
+
+            callee_authid = detail_callee_authid
+
+        if u'callee_authrole' in details:
+
+            detail_callee_authrole = details[u'callee_authrole']
+            if type(detail_callee_authrole) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'callee_authrole' detail in INVOCATION".format(type(detail_callee_authrole)))
+
+            callee_authrole = detail_callee_authrole
+
         if u'forward_for' in details:
             forward_for = details[u'forward_for']
             valid = False
@@ -1542,6 +1605,9 @@ class Error(Message):
                     enc_algo=enc_algo,
                     enc_key=enc_key,
                     enc_serializer=enc_serializer,
+                    callee=callee,
+                    callee_authid=callee_authid,
+                    callee_authrole=callee_authrole,
                     forward_for=forward_for)
 
         return obj
@@ -1555,6 +1621,12 @@ class Error(Message):
         """
         details = {}
 
+        if self.callee is not None:
+            details[u'callee'] = self.callee
+        if self.callee_authid is not None:
+            details[u'callee_authid'] = self.callee_authid
+        if self.callee_authrole is not None:
+            details[u'callee_authrole'] = self.callee_authrole
         if self.forward_for is not None:
             details[u'forward_for'] = self.forward_for
 
@@ -1578,7 +1650,7 @@ class Error(Message):
         """
         Returns string representation of this message.
         """
-        return u"Error(request_type={0}, request={1}, error={2}, args={3}, kwargs={4}, enc_algo={5}, enc_key={6}, enc_serializer={7}, payload={8})".format(self.request_type, self.request, self.error, self.args, self.kwargs, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Error(request_type={0}, request={1}, error={2}, args={3}, kwargs={4}, enc_algo={5}, enc_key={6}, enc_serializer={7}, payload={8}, callee={9}, callee_authid={10}, callee_authrole={11}, forward_for={12})".format(self.request_type, self.request, self.error, self.args, self.kwargs, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
 
 
 class Publish(Message):
@@ -4124,11 +4196,25 @@ class Result(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'callee',
+        'callee_authid',
+        'callee_authrole',
         'forward_for',
     )
 
-    def __init__(self, request, args=None, kwargs=None, payload=None, progress=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None):
+    def __init__(self,
+                 request,
+                 args=None,
+                 kwargs=None,
+                 payload=None,
+                 progress=None,
+                 enc_algo=None,
+                 enc_key=None,
+                 enc_serializer=None,
+                 callee=None,
+                 callee_authid=None,
+                 callee_authrole=None,
+                 forward_for=None):
         """
 
         :param request: The request ID of the original `CALL` request.
@@ -4158,7 +4244,16 @@ class Result(Message):
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
 
-        :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
+        :param callee: The WAMP session ID of the effective callee that responded with the result. Only filled if callee is disclosed.
+        :type callee: None or int
+
+        :param callee_authid: The WAMP authid of the responding callee. Only filled if callee is disclosed.
+        :type callee_authid: None or unicode
+
+        :param callee_authrole: The WAMP authrole of the responding callee. Only filled if callee is disclosed.
+        :type callee_authrole: None or unicode
+
+        :param forward_for: When this Result is forwarded for a client/callee (or from an intermediary router).
         :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
@@ -4168,11 +4263,14 @@ class Result(Message):
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
 
-        # payload transparency related knobs
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
+
+        assert(callee is None or type(callee) in six.integer_types)
+        assert(callee_authid is None or type(callee_authid) == six.text_type)
+        assert(callee_authrole is None or type(callee_authrole) == six.text_type)
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
@@ -4193,6 +4291,11 @@ class Result(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # effective callee that responded with the result
+        self.callee = callee
+        self.callee_authid = callee_authid
+        self.callee_authrole = callee_authrole
 
         # message forwarding
         self.forward_for = forward_for
@@ -4219,9 +4322,14 @@ class Result(Message):
         args = None
         kwargs = None
         payload = None
+        progress = None
         enc_algo = None
         enc_key = None
         enc_serializer = None
+        callee = None
+        callee_authid = None
+        callee_authrole = None
+        forward_for = None
 
         if len(wmsg) == 4 and type(wmsg[3]) in [six.text_type, six.binary_type]:
 
@@ -4250,9 +4358,6 @@ class Result(Message):
                 if type(kwargs) != dict:
                     raise ProtocolError("invalid type {0} for 'kwargs' in RESULT".format(type(kwargs)))
 
-        progress = None
-        forward_for = None
-
         if u'progress' in details:
 
             detail_progress = details[u'progress']
@@ -4260,6 +4365,30 @@ class Result(Message):
                 raise ProtocolError("invalid type {0} for 'progress' option in RESULT".format(type(detail_progress)))
 
             progress = detail_progress
+
+        if u'callee' in details:
+
+            detail_callee = details[u'callee']
+            if type(detail_callee) not in six.integer_types:
+                raise ProtocolError("invalid type {0} for 'callee' detail in RESULT".format(type(detail_callee)))
+
+            callee = detail_callee
+
+        if u'callee_authid' in details:
+
+            detail_callee_authid = details[u'callee_authid']
+            if type(detail_callee_authid) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'callee_authid' detail in RESULT".format(type(detail_callee_authid)))
+
+            callee_authid = detail_callee_authid
+
+        if u'callee_authrole' in details:
+
+            detail_callee_authrole = details[u'callee_authrole']
+            if type(detail_callee_authrole) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'callee_authrole' detail in INVOCATION".format(type(detail_callee_authrole)))
+
+            callee_authrole = detail_callee_authrole
 
         if u'forward_for' in details:
             forward_for = details[u'forward_for']
@@ -4287,6 +4416,9 @@ class Result(Message):
                      enc_algo=enc_algo,
                      enc_key=enc_key,
                      enc_serializer=enc_serializer,
+                     callee=callee,
+                     callee_authid=callee_authid,
+                     callee_authrole=callee_authrole,
                      forward_for=forward_for)
 
         return obj
@@ -4302,6 +4434,13 @@ class Result(Message):
 
         if self.progress is not None:
             details[u'progress'] = self.progress
+
+        if self.callee is not None:
+            details[u'callee'] = self.callee
+        if self.callee_authid is not None:
+            details[u'callee_authid'] = self.callee_authid
+        if self.callee_authrole is not None:
+            details[u'callee_authrole'] = self.callee_authrole
         if self.forward_for is not None:
             details[u'forward_for'] = self.forward_for
 
@@ -4325,7 +4464,7 @@ class Result(Message):
         """
         Returns string representation of this message.
         """
-        return u"Result(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Result(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7}, callee={8}, callee_authid={9}, callee_authrole={10}, forward_for={11})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
 
 
 class Register(Message):
