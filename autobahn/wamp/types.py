@@ -1029,21 +1029,29 @@ class CallOptions(object):
     __slots__ = (
         'on_progress',
         'timeout',
+        'caller',
+        'caller_authid',
+        'caller_authrole',
         'forward_for',
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
         'correlation_is_last',
+        'details',
     )
 
     def __init__(self,
                  on_progress=None,
                  timeout=None,
+                 caller=None,
+                 caller_authid=None,
+                 caller_authrole=None,
                  forward_for=None,
                  correlation_id=None,
                  correlation_uri=None,
                  correlation_is_anchor=None,
-                 correlation_is_last=None):
+                 correlation_is_last=None,
+                 details=None):
         """
 
         :param on_progress: A callback that will be called when the remote endpoint
@@ -1058,7 +1066,10 @@ class CallOptions(object):
         """
         assert(on_progress is None or callable(on_progress))
         assert(timeout is None or (type(timeout) in list(six.integer_types) + [float] and timeout > 0))
-
+        assert(details is None or type(details) == bool)
+        assert(caller is None or type(caller) in six.integer_types)
+        assert(caller_authid is None or type(caller_authid) == six.text_type)
+        assert(caller_authrole is None or type(caller_authrole) == six.text_type)
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
@@ -1069,8 +1080,13 @@ class CallOptions(object):
 
         self.on_progress = on_progress
         self.timeout = timeout
+
+        self.caller = caller
+        self.caller_authid = caller_authid
+        self.caller_authrole = caller_authrole
         self.forward_for = forward_for
 
+        self.details = details
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
         self.correlation_is_anchor = correlation_is_anchor
@@ -1082,6 +1098,9 @@ class CallOptions(object):
         """
         options = {}
 
+        # note: only some attributes are actually forwarded to the WAMP CALL message, while
+        # other attributes are for client-side/client-internal use only
+
         if self.timeout is not None:
             options[u'timeout'] = self.timeout
 
@@ -1091,10 +1110,19 @@ class CallOptions(object):
         if self.forward_for is not None:
             options[u'forward_for'] = self.forward_for
 
+        if self.caller is not None:
+            options[u'caller'] = self.caller
+
+        if self.caller_authid is not None:
+            options[u'caller_authid'] = self.caller_authid
+
+        if self.caller_authrole is not None:
+            options[u'caller_authrole'] = self.caller_authrole
+
         return options
 
     def __str__(self):
-        return u"CallOptions(on_progress={}, timeout={}, forward_for={})".format(self.on_progress, self.timeout, self.forward_for)
+        return u"CallOptions(on_progress={}, timeout={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={}, details={})".format(self.on_progress, self.timeout, self.caller, self.caller_authid, self.caller_authrole, self.forward_for, self.details)
 
 
 @public
@@ -1108,6 +1136,9 @@ class CallResult(object):
         'results',
         'kwresults',
         'enc_algo',
+        'callee',
+        'callee_authid',
+        'callee_authrole',
         'forward_for',
     )
 
@@ -1123,23 +1154,33 @@ class CallResult(object):
         enc_algo = kwresults.pop('enc_algo', None)
         assert(enc_algo is None or type(enc_algo) == six.text_type)
 
+        callee = kwresults.pop('callee', None)
+        callee_authid = kwresults.pop('callee_authid', None)
+        callee_authrole = kwresults.pop('callee_authrole', None)
+
+        assert callee is None or type(callee) in six.integer_types
+        assert callee_authid is None or type(callee_authid) == six.text_type
+        assert callee_authrole is None or type(callee_authrole) == six.text_type
+
         forward_for = kwresults.pop('forward_for', None)
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.enc_algo = enc_algo
+        self.callee = callee
+        self.callee_authid = callee_authid
+        self.callee_authrole = callee_authrole
         self.forward_for = forward_for
-
         self.results = results
         self.kwresults = kwresults
 
     def __str__(self):
-        return u"CallResult(results={}, kwresults={}, enc_algo={}, forward_for={})".format(self.results, self.kwresults, self.enc_algo, self.forward_for)
+        return u"CallResult(results={}, kwresults={}, enc_algo={}, callee={}, callee_authid={}, callee_authrole={}, forward_for={})".format(self.results, self.kwresults, self.enc_algo, self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
 
 
 @public

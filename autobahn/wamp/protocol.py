@@ -825,7 +825,20 @@ class ApplicationSession(BaseSession):
 
                                 def _error(fail):
                                     self.onUserError(fail, "While firing on_progress")
-                                prog_d = txaio.as_future(call_request.options.on_progress, *args, **kw)
+
+                                if call_request.options and call_request.options.details:
+                                    prog_d = txaio.as_future(call_request.options.on_progress,
+                                                             types.CallResult(*msg.args,
+                                                                              callee=msg.callee,
+                                                                              callee_authid=msg.callee_authid,
+                                                                              callee_authrole=msg.callee_authrole,
+                                                                              forward_for=msg.forward_for,
+                                                                              **msg.kwargs))
+                                else:
+                                    prog_d = txaio.as_future(call_request.options.on_progress,
+                                                             *args,
+                                                             **kw)
+
                                 txaio.add_callbacks(prog_d, None, _error)
 
                     else:
@@ -841,11 +854,21 @@ class ApplicationSession(BaseSession):
                         if enc_err:
                             txaio.reject(on_reply, enc_err)
                         else:
-                            if msg.kwargs:
+                            if msg.kwargs or (call_request.options and call_request.options.details):
+                                kwargs = msg.kwargs or {}
                                 if msg.args:
-                                    res = types.CallResult(*msg.args, **msg.kwargs)
+                                    res = types.CallResult(*msg.args,
+                                                           callee=msg.callee,
+                                                           callee_authid=msg.callee_authid,
+                                                           callee_authrole=msg.callee_authrole,
+                                                           forward_for=msg.forward_for,
+                                                           **kwargs)
                                 else:
-                                    res = types.CallResult(**msg.kwargs)
+                                    res = types.CallResult(callee=msg.callee,
+                                                           callee_authid=msg.callee_authid,
+                                                           callee_authrole=msg.callee_authrole,
+                                                           forward_for=msg.forward_for,
+                                                           **kwargs)
                                 txaio.resolve(on_reply, res)
                             else:
                                 if msg.args:
@@ -963,7 +986,13 @@ class ApplicationSession(BaseSession):
                                 else:
                                     progress = None
 
-                                invoke_kwargs[endpoint.details_arg] = types.CallDetails(registration, progress=progress, caller=msg.caller, caller_authid=msg.caller_authid, caller_authrole=msg.caller_authrole, procedure=proc, enc_algo=msg.enc_algo)
+                                invoke_kwargs[endpoint.details_arg] = types.CallDetails(registration,
+                                                                                        progress=progress,
+                                                                                        caller=msg.caller,
+                                                                                        caller_authid=msg.caller_authid,
+                                                                                        caller_authrole=msg.caller_authrole,
+                                                                                        procedure=proc,
+                                                                                        enc_algo=msg.enc_algo)
 
                             on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
 
@@ -988,16 +1017,31 @@ class ApplicationSession(BaseSession):
                                             )
 
                                 if encoded_payload:
-                                    reply = message.Yield(msg.request,
-                                                          payload=encoded_payload.payload,
-                                                          enc_algo=encoded_payload.enc_algo,
-                                                          enc_key=encoded_payload.enc_key,
-                                                          enc_serializer=encoded_payload.enc_serializer)
+                                    if isinstance(res, types.CallResult):
+                                        reply = message.Yield(msg.request,
+                                                              payload=encoded_payload.payload,
+                                                              enc_algo=encoded_payload.enc_algo,
+                                                              enc_key=encoded_payload.enc_key,
+                                                              enc_serializer=encoded_payload.enc_serializer,
+                                                              callee=res.callee,
+                                                              callee_authid=res.callee_authid,
+                                                              callee_authrole=res.callee_authrole,
+                                                              forward_for=res.forward_for)
+                                    else:
+                                        reply = message.Yield(msg.request,
+                                                              payload=encoded_payload.payload,
+                                                              enc_algo=encoded_payload.enc_algo,
+                                                              enc_key=encoded_payload.enc_key,
+                                                              enc_serializer=encoded_payload.enc_serializer)
                                 else:
                                     if isinstance(res, types.CallResult):
                                         reply = message.Yield(msg.request,
                                                               args=res.results,
-                                                              kwargs=res.kwresults)
+                                                              kwargs=res.kwresults,
+                                                              callee=res.callee,
+                                                              callee_authid=res.callee_authid,
+                                                              callee_authrole=res.callee_authrole,
+                                                              forward_for=res.forward_for)
                                     else:
                                         reply = message.Yield(msg.request,
                                                               args=[res])

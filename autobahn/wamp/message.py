@@ -1459,7 +1459,7 @@ class Error(Message):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
@@ -1859,7 +1859,7 @@ class Publish(Message):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self, from_fbs=from_fbs)
@@ -3176,7 +3176,7 @@ class Event(Message):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self, from_fbs=from_fbs)
@@ -3784,6 +3784,9 @@ class Call(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'caller',
+        'caller_authid',
+        'caller_authrole',
         'forward_for',
     )
 
@@ -3798,6 +3801,9 @@ class Call(Message):
                  enc_algo=None,
                  enc_key=None,
                  enc_serializer=None,
+                 caller=None,
+                 caller_authid=None,
+                 caller_authrole=None,
                  forward_for=None):
         """
 
@@ -3835,6 +3841,15 @@ class Call(Message):
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
 
+        :param caller: The WAMP session ID of the caller. Only filled if caller is disclosed.
+        :type caller: None or int
+
+        :param caller_authid: The WAMP authid of the caller. Only filled if caller is disclosed.
+        :type caller_authid: None or unicode
+
+        :param caller_authrole: The WAMP authrole of the caller. Only filled if caller is disclosed.
+        :type caller_authrole: None or unicode
+
         :param forward_for: When this Publish is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
@@ -3853,12 +3868,16 @@ class Call(Message):
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
+        assert(caller is None or type(caller) in six.integer_types)
+        assert(caller_authid is None or type(caller_authid) == six.text_type)
+        assert(caller_authrole is None or type(caller_authrole) == six.text_type)
+
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
@@ -3876,6 +3895,9 @@ class Call(Message):
         self.enc_serializer = enc_serializer
 
         # message forwarding
+        self.caller = caller
+        self.caller_authid = caller_authid
+        self.caller_authrole = caller_authrole
         self.forward_for = forward_for
 
     @staticmethod
@@ -3934,6 +3956,9 @@ class Call(Message):
 
         timeout = None
         receive_progress = None
+        caller = None
+        caller_authid = None
+        caller_authrole = None
         forward_for = None
 
         if u'timeout' in options:
@@ -3954,6 +3979,30 @@ class Call(Message):
                 raise ProtocolError("invalid type {0} for 'receive_progress' option in CALL".format(type(option_receive_progress)))
 
             receive_progress = option_receive_progress
+
+        if u'caller' in options:
+
+            option_caller = options[u'caller']
+            if type(option_caller) not in six.integer_types:
+                raise ProtocolError("invalid type {0} for 'caller' detail in INVOCATION".format(type(option_caller)))
+
+            caller = option_caller
+
+        if u'caller_authid' in options:
+
+            option_caller_authid = options[u'caller_authid']
+            if type(option_caller_authid) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'caller_authid' detail in INVOCATION".format(type(option_caller_authid)))
+
+            caller_authid = option_caller_authid
+
+        if u'caller_authrole' in options:
+
+            option_caller_authrole = options[u'caller_authrole']
+            if type(option_caller_authrole) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'caller_authrole' detail in INVOCATION".format(type(option_caller_authrole)))
+
+            caller_authrole = option_caller_authrole
 
         if u'forward_for' in options:
             forward_for = options[u'forward_for']
@@ -3983,6 +4032,9 @@ class Call(Message):
                    enc_algo=enc_algo,
                    enc_key=enc_key,
                    enc_serializer=enc_serializer,
+                   caller=caller,
+                   caller_authid=caller_authid,
+                   caller_authrole=caller_authrole,
                    forward_for=forward_for)
 
         return obj
@@ -4003,6 +4055,13 @@ class Call(Message):
                 options[u'enc_key'] = self.enc_key
             if self.enc_serializer is not None:
                 options[u'enc_serializer'] = self.enc_serializer
+
+        if self.caller is not None:
+            options[u'caller'] = self.caller
+        if self.caller_authid is not None:
+            options[u'caller_authid'] = self.caller_authid
+        if self.caller_authrole is not None:
+            options[u'caller_authrole'] = self.caller_authrole
 
         if self.forward_for is not None:
             options[u'forward_for'] = self.forward_for
@@ -4032,7 +4091,7 @@ class Call(Message):
         """
         Returns string representation of this message.
         """
-        return u"Call(request={}, procedure={}, args={}, kwargs={}, timeout={}, receive_progress={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
+        return u"Call(request={}, procedure={}, args={}, kwargs={}, timeout={}, receive_progress={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, caller={caller}, caller_authid={caller_authid}, caller_authrole={caller_authrole}, forward_for={})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.caller, self.caller_authid, self.caller_authrole, self.forward_for)
 
 
 class Cancel(Message):
@@ -4080,7 +4139,7 @@ class Cancel(Message):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
@@ -4277,7 +4336,7 @@ class Result(Message):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
@@ -5029,7 +5088,7 @@ class Invocation(Message):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
@@ -5306,7 +5365,7 @@ class Interrupt(Message):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
@@ -5431,11 +5490,25 @@ class Yield(Message):
         'enc_algo',
         'enc_key',
         'enc_serializer',
+        'callee',
+        'callee_authid',
+        'callee_authrole',
         'forward_for',
     )
 
-    def __init__(self, request, args=None, kwargs=None, payload=None, progress=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None):
+    def __init__(self,
+                 request,
+                 args=None,
+                 kwargs=None,
+                 payload=None,
+                 progress=None,
+                 enc_algo=None,
+                 enc_key=None,
+                 enc_serializer=None,
+                 callee=None,
+                 callee_authid=None,
+                 callee_authrole=None,
+                 forward_for=None):
         """
 
         :param request: The WAMP request ID of the original call.
@@ -5465,6 +5538,15 @@ class Yield(Message):
         :param enc_serializer: If using payload transparency, the payload object serializer that was used encoding the payload.
         :type enc_serializer: str or None
 
+        :param callee: The WAMP session ID of the effective callee that responded with the error. Only filled if callee is disclosed.
+        :type callee: None or int
+
+        :param callee_authid: The WAMP authid of the responding callee. Only filled if callee is disclosed.
+        :type callee_authid: None or unicode
+
+        :param callee_authrole: The WAMP authrole of the responding callee. Only filled if callee is disclosed.
+        :type callee_authrole: None or unicode
+
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
@@ -5479,12 +5561,16 @@ class Yield(Message):
         assert(enc_key is None or type(enc_key) == six.text_type)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
+        assert(callee is None or type(callee) in six.integer_types)
+        assert(callee_authid is None or type(callee_authid) == six.text_type)
+        assert(callee_authrole is None or type(callee_authrole) == six.text_type)
+
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
@@ -5496,6 +5582,11 @@ class Yield(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # effective callee that responded with the result
+        self.callee = callee
+        self.callee_authid = callee_authid
+        self.callee_authrole = callee_authrole
 
         # message forwarding
         self.forward_for = forward_for
@@ -5554,6 +5645,9 @@ class Yield(Message):
                     raise ProtocolError("invalid type {0} for 'kwargs' in YIELD".format(type(kwargs)))
 
         progress = None
+        callee = None
+        callee_authid = None
+        callee_authrole = None
         forward_for = None
 
         if u'progress' in options:
@@ -5563,6 +5657,30 @@ class Yield(Message):
                 raise ProtocolError("invalid type {0} for 'progress' option in YIELD".format(type(option_progress)))
 
             progress = option_progress
+
+        if u'callee' in options:
+
+            option_callee = options[u'callee']
+            if type(option_callee) not in six.integer_types:
+                raise ProtocolError("invalid type {0} for 'callee' detail in RESULT".format(type(option_callee)))
+
+            callee = option_callee
+
+        if u'callee_authid' in options:
+
+            option_callee_authid = options[u'callee_authid']
+            if type(option_callee_authid) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'callee_authid' detail in RESULT".format(type(option_callee_authid)))
+
+            callee_authid = option_callee_authid
+
+        if u'callee_authrole' in options:
+
+            option_callee_authrole = options[u'callee_authrole']
+            if type(option_callee_authrole) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'callee_authrole' detail in INVOCATION".format(type(option_callee_authrole)))
+
+            callee_authrole = option_callee_authrole
 
         if u'forward_for' in options:
             forward_for = options[u'forward_for']
@@ -5590,6 +5708,9 @@ class Yield(Message):
                     enc_algo=enc_algo,
                     enc_key=enc_key,
                     enc_serializer=enc_serializer,
+                    callee=callee,
+                    callee_authid=callee_authid,
+                    callee_authrole=callee_authrole,
                     forward_for=forward_for)
 
         return obj
@@ -5605,6 +5726,13 @@ class Yield(Message):
 
         if self.progress is not None:
             options[u'progress'] = self.progress
+
+        if self.callee is not None:
+            options[u'callee'] = self.callee
+        if self.callee_authid is not None:
+            options[u'callee_authid'] = self.callee_authid
+        if self.callee_authrole is not None:
+            options[u'callee_authrole'] = self.callee_authrole
         if self.forward_for is not None:
             options[u'forward_for'] = self.forward_for
 
@@ -5628,4 +5756,4 @@ class Yield(Message):
         """
         Returns string representation of this message.
         """
-        return u"Yield(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Yield(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7}, callee={8}, callee_authid={9}, callee_authrole={10}, forward_for={11})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
