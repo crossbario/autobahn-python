@@ -593,7 +593,7 @@ class SubscribeOptions(object):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.match = match
@@ -702,7 +702,7 @@ class EventDetails(object):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.subscription = subscription
@@ -929,7 +929,7 @@ class RegisterOptions(object):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.match = match
@@ -1033,7 +1033,7 @@ class CallDetails(object):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.registration = registration
@@ -1104,7 +1104,7 @@ class CallOptions(object):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.on_progress = on_progress
