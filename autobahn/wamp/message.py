@@ -2685,9 +2685,15 @@ class Subscribe(Message):
         'topic',
         'match',
         'get_retained',
+        'forward_for',
     )
 
-    def __init__(self, request, topic, match=None, get_retained=None):
+    def __init__(self,
+                 request,
+                 topic,
+                 match=None,
+                 get_retained=None,
+                 forward_for=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -2701,18 +2707,30 @@ class Subscribe(Message):
 
         :param get_retained: Whether the client wants the retained message we may have along with the subscription.
         :type get_retained: bool or None
+
+        :param forward_for: When this Subscribe is forwarded over a router-to-router link,
+            or via an intermediary router.
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
         assert(match is None or type(match) == six.text_type)
         assert(match is None or match in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD])
         assert(get_retained is None or type(get_retained) is bool)
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
         self.request = request
         self.topic = topic
         self.match = match or Subscribe.MATCH_EXACT
         self.get_retained = get_retained
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -2736,6 +2754,7 @@ class Subscribe(Message):
 
         match = Subscribe.MATCH_EXACT
         get_retained = None
+        forward_for = None
 
         if u'match' in options:
 
@@ -2754,7 +2773,25 @@ class Subscribe(Message):
             if type(get_retained) != bool:
                 raise ProtocolError("invalid type {0} for 'get_retained' option in SUBSCRIBE".format(type(get_retained)))
 
-        obj = Subscribe(request, topic, match=match, get_retained=get_retained)
+        if u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
+        obj = Subscribe(request, topic, match=match, get_retained=get_retained, forward_for=forward_for)
 
         return obj
 
@@ -2766,6 +2803,9 @@ class Subscribe(Message):
 
         if self.get_retained is not None:
             options[u'get_retained'] = self.get_retained
+
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
 
         return options
 
@@ -2782,7 +2822,7 @@ class Subscribe(Message):
         """
         Returns string representation of this message.
         """
-        return u"Subscribe(request={0}, topic={1}, match={2}, get_retained={3})".format(self.request, self.topic, self.match, self.get_retained)
+        return u"Subscribe(request={0}, topic={1}, match={2}, get_retained={3}, forward_for={4})".format(self.request, self.topic, self.match, self.get_retained, self.forward_for)
 
 
 class Subscribed(Message):
@@ -2861,7 +2901,10 @@ class Unsubscribe(Message):
     """
     A WAMP ``UNSUBSCRIBE`` message.
 
-    Format: ``[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]``
+    Formats:
+
+    * ``[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]``
+    * ``[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id, Options|dict]``
     """
 
     MESSAGE_TYPE = 34
@@ -2872,9 +2915,10 @@ class Unsubscribe(Message):
     __slots__ = (
         'request',
         'subscription',
+        'forward_for',
     )
 
-    def __init__(self, request, subscription):
+    def __init__(self, request, subscription, forward_for=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -2882,13 +2926,24 @@ class Unsubscribe(Message):
 
         :param subscription: The subscription ID for the subscription to unsubscribe from.
         :type subscription: int
+
+        :param forward_for: When this Unsubscribe is forwarded over a router-to-router link,
+            or via an intermediary router.
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(type(subscription) in six.integer_types)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
         self.request = request
         self.subscription = subscription
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -2903,13 +2958,36 @@ class Unsubscribe(Message):
         # this should already be verified by WampSerializer.unserialize
         assert(len(wmsg) > 0 and wmsg[0] == Unsubscribe.MESSAGE_TYPE)
 
-        if len(wmsg) != 3:
+        if len(wmsg) not in [3, 4]:
             raise ProtocolError("invalid message length {0} for WAMP UNSUBSCRIBE".format(len(wmsg)))
 
         request = check_or_raise_id(wmsg[1], u"'request' in UNSUBSCRIBE")
         subscription = check_or_raise_id(wmsg[2], u"'subscription' in UNSUBSCRIBE")
 
-        obj = Unsubscribe(request, subscription)
+        options = None
+        if len(wmsg) > 3:
+            options = check_or_raise_extra(wmsg[3], u"'options' in UNSUBSCRIBE")
+
+        forward_for = None
+        if options and u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in UNSUBSCRIBE")
+
+        obj = Unsubscribe(request, subscription, forward_for=forward_for)
 
         return obj
 
@@ -2920,13 +2998,19 @@ class Unsubscribe(Message):
         :returns: The serialized raw message.
         :rtype: list
         """
-        return [Unsubscribe.MESSAGE_TYPE, self.request, self.subscription]
+        if self.forward_for:
+            options = {
+                u'forward_for': self.forward_for,
+            }
+            return [Unsubscribe.MESSAGE_TYPE, self.request, self.subscription, options]
+        else:
+            return [Unsubscribe.MESSAGE_TYPE, self.request, self.subscription]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return u"Unsubscribe(request={0}, subscription={1})".format(self.request, self.subscription)
+        return u"Unsubscribe(request={0}, subscription={1}, forward_for={2})".format(self.request, self.subscription, self.forward_for)
 
 
 class Unsubscribed(Message):
@@ -3124,13 +3208,13 @@ class Event(Message):
         :param payload: Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
         :type payload: bytes or None
 
-        :param publisher: The WAMP session ID of the pubisher. Only filled if pubisher is disclosed.
+        :param publisher: The WAMP session ID of the publisher. Only filled if publisher is disclosed.
         :type publisher: None or int
 
-        :param publisher_authid: The WAMP authid of the pubisher. Only filled if pubisher is disclosed.
+        :param publisher_authid: The WAMP authid of the publisher. Only filled if publisher is disclosed.
         :type publisher_authid: None or unicode
 
-        :param publisher_authrole: The WAMP authrole of the pubisher. Only filled if pubisher is disclosed.
+        :param publisher_authrole: The WAMP authrole of the publisher. Only filled if publisher is disclosed.
         :type publisher_authrole: None or unicode
 
         :param topic: For pattern-based subscriptions, the event MUST contain the actual topic published to.
@@ -4091,7 +4175,7 @@ class Call(Message):
         """
         Returns string representation of this message.
         """
-        return u"Call(request={}, procedure={}, args={}, kwargs={}, timeout={}, receive_progress={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, caller={caller}, caller_authid={caller_authid}, caller_authrole={caller_authrole}, forward_for={})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.caller, self.caller_authid, self.caller_authrole, self.forward_for)
+        return u"Call(request={}, procedure={}, args={}, kwargs={}, timeout={}, receive_progress={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.caller, self.caller_authid, self.caller_authrole, self.forward_for)
 
 
 class Cancel(Message):
@@ -4556,9 +4640,17 @@ class Register(Message):
         'invoke',
         'concurrency',
         'force_reregister',
+        'forward_for',
     )
 
-    def __init__(self, request, procedure, match=None, invoke=None, concurrency=None, force_reregister=None):
+    def __init__(self,
+                 request,
+                 procedure,
+                 match=None,
+                 invoke=None,
+                 concurrency=None,
+                 force_reregister=None,
+                 forward_for=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -4575,6 +4667,10 @@ class Register(Message):
 
         :param concurrency: The (maximum) concurrency to be used for the registration.
         :type concurrency: int
+
+        :param forward_for: When this Register is forwarded over a router-to-router link,
+            or via an intermediary router.
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(type(procedure) == six.text_type)
@@ -4584,6 +4680,13 @@ class Register(Message):
         assert(invoke is None or invoke in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM])
         assert(concurrency is None or (type(concurrency) in six.integer_types and concurrency > 0))
         assert force_reregister in [None, True, False]
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         Message.__init__(self)
         self.request = request
@@ -4592,6 +4695,7 @@ class Register(Message):
         self.invoke = invoke or Register.INVOKE_SINGLE
         self.concurrency = concurrency
         self.force_reregister = force_reregister
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -4616,6 +4720,7 @@ class Register(Message):
         invoke = Register.INVOKE_SINGLE
         concurrency = None
         force_reregister = None
+        forward_for = None
 
         if u'match' in options:
 
@@ -4677,8 +4782,26 @@ class Register(Message):
         if options_reregister is not None:
             force_reregister = options_reregister
 
+        if u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+
         obj = Register(request, procedure, match=match, invoke=invoke, concurrency=concurrency,
-                       force_reregister=force_reregister)
+                       force_reregister=force_reregister, forward_for=forward_for)
 
         return obj
 
@@ -4697,6 +4820,9 @@ class Register(Message):
         if self.force_reregister is not None:
             options[u'force_reregister'] = self.force_reregister
 
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
+
         return options
 
     def marshal(self):
@@ -4712,7 +4838,7 @@ class Register(Message):
         """
         Returns string representation of this message.
         """
-        return u"Register(request={0}, procedure={1}, match={2}, invoke={3}, concurrency={4}, force_reregister={5})".format(self.request, self.procedure, self.match, self.invoke, self.concurrency, self.force_reregister)
+        return u"Register(request={0}, procedure={1}, match={2}, invoke={3}, concurrency={4}, force_reregister={5}, forward_for={6})".format(self.request, self.procedure, self.match, self.invoke, self.concurrency, self.force_reregister, self.forward_for)
 
 
 class Registered(Message):
@@ -4791,7 +4917,10 @@ class Unregister(Message):
     """
     A WAMP `UNREGISTER` message.
 
-    Format: ``[UNREGISTER, Request|id, REGISTERED.Registration|id]``
+    Formats:
+
+    * ``[UNREGISTER, Request|id, REGISTERED.Registration|id]``
+    * ``[UNREGISTER, Request|id, REGISTERED.Registration|id, Options|dict]``
     """
 
     MESSAGE_TYPE = 66
@@ -4802,9 +4931,10 @@ class Unregister(Message):
     __slots__ = (
         'request',
         'registration',
+        'forward_for',
     )
 
-    def __init__(self, request, registration):
+    def __init__(self, request, registration, forward_for=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -4812,6 +4942,10 @@ class Unregister(Message):
 
         :param registration: The registration ID for the registration to unregister.
         :type registration: int
+
+        :param forward_for: When this Unregister is forwarded over a router-to-router link,
+            or via an intermediary router.
+        :type forward_for: list[dict]
         """
         assert(type(request) in six.integer_types)
         assert(type(registration) in six.integer_types)
@@ -4819,6 +4953,7 @@ class Unregister(Message):
         Message.__init__(self)
         self.request = request
         self.registration = registration
+        self.forward_for = forward_for
 
     @staticmethod
     def parse(wmsg):
@@ -4833,13 +4968,36 @@ class Unregister(Message):
         # this should already be verified by WampSerializer.unserialize
         assert(len(wmsg) > 0 and wmsg[0] == Unregister.MESSAGE_TYPE)
 
-        if len(wmsg) != 3:
+        if len(wmsg) not in [3, 4]:
             raise ProtocolError("invalid message length {0} for WAMP UNREGISTER".format(len(wmsg)))
 
         request = check_or_raise_id(wmsg[1], u"'request' in UNREGISTER")
         registration = check_or_raise_id(wmsg[2], u"'registration' in UNREGISTER")
 
-        obj = Unregister(request, registration)
+        options = None
+        if len(wmsg) > 3:
+            options = check_or_raise_extra(wmsg[3], u"'options' in UNREGISTER")
+
+        forward_for = None
+        if options and u'forward_for' in options:
+            forward_for = options[u'forward_for']
+            valid = False
+            if type(forward_for) == list:
+                for ff in forward_for:
+                    if type(ff) != dict:
+                        break
+                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                        break
+                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                        break
+                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                        break
+                valid = True
+
+            if not valid:
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in UNREGISTER")
+
+        obj = Unregister(request, registration, forward_for=forward_for)
 
         return obj
 
@@ -4850,7 +5008,13 @@ class Unregister(Message):
         :returns: The serialized raw message.
         :rtype: list
         """
-        return [Unregister.MESSAGE_TYPE, self.request, self.registration]
+        if self.forward_for:
+            options = {
+                u'forward_for': self.forward_for,
+            }
+            return [Unregister.MESSAGE_TYPE, self.request, self.registration, options]
+        else:
+            return [Unregister.MESSAGE_TYPE, self.request, self.registration]
 
     def __str__(self):
         """
@@ -5285,6 +5449,9 @@ class Invocation(Message):
 
         if self.procedure is not None:
             options[u'procedure'] = self.procedure
+
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
 
         if self.payload:
             if self.enc_algo is not None:
