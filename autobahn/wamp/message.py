@@ -552,7 +552,16 @@ class Hello(Message):
         'resume_token',
     )
 
-    def __init__(self, realm, roles, authmethods=None, authid=None, authrole=None, authextra=None, resumable=None, resume_session=None, resume_token=None):
+    def __init__(self,
+                 realm,
+                 roles,
+                 authmethods=None,
+                 authid=None,
+                 authrole=None,
+                 authextra=None,
+                 resumable=None,
+                 resume_session=None,
+                 resume_token=None):
         """
 
         :param realm: The URI of the WAMP realm to join.
@@ -791,7 +800,19 @@ class Welcome(Message):
         'custom',
     )
 
-    def __init__(self, session, roles, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None, resumed=None, resumable=None, resume_token=None, custom=None):
+    def __init__(self,
+                 session,
+                 roles,
+                 realm=None,
+                 authid=None,
+                 authrole=None,
+                 authmethod=None,
+                 authprovider=None,
+                 authextra=None,
+                 resumed=None,
+                 resumable=None,
+                 resume_token=None,
+                 custom=None):
         """
 
         :param session: The WAMP session ID the other peer is assigned.
@@ -1558,7 +1579,7 @@ class Error(Message):
 
             detail_callee = details[u'callee']
             if type(detail_callee) not in six.integer_types:
-                raise ProtocolError("invalid type {0} for 'callee' detail in RESULT".format(type(detail_callee)))
+                raise ProtocolError("invalid type {0} for 'callee' detail in ERROR".format(type(detail_callee)))
 
             callee = detail_callee
 
@@ -1566,7 +1587,7 @@ class Error(Message):
 
             detail_callee_authid = details[u'callee_authid']
             if type(detail_callee_authid) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'callee_authid' detail in RESULT".format(type(detail_callee_authid)))
+                raise ProtocolError("invalid type {0} for 'callee_authid' detail in ERROR".format(type(detail_callee_authid)))
 
             callee_authid = detail_callee_authid
 
@@ -1574,7 +1595,7 @@ class Error(Message):
 
             detail_callee_authrole = details[u'callee_authrole']
             if type(detail_callee_authrole) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'callee_authrole' detail in INVOCATION".format(type(detail_callee_authrole)))
+                raise ProtocolError("invalid type {0} for 'callee_authrole' detail in ERROR".format(type(detail_callee_authrole)))
 
             callee_authrole = detail_callee_authrole
 
@@ -1594,7 +1615,7 @@ class Error(Message):
                 valid = True
 
             if not valid:
-                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in ERROR")
 
         obj = Error(request_type,
                     request,
@@ -2789,7 +2810,7 @@ class Subscribe(Message):
                 valid = True
 
             if not valid:
-                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in SUBSCRIBE")
 
         obj = Subscribe(request, topic, match=match, get_retained=get_retained, forward_for=forward_for)
 
@@ -3655,7 +3676,7 @@ class Event(Message):
 
             detail_publisher_authid = details[u'publisher_authid']
             if type(detail_publisher_authid) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'publisher_authid' detail in INVOCATION".format(type(detail_publisher_authid)))
+                raise ProtocolError("invalid type {0} for 'publisher_authid' detail in EVENT".format(type(detail_publisher_authid)))
 
             publisher_authid = detail_publisher_authid
 
@@ -3663,7 +3684,7 @@ class Event(Message):
 
             detail_publisher_authrole = details[u'publisher_authrole']
             if type(detail_publisher_authrole) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'publisher_authrole' detail in INVOCATION".format(type(detail_publisher_authrole)))
+                raise ProtocolError("invalid type {0} for 'publisher_authrole' detail in EVENT".format(type(detail_publisher_authrole)))
 
             publisher_authrole = detail_publisher_authrole
 
@@ -3701,7 +3722,7 @@ class Event(Message):
                 valid = True
 
             if not valid:
-                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in EVENT")
 
         obj = Event(subscription,
                     publication,
@@ -4068,7 +4089,7 @@ class Call(Message):
 
             option_caller = options[u'caller']
             if type(option_caller) not in six.integer_types:
-                raise ProtocolError("invalid type {0} for 'caller' detail in INVOCATION".format(type(option_caller)))
+                raise ProtocolError("invalid type {0} for 'caller' detail in CALL".format(type(option_caller)))
 
             caller = option_caller
 
@@ -4076,7 +4097,7 @@ class Call(Message):
 
             option_caller_authid = options[u'caller_authid']
             if type(option_caller_authid) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'caller_authid' detail in INVOCATION".format(type(option_caller_authid)))
+                raise ProtocolError("invalid type {0} for 'caller_authid' detail in CALL".format(type(option_caller_authid)))
 
             caller_authid = option_caller_authid
 
@@ -4084,7 +4105,7 @@ class Call(Message):
 
             option_caller_authrole = options[u'caller_authrole']
             if type(option_caller_authrole) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'caller_authrole' detail in INVOCATION".format(type(option_caller_authrole)))
+                raise ProtocolError("invalid type {0} for 'caller_authrole' detail in CALL".format(type(option_caller_authrole)))
 
             caller_authrole = option_caller_authrole
 
@@ -4104,7 +4125,7 @@ class Call(Message):
                 valid = True
 
             if not valid:
-                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in CALL")
 
         obj = Call(request,
                    procedure,
@@ -4284,7 +4305,7 @@ class Cancel(Message):
                 valid = True
 
             if not valid:
-                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in CANCEL")
 
         obj = Cancel(request, mode=mode, forward_for=forward_for)
 
@@ -4529,7 +4550,7 @@ class Result(Message):
 
             detail_callee_authrole = details[u'callee_authrole']
             if type(detail_callee_authrole) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'callee_authrole' detail in INVOCATION".format(type(detail_callee_authrole)))
+                raise ProtocolError("invalid type {0} for 'callee_authrole' detail in RESULT".format(type(detail_callee_authrole)))
 
             callee_authrole = detail_callee_authrole
 
@@ -4549,7 +4570,7 @@ class Result(Message):
                 valid = True
 
             if not valid:
-                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in RESULT")
 
         obj = Result(request,
                      args=args,
@@ -4798,7 +4819,7 @@ class Register(Message):
                 valid = True
 
             if not valid:
-                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in REGISTER")
 
         obj = Register(request, procedure, match=match, invoke=invoke, concurrency=concurrency,
                        force_reregister=force_reregister, forward_for=forward_for)
@@ -5403,7 +5424,7 @@ class Invocation(Message):
                 valid = True
 
             if not valid:
-                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in INVOCATION")
 
         obj = Invocation(request,
                          registration,
@@ -5598,7 +5619,7 @@ class Interrupt(Message):
                 valid = True
 
             if not valid:
-                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in INTERRUPT")
 
         obj = Interrupt(request, mode=mode, reason=reason, forward_for=forward_for)
 
@@ -5829,7 +5850,7 @@ class Yield(Message):
 
             option_callee = options[u'callee']
             if type(option_callee) not in six.integer_types:
-                raise ProtocolError("invalid type {0} for 'callee' detail in RESULT".format(type(option_callee)))
+                raise ProtocolError("invalid type {0} for 'callee' detail in YIELD".format(type(option_callee)))
 
             callee = option_callee
 
@@ -5837,7 +5858,7 @@ class Yield(Message):
 
             option_callee_authid = options[u'callee_authid']
             if type(option_callee_authid) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'callee_authid' detail in RESULT".format(type(option_callee_authid)))
+                raise ProtocolError("invalid type {0} for 'callee_authid' detail in YIELD".format(type(option_callee_authid)))
 
             callee_authid = option_callee_authid
 
@@ -5845,7 +5866,7 @@ class Yield(Message):
 
             option_callee_authrole = options[u'callee_authrole']
             if type(option_callee_authrole) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'callee_authrole' detail in INVOCATION".format(type(option_callee_authrole)))
+                raise ProtocolError("invalid type {0} for 'callee_authrole' detail in YIELD".format(type(option_callee_authrole)))
 
             callee_authrole = option_callee_authrole
 
@@ -5865,7 +5886,7 @@ class Yield(Message):
                 valid = True
 
             if not valid:
-                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in PUBLISH")
+                raise ProtocolError("invalid type/value {0} for/within 'forward_for' option in YIELD")
 
         obj = Yield(request,
                     args=args,

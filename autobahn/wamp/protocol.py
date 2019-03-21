@@ -298,8 +298,17 @@ class BaseSession(ObservableMixin):
                 else:
                     exc = exception.ApplicationError(msg.error)
 
+        # FIXME: cleanup and integate into ctors above
         if hasattr(exc, 'enc_algo'):
             exc.enc_algo = msg.enc_algo
+        if hasattr(exc, 'callee'):
+            exc.callee = msg.callee
+        if hasattr(exc, 'callee_authid'):
+            exc.callee_authid = msg.callee_authid
+        if hasattr(exc, 'callee_authrole'):
+            exc.callee_authrole = msg.callee_authrole
+        if hasattr(exc, 'forward_for'):
+            exc.forward_for = msg.forward_for
 
         return exc
 
