@@ -557,13 +557,14 @@ class SubscribeOptions(object):
         'details',
         'details_arg',
         'get_retained',
+        'forward_for',
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
         'correlation_is_last',
     )
 
-    def __init__(self, match=None, details=None, details_arg=None, get_retained=None,
+    def __init__(self, match=None, details=None, details_arg=None, forward_for=None, get_retained=None,
                  correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
                  correlation_is_last=None):
         """
@@ -587,6 +588,14 @@ class SubscribeOptions(object):
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert(get_retained is None or type(get_retained) is bool)
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         self.match = match
         self.details = details
 
@@ -597,6 +606,7 @@ class SubscribeOptions(object):
             self.details_arg = details_arg
 
         self.get_retained = get_retained
+        self.forward_for = forward_for
 
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
@@ -615,10 +625,13 @@ class SubscribeOptions(object):
         if self.get_retained is not None:
             options[u'get_retained'] = self.get_retained
 
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
+
         return options
 
     def __str__(self):
-        return u"SubscribeOptions(match={}, details={}, details_arg={}, get_retained={})".format(self.match, self.details, self.details_arg, self.get_retained)
+        return u"SubscribeOptions(match={}, details={}, details_arg={}, get_retained={}, forward_for={})".format(self.match, self.details, self.details_arg, self.get_retained, self.forward_for)
 
 
 @public
@@ -870,6 +883,7 @@ class RegisterOptions(object):
         'invoke',
         'concurrency',
         'force_reregister',
+        'forward_for',
         'details_arg',
         'correlation_id',
         'correlation_uri',
@@ -877,8 +891,8 @@ class RegisterOptions(object):
         'correlation_is_last',
     )
 
-    def __init__(self, match=None, invoke=None, concurrency=None, details_arg=None, force_reregister=None,
-                 correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
+    def __init__(self, match=None, invoke=None, concurrency=None, force_reregister=None, forward_for=None,
+                 details_arg=None, correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
                  correlation_is_last=None):
         """
         :param match: Type of matching to use on the URI (`exact`, `prefix` or `wildcard`)
@@ -898,7 +912,11 @@ class RegisterOptions(object):
             already registered this URI will be 'kicked out' and this
             session will become the one that's registered (the previous
             session must have used `force_reregister=True` as well)
+        :type force_reregister: bool
 
+        :param forward_for: When this Register is forwarded over a router-to-router link,
+            or via an intermediary router.
+        :type forward_for: list[dict]
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
         assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
@@ -906,12 +924,20 @@ class RegisterOptions(object):
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert force_reregister in [None, True, False]
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         self.match = match
         self.invoke = invoke
         self.concurrency = concurrency
-        self.details_arg = details_arg
         self.force_reregister = force_reregister
-
+        self.forward_for = forward_for
+        self.details_arg = details_arg
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
         self.correlation_is_anchor = correlation_is_anchor
@@ -935,10 +961,13 @@ class RegisterOptions(object):
         if self.force_reregister is not None:
             options[u'force_reregister'] = self.force_reregister
 
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
+
         return options
 
     def __str__(self):
-        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details_arg={}, force_reregister={})".format(self.match, self.invoke, self.concurrency, self.details_arg, self.force_reregister)
+        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details_arg={}, force_reregister={}, forward_for={})".format(self.match, self.invoke, self.concurrency, self.details_arg, self.force_reregister, self.forward_for)
 
 
 @public
