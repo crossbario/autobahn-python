@@ -557,13 +557,14 @@ class SubscribeOptions(object):
         'details',
         'details_arg',
         'get_retained',
+        'forward_for',
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
         'correlation_is_last',
     )
 
-    def __init__(self, match=None, details=None, details_arg=None, get_retained=None,
+    def __init__(self, match=None, details=None, details_arg=None, forward_for=None, get_retained=None,
                  correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
                  correlation_is_last=None):
         """
@@ -587,6 +588,14 @@ class SubscribeOptions(object):
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert(get_retained is None or type(get_retained) is bool)
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         self.match = match
         self.details = details
 
@@ -597,6 +606,7 @@ class SubscribeOptions(object):
             self.details_arg = details_arg
 
         self.get_retained = get_retained
+        self.forward_for = forward_for
 
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
@@ -615,10 +625,13 @@ class SubscribeOptions(object):
         if self.get_retained is not None:
             options[u'get_retained'] = self.get_retained
 
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
+
         return options
 
     def __str__(self):
-        return u"SubscribeOptions(match={}, details={}, details_arg={}, get_retained={})".format(self.match, self.details, self.details_arg, self.get_retained)
+        return u"SubscribeOptions(match={}, details={}, details_arg={}, get_retained={}, forward_for={})".format(self.match, self.details, self.details_arg, self.get_retained, self.forward_for)
 
 
 @public
@@ -689,7 +702,7 @@ class EventDetails(object):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.subscription = subscription
@@ -870,6 +883,7 @@ class RegisterOptions(object):
         'invoke',
         'concurrency',
         'force_reregister',
+        'forward_for',
         'details_arg',
         'correlation_id',
         'correlation_uri',
@@ -877,8 +891,8 @@ class RegisterOptions(object):
         'correlation_is_last',
     )
 
-    def __init__(self, match=None, invoke=None, concurrency=None, details_arg=None, force_reregister=None,
-                 correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
+    def __init__(self, match=None, invoke=None, concurrency=None, force_reregister=None, forward_for=None,
+                 details_arg=None, correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
                  correlation_is_last=None):
         """
         :param match: Type of matching to use on the URI (`exact`, `prefix` or `wildcard`)
@@ -898,7 +912,11 @@ class RegisterOptions(object):
             already registered this URI will be 'kicked out' and this
             session will become the one that's registered (the previous
             session must have used `force_reregister=True` as well)
+        :type force_reregister: bool
 
+        :param forward_for: When this Register is forwarded over a router-to-router link,
+            or via an intermediary router.
+        :type forward_for: list[dict]
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
         assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
@@ -906,12 +924,20 @@ class RegisterOptions(object):
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert force_reregister in [None, True, False]
 
+        assert(forward_for is None or type(forward_for) == list)
+        if forward_for:
+            for ff in forward_for:
+                assert type(ff) == dict
+                assert 'session' in ff and type(ff['session']) in six.integer_types
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
+                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+
         self.match = match
         self.invoke = invoke
         self.concurrency = concurrency
-        self.details_arg = details_arg
         self.force_reregister = force_reregister
-
+        self.forward_for = forward_for
+        self.details_arg = details_arg
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
         self.correlation_is_anchor = correlation_is_anchor
@@ -935,10 +961,13 @@ class RegisterOptions(object):
         if self.force_reregister is not None:
             options[u'force_reregister'] = self.force_reregister
 
+        if self.forward_for is not None:
+            options[u'forward_for'] = self.forward_for
+
         return options
 
     def __str__(self):
-        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details_arg={}, force_reregister={})".format(self.match, self.invoke, self.concurrency, self.details_arg, self.force_reregister)
+        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details_arg={}, force_reregister={}, forward_for={})".format(self.match, self.invoke, self.concurrency, self.details_arg, self.force_reregister, self.forward_for)
 
 
 @public
@@ -1004,7 +1033,7 @@ class CallDetails(object):
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.registration = registration
@@ -1029,21 +1058,29 @@ class CallOptions(object):
     __slots__ = (
         'on_progress',
         'timeout',
+        'caller',
+        'caller_authid',
+        'caller_authrole',
         'forward_for',
         'correlation_id',
         'correlation_uri',
         'correlation_is_anchor',
         'correlation_is_last',
+        'details',
     )
 
     def __init__(self,
                  on_progress=None,
                  timeout=None,
+                 caller=None,
+                 caller_authid=None,
+                 caller_authrole=None,
                  forward_for=None,
                  correlation_id=None,
                  correlation_uri=None,
                  correlation_is_anchor=None,
-                 correlation_is_last=None):
+                 correlation_is_last=None,
+                 details=None):
         """
 
         :param on_progress: A callback that will be called when the remote endpoint
@@ -1058,19 +1095,27 @@ class CallOptions(object):
         """
         assert(on_progress is None or callable(on_progress))
         assert(timeout is None or (type(timeout) in list(six.integer_types) + [float] and timeout > 0))
-
+        assert(details is None or type(details) == bool)
+        assert(caller is None or type(caller) in six.integer_types)
+        assert(caller_authid is None or type(caller_authid) == six.text_type)
+        assert(caller_authrole is None or type(caller_authrole) == six.text_type)
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.on_progress = on_progress
         self.timeout = timeout
+
+        self.caller = caller
+        self.caller_authid = caller_authid
+        self.caller_authrole = caller_authrole
         self.forward_for = forward_for
 
+        self.details = details
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
         self.correlation_is_anchor = correlation_is_anchor
@@ -1082,6 +1127,9 @@ class CallOptions(object):
         """
         options = {}
 
+        # note: only some attributes are actually forwarded to the WAMP CALL message, while
+        # other attributes are for client-side/client-internal use only
+
         if self.timeout is not None:
             options[u'timeout'] = self.timeout
 
@@ -1091,10 +1139,19 @@ class CallOptions(object):
         if self.forward_for is not None:
             options[u'forward_for'] = self.forward_for
 
+        if self.caller is not None:
+            options[u'caller'] = self.caller
+
+        if self.caller_authid is not None:
+            options[u'caller_authid'] = self.caller_authid
+
+        if self.caller_authrole is not None:
+            options[u'caller_authrole'] = self.caller_authrole
+
         return options
 
     def __str__(self):
-        return u"CallOptions(on_progress={}, timeout={}, forward_for={})".format(self.on_progress, self.timeout, self.forward_for)
+        return u"CallOptions(on_progress={}, timeout={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={}, details={})".format(self.on_progress, self.timeout, self.caller, self.caller_authid, self.caller_authrole, self.forward_for, self.details)
 
 
 @public
@@ -1108,6 +1165,9 @@ class CallResult(object):
         'results',
         'kwresults',
         'enc_algo',
+        'callee',
+        'callee_authid',
+        'callee_authrole',
         'forward_for',
     )
 
@@ -1123,23 +1183,33 @@ class CallResult(object):
         enc_algo = kwresults.pop('enc_algo', None)
         assert(enc_algo is None or type(enc_algo) == six.text_type)
 
+        callee = kwresults.pop('callee', None)
+        callee_authid = kwresults.pop('callee_authid', None)
+        callee_authrole = kwresults.pop('callee_authrole', None)
+
+        assert callee is None or type(callee) in six.integer_types
+        assert callee_authid is None or type(callee_authid) == six.text_type
+        assert callee_authrole is None or type(callee_authrole) == six.text_type
+
         forward_for = kwresults.pop('forward_for', None)
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
                 assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and type(ff['authid']) == six.text_type
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.enc_algo = enc_algo
+        self.callee = callee
+        self.callee_authid = callee_authid
+        self.callee_authrole = callee_authrole
         self.forward_for = forward_for
-
         self.results = results
         self.kwresults = kwresults
 
     def __str__(self):
-        return u"CallResult(results={}, kwresults={}, enc_algo={}, forward_for={})".format(self.results, self.kwresults, self.enc_algo, self.forward_for)
+        return u"CallResult(results={}, kwresults={}, enc_algo={}, callee={}, callee_authid={}, callee_authrole={}, forward_for={})".format(self.results, self.kwresults, self.enc_algo, self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
 
 
 @public
