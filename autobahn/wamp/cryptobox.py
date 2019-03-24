@@ -41,7 +41,7 @@ __all__ = [
 
 try:
     # try to import everything we need for WAMP-cryptobox
-    from nacl.encoding import Base64Encoder, RawEncoder
+    from nacl.encoding import Base64Encoder, RawEncoder, HexEncoder
     from nacl.public import PrivateKey, PublicKey, Box
     from nacl.utils import random
     from pytrie import StringTrie
@@ -147,7 +147,18 @@ if HAS_CRYPTOBOX:
             key = PrivateKey.generate()
             priv_key = key.encode(encoder=Base64Encoder)
             pub_key = key.public_key.encode(encoder=Base64Encoder)
-            return (u'{}'.format(priv_key), u'{}'.format(pub_key))
+            return priv_key.decode('ascii'), pub_key.decode('ascii')
+
+        @public
+        def generate_key_hex(self):
+            """
+            Generate a new private key and return a pair with the hex encodings
+            of (priv_key, pub_key).
+            """
+            key = PrivateKey.generate()
+            priv_key = key.encode(encoder=HexEncoder)
+            pub_key = key.public_key.encode(encoder=HexEncoder)
+            return priv_key.decode('ascii'), pub_key.decode('ascii')
 
         @public
         def set_key(self, uri, key):
