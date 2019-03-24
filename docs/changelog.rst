@@ -8,10 +8,11 @@ Changelog
 19.3.3
 ------
 
-* new: wamp callee disclosure
-* new: wamp forward_for in more message types; expose forward_for in options/details types
+* fix: RegisterOptions should have details|bool parameter (#1143)
+* new: WAMP callee disclosure
+* new: WAMP forward_for in more message types; expose forward_for in options/details types
 * new: expose underlying serializer modules on WAMP object serializers
-* fix: wamp-cryptosign fix base64 encodings, add hex encoding (#1146)
+* fix: WAMP-cryptosign fix base64 encodings, add hex encoding (#1146)
 
 19.3.2
 ------
