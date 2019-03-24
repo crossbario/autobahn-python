@@ -597,9 +597,9 @@ class SubscribeOptions(object):
                 assert 'authrole' in ff and type(ff['authrole']) == six.text_type
 
         self.match = match
-        self.details = details
 
         # FIXME: this is for backwards compat, but we'll deprecate it in the future
+        self.details = details
         if details:
             self.details_arg = 'details'
         else:
@@ -884,6 +884,7 @@ class RegisterOptions(object):
         'concurrency',
         'force_reregister',
         'forward_for',
+        'details',
         'details_arg',
         'correlation_id',
         'correlation_uri',
@@ -892,8 +893,8 @@ class RegisterOptions(object):
     )
 
     def __init__(self, match=None, invoke=None, concurrency=None, force_reregister=None, forward_for=None,
-                 details_arg=None, correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
-                 correlation_is_last=None):
+                 details=None, details_arg=None, correlation_id=None, correlation_uri=None,
+                 correlation_is_anchor=None, correlation_is_last=None):
         """
         :param match: Type of matching to use on the URI (`exact`, `prefix` or `wildcard`)
 
@@ -906,6 +907,14 @@ class RegisterOptions(object):
 
         :param details_arg: When invoking the endpoint, provide call details
             in this keyword argument to the callable.
+        :type details_arg: str
+
+        :param details: When invoking the endpoint, provide call details in a keyword
+            parameter ``details``.
+        :type details: bool
+
+        :param details_arg: DEPCREATED (use "details" flag). When invoking the endpoint,
+            provide call details in this keyword argument to the callable.
         :type details_arg: str
 
         :param force_reregister: if True, any other session that has
@@ -921,6 +930,7 @@ class RegisterOptions(object):
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
         assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
         assert(concurrency is None or (type(concurrency) in six.integer_types and concurrency > 0))
+        assert(details is None or (type(details) == bool and details_arg is None))
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert force_reregister in [None, True, False]
 
@@ -937,7 +947,14 @@ class RegisterOptions(object):
         self.concurrency = concurrency
         self.force_reregister = force_reregister
         self.forward_for = forward_for
-        self.details_arg = details_arg
+
+        # FIXME: this is for backwards compat, but we'll deprecate it in the future
+        self.details = details
+        if details:
+            self.details_arg = 'details'
+        else:
+            self.details_arg = details_arg
+
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
         self.correlation_is_anchor = correlation_is_anchor
@@ -967,7 +984,7 @@ class RegisterOptions(object):
         return options
 
     def __str__(self):
-        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details_arg={}, force_reregister={}, forward_for={})".format(self.match, self.invoke, self.concurrency, self.details_arg, self.force_reregister, self.forward_for)
+        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details={}, details_arg={}, force_reregister={}, forward_for={})".format(self.match, self.invoke, self.concurrency, self.details, self.details_arg, self.force_reregister, self.forward_for)
 
 
 @public

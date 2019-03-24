@@ -299,7 +299,9 @@ SERID_TO_SER[JsonSerializer.SERIALIZER_ID] = JsonSerializer
 
 
 _HAS_MSGPACK = False
-if platform.python_implementation() == u'CPython':
+_USE_UMSGPACK = platform.python_implementation() == u'PyPy' or 'AUTOBAHN_USE_UMSGPACK' in os.environ
+
+if not _USE_UMSGPACK:
     try:
         # on CPython, use an impl. with native extension:
         # https://pypi.org/project/msgpack/
@@ -311,6 +313,7 @@ if platform.python_implementation() == u'CPython':
         _HAS_MSGPACK = True
         _packb = lambda obj: msgpack.packb(obj, use_bin_type=True)  # noqa
         _unpackb = lambda data: msgpack.unpackb(data, raw=False)  # noqa
+        _msgpack = msgpack
         # print('Notice: Autobahn is using msgpack library (with native extension, best on CPython) for MessagePack serialization')
 else:
     try:
@@ -324,6 +327,7 @@ else:
         _HAS_MSGPACK = True
         _packb = umsgpack.packb
         _unpackb = umsgpack.unpackb
+        _msgpack = umsgpack
         # print('Notice: Autobahn is using umsgpack library (pure Python, best on PyPy) for MessagePack serialization')
 
 
@@ -332,6 +336,8 @@ if _HAS_MSGPACK:
     class MsgPackObjectSerializer(object):
 
         NAME = u'msgpack'
+
+        MSGPACK_MODULE = _msgpack
 
         BINARY = True
         """
@@ -444,6 +450,7 @@ if 'AUTOBAHN_USE_CBOR2' in os.environ:
         _HAS_CBOR = True
         _cbor_loads = cbor2.loads
         _cbor_dumps = cbor2.dumps
+        _cbor = cbor2
         # print('Notice: Autobahn is using cbor2 library for CBOR serialization')
 else:
     try:
@@ -456,6 +463,7 @@ else:
         _HAS_CBOR = True
         _cbor_loads = cbor.loads
         _cbor_dumps = cbor.dumps
+        _cbor = cbor
         # print('Notice: Autobahn is using cbor library for CBOR serialization')
 
 
@@ -464,6 +472,8 @@ if _HAS_CBOR:
     class CBORObjectSerializer(object):
 
         NAME = u'cbor'
+
+        CBOR_MODULE = _cbor
 
         BINARY = True
         """
@@ -579,6 +589,8 @@ else:
 
         NAME = u'ubjson'
 
+        UBJSON_MODULE = ubjson
+
         BINARY = True
         """
         Flag that indicates whether this serializer needs a binary clean transport.
@@ -693,6 +705,8 @@ if _HAS_FLATBUFFERS:
     class FlatBuffersObjectSerializer(object):
 
         NAME = u'flatbuffers'
+
+        FLATBUFFERS_MODULE = flatbuffers
 
         BINARY = True
         """
