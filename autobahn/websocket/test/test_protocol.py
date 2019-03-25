@@ -26,9 +26,10 @@
 
 from __future__ import absolute_import, print_function
 
+import os
+import unittest
 from hashlib import sha1
 from base64 import b64encode
-import unittest
 
 from autobahn.websocket.protocol import WebSocketServerProtocol
 from autobahn.websocket.protocol import WebSocketServerFactory
@@ -36,6 +37,8 @@ from autobahn.websocket.protocol import WebSocketClientProtocol
 from autobahn.websocket.protocol import WebSocketClientFactory
 from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.test import FakeTransport
+
+import txaio
 
 from mock import Mock
 
@@ -213,3 +216,47 @@ class WebSocketServerProtocolTests(unittest.TestCase):
         # We shouldn't have closed
         self.assertEqual(self.transport._written, b"")
         self.assertEqual(self.protocol.state, self.protocol.STATE_OPEN)
+
+
+if os.environ.get('USE_TWISTED', False):
+    class TwistedProtocolTests(unittest.TestCase):
+        """
+        Tests which require a specific framework's protocol class to work
+        (in this case, using Twisted)
+        """
+        def setUp(self):
+            from autobahn.twisted.websocket import WebSocketServerProtocol
+            from autobahn.twisted.websocket import WebSocketServerFactory
+            t = FakeTransport()
+            f = WebSocketServerFactory()
+            p = WebSocketServerProtocol()
+            p.factory = f
+            p.transport = t
+
+            p._connectionMade()
+            p.state = p.STATE_OPEN
+            p.websocket_version = 18
+
+            self.protocol = p
+            self.transport = t
+
+        def tearDown(self):
+            for call in [
+                    self.protocol.autoPingPendingCall,
+                    self.protocol.autoPingTimeoutCall,
+                    self.protocol.openHandshakeTimeoutCall,
+                    self.protocol.closeHandshakeTimeoutCall,
+            ]:
+                if call is not None:
+                    call.cancel()
+
+        def test_loseConnection(self):
+            """
+            If we lose our connection before openHandshakeTimeout fires, it is
+            cleaned up
+            """
+            # so, I guess a little cheezy, but we depend on the asyncio or
+            # twisted class to call _connectionLost at some point; faking
+            # that here
+            self.protocol._connectionLost(txaio.create_failure(RuntimeError("testing")))
+            self.assertTrue(self.protocol.openHandshakeTimeoutCall is None)
