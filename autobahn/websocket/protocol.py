@@ -1083,6 +1083,11 @@ class WebSocketProtocol(object):
             self.autoPingTimeoutCall.cancel()
             self.autoPingTimeoutCall = None
 
+        # our handshake timeout may not have fired
+        if self.openHandshakeTimeoutCall is not None:
+            self.openHandshakeTimeoutCall.cancel()
+            self.openHandshakeTimeoutCall = None
+
         # check required here because in some scenarios dropConnection
         # will already have resolved the Future/Deferred.
         if self.state != WebSocketProtocol.STATE_CLOSED:
