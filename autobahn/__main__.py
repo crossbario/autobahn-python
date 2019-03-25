@@ -329,13 +329,21 @@ async def do_subscribe(reactor, session, options):
 
 
 def _main():
+    """
+    This is a magic name for `python -m autobahn`, and specified as
+    our entry_point in setup.py
+    """
     react(
         lambda reactor: ensureDeferred(
             _real_main(reactor)
         )
     )
 
+
 async def _real_main(reactor):
+    """
+    Sanity check options, create a connection and run our subcommand
+    """
     options = top.parse_args()
     component = _create_component(options)
 
