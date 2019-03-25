@@ -263,6 +263,12 @@ setup(
     package_data={'autobahn.asyncio': ['test/*']},
     cffi_modules=cffi_modules,
 
+    entry_points={
+        "console_scripts": [
+            "wamp = autobahn.__main__:_main",
+        ]
+    },
+
     # this flag will make files from MANIFEST.in go into _source_ distributions only
     include_package_data=True,
 

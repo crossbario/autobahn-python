@@ -182,7 +182,19 @@ def _create_transport_endpoint(reactor, endpoint_config):
 
             # create a non-TLS connecting TCP socket
             else:
-                if version == 4:
+                if host.endswith(".onion"):
+                    # hmm, can't log here?
+                    # self.log.info("{host} appears to be a Tor endpoint", host=host)
+                    try:
+                        import txtorcon
+                        endpoint = txtorcon.TorClientEndpoint(host, port)
+                    except ImportError:
+                        raise RuntimeError(
+                            "{} appears to be a Tor Onion service, but txtorcon is not installed".format(
+                                host,
+                            )
+                        )
+                elif version == 4:
                     endpoint = TCP4ClientEndpoint(reactor, host, port, timeout=timeout)
                 elif version == 6:
                     try:
