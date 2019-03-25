@@ -41,8 +41,11 @@ except ImportError:
     print("The 'wamp' command-line tool requires Twisted.")
     print("  pip install autobahn[twisted]")
     sys.exit(1)
+
 from twisted.internet.defer import Deferred, ensureDeferred
 from twisted.internet.task import react, deferLater
+from twisted.internet.protocol import ProcessProtocol
+
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.types import PublishOptions
 from autobahn.wamp.types import RegisterOptions
@@ -159,7 +162,12 @@ register.add_argument(
 register.add_argument(
     'command',
     type=str,
-    help="The command to run when called. WAMP_ARGS, WAMP_KWARGS and _JSON variants are set in the environment"
+    nargs='*',
+    help=(
+        "Takes one or more args: the executable to call, and any positional "
+        "arguments. As well, the following environment variables are set: "
+        "WAMP_ARGS, WAMP_KWARGS and _JSON variants."
+    )
 )
 
 
@@ -258,13 +266,35 @@ async def do_register(reactor, session, options):
     countdown = [options.times]
 
     async def called(*args, **kw):
-        print("called: args={}, kwargs={}".format(args, kw))
+        print("called: args={}, kwargs={}".format(args, kw), file=sys.stderr)
         env = copy(os.environ)
         env['WAMP_ARGS'] = ' '.join(args)
         env['WAMP_ARGS_JSON'] = json.dumps(args)
         env['WAMP_KWARGS'] = ' '.join('{}={}'.format(k, v) for k, v in kw.items())
         env['WAMP_KWARGS_JSON'] = json.dumps(kw)
-        print(options.command)
+
+        exe = os.path.abspath(options.command[0])
+        args = options.command
+        done = Deferred()
+
+        class DumpOutput(ProcessProtocol):
+            def outReceived(self, data):
+                sys.stdout.write(data.decode('utf8'))
+
+            def errReceived(self, data):
+                sys.stderr.write(data.decode('utf8'))
+
+            def processExited(self, reason):
+                done.callback(reason.value.exitCode)
+
+        proto = DumpOutput()
+        reactor.spawnProcess(
+            proto, exe, args, env=env, path="."
+        )
+        code = await done
+
+        if code != 0:
+            print("Failed with exit-code {}".format(code))
         if countdown[0]:
             countdown[0] -= 1
             if countdown[0] <= 0:
@@ -312,6 +342,15 @@ async def _real_main(reactor):
     if options.subcommand_name is None:
         print("Must select a subcommand")
         sys.exit(1)
+
+    if options.subcommand_name == "register":
+        exe = options.command[0]
+        if not os.path.isabs(exe):
+            print("Full path to the executable required. Found: {}".format(exe), file=sys.stderr)
+            sys.exit(1)
+        if not os.path.exists(exe):
+            print("Executable not found: {}".format(exe), file=sys.stderr)
+            sys.exit(1)
 
     subcommands = {
         "call": do_call,
