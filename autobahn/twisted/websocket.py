@@ -289,6 +289,20 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
         self.reactor = reactor
 
         protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
+        # we must up-call *before* we set up the contextFactory
+        # because we need self.host etc to be set properly.
+        if self.isSecure and self.proxy is not None:
+            # if we have a proxy, then our factory will be used to
+            # create the connection after CONNECT and if it's doing
+            # TLS it needs a contextFactory
+            from twisted.internet import ssl
+            self.contextFactory = ssl.optionsForClientTLS(self.host)
+        # NOTE: there's thus no way to send in our own
+        # context-factory, nor any TLS options.
+
+        # Possibly we should allow 'proxy' to contain an actual
+        # IStreamClientEndpoint instance instead of configuration for
+        # how to make one
 
 
 @implementer(ITransport)
