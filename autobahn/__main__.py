@@ -41,8 +41,8 @@ except ImportError:
     print("The 'wamp' command-line tool requires Twisted.")
     print("  pip install autobahn[twisted]")
     sys.exit(1)
-from twisted.internet.defer import Deferred
-from twisted.internet.task import react
+from twisted.internet.defer import Deferred, ensureDeferred
+from twisted.internet.task import react, deferLater
 from autobahn.wamp.exception import ApplicationError
 
 
@@ -218,7 +218,7 @@ async def do_register(reactor, session, options):
     countdown = [options.times]
 
     async def called(*args, **kw):
-        print("{} called: args={}, kwargs={}".format(options.uri, args, kw))
+        print("called: args={}, kwargs={}".format(args, kw))
         env = copy(os.environ)
         env['WAMP_ARGS'] = ' '.join(args)
         env['WAMP_ARGS_JSON'] = json.dumps(args)
@@ -228,10 +228,9 @@ async def do_register(reactor, session, options):
         if countdown[0]:
             countdown[0] -= 1
             if countdown[0] <= 0:
-                all_done.callback(None)
+                reactor.callLater(0, all_done.callback, None)
 
     reg = await session.register(called, options.uri)
-    print("registered '{}'".format(options.uri))
     await all_done
 
 
@@ -243,7 +242,14 @@ async def do_publish(reactor, session, options):
     pass
 
 
-def _main(reactor):
+def main():
+    react(
+        lambda reactor: ensureDeferred(
+            _real_main(reactor)
+        )
+    )
+
+async def _real_main(reactor):
     options = top.parse_args()
     component = _create_component(options)
 
@@ -261,8 +267,6 @@ def _main(reactor):
 
     exit_code = [0]
 
-    print(dir(options))
-
     @component.on_join
     async def _(session, details):
         print("connected: authrole={} authmethod={}".format(details.authrole, details.authmethod))
@@ -273,9 +277,9 @@ def _main(reactor):
             exit_code[0] = 5
         await session.leave()
 
-    run([component])
+    await component.start(reactor)
     sys.exit(exit_code[0])
 
 
 if __name__ == "__main__":
-    react(_main)
+    _main()
