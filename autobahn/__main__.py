@@ -44,6 +44,9 @@ except ImportError:
 from twisted.internet.defer import Deferred, ensureDeferred
 from twisted.internet.task import react, deferLater
 from autobahn.wamp.exception import ApplicationError
+from autobahn.wamp.types import PublishOptions
+from autobahn.wamp.types import RegisterOptions
+from autobahn.wamp.types import SubscribeOptions
 
 
 ## XXX other ideas to get 'connection config':
@@ -93,6 +96,7 @@ sub = top.add_subparsers(
 #    help="ohai what goes here?",
 )
 
+
 call = sub.add_parser(
     'call',
     help='Do a WAMP call() and print any results',
@@ -105,7 +109,7 @@ call.add_argument(
 call.add_argument(
     'call_args',
     nargs='*',
-    help="All additional arguments are positional args (HOWTO do kwargs?)",
+    help="All additional arguments are positional args",
 )
 call.add_argument(
     '--keyword',
@@ -113,7 +117,28 @@ call.add_argument(
     action='append',
     help="Specify a keyword argument to send: name value",
 )
-# XXX FIXME: can do like "wamp call pos0 pos1 --kw name value --kw name value pos2"
+
+
+publish = sub.add_parser(
+    'publish',
+    help='Do a WAMP publish() with the given args, kwargs',
+)
+publish.add_argument(
+    'uri',
+    type=str,
+    help="A WAMP URI to publish"
+)
+publish.add_argument(
+    'publish_args',
+    nargs='*',
+    help="All additional arguments are positional args",
+)
+publish.add_argument(
+    '--keyword',
+    nargs=2,
+    action='append',
+    help="Specify a keyword argument to send: name value",
+)
 
 
 register = sub.add_parser(
@@ -209,9 +234,24 @@ async def do_call(reactor, session, options):
     print("result: {}".format(results))
 
 
+async def do_publish(reactor, session, options):
+    publish_args = list(options.publish_args)
+    publish_kwargs = {
+        k: v
+        for k, v in options.keyword
+    }
+
+    await session.publish(
+        options.uri,
+        *publish_args,
+        options=PublishOptions(acknowledge=True),
+        **publish_kwargs,
+    )
+
+
 async def do_register(reactor, session, options):
     """
-    run a command-line upon receiving an event.
+    run a command-line upon an RPC call
     """
 
     all_done = Deferred()
@@ -235,11 +275,27 @@ async def do_register(reactor, session, options):
 
 
 async def do_subscribe(reactor, session, options):
-    pass
+    """
+    print events (one line of JSON per event)
+    """
 
+    all_done = Deferred()
+    countdown = [options.times]
 
-async def do_publish(reactor, session, options):
-    pass
+    async def published(*args, **kw):
+        print(
+            json.dumps({
+                "args": args,
+                "kwargs": kw,
+            })
+        )
+        if countdown[0]:
+            countdown[0] -= 1
+            if countdown[0] <= 0:
+                reactor.callLater(0, all_done.callback, None)
+
+    reg = await session.subscribe(published, options.uri, options=SubscribeOptions(match=options.match))
+    await all_done
 
 
 def main():
@@ -269,7 +325,7 @@ async def _real_main(reactor):
 
     @component.on_join
     async def _(session, details):
-        print("connected: authrole={} authmethod={}".format(details.authrole, details.authmethod))
+        print("connected: authrole={} authmethod={}".format(details.authrole, details.authmethod), file=sys.stderr)
         try:
             await command_fn(reactor, session, options)
         except ApplicationError as e:
