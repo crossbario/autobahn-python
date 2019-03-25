@@ -43,18 +43,17 @@ except ImportError:
     sys.exit(1)
 
 from twisted.internet.defer import Deferred, ensureDeferred
-from twisted.internet.task import react, deferLater
+from twisted.internet.task import react
 from twisted.internet.protocol import ProcessProtocol
 
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.types import PublishOptions
-from autobahn.wamp.types import RegisterOptions
 from autobahn.wamp.types import SubscribeOptions
 
 
-## XXX other ideas to get 'connection config':
-## - if there .crossbar/ here, load that config and accept a --name or
-##   so to idicate which transport to use
+# XXX other ideas to get 'connection config':
+# - if there .crossbar/ here, load that config and accept a --name or
+#   so to idicate which transport to use
 
 # wamp [options] {call,publish,subscribe,register} wamp-uri [args] [kwargs]
 #
@@ -96,7 +95,6 @@ top.add_argument(
 sub = top.add_subparsers(
     title="subcommands",
     dest="subcommand_name",
-#    help="ohai what goes here?",
 )
 
 
@@ -211,14 +209,14 @@ def _create_component(options):
 
     authentication = dict()
     if options.private_key:
-        if not options.authid:# or not options.authrole:
+        if not options.authid:
             raise ValueError(
                 "Require --authid and --authrole if --private-key (or WAMP_PRIVATE_KEY) is provided"
             )
         authentication["cryptosign"] = {
-                "authid": options.authid,
-                "authrole": options.authrole,
-                "privkey": options.private_key,
+            "authid": options.authid,
+            "authrole": options.authrole,
+            "privkey": options.private_key,
         }
 
     return Component(
@@ -300,7 +298,7 @@ async def do_register(reactor, session, options):
             if countdown[0] <= 0:
                 reactor.callLater(0, all_done.callback, None)
 
-    reg = await session.register(called, options.uri)
+    await session.register(called, options.uri)
     await all_done
 
 
@@ -324,7 +322,7 @@ async def do_subscribe(reactor, session, options):
             if countdown[0] <= 0:
                 reactor.callLater(0, all_done.callback, None)
 
-    reg = await session.subscribe(published, options.uri, options=SubscribeOptions(match=options.match))
+    await session.subscribe(published, options.uri, options=SubscribeOptions(match=options.match))
     await all_done
 
 
