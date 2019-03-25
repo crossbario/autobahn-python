@@ -29,21 +29,31 @@ from __future__ import absolute_import
 # this module is available as the 'wamp' command-line tool or as
 # 'python -m autobahn'
 
+import os
 import sys
 import argparse
+import json
+from copy import copy
 
-from autobahn.twisted.component import Component, run
+try:
+    from autobahn.twisted.component import Component
+except ImportError:
+    print("The 'wamp' command-line tool requires Twisted.")
+    print("  pip install autobahn[twisted]")
+    sys.exit(1)
+from twisted.internet.defer import Deferred
+from twisted.internet.task import react
 from autobahn.wamp.exception import ApplicationError
 
 
-## XXX how to find connection config?
-# - if there's a .crossbar/ here, load .crossbar/config.{json,yaml}
-#   and connect to any transport ('--transport-id X' on the cli?)
-# - cli options
-# - read a config.json from stdin, make all transports available by name/id?
+## XXX other ideas to get 'connection config':
+## - if there .crossbar/ here, load that config and accept a --name or
+##   so to idicate which transport to use
 
-# wamp [options] {call,publish,subscribe,register} wamp-uri args --keywords kwargs
-# all kwargs are "some-arg=thevalue" following a --keywords
+# wamp [options] {call,publish,subscribe,register} wamp-uri [args] [kwargs]
+#
+# kwargs are spec'd with a 2-value-consuming --keyword option:
+# --keyword name value
 
 
 top = argparse.ArgumentParser(prog="wamp")
@@ -58,6 +68,24 @@ top.add_argument(
     action='store',
     help='The realm to join',
     default='default',
+)
+top.add_argument(
+    '--private-key', '-k',
+    action='store',
+    help='Hex-encoded private key (via WAMP_PRIVATE_KEY if not provided here)',
+    default=os.environ.get('WAMP_PRIVATE_KEY', None),
+)
+top.add_argument(
+    '--authid',
+    action='store',
+    help='The authid to use, if authenticating',
+    default=None,
+)
+top.add_argument(
+    '--authrole',
+    action='store',
+    help='The role to use, if authenticating',
+    default=None,
 )
 sub = top.add_subparsers(
     title="subcommands",
@@ -79,10 +107,66 @@ call.add_argument(
     nargs='*',
     help="All additional arguments are positional args (HOWTO do kwargs?)",
 )
+call.add_argument(
+    '--keyword',
+    nargs=2,
+    action='append',
+    help="Specify a keyword argument to send: name value",
+)
 # XXX FIXME: can do like "wamp call pos0 pos1 --kw name value --kw name value pos2"
 
 
+register = sub.add_parser(
+    'register',
+    help='Do a WAMP register() and run a command when called',
+)
+register.add_argument(
+    'uri',
+    type=str,
+    help="A WAMP URI to call"
+)
+register.add_argument(
+    '--times',
+    type=int,
+    default=0,
+    help="Listen for this number of events, then exit. Default: forever",
+)
+register.add_argument(
+    'command',
+    type=str,
+    help="The command to run when called. WAMP_ARGS, WAMP_KWARGS and _JSON variants are set in the environment"
+)
+
+
+subscribe = sub.add_parser(
+    'subscribe',
+    help='Do a WAMP subscribe() and print one line of JSON per event',
+)
+subscribe.add_argument(
+    'uri',
+    type=str,
+    help="A WAMP URI to call"
+)
+subscribe.add_argument(
+    '--times',
+    type=int,
+    default=0,
+    help="Listen for this number of events, then exit. Default: forever",
+)
+subscribe.add_argument(
+    '--match',
+    type=str,
+    default='exact',
+    choices=['exact', 'prefix'],
+    help="Massed in the SubscribeOptions, how to match the URI",
+)
+
+
 def _create_component(options):
+    """
+    Configure and return a Component instance according to the given
+    `options`
+    """
     if options.url.startswith('ws://'):
         kind = 'websocket'
     elif options.url.startswith('rs://'):
@@ -91,23 +175,75 @@ def _create_component(options):
         raise ValueError(
             "URL should start with ws:// or rs://"
         )
+
+    authentication = dict()
+    if options.private_key:
+        if not options.authid:# or not options.authrole:
+            raise ValueError(
+                "Require --authid and --authrole if --private-key (or WAMP_PRIVATE_KEY) is provided"
+            )
+        authentication["cryptosign"] = {
+                "authid": options.authid,
+                "authrole": options.authrole,
+                "privkey": options.private_key,
+        }
+
     return Component(
         transports=[{
             "type": kind,
             "url": options.url,
         }],
-        authentication={
-            "cryptosign": {
-                "authid": "wheel_pusher",
-                "authrole": "wheel_pusher",
-                "privkey": "4778956c24819ac2765fbe2e7d38b798f59d0d96931d519d70c36b5889e43a7e",
-            }
-        },
+        authentication=authentication if authentication else None,
         realm=options.realm,
     )
 
 
-def _main():
+async def do_call(reactor, session, options):
+    call_args = list(options.call_args)
+    call_kwargs = {
+        k: v
+        for k, v in options.keyword
+    }
+
+    results = await session.call(options.uri, *call_args, **call_kwargs)
+    print("result: {}".format(results))
+
+
+async def do_register(reactor, session, options):
+    """
+    run a command-line upon receiving an event.
+    """
+
+    all_done = Deferred()
+    countdown = [options.times]
+
+    async def called(*args, **kw):
+        print("{} called: args={}, kwargs={}".format(options.uri, args, kw))
+        env = copy(os.environ)
+        env['WAMP_ARGS'] = ' '.join(args)
+        env['WAMP_ARGS_JSON'] = json.dumps(args)
+        env['WAMP_KWARGS'] = ' '.join('{}={}'.format(k, v) for k, v in kw.items())
+        env['WAMP_KWARGS_JSON'] = json.dumps(kw)
+        print(options.command)
+        if countdown[0]:
+            countdown[0] -= 1
+            if countdown[0] <= 0:
+                all_done.callback(None)
+
+    reg = await session.register(called, options.uri)
+    print("registered '{}'".format(options.uri))
+    await all_done
+
+
+async def do_subscribe(reactor, session, options):
+    pass
+
+
+async def do_publish(reactor, session, options):
+    pass
+
+
+def _main(reactor):
     options = top.parse_args()
     component = _create_component(options)
 
@@ -115,27 +251,31 @@ def _main():
         print("Must select a subcommand")
         sys.exit(1)
 
+    subcommands = {
+        "call": do_call,
+        "register": do_register,
+        "subscribe": do_subscribe,
+        "publish": do_publish,
+    }
+    command_fn = subcommands[options.subcommand_name]
+
     exit_code = [0]
 
-    if options.subcommand_name == 'call':
-        call_args = list(options.call_args)
-        call_kwargs = dict()
+    print(dir(options))
 
-        @component.on_join
-        async def _(session, details):
-            print(f"connected: authrole={details.authrole}")
-            try:
-                results = await session.call(options.uri, *call_args, **call_kwargs)
-                print("result: {}".format(results))
-            except ApplicationError as e:
-                print("\n{}: {}\n".format(e.error, ''.join(e.args)))
-                exit_code[0] = 5
-            await session.leave()
+    @component.on_join
+    async def _(session, details):
+        print("connected: authrole={} authmethod={}".format(details.authrole, details.authmethod))
+        try:
+            await command_fn(reactor, session, options)
+        except ApplicationError as e:
+            print("\n{}: {}\n".format(e.error, ''.join(e.args)))
+            exit_code[0] = 5
+        await session.leave()
 
     run([component])
-    print("hi")
     sys.exit(exit_code[0])
 
 
 if __name__ == "__main__":
-    _main()
+    react(_main)
