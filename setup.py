@@ -265,7 +265,7 @@ setup(
 
     entry_points={
         "console_scripts": [
-            "wamp = autobahn.__main__:main",
+            "wamp = autobahn.__main__:_main",
         ]
     },
 

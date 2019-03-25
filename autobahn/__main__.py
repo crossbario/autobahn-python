@@ -328,7 +328,7 @@ async def do_subscribe(reactor, session, options):
     await all_done
 
 
-def main():
+def _main():
     react(
         lambda reactor: ensureDeferred(
             _real_main(reactor)
