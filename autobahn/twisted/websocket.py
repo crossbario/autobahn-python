@@ -305,7 +305,6 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
         # how to make one
 
 
-
 @implementer(ITransport)
 class WrappingWebSocketAdapter(object):
     """
