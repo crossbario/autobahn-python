@@ -53,7 +53,7 @@ aws s3 cp --recursive ./dist s3://${AWS_S3_BUCKET_NAME}/wheels
 
 # tell crossbar-builder about this new wheel push
 # get 'wamp' command, always with latest autobahn master
-pip install -e https://github.com/crossbario/autobahn-python/archive/master.zip
+pip install https://github.com/crossbario/autobahn-python/archive/master.zip
 wamp --authid wheel_pusher --url ws://office2dmz.crossbario.com:8008/ --realm webhook call builder.wheel_pushed --keyword name autobahn-python --keyword publish true
 
 # build and deploy latest docs
