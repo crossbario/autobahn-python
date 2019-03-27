@@ -231,10 +231,12 @@ def _create_component(options):
 
 async def do_call(reactor, session, options):
     call_args = list(options.call_args)
-    call_kwargs = {
-        k: v
-        for k, v in options.keyword
-    }
+    call_kwargs = dict()
+    if options.keyword is not None:
+        call_kwargs = {
+            k: v
+            for k, v in options.keyword
+        }
 
     results = await session.call(options.uri, *call_args, **call_kwargs)
     print("result: {}".format(results))
