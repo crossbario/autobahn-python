@@ -643,7 +643,7 @@ class WebSocketProtocol(ObservableMixin):
                     fail=f,
                 )
                 # all we can really do here is log; user code error
-            txaio.add_callbacks(None, error)
+            txaio.add_callbacks(f, None, error)
 
         self.message_data = None
 
