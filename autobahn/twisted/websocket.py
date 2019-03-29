@@ -164,6 +164,7 @@ def _endpoint_from_config(reactor, factory, transport_config, options):
                 # timeout,  option?
                 # attemptDelay,  option?
             )
+    print("made endpoint: {}".format(endpoint))
     return endpoint
 
 
@@ -190,17 +191,18 @@ class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
         # copy it ourselves?
         # ...should we use kwargs for options instead?
         factory = WebSocketClientFactory(
-            self._reactor,
             url=transport_config,
+            reactor=self._reactor,
             # origin=
             # protocols=
             # useragent=
             headers=options['headers'],
             # proxy=
         )
+        factory.protocol = WebSocketClientProtocol
         # XXX might want "contextFactory" for TLS ...? (or e.g. CA etc options?)
 
-        endpoint = _endpoint_from_config(self._reactor, transport_config, options)
+        endpoint = _endpoint_from_config(self._reactor, factory, transport_config, options)
         # XXX what about the part where we wait for handshake?
         return endpoint.connect(factory)
 
