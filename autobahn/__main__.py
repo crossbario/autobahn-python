@@ -381,7 +381,7 @@ async def _real_main(reactor):
         await session.leave()
 
     await component.start(reactor)
-    sys.exit(exit_code[0])
+    # sys.exit(exit_code[0])
 
 
 if __name__ == "__main__":
