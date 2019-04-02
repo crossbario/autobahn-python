@@ -879,6 +879,12 @@ class Component(ObservableMixin):
         """
         self.on('ready', fn)
 
+    def on_connectfailure(self, fn):
+        """
+        A decorator as a shortcut for listening for 'connectfailure' events.
+        """
+        self.on('connectfailure', fn)
+
 
 def _run(reactor, components, done_callback):
     """

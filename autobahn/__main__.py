@@ -380,6 +380,10 @@ async def _real_main(reactor):
             exit_code[0] = 5
         await session.leave()
 
+    @component.on_connectfailure
+    async def _(comp, fail):
+        print("connect failure: {}".format(fail))
+
     await component.start(reactor)
     # sys.exit(exit_code[0])
 
