@@ -16,16 +16,12 @@ async def main(reactor):
     def stuff(*args, **kw):
         print("stuff: {} {}".format(args, kw))
     proto.on('message', stuff)
+    await proto.is_open
 
     proto.sendMessage(b"i am a message\n")
-    await task.deferLater(reactor, 1.0, lambda: None)
-    proto.sendMessage(b"i am a message\n")
-    await task.deferLater(reactor, 1.0, lambda: None)
-    proto.sendMessage(b"i am a message\n")
-    await task.deferLater(reactor, 1.0, lambda: None)
+    await task.deferLater(reactor, 0, lambda: None)
 
-
-    proto.transport.loseConnection()
+    proto.sendClose(code=1000, reason="byebye")
     x = await proto.is_closed
     print("closed {}".format(x))
 

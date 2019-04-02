@@ -549,6 +549,7 @@ class WebSocketProtocol(ObservableMixin):
     def __init__(self):
         #: a Future/Deferred that fires when we hit STATE_CLOSED
         self.is_closed = txaio.create_future()
+        self.is_open = txaio.create_future()
         # XXX should we have open/close here too, or do you HAVE to use is_closed future?
         # XXX what about when_open() and when_closed() as well/instead?
         self.set_valid_events([
@@ -3028,7 +3029,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
         if self.trackedTimings:
             self.trackedTimings.track("onOpen")
         self._onOpen()
-        # XXX could self.fire("open") here if we want
+        print("signal open")
+        txaio.resolve(self.is_open, None)
 
         # process rest, if any
         #

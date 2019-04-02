@@ -186,6 +186,7 @@ class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
         """
         check_transport_config(transport_config)
         check_client_options(options)
+        print("open(): pre-flight checks good")
         # soooooo, our options could contain 'headers' which is a
         # mutable dict .. do we "let the user worry" about that, or
         # copy it ourselves?
@@ -204,6 +205,7 @@ class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
 
         endpoint = _endpoint_from_config(self._reactor, factory, transport_config, options)
         # XXX what about the part where we wait for handshake?
+        print("got an endpoint, factory={}".format(factory))
         return endpoint.connect(factory)
 
 
@@ -647,7 +649,9 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
             self.setProtocolOptions(perMessageCompressionAccept=accept)
 
     def buildProtocol(self, addr):
+        print("buildprotocol {}".format(addr))
         proto = WrappingWebSocketClientProtocol()
+        print("built {}".format(proto))
         proto.factory = self
         proto._proto = self._factory.buildProtocol(addr)
         proto._proto.transport = proto
