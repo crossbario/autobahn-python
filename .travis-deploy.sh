@@ -57,7 +57,7 @@ aws s3 cp --recursive ./dist s3://${AWS_S3_BUCKET_NAME}/wheels
 # 'deploy' jobs only run on master it seems...
 # currently does not work: https://github.com/crossbario/autobahn-python/issues/1163
 pip install https://github.com/crossbario/autobahn-python/archive/master.zip#egg=autobahn[twisted,serialization,encryption]
-wamp --max-failures 3 --authid wheel_pusher --url ws://office2dmz.crossbario.com:8008/ --realm webhook call builder.wheel_pushed --keyword name autobahn-python --keyword publish false
+wamp --max-failures 3 --authid wheel_pusher --url ws://office2dmz.crossbario.com:8008/ --realm webhook call builder.wheel_pushed --keyword name autobahn-python --keyword publish true
 
 # build and deploy latest docs
 #echo 'building and uploading docs ..'
