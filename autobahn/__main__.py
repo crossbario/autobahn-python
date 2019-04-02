@@ -92,6 +92,13 @@ top.add_argument(
     help='The role to use, if authenticating',
     default=None,
 )
+top.add_argument(
+    '--max-failures', '-m',
+    action='store',
+    type=int,
+    help='Failures before giving up (0 forever)',
+    default=0,
+)
 sub = top.add_subparsers(
     title="subcommands",
     dest="subcommand_name",
@@ -380,9 +387,15 @@ async def _real_main(reactor):
             exit_code[0] = 5
         await session.leave()
 
+    failures = []
+
     @component.on_connectfailure
     async def _(comp, fail):
         print("connect failure: {}".format(fail))
+        failures.append(fail)
+        if options.max_failures > 0 and len(failures) > options.max_failures:
+            print("Too many failures ({}). Exiting".format(len(failures)))
+            reactor.stop()
 
     await component.start(reactor)
     # sys.exit(exit_code[0])
