@@ -128,6 +128,50 @@ class ConnectionRequest(object):
 
 
 @public
+class ConnectingRequest(object):
+    """
+    Thin-wrapper for WebSocket connection request information provided in
+    :meth:`autobahn.websocket.protocol.WebSocketClientProtocol.onConnecting`
+    after a client has connected, but before the handshake has
+    proceeded.
+    """
+
+    __slots__ = (
+        'headers',
+    )
+
+    def __init__(self, host, port, resource, headers=None, useragent=None, origin=None, protocols=None):
+        """
+        :param headers: HTTP headers to send in the opening handshake
+        :type headers: dict
+
+        """
+        # required
+        self.host = host
+        self.port = port
+        self.resource = resource
+        # optional
+        self.headers = headers if headers else dict()
+        self.useragent = useragent
+        self.origin = origin
+        self.protocols = protocols if protocols else []
+
+    def __json__(self):
+        return {
+            'host': self.host,
+            'port': self.port,
+            'resource': self.resource,
+            'headers': self.headers,
+            'useragent': self.useragent,
+            'origin': self.origin,
+            'protocols': self.protocols,
+        }
+
+    def __str__(self):
+        return json.dumps(self.__json__())
+
+
+@public
 class ConnectionResponse(object):
     """
     Thin-wrapper for WebSocket connection response information provided in

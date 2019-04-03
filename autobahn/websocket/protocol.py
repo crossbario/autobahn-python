@@ -47,6 +47,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
     IWebSocketChannelStreamingApi
 
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
+from autobahn.websocket.types import ConnectingRequest
 
 from autobahn.util import Stopwatch, newid, wildcards2patterns, encode_truncate
 from autobahn.util import _LazyHexFormatter
@@ -3333,6 +3334,15 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
     CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_CLIENT
 
+    def onConnecting(self):
+        """
+        Callback fired after the connection is established, but before the
+        handshake has started. This may return a
+        :class:`autobahn.websocket.types.ConnectingRequest` instance
+        to control aspects of the handshake (or None for defaults)
+        """
+        pass
+
     def onConnect(self, response):
         """
         Callback fired directly after WebSocket opening handshake when new WebSocket server
@@ -3475,14 +3485,27 @@ class WebSocketClientProtocol(WebSocketProtocol):
         Start WebSocket opening handshake.
         """
 
+        # ask our specialized framework-specific (or user-code) for a
+        # ConnectingRequest instance
+        request_options = self.onConnecting(self.transport)
+        if request_options is None:
+            # Note, before onConnecting was added, everything came
+            # from self.factory so we get the required parameters from
+            # there still
+            request_options = ConnectingRequest(
+                self.factory.host,
+                self.factory.port,
+                self.factory.resources,
+            )
+
         # construct WS opening handshake HTTP header
         #
-        request = "GET %s HTTP/1.1\x0d\x0a" % self.factory.resource
+        request = "GET %s HTTP/1.1\x0d\x0a" % request_options.resource
 
-        if self.factory.useragent is not None and self.factory.useragent != "":
-            request += "User-Agent: %s\x0d\x0a" % self.factory.useragent
+        if request_options.useragent is not None and request_options.useragent != "":
+            request += "User-Agent: %s\x0d\x0a" % request_options.useragent
 
-        request += "Host: %s:%d\x0d\x0a" % (self.factory.host, self.factory.port)
+        request += "Host: %s:%d\x0d\x0a" % (request_options.host, request_options.port)
         request += "Upgrade: WebSocket\x0d\x0a"
         request += "Connection: Upgrade\x0d\x0a"
 
@@ -3497,7 +3520,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         # optional, user supplied additional HTTP headers
         #
-        for uh in self.factory.headers.items():
+        for uh in request_options.headers.items():
             request += "%s: %s\x0d\x0a" % (uh[0], uh[1])
 
         # handshake random key
@@ -3507,16 +3530,16 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         # optional origin announced
         #
-        if self.factory.origin:
+        if request_options.origin:
             if self.version > 10:
-                request += "Origin: %s\x0d\x0a" % self.factory.origin
+                request += "Origin: %s\x0d\x0a" % request_options.origin
             else:
-                request += "Sec-WebSocket-Origin: %s\x0d\x0a" % self.factory.origin
+                request += "Sec-WebSocket-Origin: %s\x0d\x0a" % request_options.origin
 
         # optional list of WS subprotocols announced
         #
-        if len(self.factory.protocols) > 0:
-            request += "Sec-WebSocket-Protocol: %s\x0d\x0a" % ','.join(self.factory.protocols)
+        if len(request_options.protocols) > 0:
+            request += "Sec-WebSocket-Protocol: %s\x0d\x0a" % ','.join(request_options.protocols)
 
         # extensions
         #
