@@ -41,7 +41,8 @@ from twisted.internet.error import ConnectionDone, ConnectionAborted, \
 from autobahn.util import public
 from autobahn.util import _is_tls_error, _maybe_tls_reason
 from autobahn.wamp import websocket
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny \
+    TransportDetails
 from autobahn.websocket import protocol
 from autobahn.twisted.util import peer2str, transport_channel_id
 
@@ -231,6 +232,16 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
         return transport_channel_id(self.transport, is_server=False, channel_id_type=channel_id_type)
+
+    def _create_transport_details(self):
+        """
+        Internal helper.
+        Base class calls this to create a TransportDetails
+        """
+        return TransportDetails(
+            peer=self.transport.getPeer(),
+            host=self.transport.getHost(),
+        )
 
 
 class WebSocketAdapterFactory(object):

@@ -3334,12 +3334,15 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
     CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_CLIENT
 
-    def onConnecting(self):
+    def onConnecting(self, transport_details):
         """
+        :param transport_details: a :class:`autobahn.websocket.types.TransportDetails`
+
         Callback fired after the connection is established, but before the
         handshake has started. This may return a
         :class:`autobahn.websocket.types.ConnectingRequest` instance
-        to control aspects of the handshake (or None for defaults)
+        (or a future which resolves to one) to control aspects of the
+        handshake (or None for defaults)
         """
         pass
 
@@ -3485,19 +3488,46 @@ class WebSocketClientProtocol(WebSocketProtocol):
         Start WebSocket opening handshake.
         """
 
+        # extract framework-specific transport information
+        transport_details = self._create_transport_details()
+
         # ask our specialized framework-specific (or user-code) for a
         # ConnectingRequest instance
-        request_options = self.onConnecting(self.transport)
-        if request_options is None:
-            # Note, before onConnecting was added, everything came
-            # from self.factory so we get the required parameters from
-            # there still
-            request_options = ConnectingRequest(
-                self.factory.host,
-                self.factory.port,
-                self.factory.resources,
-            )
+        options_d = txaio.as_future(self.onConnecting, transport_details)
 
+        def got_options(request_options):
+            """
+            onConnecting succeeded and returned options
+            """
+            if request_options is None:
+                # Note, before onConnecting was added, everything came
+                # from self.factory so we get the required parameters from
+                # there still by default
+                request_options = ConnectingRequest(
+                    self.factory.host,
+                    self.factory.port,
+                    self.factory.resources,
+                )
+            self._actuallyStartHandshake(request_options)
+            return request_options
+
+        def options_failed(fail):
+            self.log.error(
+                "onConnecting failed: {fail}",
+                fail=fail,
+            )
+            self.dropConnection(abort=False)
+            return None
+        txaio.add_callbacks(options_d, got_options, options_failed)
+
+
+    def _actuallyStartHandshake(self, request_options):
+        """
+        Internal helper.
+
+        Actually send the WebSocket opening handshake after receiving
+        valid request options.
+        """
         # construct WS opening handshake HTTP header
         #
         request = "GET %s HTTP/1.1\x0d\x0a" % request_options.resource

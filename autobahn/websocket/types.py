@@ -134,10 +134,19 @@ class ConnectingRequest(object):
     :meth:`autobahn.websocket.protocol.WebSocketClientProtocol.onConnecting`
     after a client has connected, but before the handshake has
     proceeded.
+
+    `host`, `port`, and `resource` are all required, everything else
+    is optional
     """
 
     __slots__ = (
+        'host',
+        'port',
+        'resource',
         'headers',
+        'useragent',
+        'origin',
+        'protocols',
     )
 
     def __init__(self, host, port, resource, headers=None, useragent=None, origin=None, protocols=None):
@@ -165,6 +174,40 @@ class ConnectingRequest(object):
             'useragent': self.useragent,
             'origin': self.origin,
             'protocols': self.protocols,
+        }
+
+    def __str__(self):
+        return json.dumps(self.__json__())
+
+
+@public
+class TransportDetails(object):
+    """
+    Details of our transport made available to the `onConnecting`
+    callback.
+    """
+
+    __slots__ = (
+        'peer',  # .getPeer() on Twisted, .get_extra_info('peername') on asyncio
+        'host',  # .getHost() on Twisetd, .get_extra_info('sockname') on asyncio
+    )
+    # possibly useful:
+    # is_secure
+    # peer_certificate  # getPeerCertificate(), .get_extra_info('peercert')
+
+    def __init__(self, peer, host):
+        """
+        :param peer: the address to which we are connected
+
+        :param host: our local address
+        """
+        self.peer = peer
+        self.host = host
+
+    def __json__(self):
+        return {
+            'peer': self.peer,
+            'host': self.host,
         }
 
     def __str__(self):

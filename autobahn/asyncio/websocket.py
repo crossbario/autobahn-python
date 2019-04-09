@@ -189,6 +189,16 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         self.log.debug('FIXME: transport channel binding not implemented for asyncio (autobahn-python issue #729)')
         return None
 
+    def _create_transport_details(self):
+        """
+        Internal helper.
+        Base class calls this to create a TransportDetails
+        """
+        return TransportDetails(
+            peer=self.transport.get_extra_info('peername'),
+            host=self.transport.get_extra_info('sockname'),
+        )
+
     def registerProducer(self, producer, streaming):
         raise Exception("not implemented")
 
