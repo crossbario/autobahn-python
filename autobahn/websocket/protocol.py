@@ -3504,9 +3504,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 # from self.factory so we get the required parameters from
                 # there still by default
                 request_options = ConnectingRequest(
-                    self.factory.host,
-                    self.factory.port,
-                    self.factory.resources,
+                    host=self.factory.host,
+                    port=self.factory.port,
+                    resource=self.factory.resource,
                 )
             self._actuallyStartHandshake(request_options)
             return request_options
