@@ -34,6 +34,7 @@ txaio.use_asyncio()
 from autobahn.util import public
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
+from autobahn.websocket.types import TransportDetails
 
 try:
     import asyncio

@@ -41,7 +41,7 @@ from twisted.internet.error import ConnectionDone, ConnectionAborted, \
 from autobahn.util import public
 from autobahn.util import _is_tls_error, _maybe_tls_reason
 from autobahn.wamp import websocket
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny \
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny, \
     TransportDetails
 from autobahn.websocket import protocol
 from autobahn.twisted.util import peer2str, transport_channel_id

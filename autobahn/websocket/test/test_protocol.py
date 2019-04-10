@@ -81,6 +81,7 @@ class WebSocketClientProtocolTests(unittest.TestCase):
         # subclass, but we're testing the parent here...
         self.protocol._onConnect = Mock()
         self.protocol._closeConnection = Mock()
+        self.protocol._create_transport_details = Mock()
 
         # set up a connection
         self.protocol.startHandshake()

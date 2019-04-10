@@ -3520,7 +3520,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
             return None
         txaio.add_callbacks(options_d, got_options, options_failed)
 
-
     def _actuallyStartHandshake(self, request_options):
         """
         Internal helper.
