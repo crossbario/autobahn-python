@@ -3519,6 +3519,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             self.dropConnection(abort=False)
             return None
         txaio.add_callbacks(options_d, got_options, options_failed)
+        return options_d
 
     def _actuallyStartHandshake(self, request_options):
         """
