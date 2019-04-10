@@ -51,6 +51,7 @@ class WebSocketClientProtocolTests(unittest.TestCase):
         p = WebSocketClientProtocol()
         p.factory = f
         p.transport = t
+        p._create_transport_details = Mock()
 
         p._connectionMade()
         p.state = p.STATE_OPEN
