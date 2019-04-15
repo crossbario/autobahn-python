@@ -31,7 +31,6 @@ from mock import Mock
 from autobahn.util import wildcards2patterns
 from autobahn.twisted.websocket import WebSocketServerFactory
 from autobahn.twisted.websocket import WebSocketServerProtocol
-from autobahn.twisted.websocket import WebSocketClientFactory
 from autobahn.twisted.websocket import WebSocketClientProtocol
 from autobahn.websocket.types import TransportDetails
 from autobahn.websocket.types import ConnectingRequest
