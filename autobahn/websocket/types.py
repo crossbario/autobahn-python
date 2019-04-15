@@ -136,7 +136,10 @@ class ConnectingRequest(object):
     proceeded.
 
     `host`, `port`, and `resource` are all required, everything else
-    is optional
+    is optional. Note that these are values that will be seen by the
+    client and should represent the public-facing host, port and
+    resource to which the client is connecting (not necessarily the
+    action host/port being used).
     """
 
     __slots__ = (
