@@ -3029,7 +3029,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         if self.trackedTimings:
             self.trackedTimings.track("onOpen")
         self._onOpen()
-        print("signal open")
+
         txaio.resolve(self.is_open, None)
 
         # process rest, if any
@@ -3777,6 +3777,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 if self.trackedTimings:
                     self.trackedTimings.track("onOpen")
                 self._onOpen()
+
+            txaio.resolve(self.is_open, None)
 
             # process rest, if any
             #
