@@ -26,15 +26,19 @@
 
 from __future__ import absolute_import, print_function
 
-import unittest
 from mock import Mock
 
 from autobahn.util import wildcards2patterns
 from autobahn.twisted.websocket import WebSocketServerFactory
 from autobahn.twisted.websocket import WebSocketServerProtocol
+from autobahn.twisted.websocket import WebSocketClientFactory
+from autobahn.twisted.websocket import WebSocketClientProtocol
+from autobahn.websocket.types import TransportDetails
+from autobahn.websocket.types import ConnectingRequest
 from twisted.python.failure import Failure
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
+from twisted.trial import unittest
 from twisted.test.proto_helpers import StringTransport
 from autobahn.test import FakeTransport
 
@@ -362,3 +366,73 @@ class WebSocketXForwardedFor(unittest.TestCase):
         self.assertEquals(
             self.proto.peer, "2.3.4.5",
             "The second address in X-Forwarded-For should have been picked as the peer address")
+
+
+class OnConnectingTests(unittest.TestCase):
+    """
+    Tests related to onConnecting callback
+
+    These tests are testing generic behavior, but are somewhat tied to
+    'a framework' so we're just testing using Twisted-specifics here.
+    """
+
+    def test_on_connecting_client_fails(self):
+
+        class TestProto(WebSocketClientProtocol):
+            state = None
+            wasClean = True
+            log = Mock()
+
+            def onConnecting(self, transport_details):
+                raise RuntimeError("bad stuff")
+
+        from autobahn.test import FakeTransport
+        proto = TestProto()
+        proto.transport = FakeTransport()
+        d = proto.startHandshake()
+        self.successResultOf(d)  # error is ignored
+        # ... but error should be logged
+        self.assertTrue(len(proto.log.mock_calls) > 0)
+        self.assertIn(
+            "bad stuff",
+            str(proto.log.mock_calls[0]),
+        )
+
+    def test_on_connecting_client_success(self):
+
+        class TestProto(WebSocketClientProtocol):
+            state = None
+            wasClean = True
+            perMessageCompressionOffers = []
+            version = 18
+            openHandshakeTimeout = 5
+            log = Mock()
+
+            def onConnecting(self, transport_details):
+                return ConnectingRequest(
+                    host="example.com",
+                    port=443,
+                    resource="/ws",
+                )
+
+        from autobahn.test import FakeTransport
+        proto = TestProto()
+        proto.transport = FakeTransport()
+        proto.factory = Mock()
+        proto._connectionMade()
+
+        d = proto.startHandshake()
+        req = self.successResultOf(d)
+        self.assertEqual("example.com", req.host)
+        self.assertEqual(443, req.port)
+        self.assertEqual("/ws", req.resource)
+
+    def test_str_transport(self):
+        details = TransportDetails(host="example.com", peer="example.com")
+        # we can str() this and it doesn't fail
+        str(details)
+
+    def test_str_connecting(self):
+        req = ConnectingRequest(host="example.com", port="1234", resource="/ws")
+        # we can str() this and it doesn't fail
+        str(req)

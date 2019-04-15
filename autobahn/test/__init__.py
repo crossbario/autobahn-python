@@ -46,3 +46,15 @@ class FakeTransport(object):
     def unregisterProducer(self):
         # do nothing is correct! until we fake implement registerProducer ..;)
         pass
+
+    def getPeer(self):
+        # for Twisted, this would be an IAddress
+        class _FakePeer(object):
+            pass
+        return _FakePeer()
+
+    def getHost(self):
+        # for Twisted, this would be an IAddress
+        class _FakeHost(object):
+            pass
+        return _FakeHost()

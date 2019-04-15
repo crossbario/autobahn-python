@@ -89,7 +89,7 @@ class WebSocketClientProtocolTests(unittest.TestCase):
             ConnectingRequest(
                 host="example.com",
                 port=80,
-                resource="",
+                resource="/ws",
             )
         )
 
