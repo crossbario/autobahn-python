@@ -173,9 +173,7 @@ def _endpoint_from_config(reactor, factory, transport_config, options):
                 # timeout,  option?
                 # attemptDelay,  option?
             )
-    print("made endpoint: {}".format(endpoint))
     return endpoint
-
 
 
 class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
@@ -683,9 +681,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
             self.setProtocolOptions(perMessageCompressionAccept=accept)
 
     def buildProtocol(self, addr):
-        print("buildprotocol {}".format(addr))
         proto = WrappingWebSocketClientProtocol()
-        print("built {}".format(proto))
         proto.factory = self
         proto._proto = self._factory.buildProtocol(addr)
         proto._proto.transport = proto
