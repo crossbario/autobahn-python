@@ -152,16 +152,16 @@ class ConnectingRequest(object):
         'protocols',
     )
 
-    def __init__(self, host, port, resource, headers=None, useragent=None, origin=None, protocols=None):
+    def __init__(self, host=None, port=None, resource=None, headers=None, useragent=None, origin=None, protocols=None):
         """
         :param headers: HTTP headers to send in the opening handshake
         :type headers: dict
 
         """
         # required
-        self.host = host
-        self.port = port
-        self.resource = resource
+        self.host = host if host is not None else "localhost"
+        self.port = port if port is not None else 80
+        self.resource = resource if resource is not None else "/"
         # optional
         self.headers = headers if headers else dict()
         self.useragent = useragent
