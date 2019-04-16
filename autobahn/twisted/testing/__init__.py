@@ -34,16 +34,16 @@ __all__ = (
 )
 
 
-class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
+class _TwistedWebMemoryAgent(IWebSocketClientAgent):
     """
-    This agent creates connections using Twisted
+    A testing agent.
     """
 
     def __init__(self, reactor):
         self._reactor = reactor
 
     def open(self, transport_config, options):
-
+        raise NotImplementedError
 
 
 def create_memory_agent(reactor, resource):
@@ -55,4 +55,5 @@ def create_memory_agent(reactor, resource):
     and then exchange data between client and server using purely
     in-memory buffers.
     """
-    raise NotImplemented()
+    # XXX FIXME
+    return _TwistedWebMemoryAgent(reactor)
