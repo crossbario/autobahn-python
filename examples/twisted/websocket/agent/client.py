@@ -5,6 +5,10 @@ from twisted.internet import task
 
 
 async def main(reactor):
+    """
+    Using the 'agent' interface to talk to the echo server (run
+    ../echo/server.py for the server, for example)
+    """
     agent = create_client_agent(reactor)
     options = {
         "headers": {
@@ -13,9 +17,9 @@ async def main(reactor):
     }
     proto = await agent.open("ws://localhost:9000/ws", options)
 
-    def stuff(*args, **kw):
+    def got_message(*args, **kw):
         print("on_message: args={} kwargs={}".format(args, kw))
-    proto.on('message', stuff)
+    proto.on('message', got_message)
 
     await proto.is_open
 
