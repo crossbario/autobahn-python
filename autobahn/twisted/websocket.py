@@ -39,6 +39,7 @@ from twisted.internet import endpoints
 from twisted.internet.interfaces import ITransport
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
+from twisted.internet.defer import Deferred
 
 from autobahn.util import public
 from autobahn.util import _is_tls_error, _maybe_tls_reason
@@ -116,9 +117,15 @@ def check_client_options(options):
         raise ValueError(
             "'options' must be a dict"
         )
-    # XXX probably want to accept "anything that's valid in the
-    # Factory right now" as well...?
-    valid_keys = ["headers"]
+
+    # anything that WebSocketClientFactory accepts (at least)
+    valid_keys = [
+        "origin",
+        "protocols",
+        "useragent",
+        "headers",
+        "proxy",
+    ]
     for actual_k in options.keys():
         if actual_k not in valid_keys:
             raise ValueError(
@@ -186,27 +193,32 @@ class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
         """
         check_transport_config(transport_config)
         check_client_options(options)
-        print("open(): pre-flight checks good")
-        # soooooo, our options could contain 'headers' which is a
-        # mutable dict .. do we "let the user worry" about that, or
-        # copy it ourselves?
-        # ...should we use kwargs for options instead?
+
         factory = WebSocketClientFactory(
             url=transport_config,
             reactor=self._reactor,
-            # origin=
-            # protocols=
-            # useragent=
-            headers=options['headers'],
-            # proxy=
+            **options,
         )
         factory.protocol = WebSocketClientProtocol
         # XXX might want "contextFactory" for TLS ...? (or e.g. CA etc options?)
 
         endpoint = _endpoint_from_config(self._reactor, factory, transport_config, options)
-        # XXX what about the part where we wait for handshake?
-        print("got an endpoint, factory={}".format(factory))
-        return endpoint.connect(factory)
+
+        rtn_d = Deferred()
+        proto_d = endpoint.connect(factory)
+
+        def failed(f):
+            rtn_d.errback(f)
+
+        def got_proto(proto):
+
+            def handshake_completed(arg):
+                rtn_d.callback(proto)
+                return arg
+            proto.is_open.addCallbacks(handshake_completed, failed)
+            return proto
+        proto_d.addCallbacks(got_proto, failed)
+        return rtn_d
 
 
 class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
