@@ -14,16 +14,17 @@ async def main(reactor):
     proto = await agent.open("ws://localhost:9000/ws", options)
 
     def stuff(*args, **kw):
-        print("stuff: {} {}".format(args, kw))
+        print("on_message: args={} kwargs={}".format(args, kw))
     proto.on('message', stuff)
+
     await proto.is_open
 
     proto.sendMessage(b"i am a message\n")
     await task.deferLater(reactor, 0, lambda: None)
 
     proto.sendClose(code=1000, reason="byebye")
-    x = await proto.is_closed
-    print("closed {}".format(x))
+
+    await proto.is_closed
 
 
 if __name__ == "__main__":
