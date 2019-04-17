@@ -34,8 +34,7 @@ import txaio
 txaio.use_twisted()
 
 import twisted.internet.protocol
-from twisted.internet.interfaces import ITransport, ITLSTransport, \
-    ISSLTransport
+from twisted.internet.interfaces import ITransport, ISSLTransport
 
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost

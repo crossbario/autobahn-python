@@ -38,7 +38,6 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.internet.interfaces import IStreamClientEndpoint
     from twisted.internet.defer import inlineCallbacks, succeed, Deferred
     from twisted.internet.task import Clock
-    from twisted.python.failure import Failure
     from twisted.trial import unittest
     from txaio.testutil import replace_loop
 
