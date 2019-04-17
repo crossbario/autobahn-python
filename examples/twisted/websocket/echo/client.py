@@ -34,10 +34,8 @@ class MyClientProtocol(WebSocketClientProtocol):
         print("Server connected: {0}".format(response.peer))
 
     def onConnecting(self, transport_details):
-        print(transport_details.host)
-        print(transport_details.peer)
-        print(transport_details.is_secure)
-        print(transport_details.secure_channel_id)
+        print("Connecting; transport details: {}".format(transport_details))
+        return None  # ask for defaults
 
     def onOpen(self):
         print("WebSocket connection open.")
