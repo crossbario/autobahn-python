@@ -34,9 +34,11 @@ if os.environ.get('USE_TWISTED', False):
     from zope.interface import directlyProvides
     from autobahn.wamp.message import Welcome, Goodbye, Hello, Abort
     from autobahn.wamp.serializer import JsonSerializer
+    from autobahn.test import FakeTransport
     from twisted.internet.interfaces import IStreamClientEndpoint
     from twisted.internet.defer import inlineCallbacks, succeed, Deferred
     from twisted.internet.task import Clock
+    from twisted.python.failure import Failure
     from twisted.trial import unittest
     from txaio.testutil import replace_loop
 
@@ -65,8 +67,9 @@ if os.environ.get('USE_TWISTED', False):
             component.on('join', joined)
 
             def connect(factory, **kw):
-                proto = factory.buildProtocol('boom')
-                proto.makeConnection(Mock())
+                proto = factory.buildProtocol('ws://localhost/')
+                transport = FakeTransport()
+                proto.makeConnection(transport)
 
                 from autobahn.websocket.protocol import WebSocketProtocol
                 from base64 import b64encode
