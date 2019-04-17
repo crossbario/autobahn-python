@@ -240,12 +240,15 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         Internal helper.
         Base class calls this to create a TransportDetails
         """
+        # note that ITLSTransport exists too, which is "a TCP
+        # transport that *can be upgraded* to TLS" .. if it *is*
+        # upgraded to TLS, then the transport will implement
+        # ISSLTransport at that point according to Twisted
+        # documentation
         return TransportDetails(
             peer=peer2str(self.transport.getPeer()),
             host=peer2str(self.transport.getHost()),
-            is_secure=(ISSLTransport.providedBy(self.transport) or (
-                ITLSTransport.providedBy(self.transport) and hasattr(self.transport, '_tlsConnection')
-            )),
+            is_secure=ISSLTransport.providedBy(self.transport),
             secure_channel_id=transport_channel_id(
                 transport=self.transport,
                 is_server=False,
