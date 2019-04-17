@@ -193,24 +193,37 @@ class TransportDetails(object):
     __slots__ = (
         'peer',  # .getPeer() on Twisted, .get_extra_info('peername') on asyncio
         'host',  # .getHost() on Twisetd, .get_extra_info('sockname') on asyncio
+        'is_secure',  # bool
+        'secure_channel_id',  # bytes
     )
     # possibly useful:
     # is_secure
     # peer_certificate  # getPeerCertificate(), .get_extra_info('peercert')
 
-    def __init__(self, peer, host):
+    def __init__(self, peer, host, is_secure, secure_channel_id):
         """
-        :param peer: the address to which we are connected
+        :param str peer: the address to which we are connected
 
-        :param host: our local address
+        :param str host: our local address
+
+        :param bool is_secure: using TLS or not
+
+        :param dict secure_channel_id: information about our
+            channel-binding or None if not using TLS. The only
+            channel-binding currently is `tls-unique` so if this is a
+            `dict` it will be: `{u'tls-unique': bytes}`
         """
         self.peer = peer
         self.host = host
+        self.is_secure = is_secure
+        self.secure_channel_id = secure_channel_id
 
     def __json__(self):
         return {
             'peer': self.peer,
             'host': self.host,
+            'is_secure': self.is_secure,
+            'secure_channel_id': self.secure_channel_id,
         }
 
     def __str__(self):

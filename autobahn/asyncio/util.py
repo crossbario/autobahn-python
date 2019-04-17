@@ -29,7 +29,35 @@ from __future__ import absolute_import
 __all = (
     'sleep',
     'peer2str',
+    'transport_channel_id',
 )
+
+
+def transport_channel_id(transport, is_server, channel_id_type):
+    """
+    Application-layer user authentication protocols are vulnerable to generic
+    credential forwarding attacks, where an authentication credential sent by
+    a client C to a server M may then be used by M to impersonate C at another
+    server S. To prevent such credential forwarding attacks, modern authentication
+    protocols rely on channel bindings. For example, WAMP-cryptosign can use
+    the tls-unique channel identifier provided by the TLS layer to strongly bind
+    authentication credentials to the underlying channel, so that a credential
+    received on one TLS channel cannot be forwarded on another.
+
+    """
+    if channel_id_type is None:
+        return None
+
+    if channel_id_type not in [u'tls-unique']:
+        raise Exception("invalid channel ID type {}".format(channel_id_type))
+
+    ssl_obj = transport.get_extra_info('ssl_object')
+    if ssl_obj is None:
+        return None
+
+    if hasattr(ssl_obj, 'get_channel_binding'):
+        return ssl_obj.get_channel_binding(cb_type='tls-unique')
+    return None
 
 
 def peer2str(peer):

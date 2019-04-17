@@ -32,6 +32,7 @@ import txaio
 txaio.use_asyncio()
 
 from autobahn.util import public
+from autobahn.asyncio.util import transport_channel_id, peer2str
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
 from autobahn.websocket.types import TransportDetails
@@ -196,8 +197,10 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         Base class calls this to create a TransportDetails
         """
         return TransportDetails(
-            peer=self.transport.get_extra_info('peername'),
-            host=self.transport.get_extra_info('sockname'),
+            peer=peer2str(self.transport.get_extra_info('peername')),
+            host=peer2str(self.transport.get_extra_info('sockname')),
+            is_secure=self.transport.get_extra_info('peercert', None) is not None,
+            secure_channel_id=transport_channel_id(self.transport, False, 'tls-unique'),
         )
 
     def registerProducer(self, producer, streaming):

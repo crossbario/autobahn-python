@@ -427,7 +427,12 @@ class OnConnectingTests(unittest.TestCase):
         self.assertEqual("/ws", req.resource)
 
     def test_str_transport(self):
-        details = TransportDetails(host="example.com", peer="example.com")
+        details = TransportDetails(
+            host="example.com",
+            peer="example.com",
+            is_secure=False,
+            secure_channel_id=None,
+        )
         # we can str() this and it doesn't fail
         str(details)
 

@@ -34,7 +34,9 @@ import txaio
 txaio.use_twisted()
 
 import twisted.internet.protocol
-from twisted.internet.interfaces import ITransport
+from twisted.internet.interfaces import ITransport, ITLSTransport, \
+    ISSLTransport
+
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
 
@@ -239,8 +241,16 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         Base class calls this to create a TransportDetails
         """
         return TransportDetails(
-            peer=self.transport.getPeer(),
-            host=self.transport.getHost(),
+            peer=peer2str(self.transport.getPeer()),
+            host=peer2str(self.transport.getHost()),
+            is_secure=(ISSLTransport.providedBy(self.transport) or (
+                ITLSTransport.providedBy(self.transport) and hasattr(self.transport, '_tlsConnection')
+            )),
+            secure_channel_id=transport_channel_id(
+                transport=self.transport,
+                is_server=False,
+                channel_id_type=u"tls-unique",
+            ),
         )
 
 
