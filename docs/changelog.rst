@@ -5,6 +5,9 @@
 Changelog
 =========
 
+* new: onConnecting callback (with TransportDetails and ConnectingRequest)
+
+
 19.3.3
 ------
 
