@@ -242,20 +242,21 @@ It is in these callbacks that you will implement application specific code.
 The core WebSocket interface :class:`autobahn.websocket.interfaces.IWebSocketChannel` provides the following *callbacks*:
 
 * :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect`
+* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onConnecting`
 * :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
 * :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
 * :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
 
 We have already seen the callback for :ref:`receiving-messages`. This callback will usually fire many times during the lifetime of a WebSocket connection.
 
-In contrast, the other three callbacks above each only fires once for a given connection.
+In contrast, the other four callbacks above each only fires once for a given connection.
 
 Opening Handshake
 ~~~~~~~~~~~~~~~~~
 
 Whenever a new client connects to the server, a new protocol instance will be created and the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect` callback fires as soon as the WebSocket opening handshake is begun by the client.
 
-For a WebSocket server protocol, ``onConnect()`` will fire with 
+For a WebSocket server protocol, ``onConnect()`` will fire with
 :class:`autobahn.websocket.protocol.ConnectionRequest` providing information on the client wishing to connect via WebSocket.
 
 .. code-block:: python
@@ -265,9 +266,21 @@ For a WebSocket server protocol, ``onConnect()`` will fire with
       def onConnect(self, request):
          print("Client connecting: {}".format(request.peer))
 
+For a WebSocket client protocol, ``onConnecting()`` is called
+immediately before the handshake to the server starts. It is called
+with some details about the underlying transport. This may return
+``None`` (the default) to get default values for several options
+(which are gotten from the Factory) or it may return a
+:class:`autobahn.websocket.types.ConnectingRequest` instance to
+indicate options for this handshake. This allows using different
+options on each request (as opposed to using a static set of options
+in the Factory).
 
-On the other hand, for a WebSocket client protocol, ``onConnect()`` will fire with 
-:class:`autobahn.websocket.protocol.ConnectionResponse` providing information on the WebSocket connection that was accepted by the server.
+Then, once the server has responded, a WebSocket client protocol will
+fire ``onConnect()`` with a
+:class:`autobahn.websocket.protocol.ConnectionResponse` providing
+information on the WebSocket connection that was accepted by the
+server.
 
 .. code-block:: python
 

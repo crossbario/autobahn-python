@@ -419,6 +419,22 @@ class IWebSocketChannel(object):
 
     @public
     @abc.abstractmethod
+    def onConnecting(self, transport_details):
+        """
+        This method is called when we've connected, but before the handshake is done.
+
+        :param transport_details: information about the transport.
+        :type transport_details: :class:`autobahn.websocket.types.TransportDetails`
+
+        :returns: A
+            :class:`autobahn.websocket.types.ConnectingRequest`
+            instance is returned to indicate which options should be
+            used for this connection. If you wish to use the default
+            behavior, `None` may be returned (this is the default).
+        """
+
+    @public
+    @abc.abstractmethod
     def onOpen(self):
         """
         Callback fired when the initial WebSocket opening handshake was completed.
