@@ -43,7 +43,7 @@ class IWebSocketClientAgent(object):
     connections.
     """
 
-    def open(self, transport_config, options):
+    def open(self, transport_config, options, protocol_class=None):
         """
         Open a new WebSocket connection.
 

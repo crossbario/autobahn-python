@@ -182,7 +182,7 @@ class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
     def __init__(self, reactor):
         self._reactor = reactor
 
-    def open(self, transport_config, options):
+    def open(self, transport_config, options, protocol_class=None):
         """
         Open a new connection.
 
@@ -197,7 +197,7 @@ class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
             reactor=self._reactor,
             **options,
         )
-        factory.protocol = WebSocketClientProtocol
+        factory.protocol = WebSocketClientProtocol if protocol_class is None else protocol_class
         # XXX might want "contextFactory" for TLS ...? (or e.g. CA etc options?)
 
         endpoint = _endpoint_from_config(self._reactor, factory, transport_config, options)
