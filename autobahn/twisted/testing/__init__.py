@@ -65,6 +65,7 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         # our "real" underlying agent under test
         self._agent = _TwistedWebSocketClientAgent(self._reactor)
         self._pumps = set()
+        self._servers = dict()  # client -> server
 
     def resolveHostName(self, receiver, hostName, portNumber=0):
         """
@@ -85,7 +86,7 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         through (see autobahn/twisted/test/test_websocket_agent.py
         """
         # call our "real" agent
-        client_protocol = self._agent.open(
+        real_client_protocol = self._agent.open(
             transport_config, options,
             protocol_class=protocol_class,
         )
@@ -116,7 +117,12 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         pump = iosim.connect(
             serverProtocol, serverTransport, clientProtocol, clientTransport)
         self._pumps.add(pump)
-        return client_protocol
+
+        def add_mapping(proto):
+            self._servers[proto] = serverProtocol
+            return proto
+        real_client_protocol.addCallback(add_mapping)
+        return real_client_protocol
 
     def flush(self):
         """
@@ -136,6 +142,16 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
             if p.clientIO.disconnected and p.serverIO.disconnected:
                 continue
             new_pumps.add(p)
+
+    def send_server_message_to_client(self, client, msg):
+        """
+        Is this an API that agent should have? (I'm playing with ways to
+        build tests .. and tests will want to control what the server
+        sends, and probably wait for client messages...
+        """
+        server_proto = self._servers[client]
+        server_proto.sendMessage(msg)
+        self.flush()
 
 
 def create_memory_agent(client_protocol, server_protocol):

@@ -76,16 +76,7 @@ class TestAgent(unittest.TestCase):
     @inlineCallbacks
     def test_client_receives_two_messages_listener(self):
 
-        def make():
-            p = LoggingWebSocketServerProtocol()
-            p.reactor = agent._reactor
-            p.messages = [
-                b"message zero",
-                b"message one",
-            ]
-            return p
-
-        agent = create_memory_agent(None, make)
+        agent = create_memory_agent(None, None)
         proto = yield agent.open("ws://localhost:1234/ws", dict())
 
         messages = []
@@ -95,7 +86,8 @@ class TestAgent(unittest.TestCase):
         proto.on("message", got_message)
 
         agent.flush()
-        agent._reactor.advance(1)  # send the messages
-        agent.flush()
 
+        agent.send_server_message_to_client(proto, b"message one")
+        self.assertEqual(1, len(messages))
+        agent.send_server_message_to_client(proto, b"message two")
         self.assertEqual(2, len(messages))
