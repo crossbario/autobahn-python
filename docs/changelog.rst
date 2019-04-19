@@ -5,7 +5,11 @@
 Changelog
 =========
 
-* new: onConnecting callback (with TransportDetails and ConnectingRequest)
+* new: onConnecting callback (with TransportDetails and
+  ConnectingRequest). **Note**: if you've implemented a pure
+  `IWebSocketChannel` without inheriting from Autobahn base classes,
+  you'll need to add an `onConnecting()` method that just does `return
+  None`.
 
 
 19.3.3
