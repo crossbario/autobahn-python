@@ -31,6 +31,12 @@ class FakeTransport(object):
     _written = b""
     _open = True
 
+    def __init__(self):
+        self._abort_calls = []
+
+    def abortConnection(self, *args, **kw):
+        self._abort_calls.append((args, kw))
+
     def write(self, msg):
         if not self._open:
             raise Exception("Can't write to a closed connection")
@@ -46,3 +52,18 @@ class FakeTransport(object):
     def unregisterProducer(self):
         # do nothing is correct! until we fake implement registerProducer ..;)
         pass
+
+    def getPeer(self):
+        # for Twisted, this would be an IAddress
+        class _FakePeer(object):
+            pass
+        return _FakePeer()
+
+    def getHost(self):
+        # for Twisted, this would be an IAddress
+        class _FakeHost(object):
+            pass
+        return _FakeHost()
+
+    def abort_called(self):
+        return len(self._abort_calls) > 0

@@ -36,6 +36,7 @@ from autobahn.websocket.protocol import WebSocketServerFactory
 from autobahn.websocket.protocol import WebSocketClientProtocol
 from autobahn.websocket.protocol import WebSocketClientFactory
 from autobahn.websocket.protocol import WebSocketProtocol
+from autobahn.websocket.types import ConnectingRequest
 from autobahn.test import FakeTransport
 
 import txaio
@@ -51,6 +52,7 @@ class WebSocketClientProtocolTests(unittest.TestCase):
         p = WebSocketClientProtocol()
         p.factory = f
         p.transport = t
+        p._create_transport_details = Mock()
 
         p._connectionMade()
         p.state = p.STATE_OPEN
@@ -83,7 +85,13 @@ class WebSocketClientProtocolTests(unittest.TestCase):
         self.protocol._closeConnection = Mock()
 
         # set up a connection
-        self.protocol.startHandshake()
+        self.protocol._actuallyStartHandshake(
+            ConnectingRequest(
+                host="example.com",
+                port=80,
+                resource="/ws",
+            )
+        )
 
         key = self.protocol.websocket_key + WebSocketProtocol._WS_MAGIC
         self.protocol.data = (

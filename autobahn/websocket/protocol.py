@@ -47,6 +47,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
     IWebSocketChannelStreamingApi
 
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
+from autobahn.websocket.types import ConnectingRequest
 
 from autobahn.util import Stopwatch, newid, wildcards2patterns, encode_truncate
 from autobahn.util import _LazyHexFormatter
@@ -3333,6 +3334,18 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
     CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_CLIENT
 
+    def onConnecting(self, transport_details):
+        """
+        :param transport_details: a :class:`autobahn.websocket.types.TransportDetails`
+
+        Callback fired after the connection is established, but before the
+        handshake has started. This may return a
+        :class:`autobahn.websocket.types.ConnectingRequest` instance
+        (or a future which resolves to one) to control aspects of the
+        handshake (or None for defaults)
+        """
+        pass
+
     def onConnect(self, response):
         """
         Callback fired directly after WebSocket opening handshake when new WebSocket server
@@ -3475,14 +3488,60 @@ class WebSocketClientProtocol(WebSocketProtocol):
         Start WebSocket opening handshake.
         """
 
+        # extract framework-specific transport information
+        transport_details = self._create_transport_details()
+
+        # ask our specialized framework-specific (or user-code) for a
+        # ConnectingRequest instance
+        options_d = txaio.as_future(self.onConnecting, transport_details)
+
+        def got_options(request_options):
+            """
+            onConnecting succeeded and returned options
+            """
+            if request_options is None:
+                # Note, before onConnecting was added, everything came
+                # from self.factory so we get the required parameters from
+                # there still by default
+                request_options = ConnectingRequest(
+                    # required (no defaults):
+                    host=self.factory.host,
+                    port=self.factory.port,
+                    resource=self.factory.resource,
+                    # optional (useful defaults):
+                    headers=self.factory.headers,  # might be None
+                    useragent=self.factory.useragent,  # might be None
+                    origin=self.factory.origin,  # might be None
+                    protocols=self.factory.protocols,  # might be None
+                )
+            self._actuallyStartHandshake(request_options)
+            return request_options
+
+        def options_failed(fail):
+            self.log.error(
+                "onConnecting failed: {fail}",
+                fail=fail,
+            )
+            self.dropConnection(abort=False)
+            return None
+        txaio.add_callbacks(options_d, got_options, options_failed)
+        return options_d
+
+    def _actuallyStartHandshake(self, request_options):
+        """
+        Internal helper.
+
+        Actually send the WebSocket opening handshake after receiving
+        valid request options.
+        """
         # construct WS opening handshake HTTP header
         #
-        request = "GET %s HTTP/1.1\x0d\x0a" % self.factory.resource
+        request = "GET %s HTTP/1.1\x0d\x0a" % request_options.resource
 
-        if self.factory.useragent is not None and self.factory.useragent != "":
-            request += "User-Agent: %s\x0d\x0a" % self.factory.useragent
+        if request_options.useragent is not None and request_options.useragent != "":
+            request += "User-Agent: %s\x0d\x0a" % request_options.useragent
 
-        request += "Host: %s:%d\x0d\x0a" % (self.factory.host, self.factory.port)
+        request += "Host: %s:%d\x0d\x0a" % (request_options.host, request_options.port)
         request += "Upgrade: WebSocket\x0d\x0a"
         request += "Connection: Upgrade\x0d\x0a"
 
@@ -3497,7 +3556,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         # optional, user supplied additional HTTP headers
         #
-        for uh in self.factory.headers.items():
+        for uh in request_options.headers.items():
             request += "%s: %s\x0d\x0a" % (uh[0], uh[1])
 
         # handshake random key
@@ -3507,16 +3566,16 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         # optional origin announced
         #
-        if self.factory.origin:
+        if request_options.origin:
             if self.version > 10:
-                request += "Origin: %s\x0d\x0a" % self.factory.origin
+                request += "Origin: %s\x0d\x0a" % request_options.origin
             else:
-                request += "Sec-WebSocket-Origin: %s\x0d\x0a" % self.factory.origin
+                request += "Sec-WebSocket-Origin: %s\x0d\x0a" % request_options.origin
 
         # optional list of WS subprotocols announced
         #
-        if len(self.factory.protocols) > 0:
-            request += "Sec-WebSocket-Protocol: %s\x0d\x0a" % ','.join(self.factory.protocols)
+        if len(request_options.protocols) > 0:
+            request += "Sec-WebSocket-Protocol: %s\x0d\x0a" % ','.join(request_options.protocols)
 
         # extensions
         #

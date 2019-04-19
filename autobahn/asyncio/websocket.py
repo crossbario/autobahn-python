@@ -32,8 +32,10 @@ import txaio
 txaio.use_asyncio()
 
 from autobahn.util import public
+from autobahn.asyncio.util import transport_channel_id, peer2str
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
+from autobahn.websocket.types import TransportDetails
 
 try:
     import asyncio
@@ -188,6 +190,18 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         """
         self.log.debug('FIXME: transport channel binding not implemented for asyncio (autobahn-python issue #729)')
         return None
+
+    def _create_transport_details(self):
+        """
+        Internal helper.
+        Base class calls this to create a TransportDetails
+        """
+        return TransportDetails(
+            peer=peer2str(self.transport.get_extra_info('peername')),
+            host=peer2str(self.transport.get_extra_info('sockname')),
+            is_secure=self.transport.get_extra_info('peercert', None) is not None,
+            secure_channel_id=transport_channel_id(self.transport, False, 'tls-unique'),
+        )
 
     def registerProducer(self, producer, streaming):
         raise Exception("not implemented")
