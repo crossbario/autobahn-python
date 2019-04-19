@@ -30,7 +30,7 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.internet.address import IPv4Address
 from twisted.internet._resolver import HostResolution  # FIXME
 from twisted.internet.interfaces import ISSLTransport
-from twisted.test.proto_helpers import MemoryReactor, Clock
+from twisted.test.proto_helpers import MemoryReactorClock
 from twisted.test import iosim
 
 from zope.interface import directlyProvides, implementer
@@ -52,14 +52,7 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
     """
 
     def __init__(self):
-        self._reactor = MemoryReactor()
-
-        # XXX FIXME is there another/better way to do this?
-        # MemoryReactor doesn't have IReactorTime so we graft it on
-        # here:
-        self._clock = Clock()
-        self._reactor.seconds = self._clock.seconds
-        self._reactor.callLater = self._clock.callLater
+        self._reactor = MemoryReactorClock()
 
         # XXX FIXME is there a better way to do this? MemoryReactor
         # lacks the resolver interface, so we graft it on here (so
