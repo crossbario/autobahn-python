@@ -39,6 +39,7 @@ from autobahn.websocket.interfaces import IWebSocketClientAgent
 from autobahn.twisted.websocket import _TwistedWebSocketClientAgent
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketServerFactory
+from autobahn.twisted.websocket import WebSocketClientProtocol
 
 
 __all__ = (
@@ -51,9 +52,10 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
     A testing agent.
     """
 
-    def __init__(self, server_protocol=WebSocketServerProtocol):
+    def __init__(self, client_protocol, server_protocol):
         self._reactor = MemoryReactorClock()
         self._server_protocol = server_protocol
+        self._client_protocol = client_protocol
 
         # XXX FIXME is there a better way to do this? MemoryReactor
         # lacks the resolver interface, so we graft it on here (so
@@ -76,14 +78,17 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         )
         receiver.resolutionComplete()
 
-    def open(self, transport_config, options):
+    def open(self, transport_config, options, protocol_class=None):
         """
         This is some proof-of-concept level hacking to see that we can set
         up an IOPump properly and get a client -> server message
         through (see autobahn/twisted/test/test_websocket_agent.py
         """
         # call our "real" agent
-        client_protocol = self._agent.open(transport_config, options)
+        client_protocol = self._agent.open(
+            transport_config, options,
+            protocol_class=protocol_class,
+        )
 
         # wss vs ws
         # host, port, factory, context_factory, timeout, bindAddress = (
@@ -133,7 +138,7 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
             new_pumps.add(p)
 
 
-def create_memory_agent(protocol):
+def create_memory_agent(client_protocol, server_protocol):
     """
     return a new instance implementing `IWebSocketClientAgent`.
 
@@ -142,4 +147,8 @@ def create_memory_agent(protocol):
     and then exchange data between client and server using purely
     in-memory buffers.
     """
-    return _TwistedWebMemoryAgent(protocol)
+    if client_protocol is None:
+        client_protocol = WebSocketClientProtocol
+    if server_protocol is None:
+        server_protocol = WebSocketServerProtocol
+    return _TwistedWebMemoryAgent(client_protocol, server_protocol)
