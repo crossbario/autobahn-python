@@ -198,7 +198,6 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         """
         return TransportDetails(
             peer=peer2str(self.transport.get_extra_info('peername')),
-            host=peer2str(self.transport.get_extra_info('sockname')),
             is_secure=self.transport.get_extra_info('peercert', None) is not None,
             secure_channel_id=transport_channel_id(self.transport, False, 'tls-unique'),
         )
