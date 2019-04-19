@@ -15,7 +15,7 @@ install:
 	-pip uninstall -y pytest_asyncio # remove the broken shit
 	-pip uninstall -y pytest_cov # remove the broken shit
 	# enforce use of bundled libsodium
-	AUTOBAHN_USE_NVX=1 SODIUM_INSTALL=bundled pip install -e .[all,dev]
+	AUTOBAHN_USE_NVX=1 SODIUM_INSTALL=bundled pip install -e .[all]
 
 build:
 	-rm -f dist/*

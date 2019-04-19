@@ -244,15 +244,17 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         # upgraded to TLS, then the transport will implement
         # ISSLTransport at that point according to Twisted
         # documentation
+        # the peer we are connected to
         return TransportDetails(
-            peer=peer2str(self.transport.getPeer()),
-            host=peer2str(self.transport.getHost()),
+            peer=self.peer,
             is_secure=ISSLTransport.providedBy(self.transport),
-            secure_channel_id=transport_channel_id(
-                transport=self.transport,
-                is_server=False,
-                channel_id_type=u"tls-unique",
-            ),
+            secure_channel_id={
+                u"tls-unique": transport_channel_id(
+                    transport=self.transport,
+                    is_server=False,
+                    channel_id_type=u"tls-unique",
+                ),
+            }
         )
 
 

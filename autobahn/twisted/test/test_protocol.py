@@ -428,10 +428,9 @@ class OnConnectingTests(unittest.TestCase):
 
     def test_str_transport(self):
         details = TransportDetails(
-            host="example.com",
             peer="example.com",
             is_secure=False,
-            secure_channel_id=None,
+            secure_channel_id={},
         )
         # we can str() this and it doesn't fail
         str(details)
