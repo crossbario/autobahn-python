@@ -154,19 +154,27 @@ class ConnectingRequest(object):
 
     def __init__(self, host=None, port=None, resource=None, headers=None, useragent=None, origin=None, protocols=None):
         """
-        :param headers: HTTP headers to send in the opening handshake
-        :type headers: dict
+        Any of the arguments can be `None`, which will provide a useful
+        default.
 
+        :param str host: the host to present to the server
+
+        :param int port: the port to present to the server
+
+        :param str resouce:
+
+        :param headers: extra HTTP headers to send in the opening handshake
+        :type headers: dict
         """
         # required
         self.host = host if host is not None else "localhost"
         self.port = port if port is not None else 80
         self.resource = resource if resource is not None else "/"
         # optional
-        self.headers = headers if headers else dict()
+        self.headers = headers if headers is not None else dict()
         self.useragent = useragent
         self.origin = origin
-        self.protocols = protocols if protocols else []
+        self.protocols = protocols if protocols is not None else []
 
     def __json__(self):
         return {
