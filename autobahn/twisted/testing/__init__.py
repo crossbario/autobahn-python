@@ -51,8 +51,9 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
     A testing agent.
     """
 
-    def __init__(self):
+    def __init__(self, server_protocol=WebSocketServerProtocol):
         self._reactor = MemoryReactorClock()
+        self._server_protocol = server_protocol
 
         # XXX FIXME is there a better way to do this? MemoryReactor
         # lacks the resolver interface, so we graft it on here (so
@@ -68,8 +69,6 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         'really' from IReactorPluggableNameResolver for MemoryReactor
         FIXME
         """
-        print("resolve {} {} {}".format(receiver, hostName, portNumber))
-        print(dir(receiver))
         resolution = HostResolution(hostName)
         receiver.resolutionBegan(resolution)
         receiver.addressResolved(
@@ -94,12 +93,7 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         serverAddress = IPv4Address('TCP', '127.0.0.1', port)
         clientAddress = IPv4Address('TCP', '127.0.0.1', 31337)
 
-        class TestWebSocketServerProtocol(WebSocketServerProtocol):
-
-            def onMessage(self, *args, **kw):
-                print("SERVER MESSAGE: {} {}".format(args, kw))
-
-        serverProtocol = TestWebSocketServerProtocol()
+        serverProtocol = self._server_protocol()
         serverProtocol.factory = WebSocketServerFactory()
 
         serverTransport = iosim.FakeTransport(
@@ -139,7 +133,7 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
             new_pumps.add(p)
 
 
-def create_memory_agent():
+def create_memory_agent(protocol):
     """
     return a new instance implementing `IWebSocketClientAgent`.
 
@@ -148,5 +142,4 @@ def create_memory_agent():
     and then exchange data between client and server using purely
     in-memory buffers.
     """
-    # XXX FIXME
-    return _TwistedWebMemoryAgent()
+    return _TwistedWebMemoryAgent(protocol)
