@@ -208,7 +208,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
-        return transport_channel_id(self.transport, is_server=True, channel_id_type=channel_id_type)
+        return transport_channel_id(self.transport, True, channel_id_type)
 
 
 @public
