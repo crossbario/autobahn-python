@@ -232,7 +232,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
-        return transport_channel_id(self.transport, is_server=False, channel_id_type=channel_id_type)
+        return transport_channel_id(self.transport, False, channel_id_type)
 
     def _create_transport_details(self):
         """
@@ -245,17 +245,14 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         # ISSLTransport at that point according to Twisted
         # documentation
         # the peer we are connected to
-        return TransportDetails(
-            peer=self.peer,
-            is_secure=ISSLTransport.providedBy(self.transport),
-            secure_channel_id={
-                u"tls-unique": transport_channel_id(
-                    transport=self.transport,
-                    is_server=False,
-                    channel_id_type=u"tls-unique",
-                ),
+        is_secure = ISSLTransport.providedBy(self.transport)
+        if is_secure:
+            secure_channel_id = {
+                u'tls-unique': transport_channel_id(self.transport, False, u'tls-unique'),
             }
-        )
+        else:
+            secure_channel_id = {}
+        return TransportDetails(peer=self.peer, is_secure=is_secure, secure_channel_id=secure_channel_id)
 
 
 class WebSocketAdapterFactory(object):
