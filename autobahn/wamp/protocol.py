@@ -1216,8 +1216,7 @@ class ApplicationSession(BaseSession):
             # fire callback and close the transport
             details = types.CloseDetails(
                 reason=types.CloseDetails.REASON_TRANSPORT_LOST,
-                message=(u"WAMP transport was lost without closing the"
-                         u" session before"),
+                message=u'WAMP transport was lost without closing the session {} before'.format(self._session_id),
             )
             d = txaio.as_future(self.onLeave, details)
 
