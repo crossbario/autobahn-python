@@ -31,6 +31,7 @@ import txaio
 from twisted.internet.protocol import Factory
 from twisted.protocols.basic import Int32StringReceiver
 from twisted.internet.error import ConnectionDone
+from twisted.internet.defer import CancelledError
 
 from autobahn.util import public
 from autobahn.twisted.util import peer2str, transport_channel_id
@@ -119,12 +120,21 @@ class WampRawSocketProtocol(Int32StringReceiver):
                 self.log.trace("WampRawSocketProtocol: RX WAMP message: {msg}", msg=msg)
                 self._session.onMessage(msg)
 
+        except CancelledError as e:
+            self.log.warn("{klass}.stringReceived: WAMP CancelledError - connection will continue\n{err}",
+                          klass=self.__class__.__name__,
+                          err=e)
+
         except ProtocolError as e:
-            self.log.warn("WampRawSocketProtocol: WAMP Protocol Error ({err}) - aborting connection", err=e)
+            self.log.warn("{klass}.stringReceived: WAMP ProtocolError - aborting connection\n{err}",
+                          klass=self.__class__.__name__,
+                          err=e)
             self.abort()
 
         except Exception as e:
-            self.log.warn("WampRawSocketProtocol: WAMP Internal Error ({err}) - aborting connection", err=e)
+            self.log.warn("{klass}.stringReceived: WAMP Exception - aborting connection\n{err}",
+                          klass=self.__class__.__name__,
+                          err=e)
             self.abort()
 
     def send(self, msg):
