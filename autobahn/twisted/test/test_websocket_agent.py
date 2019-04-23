@@ -1,7 +1,7 @@
 
 from twisted.trial import unittest
 from twisted.internet.defer import inlineCallbacks, Deferred
-from autobahn.twisted.testing import create_memory_agent
+from autobahn.twisted.testing import create_memory_agent, MemoryReactorClockResolver
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketClientProtocol
 
@@ -41,7 +41,8 @@ class TestAgent(unittest.TestCase):
 
     @inlineCallbacks
     def test_foo(self):
-        agent = create_memory_agent(SpammingWebSocketServerProtocol, None)
+        reactor = MemoryReactorClockResolver()
+        agent = create_memory_agent(reactor, SpammingWebSocketServerProtocol, None)
         proto = yield agent.open("ws://localhost:1234/ws", dict())
 
         proto.sendMessage(b"hello")
@@ -65,7 +66,8 @@ class TestAgent(unittest.TestCase):
             def onMessage(self, *args, **kw):
                 self.messages.append((args, kw))
 
-        agent = create_memory_agent(None, make)
+        reactor = MemoryReactorClockResolver()
+        agent = create_memory_agent(reactor, None, make)
         proto = yield agent.open("ws://localhost:1234/ws", dict(), Mine)
 
         agent.flush()
@@ -76,7 +78,8 @@ class TestAgent(unittest.TestCase):
     @inlineCallbacks
     def test_client_receives_two_messages_listener(self):
 
-        agent = create_memory_agent(None, None)
+        reactor = MemoryReactorClockResolver()
+        agent = create_memory_agent(reactor, None, None)
         proto = yield agent.open("ws://localhost:1234/ws", dict())
 
         messages = []

@@ -29,7 +29,7 @@ from __future__ import absolute_import
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.address import IPv4Address
 from twisted.internet._resolver import HostResolution  # FIXME
-from twisted.internet.interfaces import ISSLTransport
+from twisted.internet.interfaces import ISSLTransport, IReactorPluggableNameResolver, IHostnameResolver
 from twisted.test.proto_helpers import MemoryReactorClock
 from twisted.test import iosim
 
@@ -47,26 +47,8 @@ __all__ = (
 )
 
 
-class _TwistedWebMemoryAgent(IWebSocketClientAgent):
-    """
-    A testing agent.
-    """
-
-    def __init__(self, client_protocol, server_protocol):
-        self._reactor = MemoryReactorClock()
-        self._server_protocol = server_protocol
-        self._client_protocol = client_protocol
-
-        # XXX FIXME is there a better way to do this? MemoryReactor
-        # lacks the resolver interface, so we graft it on here (so
-        # HostnameEndpoint works)
-        self._reactor.nameResolver = self
-
-        # our "real" underlying agent under test
-        self._agent = _TwistedWebSocketClientAgent(self._reactor)
-        self._pumps = set()
-        self._servers = dict()  # client -> server
-
+@implementer(IHostnameResolver)
+class TestResolver(object):
     def resolveHostName(self, receiver, hostName, portNumber=0):
         """
         'really' from IReactorPluggableNameResolver for MemoryReactor
@@ -75,9 +57,49 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         resolution = HostResolution(hostName)
         receiver.resolutionBegan(resolution)
         receiver.addressResolved(
-            IPv4Address('TCP', '127.0.0.1', 31337)
+            IPv4Address('TCP', '127.0.0.1', 31337 if portNumber == 0 else portNumber)
         )
         receiver.resolutionComplete()
+
+
+@implementer(IReactorPluggableNameResolver)
+class _Resolver(object):
+
+    _resolver = None
+
+    @property
+    def nameResolver(self):
+        if self._resolver is None:
+            self._resolver = TestResolver()
+        return self._resolver
+
+    def installNameResolver(self, resolver):
+        old = self._resolver
+        self._resolver = resolver
+        return old
+
+
+class MemoryReactorClockResolver(MemoryReactorClock, _Resolver):
+    """
+    Are we **inheriting enough** yet??
+    """
+    pass
+
+
+class _TwistedWebMemoryAgent(IWebSocketClientAgent):
+    """
+    A testing agent.
+    """
+
+    def __init__(self, reactor, client_protocol, server_protocol):
+        self._reactor = reactor
+        self._server_protocol = server_protocol
+        self._client_protocol = client_protocol
+
+        # our "real" underlying agent under test
+        self._agent = _TwistedWebSocketClientAgent(self._reactor)
+        self._pumps = set()
+        self._servers = dict()  # client -> server
 
     def open(self, transport_config, options, protocol_class=None):
         """
@@ -154,7 +176,7 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         self.flush()
 
 
-def create_memory_agent(client_protocol, server_protocol):
+def create_memory_agent(reactor, client_protocol, server_protocol):
     """
     return a new instance implementing `IWebSocketClientAgent`.
 
@@ -167,4 +189,4 @@ def create_memory_agent(client_protocol, server_protocol):
         client_protocol = WebSocketClientProtocol
     if server_protocol is None:
         server_protocol = WebSocketServerProtocol
-    return _TwistedWebMemoryAgent(client_protocol, server_protocol)
+    return _TwistedWebMemoryAgent(reactor, client_protocol, server_protocol)
