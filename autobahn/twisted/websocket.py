@@ -188,8 +188,18 @@ class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
         """
         Open a new connection.
 
-        :returns: a Deferred that fires with a WebSocketClientProtocol
-            that has successfully shaken hands (completed the handshake).
+        :param dict transport_config: valid transport configuration
+
+        :param dict options: additional options for the factory
+
+        :param protocol_class: a callable that returns an instance of
+            the protocol (WebSocketClientProtocol if the default None
+            is passed in)
+
+        :returns: a Deferred that fires with an instance of
+            `protocol_class` (or WebSocketClientProtocol by default)
+            that has successfully shaken hands (completed the
+            handshake).
         """
         check_transport_config(transport_config)
         check_client_options(options)
@@ -197,7 +207,7 @@ class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
         factory = WebSocketClientFactory(
             url=transport_config,
             reactor=self._reactor,
-            **options,
+            **options
         )
         factory.protocol = WebSocketClientProtocol if protocol_class is None else protocol_class
         # XXX might want "contextFactory" for TLS ...? (or e.g. CA etc options?)

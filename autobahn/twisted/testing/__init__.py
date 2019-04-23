@@ -91,10 +91,9 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
     A testing agent.
     """
 
-    def __init__(self, reactor, client_protocol, server_protocol):
+    def __init__(self, reactor, server_protocol):
         self._reactor = reactor
         self._server_protocol = server_protocol
-        self._client_protocol = client_protocol
 
         # our "real" underlying agent under test
         self._agent = _TwistedWebSocketClientAgent(self._reactor)
@@ -176,7 +175,7 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         self.flush()
 
 
-def create_memory_agent(reactor, client_protocol, server_protocol):
+def create_memory_agent(reactor, server_protocol):
     """
     return a new instance implementing `IWebSocketClientAgent`.
 
@@ -185,8 +184,6 @@ def create_memory_agent(reactor, client_protocol, server_protocol):
     and then exchange data between client and server using purely
     in-memory buffers.
     """
-    if client_protocol is None:
-        client_protocol = WebSocketClientProtocol
     if server_protocol is None:
         server_protocol = WebSocketServerProtocol
-    return _TwistedWebMemoryAgent(reactor, client_protocol, server_protocol)
+    return _TwistedWebMemoryAgent(reactor, server_protocol)

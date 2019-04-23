@@ -37,60 +37,49 @@ class LoggingWebSocketServerProtocol(WebSocketServerProtocol):
 class TestAgent(unittest.TestCase):
 
     def setUp(self):
-        pass
+        self.reactor = MemoryReactorClockResolver()
 
     @inlineCallbacks
-    def test_foo(self):
-        reactor = MemoryReactorClockResolver()
-        agent = create_memory_agent(reactor, SpammingWebSocketServerProtocol, None)
+    def _test_foo(self):
+        agent = create_memory_agent(self.reactor, SpammingWebSocketServerProtocol)
         proto = yield agent.open("ws://localhost:1234/ws", dict())
 
         proto.sendMessage(b"hello")
         agent.flush()
 
     @inlineCallbacks
-    def test_client_receives_two_messages_subclass(self):
+    def test_echo_server(self):
 
-        def make():
-            p = LoggingWebSocketServerProtocol()
-            p.reactor = agent._reactor
-            p.messages = [
-                b"message zero",
-                b"message one",
-            ]
-            return p
+        class EchoServer(WebSocketServerProtocol):
+            def onOpen(self):
+                print("open")
+                print("sent",self.sendMessage(b"hello"))
 
-        class Mine(WebSocketClientProtocol):
-            messages = []
+            def onMesssage(self, msg, isBinary):
+                print("gotmessage {}".format(msg))
+                self.sendMessage(msg, isBinary=is_binary)
 
-            def onMessage(self, *args, **kw):
-                self.messages.append((args, kw))
+            def onClose(*args):
+                print("close {}".format(args))
 
-        reactor = MemoryReactorClockResolver()
-        agent = create_memory_agent(reactor, None, make)
-        proto = yield agent.open("ws://localhost:1234/ws", dict(), Mine)
-
-        agent.flush()
-        agent._reactor.advance(1)
-        agent.flush()
-        self.assertEqual(len(proto.messages), 2)
-
-    @inlineCallbacks
-    def test_client_receives_two_messages_listener(self):
-
-        reactor = MemoryReactorClockResolver()
-        agent = create_memory_agent(reactor, None, None)
+        agent = create_memory_agent(self.reactor, EchoServer)
         proto = yield agent.open("ws://localhost:1234/ws", dict())
 
         messages = []
+        def got(msg, isBinary):
+            print("got", msg)
+            messages.append(msg)
+        proto.on("message", got)
 
-        def got_message(*args, **kw):
-            messages.append((args, kw))
-        proto.on("message", got_message)
-
+        proto.sendMessage(b"hello")
         agent.flush()
 
-        agent.send_server_message_to_client(proto, b"message one")
-        self.assertEqual(1, len(messages))
-        agent.send_server_message_to_client(proto, b"message two")
-        self.assertEqual(2, len(messages))
+        if True:
+            # clean close
+            proto.sendClose()
+        else:
+            # unclean close
+            proto.transport.loseConnection()
+        agent.flush()
+        yield proto.is_closed
+        self.assertEqual([b"hello"], messages)
