@@ -26,7 +26,7 @@
 
 from __future__ import absolute_import
 
-from twisted.internet.defer import inlineCallbacks
+from twisted.internet.defer import inlineCallbacks, Deferred
 from twisted.internet.address import IPv4Address
 from twisted.internet._resolver import HostResolution  # FIXME
 from twisted.internet.interfaces import ISSLTransport, IReactorPluggableNameResolver, IHostnameResolver
@@ -43,6 +43,7 @@ from autobahn.twisted.websocket import WebSocketClientProtocol
 
 
 __all__ = (
+    'create_pumper',
     'create_memory_agent',
     'MemoryReactorClockResolver',
 )
@@ -94,9 +95,10 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
     A testing agent.
     """
 
-    def __init__(self, reactor, server_protocol):
+    def __init__(self, reactor, pumper, server_protocol):
         self._reactor = reactor
         self._server_protocol = server_protocol
+        self._pumper = pumper
 
         # our "real" underlying agent under test
         self._agent = _TwistedWebSocketClientAgent(self._reactor)
@@ -144,7 +146,7 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
 
         pump = iosim.connect(
             server_protocol, server_transport, clientProtocol, client_transport)
-        self._pumps.add(pump)
+        self._pumper.add(pump)
 
         def add_mapping(proto):
             self._servers[proto] = server_protocol
@@ -152,7 +154,76 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         real_client_protocol.addCallback(add_mapping)
         return real_client_protocol
 
-    def flush(self):
+
+class _Kalamazoo(object):
+    """
+    Feeling whimsical about class names, see https://en.wikipedia.org/wiki/Handcar
+
+    This is 'an IOPump pumper', an object which causes a series of
+    IOPumps it is monitoring to do their I/O operations
+    periodically. This needs the 'real' reactor which trial drives,
+    because reasons:
+
+     - so @inlineCallbacks / async-def functions work
+       (if I could explain exactly why here, I would)
+
+     - we need to 'break the loop' of synchronous calls somewhere and
+       polluting the tests themselves with that is bad
+
+     - get rid of e.g. .flush() calls in tests themselves (thus
+      'teaching' the tests about details of I/O scheduling that they
+      shouldn't know).
+    """
+
+    def __init__(self):
+        self._pumps = set()
+        self._pumping = False
+        self._waiting_for_stop = []
+        from twisted.internet import reactor as global_reactor
+        self._global_reactor = global_reactor
+
+    def add(self, p):
+        """
+        Add a new IOPump. It will be removed when both its client and
+        server are disconnected.
+        """
+        self._pumps.add(p)
+
+    def start(self):
+        if self._pumping:
+            return
+        self._pumping = True
+        self._global_reactor.callLater(0, self._pump_once)
+
+    def stop(self):
+        """
+        :returns: a Deferred that fires when we have stopped pump()-ing
+
+        Call from tearDown, for example.
+        """
+        if self._pumping or len(self._waiting_for_stop):
+            d = Deferred()
+            self._waiting_for_stop.append(d)
+            self._pumping = False
+            return d
+        d = Deferred()
+        d.callback(None)
+        return d
+
+    def _pump_once(self):
+        """
+        flush all data from all our IOPump instances and schedule another
+        iteration on the global reactor
+        """
+        if self._pumping:
+            self._flush()
+            self._global_reactor.callLater(0.1, self._pump_once)
+        else:
+            for d in self._waiting_for_stop:
+                d.callback(None)
+            self._waiting_for_stop = []
+
+    def _flush(self):
         """
         Flush all data between pending client/server pairs.
         """
@@ -165,7 +236,14 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
             new_pumps.add(p)
 
 
-def create_memory_agent(reactor, server_protocol):
+def create_pumper():
+    """
+    return a new instance implementing IPumper
+    """
+    return _Kalamazoo()
+
+
+def create_memory_agent(reactor, pumper, server_protocol):
     """
     return a new instance implementing `IWebSocketClientAgent`.
 
@@ -176,4 +254,4 @@ def create_memory_agent(reactor, server_protocol):
     """
     if server_protocol is None:
         server_protocol = WebSocketServerProtocol
-    return _TwistedWebMemoryAgent(reactor, server_protocol)
+    return _TwistedWebMemoryAgent(reactor, pumper, server_protocol)
