@@ -44,15 +44,15 @@ from autobahn.twisted.websocket import WebSocketClientProtocol
 
 __all__ = (
     'create_memory_agent',
+    'MemoryReactorClockResolver',
 )
 
 
 @implementer(IHostnameResolver)
-class TestResolver(object):
+class _LeetResolver(object):
     def resolveHostName(self, receiver, hostName, portNumber=0):
         """
-        'really' from IReactorPluggableNameResolver for MemoryReactor
-        FIXME
+        Implement IHostnameResolver which always returns 127.0.0.1:31337
         """
         resolution = HostResolution(hostName)
         receiver.resolutionBegan(resolution)
@@ -64,13 +64,16 @@ class TestResolver(object):
 
 @implementer(IReactorPluggableNameResolver)
 class _Resolver(object):
+    """
+    A test version of IReactorPluggableNameResolver
+    """
 
     _resolver = None
 
     @property
     def nameResolver(self):
         if self._resolver is None:
-            self._resolver = TestResolver()
+            self._resolver = _LeetResolver()
         return self._resolver
 
     def installNameResolver(self, resolver):
@@ -102,59 +105,56 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
 
     def open(self, transport_config, options, protocol_class=None):
         """
-        This is some proof-of-concept level hacking to see that we can set
-        up an IOPump properly and get a client -> server message
-        through (see autobahn/twisted/test/test_websocket_agent.py
+        Implement IWebSocketClientAgent with in-memory transports.
+
+        To 'see' data on the other side, `.flush()` must be called
+        after data has been sent (e.g. after a sendMessage() call for
+        example).
         """
+        is_secure = transport_config.startswith("wss://")
+
         # call our "real" agent
         real_client_protocol = self._agent.open(
             transport_config, options,
             protocol_class=protocol_class,
         )
 
-        # wss vs ws
-        # host, port, factory, context_factory, timeout, bindAddress = (
-        #     self._memoryReactor.sslClients[-1])
-        host, port, factory, timeout, bindAddress = self._reactor.tcpClients[-1]
+        if is_secure:
+            host, port, factory, context_factory, timeout, bindAddress = self._reactor.sslClients[-1]
+        else:
+            host, port, factory, timeout, bindAddress = self._reactor.tcpClients[-1]
 
-        serverAddress = IPv4Address('TCP', '127.0.0.1', port)
-        clientAddress = IPv4Address('TCP', '127.0.0.1', 31337)
+        server_address = IPv4Address('TCP', '127.0.0.1', port)
+        client_address = IPv4Address('TCP', '127.0.0.1', 31337)
 
-        serverProtocol = self._server_protocol()
-        serverProtocol.factory = WebSocketServerFactory()
+        server_protocol = self._server_protocol()
+        server_protocol.factory = WebSocketServerFactory()
 
-        serverTransport = iosim.FakeTransport(
-            serverProtocol, isServer=True,
-            hostAddress=serverAddress, peerAddress=clientAddress)
+        server_transport = iosim.FakeTransport(
+            server_protocol, isServer=True,
+            hostAddress=server_address, peerAddress=client_address)
         clientProtocol = factory.buildProtocol(None)
-        clientTransport = iosim.FakeTransport(
+        client_transport = iosim.FakeTransport(
             clientProtocol, isServer=False,
-            hostAddress=clientAddress, peerAddress=serverAddress)
+            hostAddress=client_address, peerAddress=server_address)
 
-        if "wss":
-            directlyProvides(serverTransport, ISSLTransport)
-            directlyProvides(clientTransport, ISSLTransport)
+        if is_secure:
+            directlyProvides(server_transport, ISSLTransport)
+            directlyProvides(client_transport, ISSLTransport)
 
         pump = iosim.connect(
-            serverProtocol, serverTransport, clientProtocol, clientTransport)
+            server_protocol, server_transport, clientProtocol, client_transport)
         self._pumps.add(pump)
 
         def add_mapping(proto):
-            self._servers[proto] = serverProtocol
+            self._servers[proto] = server_protocol
             return proto
         real_client_protocol.addCallback(add_mapping)
         return real_client_protocol
 
     def flush(self):
         """
-        (XXX copied from treq, MIT license)
-        (XXX not sure if we need this? change docs if so)
         Flush all data between pending client/server pairs.
-
-        This is only necessary if a :obj:`Resource` under test returns
-        :obj:`NOT_DONE_YET` from its ``render`` method, making a response
-        asynchronous. In that case, after each write from the server,
-        :meth:`pump` must be called so the client can see it.
         """
         old_pumps = self._pumps
         new_pumps = self._pumps = set()
@@ -163,16 +163,6 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
             if p.clientIO.disconnected and p.serverIO.disconnected:
                 continue
             new_pumps.add(p)
-
-    def send_server_message_to_client(self, client, msg):
-        """
-        Is this an API that agent should have? (I'm playing with ways to
-        build tests .. and tests will want to control what the server
-        sends, and probably wait for client messages...
-        """
-        server_proto = self._servers[client]
-        server_proto.sendMessage(msg)
-        self.flush()
 
 
 def create_memory_agent(reactor, server_protocol):
