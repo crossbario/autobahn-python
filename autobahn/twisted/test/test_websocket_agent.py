@@ -1,7 +1,7 @@
 
 from twisted.trial import unittest
 from twisted.internet.defer import inlineCallbacks, Deferred
-from autobahn.twisted.testing import create_memory_agent, MemoryReactorClockResolver
+from autobahn.twisted.testing import create_memory_agent, MemoryReactorClockResolver, create_pumper
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketClientProtocol
 
@@ -11,7 +11,12 @@ from twisted.internet import reactor
 class TestAgent(unittest.TestCase):
 
     def setUp(self):
+        self.pumper = create_pumper()
         self.reactor = MemoryReactorClockResolver()
+        return self.pumper.start()
+
+    def tearDown(self):
+        return self.pumper.stop()
 
     @inlineCallbacks
     def test_echo_server(self):
@@ -20,7 +25,7 @@ class TestAgent(unittest.TestCase):
             def onMessage(self, msg, is_binary):
                 self.sendMessage(msg)
 
-        agent = create_memory_agent(self.reactor, EchoServer)
+        agent = create_memory_agent(self.reactor, self.pumper, EchoServer)
         proto = yield agent.open("ws://localhost:1234/ws", dict())
 
         messages = []
@@ -29,7 +34,6 @@ class TestAgent(unittest.TestCase):
         proto.on("message", got)
 
         proto.sendMessage(b"hello")
-        agent.flush()
 
         if True:
             # clean close
@@ -37,6 +41,5 @@ class TestAgent(unittest.TestCase):
         else:
             # unclean close
             proto.transport.loseConnection()
-        agent.flush()
         yield proto.is_closed
         self.assertEqual([b"hello"], messages)
