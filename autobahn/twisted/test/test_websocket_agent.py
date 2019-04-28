@@ -1,11 +1,8 @@
 
 from twisted.trial import unittest
-from twisted.internet.defer import inlineCallbacks, Deferred
+from twisted.internet.defer import inlineCallbacks
 from autobahn.twisted.testing import create_memory_agent, MemoryReactorClockResolver, create_pumper
 from autobahn.twisted.websocket import WebSocketServerProtocol
-from autobahn.twisted.websocket import WebSocketClientProtocol
-
-from twisted.internet import reactor
 
 
 class TestAgent(unittest.TestCase):
@@ -29,6 +26,7 @@ class TestAgent(unittest.TestCase):
         proto = yield agent.open("ws://localhost:1234/ws", dict())
 
         messages = []
+
         def got(msg, is_binary):
             messages.append(msg)
         proto.on("message", got)

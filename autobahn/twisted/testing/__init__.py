@@ -26,7 +26,7 @@
 
 from __future__ import absolute_import
 
-from twisted.internet.defer import inlineCallbacks, Deferred
+from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address
 from twisted.internet._resolver import HostResolution  # FIXME
 from twisted.internet.interfaces import ISSLTransport, IReactorPluggableNameResolver, IHostnameResolver
@@ -39,7 +39,6 @@ from autobahn.websocket.interfaces import IWebSocketClientAgent
 from autobahn.twisted.websocket import _TwistedWebSocketClientAgent
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketServerFactory
-from autobahn.twisted.websocket import WebSocketClientProtocol
 
 
 __all__ = (
