@@ -48,3 +48,30 @@ class TestAgent(unittest.TestCase):
             proto.transport.loseConnection()
         yield proto.is_closed
         self.assertEqual([b"hello"], messages)
+
+    @inlineCallbacks
+    def test_secure_echo_server(self):
+
+        class EchoServer(WebSocketServerProtocol):
+            def onMessage(self, msg, is_binary):
+                self.sendMessage(msg)
+
+        agent = create_memory_agent(self.reactor, self.pumper, EchoServer)
+        proto = yield agent.open(u"wss://localhost:1234/ws", dict())
+
+        messages = []
+
+        def got(msg, is_binary):
+            messages.append(msg)
+        proto.on("message", got)
+
+        proto.sendMessage(b"hello")
+
+        if True:
+            # clean close
+            proto.sendClose()
+        else:
+            # unclean close
+            proto.transport.loseConnection()
+        yield proto.is_closed
+        self.assertEqual([b"hello"], messages)
