@@ -30,7 +30,7 @@ from __future__ import absolute_import
 # that, it was IResolverSimple only.
 
 try:
-    from twisted.internet.interfaces import  IHostnameResolver
+    from twisted.internet.interfaces import IHostnameResolver
 except ImportError:
     raise ImportError(
         "Twisted 17.1.0 or later required for autobahn.twisted.testing"
