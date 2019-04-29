@@ -26,10 +26,20 @@
 
 from __future__ import absolute_import
 
+# IHostnameResolver et al. were added in Twisted 17.1.0 .. before
+# that, it was IResolverSimple only.
+
+try:
+    from twisted.internet.interfaces import  IHostnameResolver
+except ImportError:
+    raise ImportError(
+        "Twisted 17.1.0 or later required for autobahn.twisted.testing"
+    )
+
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address
-from twisted.internet._resolver import HostResolution  # FIXME
-from twisted.internet.interfaces import ISSLTransport, IReactorPluggableNameResolver, IHostnameResolver
+from twisted.internet._resolver import HostResolution  # FIXME?
+from twisted.internet.interfaces import ISSLTransport, IReactorPluggableNameResolver
 from twisted.test.proto_helpers import MemoryReactorClock
 from twisted.test import iosim
 
