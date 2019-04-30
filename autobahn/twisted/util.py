@@ -120,10 +120,10 @@ def transport_channel_id(transport, is_server, channel_id_type):
             tls_finished_msg = transport._tlsConnection.get_finished()
 
         if tls_finished_msg is None:
+            # this can occur if we made a successful connection (in a
+            # TCP sense) but something failed with the TLS handshake
+            # (e.g. invalid certificate)
             return None
-            raise RuntimeError(
-                "A TLS connection was attempted, but no Finished message found"
-            )
 
         m = hashlib.sha256()
         m.update(tls_finished_msg)
