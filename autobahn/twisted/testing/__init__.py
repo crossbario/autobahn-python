@@ -38,7 +38,7 @@ except ImportError:
 
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address
-from twisted.internet._resolver import HostResolution  # FIXME?
+from twisted.internet._resolver import HostResolution  # "internal" class, but it's simple
 from twisted.internet.interfaces import ISSLTransport, IReactorPluggableNameResolver
 from twisted.test.proto_helpers import MemoryReactorClock
 from twisted.test import iosim
@@ -59,7 +59,7 @@ __all__ = (
 
 
 @implementer(IHostnameResolver)
-class _LeetResolver(object):
+class _StaticTestResolver(object):
     def resolveHostName(self, receiver, hostName, portNumber=0):
         """
         Implement IHostnameResolver which always returns 127.0.0.1:31337
@@ -73,7 +73,7 @@ class _LeetResolver(object):
 
 
 @implementer(IReactorPluggableNameResolver)
-class _Resolver(object):
+class _TestNameResolver(object):
     """
     A test version of IReactorPluggableNameResolver
     """
@@ -83,7 +83,7 @@ class _Resolver(object):
     @property
     def nameResolver(self):
         if self._resolver is None:
-            self._resolver = _LeetResolver()
+            self._resolver = _StaticTestResolver()
         return self._resolver
 
     def installNameResolver(self, resolver):
@@ -92,16 +92,28 @@ class _Resolver(object):
         return old
 
 
-class MemoryReactorClockResolver(MemoryReactorClock, _Resolver):
+class MemoryReactorClockResolver(MemoryReactorClock, _TestNameResolver):
     """
-    Are we **inheriting enough** yet??
+    Combine MemoryReactor, Clock and an IReactorPluggableNameResolver
+    together.
     """
     pass
 
 
 class _TwistedWebMemoryAgent(IWebSocketClientAgent):
     """
-    A testing agent.
+    A testing agent which will hook up an instance of
+    `server_protocol` for every client that is created via the `open`
+    API call.
+
+    :param reactor: the reactor to use for tests (usually an instance
+        of MemoryReactorClockResolver)
+
+    :param pumper: an implementation IPumper (e.g. as returned by
+        `create_pumper`)
+
+    :param server_protocol: the server-side WebSocket protocol class
+        to instantiate (e.g. a subclass of `WebSocketServerProtocol`
     """
 
     def __init__(self, reactor, pumper, server_protocol):
@@ -118,9 +130,14 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         """
         Implement IWebSocketClientAgent with in-memory transports.
 
-        To 'see' data on the other side, `.flush()` must be called
-        after data has been sent (e.g. after a sendMessage() call for
-        example).
+        :param transport_config: a string starting with 'wss://' or
+            'ws://'
+
+        :param options: a dict containing options
+
+        :param protocol_class: the client protocol class to
+            instantiate (or `None` for defaults, which is to use
+            `WebSocketClientProtocol`)
         """
         is_secure = transport_config.startswith("wss://")
 
@@ -199,6 +216,11 @@ class _Kalamazoo(object):
         self._pumps.add(p)
 
     def start(self):
+        """
+        Begin triggering I/O in all IOPump instances we have. We will keep
+        periodically 'pumping' our IOPumps until `.stop()` is
+        called. Call from `setUp()` for example.
+        """
         if self._pumping:
             return
         self._pumping = True
@@ -208,7 +230,7 @@ class _Kalamazoo(object):
         """
         :returns: a Deferred that fires when we have stopped pump()-ing
 
-        Call from tearDown, for example.
+        Call from `tearDown()`, for example.
         """
         if self._pumping or len(self._waiting_for_stop):
             d = Deferred()
@@ -261,6 +283,8 @@ def create_memory_agent(reactor, pumper, server_protocol):
     and then exchange data between client and server using purely
     in-memory buffers.
     """
+    # Note, we currently don't actually do any "resource traversing"
+    # and basically accept any path at all to our websocket resource
     if server_protocol is None:
         server_protocol = WebSocketServerProtocol
     return _TwistedWebMemoryAgent(reactor, pumper, server_protocol)
