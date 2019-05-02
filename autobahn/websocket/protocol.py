@@ -3483,7 +3483,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         self.log.debug("failing proxy connect ('{reason}')", reason=reason)
         self.dropConnection(abort=True)
 
-    def _fixme_startHandshake(self):
+    def startHandshake(self):
         """
         Start WebSocket opening handshake.
         """
@@ -3526,24 +3526,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
             return None
         txaio.add_callbacks(options_d, got_options, options_failed)
         return options_d
-
-    def startHandshake(self):
-        """
-        Start WebSocket opening handshake.
-        """
-        request_options = ConnectingRequest(
-            # required (no defaults):
-            host=self.factory.host,
-            port=self.factory.port,
-            resource=self.factory.resource,
-            # optional (useful defaults):
-            headers=self.factory.headers,  # might be None
-            useragent=self.factory.useragent,  # might be None
-            origin=self.factory.origin,  # might be None
-            protocols=self.factory.protocols,  # might be None
-        )
-        self._actuallyStartHandshake(request_options)
-        return request_options
 
     def _actuallyStartHandshake(self, request_options):
         """

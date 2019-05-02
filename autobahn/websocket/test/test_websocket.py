@@ -40,7 +40,7 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.twisted.websocket import WebSocketClientProtocol
     from autobahn.twisted.websocket import WebSocketClientFactory
     from autobahn.websocket.compress_deflate import PerMessageDeflate
-    # from autobahn.test import FakeTransport
+    from autobahn.test import FakeTransport
 
     from mock import MagicMock, patch
     from txaio.testutil import replace_loop
@@ -65,8 +65,7 @@ if os.environ.get('USE_TWISTED', False):
         factory.protocol = WebSocketClientProtocol
         factory.doStart()
         proto = factory.buildProtocol(IPv4Address('TCP', '127.0.0.9', 65534))
-        # proto.transport = FakeTransport()
-        proto.transport = MagicMock()
+        proto.transport = FakeTransport()
         proto.connectionMade()
         proto.data = mock_handshake_server
         proto.processHandshake()
@@ -133,8 +132,7 @@ if os.environ.get('USE_TWISTED', False):
             self.factory.doStart()
 
             self.proto = self.factory.buildProtocol(IPv4Address('TCP', '127.0.0.1', 65534))
-            # self.transport = FakeTransport()
-            self.transport = MagicMock()
+            self.transport = FakeTransport()
             self.proto.transport = self.transport
             self.proto.connectionMade()
 
@@ -186,10 +184,7 @@ if os.environ.get('USE_TWISTED', False):
                 reactor.advance(self.proto.closeHandshakeTimeout + 1)
 
                 # we should have called abortConnection
-                # self.assertTrue(self.proto.transport.abort_called())
-                self.assertEqual("call.abortConnection()", str(self.proto.transport.method_calls[-1]))
-                self.assertTrue(self.proto.transport.abortConnection.called)
-
+                self.assertTrue(self.proto.transport.abort_called())
                 # ...too "internal" for an assert?
                 self.assertEqual(self.proto.state, WebSocketServerProtocol.STATE_CLOSED)
 
