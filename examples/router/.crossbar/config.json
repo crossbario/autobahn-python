@@ -206,6 +206,13 @@
                             "certificate": "server.crt"
                         }
                     }
+                },
+                {
+                    "type": "websocket",
+                    "endpoint": {
+                        "type": "unix",
+                        "path": "unix_socket"
+                    }
                 }
             ],
             "components": [

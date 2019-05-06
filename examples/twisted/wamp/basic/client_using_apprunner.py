@@ -3,7 +3,7 @@ txaio.use_twisted()
 
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-from twisted.internet.endpoints import TCP4ClientEndpoint
+from twisted.internet.endpoints import TCP4ClientEndpoint, UNIXClientEndpoint
 from twisted.application.internet import ClientService
 
 from autobahn.wamp.types import ComponentConfig
@@ -63,15 +63,29 @@ if __name__ == '__main__':
 
     # create a WAMP session object. this is reused across multiple
     # reconnects (if automatically reconnected)
-    session = MyAppSession(ComponentConfig(u'realm1', {}))
+    session = MyAppSession(ComponentConfig(u'crossbardemo', {}))
 
     # use WAMP-over-RawSocket
-    runner = ApplicationRunner(u'rs://localhost:8080', u'realm1')
+    # runner = ApplicationRunner(u'rs://localhost:8080', u'crossbardemo')
+
+    # alternatively, use WAMP-over-Unix-socket
+    runner = ApplicationRunner(
+        u'ws://localhost:8080',
+        u'crossbardemo',
+    )
 
     # alternatively, use WAMP-over-WebSocket plain (standalone, not hooked in under Twisted Web)
-    #runner = ApplicationRunner(u'ws://localhost:8080/ws', u'realm1')
+    #runner = ApplicationRunner(u'ws://localhost:8080/ws', u'crossbardemo')
 
     # alternatively, use WAMP-over-WebSocket running under Twisted Web (as a web resource)
-    #runner = ApplicationRunner(u'ws://localhost:8080/twws', u'realm1')
+    # runner = ApplicationRunner(u'ws://localhost:8080/twws', u'crossbardemo')
 
-    runner.run(session, auto_reconnect=True)
+    runner.run(
+        session,
+        auto_reconnect=True,
+        endpoint=UNIXClientEndpoint(
+            reactor,
+            "examples/router/.crossbar/unix_socket",
+        )
+
+    )
