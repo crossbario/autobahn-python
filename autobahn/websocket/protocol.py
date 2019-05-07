@@ -51,6 +51,7 @@ from autobahn.websocket.types import ConnectingRequest
 
 from autobahn.util import Stopwatch, newid, wildcards2patterns, encode_truncate
 from autobahn.util import _LazyHexFormatter
+from autobahn.util import ObservableMixin
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, create_xor_masker
 from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
@@ -358,7 +359,7 @@ class Timings(object):
         return pformat(self._timings)
 
 
-class WebSocketProtocol(object):
+class WebSocketProtocol(ObservableMixin):
     """
     Protocol base class for WebSocket.
 
@@ -549,6 +550,12 @@ class WebSocketProtocol(object):
     def __init__(self):
         #: a Future/Deferred that fires when we hit STATE_CLOSED
         self.is_closed = txaio.create_future()
+        self.is_open = txaio.create_future()
+        # XXX should we have open/close here too, or do you HAVE to use is_closed future?
+        # XXX what about when_open() and when_closed() as well/instead?
+        self.set_valid_events([
+            "message",  # like onMessage (takes: payload, is_binary=)
+        ])
 
     def onOpen(self):
         """
@@ -627,6 +634,18 @@ class WebSocketProtocol(object):
             if self.trackedTimings:
                 self.trackedTimings.track("onMessage")
             self._onMessage(payload, self.message_is_binary)
+
+            # notify any listeners about this message
+
+            f = self.fire("message", payload, is_binary=self.message_is_binary)
+
+            def error(f):
+                self.log.error(
+                    "Firing signal 'message' failed: {fail}",
+                    fail=f,
+                )
+                # all we can really do here is log; user code error
+            txaio.add_callbacks(f, None, error)
 
         self.message_data = None
 
@@ -1109,6 +1128,7 @@ class WebSocketProtocol(object):
                 self._onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
             else:
                 self._onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
+            # XXX could self.fire("close", ...) here if we want?
 
     def logRxOctets(self, data):
         """
@@ -3011,6 +3031,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
             self.trackedTimings.track("onOpen")
         self._onOpen()
 
+        txaio.resolve(self.is_open, None)
+
         # process rest, if any
         #
         if len(self.data) > 0:
@@ -3814,6 +3836,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 if self.trackedTimings:
                     self.trackedTimings.track("onOpen")
                 self._onOpen()
+
+            txaio.resolve(self.is_open, None)
 
             # process rest, if any
             #

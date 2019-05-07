@@ -27,6 +27,7 @@
 from __future__ import absolute_import
 
 from base64 import b64encode, b64decode
+import six
 
 from zope.interface import implementer
 
@@ -34,10 +35,12 @@ import txaio
 txaio.use_twisted()
 
 import twisted.internet.protocol
+from twisted.internet import endpoints
 from twisted.internet.interfaces import ITransport, ISSLTransport
 
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
+from twisted.internet.defer import Deferred
 
 from autobahn.util import public
 from autobahn.util import _is_tls_error, _maybe_tls_reason
@@ -45,6 +48,7 @@ from autobahn.wamp import websocket
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny, \
     TransportDetails
 from autobahn.websocket import protocol
+from autobahn.websocket.interfaces import IWebSocketClientAgent
 from autobahn.twisted.util import peer2str, transport_channel_id
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
@@ -54,6 +58,8 @@ from autobahn.websocket.compress import PerMessageDeflateOffer, \
 
 
 __all__ = (
+    'create_client_agent',
+
     'WebSocketAdapterProtocol',
     'WebSocketServerProtocol',
     'WebSocketClientProtocol',
@@ -75,6 +81,154 @@ __all__ = (
     'WampWebSocketClientProtocol',
     'WampWebSocketClientFactory',
 )
+
+
+def create_client_agent(reactor):
+    """
+    :returns: an instance implementing IWebSocketClientAgent
+    """
+    return _TwistedWebSocketClientAgent(reactor)
+
+
+def check_transport_config(transport_config):
+    """
+    raises a ValueError if `transport_config` is invalid
+    """
+    # XXX move me to "autobahn.websocket.util"
+    if not isinstance(transport_config, six.text_type):
+        raise ValueError(
+            "'transport_config' must be a string, found {}".format(type(transport_config))
+        )
+    # XXX also accept everything Crossbar has in client transport configs? e.g like:
+    # { "type": "websocket", "endpoint": {"type": "tcp", "host": "example.com", ...}}
+    # XXX what about TLS options? (the above point would address that too)
+    if not transport_config.startswith("ws://") and \
+       not transport_config.startswith("wss://"):
+        raise ValueError(
+            "'transport_config' must start with 'ws://' or 'wss://'"
+        )
+    return None
+
+
+def check_client_options(options):
+    """
+    raises a ValueError if `options` is invalid
+    """
+    # XXX move me to "autobahn.websocket.util"
+    if not isinstance(options, dict):
+        raise ValueError(
+            "'options' must be a dict"
+        )
+
+    # anything that WebSocketClientFactory accepts (at least)
+    valid_keys = [
+        "origin",
+        "protocols",
+        "useragent",
+        "headers",
+        "proxy",
+    ]
+    for actual_k in options.keys():
+        if actual_k not in valid_keys:
+            raise ValueError(
+                "'options' may not contain '{}'".format(actual_k)
+            )
+
+
+def _endpoint_from_config(reactor, factory, transport_config, options):
+    # XXX might want some Crossbar code here? e.g. if we allow
+    # "transport_config" to be a dict etc.
+
+    # ... passing in the Factory is weird, but that's what parses all
+    # the options and the URL currently
+
+    if factory.isSecure:
+        # create default client SSL context factory when none given
+        from twisted.internet import ssl
+        context_factory = ssl.optionsForClientTLS(factory.host)
+
+    if factory.proxy is not None:
+        factory.contextFactory = context_factory
+        endpoint = endpoints.HostnameEndpoint(
+            reactor,
+            factory.proxy[u'host'],
+            factory.proxy[u'port'],
+            # timeout,  option?
+        )
+    else:
+        if factory.isSecure:
+            from twisted.internet import ssl
+            endpoint = endpoints.SSL4ClientEndpoint(
+                reactor,
+                factory.host,
+                factory.port,
+                context_factory,
+                # timeout,  option?
+            )
+        else:
+            endpoint = endpoints.HostnameEndpoint(  # XXX right? not TCP4ClientEndpoint
+                reactor,
+                factory.host,
+                factory.port,
+                # timeout,  option?
+                # attemptDelay,  option?
+            )
+    return endpoint
+
+
+class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
+    """
+    This agent creates connections using Twisted
+    """
+
+    def __init__(self, reactor):
+        self._reactor = reactor
+
+    def open(self, transport_config, options, protocol_class=None):
+        """
+        Open a new connection.
+
+        :param dict transport_config: valid transport configuration
+
+        :param dict options: additional options for the factory
+
+        :param protocol_class: a callable that returns an instance of
+            the protocol (WebSocketClientProtocol if the default None
+            is passed in)
+
+        :returns: a Deferred that fires with an instance of
+            `protocol_class` (or WebSocketClientProtocol by default)
+            that has successfully shaken hands (completed the
+            handshake).
+        """
+        check_transport_config(transport_config)
+        check_client_options(options)
+
+        factory = WebSocketClientFactory(
+            url=transport_config,
+            reactor=self._reactor,
+            **options
+        )
+        factory.protocol = WebSocketClientProtocol if protocol_class is None else protocol_class
+        # XXX might want "contextFactory" for TLS ...? (or e.g. CA etc options?)
+
+        endpoint = _endpoint_from_config(self._reactor, factory, transport_config, options)
+
+        rtn_d = Deferred()
+        proto_d = endpoint.connect(factory)
+
+        def failed(f):
+            rtn_d.errback(f)
+
+        def got_proto(proto):
+
+            def handshake_completed(arg):
+                rtn_d.callback(proto)
+                return arg
+            proto.is_open.addCallbacks(handshake_completed, failed)
+            return proto
+        proto_d.addCallbacks(got_proto, failed)
+        return rtn_d
 
 
 class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
