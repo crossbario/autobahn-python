@@ -361,10 +361,15 @@ class ApplicationRunner(object):
 
             if self.max_retries or self.initial_retry_delay or self.max_retry_delay or self.retry_delay_growth or self.retry_delay_jitter:
                 kwargs = {}
+
+                def _jitter():
+                    j = 1 if self.retry_delay_jitter is None else self.retry_delay_jitter
+                    return random.random() * j
+
                 for key, val in [('initialDelay', self.initial_retry_delay),
                                  ('maxDelay', self.max_retry_delay),
                                  ('factor', self.retry_delay_growth),
-                                 ('jitter', lambda: random.random() * self.retry_delay_jitter)]:
+                                 ('jitter', _jitter)]:
                     if val:
                         kwargs[key] = val
 
