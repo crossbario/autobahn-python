@@ -1056,3 +1056,34 @@ if os.environ.get('USE_TWISTED', False):
 
             session.add_authenticator(auth0)
             session.add_authenticator(auth1)
+
+        def test_inconsistent_authextra(self):
+            session = Session(mock.Mock())
+
+            class TestAuthenticator(IAuthenticator):
+
+                name = "test"
+
+                def on_challenge(self, session, challenge):
+                    raise NotImplemented
+
+                def on_welcome(self, authextra):
+                    raise NotImplemented
+
+            auth0 = TestAuthenticator()
+            auth0.authextra = {
+                "foo": "value0",
+                "bar": "value1",
+            }
+            auth0._args = {}
+
+            auth1 = TestAuthenticator()
+            auth1.authextra = {
+                "foo": "value1",
+            }
+            auth1._args = {}
+
+            session.add_authenticator(auth0)
+            with self.assertRaises(ValueError) as ctx:
+                session.add_authenticator(auth1)
+            self.assertIn("Inconsistent authextra", str(ctx.exception))
