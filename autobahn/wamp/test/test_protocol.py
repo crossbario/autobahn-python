@@ -39,10 +39,13 @@ if os.environ.get('USE_TWISTED', False):
 
     from autobahn import util
     from autobahn.twisted.wamp import ApplicationSession
+    from autobahn.twisted.wamp import Session
     from autobahn.wamp import message, role, serializer, types, uri, CloseDetails
     from autobahn.wamp.request import CallRequest
     from autobahn.wamp.exception import ApplicationError, NotAuthorized
     from autobahn.wamp.exception import InvalidUri, ProtocolError
+    from autobahn.wamp.auth import create_authenticator
+    from autobahn.wamp.interfaces import IAuthenticator
 
     if PY3:
         long = int
@@ -1003,10 +1006,6 @@ if os.environ.get('USE_TWISTED', False):
         #    with self.assertRaises(ApplicationError):
         #       yield self.handler.publish(u'de.myapp.topic1')
 
-    from autobahn.twisted.wamp import Session
-    from autobahn.wamp.auth import create_authenticator
-    from autobahn.wamp.interfaces import IAuthenticator
-
     class TestAuthenticator(unittest.TestCase):
 
         def test_inconsistent_authids(self):
@@ -1035,10 +1034,10 @@ if os.environ.get('USE_TWISTED', False):
                 name = "test"
 
                 def on_challenge(self, session, challenge):
-                    raise NotImplemented
+                    raise NotImplementedError
 
                 def on_welcome(self, authextra):
-                    raise NotImplemented
+                    raise NotImplementedError
 
             auth0 = TestAuthenticator()
             auth0.authextra = {
@@ -1065,10 +1064,10 @@ if os.environ.get('USE_TWISTED', False):
                 name = "test"
 
                 def on_challenge(self, session, challenge):
-                    raise NotImplemented
+                    raise NotImplementedError
 
                 def on_welcome(self, authextra):
-                    raise NotImplemented
+                    raise NotImplementedError
 
             auth0 = TestAuthenticator()
             auth0.authextra = {
