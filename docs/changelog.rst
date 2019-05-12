@@ -5,12 +5,24 @@
 Changelog
 =========
 
+19.5.1
+------
+
+* fix: authextra merging (#1191)
+* fix: set default retry_delay_jitter (#1190)
+* new: add rawsocket + twisted example (#1189)
+* new: WebSocket testing support, via Agent-style interface (#1186)
+* new: decorator for on_connectfailure
+* fix: delayed call leakage (#1152)
+* new: CLI client (#1150)
+* fix: set up TLS over proxy properly (#1149)
+* new: expose ser modules (#1148)
+* fix: base64 encodings, add hex encoding (#1146)
 * new: onConnecting callback (with TransportDetails and
   ConnectingRequest). **Note**: if you've implemented a pure
   `IWebSocketChannel` without inheriting from Autobahn base classes,
   you'll need to add an `onConnecting()` method that just does `return
   None`.
-
 
 19.3.3
 ------
