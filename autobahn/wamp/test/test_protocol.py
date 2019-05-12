@@ -39,10 +39,13 @@ if os.environ.get('USE_TWISTED', False):
 
     from autobahn import util
     from autobahn.twisted.wamp import ApplicationSession
+    from autobahn.twisted.wamp import Session
     from autobahn.wamp import message, role, serializer, types, uri, CloseDetails
     from autobahn.wamp.request import CallRequest
     from autobahn.wamp.exception import ApplicationError, NotAuthorized
     from autobahn.wamp.exception import InvalidUri, ProtocolError
+    from autobahn.wamp.auth import create_authenticator
+    from autobahn.wamp.interfaces import IAuthenticator
 
     if PY3:
         long = int
@@ -1002,3 +1005,84 @@ if os.environ.get('USE_TWISTED', False):
         # def test_publish3(self):
         #    with self.assertRaises(ApplicationError):
         #       yield self.handler.publish(u'de.myapp.topic1')
+
+    class TestAuthenticator(unittest.TestCase):
+
+        def test_inconsistent_authids(self):
+            session = Session(mock.Mock())
+            auth0 = create_authenticator(
+                "wampcra",
+                authid=u"alice",
+                secret=u"p4ssw0rd",
+            )
+            auth1 = create_authenticator(
+                "wampcra",
+                authid=u"bob",
+                secret=u"password42",
+            )
+
+            session.add_authenticator(auth0)
+            with self.assertRaises(ValueError) as ctx:
+                session.add_authenticator(auth1)
+            assert "authids" in str(ctx.exception)
+
+        def test_two_authenticators(self):
+            session = Session(mock.Mock())
+
+            class TestAuthenticator(IAuthenticator):
+
+                name = "test"
+
+                def on_challenge(self, session, challenge):
+                    raise NotImplementedError
+
+                def on_welcome(self, authextra):
+                    raise NotImplementedError
+
+            auth0 = TestAuthenticator()
+            auth0.authextra = {
+                "foo": "value0",
+                "bar": "value1",
+            }
+            auth0._args = {}
+
+            auth1 = TestAuthenticator()
+            auth1.authextra = {
+                "bar": "value1",
+                "qux": "what",
+            }
+            auth1._args = {}
+
+            session.add_authenticator(auth0)
+            session.add_authenticator(auth1)
+
+        def test_inconsistent_authextra(self):
+            session = Session(mock.Mock())
+
+            class TestAuthenticator(IAuthenticator):
+
+                name = "test"
+
+                def on_challenge(self, session, challenge):
+                    raise NotImplementedError
+
+                def on_welcome(self, authextra):
+                    raise NotImplementedError
+
+            auth0 = TestAuthenticator()
+            auth0.authextra = {
+                "foo": "value0",
+                "bar": "value1",
+            }
+            auth0._args = {}
+
+            auth1 = TestAuthenticator()
+            auth1.authextra = {
+                "foo": "value1",
+            }
+            auth1._args = {}
+
+            session.add_authenticator(auth0)
+            with self.assertRaises(ValueError) as ctx:
+                session.add_authenticator(auth1)
+            self.assertIn("Inconsistent authextra", str(ctx.exception))

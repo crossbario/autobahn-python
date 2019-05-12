@@ -1739,6 +1739,9 @@ class _SessionShim(ApplicationSession):
             # [None] or [None, 'some_authid']
             authid = [x._args.get('authid', None) for x in self._authenticators.values()][-1]
             authrole = [x._args.get('authrole', None) for x in self._authenticators.values()][-1]
+            # we need a "merged" authextra here because we can send a
+            # list of acceptable authmethods, but only a single
+            # authextra dict
             authextra = self._merged_authextra()
             self.join(
                 self.config.realm,
@@ -1829,15 +1832,40 @@ class _SessionShim(ApplicationSession):
         self._authenticators[authenticator.name] = authenticator
 
     def _merged_authextra(self):
+        """
+        internal helper
+
+        :returns: a single 'authextra' dict, consisting of all keys
+            from any authenticator's authextra.
+
+        Note that when the authenticator was added, we already checked
+        that any keys it does contain has the same value as any
+        existing authextra.
+        """
         authextras = [a.authextra for a in self._authenticators.values()]
-        # for all existing _authenticators, we've already checked that
-        # if they contain a key it has the same value as all others.
-        return {
-            k: v
-            for k, v in zip(
-                reduce(lambda x, y: x | set(y.keys()), authextras, set()),
-                reduce(lambda x, y: x | set(y.values()), authextras, set())
+
+        def extract_keys(x, y):
+            return x | set(y.keys())
+
+        unique_keys = reduce(extract_keys, authextras, set())
+
+        def first_value_for(k):
+            """
+            for anything already in self._authenticators, we checked
+            that it has the same value for any keys in its authextra --
+            so here we just extract the first one
+            """
+            for authextra in authextras:
+                if k in authextra:
+                    return authextra[k]
+            # "can't" happen
+            raise ValueError(
+                "No values for '{}'".format(k)
             )
+
+        return {
+            k: first_value_for(k)
+            for k in unique_keys
         }
 
     # these are the actual "new API" methods (i.e. snake_case)
