@@ -256,6 +256,7 @@ setup(
         'autobahn.rawsocket.test',
         'autobahn.asyncio',
         'autobahn.twisted',
+        'autobahn.twisted.testing',
         'twisted.plugins',
         'autobahn.nvx',
         'autobahn.nvx.test',
