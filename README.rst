@@ -62,7 +62,7 @@ Autobahn contains **NVX**, a network accelerator library that provides SIMD acce
 WAMP Serializers
 ~~~~~~~~~~~~~~~~
 
-**Above is for avanced uses. In general we recommend to use CBOR where you can,
+**Above is for advanced uses. In general we recommend to use CBOR where you can,
 and JSON (from the standard library) otherwise.**
 
 -----
