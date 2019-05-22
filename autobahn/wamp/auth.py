@@ -42,6 +42,7 @@ from autobahn.wamp.interfaces import IAuthenticator
 
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
 
 # if we don't have argon2/passlib (see "authentication" extra) then
 # you don't get AuthScram and variants
@@ -220,7 +221,7 @@ def _hash_pbkdf2_secret(password, salt, iterations):
     """
     Internal helper for SCRAM authentication
     """
-    return pbkdf2(password, salt, iterations, keylen=32, hashfunc=hashlib.sha256)
+    return pbkdf2(password, salt, iterations, keylen=32)
 
 
 class AuthScram(object):
@@ -487,8 +488,8 @@ def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
     :type iterations: int
     :param keylen: The length of the cryptographic key to derive.
     :type keylen: int
-    :param hashfunc: Unused (formerly specified hash function; it's SHA256)
-    :type hashfunc: callable
+    :param hashfunc: Name of the hash algorithm to use
+    :type hashfunc: str
 
     :returns: The derived cryptographic key.
     :rtype: bytes
@@ -502,17 +503,21 @@ def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
     # justification: WAMP-CRA uses SHA256 and users shouldn't have any
     # other reason to call this particular pbkdf2 function (arguably,
     # it should be private maybe?)
-    if hashfunc is not None:
+    if hashfunc is None:
+        hashfunc = 'sha256'
+    if hashfunc is callable:
+        # used to take stuff from hashlib; translate?
         raise ValueError(
-            "Setting the hash function for pbkdf2 is not supported "
-            "after version 19.5.1 (always uses SHA256)"
+            "pbkdf2 now takes the name of a hash algorithm for 'hashfunc='"
         )
 
+    backend = default_backend()
     kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
+        algorithm=getattr(hashes, hashfunc.upper()),
         length=keylen,
         salt=salt,
         iterations=iterations,
+        backend=backend,
     )
     return kdf.derive(data)
 

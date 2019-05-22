@@ -33,7 +33,6 @@ import six
 import re
 import json
 import binascii
-import hashlib
 from mock import Mock
 
 from autobahn.wamp import auth
@@ -76,7 +75,7 @@ class TestWampAuthHelpers(unittest.TestCase):
 
     def test_pbkdf2(self):
         for tv in PBKDF2_TEST_VECTORS:
-            result = auth.pbkdf2(tv[0], tv[1], tv[2], tv[3], hashlib.sha1)
+            result = auth.pbkdf2(tv[0], tv[1], tv[2], tv[3], 'sha1')
             self.assertEqual(type(result), bytes)
             self.assertEqual(binascii.hexlify(result).decode('ascii'), tv[4])
 
