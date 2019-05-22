@@ -25,6 +25,8 @@
 ###############################################################################
 
 from __future__ import absolute_import
+from __future__ import print_function
+
 
 # this module is available as the 'wamp' command-line tool or as
 # 'python -m autobahn'
@@ -42,13 +44,16 @@ except ImportError:
     print("  pip install autobahn[twisted]")
     sys.exit(1)
 
-from twisted.internet.defer import Deferred, ensureDeferred
+from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.internet.task import react
 from twisted.internet.protocol import ProcessProtocol
 
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.types import PublishOptions
 from autobahn.wamp.types import SubscribeOptions
+
+import txaio
+txaio.use_twisted()
 
 
 # XXX other ideas to get 'connection config':
@@ -236,7 +241,8 @@ def _create_component(options):
     )
 
 
-async def do_call(reactor, session, options):
+@inlineCallbacks
+def do_call(reactor, session, options):
     call_args = list(options.call_args)
     call_kwargs = dict()
     if options.keyword is not None:
@@ -245,26 +251,28 @@ async def do_call(reactor, session, options):
             for k, v in options.keyword
         }
 
-    results = await session.call(options.uri, *call_args, **call_kwargs)
+    results = yield session.call(options.uri, *call_args, **call_kwargs)
     print("result: {}".format(results))
 
 
-async def do_publish(reactor, session, options):
+@inlineCallbacks
+def do_publish(reactor, session, options):
     publish_args = list(options.publish_args)
-    publish_kwargs = {
+    publish_kwargs = {} if options.keyword is None else {
         k: v
         for k, v in options.keyword
     }
 
-    await session.publish(
+    yield session.publish(
         options.uri,
         *publish_args,
         options=PublishOptions(acknowledge=True),
-        **publish_kwargs,
+        **publish_kwargs
     )
 
 
-async def do_register(reactor, session, options):
+@inlineCallbacks
+def do_register(reactor, session, options):
     """
     run a command-line upon an RPC call
     """
@@ -272,7 +280,8 @@ async def do_register(reactor, session, options):
     all_done = Deferred()
     countdown = [options.times]
 
-    async def called(*args, **kw):
+    @inlineCallbacks
+    def called(*args, **kw):
         print("called: args={}, kwargs={}".format(args, kw), file=sys.stderr)
         env = copy(os.environ)
         env['WAMP_ARGS'] = ' '.join(args)
@@ -298,7 +307,7 @@ async def do_register(reactor, session, options):
         reactor.spawnProcess(
             proto, exe, args, env=env, path="."
         )
-        code = await done
+        code = yield done
 
         if code != 0:
             print("Failed with exit-code {}".format(code))
@@ -307,11 +316,12 @@ async def do_register(reactor, session, options):
             if countdown[0] <= 0:
                 reactor.callLater(0, all_done.callback, None)
 
-    await session.register(called, options.uri)
-    await all_done
+    yield session.register(called, options.uri)
+    yield all_done
 
 
-async def do_subscribe(reactor, session, options):
+@inlineCallbacks
+def do_subscribe(reactor, session, options):
     """
     print events (one line of JSON per event)
     """
@@ -319,7 +329,8 @@ async def do_subscribe(reactor, session, options):
     all_done = Deferred()
     countdown = [options.times]
 
-    async def published(*args, **kw):
+    @inlineCallbacks
+    def published(*args, **kw):
         print(
             json.dumps({
                 "args": args,
@@ -331,8 +342,8 @@ async def do_subscribe(reactor, session, options):
             if countdown[0] <= 0:
                 reactor.callLater(0, all_done.callback, None)
 
-    await session.subscribe(published, options.uri, options=SubscribeOptions(match=options.match))
-    await all_done
+    yield session.subscribe(published, options.uri, options=SubscribeOptions(match=options.match))
+    yield all_done
 
 
 def _main():
@@ -340,14 +351,11 @@ def _main():
     This is a magic name for `python -m autobahn`, and specified as
     our entry_point in setup.py
     """
-    react(
-        lambda reactor: ensureDeferred(
-            _real_main(reactor)
-        )
-    )
+    react(_real_main)
 
 
-async def _real_main(reactor):
+@inlineCallbacks
+def _real_main(reactor):
     """
     Sanity check options, create a connection and run our subcommand
     """
@@ -378,26 +386,27 @@ async def _real_main(reactor):
     exit_code = [0]
 
     @component.on_join
-    async def _(session, details):
+    @inlineCallbacks
+    def _(session, details):
         print("connected: authrole={} authmethod={}".format(details.authrole, details.authmethod), file=sys.stderr)
         try:
-            await command_fn(reactor, session, options)
+            yield command_fn(reactor, session, options)
         except ApplicationError as e:
             print("\n{}: {}\n".format(e.error, ''.join(e.args)))
             exit_code[0] = 5
-        await session.leave()
+        yield session.leave()
 
     failures = []
 
     @component.on_connectfailure
-    async def _(comp, fail):
+    def _(comp, fail):
         print("connect failure: {}".format(fail))
         failures.append(fail)
         if options.max_failures > 0 and len(failures) > options.max_failures:
             print("Too many failures ({}). Exiting".format(len(failures)))
             reactor.stop()
 
-    await component.start(reactor)
+    yield component.start(reactor)
     # sys.exit(exit_code[0])
 
 
