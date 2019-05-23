@@ -35,13 +35,14 @@ import binascii
 import hmac
 import hashlib
 import random
-from struct import Struct
-from operator import xor
-from itertools import starmap
 
 from autobahn.util import public
 from autobahn.util import xor as xor_array
 from autobahn.wamp.interfaces import IAuthenticator
+
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
 
 # if we don't have argon2/passlib (see "authentication" extra) then
 # you don't get AuthScram and variants
@@ -220,7 +221,7 @@ def _hash_pbkdf2_secret(password, salt, iterations):
     """
     Internal helper for SCRAM authentication
     """
-    return pbkdf2(password, salt, iterations, keylen=32, hashfunc=hashlib.sha256)
+    return pbkdf2(password, salt, iterations, keylen=32)
 
 
 class AuthScram(object):
@@ -471,52 +472,6 @@ def qrcode_from_totp(secret, label, issuer):
     return buffer.getvalue()
 
 
-#
-# The following code is adapted from the pbkdf2_bin() function
-# in here https://github.com/mitsuhiko/python-pbkdf2
-# Copyright 2011 by Armin Ronacher. Licensed under BSD license.
-# https://github.com/mitsuhiko/python-pbkdf2/blob/master/LICENSE
-#
-_pack_int = Struct('>I').pack
-
-if six.PY3:
-
-    def _pseudorandom(x, mac):
-        h = mac.copy()
-        h.update(x)
-        return h.digest()
-
-    def _pbkdf2(data, salt, iterations, keylen, hashfunc):
-        mac = hmac.new(data, None, hashfunc)
-        buf = []
-        for block in range(1, -(-keylen // mac.digest_size) + 1):
-            rv = u = _pseudorandom(salt + _pack_int(block), mac)
-            for i in range(iterations - 1):
-                u = _pseudorandom(u, mac)
-                rv = starmap(xor, zip(rv, u))
-            buf.extend(rv)
-        return bytes(buf)[:keylen]
-
-else:
-    from itertools import izip
-
-    def _pseudorandom(x, mac):
-        h = mac.copy()
-        h.update(x)
-        return map(ord, h.digest())
-
-    def _pbkdf2(data, salt, iterations, keylen, hashfunc):
-        mac = hmac.new(data, None, hashfunc)
-        buf = []
-        for block in range(1, -(-keylen // mac.digest_size) + 1):
-            rv = u = _pseudorandom(salt + _pack_int(block), mac)
-            for i in range(iterations - 1):
-                u = _pseudorandom(''.join(map(chr, u)), mac)
-                rv = starmap(xor, izip(rv, u))
-            buf.extend(rv)
-        return ''.join(map(chr, buf))[:keylen]
-
-
 @public
 def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
     """
@@ -533,17 +488,38 @@ def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
     :type iterations: int
     :param keylen: The length of the cryptographic key to derive.
     :type keylen: int
-    :param hashfunc: The hash function to use, e.g. ``hashlib.sha1``.
-    :type hashfunc: callable
+    :param hashfunc: Name of the hash algorithm to use
+    :type hashfunc: str
 
     :returns: The derived cryptographic key.
     :rtype: bytes
     """
-    assert(type(data) == bytes)
-    assert(type(salt) == bytes)
-    assert(type(iterations) in six.integer_types)
-    assert(type(keylen) in six.integer_types)
-    return _pbkdf2(data, salt, iterations, keylen, hashfunc or hashlib.sha256)
+    if not (type(data) == bytes) or \
+       not (type(salt) == bytes) or \
+       not (type(iterations) in six.integer_types) or \
+       not (type(keylen) in six.integer_types):
+        raise ValueError("Invalid argument types")
+
+    # justification: WAMP-CRA uses SHA256 and users shouldn't have any
+    # other reason to call this particular pbkdf2 function (arguably,
+    # it should be private maybe?)
+    if hashfunc is None:
+        hashfunc = 'sha256'
+    if hashfunc is callable:
+        # used to take stuff from hashlib; translate?
+        raise ValueError(
+            "pbkdf2 now takes the name of a hash algorithm for 'hashfunc='"
+        )
+
+    backend = default_backend()
+    kdf = PBKDF2HMAC(
+        algorithm=getattr(hashes, hashfunc.upper()),
+        length=keylen,
+        salt=salt,
+        iterations=iterations,
+        backend=backend,
+    )
+    return kdf.derive(data)
 
 
 @public
@@ -565,10 +541,14 @@ def derive_key(secret, salt, iterations=1000, keylen=32):
     :return: The derived key in Base64 encoding.
     :rtype: bytes
     """
-    assert(type(secret) in [six.text_type, six.binary_type])
-    assert(type(salt) in [six.text_type, six.binary_type])
-    assert(type(iterations) in six.integer_types)
-    assert(type(keylen) in six.integer_types)
+    if not (type(secret) in [six.text_type, six.binary_type]):
+        raise ValueError("'secret' must be bytes")
+    if not (type(salt) in [six.text_type, six.binary_type]):
+        raise ValueError("'salt' must be bytes")
+    if not (type(iterations) in six.integer_types):
+        raise ValueError("'iterations' must be an integer")
+    if not (type(keylen) in six.integer_types):
+        raise ValueError("'keylen' must be an integer")
     if type(secret) == six.text_type:
         secret = secret.encode('utf8')
     if type(salt) == six.text_type:
