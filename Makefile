@@ -93,6 +93,9 @@ test_twisted:
 	USE_TWISTED=1 trial autobahn
 	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_TWISTED=1 trial autobahn
 
+test_rng:
+	USE_TWISTED=1 trial autobahn.test.test_rng
+
 test_tx_serializer:
 	USE_TWISTED=1 trial autobahn.wamp.test.test_serializer
 
