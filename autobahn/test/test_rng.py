@@ -50,26 +50,26 @@ class TestEntropy(unittest.TestCase):
                     random.seed()
 
                     # random UUIDs
-                    v1 = uuid.uuid4()
+                    v1 = uuid.uuid4()  # noqa
 
                     # stdlib random
-                    v2 = random.random()
-                    v3 = random.getrandbits(32)
-                    v4 = random.randint(0, 9007199254740992)
-                    v5 = random.normalvariate(10, 100)
-                    v6 = random.choice(range(100))
+                    v2 = random.random()  # noqa
+                    v3 = random.getrandbits(32)  # noqa
+                    v4 = random.randint(0, 9007199254740992)  # noqa
+                    v5 = random.normalvariate(10, 100)  # noqa
+                    v6 = random.choice(range(100))  # noqa
 
                     # PyNaCl
-                    v7 = utils.random(public.Box.NONCE_SIZE)
+                    v7 = utils.random(public.Box.NONCE_SIZE)  # noqa
 
                     # Autobahn utils
-                    v8 = util.generate_token(4, 4)
-                    v9 = util.id()
-                    v10 = util.rid()
-                    v11 = util.newid()
+                    v8 = util.generate_token(4, 4)  # noqa
+                    v9 = util.id()  # noqa
+                    v10 = util.rid()  # noqa
+                    v11 = util.newid()  # noqa
 
                 # direct procfs access to PRNG
-                d = rng.read(1000)
+                d = rng.read(1000)  # noqa
 
                 # check available entropy
                 with open('/proc/sys/kernel/random/entropy_avail', 'r') as ent:
@@ -84,7 +84,7 @@ class TestEntropy(unittest.TestCase):
         for k in skeys:
             print('{}: {}'.format(k, res[k]))
 
-        self.assertTrue(skeys[0] > 20)
+        self.assertTrue(skeys[0] > 10)
 
     def test_depleting(self):
         res = {}
@@ -93,7 +93,7 @@ class TestEntropy(unittest.TestCase):
             for i in range(10000):
 
                 # direct procfs access to "real" RNG
-                d = rng.read(1000)
+                d = rng.read(1000)  # noqa
 
                 # check available entropy
                 with open('/proc/sys/kernel/random/entropy_avail', 'r') as ent:
