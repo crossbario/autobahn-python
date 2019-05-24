@@ -22,7 +22,7 @@ Another highly recommended reading is `The Reactive Manifesto <http://www.reacti
 
 .. epigraph::
 
-   Non-blocking means the ability to make continuous progress in order to for the application to be responsive at all times, even under failure and burst scenarios. For this all resources needed for a response—for example CPU, memory and network—must not be monopolized. As such it can enable both lower latency, higher throughput and better scalability.
+   Non-blocking means the ability to make continuous progress in order for the application to be responsive at all times, even under failure and burst scenarios. For this all resources needed for a response—for example CPU, memory and network—must not be monopolized. As such it can enable both lower latency, higher throughput and better scalability.
 
    -- `The Reactive Manifesto <http://www.reactivemanifesto.org>`_
 
