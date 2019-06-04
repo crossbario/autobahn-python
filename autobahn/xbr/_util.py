@@ -24,4 +24,10 @@
 #
 ###############################################################################
 
-__version__ = u'19.6.1'
+import click
+
+
+def hl(text, bold=True, color='yellow'):
+    if not isinstance(text, str):
+        text = '{}'.format(text)
+    return click.style(text, fg=color, bold=bold)

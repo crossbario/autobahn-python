@@ -146,11 +146,19 @@ if 'AUTOBAHN_USE_NVX' in os.environ:
     # should make the following be included)
     cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
 
+extras_require_xbr = [
+    'cbor2>=4.1.1',         # MIT license
+    'zlmdb>=18.12.1',       # MIT license
+    'twisted>=18.9.0',      # MIT license
+    'autobahn>=18.11.2',    # MIT license
+    'web3>=4.8.1',          # MIT license
+]
+
 # everything
 extras_require_all = extras_require_twisted + extras_require_asyncio + \
     extras_require_accelerate + extras_require_compress + \
     extras_require_serialization + extras_require_encryption + \
-    extras_require_scram + extras_require_nvx
+    extras_require_scram + extras_require_nvx + extras_require_xbr
 
 # development dependencies
 extras_require_dev = [
@@ -237,6 +245,7 @@ setup(
         'scram': extras_require_scram,
         'nvx': extras_require_nvx,
         'dev': extras_require_dev,
+        'xbr': extras_require_xbr,
     },
     tests_require=test_requirements,
     cmdclass={
@@ -260,8 +269,9 @@ setup(
         'twisted.plugins',
         'autobahn.nvx',
         'autobahn.nvx.test',
+        'autobahn.xbr',
     ],
-    package_data={'autobahn.asyncio': ['test/*']},
+    package_data={'autobahn.asyncio': ['test/*'], 'xbr': ['./xbr/contracts/*.json']},
     cffi_modules=cffi_modules,
 
     entry_points={
@@ -300,7 +310,7 @@ setup(
                  "Topic :: Software Development :: Libraries",
                  "Topic :: Software Development :: Libraries :: Python Modules",
                  "Topic :: Software Development :: Object Brokering"],
-    keywords='autobahn crossbar websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
+    keywords='autobahn crossbar websocket realtime rfc6455 wamp rpc pubsub twisted asyncio xbr data-markets blockchain ethereum'
 )
 
 
