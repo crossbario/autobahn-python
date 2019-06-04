@@ -5,6 +5,11 @@
 Changelog
 =========
 
+19.6.1
+------
+
+* new: XBR client library support (#1201)
+
 19.5.1
 ------
 
