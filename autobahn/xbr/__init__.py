@@ -102,7 +102,6 @@ _____________/_ __ \_____________
 
 
 __all__ = (
-    'version',
     'setProvider',
 
     'xbrtoken',
