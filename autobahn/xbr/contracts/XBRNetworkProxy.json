@@ -1,0 +1,584 @@
+{
+  "contractName": "XBRNetworkProxy",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "renounceMaintainer",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "addMaintainer",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "isMaintainer",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "MaintainerAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "MaintainerRemoved",
+      "type": "event"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "networkContract",
+          "type": "address"
+        }
+      ],
+      "name": "setNetworkContract",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x60806040526100163364010000000061001b810204565b6100f8565b61003360008264010000000061029661006a82021704565b604051600160a060020a038216907f1390a149489c82e9e2e89927bdb17ad1ea3f0cc314fce06c96369721d3afb8f090600090a250565b600160a060020a038116151561007f57600080fd5b61009282826401000000006100c1810204565b1561009c57600080fd5b600160a060020a0316600090815260209190915260409020805460ff19166001179055565b6000600160a060020a03821615156100d857600080fd5b50600160a060020a03166000908152602091909152604090205460ff1690565b610310806101076000396000f3fe608060405234801561001057600080fd5b5060043610610068577c01000000000000000000000000000000000000000000000000000000006000350463314db06b811461006d578063599b9348146100775780636b453c1f1461009d578063dd57366a146100c3575b600080fd5b6100756100fd565b005b6100756004803603602081101561008d57600080fd5b5035600160a060020a0316610108565b610075600480360360208110156100b357600080fd5b5035600160a060020a031661014b565b6100e9600480360360208110156100d957600080fd5b5035600160a060020a031661016b565b604080519115158252519081900360200190f35b61010633610183565b565b6101113361016b565b151561011c57600080fd5b6001805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0392909216919091179055565b6101543361016b565b151561015f57600080fd5b610168816101cb565b50565b600061017d818363ffffffff61021316565b92915050565b61019460008263ffffffff61024a16565b604051600160a060020a038216907fa7b36d52bea726c3aa90d876d0e52a1089a347b3e3408a03f08eae32f96fdbb490600090a250565b6101dc60008263ffffffff61029616565b604051600160a060020a038216907f1390a149489c82e9e2e89927bdb17ad1ea3f0cc314fce06c96369721d3afb8f090600090a250565b6000600160a060020a038216151561022a57600080fd5b50600160a060020a03166000908152602091909152604090205460ff1690565b600160a060020a038116151561025f57600080fd5b6102698282610213565b151561027457600080fd5b600160a060020a0316600090815260209190915260409020805460ff19169055565b600160a060020a03811615156102ab57600080fd5b6102b58282610213565b156102bf57600080fd5b600160a060020a0316600090815260209190915260409020805460ff1916600117905556fea165627a7a7230582073c1dc04ee71bafe4609e7baa52888f02f7b20b24f5af5c3da81b6d5a3dad0860029",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b5060043610610068577c01000000000000000000000000000000000000000000000000000000006000350463314db06b811461006d578063599b9348146100775780636b453c1f1461009d578063dd57366a146100c3575b600080fd5b6100756100fd565b005b6100756004803603602081101561008d57600080fd5b5035600160a060020a0316610108565b610075600480360360208110156100b357600080fd5b5035600160a060020a031661014b565b6100e9600480360360208110156100d957600080fd5b5035600160a060020a031661016b565b604080519115158252519081900360200190f35b61010633610183565b565b6101113361016b565b151561011c57600080fd5b6001805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0392909216919091179055565b6101543361016b565b151561015f57600080fd5b610168816101cb565b50565b600061017d818363ffffffff61021316565b92915050565b61019460008263ffffffff61024a16565b604051600160a060020a038216907fa7b36d52bea726c3aa90d876d0e52a1089a347b3e3408a03f08eae32f96fdbb490600090a250565b6101dc60008263ffffffff61029616565b604051600160a060020a038216907f1390a149489c82e9e2e89927bdb17ad1ea3f0cc314fce06c96369721d3afb8f090600090a250565b6000600160a060020a038216151561022a57600080fd5b50600160a060020a03166000908152602091909152604090205460ff1690565b600160a060020a038116151561025f57600080fd5b6102698282610213565b151561027457600080fd5b600160a060020a0316600090815260209190915260409020805460ff19169055565b600160a060020a03811615156102ab57600080fd5b6102b58282610213565b156102bf57600080fd5b600160a060020a0316600090815260209190915260409020805460ff1916600117905556fea165627a7a7230582073c1dc04ee71bafe4609e7baa52888f02f7b20b24f5af5c3da81b6d5a3dad0860029",
+  "sourceMap": "927:218:3:-;;;1837:26:1;1852:10;1837:14;;;;:26;:::i;:::-;927:218:3;;2778:131:1;2839:24;:11;2855:7;2839:15;;;;;;:24;:::i;:::-;2878;;-1:-1:-1;;;;;2878:24:1;;;;;;;;2778:131;:::o;259:181:6:-;-1:-1:-1;;;;;335:21:6;;;;327:30;;;;;;376:18;380:4;386:7;376:3;;;;:18;:::i;:::-;375:19;367:28;;;;;;-1:-1:-1;;;;;406:20:6;:11;:20;;;;;;;;;;;:27;;-1:-1:-1;;406:27:6;429:4;406:27;;;259:181::o;786:162::-;858:4;-1:-1:-1;;;;;882:21:6;;;;874:30;;;;;;-1:-1:-1;;;;;;921:20:6;:11;:20;;;;;;;;;;;;;;;786:162::o;927:218:3:-;;;;;;;",
+  "deployedSourceMap": "927:218:3:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;927:218:3;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;2688:84:1;;;:::i;:::-;;1016:127:3;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;1016:127:3;-1:-1:-1;;;;;1016:127:3;;:::i;2527:103:1:-;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;2527:103:1;-1:-1:-1;;;;;2527:103:1;;:::i;2262:115::-;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;2262:115:1;-1:-1:-1;;;;;2262:115:1;;:::i;:::-;;;;;;;;;;;;;;;;;;2688:84;2736:29;2754:10;2736:17;:29::i;:::-;2688:84::o;1016:127:3:-;2014:24:1;2027:10;2014:12;:24::i;:::-;2006:33;;;;;;;;1102:16:3;:34;;-1:-1:-1;;1102:34:3;-1:-1:-1;;;;;1102:34:3;;;;;;;;;;1016:127::o;2527:103:1:-;2014:24;2027:10;2014:12;:24::i;:::-;2006:33;;;;;;;;2600:23;2615:7;2600:14;:23::i;:::-;2527:103;:::o;2262:115::-;2323:4;2346:24;2323:4;2362:7;2346:24;:15;:24;:::i;:::-;2339:31;2262:115;-1:-1:-1;;2262:115:1:o;2915:139::-;2979:27;:11;2998:7;2979:27;:18;:27;:::i;:::-;3021:26;;-1:-1:-1;;;;;3021:26:1;;;;;;;;2915:139;:::o;2778:131::-;2839:24;:11;2855:7;2839:24;:15;:24;:::i;:::-;2878;;-1:-1:-1;;;;;2878:24:1;;;;;;;;2778:131;:::o;786:162:6:-;858:4;-1:-1:-1;;;;;882:21:6;;;;874:30;;;;;;-1:-1:-1;;;;;;921:20:6;:11;:20;;;;;;;;;;;;;;;786:162::o;514:184::-;-1:-1:-1;;;;;593:21:6;;;;585:30;;;;;;633:18;637:4;643:7;633:3;:18::i;:::-;625:27;;;;;;;;-1:-1:-1;;;;;663:20:6;686:5;663:20;;;;;;;;;;;:28;;-1:-1:-1;;663:28:6;;;514:184::o;259:181::-;-1:-1:-1;;;;;335:21:6;;;;327:30;;;;;;376:18;380:4;386:7;376:3;:18::i;:::-;375:19;367:28;;;;;;-1:-1:-1;;;;;406:20:6;:11;:20;;;;;;;;;;;:27;;-1:-1:-1;;406:27:6;429:4;406:27;;;259:181::o",
+  "source": "///////////////////////////////////////////////////////////////////////////////\n//\n//  Copyright (C) 2018 Crossbar.io Technologies GmbH and contributors.\n//\n//  Licensed under the Apache License, Version 2.0 (the \"License\");\n//  you may not use this file except in compliance with the License.\n//  You may obtain a copy of the License at\n//\n//      http://www.apache.org/licenses/LICENSE-2.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an \"AS IS\" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n//  See the License for the specific language governing permissions and\n//  limitations under the License.\n//\n///////////////////////////////////////////////////////////////////////////////\n\npragma solidity ^0.5.2;\n\nimport \"./XBRMaintained.sol\";\n\n\n/**\n * @title XBR Network root SC\n * @author The XBR Project\n */\ncontract XBRNetworkProxy is XBRMaintained {\n\n    address internal _networkContract;\n\n    function setNetworkContract (address networkContract) public onlyMaintainer {\n        _networkContract = networkContract;\n    }\n}\n",
+  "sourcePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/XBRNetworkProxy.sol",
+  "ast": {
+    "absolutePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/XBRNetworkProxy.sol",
+    "exportedSymbols": {
+      "XBRNetworkProxy": [
+        2131
+      ]
+    },
+    "id": 2132,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 2113,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".2"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "805:23:3"
+      },
+      {
+        "absolutePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/XBRMaintained.sol",
+        "file": "./XBRMaintained.sol",
+        "id": 2114,
+        "nodeType": "ImportDirective",
+        "scope": 2132,
+        "sourceUnit": 160,
+        "src": "830:29:3",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "baseContracts": [
+          {
+            "arguments": null,
+            "baseName": {
+              "contractScope": null,
+              "id": 2115,
+              "name": "XBRMaintained",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 159,
+              "src": "955:13:3",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_XBRMaintained_$159",
+                "typeString": "contract XBRMaintained"
+              }
+            },
+            "id": 2116,
+            "nodeType": "InheritanceSpecifier",
+            "src": "955:13:3"
+          }
+        ],
+        "contractDependencies": [
+          159
+        ],
+        "contractKind": "contract",
+        "documentation": "@title XBR Network root SC\n@author The XBR Project",
+        "fullyImplemented": true,
+        "id": 2131,
+        "linearizedBaseContracts": [
+          2131,
+          159
+        ],
+        "name": "XBRNetworkProxy",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "constant": false,
+            "id": 2118,
+            "name": "_networkContract",
+            "nodeType": "VariableDeclaration",
+            "scope": 2131,
+            "src": "976:33:3",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            },
+            "typeName": {
+              "id": 2117,
+              "name": "address",
+              "nodeType": "ElementaryTypeName",
+              "src": "976:7:3",
+              "stateMutability": "nonpayable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_address",
+                "typeString": "address"
+              }
+            },
+            "value": null,
+            "visibility": "internal"
+          },
+          {
+            "body": {
+              "id": 2129,
+              "nodeType": "Block",
+              "src": "1092:51:3",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 2127,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 2125,
+                      "name": "_networkContract",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 2118,
+                      "src": "1102:16:3",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 2126,
+                      "name": "networkContract",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 2120,
+                      "src": "1121:15:3",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "src": "1102:34:3",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 2128,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1102:34:3"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 2130,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [
+              {
+                "arguments": null,
+                "id": 2123,
+                "modifierName": {
+                  "argumentTypes": null,
+                  "id": 2122,
+                  "name": "onlyMaintainer",
+                  "nodeType": "Identifier",
+                  "overloadedDeclarations": [],
+                  "referencedDeclaration": 92,
+                  "src": "1077:14:3",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_modifier$__$",
+                    "typeString": "modifier ()"
+                  }
+                },
+                "nodeType": "ModifierInvocation",
+                "src": "1077:14:3"
+              }
+            ],
+            "name": "setNetworkContract",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 2121,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 2120,
+                  "name": "networkContract",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 2130,
+                  "src": "1045:23:3",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 2119,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1045:7:3",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1044:25:3"
+            },
+            "returnParameters": {
+              "id": 2124,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1092:0:3"
+            },
+            "scope": 2131,
+            "src": "1016:127:3",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 2132,
+        "src": "927:218:3"
+      }
+    ],
+    "src": "805:341:3"
+  },
+  "legacyAST": {
+    "absolutePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/XBRNetworkProxy.sol",
+    "exportedSymbols": {
+      "XBRNetworkProxy": [
+        2131
+      ]
+    },
+    "id": 2132,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 2113,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".2"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "805:23:3"
+      },
+      {
+        "absolutePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/XBRMaintained.sol",
+        "file": "./XBRMaintained.sol",
+        "id": 2114,
+        "nodeType": "ImportDirective",
+        "scope": 2132,
+        "sourceUnit": 160,
+        "src": "830:29:3",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "baseContracts": [
+          {
+            "arguments": null,
+            "baseName": {
+              "contractScope": null,
+              "id": 2115,
+              "name": "XBRMaintained",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 159,
+              "src": "955:13:3",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_XBRMaintained_$159",
+                "typeString": "contract XBRMaintained"
+              }
+            },
+            "id": 2116,
+            "nodeType": "InheritanceSpecifier",
+            "src": "955:13:3"
+          }
+        ],
+        "contractDependencies": [
+          159
+        ],
+        "contractKind": "contract",
+        "documentation": "@title XBR Network root SC\n@author The XBR Project",
+        "fullyImplemented": true,
+        "id": 2131,
+        "linearizedBaseContracts": [
+          2131,
+          159
+        ],
+        "name": "XBRNetworkProxy",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "constant": false,
+            "id": 2118,
+            "name": "_networkContract",
+            "nodeType": "VariableDeclaration",
+            "scope": 2131,
+            "src": "976:33:3",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            },
+            "typeName": {
+              "id": 2117,
+              "name": "address",
+              "nodeType": "ElementaryTypeName",
+              "src": "976:7:3",
+              "stateMutability": "nonpayable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_address",
+                "typeString": "address"
+              }
+            },
+            "value": null,
+            "visibility": "internal"
+          },
+          {
+            "body": {
+              "id": 2129,
+              "nodeType": "Block",
+              "src": "1092:51:3",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 2127,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 2125,
+                      "name": "_networkContract",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 2118,
+                      "src": "1102:16:3",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 2126,
+                      "name": "networkContract",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 2120,
+                      "src": "1121:15:3",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "src": "1102:34:3",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 2128,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1102:34:3"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 2130,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [
+              {
+                "arguments": null,
+                "id": 2123,
+                "modifierName": {
+                  "argumentTypes": null,
+                  "id": 2122,
+                  "name": "onlyMaintainer",
+                  "nodeType": "Identifier",
+                  "overloadedDeclarations": [],
+                  "referencedDeclaration": 92,
+                  "src": "1077:14:3",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_modifier$__$",
+                    "typeString": "modifier ()"
+                  }
+                },
+                "nodeType": "ModifierInvocation",
+                "src": "1077:14:3"
+              }
+            ],
+            "name": "setNetworkContract",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 2121,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 2120,
+                  "name": "networkContract",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 2130,
+                  "src": "1045:23:3",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 2119,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1045:7:3",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1044:25:3"
+            },
+            "returnParameters": {
+              "id": 2124,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1092:0:3"
+            },
+            "scope": 2131,
+            "src": "1016:127:3",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 2132,
+        "src": "927:218:3"
+      }
+    ],
+    "src": "805:341:3"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.2+commit.1df8f40c.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.0.5",
+  "updatedAt": "2019-06-04T10:01:11.413Z",
+  "devdoc": {
+    "author": "The XBR Project",
+    "methods": {
+      "addMaintainer(address)": {
+        "params": {
+          "account": "The account to grant maintainer rights to."
+        }
+      },
+      "isMaintainer(address)": {
+        "params": {
+          "account": "The account to check."
+        },
+        "return": "`true` if the account is maintainer, otherwise `false`."
+      }
+    },
+    "title": "XBR Network root SC"
+  },
+  "userdoc": {
+    "methods": {
+      "addMaintainer(address)": {
+        "notice": "Add a new maintainer to the list of maintainers."
+      },
+      "isMaintainer(address)": {
+        "notice": "Check if the given address is currently a maintainer."
+      },
+      "renounceMaintainer()": {
+        "notice": "Give away maintainer rights."
+      }
+    }
+  }
+}

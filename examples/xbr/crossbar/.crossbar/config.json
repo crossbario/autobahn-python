@@ -1,0 +1,163 @@
+{
+    "$schema": "https://raw.githubusercontent.com/crossbario/crossbar/master/crossbar.json",
+    "version": 2,
+    "controller": {
+        "enable_docker": false,
+        "fabric": {}
+    },
+    "workers": [
+        {
+            "type": "router",
+            "realms": [
+                {
+                    "name": "realm1",
+                    "roles": [
+                        {
+                            "name": "anonymous",
+                            "permissions": [
+                                {
+                                    "uri": "com.example.",
+                                    "match": "prefix",
+                                    "allow": {
+                                        "call": true,
+                                        "register": true,
+                                        "publish": true,
+                                        "subscribe": true
+                                    },
+                                    "disclose": {
+                                        "caller": true,
+                                        "publisher": true
+                                    },
+                                    "cache": true
+                                }
+                            ]
+                        },
+                        {
+                            "name": "xbrmm",
+                            "permissions": [
+                                {
+                                    "uri": "xbr.marketmaker.",
+                                    "match": "prefix",
+                                    "allow": {
+                                        "call": true,
+                                        "register": true,
+                                        "publish": true,
+                                        "subscribe": true
+                                    },
+                                    "disclose": {
+                                        "caller": true,
+                                        "publisher": true
+                                    },
+                                    "cache": true
+                                },
+                                {
+                                    "uri": "xbr.provider.",
+                                    "match": "prefix",
+                                    "allow": {
+                                        "call": true,
+                                        "register": false,
+                                        "publish": false,
+                                        "subscribe": true
+                                    },
+                                    "disclose": {
+                                        "caller": true,
+                                        "publisher": true
+                                    },
+                                    "cache": true
+                                }
+                            ]
+                        }
+                    ],
+                    "store": {
+                        "type": "cfxdb",
+                        "path": "../.xbrdb",
+                        "maxsize": 1073741824,
+                        "buffer-flush": 250,
+                        "event-history": [
+                            {
+                                "uri": "xbr.",
+                                "match": "prefix"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "transports": [
+                {
+                    "type": "rawsocket",
+                    "endpoint": {
+                        "type": "unix",
+                        "path": "xbrmm.sock"
+                    },
+                    "max_message_size": 1048576,
+                    "serializers": ["cbor"],
+                    "auth": {
+                        "anonymous": {
+                            "type": "static",
+                            "role": "xbrmm"
+                        }
+                    }
+                },
+                {
+                    "type": "web",
+                    "endpoint": {
+                        "type": "tcp",
+                        "port": 8040
+                    },
+                    "paths": {
+                        "/": {
+                            "type": "static",
+                            "directory": "../web",
+                            "options": {
+                                "enable_directory_listing": true
+                            }
+                        },
+                        "ws": {
+                            "type": "websocket"
+                        },
+                        "info": {
+                            "type": "nodeinfo"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": "xbrmm1",
+            "type": "xbrmm",
+            "options": {
+                "env": {
+                    "inherit": true
+                }
+            },
+            "makers": [
+                {
+                    "id": "maker1",
+                    "store": {
+                        "type": "cfxdb",
+                        "path": "../.xbrdb-transactions",
+                        "maxsize": 1073741824
+                    },                    
+                    "blockchain": {
+                        "type": "ethereum",
+                        "gateway": {
+                            "type": "user",
+                            "http": "http://127.0.0.1:8545"
+                        }
+                    },
+                    "connection": {
+                        "realm": "realm1",
+                        "transport": {
+                            "type": "rawsocket",
+                            "endpoint": {
+                                "type": "unix",
+                                "path": "xbrmm.sock"
+                            },
+                            "serializer": "cbor"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
