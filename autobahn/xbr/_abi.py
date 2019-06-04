@@ -37,9 +37,9 @@ import web3
 # print('Using eth_hash backend {}'.format(keccak256))
 
 
-XBR_TOKEN_FN = pkg_resources.resource_filename('xbr', 'contracts/XBRToken.json')
-XBR_NETWORK_FN = pkg_resources.resource_filename('xbr', 'contracts/XBRNetwork.json')
-XBR_PAYMENT_CHANNEL_FN = pkg_resources.resource_filename('xbr', 'contracts/XBRPaymentChannel.json')
+XBR_TOKEN_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRToken.json')
+XBR_NETWORK_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRNetwork.json')
+XBR_PAYMENT_CHANNEL_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRPaymentChannel.json')
 
 
 if 'XBR_DEBUG_TOKEN_ADDR' in os.environ:
@@ -56,7 +56,7 @@ else:
 
 
 def _load_json(contract_name):
-    fn = pkg_resources.resource_filename('xbr', 'contracts/{}.json'.format(contract_name))
+    fn = pkg_resources.resource_filename('autobahn', 'xbr/contracts/{}.json'.format(contract_name))
     # fn = os.path.join(os.path.dirname(__file__), '../build/contracts/{}.json'.format(contract_name))
     with open(fn) as f:
         data = json.loads(f.read())
