@@ -8,7 +8,11 @@ Changelog
 19.6.1
 ------
 
-* new: XBR client library support (#1201)
+* new: XBR client library integrated (#1201)
+* new: add entropy depletion unit tests
+* fix: make CLI tool python2 compatible (#1197)
+* fix: use cryptography pbkdf2 instead of custom (#1198)
+* fix: include tests for packaging (#1194)
 
 19.5.1
 ------
