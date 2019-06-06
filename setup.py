@@ -231,8 +231,9 @@ setup(
     url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
-        'six>=1.11.0',      # MIT license
-        'txaio>=18.8.1',    # MIT license
+        'six>=1.11.0',       # MIT license
+        'txaio>=18.8.1',     # MIT license
+        'cryptography>=2.7', # BSD *or* Apache license
     ],
     extras_require={
         'all': extras_require_all,
