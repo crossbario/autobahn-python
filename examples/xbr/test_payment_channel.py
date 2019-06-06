@@ -3,7 +3,7 @@ import sys
 import binascii
 
 import web3
-import xbr
+from autobahn import xbr
 
 from test_accounts import addr_owner, addr_edith_consumer, addr_frank_consumer, markets, hl
 

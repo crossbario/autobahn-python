@@ -1,6 +1,6 @@
 import sys
 import web3
-import xbr
+from autobahn import xbr
 import argparse
 
 from test_accounts import addr_owner, addr_alice_market, addr_alice_market_maker1, addr_bob_market, addr_bob_market_maker1, \

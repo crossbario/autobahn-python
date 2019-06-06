@@ -5,7 +5,7 @@
 # export XBR_DEBUG_NETWORK_ADDR="0x254dffcd3277c0b1660f6d42efbb754edababc2b"
 
 import web3
-import xbr
+from autobahn import xbr
 import click
 import six
 

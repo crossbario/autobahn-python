@@ -2,7 +2,7 @@ import os
 import sys
 import web3
 
-import xbr
+from autobahn import xbr
 
 from test_accounts import addr_owner, addr_alice_market, addr_alice_market_maker1, addr_bob_market, addr_bob_market_maker1, \
     addr_charlie_provider, addr_charlie_provider_delegate1, addr_donald_provider, addr_donald_provider_delegate1, \
