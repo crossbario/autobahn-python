@@ -5,6 +5,11 @@
 Changelog
 =========
 
+19.6.2
+------
+
+* fix: add forgotten cryptography dependency (#1205)
+
 19.6.1
 ------
 
