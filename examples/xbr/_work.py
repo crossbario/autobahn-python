@@ -1,7 +1,7 @@
 from pprint import pprint
 import time
 from web3.auto import w3
-import xbr
+from autobahn import xbr
 
 xbr.setProvider(w3)
 
