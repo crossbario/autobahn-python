@@ -1,5 +1,7 @@
 import os
 import sys
+import argparse
+
 import web3
 
 from autobahn import xbr
@@ -10,9 +12,10 @@ from test_accounts import addr_owner, addr_alice_market, addr_alice_market_maker
 
 from test_accounts import markets, hl
 
+
 def main(accounts):
     for market in markets:
-        owner = xbr.xbrNetwork.functions.getMarketOwner(market['id']).call()
+        owner = xbr.xbrnetwork.functions.getMarketOwner(market['id']).call()
 
         if owner != '0x0000000000000000000000000000000000000000':
             if owner != market['owner']:
@@ -20,7 +23,7 @@ def main(accounts):
             else:
                 print('Market {} already exists and has expected owner {}'.format(hl(market['id']), owner))
         else:
-            xbr.xbrNetwork.functions.createMarket(
+            xbr.xbrnetwork.functions.createMarket(
                 market['id'],
                 market['terms'],
                 market['meta'],
@@ -32,20 +35,20 @@ def main(accounts):
             print('Market {} created with owner!'.format(hl(market['id']), market['owner']))
 
         for actor in market['actors']:
-            atype = xbr.xbrNetwork.functions.getMarketActorType(market['id'], actor['addr']).call()
+            atype = xbr.xbrnetwork.functions.getMarketActorType(market['id'], actor['addr']).call()
             if atype:
                 if atype != actor['type']:
                     print('Account {} is already actor in the market, but has wrong actor type! Expected {}, but got {}.'.format(actor['addr'], actor['type'], atype))
                 else:
                     print('Account {} is already actor in the market and has correct actor type {}'.format(actor['addr'], atype))
             else:
-                result = xbr.xbrToken.functions.approve(xbr.xbrNetwork.address, actor['security']).transact({'from': actor['addr'], 'gas': 1000000})
+                result = xbr.xbrtoken.functions.approve(xbr.xbrnetwork.address, actor['security']).transact({'from': actor['addr'], 'gas': 1000000})
                 if not result:
                     print('Failed to allow transfer of tokens for market security!', result)
                 else:
-                    print('Allowed transfer of {} XBR from {} to {} as security for joining market'.format(actor['security'], actor['addr'], xbr.xbrNetwork.address))
+                    print('Allowed transfer of {} XBR from {} to {} as security for joining market'.format(actor['security'], actor['addr'], xbr.xbrnetwork.address))
 
-                    security = xbr.xbrNetwork.functions.joinMarket(market['id'], actor['type']).transact({'from': actor['addr'], 'gas': 1000000})
+                    security = xbr.xbrnetwork.functions.joinMarket(market['id'], actor['type']).transact({'from': actor['addr'], 'gas': 1000000})
 
                     print('Actor {} joined market {} as actor type {} with security {}!'.format(hl(actor['addr']), market['id'], hl(actor['type']), security))
 
@@ -53,15 +56,29 @@ def main(accounts):
 if __name__ == '__main__':
     print('using web3.py v{}'.format(web3.__version__))
 
-    # using automatic provider detection:
-    from web3.auto import w3
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--gateway',
+                        dest='gateway',
+                        type=str,
+                        default=None,
+                        help='Ethereum HTTP gateway URL or None for auto-select (default: -, means let web3 auto-select).')
+
+    args = parser.parse_args()
+
+    if args.gateway:
+        w3 = web3.Web3(web3.Web3.HTTPProvider(args.gateway))
+    else:
+        # using automatic provider detection:
+        from web3.auto import w3
 
     # check we are connected, and check network ID
     if not w3.isConnected():
-        print('could not connect to Web3/Ethereum')
+        print('could not connect to Web3/Ethereum at: {}'.format(args.gateway or 'auto'))
         sys.exit(1)
     else:
-        print('connected to network {}'.format(w3.version.network))
+        print('connected to network {} at provider "{}"'.format(w3.version.network,
+                                                                args.gateway or 'auto'))
 
     # set new provider on XBR library
     xbr.setProvider(w3)

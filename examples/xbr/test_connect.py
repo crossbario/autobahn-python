@@ -1,7 +1,9 @@
 import sys
-import web3
-from autobahn import xbr
 import argparse
+
+import web3
+
+from autobahn import xbr
 
 from test_accounts import hl
 
@@ -20,6 +22,7 @@ def main (accounts):
         print('    balances of {}: {:>30} ETH, {:>30} XBR'.format(hl(acct), balance_eth, balance_xbr))
 
     print()
+
 
 if __name__ == '__main__':
     print('using web3.py v{}'.format(web3.__version__))

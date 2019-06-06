@@ -18,7 +18,7 @@ def main(accounts):
     raw_amount = amount * 10**18
 
     for acct in [addr_alice_market, addr_bob_market, addr_charlie_provider, addr_donald_provider, addr_edith_consumer, addr_frank_consumer]:
-        success = xbr.xbrToken.functions.transfer(acct, raw_amount).transact({'from': addr_owner, 'gas': 100000})
+        success = xbr.xbrtoken.functions.transfer(acct, raw_amount).transact({'from': addr_owner, 'gas': 100000})
         if success:
             print('Transferred {} XBR to {}'.format(hl(amount), hl(acct)))
         else:

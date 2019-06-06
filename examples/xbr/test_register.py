@@ -1,5 +1,8 @@
 import sys
+import argparse
+
 import web3
+
 from autobahn import xbr
 
 from test_accounts import addr_owner, addr_alice_market, addr_alice_market_maker1, addr_bob_market, addr_bob_market_maker1, \
@@ -11,32 +14,45 @@ from test_accounts import hl
 
 def main(accounts):
     for acct in [addr_alice_market, addr_bob_market, addr_charlie_provider, addr_donald_provider, addr_edith_consumer, addr_frank_consumer]:
-        level = xbr.xbrNetwork.functions.getMemberLevel(acct).call()
+        level = xbr.xbrnetwork.functions.getMemberLevel(acct).call()
         if not level:
             eula = 'QmU7Gizbre17x6V2VR1Q2GJEjz6m8S1bXmBtVxS2vmvb81'
             profile = ''
 
-            xbr.xbrNetwork.functions.register(eula, profile).transact({'from': acct, 'gas': 200000})
+            xbr.xbrnetwork.functions.register(eula, profile).transact({'from': acct, 'gas': 200000})
             print('New member {} registered in the XBR Network (eula={}, profile={})'.format(hl(acct), eula, profile))
         else:
-            eula = xbr.xbrNetwork.functions.getMemberEula(acct).call()
-            profile = xbr.xbrNetwork.functions.getMemberProfile(acct).call()
+            eula = xbr.xbrnetwork.functions.getMemberEula(acct).call()
+            profile = xbr.xbrnetwork.functions.getMemberProfile(acct).call()
             print('{} is already a member (level={}, eula={}, profile={})'.format(hl(acct), hl(level), eula, profile))
-
 
 
 if __name__ == '__main__':
     print('using web3.py v{}'.format(web3.__version__))
 
-    # using automatic provider detection:
-    from web3.auto import w3
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--gateway',
+                        dest='gateway',
+                        type=str,
+                        default=None,
+                        help='Ethereum HTTP gateway URL or None for auto-select (default: -, means let web3 auto-select).')
+
+    args = parser.parse_args()
+
+    if args.gateway:
+        w3 = web3.Web3(web3.Web3.HTTPProvider(args.gateway))
+    else:
+        # using automatic provider detection:
+        from web3.auto import w3
 
     # check we are connected, and check network ID
     if not w3.isConnected():
-        print('could not connect to Web3/Ethereum')
+        print('could not connect to Web3/Ethereum at: {}'.format(args.gateway or 'auto'))
         sys.exit(1)
     else:
-        print('connected to network {}'.format(w3.version.network))
+        print('connected to network {} at provider "{}"'.format(w3.version.network,
+                                                                args.gateway or 'auto'))
 
     # set new provider on XBR library
     xbr.setProvider(w3)
