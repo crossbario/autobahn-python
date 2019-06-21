@@ -69,6 +69,7 @@ class WampWebSocketProtocol(object):
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
         """
         # WAMP session might never have been established in the first place .. guard this!
+        self._onclose_reason = reason
         if self._session is not None:
             # WebSocket connection lost - fire off the WAMP
             # session close callback
