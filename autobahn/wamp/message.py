@@ -4662,6 +4662,7 @@ class Register(Message):
         'concurrency',
         'force_reregister',
         'forward_for',
+        'custom_options'
     )
 
     def __init__(self,
@@ -4671,7 +4672,8 @@ class Register(Message):
                  invoke=None,
                  concurrency=None,
                  force_reregister=None,
-                 forward_for=None):
+                 forward_for=None,
+                 custom_options=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -4692,6 +4694,9 @@ class Register(Message):
         :param forward_for: When this Register is forwarded over a router-to-router link,
             or via an intermediary router.
         :type forward_for: list[dict]
+
+        :param custom_options: Dictionary of additional arbitary options to pass.
+        :type custom_options: dict[str]
         """
         assert(type(request) in six.integer_types)
         assert(type(procedure) == six.text_type)
@@ -4701,6 +4706,7 @@ class Register(Message):
         assert(invoke is None or invoke in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM])
         assert(concurrency is None or (type(concurrency) in six.integer_types and concurrency > 0))
         assert force_reregister in [None, True, False]
+        assert (custom_options is None or (type(custom_options) is dict and all(type(key) is str for key in custom_options.keys())))
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
@@ -4717,6 +4723,7 @@ class Register(Message):
         self.concurrency = concurrency
         self.force_reregister = force_reregister
         self.forward_for = forward_for
+        self.custom_options = custom_options
 
     @staticmethod
     def parse(wmsg):
@@ -4843,6 +4850,9 @@ class Register(Message):
 
         if self.forward_for is not None:
             options[u'forward_for'] = self.forward_for
+
+        if self.custom_options is not None:
+            options.update(self.custom_options)
 
         return options
 

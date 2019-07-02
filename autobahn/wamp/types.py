@@ -562,11 +562,12 @@ class SubscribeOptions(object):
         'correlation_uri',
         'correlation_is_anchor',
         'correlation_is_last',
+        'custom_options'
     )
 
     def __init__(self, match=None, details=None, details_arg=None, forward_for=None, get_retained=None,
                  correlation_id=None, correlation_uri=None, correlation_is_anchor=None,
-                 correlation_is_last=None):
+                 correlation_is_last=None, custom_options=None):
         """
 
         :param match: The topic matching method to be used for the subscription.
@@ -587,6 +588,7 @@ class SubscribeOptions(object):
         assert(details is None or (type(details) == bool and details_arg is None))
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert(get_retained is None or type(get_retained) is bool)
+        assert (custom_options is None or (type(custom_options) is dict and all(type(key) is str for key in custom_options.keys())))
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
@@ -612,6 +614,7 @@ class SubscribeOptions(object):
         self.correlation_uri = correlation_uri
         self.correlation_is_anchor = correlation_is_anchor
         self.correlation_is_last = correlation_is_last
+        self.custom_options = custom_options
 
     def message_attr(self):
         """
@@ -628,10 +631,13 @@ class SubscribeOptions(object):
         if self.forward_for is not None:
             options[u'forward_for'] = self.forward_for
 
+        if self.custom_options is not None:
+            options['custom_options'] = self.custom_options
+
         return options
 
     def __str__(self):
-        return u"SubscribeOptions(match={}, details={}, details_arg={}, get_retained={}, forward_for={})".format(self.match, self.details, self.details_arg, self.get_retained, self.forward_for)
+        return u"SubscribeOptions(match={}, details={}, details_arg={}, get_retained={}, forward_for={}, custom_optios={})".format(self.match, self.details, self.details_arg, self.get_retained, self.forward_for, self.custom_options)
 
 
 @public
@@ -741,6 +747,7 @@ class PublishOptions(object):
         'correlation_uri',
         'correlation_is_anchor',
         'correlation_is_last',
+        'custom_options'
     )
 
     def __init__(self,
@@ -757,7 +764,8 @@ class PublishOptions(object):
                  correlation_id=None,
                  correlation_uri=None,
                  correlation_is_anchor=None,
-                 correlation_is_last=None):
+                 correlation_is_last=None,
+                 custom_options=None):
         """
 
         :param acknowledge: If ``True``, acknowledge the publication with a success or
@@ -791,6 +799,9 @@ class PublishOptions(object):
 
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
+
+        :param custom_options: Dictionary of additional arbitary options to pass.
+        :type custom_options: dict[str]
         """
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(exclude_me is None or type(exclude_me) == bool)
@@ -801,6 +812,7 @@ class PublishOptions(object):
         assert(eligible_authid is None or type(eligible_authid) == six.text_type or (type(eligible_authid) == list and all(type(x) == six.text_type for x in eligible_authid)))
         assert(eligible_authrole is None or type(eligible_authrole) == six.text_type or (type(eligible_authrole) == list and all(type(x) == six.text_type for x in eligible_authrole)))
         assert(retain is None or type(retain) == bool)
+        assert (custom_options is None or (type(custom_options) is dict and all(type(key) is str for key in custom_options.keys())))
 
         assert(forward_for is None or type(forward_for) == list), 'forward_for, when present, must have list type - was {}'.format(type(forward_for))
         if forward_for:
@@ -823,6 +835,7 @@ class PublishOptions(object):
         self.eligible_authrole = eligible_authrole
         self.retain = retain
         self.forward_for = forward_for
+        self.custom_options = custom_options
 
         self.correlation_id = correlation_id
         self.correlation_uri = correlation_uri
@@ -865,10 +878,13 @@ class PublishOptions(object):
         if self.forward_for is not None:
             options[u'forward_for'] = self.forward_for
 
+        if self.custom_options is not None:
+            options['custom_options'] = self.custom_options
+
         return options
 
     def __str__(self):
-        return u"PublishOptions(acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, forward_for={})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.forward_for)
+        return u"PublishOptions(acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, forward_for={}, custom_options={})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.forward_for, self.custom_options)
 
 
 @public
@@ -890,11 +906,12 @@ class RegisterOptions(object):
         'correlation_uri',
         'correlation_is_anchor',
         'correlation_is_last',
+        'custom_options'
     )
 
     def __init__(self, match=None, invoke=None, concurrency=None, force_reregister=None, forward_for=None,
                  details=None, details_arg=None, correlation_id=None, correlation_uri=None,
-                 correlation_is_anchor=None, correlation_is_last=None):
+                 correlation_is_anchor=None, correlation_is_last=None, custom_options=None):
         """
         :param match: Type of matching to use on the URI (`exact`, `prefix` or `wildcard`)
 
@@ -926,6 +943,9 @@ class RegisterOptions(object):
         :param forward_for: When this Register is forwarded over a router-to-router link,
             or via an intermediary router.
         :type forward_for: list[dict]
+
+        :param custom_options: Dictionary of additional arbitary options to pass.
+        :type custom_options: dict[str]
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
         assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
@@ -933,6 +953,7 @@ class RegisterOptions(object):
         assert(details is None or (type(details) == bool and details_arg is None))
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert force_reregister in [None, True, False]
+        assert(custom_options is None or (type(custom_options) is dict and all(type(key) is str for key in custom_options.keys())))
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
@@ -947,6 +968,8 @@ class RegisterOptions(object):
         self.concurrency = concurrency
         self.force_reregister = force_reregister
         self.forward_for = forward_for
+
+        self.custom_options = custom_options
 
         # FIXME: this is for backwards compat, but we'll deprecate it in the future
         self.details = details
@@ -981,10 +1004,13 @@ class RegisterOptions(object):
         if self.forward_for is not None:
             options[u'forward_for'] = self.forward_for
 
+        if self.custom_options is not None:
+            options['custom_options'] = self.custom_options
+
         return options
 
     def __str__(self):
-        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details={}, details_arg={}, force_reregister={}, forward_for={})".format(self.match, self.invoke, self.concurrency, self.details, self.details_arg, self.force_reregister, self.forward_for)
+        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details={}, details_arg={}, force_reregister={}, forward_for={}, custom_options={})".format(self.match, self.invoke, self.concurrency, self.details, self.details_arg, self.force_reregister, self.forward_for, self.custom_options)
 
 
 @public
@@ -1084,6 +1110,7 @@ class CallOptions(object):
         'correlation_is_anchor',
         'correlation_is_last',
         'details',
+        'custom_options'
     )
 
     def __init__(self,
@@ -1097,7 +1124,8 @@ class CallOptions(object):
                  correlation_uri=None,
                  correlation_is_anchor=None,
                  correlation_is_last=None,
-                 details=None):
+                 details=None,
+                 custom_options=None):
         """
 
         :param on_progress: A callback that will be called when the remote endpoint
@@ -1109,6 +1137,9 @@ class CallOptions(object):
 
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
+
+        :param custom_options: Dictionary of additional arbitary options to pass.
+        :type custom_options: dict[str]
         """
         assert(on_progress is None or callable(on_progress))
         assert(timeout is None or (type(timeout) in list(six.integer_types) + [float] and timeout > 0))
@@ -1116,6 +1147,7 @@ class CallOptions(object):
         assert(caller is None or type(caller) in six.integer_types)
         assert(caller_authid is None or type(caller_authid) == six.text_type)
         assert(caller_authrole is None or type(caller_authrole) == six.text_type)
+        assert(custom_options is None or (type(custom_options) is dict and all(type(key) is str for key in custom_options.keys())))
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
@@ -1131,6 +1163,7 @@ class CallOptions(object):
         self.caller_authid = caller_authid
         self.caller_authrole = caller_authrole
         self.forward_for = forward_for
+        self.custom_options = custom_options
 
         self.details = details
         self.correlation_id = correlation_id
@@ -1165,10 +1198,13 @@ class CallOptions(object):
         if self.caller_authrole is not None:
             options[u'caller_authrole'] = self.caller_authrole
 
+        if self.custom_options is not None:
+            options['custom_options'] = self.custom_options
+
         return options
 
     def __str__(self):
-        return u"CallOptions(on_progress={}, timeout={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={}, details={})".format(self.on_progress, self.timeout, self.caller, self.caller_authid, self.caller_authrole, self.forward_for, self.details)
+        return u"CallOptions(on_progress={}, timeout={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={}, details={}, custom_options={})".format(self.on_progress, self.timeout, self.caller, self.caller_authid, self.caller_authrole, self.forward_for, self.details, self.custom_options)
 
 
 @public
