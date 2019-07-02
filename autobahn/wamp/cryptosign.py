@@ -453,6 +453,9 @@ if HAS_CRYPTOSIGN:
             """
             Sign WAMP-cryptosign challenge.
 
+            :param session: The authenticating WAMP session.
+            :type session: :class:`autobahn.wamp.protocol.ApplicationSession`
+
             :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
             :type challenge: instance of autobahn.wamp.types.Challenge
 
@@ -460,13 +463,19 @@ if HAS_CRYPTOSIGN:
             :rtype: str
             """
             if not isinstance(challenge, Challenge):
-                raise Exception("challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
+                raise Exception(u"challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
 
             if u'challenge' not in challenge.extra:
-                raise Exception("missing challenge value in challenge.extra")
+                raise Exception(u"missing challenge value in challenge.extra")
 
             # the challenge sent by the router (a 32 bytes random value)
             challenge_hex = challenge.extra[u'challenge']
+
+            if type(challenge_hex) != six.text_type:
+                raise Exception(u"invalid type {} for challenge (expected a hex string)".format(type(challenge_hex)))
+
+            if len(challenge_hex) != 64:
+                raise Exception(u"unexpected challenge (hex) length: was {}, but expected 64".format(len(challenge_hex)))
 
             # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
             challenge_raw = binascii.a2b_hex(challenge_hex)
@@ -475,6 +484,7 @@ if HAS_CRYPTOSIGN:
             # is the XOR of the challenge and the channel ID
             channel_id_raw = session._transport.get_channel_id()
             if channel_id_raw:
+                assert len(channel_id_raw) == 32, 'unexpected TLS transport channel ID length: was {}, but expected 32'.format(len(channel_id_raw))
                 data = util.xor(challenge_raw, channel_id_raw)
             else:
                 data = challenge_raw
@@ -506,8 +516,11 @@ if HAS_CRYPTOSIGN:
             if not (comment is None or type(comment) == six.text_type):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
+            if type(keydata) != six.binary_type:
+                raise ValueError("invalid key type {} (expected binary)".format(type(keydata)))
+
             if len(keydata) != 32:
-                raise ValueError("invalid key length {}".format(len(keydata)))
+                raise ValueError("invalid key length {} (expected 32)".format(len(keydata)))
 
             key = signing.SigningKey(keydata)
             return cls(key, comment)
