@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import
 
+import math
 import txaio
 
 from twisted.internet.protocol import Factory
@@ -37,6 +38,7 @@ from autobahn.util import public
 from autobahn.twisted.util import peer2str, transport_channel_id
 from autobahn.util import _LazyHexFormatter
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
+from autobahn.exception import PayloadExceededError
 
 __all__ = (
     'WampRawSocketServerProtocol',
@@ -51,6 +53,9 @@ class WampRawSocketProtocol(Int32StringReceiver):
     Base class for Twisted-based WAMP-over-RawSocket protocols.
     """
     log = txaio.make_logger()
+
+    def __init__(self):
+        self._max_message_size = 2**24
 
     def connectionMade(self):
         self.log.debug("WampRawSocketProtocol: connection made")
@@ -86,7 +91,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
         #
         self._handshake_bytes = b''
 
-        # Client requested maximum length of serialized messages.
+        # Peer requested to receive this maximum length of serialized messages.
         #
         self._max_len_send = None
 
@@ -149,8 +154,15 @@ class WampRawSocketProtocol(Int32StringReceiver):
                 # all exceptions raised from above should be serialization errors ..
                 raise SerializationError("WampRawSocketProtocol: unable to serialize WAMP application payload ({0})".format(e))
             else:
-                self.sendString(payload)
-                self.log.trace("WampRawSocketProtocol: TX octets: {octets}", octets=_LazyHexFormatter(payload))
+                payload_len = len(payload)
+                if 0 < self._max_len_send < payload_len:
+                    emsg = u'tried to send RawSocket message with size {} exceeding payload limit of {} octets'.format(
+                        payload_len, self._max_len_send)
+                    self.log.warn(emsg)
+                    raise PayloadExceededError(emsg)
+                else:
+                    self.sendString(payload)
+                    self.log.trace("WampRawSocketProtocol: TX octets: {octets}", octets=_LazyHexFormatter(payload))
         else:
             raise TransportLost()
 
@@ -219,7 +231,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
                 # peer requests us to send messages of maximum length 2**max_len_exp
                 #
                 self._max_len_send = 2 ** (9 + (ord(self._handshake_bytes[1:2]) >> 4))
-                self.log.debug(
+                self.log.warn(
                     "WampRawSocketProtocol: client requests us to send out most {max_bytes} bytes per message",
                     max_bytes=self._max_len_send,
                 )
@@ -241,9 +253,9 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
                     )
                     self.abort()
 
-                # we request the peer to send message of maximum length 2**reply_max_len_exp
+                # FIXME: we request the peer to send message of maximum length 2**reply_max_len_exp
                 #
-                reply_max_len_exp = 24
+                reply_max_len_exp = math.ceil(math.log(self._max_message_size, 2))
 
                 # send out handshake reply
                 #
@@ -289,9 +301,8 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
         WampRawSocketProtocol.connectionMade(self)
         self._serializer = self.factory._serializer
 
-        # we request the peer to send message of maximum length 2**reply_max_len_exp
-        #
-        request_max_len_exp = 24
+        # FIXME: we request the peer to send message of maximum length 2**reply_max_len_exp
+        request_max_len_exp = math.ceil(math.log(self._max_message_size, 2))
 
         # send out handshake reply
         #
@@ -368,6 +379,42 @@ class WampRawSocketFactory(Factory):
     """
     Base class for Twisted-based WAMP-over-RawSocket factories.
     """
+    log = txaio.make_logger()
+
+    def __init__(self, factory):
+        """
+
+        :param factory: A callable that produces instances that implement
+            :class:`autobahn.wamp.interfaces.ITransportHandler`
+        :type factory: callable
+        """
+        if callable(factory):
+            self._factory = factory
+        else:
+            self._factory = lambda: factory
+
+        # RawSocket max payload size is 16M (https://wamp-proto.org/_static/gen/wamp_latest_ietf.html#handshake)
+        self._max_message_size = 2**24
+
+    def resetProtocolOptions(self):
+        self._max_message_size = 2**24
+
+    def setProtocolOptions(self, maxMessagePayloadSize=None):
+        self.log.info('{klass}.setProtocolOptions(maxMessagePayloadSize={maxMessagePayloadSize})',
+                      klass=self.__class__.__name__, maxMessagePayloadSize=maxMessagePayloadSize)
+        assert maxMessagePayloadSize is None or (type(maxMessagePayloadSize) == int and maxMessagePayloadSize >= 512 and maxMessagePayloadSize <= 2**24)
+        if maxMessagePayloadSize is not None and maxMessagePayloadSize != self._max_message_size:
+            self._max_message_size = maxMessagePayloadSize
+
+    def buildProtocol(self, addr):
+        self.log.info('{klass}.buildProtocol(addr={addr})', klass=self.__class__.__name__, addr=addr)
+        p = self.protocol()
+        p.factory = self
+        p.MAX_LENGTH = self._max_message_size
+        p._max_message_size = self._max_message_size
+        self.log.info('{klass}.buildProtocol() -> proto={proto}, max_message_size={max_message_size}, MAX_LENGTH={MAX_LENGTH}',
+                      klass=self.__class__.__name__, proto=p, max_message_size=p._max_message_size, MAX_LENGTH=p.MAX_LENGTH)
+        return p
 
 
 @public
@@ -390,10 +437,7 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
         :type serializers: list of objects implementing
             :class:`autobahn.wamp.interfaces.ISerializer`
         """
-        if callable(factory):
-            self._factory = factory
-        else:
-            self._factory = lambda: factory
+        WampRawSocketFactory.__init__(self, factory)
 
         if serializers is None:
             serializers = []
@@ -458,10 +502,7 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
            this list: CBOR, MessagePack, UBJSON, JSON).
         :type serializer: object implementing :class:`autobahn.wamp.interfaces.ISerializer`
         """
-        if callable(factory):
-            self._factory = factory
-        else:
-            self._factory = lambda: factory
+        WampRawSocketFactory.__init__(self, factory)
 
         if serializer is None:
 
