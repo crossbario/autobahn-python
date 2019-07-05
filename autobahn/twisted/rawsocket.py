@@ -284,7 +284,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
 
                 # this is an instance attribute on the Twisted base class for maximum size
                 # of _received_ messages
-                self.MAX_LENGTH = reply_max_len_exp
+                self.MAX_LENGTH = 2**reply_max_len_exp
 
                 # send out handshake reply
                 #
@@ -335,7 +335,7 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
 
         # this is an instance attribute on the Twisted base class for maximum size
         # of _received_ messages
-        self.MAX_LENGTH = request_max_len_exp
+        self.MAX_LENGTH = 2**request_max_len_exp
 
         # send out handshake request
         #
