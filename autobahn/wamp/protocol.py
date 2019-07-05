@@ -41,6 +41,7 @@ from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
 from autobahn.wamp.interfaces import ISession, IPayloadCodec, IAuthenticator  # noqa
 from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
+from autobahn.exception import PayloadExceededError
 from autobahn.wamp.request import \
     Publication, \
     Subscription, \
@@ -93,7 +94,8 @@ class BaseSession(ObservableMixin):
 
         # mapping of WAMP error URIs to exception classes
         self._uri_to_ecls = {
-            ApplicationError.INVALID_PAYLOAD: SerializationError
+            ApplicationError.INVALID_PAYLOAD: SerializationError,
+            ApplicationError.PAYLOAD_SIZE_EXCEEDED: PayloadExceededError,
         }
 
         # session authentication information
@@ -1066,6 +1068,12 @@ class ApplicationSession(BaseSession):
                                     reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
                                                           args=[u'success return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
                                     self._transport.send(reply)
+                                except PayloadExceededError as e:
+                                    # the application-level payload returned from the invoked procedure, when serialized and framed
+                                    # for the transport, exceeds the transport message/frame size limit
+                                    reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.PAYLOAD_SIZE_EXCEEDED,
+                                                          args=[u'success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
+                                    self._transport.send(reply)
 
                             def error(err):
                                 del self._invocations[msg.request]
@@ -1096,6 +1104,13 @@ class ApplicationSession(BaseSession):
                                     reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
                                                           args=[u'error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
                                     self._transport.send(reply)
+                                except PayloadExceededError as e:
+                                    # the application-level payload returned from the invoked procedure, when serialized and framed
+                                    # for the transport, exceeds the transport message/frame size limit
+                                    reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.PAYLOAD_SIZE_EXCEEDED,
+                                                          args=[u'success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
+                                    self._transport.send(reply)
+
                                 # we have handled the error, so we eat it
                                 return None
 

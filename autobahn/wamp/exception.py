@@ -101,6 +101,12 @@ class ApplicationError(Error):
     The application payload could not be serialized.
     """
 
+    PAYLOAD_SIZE_EXCEEDED = u"wamp.error.payload_size_exceeded"
+    """
+    The application payload could not be transported becuase the serialized/framed payload
+    exceeds the transport limits.
+    """
+
     NO_SUCH_PROCEDURE = u"wamp.error.no_such_procedure"
     """
     A Dealer could not perform a call, since not procedure is currently registered
