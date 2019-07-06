@@ -61,7 +61,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
     def lengthLimitExceeded(self, length):
         # override hook in Int32StringReceiver base class that is fired when a message is (to be) received
         # that is larger than what we agreed to handle (by negotiation in the RawSocket opening handshake)
-        emsg = 'failing RawSocket connection: length of received message exceeded (message was {} bytes, but current maximum is {} bytes)'.format(length, self.MAX_LENGTH)
+        emsg = 'RawSocket connection: length of received message exceeded (message was {} bytes, but current maximum is {} bytes)'.format(length, self.MAX_LENGTH)
         raise PayloadExceededError(emsg)
 
     def connectionMade(self):
