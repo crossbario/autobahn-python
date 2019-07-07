@@ -137,9 +137,9 @@ class WampRawSocketProtocol(Int32StringReceiver):
                 self._session.onMessage(msg)
 
         except CancelledError as e:
-            self.log.warn("{klass}.stringReceived: WAMP CancelledError - connection will continue!\n{err}",
-                          klass=self.__class__.__name__,
-                          err=e)
+            self.log.debug("{klass}.stringReceived: WAMP CancelledError - connection will continue!\n{err}",
+                           klass=self.__class__.__name__,
+                           err=e)
 
         except ProtocolError as e:
             self.log.warn("{klass}.stringReceived: WAMP ProtocolError - aborting connection!\n{err}",
@@ -256,7 +256,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
                 # peer requests us to send messages of maximum length 2**max_len_exp
                 #
                 self._max_len_send = 2 ** (9 + (ord(self._handshake_bytes[1:2]) >> 4))
-                self.log.warn(
+                self.log.debug(
                     "WampRawSocketServerProtocol: client requests us to send out most {max_bytes} bytes per message",
                     max_bytes=self._max_len_send,
                 )
@@ -433,20 +433,20 @@ class WampRawSocketFactory(Factory):
         self._max_message_size = 2**24
 
     def setProtocolOptions(self, maxMessagePayloadSize=None):
-        self.log.info('{klass}.setProtocolOptions(maxMessagePayloadSize={maxMessagePayloadSize})',
-                      klass=self.__class__.__name__, maxMessagePayloadSize=maxMessagePayloadSize)
+        self.log.debug('{klass}.setProtocolOptions(maxMessagePayloadSize={maxMessagePayloadSize})',
+                       klass=self.__class__.__name__, maxMessagePayloadSize=maxMessagePayloadSize)
         assert maxMessagePayloadSize is None or (type(maxMessagePayloadSize) == int and maxMessagePayloadSize >= 512 and maxMessagePayloadSize <= 2**24)
         if maxMessagePayloadSize is not None and maxMessagePayloadSize != self._max_message_size:
             self._max_message_size = maxMessagePayloadSize
 
     def buildProtocol(self, addr):
-        self.log.info('{klass}.buildProtocol(addr={addr})', klass=self.__class__.__name__, addr=addr)
+        self.log.debug('{klass}.buildProtocol(addr={addr})', klass=self.__class__.__name__, addr=addr)
         p = self.protocol()
         p.factory = self
         p.MAX_LENGTH = self._max_message_size
         p._max_message_size = self._max_message_size
-        self.log.info('{klass}.buildProtocol() -> proto={proto}, max_message_size={max_message_size}, MAX_LENGTH={MAX_LENGTH}',
-                      klass=self.__class__.__name__, proto=p, max_message_size=p._max_message_size, MAX_LENGTH=p.MAX_LENGTH)
+        self.log.debug('{klass}.buildProtocol() -> proto={proto}, max_message_size={max_message_size}, MAX_LENGTH={MAX_LENGTH}',
+                       klass=self.__class__.__name__, proto=p, max_message_size=p._max_message_size, MAX_LENGTH=p.MAX_LENGTH)
         return p
 
 
