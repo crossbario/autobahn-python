@@ -24,4 +24,18 @@
 #
 ###############################################################################
 
-__version__ = u'19.7.1'
+from __future__ import absolute_import
+
+from autobahn.util import public
+
+__all__ = (
+    'PayloadExceededError',
+)
+
+
+@public
+class PayloadExceededError(RuntimeError):
+    """
+    Exception raised when the serialized and framed (eg WebSocket/RawSocket) WAMP payload
+    exceeds the transport message size limit.
+    """

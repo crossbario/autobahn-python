@@ -56,6 +56,7 @@ from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, create_xor_masker
 from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 from autobahn.websocket.util import parse_url
+from autobahn.exception import PayloadExceededError
 from autobahn.util import _maybe_tls_reason
 
 from six.moves import urllib
@@ -581,16 +582,14 @@ class WebSocketProtocol(ObservableMixin):
         if not self.failedByMe:
             if 0 < self.maxMessagePayloadSize < self.message_data_total_length:
                 self.wasMaxMessagePayloadSizeExceeded = True
-                self._fail_connection(
-                    WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG,
-                    u'message exceeds payload limit of {} octets'.format(self.maxMessagePayloadSize)
-                )
+                self._max_message_size_exceeded(self.message_data_total_length,
+                                                self.maxMessagePayloadSize,
+                                                u'received WebSocket message size {} exceeds payload limit of {} octets'.format(self.message_data_total_length, self.maxMessagePayloadSize))
             elif 0 < self.maxFramePayloadSize < length:
                 self.wasMaxFramePayloadSizeExceeded = True
-                self._fail_connection(
-                    WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION,
-                    u'frame exceeds payload limit of {} octets'.format(self.maxFramePayloadSize)
-                )
+                self._max_message_size_exceeded(length,
+                                                self.maxFramePayloadSize,
+                                                u'received WebSocket frame size {} exceeds payload limit of {} octets'.format(length, self.maxFramePayloadSize))
 
     def onMessageFrameData(self, payload):
         """
@@ -601,10 +600,9 @@ class WebSocketProtocol(ObservableMixin):
                 self.message_data_total_length += len(payload)
                 if 0 < self.maxMessagePayloadSize < self.message_data_total_length:
                     self.wasMaxMessagePayloadSizeExceeded = True
-                    self._fail_connection(
-                        WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG,
-                        u'message exceeds payload limit of {} octets'.format(self.maxMessagePayloadSize)
-                    )
+                    self._max_message_size_exceeded(self.message_data_total_length,
+                                                    self.maxMessagePayloadSize,
+                                                    u'received (partial) WebSocket message size {} (already) exceeds payload limit of {} octets'.format(self.message_data_total_length, self.maxMessagePayloadSize))
                 self.message_data.append(payload)
             else:
                 self.frame_data.append(payload)
@@ -878,12 +876,19 @@ class WebSocketProtocol(ObservableMixin):
         else:
             self.log.debug('dropping connection to peer {peer} skipped - connection already closed', peer=self.peer)
 
+    def _max_message_size_exceeded(self, msg_size, max_msg_size, reason):
+        # hook that is fired when a message is (to be) received that is larger than what is configured to be handled
+        if True:
+            self._fail_connection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, reason)
+        else:
+            raise PayloadExceededError(reason)
+
     def _fail_connection(self, code=CLOSE_STATUS_CODE_GOING_AWAY, reason=u'going away'):
         """
         Fails the WebSocket connection.
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            self.log.debug("failing connection: {code}: {reason}", code=code, reason=reason)
+            self.log.warn('failing WebSocket connection (code={code}): "{reason}"', code=code, reason=reason)
 
             self.failedByMe = True
 
@@ -2195,7 +2200,11 @@ class WebSocketProtocol(ObservableMixin):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage`
         """
-        assert(type(payload) == bytes)
+        assert type(payload) == six.binary_type, '"payload" must have type bytes, but was "{}"'.format(type(payload))
+        assert type(isBinary) == bool, '"isBinary" must have type bool, but was "{}"'.format(type(isBinary))
+        assert fragmentSize is None or type(fragmentSize) == bool, '"fragmentSize" must have type bool, but was "{}"'.format(type(fragmentSize))
+        assert type(sync) == bool, '"sync" must have type bool, but was "{}"'.format(type(sync))
+        assert type(doNotCompress) == bool, '"doNotCompress" must have type bool, but was "{}"'.format(type(doNotCompress))
 
         if self.state != WebSocketProtocol.STATE_OPEN:
             return
@@ -2225,13 +2234,21 @@ class WebSocketProtocol(ObservableMixin):
             payload2 = self._perMessageCompress.end_compress_message()
             payload = b''.join([payload1, payload2])
 
-            self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
+            payload_len = len(payload)
+
+            self.trafficStats.outgoingOctetsWebSocketLevel += payload_len
 
         else:
             sendCompressed = False
-            l = len(payload)
-            self.trafficStats.outgoingOctetsAppLevel += l
-            self.trafficStats.outgoingOctetsWebSocketLevel += l
+            payload_len = len(payload)
+            self.trafficStats.outgoingOctetsAppLevel += payload_len
+            self.trafficStats.outgoingOctetsWebSocketLevel += payload_len
+
+        if 0 < self.maxMessagePayloadSize < payload_len:
+            self.wasMaxMessagePayloadSizeExceeded = True
+            emsg = u'tried to send WebSocket message with size {} exceeding payload limit of {} octets'.format(payload_len, self.maxMessagePayloadSize)
+            self.log.warn(emsg)
+            raise PayloadExceededError(emsg)
 
         # explicit fragmentSize arguments overrides autoFragmentSize setting
         #
