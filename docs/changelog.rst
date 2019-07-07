@@ -5,6 +5,13 @@
 Changelog
 =========
 
+19.7.1
+------
+
+* fix: implement client side payload exceed max size; improve max size exceeded handling
+* fix: detect when our transport is "already" closed at connect time (#1215)
+* fix: XBR examples
+
 19.6.2
 ------
 
