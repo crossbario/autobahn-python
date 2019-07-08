@@ -5,6 +5,11 @@
 Changelog
 =========
 
+19.7.2
+------
+
+* new: client side catching of WAMP URI errors in `session.call|register|publish|subscribe`
+
 19.7.1
 ------
 

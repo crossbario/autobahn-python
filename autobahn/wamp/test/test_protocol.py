@@ -346,7 +346,7 @@ if os.environ.get('USE_TWISTED', False):
             options = types.PublishOptions(acknowledge=True)
 
             yield self.assertFailure(handler.publish(u'de.myapp.topic1', options=options), ApplicationError)
-            yield self.assertFailure(handler.publish(u'', options=options), ApplicationError)
+            yield self.assertFailure(handler.publish(u'foobar', options=options), ApplicationError)
 
         @inlineCallbacks
         def test_publish_defined_exception(self):
@@ -359,7 +359,7 @@ if os.environ.get('USE_TWISTED', False):
             yield self.assertFailure(handler.publish(u'de.myapp.topic1', options=options), NotAuthorized)
 
             handler.define(InvalidUri)
-            yield self.assertFailure(handler.publish(u'', options=options), InvalidUri)
+            yield self.assertFailure(handler.publish(u'foobar', options=options), NotAuthorized)
 
         @inlineCallbacks
         def test_call(self):

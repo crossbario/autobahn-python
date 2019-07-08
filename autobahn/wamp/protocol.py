@@ -1372,6 +1372,12 @@ class ApplicationSession(BaseSession):
         assert(args is None or type(args) in (list, tuple))
         assert(kwargs is None or type(kwargs) == dict)
 
+        message.check_or_raise_uri(topic,
+                                   message='{}.publish()'.format(self.__class__.__name__),
+                                   strict=False,
+                                   allow_empty_components=False,
+                                   allow_none=False)
+
         options = kwargs.pop('options', None)
         if options and not isinstance(options, types.PublishOptions):
             raise Exception("options must be of type a.w.t.PublishOptions")
@@ -1467,6 +1473,12 @@ class ApplicationSession(BaseSession):
             raise exception.TransportLost()
 
         def _subscribe(obj, fn, topic, options):
+            message.check_or_raise_uri(topic,
+                                       message='{}.subscribe()'.format(self.__class__.__name__),
+                                       strict=False,
+                                       allow_empty_components=True,
+                                       allow_none=False)
+
             request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
             handler_obj = Handler(fn, obj, options.details_arg if options else None)
@@ -1557,6 +1569,12 @@ class ApplicationSession(BaseSession):
         assert(type(procedure) == six.text_type)
         assert(args is None or type(args) in (list, tuple))
         assert(kwargs is None or type(kwargs) == dict)
+
+        message.check_or_raise_uri(procedure,
+                                   message='{}.call()'.format(self.__class__.__name__),
+                                   strict=False,
+                                   allow_empty_components=False,
+                                   allow_none=False)
 
         options = kwargs.pop('options', None)
         if options and not isinstance(options, types.CallOptions):
@@ -1661,6 +1679,12 @@ class ApplicationSession(BaseSession):
             raise exception.TransportLost()
 
         def _register(obj, fn, procedure, options):
+            message.check_or_raise_uri(procedure,
+                                       message='{}.register()'.format(self.__class__.__name__),
+                                       strict=False,
+                                       allow_empty_components=True,
+                                       allow_none=False)
+
             request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
             endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
@@ -1704,7 +1728,7 @@ class ApplicationSession(BaseSession):
                             regopts = pat.options or options
                             on_replies.append(_register(endpoint, proc, _uri, regopts))
 
-            # XXX neds coverage
+            # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)
 
     def _unregister(self, registration):

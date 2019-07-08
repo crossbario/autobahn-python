@@ -37,7 +37,7 @@ from twisted.internet.defer import CancelledError
 from autobahn.util import public
 from autobahn.twisted.util import peer2str, transport_channel_id
 from autobahn.util import _LazyHexFormatter
-from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
+from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost, InvalidUriError
 from autobahn.exception import PayloadExceededError
 
 __all__ = (
@@ -140,6 +140,12 @@ class WampRawSocketProtocol(Int32StringReceiver):
             self.log.debug("{klass}.stringReceived: WAMP CancelledError - connection will continue!\n{err}",
                            klass=self.__class__.__name__,
                            err=e)
+
+        except InvalidUriError as e:
+            self.log.warn("{klass}.stringReceived: WAMP InvalidUriError - aborting connection!\n{err}",
+                          klass=self.__class__.__name__,
+                          err=e)
+            self.abort()
 
         except ProtocolError as e:
             self.log.warn("{klass}.stringReceived: WAMP ProtocolError - aborting connection!\n{err}",

@@ -67,6 +67,13 @@ class SerializationError(Error):
 
 
 @public
+class InvalidUriError(Error):
+    """
+    Exception raised when an invalid WAMP URI was used.
+    """
+
+
+@public
 class ProtocolError(Error):
     """
     Exception raised when WAMP protocol was violated. Protocol errors

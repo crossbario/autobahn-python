@@ -32,7 +32,7 @@ import binascii
 import six
 
 import autobahn
-from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.exception import ProtocolError, InvalidUriError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
 try:
@@ -246,11 +246,11 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
         if allow_none:
             return
         else:
-            raise ProtocolError(u"{0}: URI cannot be null".format(message))
+            raise InvalidUriError(u"{0}: URI cannot be null".format(message))
 
     if type(value) != six.text_type:
         if not (value is None and allow_none):
-            raise ProtocolError(u"{0}: invalid type {1} for URI".format(message, type(value)))
+            raise InvalidUriError(u"{0}: invalid type {1} for URI".format(message, type(value)))
 
     if strict:
         if allow_last_empty:
@@ -268,7 +268,7 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
             pat = _URI_PAT_LOOSE_NON_EMPTY
 
     if not pat.match(value):
-        raise ProtocolError(u"{0}: invalid value '{1}' for URI (did not match pattern {2}, strict={3}, allow_empty_components={4}, allow_last_empty={5}, allow_none={6})".format(message, value, pat.pattern, strict, allow_empty_components, allow_last_empty, allow_none))
+        raise InvalidUriError(u'{0}: invalid value "{1}" for URI (did not match pattern "{2}" with options strict={3}, allow_empty_components={4}, allow_last_empty={5}, allow_none={6})'.format(message, value, pat.pattern, strict, allow_empty_components, allow_last_empty, allow_none))
     else:
         return value
 

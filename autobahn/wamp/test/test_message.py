@@ -28,7 +28,7 @@ from __future__ import absolute_import
 
 from autobahn.wamp import role
 from autobahn.wamp import message
-from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.exception import ProtocolError, InvalidUriError
 
 import unittest
 
@@ -81,7 +81,7 @@ class TestUris(unittest.TestCase):
                   u"com.myapp.product#",
                   u"com.#.product",
                   ]:
-            self.assertRaises(ProtocolError, message.check_or_raise_uri, u)
+            self.assertRaises(InvalidUriError, message.check_or_raise_uri, u)
 
     def test_valid_uris_loose_empty(self):
         for u in [u"com.myapp.topic1",
@@ -113,7 +113,7 @@ class TestUris(unittest.TestCase):
                   u"com.myapp.product#",
                   u"com.#.product",
                   ]:
-            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, allow_empty_components=True)
+            self.assertRaises(InvalidUriError, message.check_or_raise_uri, u, allow_empty_components=True)
 
     def test_valid_uris_strict_nonempty(self):
         for u in [u"com.myapp.topic1",
@@ -146,7 +146,7 @@ class TestUris(unittest.TestCase):
                   u"hello\xE2\x82\xACworld",
                   u"hello\xF0\xA4\xAD\xA2world",
                   ]:
-            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict=True)
+            self.assertRaises(InvalidUriError, message.check_or_raise_uri, u, strict=True)
 
     def test_valid_uris_strict_empty(self):
         for u in [u"com.myapp.topic1",
@@ -178,7 +178,7 @@ class TestUris(unittest.TestCase):
                   u"hello\xE2\x82\xACworld..foo",
                   u"hello\xF0\xA4\xAD\xA2world..foo",
                   ]:
-            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict=True, allow_empty_components=True)
+            self.assertRaises(InvalidUriError, message.check_or_raise_uri, u, strict=True, allow_empty_components=True)
 
 
 class TestErrorMessage(unittest.TestCase):
