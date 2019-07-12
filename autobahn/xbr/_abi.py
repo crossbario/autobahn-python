@@ -46,13 +46,13 @@ if 'XBR_DEBUG_TOKEN_ADDR' in os.environ:
     XBR_DEBUG_TOKEN_ADDR = web3.Web3.toChecksumAddress(os.environ['XBR_DEBUG_TOKEN_ADDR'])
 else:
     XBR_DEBUG_TOKEN_ADDR = '0x0'
-    print('WARNING: The XBR smart contracts are not yet depoyed to public networks. Please set XBR_DEBUG_TOKEN_ADDR manually.')
+    print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_TOKEN_ADDR manually.')
 
 if 'XBR_DEBUG_NETWORK_ADDR' in os.environ:
     XBR_DEBUG_NETWORK_ADDR = web3.Web3.toChecksumAddress(os.environ['XBR_DEBUG_NETWORK_ADDR'])
 else:
     XBR_DEBUG_NETWORK_ADDR = '0x0'
-    print('WARNING: The XBR smart contracts are not yet depoyed to public networks. Please set XBR_DEBUG_NETWORK_ADDR manually.')
+    print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_NETWORK_ADDR manually.')
 
 
 def _load_json(contract_name):
