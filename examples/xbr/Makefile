@@ -1,6 +1,9 @@
 connect:
 	python test_connect.py --gateway http://localhost:1545
 
+typed:
+	python test_typed.py --gateway http://localhost:1545
+
 transfer:
 	python test_transfer_tokens.py --gateway http://localhost:1545
 

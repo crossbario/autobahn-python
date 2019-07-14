@@ -147,11 +147,12 @@ if 'AUTOBAHN_USE_NVX' in os.environ:
     cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
 
 extras_require_xbr = [
-    'cbor2>=4.1.1',         # MIT license
-    'zlmdb>=18.12.1',       # MIT license
-    'twisted>=18.9.0',      # MIT license
-    'autobahn>=18.11.2',    # MIT license
-    'web3>=4.8.1',          # MIT license
+    'cbor2>=4.1.1',             # MIT license
+    'zlmdb>=18.12.1',           # MIT license
+    'twisted>=18.9.0',          # MIT license
+    'autobahn>=18.11.2',        # MIT license
+    'web3>=4.8.1',              # MIT license
+    'py-eth-sig-utils>=0.3.0',  # MIT license
 ]
 
 # everything
