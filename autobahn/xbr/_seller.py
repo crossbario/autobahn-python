@@ -25,7 +25,6 @@
 ###############################################################################
 
 import os
-import time
 import uuid
 import binascii
 
@@ -37,6 +36,8 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.internet.task import LoopingCall
 
 import txaio
+
+from zlmdb import time_ns
 
 from autobahn.wamp.types import RegisterOptions
 from autobahn.wamp.exception import ApplicationError, TransportLost
@@ -203,7 +204,7 @@ class SimpleSeller(object):
             retries = 5
             while retries:
                 try:
-                    valid_from = time.time_ns() - 10 * 10 ** 9
+                    valid_from = time_ns() - 10 * 10 ** 9
 
                     delegate = self._addr
 
