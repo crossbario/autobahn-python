@@ -10,26 +10,25 @@ import eth_keys
 from eth_account import Account
 
 
-def main (accounts):
-
+def main(accounts):
     from py_eth_sig_utils import signing
 
     data = {
         'types': {
             'EIP712Domain': [
-                { 'name': 'name', 'type': 'string' },
-                { 'name': 'version', 'type': 'string' },
-                { 'name': 'chainId', 'type': 'uint256' },
-                { 'name': 'verifyingContract', 'type': 'address' },
+                {'name': 'name', 'type': 'string'},
+                {'name': 'version', 'type': 'string'},
+                {'name': 'chainId', 'type': 'uint256'},
+                {'name': 'verifyingContract', 'type': 'address'},
             ],
             'Person': [
-                { 'name': 'name', 'type': 'string' },
-                { 'name': 'wallet', 'type': 'address' }
+                {'name': 'name', 'type': 'string'},
+                {'name': 'wallet', 'type': 'address'}
             ],
             'Mail': [
-                { 'name': 'from', 'type': 'Person' },
-                { 'name': 'to', 'type': 'Person' },
-                { 'name': 'contents', 'type': 'string' }
+                {'name': 'from', 'type': 'Person'},
+                {'name': 'to', 'type': 'Person'},
+                {'name': 'contents', 'type': 'string'}
             ]
         },
         'primaryType': 'Mail',
@@ -47,6 +46,7 @@ def main (accounts):
             'to': {
                 'name': 'Bob',
                 'wallet': '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+                'foobar': 23,
             },
             'contents': 'Hello, Bob!',
         },
@@ -69,7 +69,7 @@ def main (accounts):
 
     signature = signing.v_r_s_to_signature(*signing.sign_typed_data(data, pkey_raw))
     assert len(signature) == 32 + 32 + 1
-    print('Ok, signed typed data using {}'.format(caddr))
+    print('Ok, signed typed data using {}:\nSIGNATURE = 0x{}'.format(caddr, b2a_hex(signature).decode()))
 
     signer_address = signing.recover_typed_data(data, *signing.signature_to_v_r_s(signature))
     assert signer_address == caddr

@@ -152,7 +152,11 @@ extras_require_xbr = [
     'twisted>=18.9.0',          # MIT license
     'autobahn>=18.11.2',        # MIT license
     'web3>=4.8.1',              # MIT license
-    'py-eth-sig-utils>=0.3.0',  # MIT license
+
+    # FIXME: this is actually only needed for EIP712 ("signed typed data")
+    'py-eth-sig-utils>=0.3.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
+    'ethereum>=2.3.2',          # MIT license (https://github.com/ethereum/pyethereum/blob/v2.3.2/LICENSE)
+    'eth-abi>=1.3.0',           # MIT license (https://github.com/ethereum/eth-abi)
 ]
 
 # everything
