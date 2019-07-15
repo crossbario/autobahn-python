@@ -196,8 +196,20 @@ class SimpleBuyer(object):
             # mark the key as currently being bought already (the location of code here is multi-entrant)
             self._keys[key_id] = False
 
-            # call the market maker to buy the key
-            amount = self._max_price
+            # get price for key
+            price = await self._session.call('xbr.marketmaker.get_quote', key_id)
+
+            if price > self._max_price:
+                raise ApplicationError('xbr.error.max_price_exceeded',
+                                       'key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(uuid.UUID(bytes=key_id), price, self._max_price))
+
+            # call the market maker to buy the key with maximum price to pay set to current quote
+            amount = price
+
+            balance = self._balance - amount
+            if balance < 0:
+                raise ApplicationError('xbr.error.insufficient_balance',
+                                       'key {} needed cannot be bought: insufficient balance {} in payment channel for amount {}'.format(uuid.UUID(bytes=key_id), self._balance, amount))
 
             # FIXME: compute actual kecchak256 based signature
             signature = b'\x00' * 64
