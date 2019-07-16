@@ -42,6 +42,9 @@ from zlmdb import time_ns
 from autobahn.wamp.types import RegisterOptions
 from autobahn.wamp.exception import ApplicationError, TransportLost
 from autobahn.twisted.util import sleep
+from autobahn.wamp.types import CallDetails
+
+from autobahn import xbr
 
 import eth_keys
 from eth_account import Account
@@ -336,34 +339,74 @@ class SimpleSeller(object):
 
         return key_id, serializer, ciphertext
 
-    def sell(self, key_id, buyer_pubkey, amount_paid, post_balance, signature, details=None):
+    def sell(self, delegate_adr, buyer_pubkey, key_id, amount, balance, signature, details=None):
         """
+        Called by a XBR Market Maker to buy a key, acting for (triggered by) the XBR buyer delegate.
 
-        :param key_id:
-        :param buyer_pubkey:
-        :param amount_paid:
-        :param post_balance:
-        :param signature:
+        :param delegate_adr: The market maker Ethereum address. The technical buyer is usually the
+            XBR market maker (== the XBR delegate of the XBR market operator).
+        :type delegate_adr: bytes of length 20
+
+        :param buyer_pubkey: The buyer delegate Ed25519 public key.
+        :type buyer_pubkey: bytes of length 32
+
+        :param key_id: The UUID of the data encryption key to buy.
+        :type key_id: bytes of length 16
+
+        :param amount:
+        :type amount:
+
+        :param balance: Balance remaining in the payment channel (from the market maker to the
+            seller) after successfully buying the key.
+        :type balance: int
+
+        :param signature: Signature over the supplied buying information, using the Ethereum
+            private key of the market maker (which is the delegate of the marker operator).
+        :type signature: bytes
+
+        :param details: Caller details. The call will come from the XBR Market Maker.
         :param details:
-        :return:
+
+        :return: The data encryption key, itself encrypted to the public key of the original buyer.
+        :rtype: bytes
         """
+        assert type(delegate_adr) == bytes and len(delegate_adr) == 20, 'delegate_adr must be bytes[20]'
+        assert type(buyer_pubkey) == bytes and len(buyer_pubkey) == 32, 'buyer_pubkey must be bytes[32]'
+        assert type(key_id) == bytes and len(key_id) == 16, 'key_id must be bytes[16]'
+        assert type(amount) == int, 'amount_paid must be int'
+        assert type(balance) == int, 'post_balance must be int'
+        assert type(signature) == bytes and len(signature) == (32 + 32 + 1), 'signature must be bytes[65]'
+        assert details is None or isinstance(details, CallDetails), 'details must be autobahn.wamp.types.CallDetails'
+
+        # check the signature (over all input data for the buying of the key)
+        signer_address = xbr.recover_eip712_signer(delegate_adr, buyer_pubkey, key_id, amount, balance, signature)
+        if signer_address != delegate_adr:
+            self.log.info('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
+                          signer_address=signer_address, delegate_adr=delegate_adr)
+            raise ApplicationError('xbr.error.invalid_signature', 'EIP712 signature invalid or not signed by buyer delegate')
+
+        # FIXME: check that the delegate_adr fits what we expect for the market maker
+
+        # get the key series given the key_id
         if key_id not in self._keys_map:
             raise ApplicationError('crossbar.error.no_such_object', 'no key with ID "{}"'.format(key_id))
-
         key_series = self._keys_map[key_id]
 
-        encrypted_key = key_series.encrypt_key(key_id, buyer_pubkey)
+        # encrypt the data encryption key against the original buyer delegate Ed25519 public key
+        sealed_key = key_series.encrypt_key(key_id, buyer_pubkey)
+
+        assert type(sealed_key) == bytes and len(sealed_key) == 32
 
         self.log.info('{tx_type} key "{key_id}" sold for {amount_earned} [caller={caller}, caller_authid="{caller_authid}", buyer_pubkey="{buyer_pubkey}"]',
                       tx_type=hl('XBR SELL  ', color='magenta'),
                       key_id=hl(uuid.UUID(bytes=key_id)),
-                      amount_earned=hl(str(amount_paid) + ' XBR', color='magenta'),
+                      amount_earned=hl(str(amount) + ' XBR', color='magenta'),
                       # paying_channel=hl(binascii.b2a_hex(paying_channel).decode()),
                       caller=hl(details.caller),
                       caller_authid=hl(details.caller_authid),
                       buyer_pubkey=hl(binascii.b2a_hex(buyer_pubkey).decode()))
 
-        return encrypted_key
+        return sealed_key
 
 
 ISeller.register(SimpleSeller)

@@ -38,11 +38,12 @@ import txaio
 from autobahn.twisted.util import sleep
 from autobahn.wamp.exception import ApplicationError
 
+import web3
 import eth_keys
 from eth_account import Account
 
 from ._interfaces import IConsumer, IBuyer
-from ._util import hl
+from ._util import hl, sign_eip712_data
 
 
 class SimpleBuyer(object):
@@ -63,11 +64,29 @@ class SimpleBuyer(object):
 
         :param buyer_key: Consumer delegate (buyer) private Ethereum key.
         :type buyer_key: bytes
+
+        :param max_price: Maximum price we are willing to buy per key.
+        :type max_price: int
         """
+        assert type(buyer_key) == bytes and len(buyer_key) == 32
+        assert type(max_price) == int and max_price > 0
+
+        # raw ethereum private key (32 bytes)
+        self._pkey_raw = buyer_key
+
+        # ethereum private key object
         self._pkey = eth_keys.keys.PrivateKey(buyer_key)
+
+        # ethereum private account from raw private key
         self._acct = Account.privateKeyToAccount(self._pkey)
+
+        # ethereum account canonical address
         self._addr = self._pkey.public_key.to_canonical_address()
 
+        # ethereum account canonical checksummed address
+        self._caddr = web3.Web3.toChecksumAddress(self._addr)
+
+        # maximum price per key we are willing to pay
         self._max_price = max_price
 
         # this holds the keys we bought (map: key_id => nacl.secret.SecretBox)
@@ -196,25 +215,26 @@ class SimpleBuyer(object):
             # mark the key as currently being bought already (the location of code here is multi-entrant)
             self._keys[key_id] = False
 
-            # get price for key
-            price = await self._session.call('xbr.marketmaker.get_quote', key_id)
+            # get (current) price for key we want to buy
+            quote = await self._session.call('xbr.marketmaker.get_quote', key_id)
 
-            if price > self._max_price:
+            if quote['price'] > self._max_price:
                 raise ApplicationError('xbr.error.max_price_exceeded',
-                                       'key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(uuid.UUID(bytes=key_id), price, self._max_price))
+                                       'key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(uuid.UUID(bytes=key_id), quote['price'], self._max_price))
 
-            # call the market maker to buy the key with maximum price to pay set to current quote
-            amount = price
+            # set maximum price we are willing to pay set to the (current) quoted price
+            amount = quote['price']
 
+            # check (locally) we have enough balance left in the payment channel to buy the key
             balance = self._balance - amount
             if balance < 0:
                 raise ApplicationError('xbr.error.insufficient_balance',
                                        'key {} needed cannot be bought: insufficient balance {} in payment channel for amount {}'.format(uuid.UUID(bytes=key_id), self._balance, amount))
 
-            # FIXME: compute actual kecchak256 based signature
-            signature = b'\x00' * 64
-
             buyer_pubkey = self._receive_key.public_key.encode(encoder=nacl.encoding.RawEncoder)
+
+            # compute EIP712 typed data signature
+            signature = sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, amount, balance)
 
             # call the market maker to buy the key
             #   -> channel_id, channel_seq, buyer_pubkey, datakey_id, amount, balance, signature
@@ -224,6 +244,7 @@ class SimpleBuyer(object):
                                                    buyer_pubkey,
                                                    key_id,
                                                    amount,
+                                                   balance,
                                                    signature)
             except Exception as e:
                 self._keys[key_id] = e
