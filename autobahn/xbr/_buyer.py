@@ -48,13 +48,8 @@ from ._util import hl, sign_eip712_data, recover_eip712_signer
 
 class SimpleBuyer(object):
     """
-    Simple XBR buyer component. This component can be used by a XBR consumer to handle
-    XBR buying transactions to buy data keys for services used by the XBR consumer.
-
-    on_offer_placed
-    on_offer_revoked
-    on_payment_channel_empty
-    on_paying_channel_empty
+    Simple XBR buyer component. This component can be used by a XBR buyer delegate to
+    handle the automated buying of data encryption keys from the XBR market maker.
     """
 
     log = txaio.make_logger()
@@ -108,8 +103,13 @@ class SimpleBuyer(object):
         Start buying keys to decrypt XBR data by calling ``unwrap()``.
 
         :param session:
+        :type session:
+
         :param consumer_id:
+        :type consumer_id:
+
         :return:
+        :rtype:
         """
         assert not self._running
 
@@ -138,6 +138,10 @@ class SimpleBuyer(object):
         return self._balance
 
     async def stop(self):
+        """
+
+        :return:
+        """
         assert self._running
 
         self._running = False
@@ -176,8 +180,13 @@ class SimpleBuyer(object):
         """
 
         :param amount:
+        :type amount:
+
         :param details:
+        :type details:
+
         :return:
+        :rtype:
         """
         assert self._session and self._session.is_attached()
 
@@ -211,9 +220,16 @@ class SimpleBuyer(object):
         XBR market maker to buy data encryption keys from the XBR provider.
 
         :param key_id:
+        :type key_id:
+
         :param enc_ser:
+        :type enc_ser:
+
         :param ciphertext:
+        :type ciphertext:
+
         :return:
+        :rtype:
         """
         assert(enc_ser == 'cbor')
 

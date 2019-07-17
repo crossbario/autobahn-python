@@ -56,10 +56,28 @@ from ._util import hl
 
 
 class KeySeries(object):
+    """
+    Data encryption key series with automatic (time-based) key rotation
+    and key offering (to the XBR market maker).
+    """
 
     log = txaio.make_logger()
 
     def __init__(self, api_id, price, interval, on_rotate=None):
+        """
+
+        :param api_id:
+        :type api_id:
+
+        :param price:
+        :type price:
+
+        :param interval:
+        :type interval:
+
+        :param on_rotate:
+        :type on_rotate:
+        """
         assert type(api_id) == bytes and len(api_id) == 16
         assert type(price) == int and price > 0
         assert type(interval) == int and interval > 0
@@ -91,7 +109,10 @@ class KeySeries(object):
         Encrypt data with the current XBR data encryption key.
 
         :param payload:
+        :type payload:
+
         :return:
+        :rtype:
         """
         data = cbor2.dumps(payload)
         ciphertext = self._box.encrypt(data)
@@ -103,8 +124,13 @@ class KeySeries(object):
         Encrypt a previously used XBR data encryption key with a buyer public key.
 
         :param key_id:
+        :type key_id:
+
         :param buyer_pubkey:
+        :type buyer_pubkey:
+
         :return:
+        :rtype:
         """
 
         # FIXME: check amount paid, post balance and signature
@@ -119,6 +145,10 @@ class KeySeries(object):
         return encrypted_key
 
     def start(self):
+        """
+
+        :return:
+        """
         assert self._run_loop is None
 
         self.log.info('Starting key rotation every {interval} seconds for api_id="{api_id}" ..',
@@ -130,6 +160,10 @@ class KeySeries(object):
         return self._started
 
     def stop(self):
+        """
+
+        :return:
+        """
         assert self._run_loop
 
         if self._run_loop:
@@ -157,6 +191,10 @@ class KeySeries(object):
 
 
 class SimpleSeller(object):
+    """
+    Simple XBR seller component. This component can be used by a XBR seller delegate to
+    handle the automated selling of data encryption keys to the XBR market maker.
+    """
 
     log = txaio.make_logger()
 
@@ -218,8 +256,13 @@ class SimpleSeller(object):
         Add a new (rotating) private encryption key for encrypting data on the given API.
 
         :param api_id: API for which to create a new series of rotating encryption keys.
+        :type api_id:
+
         :param price: Price in XBR token per key.
+        :type price:
+
         :param interval: Interval (in seconds) in which to auto-rotate the encryption key.
+        :type interval:
         """
         assert api_id not in self._keys
 
@@ -295,8 +338,10 @@ class SimpleSeller(object):
         Start rotating keys and placing key offers with the XBR market maker.
 
         :param session: WAMP session over which to communicate with the XBR market maker.
+        :type session:
+
         :param provider_id: The XBR provider ID.
-        :return:
+        :type provider_id:
         """
         assert self._session is None
 
@@ -353,8 +398,13 @@ class SimpleSeller(object):
         """
 
         :param uri:
+        :type uri:
+
         :param payload:
+        :type payload:
+
         :return:
+        :rtype:
         """
         assert api_id in self._keys
         assert type(uri) == str
