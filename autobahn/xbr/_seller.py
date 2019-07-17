@@ -158,13 +158,26 @@ class SimpleSeller(object):
 
     log = txaio.make_logger()
 
-    def __init__(self, private_key, provider_id=None):
+    def __init__(self, market_maker_adr, seller_key, provider_id=None):
         """
 
-        :param private_key:
+        :param market_maker_adr:
+        :type market_maker_adr:
+
+        :param seller_key:
+        :type seller_key:
+
+        :param provider_id:
+        :type provider_id:
         """
+        assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'market_maker_adr must be bytes[20], but got "{}"'.format(market_maker_adr)
+        assert type(seller_key) == bytes and len(seller_key) == 32, 'seller delegate must be bytes[32], but got "{}"'.format(seller_key)
+        assert provider_id is None or type(provider_id) == str, 'provider_id must be None or string, but got "{}"'.format(provider_id)
+
+        self._market_maker_adr = market_maker_adr
+
         # seller private key/account
-        self._pkey = eth_keys.keys.PrivateKey(private_key)
+        self._pkey = eth_keys.keys.PrivateKey(seller_key)
         self._acct = Account.privateKeyToAccount(self._pkey)
         self._addr = self._pkey.public_key.to_canonical_address()
 
@@ -378,14 +391,18 @@ class SimpleSeller(object):
         assert type(signature) == bytes and len(signature) == (32 + 32 + 1), 'signature must be bytes[65]'
         assert details is None or isinstance(details, CallDetails), 'details must be autobahn.wamp.types.CallDetails'
 
+        # check that the delegate_adr fits what we expect for the market maker
+        if delegate_adr != self._market_maker_adr:
+            raise ApplicationError('xbr.error.unexpected_delegate_adr',
+                                   'unexpected market maker (delegate) address: expected 0x{}, but got 0x{}'.format(binascii.b2a_hex(self._market_maker_adr).decode(), binascii.b2a_hex(delegate_adr).decode()))
+
         # check the signature (over all input data for the buying of the key)
         signer_address = xbr.recover_eip712_signer(delegate_adr, buyer_pubkey, key_id, amount, balance, signature)
         if signer_address != delegate_adr:
-            self.log.info('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
-                          signer_address=signer_address, delegate_adr=delegate_adr)
-            raise ApplicationError('xbr.error.invalid_signature', 'EIP712 signature invalid or not signed by buyer delegate')
-
-        # FIXME: check that the delegate_adr fits what we expect for the market maker
+            self.log.warn('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
+                          signer_address=hl(binascii.b2a_hex(signer_address).decode()),
+                          delegate_adr=hl(binascii.b2a_hex(delegate_adr).decode()))
+            raise ApplicationError('xbr.error.invalid_signature', 'EIP712 signature invalid or not signed by market maker')
 
         # get the key series given the key_id
         if key_id not in self._keys_map:
@@ -395,7 +412,7 @@ class SimpleSeller(object):
         # encrypt the data encryption key against the original buyer delegate Ed25519 public key
         sealed_key = key_series.encrypt_key(key_id, buyer_pubkey)
 
-        assert type(sealed_key) == bytes and len(sealed_key) == 32
+        assert type(sealed_key) == bytes and len(sealed_key) == 80, 'unexpected sealed key computed (expected bytes[80]): {}'.format(sealed_key)
 
         self.log.info('{tx_type} key "{key_id}" sold for {amount_earned} [caller={caller}, caller_authid="{caller_authid}", buyer_pubkey="{buyer_pubkey}"]',
                       tx_type=hl('XBR SELL  ', color='magenta'),
