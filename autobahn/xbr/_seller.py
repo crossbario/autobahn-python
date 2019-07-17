@@ -35,6 +35,8 @@ import nacl.utils
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.task import LoopingCall
 
+import web3
+
 import txaio
 
 from zlmdb import time_ns
@@ -164,8 +166,8 @@ class SimpleSeller(object):
         :param market_maker_adr:
         :type market_maker_adr:
 
-        :param seller_key:
-        :type seller_key:
+        :param seller_key: Provider delegate (seller) private Ethereum key.
+        :type seller_key: bytes
 
         :param provider_id:
         :type provider_id:
@@ -174,13 +176,25 @@ class SimpleSeller(object):
         assert type(seller_key) == bytes and len(seller_key) == 32, 'seller delegate must be bytes[32], but got "{}"'.format(seller_key)
         assert provider_id is None or type(provider_id) == str, 'provider_id must be None or string, but got "{}"'.format(provider_id)
 
+        # market maker address
         self._market_maker_adr = market_maker_adr
 
-        # seller private key/account
+        # seller raw ethereum private key (32 bytes)
+        self._pkey_raw = seller_key
+
+        # seller ethereum private key object
         self._pkey = eth_keys.keys.PrivateKey(seller_key)
+
+        # seller ethereum private account from raw private key
         self._acct = Account.privateKeyToAccount(self._pkey)
+
+        # seller ethereum account canonical address
         self._addr = self._pkey.public_key.to_canonical_address()
 
+        # seller ethereum account canonical checksummed address
+        self._caddr = web3.Web3.toChecksumAddress(self._addr)
+
+        # seller provider ID
         self._provider_id = provider_id or str(self._pkey.public_key)
 
         self._keys = {}
@@ -414,6 +428,8 @@ class SimpleSeller(object):
 
         assert type(sealed_key) == bytes and len(sealed_key) == 80, 'unexpected sealed key computed (expected bytes[80]): {}'.format(sealed_key)
 
+        seller_signature = xbr.sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, amount, balance)
+
         self.log.info('{tx_type} key "{key_id}" sold for {amount_earned} [caller={caller}, caller_authid="{caller_authid}", buyer_pubkey="{buyer_pubkey}"]',
                       tx_type=hl('XBR SELL  ', color='magenta'),
                       key_id=hl(uuid.UUID(bytes=key_id)),
@@ -423,7 +439,32 @@ class SimpleSeller(object):
                       caller_authid=hl(details.caller_authid),
                       buyer_pubkey=hl(binascii.b2a_hex(buyer_pubkey).decode()))
 
-        return sealed_key
+        receipt = {
+            # key ID that has been bought
+            'key_id': key_id,
+
+            # seller delegate address that sold the key
+            'delegate': self._addr,
+
+            # buyer delegate Ed25519 public key with which the bought key was sealed
+            'buyer_pubkey': buyer_pubkey,
+
+            # finally return what the consumer (buyer) was actually interested in:
+            # the data encryption key, sealed (public key Ed25519 encrypted) to the
+            # public key of the buyer delegate
+            'sealed_key': sealed_key,
+
+            # amount paid for the key
+            'amount': amount,
+
+            # paying channel amount remaining
+            'balance': balance,
+
+            # seller (delegate) signature
+            'signature': seller_signature,
+        }
+
+        return receipt
 
 
 ISeller.register(SimpleSeller)

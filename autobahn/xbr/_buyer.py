@@ -43,7 +43,7 @@ import eth_keys
 from eth_account import Account
 
 from ._interfaces import IConsumer, IBuyer
-from ._util import hl, sign_eip712_data
+from ._util import hl, sign_eip712_data, recover_eip712_signer
 
 
 class SimpleBuyer(object):
@@ -59,8 +59,11 @@ class SimpleBuyer(object):
 
     log = txaio.make_logger()
 
-    def __init__(self, buyer_key, max_price):
+    def __init__(self, market_maker_adr, buyer_key, max_price):
         """
+
+        :param market_maker_adr:
+        :type market_maker_adr:
 
         :param buyer_key: Consumer delegate (buyer) private Ethereum key.
         :type buyer_key: bytes
@@ -68,22 +71,26 @@ class SimpleBuyer(object):
         :param max_price: Maximum price we are willing to buy per key.
         :type max_price: int
         """
-        assert type(buyer_key) == bytes and len(buyer_key) == 32
+        assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'market_maker_adr must be bytes[20], but got "{}"'.format(market_maker_adr)
+        assert type(buyer_key) == bytes and len(buyer_key) == 32, 'buyer delegate must be bytes[32], but got "{}"'.format(buyer_key)
         assert type(max_price) == int and max_price > 0
 
-        # raw ethereum private key (32 bytes)
+        # market maker address
+        self._market_maker_adr = market_maker_adr
+
+        # buyer raw ethereum private key (32 bytes)
         self._pkey_raw = buyer_key
 
-        # ethereum private key object
+        # buyer ethereum private key object
         self._pkey = eth_keys.keys.PrivateKey(buyer_key)
 
-        # ethereum private account from raw private key
+        # buyer ethereum private account from raw private key
         self._acct = Account.privateKeyToAccount(self._pkey)
 
-        # ethereum account canonical address
+        # buyer ethereum account canonical address
         self._addr = self._pkey.public_key.to_canonical_address()
 
-        # ethereum account canonical checksummed address
+        # buyer ethereum account canonical checksummed address
         self._caddr = web3.Web3.toChecksumAddress(self._addr)
 
         # maximum price per key we are willing to pay
@@ -249,6 +256,16 @@ class SimpleBuyer(object):
             except Exception as e:
                 self._keys[key_id] = e
                 raise e
+
+            # check market maker signature
+            marketmaker_signature = receipt['signature']
+            signer_address = recover_eip712_signer(self._market_maker_adr, buyer_pubkey, key_id, amount, balance, marketmaker_signature)
+            if signer_address != self._market_maker_adr:
+                self.log.warn('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
+                              signer_address=hl(binascii.b2a_hex(signer_address).decode()),
+                              delegate_adr=hl(binascii.b2a_hex(self._market_maker_adr).decode()))
+                raise ApplicationError('xbr.error.invalid_signature',
+                                       'EIP712 signature invalid or not signed by market maker')
 
             sealed_key = receipt['sealed_key']
 
