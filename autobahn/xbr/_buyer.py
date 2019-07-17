@@ -245,7 +245,7 @@ class SimpleBuyer(object):
                 raise ApplicationError('xbr.error.max_price_exceeded',
                                        'key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(uuid.UUID(bytes=key_id), quote['price'], self._max_price))
 
-            # set maximum price we are willing to pay set to the (current) quoted price
+            # set price we pay set to the (current) quoted price
             amount = quote['price']
 
             # check (locally) we have enough balance left in the payment channel to buy the key
@@ -260,7 +260,6 @@ class SimpleBuyer(object):
             signature = sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, amount, balance)
 
             # call the market maker to buy the key
-            #   -> channel_id, channel_seq, buyer_pubkey, datakey_id, amount, balance, signature
             try:
                 receipt = await self._session.call('xbr.marketmaker.buy_key',
                                                    self._addr,
@@ -272,6 +271,8 @@ class SimpleBuyer(object):
             except Exception as e:
                 self._keys[key_id] = e
                 raise e
+            else:
+                self._balance -= amount
 
             # check market maker signature
             marketmaker_signature = receipt['signature']
@@ -283,8 +284,8 @@ class SimpleBuyer(object):
                 raise ApplicationError('xbr.error.invalid_signature',
                                        'EIP712 signature invalid or not signed by market maker')
 
+            # unseal the data encryption key
             sealed_key = receipt['sealed_key']
-
             unseal_box = nacl.public.SealedBox(self._receive_key)
             try:
                 key = unseal_box.decrypt(sealed_key)
@@ -318,13 +319,14 @@ class SimpleBuyer(object):
             e = self._keys[key_id]
             raise e
 
-        # now that we have the secret key, decrypt the event application payload
+        # now that we have the data encryption key, decrypt the application payload
         try:
             message = self._keys[key_id].decrypt(ciphertext)
         except nacl.exceptions.CryptoError as e:
             # Decryption failed. Ciphertext failed verification
             raise ApplicationError('xbr.error.decryption_failed', 'failed to unwrap encrypted data: {}'.format(e))
 
+        # deserialize the application payload
         try:
             payload = cbor2.loads(message)
         except cbor2.decoder.CBORDecodeError as e:
