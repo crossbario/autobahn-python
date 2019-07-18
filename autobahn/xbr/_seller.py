@@ -460,7 +460,7 @@ class SimpleSeller(object):
             raise ApplicationError('xbr.error.unexpected_delegate_adr',
                                    'unexpected market maker (delegate) address: expected 0x{}, but got 0x{}'.format(binascii.b2a_hex(self._market_maker_adr).decode(), binascii.b2a_hex(delegate_adr).decode()))
 
-        # check the signature (over all input data for the buying of the key)
+        # XBRSIG[4/8]: check the signature (over all input data for the buying of the key)
         signer_address = xbr.recover_eip712_signer(delegate_adr, buyer_pubkey, key_id, amount, balance, signature)
         if signer_address != delegate_adr:
             self.log.warn('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
@@ -478,6 +478,7 @@ class SimpleSeller(object):
 
         assert type(sealed_key) == bytes and len(sealed_key) == 80, 'unexpected sealed key computed (expected bytes[80]): {}'.format(sealed_key)
 
+        # XBRSIG[5/8]: compute EIP712 typed data signature
         seller_signature = xbr.sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, amount, balance)
 
         self.log.info('{tx_type} key "{key_id}" sold for {amount_earned} [caller={caller}, caller_authid="{caller_authid}", buyer_pubkey="{buyer_pubkey}"]',

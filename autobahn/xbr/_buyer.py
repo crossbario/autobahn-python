@@ -256,7 +256,7 @@ class SimpleBuyer(object):
 
             buyer_pubkey = self._receive_key.public_key.encode(encoder=nacl.encoding.RawEncoder)
 
-            # compute EIP712 typed data signature
+            # XBRSIG[1/8]: compute EIP712 typed data signature
             signature = sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, amount, balance)
 
             # call the market maker to buy the key
@@ -274,7 +274,7 @@ class SimpleBuyer(object):
             else:
                 self._balance -= amount
 
-            # check market maker signature
+            # XBRSIG[8/8]: check market maker signature
             marketmaker_signature = receipt['signature']
             signer_address = recover_eip712_signer(self._market_maker_adr, buyer_pubkey, key_id, amount, balance, marketmaker_signature)
             if signer_address != self._market_maker_adr:
