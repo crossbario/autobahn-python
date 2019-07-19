@@ -1,5 +1,5 @@
-Public API Reference
-====================
+API Reference
+=============
 
 The following is a API reference of |Ab| generated from Python source code and docstrings.
 

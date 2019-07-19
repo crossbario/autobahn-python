@@ -66,30 +66,30 @@ markets = [
         'maker': addr_alice_market_maker1,
         'terms': '',
         'meta': '',
-        'providerSecurity': 100 * 10**18,
-        'consumerSecurity': 100 * 10**18,
-        'marketFee': 10**7 * 10**18,
+        'providerSecurity': 100 * 1000,
+        'consumerSecurity': 100 * 1000,
+        'marketFee': 1000,
         'actors': [
             {
                 'addr': addr_charlie_provider,
                 'type': xbr.ActorType.PROVIDER,
-                'security': 100 * 10**18
+                'security': 100 * 1000
             },
             {
                 'addr': addr_donald_provider,
                 'type': xbr.ActorType.PROVIDER,
-                'security': 100 * 10**18
+                'security': 100 * 1000
             },
             {
                 'addr': addr_edith_consumer,
                 'type': xbr.ActorType.CONSUMER,
-                'security': 100 * 10**18,
+                'security': 100 * 1000,
                 'delegate': addr_edith_consumer_delegate1
             },
             {
                 'addr': addr_frank_consumer,
                 'type': xbr.ActorType.CONSUMER,
-                'security': 100 * 10**18,
+                'security': 100 * 1000,
                 'delegate': addr_frank_consumer_delegate1
             }
         ]
@@ -100,9 +100,9 @@ markets = [
         'maker': addr_bob_market_maker1,
         'terms': '',
         'meta': '',
-        'providerSecurity': 100 * 10**18,
-        'consumerSecurity': 100 * 10**18,
-        'marketFee': 10**7 * 10**18,
+        'providerSecurity': 100 * 1000,
+        'consumerSecurity': 100 * 1000,
+        'marketFee': 1000,
         'actors': []
     }
 ]

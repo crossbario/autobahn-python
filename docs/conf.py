@@ -92,9 +92,10 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
     else:
         return True
 
-def setup(app):
-    # wire up our custom checker to skip member
-    app.connect('autodoc-skip-member', autodoc_skip_member)
+# !! when enabled, only members with "@public" decorator will be rendered in the docs !!
+# def setup(app):
+#     # wire up our custom checker to skip member
+#     app.connect('autodoc-skip-member', autodoc_skip_member)
 
 
 # -- General configuration ------------------------------------------------
@@ -303,7 +304,6 @@ htmlhelp_basename = 'autobahndoc'
 intersphinx_mapping = {
    'py2': ('https://docs.python.org/2', None),
    'py3': ('https://docs.python.org/3', None),
-   'six': ('https://pythonhosted.org/six/', None),
 }
 
 rst_epilog = """
@@ -334,4 +334,4 @@ rst_prolog = """
 autoclass_content = 'both'
 
 # http://www.sphinx-doc.org/en/stable/ext/autodoc.html#confval-autodoc_member_order
-autodoc_member_order = 'bysource'
+# autodoc_member_order = 'bysource'

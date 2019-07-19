@@ -30,7 +30,7 @@ def main(accounts):
                 market['maker'],
                 market['providerSecurity'],
                 market['consumerSecurity'],
-                market['marketFee']).transact({'from': market['owner'], 'gas': 1000000})
+                market['marketFee']).transact({'from': market['owner'], 'gas': 200000})
 
             print('Market {} created with owner!'.format(hl(market['id']), market['owner']))
 
