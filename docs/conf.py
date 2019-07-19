@@ -92,6 +92,7 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
     else:
         return True
 
+# !! when enabled, only members with "@public" decorator will be rendered in the docs !!
 # def setup(app):
 #     # wire up our custom checker to skip member
 #     app.connect('autodoc-skip-member', autodoc_skip_member)
@@ -330,7 +331,7 @@ rst_prolog = """
 """
 
 # http://stackoverflow.com/questions/5599254/how-to-use-sphinxs-autodoc-to-document-a-classs-init-self-method
-#autoclass_content = 'both'
+autoclass_content = 'both'
 
 # http://www.sphinx-doc.org/en/stable/ext/autodoc.html#confval-autodoc_member_order
-#autodoc_member_order = 'bysource'
+# autodoc_member_order = 'bysource'

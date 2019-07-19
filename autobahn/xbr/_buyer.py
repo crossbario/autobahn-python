@@ -37,6 +37,7 @@ import nacl.public
 import txaio
 from autobahn.twisted.util import sleep
 from autobahn.wamp.exception import ApplicationError
+from autobahn.wamp.protocol import ApplicationSession
 
 import web3
 import eth_keys
@@ -102,15 +103,17 @@ class SimpleBuyer(object):
         """
         Start buying keys to decrypt XBR data by calling ``unwrap()``.
 
-        :param session:
-        :type session:
+        :param session: WAMP session over which to communicate with the XBR market maker.
+        :type session: :class:`autobahn.wamp.protocol.ApplicationSession`
 
-        :param consumer_id:
-        :type consumer_id:
+        :param consumer_id: XBR consumer ID.
+        :type consumer_id: str
 
-        :return:
-        :rtype:
+        :return: Current remaining balance in payment channel.
+        :rtype: int
         """
+        assert isinstance(session, ApplicationSession)
+        assert type(consumer_id) == str
         assert not self._running
 
         self._session = session
@@ -139,8 +142,7 @@ class SimpleBuyer(object):
 
     async def stop(self):
         """
-
-        :return:
+        Stop buying keys.
         """
         assert self._running
 
@@ -219,19 +221,24 @@ class SimpleBuyer(object):
         Decrypt XBR data. This functions will potentially make the buyer call the
         XBR market maker to buy data encryption keys from the XBR provider.
 
-        :param key_id:
-        :type key_id:
+        :param key_id: ID of the data encryption used for decryption
+            of application payload.
+        :type key_id: bytes
 
-        :param enc_ser:
-        :type enc_ser:
+        :param enc_ser: Application payload serializer.
+        :type enc_ser: str
 
-        :param ciphertext:
-        :type ciphertext:
+        :param ciphertext: Ciphertext of encrypted application payload to
+            decrypt.
+        :type ciphertext: bytes
 
-        :return:
-        :rtype:
+        :return: Decrypted application payload.
+        :rtype: object
         """
-        assert(enc_ser == 'cbor')
+        assert type(key_id) == bytes and len(key_id) == 16
+        # FIXME: support more app payload serializers
+        assert type(enc_ser) == str and enc_ser == 'cbor'
+        assert type(ciphertext) == bytes
 
         # if we don't have the key, buy it!
         if key_id not in self._keys:

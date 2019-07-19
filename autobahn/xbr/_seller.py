@@ -41,11 +41,10 @@ import txaio
 
 from zlmdb import time_ns
 
-from autobahn.wamp.types import RegisterOptions
+from autobahn.wamp.types import RegisterOptions, CallDetails
 from autobahn.wamp.exception import ApplicationError, TransportLost
 from autobahn.wamp.protocol import ApplicationSession
 from autobahn.twisted.util import sleep
-from autobahn.wamp.types import CallDetails
 
 from autobahn import xbr
 
@@ -213,10 +212,10 @@ class SimpleSeller(object):
     def __init__(self, market_maker_adr, seller_key, provider_id=None):
         """
 
-        :param market_maker_adr: Market maker public Ethereum address.
+        :param market_maker_adr: Market maker public Ethereum address (20 bytes).
         :type market_maker_adr: bytes
 
-        :param seller_key: Provider delegate (seller) private Ethereum key.
+        :param seller_key: Seller (delegate) private Ethereum key (32 bytes).
         :type seller_key: bytes
 
         :param provider_id: Optional explicit data provider ID. When not given, the seller delegate
@@ -258,7 +257,7 @@ class SimpleSeller(object):
     @property
     def public_key(self):
         """
-        Get the seller Ethereum public key.
+        Seller (delegate) public Ehtereum key.
 
         :return: Ethereum public key of seller (delegate).
         :rtype: bytes
@@ -356,11 +355,9 @@ class SimpleSeller(object):
         Start rotating keys and placing key offers with the XBR market maker.
 
         :param session: WAMP session over which to communicate with the XBR market maker.
-        :type session: ApplicationSession
-
-        :param provider_id: The XBR provider ID.
-        :type provider_id: bytes
+        :type session: :class:`autobahn.wamp.protocol.ApplicationSession`
         """
+        assert isinstance(session, ApplicationSession)
         assert self._session is None
 
         self._session = session
@@ -398,6 +395,9 @@ class SimpleSeller(object):
         """
         Encrypt and wrap application payload for a given API and destined for a specific WAMP URI.
 
+        :param api_id: API for which to encrypt and wrap the application payload for.
+        :type api_id: bytes
+
         :param uri: WAMP URI the application payload is destined for (eg the procedure or topic URI).
         :type uri: str
 
@@ -407,7 +407,7 @@ class SimpleSeller(object):
         :return: The encrypted and wrapped application payload: a tuple with ``(key_id, serializer, ciphertext)``.
         :rtype: tuple
         """
-        assert api_id in self._keys
+        assert type(api_id) == bytes and len(api_id) == 16 and api_id in self._keys
         assert type(uri) == str
         assert payload is not None
 
@@ -419,7 +419,8 @@ class SimpleSeller(object):
 
     def sell(self, delegate_adr, buyer_pubkey, key_id, amount, balance, signature, details=None):
         """
-        Called by a XBR Market Maker to buy a key, acting for (triggered by) the XBR buyer delegate.
+        Called by a XBR Market Maker to buy a data encyption key. The XBR Market Maker here is
+        acting for (triggered by) the XBR buyer delegate.
 
         :param delegate_adr: The market maker Ethereum address. The technical buyer is usually the
             XBR market maker (== the XBR delegate of the XBR market operator).
@@ -431,8 +432,8 @@ class SimpleSeller(object):
         :param key_id: The UUID of the data encryption key to buy.
         :type key_id: bytes of length 16
 
-        :param amount:
-        :type amount:
+        :param amount: The amount paid by the XBR Buyer via the XBR Market Maker.
+        :type amount: int
 
         :param balance: Balance remaining in the payment channel (from the market maker to the
             seller) after successfully buying the key.
@@ -443,7 +444,7 @@ class SimpleSeller(object):
         :type signature: bytes
 
         :param details: Caller details. The call will come from the XBR Market Maker.
-        :param details:
+        :type details: :class:`autobahn.wamp.types.CallDetails`
 
         :return: The data encryption key, itself encrypted to the public key of the original buyer.
         :rtype: bytes

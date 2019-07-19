@@ -23,6 +23,13 @@ Using the ABI files
         abi = data['abi']
         pprint(abi)
 
+SimpleBlockchain
+----------------
+
+.. autoclass:: autobahn.xbr.SimpleBlockchain
+    :members:
+        start,
+        stop
 
 SimpleBuyer
 -----------
