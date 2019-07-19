@@ -1,5 +1,5 @@
-Python API
-==========
+XBR Python API
+==============
 
 This is the **XBR Lib for Python** API reference documentation, generated from the Python source code
 using `Sphinx <http://www.sphinx-doc.org>`_.
@@ -30,8 +30,11 @@ SimpleBuyer
 .. autoclass:: autobahn.xbr.SimpleBuyer
     :members:
         start,
+        stop,
+        balance,
+        open_channel,
+        close_channel,
         unwrap
-
 
 SimpleSeller
 ------------
@@ -39,9 +42,22 @@ SimpleSeller
 .. autoclass:: autobahn.xbr.SimpleSeller
     :members:
         start,
+        stop,
         wrap,
-        sell
+        sell,
+        public_key,
+        add
 
+KeySeries
+---------
+
+.. autoclass:: autobahn.xbr.KeySeries
+    :members:
+        key_id,
+        encrypt,
+        encrypt_key,
+        start,
+        stop
 
 IMarketMaker
 ------------
@@ -88,4 +104,3 @@ IBuyer
     :members:
         start,
         unwrap
-

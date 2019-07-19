@@ -43,6 +43,7 @@ from zlmdb import time_ns
 
 from autobahn.wamp.types import RegisterOptions
 from autobahn.wamp.exception import ApplicationError, TransportLost
+from autobahn.wamp.protocol import ApplicationSession
 from autobahn.twisted.util import sleep
 from autobahn.wamp.types import CallDetails
 
@@ -66,21 +67,22 @@ class KeySeries(object):
     def __init__(self, api_id, price, interval, on_rotate=None):
         """
 
-        :param api_id:
-        :type api_id:
+        :param api_id: ID of the API for which to generate keys.
+        :type api_id: bytes
 
-        :param price:
-        :type price:
+        :param price: Price per key in key series.
+        :type price: int
 
-        :param interval:
-        :type interval:
+        :param interval: Key rotation interval in seconds.
+        :type interval: int
 
-        :param on_rotate:
-        :type on_rotate:
+        :param on_rotate: Optional user callback fired after key was rotated.
+        :type on_rotate: callable
         """
         assert type(api_id) == bytes and len(api_id) == 16
         assert type(price) == int and price > 0
         assert type(interval) == int and interval > 0
+        assert on_rotate is None or callable(on_rotate)
 
         self._api_id = api_id
         self._price = price
@@ -98,9 +100,11 @@ class KeySeries(object):
     @property
     def key_id(self):
         """
-        Get current XBR data encryption key ID.
+        Get current XBR data encryption key ID (of the keys being rotated
+        in a series).
 
-        :return:
+        :return: Current key ID in key series (16 bytes).
+        :rtype: bytes
         """
         return self._id
 
@@ -108,11 +112,11 @@ class KeySeries(object):
         """
         Encrypt data with the current XBR data encryption key.
 
-        :param payload:
-        :type payload:
+        :param payload: Application payload to encrypt.
+        :type payload: object
 
-        :return:
-        :rtype:
+        :return: The ciphertext for the encrypted application payload.
+        :rtype: bytes
         """
         data = cbor2.dumps(payload)
         ciphertext = self._box.encrypt(data)
@@ -121,17 +125,20 @@ class KeySeries(object):
 
     def encrypt_key(self, key_id, buyer_pubkey):
         """
-        Encrypt a previously used XBR data encryption key with a buyer public key.
+        Encrypt a (previously used) XBR data encryption key with a buyer public key.
 
-        :param key_id:
-        :type key_id:
+        :param key_id: ID of the data encryption key to encrypt.
+        :type key_id: bytes
 
-        :param buyer_pubkey:
-        :type buyer_pubkey:
+        :param buyer_pubkey: Buyer WAMP public key (Ed25519) to asymmetrically encrypt
+            the data encryption key (selected by ``key_id``) against.
+        :type buyer_pubkey: bytes
 
-        :return:
-        :rtype:
+        :return: The ciphertext for the encrypted data encryption key.
+        :rtype: bytes
         """
+        assert type(key_id) == bytes and len(key_id) == 16
+        assert type(buyer_pubkey) == bytes and len(buyer_pubkey) == 32
 
         # FIXME: check amount paid, post balance and signature
         # FIXME: sign transaction
@@ -146,8 +153,7 @@ class KeySeries(object):
 
     def start(self):
         """
-
-        :return:
+        Start offering and selling data encryption keys in the background.
         """
         assert self._run_loop is None
 
@@ -161,23 +167,28 @@ class KeySeries(object):
 
     def stop(self):
         """
-
-        :return:
+        Stop offering/selling data encryption keys.
         """
-        assert self._run_loop
+        if not self._run_loop:
+            raise RuntimeError('cannot stop {} - not currently running'.format(self.__class__.__name__))
 
-        if self._run_loop:
-            self._run_loop.stop()
-            self._run_loop = None
+        self._run_loop.stop()
+        self._run_loop = None
 
         return self._started
 
     @inlineCallbacks
     def _rotate(self):
+        # generate new ID for next key in key series
         self._id = os.urandom(16)
+
+        # generate next data encryption key in key series
         self._key = nacl.utils.random(nacl.secret.SecretBox.KEY_SIZE)
+
+        # create secretbox from new key
         self._box = nacl.secret.SecretBox(self._key)
 
+        # add key to archive
         self._archive[self._id] = (self._key, self._box)
 
         self.log.info(
@@ -186,6 +197,7 @@ class KeySeries(object):
             key_id=hl(uuid.UUID(bytes=self._id)),
             api_id=hl(uuid.UUID(bytes=self._api_id)))
 
+        # maybe fire user callback
         if self._on_rotate:
             yield self._on_rotate(self)
 
@@ -201,14 +213,15 @@ class SimpleSeller(object):
     def __init__(self, market_maker_adr, seller_key, provider_id=None):
         """
 
-        :param market_maker_adr:
-        :type market_maker_adr:
+        :param market_maker_adr: Market maker public Ethereum address.
+        :type market_maker_adr: bytes
 
         :param seller_key: Provider delegate (seller) private Ethereum key.
         :type seller_key: bytes
 
-        :param provider_id:
-        :type provider_id:
+        :param provider_id: Optional explicit data provider ID. When not given, the seller delegate
+            public WAMP key (Ed25519 in Hex) is used as the provider ID. This must be a valid WAMP URI part.
+        :type provider_id: string
         """
         assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'market_maker_adr must be bytes[20], but got "{}"'.format(market_maker_adr)
         assert type(seller_key) == bytes and len(seller_key) == 32, 'seller delegate must be bytes[32], but got "{}"'.format(seller_key)
@@ -245,9 +258,10 @@ class SimpleSeller(object):
     @property
     def public_key(self):
         """
-        Get the seller public key.
+        Get the seller Ethereum public key.
 
-        :return:
+        :return: Ethereum public key of seller (delegate).
+        :rtype: bytes
         """
         return self._pkey.public_key
 
@@ -256,15 +270,17 @@ class SimpleSeller(object):
         Add a new (rotating) private encryption key for encrypting data on the given API.
 
         :param api_id: API for which to create a new series of rotating encryption keys.
-        :type api_id:
+        :type api_id: bytes
 
         :param price: Price in XBR token per key.
-        :type price:
+        :type price: int
 
         :param interval: Interval (in seconds) in which to auto-rotate the encryption key.
-        :type interval:
+        :type interval: int
         """
-        assert api_id not in self._keys
+        assert type(api_id) == bytes and len(api_id) == 16 and api_id not in self._keys
+        assert type(price) == int and price > 0
+        assert type(interval) == int and interval > 0
 
         @inlineCallbacks
         def on_rotate(key_series):
@@ -272,6 +288,8 @@ class SimpleSeller(object):
             key_id = key_series.key_id
 
             self._keys_map[key_id] = key_series
+
+            # FIXME: expose the knobs hard-coded in below ..
 
             # offer the key to the market maker (retry 5x in specific error cases)
             retries = 5
@@ -338,10 +356,10 @@ class SimpleSeller(object):
         Start rotating keys and placing key offers with the XBR market maker.
 
         :param session: WAMP session over which to communicate with the XBR market maker.
-        :type session:
+        :type session: ApplicationSession
 
         :param provider_id: The XBR provider ID.
-        :type provider_id:
+        :type provider_id: bytes
         """
         assert self._session is None
 
@@ -356,27 +374,9 @@ class SimpleSeller(object):
         for key_series in self._keys.values():
             key_series.start()
 
-        if False:
-            dl = []
-            for func in [self.sell]:
-                procedure = 'xbr.provider.{}.{}'.format(self._provider_id, func.__name__)
-                d = session.register(func, procedure, options=RegisterOptions(details_arg='details'))
-                dl.append(d)
-            d = txaio.gather(dl)
-
-            def registered(regs):
-                for reg in regs:
-                    self.log.info('Registered procedure "{procedure}"', procedure=hl(reg.procedure))
-                self._session_regs = regs
-
-            d.addCallback(registered)
-
-            return d
-
     def stop(self):
         """
-
-        :return:
+        Stop rotating/offering keys to the XBR market maker.
         """
         dl = []
         for key_series in self._keys.values():
@@ -396,15 +396,16 @@ class SimpleSeller(object):
 
     async def wrap(self, api_id, uri, payload):
         """
+        Encrypt and wrap application payload for a given API and destined for a specific WAMP URI.
 
-        :param uri:
-        :type uri:
+        :param uri: WAMP URI the application payload is destined for (eg the procedure or topic URI).
+        :type uri: str
 
-        :param payload:
-        :type payload:
+        :param payload: Application payload to encrypt and wrap.
+        :type payload: object
 
-        :return:
-        :rtype:
+        :return: The encrypted and wrapped application payload: a tuple with ``(key_id, serializer, ciphertext)``.
+        :rtype: tuple
         """
         assert api_id in self._keys
         assert type(uri) == str

@@ -29,7 +29,7 @@ from __future__ import absolute_import
 from autobahn.xbr._abi import XBR_TOKEN_ABI, XBR_NETWORK_ABI, XBR_PAYMENT_CHANNEL_ABI
 from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR
 from autobahn.xbr._buyer import SimpleBuyer
-from autobahn.xbr._seller import SimpleSeller
+from autobahn.xbr._seller import SimpleSeller, KeySeries
 from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer
 from autobahn.xbr._util import sign_eip712_data, recover_eip712_signer
 
@@ -124,6 +124,7 @@ __all__ = (
 
     'SimpleBuyer',
     'SimpleSeller',
+    'KeySeries',
 
     'sign_eip712_data',
     'recover_eip712_signer',
