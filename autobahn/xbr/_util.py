@@ -43,10 +43,11 @@ def hl(text, bold=True, color='yellow'):
     return click.style(text, fg=color, bold=bold)
 
 
-def _create_eip712_data(eth_adr, ed25519_pubkey, key_id, amount, balance):
+def _create_eip712_data(eth_adr, ed25519_pubkey, key_id, channel_seq, amount, balance):
     assert type(eth_adr) == bytes and len(eth_adr) == 20
     assert type(ed25519_pubkey) == bytes and len(ed25519_pubkey) == 32
     assert type(key_id) == bytes and len(key_id) == 16
+    assert type(channel_seq) == int
     assert type(amount) == int
     assert type(balance) == int
 
@@ -67,6 +68,9 @@ def _create_eip712_data(eth_adr, ed25519_pubkey, key_id, amount, balance):
 
                 # The UUID of the data encryption key (16 bytes).
                 {'name': 'key_id', 'type': 'uint128'},
+
+                # Channel off-chain transaction sequence number.
+                {'name': 'channel_seq', 'type': 'uint32'},
 
                 # Amount of the transaction.
                 {'name': 'amount', 'type': 'uint256'},
@@ -90,6 +94,7 @@ def _create_eip712_data(eth_adr, ed25519_pubkey, key_id, amount, balance):
             'adr': eth_adr,
             'pubkey': unpack_uint256(ed25519_pubkey),
             'key_id': unpack_uint128(key_id),
+            'channel_seq': channel_seq,
             'amount': amount,
             'balance': balance,
         },
@@ -98,7 +103,7 @@ def _create_eip712_data(eth_adr, ed25519_pubkey, key_id, amount, balance):
     return data
 
 
-def sign_eip712_data(eth_privkey, ed25519_pubkey, key_id, amount, balance):
+def sign_eip712_data(eth_privkey, ed25519_pubkey, key_id, channel_seq, amount, balance):
     """
 
     :param buyer_adr: Ethereum address of buyer (a raw 20 bytes Ethereum address).
@@ -109,6 +114,9 @@ def sign_eip712_data(eth_privkey, ed25519_pubkey, key_id, amount, balance):
 
     :param key_id: Unique ID of the key bought/sold (a UUID in raw 16 bytes)
     :type key_id: bytes
+
+    :param channel_seq: Payment channel off-chain transaction sequence number.
+    :type channel_seq: int
 
     :param amount: Amount paid/earned for the key.
     :type amount: int
@@ -122,6 +130,7 @@ def sign_eip712_data(eth_privkey, ed25519_pubkey, key_id, amount, balance):
     assert type(eth_privkey) == bytes and len(eth_privkey) == 32
     assert type(ed25519_pubkey) == bytes and len(ed25519_pubkey) == 32
     assert type(key_id) == bytes and len(key_id) == 16
+    assert type(channel_seq) == int
     assert type(amount) == int
     assert type(balance) == int
 
@@ -133,7 +142,7 @@ def sign_eip712_data(eth_privkey, ed25519_pubkey, key_id, amount, balance):
     eth_adr = pkey.public_key.to_canonical_address()
 
     # create EIP712 typed data object
-    data = _create_eip712_data(eth_adr, ed25519_pubkey, key_id, amount, balance)
+    data = _create_eip712_data(eth_adr, ed25519_pubkey, key_id, channel_seq, amount, balance)
 
     signature = signing.v_r_s_to_signature(*signing.sign_typed_data(data, eth_privkey))
     assert len(signature) == _EIP712_SIG_LEN
@@ -141,7 +150,7 @@ def sign_eip712_data(eth_privkey, ed25519_pubkey, key_id, amount, balance):
     return signature
 
 
-def recover_eip712_signer(eth_adr, ed25519_pubkey, key_id, amount, balance, signature):
+def recover_eip712_signer(eth_adr, ed25519_pubkey, key_id, channel_seq, amount, balance, signature):
     """
     Recover the signer address the given EIP712 signature was signed with.
 
@@ -153,6 +162,9 @@ def recover_eip712_signer(eth_adr, ed25519_pubkey, key_id, amount, balance, sign
 
     :param key_id: Input typed data for signature.
     :type key_id: bytes
+
+    :param channel_seq: Input typed data for signature.
+    :type channel_seq: int
 
     :param amount: Input typed data for signature.
     :type amount: int
@@ -169,12 +181,13 @@ def recover_eip712_signer(eth_adr, ed25519_pubkey, key_id, amount, balance, sign
     assert type(eth_adr) == bytes and len(eth_adr) == 20
     assert type(ed25519_pubkey) == bytes and len(ed25519_pubkey) == 32
     assert type(key_id) == bytes and len(key_id) == 16
+    assert type(channel_seq) == int
     assert type(amount) == int
     assert type(balance) == int
     assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
 
     # recreate EIP712 typed data object
-    data = _create_eip712_data(eth_adr, ed25519_pubkey, key_id, amount, balance)
+    data = _create_eip712_data(eth_adr, ed25519_pubkey, key_id, channel_seq, amount, balance)
 
     # this returns the signer (checksummed) address as a string, eg "0xE11BA2b4D45Eaed5996Cd0823791E0C93114882d"
     signer_address = signing.recover_typed_data(data, *signing.signature_to_v_r_s(signature))

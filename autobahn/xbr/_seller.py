@@ -417,7 +417,7 @@ class SimpleSeller(object):
 
         return key_id, serializer, ciphertext
 
-    def sell(self, market_maker_adr, buyer_pubkey, key_id, amount, balance, signature, details=None):
+    def sell(self, market_maker_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature, details=None):
         """
         Called by a XBR Market Maker to buy a data encyption key. The XBR Market Maker here is
         acting for (triggered by) the XBR buyer delegate.
@@ -431,6 +431,9 @@ class SimpleSeller(object):
 
         :param key_id: The UUID of the data encryption key to buy.
         :type key_id: bytes of length 16
+
+        :param channel_seq: Paying channel sequence off-chain transaction number.
+        :type channel_seq: int
 
         :param amount: The amount paid by the XBR Buyer via the XBR Market Maker.
         :type amount: int
@@ -452,6 +455,7 @@ class SimpleSeller(object):
         assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'delegate_adr must be bytes[20]'
         assert type(buyer_pubkey) == bytes and len(buyer_pubkey) == 32, 'buyer_pubkey must be bytes[32]'
         assert type(key_id) == bytes and len(key_id) == 16, 'key_id must be bytes[16]'
+        assert type(channel_seq) == int, 'channel_seq must be int'
         assert type(amount) == int, 'amount_paid must be int'
         assert type(balance) == int, 'post_balance must be int'
         assert type(signature) == bytes and len(signature) == (32 + 32 + 1), 'signature must be bytes[65]'
@@ -463,7 +467,7 @@ class SimpleSeller(object):
                                    'unexpected market maker (delegate) address: expected 0x{}, but got 0x{}'.format(binascii.b2a_hex(self._market_maker_adr).decode(), binascii.b2a_hex(market_maker_adr).decode()))
 
         # XBRSIG[4/8]: check the signature (over all input data for the buying of the key)
-        signer_address = xbr.recover_eip712_signer(market_maker_adr, buyer_pubkey, key_id, amount, balance, signature)
+        signer_address = xbr.recover_eip712_signer(market_maker_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
         if signer_address != market_maker_adr:
             self.log.warn('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                           signer_address=hl(binascii.b2a_hex(signer_address).decode()),
@@ -481,7 +485,7 @@ class SimpleSeller(object):
         assert type(sealed_key) == bytes and len(sealed_key) == 80, 'unexpected sealed key computed (expected bytes[80]): {}'.format(sealed_key)
 
         # XBRSIG[5/8]: compute EIP712 typed data signature
-        seller_signature = xbr.sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, amount, balance)
+        seller_signature = xbr.sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, channel_seq, amount, balance)
 
         self.log.info('{tx_type} key "{key_id}" sold for {amount_earned} [caller={caller}, caller_authid="{caller_authid}", buyer_pubkey="{buyer_pubkey}"]',
                       tx_type=hl('XBR SELL  ', color='magenta'),
@@ -506,6 +510,9 @@ class SimpleSeller(object):
             # the data encryption key, sealed (public key Ed25519 encrypted) to the
             # public key of the buyer delegate
             'sealed_key': sealed_key,
+
+            # paying channel off-chain transaction sequence numbers
+            'channel_seq': channel_seq,
 
             # amount paid for the key
             'amount': amount,

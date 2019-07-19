@@ -255,6 +255,9 @@ class SimpleBuyer(object):
             # set price we pay set to the (current) quoted price
             amount = quote['price']
 
+            # FIXME
+            channel_seq = 1
+
             # check (locally) we have enough balance left in the payment channel to buy the key
             balance = self._balance - amount
             if balance < 0:
@@ -264,7 +267,7 @@ class SimpleBuyer(object):
             buyer_pubkey = self._receive_key.public_key.encode(encoder=nacl.encoding.RawEncoder)
 
             # XBRSIG[1/8]: compute EIP712 typed data signature
-            signature = sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, amount, balance)
+            signature = sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, channel_seq, amount, balance)
 
             # call the market maker to buy the key
             try:
@@ -272,6 +275,7 @@ class SimpleBuyer(object):
                                                    self._addr,
                                                    buyer_pubkey,
                                                    key_id,
+                                                   channel_seq,
                                                    amount,
                                                    balance,
                                                    signature)
@@ -283,7 +287,7 @@ class SimpleBuyer(object):
 
             # XBRSIG[8/8]: check market maker signature
             marketmaker_signature = receipt['signature']
-            signer_address = recover_eip712_signer(self._market_maker_adr, buyer_pubkey, key_id, amount, balance, marketmaker_signature)
+            signer_address = recover_eip712_signer(self._market_maker_adr, buyer_pubkey, key_id, channel_seq, amount, balance, marketmaker_signature)
             if signer_address != self._market_maker_adr:
                 self.log.warn('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                               signer_address=hl(binascii.b2a_hex(signer_address).decode()),
