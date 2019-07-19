@@ -417,14 +417,14 @@ class SimpleSeller(object):
 
         return key_id, serializer, ciphertext
 
-    def sell(self, delegate_adr, buyer_pubkey, key_id, amount, balance, signature, details=None):
+    def sell(self, market_maker_adr, buyer_pubkey, key_id, amount, balance, signature, details=None):
         """
         Called by a XBR Market Maker to buy a data encyption key. The XBR Market Maker here is
         acting for (triggered by) the XBR buyer delegate.
 
-        :param delegate_adr: The market maker Ethereum address. The technical buyer is usually the
+        :param market_maker_adr: The market maker Ethereum address. The technical buyer is usually the
             XBR market maker (== the XBR delegate of the XBR market operator).
-        :type delegate_adr: bytes of length 20
+        :type market_maker_adr: bytes of length 20
 
         :param buyer_pubkey: The buyer delegate Ed25519 public key.
         :type buyer_pubkey: bytes of length 32
@@ -449,7 +449,7 @@ class SimpleSeller(object):
         :return: The data encryption key, itself encrypted to the public key of the original buyer.
         :rtype: bytes
         """
-        assert type(delegate_adr) == bytes and len(delegate_adr) == 20, 'delegate_adr must be bytes[20]'
+        assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'delegate_adr must be bytes[20]'
         assert type(buyer_pubkey) == bytes and len(buyer_pubkey) == 32, 'buyer_pubkey must be bytes[32]'
         assert type(key_id) == bytes and len(key_id) == 16, 'key_id must be bytes[16]'
         assert type(amount) == int, 'amount_paid must be int'
@@ -458,16 +458,16 @@ class SimpleSeller(object):
         assert details is None or isinstance(details, CallDetails), 'details must be autobahn.wamp.types.CallDetails'
 
         # check that the delegate_adr fits what we expect for the market maker
-        if delegate_adr != self._market_maker_adr:
+        if market_maker_adr != self._market_maker_adr:
             raise ApplicationError('xbr.error.unexpected_delegate_adr',
-                                   'unexpected market maker (delegate) address: expected 0x{}, but got 0x{}'.format(binascii.b2a_hex(self._market_maker_adr).decode(), binascii.b2a_hex(delegate_adr).decode()))
+                                   'unexpected market maker (delegate) address: expected 0x{}, but got 0x{}'.format(binascii.b2a_hex(self._market_maker_adr).decode(), binascii.b2a_hex(market_maker_adr).decode()))
 
         # XBRSIG[4/8]: check the signature (over all input data for the buying of the key)
-        signer_address = xbr.recover_eip712_signer(delegate_adr, buyer_pubkey, key_id, amount, balance, signature)
-        if signer_address != delegate_adr:
+        signer_address = xbr.recover_eip712_signer(market_maker_adr, buyer_pubkey, key_id, amount, balance, signature)
+        if signer_address != market_maker_adr:
             self.log.warn('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                           signer_address=hl(binascii.b2a_hex(signer_address).decode()),
-                          delegate_adr=hl(binascii.b2a_hex(delegate_adr).decode()))
+                          delegate_adr=hl(binascii.b2a_hex(market_maker_adr).decode()))
             raise ApplicationError('xbr.error.invalid_signature', 'EIP712 signature invalid or not signed by market maker')
 
         # get the key series given the key_id
