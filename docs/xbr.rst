@@ -16,10 +16,33 @@ are written in Solidity and published as open-source `on GitHub <https://github.
 
 To talk to the XBR smart contracts on the blockchain, you need two things:
 
-1. the addresses and
-2. the ABI files (JSON)
+1. the XBR smart contract addresses and
+2. the XBR smart contract ABI files (JSON)
 
-of the XBR smart contracts. Both of which are built into the Autobahn library.
+Both of which are built into the Autobahn library.
+
+Data stored on-chain
+....................
+
+.. code-block:: console
+
+    /// Current XBR Network members ("member directory").
+    mapping(address => Member) private members;
+
+    /// Current XBR Domains ("domain directory")
+    mapping(bytes16 => Domain) private domains;
+
+    /// Current XBR Nodes ("node directory");
+    mapping(bytes16 => Node) private nodes;
+
+    /// Index: node public key => (market ID, node ID)
+    mapping(bytes32 => bytes16) private nodesByKey;
+
+    /// Current XBR Markets ("market directory")
+    mapping(bytes16 => Market) private markets;
+
+    /// Index: maker address => market ID
+    mapping(address => bytes16) private marketsByMaker;
 
 
 SimpleBlockchain
@@ -33,8 +56,24 @@ blockchain client with specific functions directly supporting XBR:
     :members:
         start,
         stop,
+        get_contract_adrs,
         get_balances,
-        get_contract_adrs
+        get_member_status,
+        get_delegate_status,
+        get_actor_status,
+        get_market_status,
+        get_domain_status,
+        get_node_status
+
+
+SimpleBlockchain Example
+........................
+
+Here is a complete example blockchain client:
+
+.. code-block:: python
+
+    pass
 
 
 Using the ABI files

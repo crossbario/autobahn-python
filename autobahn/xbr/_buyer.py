@@ -216,7 +216,7 @@ class SimpleBuyer(object):
         :return:
         """
 
-    async def unwrap(self, key_id, enc_ser, ciphertext):
+    async def unwrap(self, key_id, serializer, ciphertext):
         """
         Decrypt XBR data. This functions will potentially make the buyer call the
         XBR market maker to buy data encryption keys from the XBR provider.
@@ -225,8 +225,8 @@ class SimpleBuyer(object):
             of application payload.
         :type key_id: bytes
 
-        :param enc_ser: Application payload serializer.
-        :type enc_ser: str
+        :param serializer: Application payload serializer.
+        :type serializer: str
 
         :param ciphertext: Ciphertext of encrypted application payload to
             decrypt.
@@ -237,7 +237,7 @@ class SimpleBuyer(object):
         """
         assert type(key_id) == bytes and len(key_id) == 16
         # FIXME: support more app payload serializers
-        assert type(enc_ser) == str and enc_ser == 'cbor'
+        assert type(serializer) == str and serializer == 'cbor'
         assert type(ciphertext) == bytes
 
         # if we don't have the key, buy it!
@@ -338,6 +338,7 @@ class SimpleBuyer(object):
             raise ApplicationError('xbr.error.decryption_failed', 'failed to unwrap encrypted data: {}'.format(e))
 
         # deserialize the application payload
+        # FIXME: support more app payload serializers
         try:
             payload = cbor2.loads(message)
         except cbor2.decoder.CBORDecodeError as e:

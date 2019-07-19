@@ -32,6 +32,20 @@ from twisted.internet.threads import deferToThread
 import web3
 from autobahn import xbr
 
+DomainStatus_NULL = 0
+DomainStatus_ACTIVE = 1
+DomainStatus_CLOSED = 2
+
+NodeType_NULL = 0
+NodeType_MASTER = 1
+NodeType_CORE = 2
+NodeType_EDGE = 3
+
+NodeLicense_NULL = 0
+NodeLicense_INFINITE = 1
+NodeLicense_FREE = 2
+
+
 
 class SimpleBlockchain(object):
     """
@@ -84,25 +98,126 @@ class SimpleBlockchain(object):
 
         self._w3 = None
 
+    def get_market_status(self, market_id):
+        """
+
+        :param market_id:
+        :return:
+        """
+        def _get_market_status(_market_id):
+            owner = xbr.xbrnetwork.functions.getMarketOwner(_market_id).call()
+            if not owner or owner == '0x0000000000000000000000000000000000000000':
+                return None
+            else:
+                return {
+                    'owner': owner,
+                }
+        return deferToThread(_get_market_status, market_id)
+
+    def get_domain_status(self, domain_id):
+        """
+
+        :param domain_id:
+        :type domain_id: bytes
+
+        :return:
+        :rtype: dict
+        """
+        def _get_domain_status(_domain_id):
+            status = xbr.xbrnetwork.functions.getDomainStatus(_domain_id).call()
+            if status == DomainStatus_NULL:
+                return None
+            elif status == DomainStatus_ACTIVE:
+                return {'status': 'ACTIVE'}
+            elif status == DomainStatus_CLOSED:
+                return {'status': 'CLOSED'}
+        return deferToThread(_get_domain_status, domain_id)
+
+    def get_node_status(self, delegate_adr):
+        """
+
+        :param delegate_adr:
+        :type delegate_adr: bytes
+
+        :return:
+        :rtype: dict
+        """
+        raise NotImplementedError()
+
+    def get_actor_status(self, delegate_adr):
+        """
+
+        :param delegate_adr:
+        :type delegate_adr: bytes
+
+        :return:
+        :rtype: dict
+        """
+        raise NotImplementedError()
+
+    def get_delegate_status(self, delegate_adr):
+        """
+
+        :param delegate_adr:
+        :type delegate_adr: bytes
+
+        :return:
+        :rtype: dict
+        """
+        raise NotImplementedError()
+
+    def get_channel_status(self, channel_adr):
+        """
+
+        :param channel_adr:
+        :type channel_adr: bytes
+
+        :return:
+        :rtype: dict
+        """
+        raise NotImplementedError()
+
+    def get_member_status(self, member_adr):
+        """
+
+        :param member_adr:
+        :type member_adr: bytes
+
+        :return:
+        :rtype: dict
+        """
+        def _get_member_status(_member_adr):
+            level = xbr.xbrnetwork.functions.getMemberLevel(member_adr).call()
+            if not level:
+                return None
+            else:
+                eula = xbr.xbrnetwork.functions.getMemberEula(member_adr).call()
+                profile = xbr.xbrnetwork.functions.getMemberProfile(member_adr).call()
+                return {
+                    'eula': eula,
+                    'profile': profile,
+                }
+        return deferToThread(_get_member_status, member_adr)
+
     def get_balances(self, adr):
         """
         Return current ETH and XBR balances of account with given address.
 
         :param adr: Ethereum address of account to get balances for.
+        :type adr: bytes
+
         :return: A dictionary with ``"ETH"`` and ``"XBR"`` keys and respective
             current on-chain balances as values.
         :rtype: dict
         """
-        def _balance(_adr):
+        def _get_balances(_adr):
             balance_eth = self._w3.eth.getBalance(_adr)
             balance_xbr = xbr.xbrtoken.functions.balanceOf(_adr).call()
             return {
                 'ETH': balance_eth,
                 'XBR': balance_xbr,
             }
-
-        d = deferToThread(_balance, adr)
-        return d
+        return deferToThread(_get_balances, adr)
 
     def get_contract_adrs(self):
         """
