@@ -139,8 +139,6 @@ class KeySeries(object):
         assert type(key_id) == bytes and len(key_id) == 16
         assert type(buyer_pubkey) == bytes and len(buyer_pubkey) == 32
 
-        # FIXME: check amount paid, post balance and signature
-        # FIXME: sign transaction
         key, _ = self._archive[key_id]
 
         sendkey_box = nacl.public.SealedBox(nacl.public.PublicKey(buyer_pubkey,

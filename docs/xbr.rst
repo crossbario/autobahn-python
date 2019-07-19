@@ -1,8 +1,8 @@
 XBR Programming
 ===============
 
-This is the **XBR Lib for Python** API reference documentation, generated from the Python source code
-using `Sphinx <http://www.sphinx-doc.org>`_.
+Autobahn comes with built-in support for `XBR <https://xbr.network/>`_. This chapter contains
+documentation of writing XBR buyers and sellers in Python using Autobahn.
 
 .. contents:: :local:
 
@@ -91,6 +91,21 @@ Here is a complete example blockchain client:
         args = parser.parse_args()
 
         react(main, (args.gateway, a2b_hex(args.adr[2:],)))
+
+Here is example output of above program with two different addresses, only one being a member,
+and with different balances of ETH and XBR.
+
+.. code-block:: console
+
+    connected to network 5777 at provider "http://localhost:1545"
+    status for address 0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1:
+    balances: {'ETH': 9999866871000000000000, 'XBR': 1000000000000000000000000000}
+    member status: None
+
+    connected to network 5777 at provider "http://localhost:1545"
+    status for address 0xffcf8fdee72ac11b5c542428b35eef5769c409f0:
+    balances: {'ETH': 9999999999999999625429, 'XBR': 0}
+    member status: {'eula': 'QmU7Gizbre17x6V2VR1Q2GJEjz6m8S1bXmBtVxS2vmvb81', 'profile': None}
 
 
 Using the ABI files

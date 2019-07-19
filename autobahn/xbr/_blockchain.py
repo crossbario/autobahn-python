@@ -46,7 +46,6 @@ NodeLicense_INFINITE = 1
 NodeLicense_FREE = 2
 
 
-
 class SimpleBlockchain(object):
     """
     Simple Ethereum blockchain XBR client.
