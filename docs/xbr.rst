@@ -21,29 +21,6 @@ To talk to the XBR smart contracts on the blockchain, you need two things:
 
 Both of which are built into the Autobahn library.
 
-Data stored on-chain
-....................
-
-.. code-block:: console
-
-    /// Current XBR Network members ("member directory").
-    mapping(address => Member) private members;
-
-    /// Current XBR Domains ("domain directory")
-    mapping(bytes16 => Domain) private domains;
-
-    /// Current XBR Nodes ("node directory");
-    mapping(bytes16 => Node) private nodes;
-
-    /// Index: node public key => (market ID, node ID)
-    mapping(bytes32 => bytes16) private nodesByKey;
-
-    /// Current XBR Markets ("market directory")
-    mapping(bytes16 => Market) private markets;
-
-    /// Index: maker address => market ID
-    mapping(address => bytes16) private marketsByMaker;
-
 
 SimpleBlockchain
 ................
@@ -73,7 +50,47 @@ Here is a complete example blockchain client:
 
 .. code-block:: python
 
-    pass
+    import argparse
+    from binascii import a2b_hex, b2a_hex
+    from autobahn import xbr
+    from twisted.internet.task import react
+    from twisted.internet.defer import inlineCallbacks
+
+
+    @inlineCallbacks
+    def main(reactor, gateway, adr):
+        sbc = xbr.SimpleBlockchain(gateway)
+        yield sbc.start()
+
+        print('status for address 0x{}:'.format(b2a_hex(adr).decode()))
+
+        # get ETH and XBR account balances for address
+        balances = yield sbc.get_balances(adr)
+        print('balances: {}'.format(balances))
+
+        # get XBR network membership status for address
+        member_status = yield sbc.get_member_status(adr)
+        print('member status: {}'.format(member_status))
+
+
+    if __name__ == '__main__':
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument('--gateway',
+                            dest='gateway',
+                            type=str,
+                            default=None,
+                            help='Ethereum HTTP gateway URL or None for auto-select.')
+
+        parser.add_argument('--adr',
+                            dest='adr',
+                            type=str,
+                            default=None,
+                            help='Ethereum address to lookup.')
+
+        args = parser.parse_args()
+
+        react(main, (args.gateway, a2b_hex(args.adr[2:],)))
 
 
 Using the ABI files
@@ -91,6 +108,32 @@ To directly use the embedded ABI files:
         data = json.loads(f.read())
         abi = data['abi']
         pprint(abi)
+
+
+Data stored on-chain
+....................
+
+See the `XBRNetwork contract <https://github.com/crossbario/xbr-protocol/blob/master/contracts/XBRNetwork.sol>`_:
+
+.. code-block:: console
+
+    /// Current XBR Network members ("member directory").
+    mapping(address => Member) private members;
+
+    /// Current XBR Domains ("domain directory")
+    mapping(bytes16 => Domain) private domains;
+
+    /// Current XBR Nodes ("node directory");
+    mapping(bytes16 => Node) private nodes;
+
+    /// Index: node public key => (market ID, node ID)
+    mapping(bytes32 => bytes16) private nodesByKey;
+
+    /// Current XBR Markets ("market directory")
+    mapping(bytes16 => Market) private markets;
+
+    /// Index: maker address => market ID
+    mapping(address => bytes16) private marketsByMaker;
 
 
 Off-chain XBR market maker

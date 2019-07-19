@@ -10,8 +10,15 @@ def main(reactor, gateway, adr):
     sbc = xbr.SimpleBlockchain(gateway)
     yield sbc.start()
 
+    print('status for address 0x{}:'.format(b2a_hex(adr).decode()))
+
+    # get ETH and XBR account balances for address
     balances = yield sbc.get_balances(adr)
-    print('balances for 0x{}: {}'.format(b2a_hex(adr).decode(), balances))
+    print('balances: {}'.format(balances))
+
+    # get XBR network membership status for address
+    member_status = yield sbc.get_member_status(adr)
+    print('member status: {}'.format(member_status))
 
 
 if __name__ == '__main__':
@@ -21,7 +28,7 @@ if __name__ == '__main__':
                         dest='gateway',
                         type=str,
                         default=None,
-                        help='Ethereum HTTP gateway URL or None for auto-select (default: -, means let web3 auto-select).')
+                        help='Ethereum HTTP gateway URL or None for auto-select.')
 
     parser.add_argument('--adr',
                         dest='adr',

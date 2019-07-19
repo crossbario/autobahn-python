@@ -186,30 +186,38 @@ class SimpleBlockchain(object):
         :return:
         :rtype: dict
         """
+        assert type(member_adr) == bytes and len(member_adr) == 20
+
         def _get_member_status(_member_adr):
             level = xbr.xbrnetwork.functions.getMemberLevel(member_adr).call()
             if not level:
                 return None
             else:
                 eula = xbr.xbrnetwork.functions.getMemberEula(member_adr).call()
+                if not eula or eula.strip() == '':
+                    return None
                 profile = xbr.xbrnetwork.functions.getMemberProfile(member_adr).call()
+                if not profile or profile.strip() == '':
+                    profile = None
                 return {
                     'eula': eula,
                     'profile': profile,
                 }
         return deferToThread(_get_member_status, member_adr)
 
-    def get_balances(self, adr):
+    def get_balances(self, account_adr):
         """
         Return current ETH and XBR balances of account with given address.
 
-        :param adr: Ethereum address of account to get balances for.
-        :type adr: bytes
+        :param account_adr: Ethereum address of account to get balances for.
+        :type account_adr: bytes
 
         :return: A dictionary with ``"ETH"`` and ``"XBR"`` keys and respective
             current on-chain balances as values.
         :rtype: dict
         """
+        assert type(account_adr) == bytes and len(account_adr) == 20
+
         def _get_balances(_adr):
             balance_eth = self._w3.eth.getBalance(_adr)
             balance_xbr = xbr.xbrtoken.functions.balanceOf(_adr).call()
@@ -217,7 +225,7 @@ class SimpleBlockchain(object):
                 'ETH': balance_eth,
                 'XBR': balance_xbr,
             }
-        return deferToThread(_get_balances, adr)
+        return deferToThread(_get_balances, account_adr)
 
     def get_contract_adrs(self):
         """
