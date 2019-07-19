@@ -1,5 +1,5 @@
-XBR Python API
-==============
+XBR Programming
+===============
 
 This is the **XBR Lib for Python** API reference documentation, generated from the Python source code
 using `Sphinx <http://www.sphinx-doc.org>`_.
@@ -8,9 +8,20 @@ using `Sphinx <http://www.sphinx-doc.org>`_.
 
 ----------
 
+On-chain XBR smart contracts
+----------------------------
+
+SimpleBlockchain
+................
+
+.. autoclass:: autobahn.xbr.SimpleBlockchain
+    :members:
+        start,
+        stop
+
 
 Using the ABI files
--------------------
+...................
 
 .. code-block:: python
 
@@ -23,16 +34,12 @@ Using the ABI files
         abi = data['abi']
         pprint(abi)
 
-SimpleBlockchain
-----------------
 
-.. autoclass:: autobahn.xbr.SimpleBlockchain
-    :members:
-        start,
-        stop
+Off-chain XBR market maker
+--------------------------
 
 SimpleBuyer
------------
+...........
 
 .. autoclass:: autobahn.xbr.SimpleBuyer
     :members:
@@ -43,8 +50,9 @@ SimpleBuyer
         close_channel,
         unwrap
 
+
 SimpleSeller
-------------
+............
 
 .. autoclass:: autobahn.xbr.SimpleSeller
     :members:
@@ -55,8 +63,9 @@ SimpleSeller
         public_key,
         add
 
+
 KeySeries
----------
+.........
 
 .. autoclass:: autobahn.xbr.KeySeries
     :members:
@@ -66,8 +75,12 @@ KeySeries
         start,
         stop
 
+
+Interface Reference
+-------------------
+
 IMarketMaker
-------------
+............
 
 .. autoclass:: autobahn.xbr.IMarketMaker
     :members:
@@ -81,7 +94,7 @@ IMarketMaker
 
 
 IProvider
----------
+.........
 
 .. autoclass:: autobahn.xbr.IProvider
     :members:
@@ -89,14 +102,14 @@ IProvider
 
 
 IConsumer
----------
+.........
 
 .. autoclass:: autobahn.xbr.IConsumer
     :members:
 
 
 ISeller
--------
+.......
 
 .. autoclass:: autobahn.xbr.ISeller
     :members:
@@ -105,7 +118,7 @@ ISeller
 
 
 IBuyer
-------
+......
 
 .. autoclass:: autobahn.xbr.IBuyer
     :members:
