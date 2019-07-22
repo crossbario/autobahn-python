@@ -79,9 +79,9 @@
   "sourceMap": "",
   "deployedSourceMap": "",
   "source": "///////////////////////////////////////////////////////////////////////////////\n//\n//  Copyright (C) 2018 Crossbar.io Technologies GmbH and contributors.\n//\n//  Licensed under the Apache License, Version 2.0 (the \"License\");\n//  you may not use this file except in compliance with the License.\n//  You may obtain a copy of the License at\n//\n//      http://www.apache.org/licenses/LICENSE-2.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an \"AS IS\" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n//  See the License for the specific language governing permissions and\n//  limitations under the License.\n//\n///////////////////////////////////////////////////////////////////////////////\n\npragma solidity ^0.5.2;\n\nimport \"openzeppelin-solidity/contracts/access/Roles.sol\";\n\n\n/**\n * XBR Network (and XBR Network Proxies) SCs inherit from this base contract\n * to manage network administration and maintenance via Role-based Access\n * Control (RBAC).\n * The implementation for management comes from the OpenZeppelin RBAC library.\n */\ncontract XBRMaintained {\n    /// OpenZeppelin RBAC mixin.\n    using Roles for Roles.Role;\n\n    /**\n     * Event fired when a maintainer was added.\n     *\n     * @param account The account that was added as a maintainer.\n     */\n    event MaintainerAdded(address indexed account);\n\n    /**\n     * Event fired when a maintainer was removed.\n     *\n     * @param account The account that was removed as a maintainer.\n     */\n    event MaintainerRemoved(address indexed account);\n\n    /// Current list of XBR network maintainers.\n    Roles.Role private maintainers;\n\n    /// The constructor is internal (roles are managed by the OpenZeppelin base class).\n    constructor () internal {\n        _addMaintainer(msg.sender);\n    }\n\n    /**\n     * Modifier to require maintainer-role for the sender when calling a SC.\n     */\n    modifier onlyMaintainer () {\n        require(isMaintainer(msg.sender));\n        _;\n    }\n\n    /**\n     * Check if the given address is currently a maintainer.\n     *\n     * @param account The account to check.\n     * @return `true` if the account is maintainer, otherwise `false`.\n     */\n    function isMaintainer (address account) public view returns (bool) {\n        return maintainers.has(account);\n    }\n\n    /**\n     * Add a new maintainer to the list of maintainers.\n     *\n     * @param account The account to grant maintainer rights to.\n     */\n    function addMaintainer (address account) public onlyMaintainer {\n        _addMaintainer(account);\n    }\n\n    /**\n     * Give away maintainer rights.\n     */\n    function renounceMaintainer () public {\n        _removeMaintainer(msg.sender);\n    }\n\n    function _addMaintainer (address account) internal {\n        maintainers.add(account);\n        emit MaintainerAdded(account);\n    }\n\n    function _removeMaintainer (address account) internal {\n        maintainers.remove(account);\n        emit MaintainerRemoved(account);\n    }\n}\n",
-  "sourcePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/XBRMaintained.sol",
+  "sourcePath": "/home/oberstet/scm/crossbario/xbr-protocol/contracts/XBRMaintained.sol",
   "ast": {
-    "absolutePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/XBRMaintained.sol",
+    "absolutePath": "/home/oberstet/scm/crossbario/xbr-protocol/contracts/XBRMaintained.sol",
     "exportedSymbols": {
       "XBRMaintained": [
         159
@@ -107,7 +107,7 @@
         "id": 59,
         "nodeType": "ImportDirective",
         "scope": 160,
-        "sourceUnit": 2556,
+        "sourceUnit": 2651,
         "src": "830:58:1",
         "symbolAliases": [],
         "unitAlias": ""
@@ -132,10 +132,10 @@
               "id": 60,
               "name": "Roles",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2555,
+              "referencedDeclaration": 2650,
               "src": "1216:5:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_Roles_$2555",
+                "typeIdentifier": "t_contract$_Roles_$2650",
                 "typeString": "library Roles"
               }
             },
@@ -146,10 +146,10 @@
               "id": 61,
               "name": "Roles.Role",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2468,
+              "referencedDeclaration": 2576,
               "src": "1226:10:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_struct$_Role_$2468_storage_ptr",
+                "typeIdentifier": "t_struct$_Role_$2576_storage_ptr",
                 "typeString": "struct Roles.Role"
               }
             }
@@ -250,7 +250,7 @@
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
-              "typeIdentifier": "t_struct$_Role_$2468_storage",
+              "typeIdentifier": "t_struct$_Role_$2576_storage",
               "typeString": "struct Roles.Role"
             },
             "typeName": {
@@ -258,10 +258,10 @@
               "id": 71,
               "name": "Roles.Role",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2468,
+              "referencedDeclaration": 2576,
               "src": "1678:10:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_struct$_Role_$2468_storage_ptr",
+                "typeIdentifier": "t_struct$_Role_$2576_storage_ptr",
                 "typeString": "struct Roles.Role"
               }
             },
@@ -286,7 +286,7 @@
                           "name": "msg",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 3289,
+                          "referencedDeclaration": 3403,
                           "src": "1852:3:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_magic_message",
@@ -392,7 +392,7 @@
                               "name": "msg",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 3289,
+                              "referencedDeclaration": 3403,
                               "src": "2027:3:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_magic_message",
@@ -458,10 +458,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        3292,
-                        3293
+                        3406,
+                        3407
                       ],
-                      "referencedDeclaration": 3292,
+                      "referencedDeclaration": 3406,
                       "src": "2006:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$returns$__$",
@@ -546,7 +546,7 @@
                         "referencedDeclaration": 72,
                         "src": "2346:11:1",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_Role_$2468_storage",
+                          "typeIdentifier": "t_struct$_Role_$2576_storage",
                           "typeString": "struct Roles.Role storage ref"
                         }
                       },
@@ -557,10 +557,10 @@
                       "lValueRequested": false,
                       "memberName": "has",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 2554,
+                      "referencedDeclaration": 2649,
                       "src": "2346:15:1",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_function_internal_view$_t_struct$_Role_$2468_storage_ptr_$_t_address_$returns$_t_bool_$bound_to$_t_struct$_Role_$2468_storage_ptr_$",
+                        "typeIdentifier": "t_function_internal_view$_t_struct$_Role_$2576_storage_ptr_$_t_address_$returns$_t_bool_$bound_to$_t_struct$_Role_$2576_storage_ptr_$",
                         "typeString": "function (struct Roles.Role storage pointer,address) view returns (bool)"
                       }
                     },
@@ -818,7 +818,7 @@
                           "name": "msg",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 3289,
+                          "referencedDeclaration": 3403,
                           "src": "2754:3:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_magic_message",
@@ -943,7 +943,7 @@
                         "referencedDeclaration": 72,
                         "src": "2839:11:1",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_Role_$2468_storage",
+                          "typeIdentifier": "t_struct$_Role_$2576_storage",
                           "typeString": "struct Roles.Role storage ref"
                         }
                       },
@@ -954,10 +954,10 @@
                       "lValueRequested": false,
                       "memberName": "add",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 2500,
+                      "referencedDeclaration": 2601,
                       "src": "2839:15:1",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_Role_$2468_storage_ptr_$_t_address_$returns$__$bound_to$_t_struct$_Role_$2468_storage_ptr_$",
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_Role_$2576_storage_ptr_$_t_address_$returns$__$bound_to$_t_struct$_Role_$2576_storage_ptr_$",
                         "typeString": "function (struct Roles.Role storage pointer,address)"
                       }
                     },
@@ -1128,7 +1128,7 @@
                         "referencedDeclaration": 72,
                         "src": "2979:11:1",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_Role_$2468_storage",
+                          "typeIdentifier": "t_struct$_Role_$2576_storage",
                           "typeString": "struct Roles.Role storage ref"
                         }
                       },
@@ -1139,10 +1139,10 @@
                       "lValueRequested": false,
                       "memberName": "remove",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 2531,
+                      "referencedDeclaration": 2625,
                       "src": "2979:18:1",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_Role_$2468_storage_ptr_$_t_address_$returns$__$bound_to$_t_struct$_Role_$2468_storage_ptr_$",
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_Role_$2576_storage_ptr_$_t_address_$returns$__$bound_to$_t_struct$_Role_$2576_storage_ptr_$",
                         "typeString": "function (struct Roles.Role storage pointer,address)"
                       }
                     },
@@ -1281,7 +1281,7 @@
     "src": "805:2252:1"
   },
   "legacyAST": {
-    "absolutePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/XBRMaintained.sol",
+    "absolutePath": "/home/oberstet/scm/crossbario/xbr-protocol/contracts/XBRMaintained.sol",
     "exportedSymbols": {
       "XBRMaintained": [
         159
@@ -1307,7 +1307,7 @@
         "id": 59,
         "nodeType": "ImportDirective",
         "scope": 160,
-        "sourceUnit": 2556,
+        "sourceUnit": 2651,
         "src": "830:58:1",
         "symbolAliases": [],
         "unitAlias": ""
@@ -1332,10 +1332,10 @@
               "id": 60,
               "name": "Roles",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2555,
+              "referencedDeclaration": 2650,
               "src": "1216:5:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_Roles_$2555",
+                "typeIdentifier": "t_contract$_Roles_$2650",
                 "typeString": "library Roles"
               }
             },
@@ -1346,10 +1346,10 @@
               "id": 61,
               "name": "Roles.Role",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2468,
+              "referencedDeclaration": 2576,
               "src": "1226:10:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_struct$_Role_$2468_storage_ptr",
+                "typeIdentifier": "t_struct$_Role_$2576_storage_ptr",
                 "typeString": "struct Roles.Role"
               }
             }
@@ -1450,7 +1450,7 @@
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
-              "typeIdentifier": "t_struct$_Role_$2468_storage",
+              "typeIdentifier": "t_struct$_Role_$2576_storage",
               "typeString": "struct Roles.Role"
             },
             "typeName": {
@@ -1458,10 +1458,10 @@
               "id": 71,
               "name": "Roles.Role",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2468,
+              "referencedDeclaration": 2576,
               "src": "1678:10:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_struct$_Role_$2468_storage_ptr",
+                "typeIdentifier": "t_struct$_Role_$2576_storage_ptr",
                 "typeString": "struct Roles.Role"
               }
             },
@@ -1486,7 +1486,7 @@
                           "name": "msg",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 3289,
+                          "referencedDeclaration": 3403,
                           "src": "1852:3:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_magic_message",
@@ -1592,7 +1592,7 @@
                               "name": "msg",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 3289,
+                              "referencedDeclaration": 3403,
                               "src": "2027:3:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_magic_message",
@@ -1658,10 +1658,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        3292,
-                        3293
+                        3406,
+                        3407
                       ],
-                      "referencedDeclaration": 3292,
+                      "referencedDeclaration": 3406,
                       "src": "2006:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$returns$__$",
@@ -1746,7 +1746,7 @@
                         "referencedDeclaration": 72,
                         "src": "2346:11:1",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_Role_$2468_storage",
+                          "typeIdentifier": "t_struct$_Role_$2576_storage",
                           "typeString": "struct Roles.Role storage ref"
                         }
                       },
@@ -1757,10 +1757,10 @@
                       "lValueRequested": false,
                       "memberName": "has",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 2554,
+                      "referencedDeclaration": 2649,
                       "src": "2346:15:1",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_function_internal_view$_t_struct$_Role_$2468_storage_ptr_$_t_address_$returns$_t_bool_$bound_to$_t_struct$_Role_$2468_storage_ptr_$",
+                        "typeIdentifier": "t_function_internal_view$_t_struct$_Role_$2576_storage_ptr_$_t_address_$returns$_t_bool_$bound_to$_t_struct$_Role_$2576_storage_ptr_$",
                         "typeString": "function (struct Roles.Role storage pointer,address) view returns (bool)"
                       }
                     },
@@ -2018,7 +2018,7 @@
                           "name": "msg",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 3289,
+                          "referencedDeclaration": 3403,
                           "src": "2754:3:1",
                           "typeDescriptions": {
                             "typeIdentifier": "t_magic_message",
@@ -2143,7 +2143,7 @@
                         "referencedDeclaration": 72,
                         "src": "2839:11:1",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_Role_$2468_storage",
+                          "typeIdentifier": "t_struct$_Role_$2576_storage",
                           "typeString": "struct Roles.Role storage ref"
                         }
                       },
@@ -2154,10 +2154,10 @@
                       "lValueRequested": false,
                       "memberName": "add",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 2500,
+                      "referencedDeclaration": 2601,
                       "src": "2839:15:1",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_Role_$2468_storage_ptr_$_t_address_$returns$__$bound_to$_t_struct$_Role_$2468_storage_ptr_$",
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_Role_$2576_storage_ptr_$_t_address_$returns$__$bound_to$_t_struct$_Role_$2576_storage_ptr_$",
                         "typeString": "function (struct Roles.Role storage pointer,address)"
                       }
                     },
@@ -2328,7 +2328,7 @@
                         "referencedDeclaration": 72,
                         "src": "2979:11:1",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_struct$_Role_$2468_storage",
+                          "typeIdentifier": "t_struct$_Role_$2576_storage",
                           "typeString": "struct Roles.Role storage ref"
                         }
                       },
@@ -2339,10 +2339,10 @@
                       "lValueRequested": false,
                       "memberName": "remove",
                       "nodeType": "MemberAccess",
-                      "referencedDeclaration": 2531,
+                      "referencedDeclaration": 2625,
                       "src": "2979:18:1",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_Role_$2468_storage_ptr_$_t_address_$returns$__$bound_to$_t_struct$_Role_$2468_storage_ptr_$",
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_struct$_Role_$2576_storage_ptr_$_t_address_$returns$__$bound_to$_t_struct$_Role_$2576_storage_ptr_$",
                         "typeString": "function (struct Roles.Role storage pointer,address)"
                       }
                     },
@@ -2486,7 +2486,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.5",
-  "updatedAt": "2019-06-04T10:01:11.419Z",
+  "updatedAt": "2019-07-22T18:01:28.511Z",
   "devdoc": {
     "methods": {
       "addMaintainer(address)": {

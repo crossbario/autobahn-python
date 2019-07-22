@@ -136,7 +136,7 @@ class SimpleBuyer(object):
             raise Exception('payment channel (amount={}) has no balance remaining'.format(payment_channel['remaining']))
 
         self._channel = payment_channel
-        self._balance = payment_channel['remaining']
+        self._balance = payment_channel['amount']
 
         return self._balance
 
