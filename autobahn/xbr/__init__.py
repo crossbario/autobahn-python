@@ -26,7 +26,7 @@
 
 from __future__ import absolute_import
 
-from autobahn.xbr._abi import XBR_TOKEN_ABI, XBR_NETWORK_ABI, XBR_PAYMENT_CHANNEL_ABI
+from autobahn.xbr._abi import XBR_TOKEN_ABI, XBR_NETWORK_ABI, XBR_CHANNEL_ABI
 from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR
 from autobahn.xbr._blockchain import SimpleBlockchain
 from autobahn.xbr._buyer import SimpleBuyer
@@ -116,7 +116,7 @@ __all__ = (
 
     'XBR_TOKEN_ABI',
     'XBR_NETWORK_ABI',
-    'XBR_PAYMENT_CHANNEL_ABI',
+    'XBR_CHANNEL_ABI',
     'ASCII_BOMB',
 
     'IMarketMaker',

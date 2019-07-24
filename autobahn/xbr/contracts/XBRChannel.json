@@ -307,7 +307,7 @@
         "id": 59,
         "nodeType": "ImportDirective",
         "scope": 387,
-        "sourceUnit": 3039,
+        "sourceUnit": 3029,
         "src": "886:59:1",
         "symbolAliases": [],
         "unitAlias": ""
@@ -318,7 +318,7 @@
         "id": 60,
         "nodeType": "ImportDirective",
         "scope": 387,
-        "sourceUnit": 2906,
+        "sourceUnit": 2896,
         "src": "1008:64:1",
         "symbolAliases": [],
         "unitAlias": ""
@@ -343,10 +343,10 @@
               "id": 61,
               "name": "SafeMath",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 3038,
+              "referencedDeclaration": 3028,
               "src": "1331:8:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_SafeMath_$3038",
+                "typeIdentifier": "t_contract$_SafeMath_$3028",
                 "typeString": "library SafeMath"
               }
             },
@@ -370,10 +370,10 @@
               "id": 64,
               "name": "ECDSA",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2905,
+              "referencedDeclaration": 2895,
               "src": "1436:5:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_ECDSA_$2905",
+                "typeIdentifier": "t_contract$_ECDSA_$2895",
                 "typeString": "library ECDSA"
               }
             },
@@ -1432,7 +1432,7 @@
                         "name": "block",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3567,
+                        "referencedDeclaration": 3557,
                         "src": "4882:5:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_block",
@@ -2658,7 +2658,7 @@
                         "name": "ecrecover",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3569,
+                        "referencedDeclaration": 3559,
                         "src": "7718:9:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_function_ecrecover_pure$_t_bytes32_$_t_uint8_$_t_bytes32_$_t_bytes32_$returns$_t_address_$",
@@ -2842,10 +2842,10 @@
                             "name": "revert",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [
-                              3582,
-                              3583
+                              3572,
+                              3573
                             ],
-                            "referencedDeclaration": 3583,
+                            "referencedDeclaration": 3573,
                             "src": "7811:6:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_revert_pure$_t_string_memory_ptr_$returns$__$",
@@ -2908,7 +2908,7 @@
                               "name": "this",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 3596,
+                              "referencedDeclaration": 3586,
                               "src": "7894:4:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_contract$_XBRChannel_$386",
@@ -2963,7 +2963,7 @@
                               "name": "abi",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 3564,
+                              "referencedDeclaration": 3554,
                               "src": "7877:3:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_magic_abi",
@@ -3010,7 +3010,7 @@
                         "name": "keccak256",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3571,
+                        "referencedDeclaration": 3561,
                         "src": "7867:9:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_function_keccak256_pure$_t_bytes_memory_ptr_$returns$_t_bytes32_$",
@@ -3130,10 +3130,10 @@
                             "name": "revert",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [
-                              3582,
-                              3583
+                              3572,
+                              3573
                             ],
-                            "referencedDeclaration": 3583,
+                            "referencedDeclaration": 3573,
                             "src": "7958:6:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_revert_pure$_t_string_memory_ptr_$returns$__$",
@@ -3439,10 +3439,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        3580,
-                        3581
+                        3570,
+                        3571
                       ],
-                      "referencedDeclaration": 3581,
+                      "referencedDeclaration": 3571,
                       "src": "9038:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -3532,7 +3532,7 @@
                       "name": "now",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 3579,
+                      "referencedDeclaration": 3569,
                       "src": "9203:3:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -3588,10 +3588,10 @@
                             "name": "revert",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [
-                              3582,
-                              3583
+                              3572,
+                              3573
                             ],
-                            "referencedDeclaration": 3583,
+                            "referencedDeclaration": 3573,
                             "src": "9246:6:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_revert_pure$_t_string_memory_ptr_$returns$__$",
@@ -3650,7 +3650,7 @@
                         "name": "block",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3567,
+                        "referencedDeclaration": 3557,
                         "src": "9303:5:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_block",
@@ -3851,7 +3851,7 @@
                             "name": "abi",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 3564,
+                            "referencedDeclaration": 3554,
                             "src": "9635:3:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_magic_abi",
@@ -3898,7 +3898,7 @@
                       "name": "keccak256",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 3571,
+                      "referencedDeclaration": 3561,
                       "src": "9625:9:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_keccak256_pure$_t_bytes_memory_ptr_$returns$_t_bytes32_$",
@@ -4013,7 +4013,7 @@
                         "name": "ecrecover",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3569,
+                        "referencedDeclaration": 3559,
                         "src": "9683:9:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_function_ecrecover_pure$_t_bytes32_$_t_uint8_$_t_bytes32_$_t_bytes32_$returns$_t_address_$",
@@ -4280,7 +4280,7 @@
         "id": 59,
         "nodeType": "ImportDirective",
         "scope": 387,
-        "sourceUnit": 3039,
+        "sourceUnit": 3029,
         "src": "886:59:1",
         "symbolAliases": [],
         "unitAlias": ""
@@ -4291,7 +4291,7 @@
         "id": 60,
         "nodeType": "ImportDirective",
         "scope": 387,
-        "sourceUnit": 2906,
+        "sourceUnit": 2896,
         "src": "1008:64:1",
         "symbolAliases": [],
         "unitAlias": ""
@@ -4316,10 +4316,10 @@
               "id": 61,
               "name": "SafeMath",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 3038,
+              "referencedDeclaration": 3028,
               "src": "1331:8:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_SafeMath_$3038",
+                "typeIdentifier": "t_contract$_SafeMath_$3028",
                 "typeString": "library SafeMath"
               }
             },
@@ -4343,10 +4343,10 @@
               "id": 64,
               "name": "ECDSA",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 2905,
+              "referencedDeclaration": 2895,
               "src": "1436:5:1",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_ECDSA_$2905",
+                "typeIdentifier": "t_contract$_ECDSA_$2895",
                 "typeString": "library ECDSA"
               }
             },
@@ -5405,7 +5405,7 @@
                         "name": "block",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3567,
+                        "referencedDeclaration": 3557,
                         "src": "4882:5:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_block",
@@ -6631,7 +6631,7 @@
                         "name": "ecrecover",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3569,
+                        "referencedDeclaration": 3559,
                         "src": "7718:9:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_function_ecrecover_pure$_t_bytes32_$_t_uint8_$_t_bytes32_$_t_bytes32_$returns$_t_address_$",
@@ -6815,10 +6815,10 @@
                             "name": "revert",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [
-                              3582,
-                              3583
+                              3572,
+                              3573
                             ],
-                            "referencedDeclaration": 3583,
+                            "referencedDeclaration": 3573,
                             "src": "7811:6:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_revert_pure$_t_string_memory_ptr_$returns$__$",
@@ -6881,7 +6881,7 @@
                               "name": "this",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 3596,
+                              "referencedDeclaration": 3586,
                               "src": "7894:4:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_contract$_XBRChannel_$386",
@@ -6936,7 +6936,7 @@
                               "name": "abi",
                               "nodeType": "Identifier",
                               "overloadedDeclarations": [],
-                              "referencedDeclaration": 3564,
+                              "referencedDeclaration": 3554,
                               "src": "7877:3:1",
                               "typeDescriptions": {
                                 "typeIdentifier": "t_magic_abi",
@@ -6983,7 +6983,7 @@
                         "name": "keccak256",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3571,
+                        "referencedDeclaration": 3561,
                         "src": "7867:9:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_function_keccak256_pure$_t_bytes_memory_ptr_$returns$_t_bytes32_$",
@@ -7103,10 +7103,10 @@
                             "name": "revert",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [
-                              3582,
-                              3583
+                              3572,
+                              3573
                             ],
-                            "referencedDeclaration": 3583,
+                            "referencedDeclaration": 3573,
                             "src": "7958:6:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_revert_pure$_t_string_memory_ptr_$returns$__$",
@@ -7412,10 +7412,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        3580,
-                        3581
+                        3570,
+                        3571
                       ],
-                      "referencedDeclaration": 3581,
+                      "referencedDeclaration": 3571,
                       "src": "9038:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -7505,7 +7505,7 @@
                       "name": "now",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 3579,
+                      "referencedDeclaration": 3569,
                       "src": "9203:3:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
@@ -7561,10 +7561,10 @@
                             "name": "revert",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [
-                              3582,
-                              3583
+                              3572,
+                              3573
                             ],
-                            "referencedDeclaration": 3583,
+                            "referencedDeclaration": 3573,
                             "src": "9246:6:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_function_revert_pure$_t_string_memory_ptr_$returns$__$",
@@ -7623,7 +7623,7 @@
                         "name": "block",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3567,
+                        "referencedDeclaration": 3557,
                         "src": "9303:5:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_block",
@@ -7824,7 +7824,7 @@
                             "name": "abi",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 3564,
+                            "referencedDeclaration": 3554,
                             "src": "9635:3:1",
                             "typeDescriptions": {
                               "typeIdentifier": "t_magic_abi",
@@ -7871,7 +7871,7 @@
                       "name": "keccak256",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 3571,
+                      "referencedDeclaration": 3561,
                       "src": "9625:9:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_keccak256_pure$_t_bytes_memory_ptr_$returns$_t_bytes32_$",
@@ -7986,7 +7986,7 @@
                         "name": "ecrecover",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3569,
+                        "referencedDeclaration": 3559,
                         "src": "9683:9:1",
                         "typeDescriptions": {
                           "typeIdentifier": "t_function_ecrecover_pure$_t_bytes32_$_t_uint8_$_t_bytes32_$_t_bytes32_$returns$_t_address_$",
@@ -8232,7 +8232,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.5",
-  "updatedAt": "2019-07-24T06:29:23.747Z",
+  "updatedAt": "2019-07-24T15:18:28.757Z",
   "devdoc": {
     "methods": {
       "constructor": {
