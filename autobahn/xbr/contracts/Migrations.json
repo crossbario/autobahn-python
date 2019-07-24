@@ -64,14 +64,14 @@
       "type": "function"
     }
   ],
-  "bytecode": "0x608060405234801561001057600080fd5b5060008054600160a060020a03191633179055610230806100326000396000f3fe608060405234801561001057600080fd5b5060043610610068577c010000000000000000000000000000000000000000000000000000000060003504630900f010811461006d5780638da5cb5b146100a2578063fbdbad3c146100d3578063fdacd576146100ed575b600080fd5b6100a06004803603602081101561008357600080fd5b503573ffffffffffffffffffffffffffffffffffffffff1661010a565b005b6100aa6101bd565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6100db6101d9565b60408051918252519081900360200190f35b6100a06004803603602081101561010357600080fd5b50356101df565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760008190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1580156101a057600080fd5b505af11580156101b4573d6000803e3d6000fd5b50505050505b50565b60005473ffffffffffffffffffffffffffffffffffffffff1681565b60015481565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760015556fea165627a7a72305820421ef04a0a75647830e6218c4ded7d1ff60551b38d48ac9577d9a72bfb522a0e0029",
-  "deployedBytecode": "0x608060405234801561001057600080fd5b5060043610610068577c010000000000000000000000000000000000000000000000000000000060003504630900f010811461006d5780638da5cb5b146100a2578063fbdbad3c146100d3578063fdacd576146100ed575b600080fd5b6100a06004803603602081101561008357600080fd5b503573ffffffffffffffffffffffffffffffffffffffff1661010a565b005b6100aa6101bd565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6100db6101d9565b60408051918252519081900360200190f35b6100a06004803603602081101561010357600080fd5b50356101df565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760008190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1580156101a057600080fd5b505af11580156101b4573d6000803e3d6000fd5b50505050505b50565b60005473ffffffffffffffffffffffffffffffffffffffff1681565b60015481565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760015556fea165627a7a72305820421ef04a0a75647830e6218c4ded7d1ff60551b38d48ac9577d9a72bfb522a0e0029",
+  "bytecode": "0x608060405234801561001057600080fd5b5060008054600160a060020a03191633179055610230806100326000396000f3fe608060405234801561001057600080fd5b5060043610610068577c010000000000000000000000000000000000000000000000000000000060003504630900f010811461006d5780638da5cb5b146100a2578063fbdbad3c146100d3578063fdacd576146100ed575b600080fd5b6100a06004803603602081101561008357600080fd5b503573ffffffffffffffffffffffffffffffffffffffff1661010a565b005b6100aa6101bd565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6100db6101d9565b60408051918252519081900360200190f35b6100a06004803603602081101561010357600080fd5b50356101df565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760008190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1580156101a057600080fd5b505af11580156101b4573d6000803e3d6000fd5b50505050505b50565b60005473ffffffffffffffffffffffffffffffffffffffff1681565b60015481565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760015556fea165627a7a72305820f532ddead12f7a06ba58862fc973df9f91d9e3053faedbce70211ee31c1b93f60029",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b5060043610610068577c010000000000000000000000000000000000000000000000000000000060003504630900f010811461006d5780638da5cb5b146100a2578063fbdbad3c146100d3578063fdacd576146100ed575b600080fd5b6100a06004803603602081101561008357600080fd5b503573ffffffffffffffffffffffffffffffffffffffff1661010a565b005b6100aa6101bd565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6100db6101d9565b60408051918252519081900360200190f35b6100a06004803603602081101561010357600080fd5b50356101df565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760008190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1580156101a057600080fd5b505af11580156101b4573d6000803e3d6000fd5b50505050505b50565b60005473ffffffffffffffffffffffffffffffffffffffff1681565b60015481565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760015556fea165627a7a72305820f532ddead12f7a06ba58862fc973df9f91d9e3053faedbce70211ee31c1b93f60029",
   "sourceMap": "831:516:0:-;;;996:57;8:9:-1;5:2;;;30:1;27;20:12;5:2;-1:-1;1028:5:0;:18;;-1:-1:-1;;;;;;1028:18:0;1036:10;1028:18;;;831:516;;;;;;",
   "deployedSourceMap": "831:516:0:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;831:516:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;1173:172;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;1173:172:0;;;;:::i;:::-;;857:20;;;:::i;:::-;;;;;;;;;;;;;;;;;;;883:34;;;:::i;:::-;;;;;;;;;;;;;;;;1059:108;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;1059:108:0;;:::i;1173:172::-;975:5;;;;961:10;:19;957:26;;;1239:19;1272:10;1239:44;;1293:8;:21;;;1315:22;;1293:45;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;1293:45:0;;;;8:9:-1;5:2;;;45:16;42:1;39;24:38;77:16;74:1;67:27;5:2;1293:45:0;;;;982:1;957:26;1173:172;:::o;857:20::-;;;;;;:::o;883:34::-;;;;:::o;1059:108::-;975:5;;;;961:10;:19;957:26;;;1126:22;:34;1059:108::o",
   "source": "///////////////////////////////////////////////////////////////////////////////\n//\n//  Copyright (C) 2018 Crossbar.io Technologies GmbH and contributors.\n//\n//  Licensed under the Apache License, Version 2.0 (the \"License\");\n//  you may not use this file except in compliance with the License.\n//  You may obtain a copy of the License at\n//\n//      http://www.apache.org/licenses/LICENSE-2.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an \"AS IS\" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n//  See the License for the specific language governing permissions and\n//  limitations under the License.\n//\n///////////////////////////////////////////////////////////////////////////////\n\npragma solidity ^0.5.2;\n\n\ncontract Migrations {\n    address public owner;\n    uint public lastCompletedMigration;\n\n    modifier restricted () {\n        if (msg.sender == owner) _;\n    }\n\n    constructor () public {\n        owner = msg.sender;\n    }\n\n    function setCompleted (uint completed) public restricted {\n        lastCompletedMigration = completed;\n    }\n\n    function upgrade (address newAddress) public restricted {\n        Migrations upgraded = Migrations(newAddress);\n        upgraded.setCompleted(lastCompletedMigration);\n    }\n}\n",
-  "sourcePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/Migrations.sol",
+  "sourcePath": "/home/oberstet/scm/crossbario/xbr-protocol/contracts/Migrations.sol",
   "ast": {
-    "absolutePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/Migrations.sol",
+    "absolutePath": "/home/oberstet/scm/crossbario/xbr-protocol/contracts/Migrations.sol",
     "exportedSymbols": {
       "Migrations": [
         56
@@ -183,7 +183,7 @@
                         "name": "msg",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3289,
+                        "referencedDeclaration": 3567,
                         "src": "961:3:0",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_message",
@@ -287,7 +287,7 @@
                         "name": "msg",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3289,
+                        "referencedDeclaration": 3567,
                         "src": "1036:3:0",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_message",
@@ -717,7 +717,7 @@
     "src": "805:543:0"
   },
   "legacyAST": {
-    "absolutePath": "/home/oberstet/scm/xbr/xbr-protocol/contracts/Migrations.sol",
+    "absolutePath": "/home/oberstet/scm/crossbario/xbr-protocol/contracts/Migrations.sol",
     "exportedSymbols": {
       "Migrations": [
         56
@@ -829,7 +829,7 @@
                         "name": "msg",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3289,
+                        "referencedDeclaration": 3567,
                         "src": "961:3:0",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_message",
@@ -933,7 +933,7 @@
                         "name": "msg",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3289,
+                        "referencedDeclaration": 3567,
                         "src": "1036:3:0",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_message",
@@ -1368,7 +1368,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.5",
-  "updatedAt": "2019-06-04T10:01:11.415Z",
+  "updatedAt": "2019-07-24T15:18:28.757Z",
   "devdoc": {
     "methods": {}
   },

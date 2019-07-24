@@ -8,6 +8,10 @@ Changelog
 19.7.2
 ------
 
+* fix: monkey patch re-add removed helper functions removed in eth-abi
+* new: simple blockchain (XBR) client
+* new: update XBR ABI files
+* new: XBR endpoint transaction signing
 * new: client side catching of WAMP URI errors in `session.call|register|publish|subscribe`
 
 19.7.1
