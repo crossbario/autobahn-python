@@ -146,7 +146,7 @@ class SimpleBuyer(object):
         if payment_channel['state'] != 1:
             raise Exception('payment channel not open')
         if payment_channel['remaining'] == 0:
-            raise Exception('payment channel (amount={}) has no balance remaining'.format(payment_channel['remaining']))
+            raise Exception('payment channel (amount={}) has no balance remaining'.format(int(payment_channel['remaining'] / 10 ** 18)))
 
         self._channel = payment_channel
         self._balance = payment_channel['remaining']
@@ -181,8 +181,8 @@ class SimpleBuyer(object):
             raise Exception('no active payment channel found for delegate')
         if payment_channel['state'] != 1:
             raise Exception('payment channel not open')
-        if payment_channel['remaining'] == 0:
-            raise Exception('payment channel (amount={}) has no balance remaining'.format(payment_channel['remaining']))
+        if payment_channel['remaining'] <= 0:
+            raise Exception('payment channel (amount={}) has no balance remaining'.format(int(payment_channel['remaining'] / 10 ** 18)))
 
         balance = {
             'amount': payment_channel['amount'],
@@ -265,7 +265,7 @@ class SimpleBuyer(object):
 
             if quote['price'] > self._max_price:
                 raise ApplicationError('xbr.error.max_price_exceeded',
-                                       '{}.unwrap() - key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(self.__class__.__name__, uuid.UUID(bytes=key_id), quote['price'], self._max_price))
+                                       '{}.unwrap() - key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(self.__class__.__name__, uuid.UUID(bytes=key_id), int(quote['price'] / 10 ** 18), int(self._max_price / 10 ** 18)))
 
             # set price we pay set to the (current) quoted price
             amount = quote['price']
@@ -274,7 +274,7 @@ class SimpleBuyer(object):
             balance = self._balance - amount
             if balance < 0:
                 raise ApplicationError('xbr.error.insufficient_balance',
-                                       '{}.unwrap() - key {} needed cannot be bought: insufficient balance {} in payment channel for amount {}'.format(self.__class__.__name__, uuid.UUID(bytes=key_id), self._balance, amount))
+                                       '{}.unwrap() - key {} needed cannot be bought: insufficient balance {} in payment channel for amount {}'.format(self.__class__.__name__, uuid.UUID(bytes=key_id), int(self._balance / 10 ** 18), int(amount / 10 ** 18)))
 
             channel_seq = self._seq + 1
 
@@ -336,10 +336,10 @@ class SimpleBuyer(object):
                 klass=self.__class__.__name__,
                 tx_type=hl('XBR BUY   ', color='magenta'),
                 key_id=hl(uuid.UUID(bytes=key_id)),
-                amount_paid=hl(str(receipt['amount_paid']) + ' XBR', color='magenta'),
+                amount_paid=hl(str(int(receipt['amount_paid'] / 10 ** 18)) + ' XBR', color='magenta'),
                 payment_channel=hl(binascii.b2a_hex(receipt['payment_channel']).decode()),
-                remaining=hl(receipt['remaining']),
-                inflight=hl(receipt['inflight']),
+                remaining=hl(int(receipt['remaining'] / 10 ** 18)),
+                inflight=hl(int(receipt['inflight'] / 10 ** 18)),
                 buyer_pubkey=hl(binascii.b2a_hex(buyer_pubkey).decode()))
 
         # if the key is already being bought, wait until the one buying path of execution has succeeded and done
