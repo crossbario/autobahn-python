@@ -438,7 +438,7 @@ class SimpleSeller(object):
         if paying_channel['state'] != 1:
             raise Exception('paying channel not open')
         if paying_channel['remaining'] == 0:
-            raise Exception('paying channel (amount={}) has no balance remaining'.format(int(paying_channel['remaining'] / 10 **18)))
+            raise Exception('paying channel (amount={}) has no balance remaining'.format(int(paying_channel['remaining'] / 10 ** 18)))
 
         balance = {
             'amount': paying_channel['amount'],
@@ -593,7 +593,7 @@ class SimpleSeller(object):
                       klass=self.__class__.__name__,
                       tx_type=hl('XBR SELL  ', color='magenta'),
                       key_id=hl(uuid.UUID(bytes=key_id)),
-                      amount_earned=hl(str(int(amount / 10 ** 18 )) + ' XBR', color='magenta'),
+                      amount_earned=hl(str(int(amount / 10 ** 18)) + ' XBR', color='magenta'),
                       # paying_channel=hl(binascii.b2a_hex(paying_channel).decode()),
                       caller=hl(details.caller),
                       caller_authid=hl(details.caller_authid),
