@@ -2486,7 +2486,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.5",
-  "updatedAt": "2019-07-24T15:18:28.758Z",
+  "updatedAt": "2019-07-25T08:21:40.510Z",
   "devdoc": {
     "methods": {
       "addMaintainer(address)": {
