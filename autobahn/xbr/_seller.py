@@ -27,6 +27,7 @@
 import os
 import uuid
 import binascii
+from pprint import pformat
 
 import cbor2
 import nacl.secret
@@ -245,6 +246,15 @@ class SimpleSeller(object):
         # seller provider ID
         self._provider_id = provider_id or str(self._pkey.public_key)
 
+        # will be filled with on-chain payment channel contract, once started
+        self._channel = None
+
+        # channel current (off-chain) balance
+        self._balance = 0
+
+        # channel sequence number
+        self._seq = 0
+
         self._keys = {}
         self._keys_map = {}
 
@@ -369,6 +379,25 @@ class SimpleSeller(object):
         for key_series in self._keys.values():
             key_series.start()
 
+        paying_channel = yield session.call('xbr.marketmaker.get_paying_channel', self._addr)
+
+        self.log.info('Delegate current payment channel {paying_channel_adr}:\n{paying_channel}',
+                      paying_channel=pformat(paying_channel),
+                      paying_channel_adr=hl('0x' + binascii.b2a_hex(paying_channel['channel']).decode()))
+
+        if not paying_channel:
+            raise Exception('no active paying channel found for delegate')
+        if paying_channel['state'] != 1:
+            raise Exception('paying channel not open')
+        if paying_channel['remaining'] == 0:
+            raise Exception('paying channel (amount={}) has no balance remaining'.format(paying_channel['remaining']))
+
+        self._channel = paying_channel
+        self._balance = paying_channel['remaining']
+        self._seq = paying_channel['seq']
+
+        return self._balance
+
     def stop(self):
         """
         Stop rotating/offering keys to the XBR market maker.
@@ -388,6 +417,37 @@ class SimpleSeller(object):
 
         d = txaio.gather(dl)
         return d
+
+    async def balance(self):
+        """
+        Return current balance of payment channel:
+
+        * ``amount``: The initial amount with which the payment channel was opened.
+        * ``remaining``: The remaining amount of XBR in the payment channel that can be spent.
+        * ``inflight``: The amount of XBR allocated to buy transactions that are currently processed.
+
+        :return: Current payment balance.
+        :rtype: dict
+        """
+        assert self._session and self._session.is_attached()
+
+        paying_channel = await self._session.call('xbr.marketmaker.get_paying_channel', self._addr)
+
+        if not paying_channel:
+            raise Exception('no active paying channel found for delegate')
+        if paying_channel['state'] != 1:
+            raise Exception('paying channel not open')
+        if paying_channel['remaining'] == 0:
+            raise Exception('paying channel (amount={}) has no balance remaining'.format(paying_channel['remaining']))
+
+        balance = {
+            'amount': paying_channel['amount'],
+            'remaining': paying_channel['remaining'],
+            'inflight': paying_channel['inflight'],
+            'seq': paying_channel['seq'],
+        }
+
+        return balance
 
     async def wrap(self, api_id, uri, payload):
         """
@@ -454,45 +514,52 @@ class SimpleSeller(object):
         assert type(buyer_pubkey) == bytes and len(buyer_pubkey) == 32, 'buyer_pubkey must be bytes[32]'
         assert type(key_id) == bytes and len(key_id) == 16, 'key_id must be bytes[16]'
         assert type(channel_seq) == int, 'channel_seq must be int'
-        assert type(amount) == int, 'amount_paid must be int'
-        assert type(balance) == int, 'post_balance must be int'
+        assert type(amount) == int and amount >= 0, 'amount_paid must be int (>= 0)'
+        assert type(balance) == int and balance >= 0, 'post_balance must be int (>= 0)'
         assert type(signature) == bytes and len(signature) == (32 + 32 + 1), 'signature must be bytes[65]'
         assert details is None or isinstance(details, CallDetails), 'details must be autobahn.wamp.types.CallDetails'
 
         # check that the delegate_adr fits what we expect for the market maker
         if market_maker_adr != self._market_maker_adr:
             raise ApplicationError('xbr.error.unexpected_delegate_adr',
-                                   'unexpected market maker (delegate) address: expected 0x{}, but got 0x{}'.format(binascii.b2a_hex(self._market_maker_adr).decode(), binascii.b2a_hex(market_maker_adr).decode()))
+                                   '{}.sell() - unexpected market maker (delegate) address: expected 0x{}, but got 0x{}'.format(self.__class__.__name__, binascii.b2a_hex(self._market_maker_adr).decode(), binascii.b2a_hex(market_maker_adr).decode()))
+
+        # get the key series given the key_id
+        if key_id not in self._keys_map:
+            raise ApplicationError('crossbar.error.no_such_object', '{}.sell() - no key with ID "{}"'.format(self.__class__.__name__, key_id))
+        key_series = self._keys_map[key_id]
+
+        # channel sequence number: check we have consensus on off-chain channel state with peer (which is the market maker)
+        if channel_seq != self._seq + 1:
+            raise ApplicationError('xbr.error.unexpected_channel_seq',
+                                   '{}.sell() - unexpected channel (after tx) sequence number: expected {}, but got {}'.format(self.__class__.__name__, self._seq + 1, channel_seq))
+
+        # channel balance: check we have consensus on off-chain channel state with peer (which is the market maker)
+        if balance != self._balance - amount:
+            raise ApplicationError('xbr.error.unexpected_channel_balance',
+                                   '{}.sell() - unexpected channel (after tx) balance: expected {}, but got {}'.format(self.__class__.__name__, self._balance - amount, balance))
 
         # XBRSIG[4/8]: check the signature (over all input data for the buying of the key)
         signer_address = xbr.recover_eip712_signer(market_maker_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
         if signer_address != market_maker_adr:
-            self.log.warn('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
+            self.log.warn('{klass}.sell()::XBRSIG[4/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
+                          klass=self.__class__.__name__,
                           signer_address=hl(binascii.b2a_hex(signer_address).decode()),
                           delegate_adr=hl(binascii.b2a_hex(market_maker_adr).decode()))
-            raise ApplicationError('xbr.error.invalid_signature', 'EIP712 signature invalid or not signed by market maker')
+            raise ApplicationError('xbr.error.invalid_signature', '{}.sell()::XBRSIG[4/8] - EIP712 signature invalid or not signed by market maker'.format(self.__class__.__name__))
 
-        # get the key series given the key_id
-        if key_id not in self._keys_map:
-            raise ApplicationError('crossbar.error.no_such_object', 'no key with ID "{}"'.format(key_id))
-        key_series = self._keys_map[key_id]
+        # now actually update our local knowledge of the channel state
+        # FIXME: what if code down below fails?
+        self._seq += 1
+        self._balance -= amount
 
         # encrypt the data encryption key against the original buyer delegate Ed25519 public key
         sealed_key = key_series.encrypt_key(key_id, buyer_pubkey)
 
-        assert type(sealed_key) == bytes and len(sealed_key) == 80, 'unexpected sealed key computed (expected bytes[80]): {}'.format(sealed_key)
+        assert type(sealed_key) == bytes and len(sealed_key) == 80, '{}.sell() - unexpected sealed key computed (expected bytes[80]): {}'.format(self.__class__.__name__, sealed_key)
 
         # XBRSIG[5/8]: compute EIP712 typed data signature
-        seller_signature = xbr.sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, channel_seq, amount, balance)
-
-        self.log.info('{tx_type} key "{key_id}" sold for {amount_earned} [caller={caller}, caller_authid="{caller_authid}", buyer_pubkey="{buyer_pubkey}"]',
-                      tx_type=hl('XBR SELL  ', color='magenta'),
-                      key_id=hl(uuid.UUID(bytes=key_id)),
-                      amount_earned=hl(str(amount) + ' XBR', color='magenta'),
-                      # paying_channel=hl(binascii.b2a_hex(paying_channel).decode()),
-                      caller=hl(details.caller),
-                      caller_authid=hl(details.caller_authid),
-                      buyer_pubkey=hl(binascii.b2a_hex(buyer_pubkey).decode()))
+        seller_signature = xbr.sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, self._seq, amount, self._balance)
 
         receipt = {
             # key ID that has been bought
@@ -510,17 +577,27 @@ class SimpleSeller(object):
             'sealed_key': sealed_key,
 
             # paying channel off-chain transaction sequence numbers
-            'channel_seq': channel_seq,
+            'channel_seq': self._seq,
 
             # amount paid for the key
             'amount': amount,
 
             # paying channel amount remaining
-            'balance': balance,
+            'balance': self._balance,
 
             # seller (delegate) signature
             'signature': seller_signature,
         }
+
+        self.log.info('{klass}.sell() - {tx_type} key "{key_id}" sold for {amount_earned} [caller={caller}, caller_authid="{caller_authid}", buyer_pubkey="{buyer_pubkey}"]',
+                      klass=self.__class__.__name__,
+                      tx_type=hl('XBR SELL  ', color='magenta'),
+                      key_id=hl(uuid.UUID(bytes=key_id)),
+                      amount_earned=hl(str(amount) + ' XBR', color='magenta'),
+                      # paying_channel=hl(binascii.b2a_hex(paying_channel).decode()),
+                      caller=hl(details.caller),
+                      caller_authid=hl(details.caller_authid),
+                      buyer_pubkey=hl(binascii.b2a_hex(buyer_pubkey).decode()))
 
         return receipt
 

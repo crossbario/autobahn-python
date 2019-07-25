@@ -26,6 +26,7 @@
 
 import uuid
 import binascii
+from pprint import pformat
 
 import os
 import cbor2
@@ -34,6 +35,7 @@ import nacl.utils
 import nacl.exceptions
 import nacl.public
 
+from twisted.internet.defer import inlineCallbacks
 import txaio
 from autobahn.twisted.util import sleep
 from autobahn.wamp.exception import ApplicationError
@@ -92,6 +94,15 @@ class SimpleBuyer(object):
         # maximum price per key we are willing to pay
         self._max_price = max_price
 
+        # will be filled with on-chain payment channel contract, once started
+        self._channel = None
+
+        # channel current (off-chain) balance
+        self._balance = 0
+
+        # channel sequence number
+        self._seq = 0
+
         # this holds the keys we bought (map: key_id => nacl.secret.SecretBox)
         self._keys = {}
         self._session = None
@@ -99,7 +110,8 @@ class SimpleBuyer(object):
 
         self._receive_key = nacl.public.PrivateKey.generate()
 
-    async def start(self, session, consumer_id):
+    @inlineCallbacks
+    def start(self, session, consumer_id):
         """
         Start buying keys to decrypt XBR data by calling ``unwrap()``.
 
@@ -123,10 +135,11 @@ class SimpleBuyer(object):
                       address=self._acct.address,
                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
-        payment_channel = await session.call('xbr.marketmaker.get_payment_channel', self._addr)
+        payment_channel = yield session.call('xbr.marketmaker.get_payment_channel', self._addr)
 
-        self.log.info('Delegate current payment channel: {payment_channel}',
-                      payment_channel=hl(binascii.b2a_hex(payment_channel['channel']).decode()))
+        self.log.info('Delegate current payment channel {payment_channel_adr}:\n{payment_channel}',
+                      payment_channel=pformat(payment_channel),
+                      payment_channel_adr=hl('0x' + binascii.b2a_hex(payment_channel['channel']).decode()))
 
         if not payment_channel:
             raise Exception('no active payment channel found for delegate')
@@ -136,7 +149,8 @@ class SimpleBuyer(object):
             raise Exception('payment channel (amount={}) has no balance remaining'.format(payment_channel['remaining']))
 
         self._channel = payment_channel
-        self._balance = payment_channel['amount']
+        self._balance = payment_channel['remaining']
+        self._seq = payment_channel['seq']
 
         return self._balance
 
@@ -174,6 +188,7 @@ class SimpleBuyer(object):
             'amount': payment_channel['amount'],
             'remaining': payment_channel['remaining'],
             'inflight': payment_channel['inflight'],
+            'seq': payment_channel['seq'],
         }
 
         return balance
@@ -250,19 +265,18 @@ class SimpleBuyer(object):
 
             if quote['price'] > self._max_price:
                 raise ApplicationError('xbr.error.max_price_exceeded',
-                                       'key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(uuid.UUID(bytes=key_id), quote['price'], self._max_price))
+                                       '{}.unwrap() - key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(self.__class__.__name__, uuid.UUID(bytes=key_id), quote['price'], self._max_price))
 
             # set price we pay set to the (current) quoted price
             amount = quote['price']
-
-            # FIXME
-            channel_seq = 1
 
             # check (locally) we have enough balance left in the payment channel to buy the key
             balance = self._balance - amount
             if balance < 0:
                 raise ApplicationError('xbr.error.insufficient_balance',
-                                       'key {} needed cannot be bought: insufficient balance {} in payment channel for amount {}'.format(uuid.UUID(bytes=key_id), self._balance, amount))
+                                       '{}.unwrap() - key {} needed cannot be bought: insufficient balance {} in payment channel for amount {}'.format(self.__class__.__name__, uuid.UUID(bytes=key_id), self._balance, amount))
+
+            channel_seq = self._seq + 1
 
             buyer_pubkey = self._receive_key.public_key.encode(encoder=nacl.encoding.RawEncoder)
 
@@ -284,16 +298,26 @@ class SimpleBuyer(object):
                 raise e
             else:
                 self._balance -= amount
+                self._seq += 1
 
             # XBRSIG[8/8]: check market maker signature
             marketmaker_signature = receipt['signature']
-            signer_address = recover_eip712_signer(self._market_maker_adr, buyer_pubkey, key_id, channel_seq, amount, balance, marketmaker_signature)
+            marketmaker_amount_paid = receipt['amount_paid']
+            marketmaker_channel_seq = receipt['channel_seq']
+            marketmaker_remaining = receipt['remaining']
+
+            # FIXME: compare above to what we know locally
+
+            signer_address = recover_eip712_signer(self._market_maker_adr, buyer_pubkey, key_id,
+                                                   marketmaker_channel_seq, marketmaker_amount_paid,
+                                                   marketmaker_remaining, marketmaker_signature)
             if signer_address != self._market_maker_adr:
-                self.log.warn('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
+                self.log.warn('{klass}.unwrap()::XBRSIG[8/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
+                              klass=self.__class__.__name__,
                               signer_address=hl(binascii.b2a_hex(signer_address).decode()),
                               delegate_adr=hl(binascii.b2a_hex(self._market_maker_adr).decode()))
                 raise ApplicationError('xbr.error.invalid_signature',
-                                       'EIP712 signature invalid or not signed by market maker')
+                                       '{}.unwrap()::XBRSIG[8/8] - EIP712 signature invalid or not signed by market maker'.format(self.__class__.__name__))
 
             # unseal the data encryption key
             sealed_key = receipt['sealed_key']
@@ -302,13 +326,14 @@ class SimpleBuyer(object):
                 key = unseal_box.decrypt(sealed_key)
             except nacl.exceptions.CryptoError as e:
                 self._keys[key_id] = e
-                raise ApplicationError('xbr.error.decryption_failed', 'could not unseal data encryption key: {}'.format(e))
+                raise ApplicationError('xbr.error.decryption_failed', '{}.unwrap() - could not unseal data encryption key: {}'.format(self.__class__.__name__, e))
 
             # remember the key, so we can use it to actually decrypt application payload data
             self._keys[key_id] = nacl.secret.SecretBox(key)
 
             self.log.info(
-                '{tx_type} key "{key_id}" bought for {amount_paid} [payment_channel="{payment_channel}", remaining={remaining}, inflight={inflight}, buyer_pubkey="{buyer_pubkey}"]',
+                '{klass}.unwrap() - {tx_type} key "{key_id}" bought for {amount_paid} [payment_channel="{payment_channel}", remaining={remaining}, inflight={inflight}, buyer_pubkey="{buyer_pubkey}"]',
+                klass=self.__class__.__name__,
                 tx_type=hl('XBR BUY   ', color='magenta'),
                 key_id=hl(uuid.UUID(bytes=key_id)),
                 amount_paid=hl(str(receipt['amount_paid']) + ' XBR', color='magenta'),
@@ -321,7 +346,8 @@ class SimpleBuyer(object):
         log_counter = 0
         while self._keys[key_id] is False:
             if log_counter % 100:
-                self.log.info('Waiting for key "{key_id}" currently being bought ..', key_id=hl(uuid.UUID(bytes=key_id)))
+                self.log.info('{klass}.unwrap() - waiting for key "{key_id}" currently being bought ..',
+                              klass=self.__class__.__name__, key_id=hl(uuid.UUID(bytes=key_id)))
                 log_counter += 1
             await sleep(.2)
 
@@ -335,7 +361,7 @@ class SimpleBuyer(object):
             message = self._keys[key_id].decrypt(ciphertext)
         except nacl.exceptions.CryptoError as e:
             # Decryption failed. Ciphertext failed verification
-            raise ApplicationError('xbr.error.decryption_failed', 'failed to unwrap encrypted data: {}'.format(e))
+            raise ApplicationError('xbr.error.decryption_failed', '{}.unwrap() - failed to unwrap encrypted data: {}'.format(self.__class__.__name__, e))
 
         # deserialize the application payload
         # FIXME: support more app payload serializers
@@ -343,7 +369,7 @@ class SimpleBuyer(object):
             payload = cbor2.loads(message)
         except cbor2.decoder.CBORDecodeError as e:
             # premature end of stream (expected to read 4187 bytes, got 27 instead)
-            raise ApplicationError('xbr.error.deserialization_failed', 'failed to deserialize application payload: {}'.format(e))
+            raise ApplicationError('xbr.error.deserialization_failed', '{}.unwrap() - failed to deserialize application payload: {}'.format(self.__class__.__name__, e))
 
         return payload
 
