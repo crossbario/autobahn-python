@@ -333,10 +333,19 @@ class SimpleBuyer(object):
                                                  market_maker_signature=tx2.signature,
                                                  delegate_signature=tx1.signature)
 
-                    # FIXME: wait for and acquire new payment channel
+                        # FIXME: wait for and acquire new payment channel instead of bailing out ..
+
+                        raise ApplicationError('xbr.error.channel_closed',
+                                               '{}.unwrap() - key {} cannot be bought: payment channel 0x{} ran empty and we initiated close at remaining balance of {}'.format(self.__class__.__name__,
+                                                                                                                                                                                uuid.UUID(bytes=key_id),
+                                                                                                                                                                                binascii.b2a_hex(tx1.channel).decode(),
+                                                                                                                                                                                int(tx1.balance / 10 ** 18)))
                 else:
                     raise ApplicationError('xbr.error.insufficient_balance',
-                                           '{}.unwrap() - key {} needed cannot be bought: insufficient balance {} in payment channel for amount {}'.format(self.__class__.__name__, uuid.UUID(bytes=key_id), int(self._balance / 10 ** 18), int(amount / 10 ** 18)))
+                                           '{}.unwrap() - key {} cannot be bought: insufficient balance {} in payment channel for amount {}'.format(self.__class__.__name__,
+                                                                                                                                                           uuid.UUID(bytes=key_id),
+                                                                                                                                                           int(self._balance / 10 ** 18),
+                                                                                                                                                           int(amount / 10 ** 18)))
 
             buyer_pubkey = self._receive_key.public_key.encode(encoder=nacl.encoding.RawEncoder)
             channel_seq = self._seq + 1
