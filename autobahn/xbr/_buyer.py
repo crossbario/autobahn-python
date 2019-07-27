@@ -342,9 +342,9 @@ class SimpleBuyer(object):
                 else:
                     raise ApplicationError('xbr.error.insufficient_balance',
                                            '{}.unwrap() - key {} cannot be bought: insufficient balance {} in payment channel for amount {}'.format(self.__class__.__name__,
-                                                                                                                                                           uuid.UUID(bytes=key_id),
-                                                                                                                                                           int(self._balance / 10 ** 18),
-                                                                                                                                                           int(amount / 10 ** 18)))
+                                                                                                                                                    uuid.UUID(bytes=key_id),
+                                                                                                                                                    int(self._balance / 10 ** 18),
+                                                                                                                                                    int(amount / 10 ** 18)))
 
             buyer_pubkey = self._receive_key.public_key.encode(encoder=nacl.encoding.RawEncoder)
             channel_seq = self._seq + 1

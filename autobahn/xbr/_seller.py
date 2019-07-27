@@ -27,7 +27,6 @@
 import os
 import uuid
 import binascii
-from pprint import pformat
 
 import cbor2
 import nacl.secret
