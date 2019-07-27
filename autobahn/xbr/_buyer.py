@@ -170,13 +170,12 @@ class SimpleBuyer(object):
         self._running = True
 
         self.log.info('Start buying from consumer delegate address {address} (public key 0x{public_key}..)',
-                      address=self._acct.address,
+                      address=hl('0x' + self._acct.address),
                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
         payment_channel = yield session.call('xbr.marketmaker.get_payment_channel', self._addr)
 
-        self.log.info('Delegate current payment channel {payment_channel_adr}:\n{payment_channel}',
-                      payment_channel=pformat(payment_channel),
+        self.log.info('Delegate has current payment channel address {payment_channel_adr}',
                       payment_channel_adr=hl('0x' + binascii.b2a_hex(payment_channel['channel']).decode()))
 
         if not payment_channel:
@@ -410,7 +409,7 @@ class SimpleBuyer(object):
 
             transactions_count = self.count_transactions()
             self.log.info(
-                '{klass}.unwrap() - {tx_type} key "{key_id}" bought for {amount_paid} [payment_channel="{payment_channel}", remaining={remaining}, inflight={inflight}, buyer_pubkey="{buyer_pubkey}", transactions={transactions}]',
+                '{klass}.unwrap() - {tx_type} key {key_id} bought for {amount_paid} [payment_channel={payment_channel}, remaining={remaining}, inflight={inflight}, buyer_pubkey={buyer_pubkey}, transactions={transactions}]',
                 klass=self.__class__.__name__,
                 tx_type=hl('XBR BUY   ', color='magenta'),
                 key_id=hl(uuid.UUID(bytes=key_id)),

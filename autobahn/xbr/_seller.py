@@ -371,18 +371,21 @@ class SimpleSeller(object):
         self._session = session
         self._session_regs = []
 
+        self.log.info('Start selling from seller delegate address {address} (public key 0x{public_key}..)',
+                      address=hl('0x' + self._acct.address),
+                      public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
+
         procedure = 'xbr.provider.{}.sell'.format(self._provider_id)
         reg = yield session.register(self.sell, procedure, options=RegisterOptions(details_arg='details'))
         self._session_regs.append(reg)
-        self.log.info('Registered procedure "{procedure}"', procedure=hl(reg.procedure))
+        self.log.debug('Registered procedure "{procedure}"', procedure=hl(reg.procedure))
 
         for key_series in self._keys.values():
             key_series.start()
 
         paying_channel = yield session.call('xbr.marketmaker.get_paying_channel', self._addr)
 
-        self.log.info('Delegate current payment channel {paying_channel_adr}:\n{paying_channel}',
-                      paying_channel=pformat(paying_channel),
+        self.log.info('Delegate has current paying channel address {paying_channel_adr}',
                       paying_channel_adr=hl('0x' + binascii.b2a_hex(paying_channel['channel']).decode()))
 
         if not paying_channel:
