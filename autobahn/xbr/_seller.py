@@ -302,11 +302,10 @@ class SimpleSeller(object):
             while retries:
                 try:
                     valid_from = time_ns() - 10 * 10 ** 9
-
                     delegate = self._addr
-
                     # FIXME: sign the supplied offer information using self._pkey
                     signature = os.urandom(64)
+                    provider_id = self._provider_id
 
                     offer = yield self._session.call('xbr.marketmaker.place_offer',
                                                      key_id,
@@ -320,7 +319,7 @@ class SimpleSeller(object):
                                                      categories=categories,
                                                      expires=None,
                                                      copies=None,
-                                                     provider_id=self._provider_id)
+                                                     provider_id=provider_id)
 
                     self.log.info(
                         '{tx_type} key "{key_id}" offered for {price} [api_id={api_id}, prefix="{prefix}", delegate="{delegate}"]',
