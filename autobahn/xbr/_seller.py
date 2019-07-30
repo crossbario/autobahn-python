@@ -45,6 +45,7 @@ from autobahn.wamp.types import RegisterOptions, CallDetails
 from autobahn.wamp.exception import ApplicationError, TransportLost
 from autobahn.wamp.protocol import ApplicationSession
 from autobahn.twisted.util import sleep
+from crossbarfx.cfxdb import unpack_uint256
 
 from autobahn import xbr
 
@@ -207,6 +208,12 @@ class SimpleSeller(object):
 
     log = txaio.make_logger()
 
+    STATE_NONE = 0
+    STATE_STARTING = 1
+    STATE_STARTED = 2
+    STATE_STOPPING = 3
+    STATE_STOPPED = 4
+
     def __init__(self, market_maker_adr, seller_key, provider_id=None):
         """
 
@@ -223,6 +230,9 @@ class SimpleSeller(object):
         assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'market_maker_adr must be bytes[20], but got "{}"'.format(market_maker_adr)
         assert type(seller_key) == bytes and len(seller_key) == 32, 'seller delegate must be bytes[32], but got "{}"'.format(seller_key)
         assert provider_id is None or type(provider_id) == str, 'provider_id must be None or string, but got "{}"'.format(provider_id)
+
+        # current seller state
+        self._state = SimpleSeller.STATE_NONE
 
         # market maker address
         self._market_maker_adr = market_maker_adr
@@ -264,9 +274,9 @@ class SimpleSeller(object):
     @property
     def public_key(self):
         """
-        Seller (delegate) public Ehtereum key.
+        This seller delegate public Ethereum key.
 
-        :return: Ethereum public key of seller (delegate).
+        :return: Ethereum public key of this seller delegate.
         :rtype: bytes
         """
         return self._pkey.public_key
@@ -287,6 +297,9 @@ class SimpleSeller(object):
         assert type(api_id) == bytes and len(api_id) == 16 and api_id not in self._keys
         assert type(price) == int and price > 0
         assert type(interval) == int and interval > 0
+        assert categories is None or (type(categories) == dict and
+                                      (type(k) == str for k in categories.keys()) and
+                                      (type(v) == str for v in categories.values())), 'invalid categories type (must be dict) or category key or value type (must both be string)'
 
         @inlineCallbacks
         def on_rotate(key_series):
@@ -304,7 +317,7 @@ class SimpleSeller(object):
                     valid_from = time_ns() - 10 * 10 ** 9
                     delegate = self._addr
                     # FIXME: sign the supplied offer information using self._pkey
-                    signature = os.urandom(64)
+                    signature = os.urandom(65)
                     provider_id = self._provider_id
 
                     offer = yield self._session.call('xbr.marketmaker.place_offer',
@@ -363,9 +376,10 @@ class SimpleSeller(object):
         :param session: WAMP session over which to communicate with the XBR market maker.
         :type session: :class:`autobahn.wamp.protocol.ApplicationSession`
         """
-        assert isinstance(session, ApplicationSession)
-        assert self._session is None
+        assert isinstance(session, ApplicationSession), 'session must be an ApplicationSession, was "{}"'.format(session)
+        assert self._state in [SimpleSeller.STATE_NONE, SimpleSeller.STATE_STOPPED], 'seller already running'
 
+        self._state = SimpleSeller.STATE_STARTING
         self._session = session
         self._session_regs = []
 
@@ -381,21 +395,21 @@ class SimpleSeller(object):
         for key_series in self._keys.values():
             key_series.start()
 
-        paying_channel = yield session.call('xbr.marketmaker.get_paying_channel', self._addr)
+        paying_channel, paying_balance = yield session.call('xbr.marketmaker.get_paying_channel', self._addr)
 
         self.log.info('Delegate has current paying channel address {paying_channel_adr}',
                       paying_channel_adr=hl('0x' + binascii.b2a_hex(paying_channel['channel']).decode()))
 
-        if not paying_channel:
-            raise Exception('no active paying channel found for delegate')
-        if paying_channel['state'] != 1:
-            raise Exception('paying channel not open')
-        if paying_channel['remaining'] == 0:
-            raise Exception('paying channel (amount={}) has no balance remaining'.format(int(paying_channel['remaining'] / 10 ** 18)))
-
         self._channel = paying_channel
-        self._balance = paying_channel['remaining']
-        self._seq = paying_channel['seq']
+
+        # FIXME
+        self._balance = paying_balance['remaining']
+        if type(self._balance) == bytes:
+            self._balance = unpack_uint256(self._balance)
+
+        self._seq = paying_balance['seq']
+
+        self._state = SimpleSeller.STATE_STARTED
 
         return self._balance
 
@@ -403,6 +417,10 @@ class SimpleSeller(object):
         """
         Stop rotating/offering keys to the XBR market maker.
         """
+        assert self._state in [SimpleSeller.STATE_STARTED], 'seller not running'
+
+        self._state = SimpleSeller.STATE_STOPPING
+
         dl = []
         for key_series in self._keys.values():
             d = key_series.stop()
@@ -417,29 +435,39 @@ class SimpleSeller(object):
             self._session_regs = None
 
         d = txaio.gather(dl)
-        return d
+
+        try:
+            yield d
+        except:
+            self.log.failure()
+        finally:
+            self._state = SimpleSeller.STATE_STOPPED
+            self._session = None
 
     async def balance(self):
         """
-        Return current balance of payment channel:
+        Return current (off-chain) balance of paying channel:
 
-        * ``amount``: The initial amount with which the payment channel was opened.
-        * ``remaining``: The remaining amount of XBR in the payment channel that can be spent.
-        * ``inflight``: The amount of XBR allocated to buy transactions that are currently processed.
+        * ``amount``: The initial amount with which the paying channel was opened.
+        * ``remaining``: The remaining amount of XBR in the paying channel that can be earned.
+        * ``inflight``: The amount of XBR allocated to sell transactions that are currently processed.
 
-        :return: Current payment balance.
+        :return: Current paying balance.
         :rtype: dict
         """
-        assert self._session and self._session.is_attached()
+        if not self._state in [SimpleSeller.STATE_STARTED]:
+            raise RuntimeError('seller not running')
+        if not self._session or not self._session.is_attached():
+            raise RuntimeError('market-maker session not attached')
 
         paying_channel = await self._session.call('xbr.marketmaker.get_paying_channel', self._addr)
 
         if not paying_channel:
-            raise Exception('no active paying channel found for delegate')
+            raise RuntimeError('no active paying channel found for delegate')
         if paying_channel['state'] != 1:
-            raise Exception('paying channel not open')
+            raise RuntimeError('paying channel not open')
         if paying_channel['remaining'] == 0:
-            raise Exception('paying channel (amount={}) has no balance remaining'.format(int(paying_channel['remaining'] / 10 ** 18)))
+            raise RuntimeError('paying channel (amount={}) has no balance remaining'.format(int(paying_channel['remaining'] / 10 ** 18)))
 
         balance = {
             'amount': paying_channel['amount'],

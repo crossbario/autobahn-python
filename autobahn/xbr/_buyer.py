@@ -40,6 +40,7 @@ import txaio
 from autobahn.twisted.util import sleep
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.protocol import ApplicationSession
+from crossbarfx.cfxdb import unpack_uint256
 
 import web3
 import eth_keys
@@ -173,21 +174,19 @@ class SimpleBuyer(object):
                       address=hl('0x' + self._acct.address),
                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
-        payment_channel = yield session.call('xbr.marketmaker.get_payment_channel', self._addr)
+        payment_channel, payment_balance = yield session.call('xbr.marketmaker.get_payment_channel', self._addr)
 
         self.log.info('Delegate has current payment channel address {payment_channel_adr}',
                       payment_channel_adr=hl('0x' + binascii.b2a_hex(payment_channel['channel']).decode()))
 
-        if not payment_channel:
-            raise Exception('no active payment channel found for delegate')
-        if payment_channel['state'] != 1:
-            raise Exception('payment channel not open')
-        if payment_channel['remaining'] == 0:
-            raise Exception('payment channel (amount={}) has no balance remaining'.format(int(payment_channel['remaining'] / 10 ** 18)))
-
         self._channel = payment_channel
-        self._balance = payment_channel['remaining']
-        self._seq = payment_channel['seq']
+
+        # FIXME
+        self._balance = payment_balance['remaining']
+        if type(self._balance) == bytes:
+            self._balance = unpack_uint256(self._balance)
+
+        self._seq = payment_balance['seq']
 
         return self._balance
 
@@ -212,18 +211,11 @@ class SimpleBuyer(object):
         """
         assert self._session and self._session.is_attached()
 
-        payment_channel = await self._session.call('xbr.marketmaker.get_payment_channel', self._addr)
-
-        if not payment_channel:
-            raise Exception('no active payment channel found for delegate')
-        if payment_channel['state'] != 1:
-            raise Exception('payment channel not open')
-        if payment_channel['remaining'] <= 0:
-            raise Exception('payment channel (amount={}) has no balance remaining'.format(int(payment_channel['remaining'] / 10 ** 18)))
+        payment_channel, payment_balance = await self._session.call('xbr.marketmaker.get_payment_channel', self._addr)
 
         balance = {
             'amount': payment_channel['amount'],
-            'remaining': payment_channel['remaining'],
+            'remaining': payment_balance['remaining'],
             'inflight': payment_channel['inflight'],
             'seq': payment_channel['seq'],
         }
@@ -289,7 +281,7 @@ class SimpleBuyer(object):
         """
         assert type(key_id) == bytes and len(key_id) == 16
         # FIXME: support more app payload serializers
-        assert type(serializer) == str and serializer == 'cbor'
+        assert type(serializer) == str and serializer in ['cbor']
         assert type(ciphertext) == bytes
 
         # if we don't have the key, buy it!
