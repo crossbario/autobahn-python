@@ -26,6 +26,7 @@
 
 import uuid
 import binascii
+from pprint import pformat
 
 import os
 import cbor2
@@ -34,10 +35,12 @@ import nacl.utils
 import nacl.exceptions
 import nacl.public
 
+from twisted.internet.defer import inlineCallbacks
 import txaio
 from autobahn.twisted.util import sleep
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.protocol import ApplicationSession
+from crossbarfx.cfxdb import unpack_uint256
 
 import web3
 import eth_keys
@@ -45,6 +48,35 @@ from eth_account import Account
 
 from ._interfaces import IConsumer, IBuyer
 from ._util import hl, sign_eip712_data, recover_eip712_signer
+
+
+class Transaction(object):
+
+    def __init__(self, channel, delegate, pubkey, key_id, channel_seq, amount, balance, signature):
+        self.channel = channel
+        self.delegate = delegate
+        self.pubkey = pubkey
+        self.key_id = key_id
+        self.channel_seq = channel_seq
+        self.amount = amount
+        self.balance = balance
+        self.signature = signature
+
+    def marshal(self):
+        res = {
+            'channel': self.channel,
+            'delegate': self.delegate,
+            'pubkey': self.pubkey,
+            'key_id': self.key_id,
+            'channel_seq': self.channel_seq,
+            'amount': self.amount,
+            'balance': self.balance,
+            'signature': self.signature,
+        }
+        return res
+
+    def __str__(self):
+        return pformat(self.marshal())
 
 
 class SimpleBuyer(object):
@@ -89,17 +121,36 @@ class SimpleBuyer(object):
         # buyer ethereum account canonical checksummed address
         self._caddr = web3.Web3.toChecksumAddress(self._addr)
 
+        # FIXME: ephemeral data consumer key
+        self._receive_key = nacl.public.PrivateKey.generate()
+
         # maximum price per key we are willing to pay
         self._max_price = max_price
+
+        # will be filled with on-chain payment channel contract, once started
+        self._channel = None
+
+        # channel current (off-chain) balance
+        self._balance = 0
+
+        # channel sequence number
+        self._seq = 0
 
         # this holds the keys we bought (map: key_id => nacl.secret.SecretBox)
         self._keys = {}
         self._session = None
         self._running = False
 
-        self._receive_key = nacl.public.PrivateKey.generate()
+        # automatically initiate a close of the payment channel when running into
+        # a transaction failing because of insufficient balance remaining in the channel
+        self._auto_close_channel = True
 
-    async def start(self, session, consumer_id):
+        # FIXME: poor mans local transaction store
+        self._transaction_idx = {}
+        self._transactions = []
+
+    @inlineCallbacks
+    def start(self, session, consumer_id):
         """
         Start buying keys to decrypt XBR data by calling ``unwrap()``.
 
@@ -120,23 +171,24 @@ class SimpleBuyer(object):
         self._running = True
 
         self.log.info('Start buying from consumer delegate address {address} (public key 0x{public_key}..)',
-                      address=self._acct.address,
+                      address=hl('0x' + self._acct.address),
                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
-        payment_channel = await session.call('xbr.marketmaker.get_payment_channel', self._addr)
+        # get the currently active (if any) payment channel for the delegate
+        self._channel = yield session.call('xbr.marketmaker.get_active_payment_channel', self._addr)
 
-        self.log.info('Delegate current payment channel: {payment_channel}',
-                      payment_channel=hl(binascii.b2a_hex(payment_channel['channel']).decode()))
+        # get the current (off-chain) balance of the payment channel
+        payment_balance = yield session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
 
-        if not payment_channel:
-            raise Exception('no active payment channel found for delegate')
-        if payment_channel['state'] != 1:
-            raise Exception('payment channel not open')
-        if payment_channel['remaining'] == 0:
-            raise Exception('payment channel (amount={}) has no balance remaining'.format(payment_channel['remaining']))
+        self.log.info('Delegate has current payment channel address {payment_channel_adr}',
+                      payment_channel_adr=hl('0x' + binascii.b2a_hex(self._channel['channel']).decode()))
 
-        self._channel = payment_channel
-        self._balance = payment_channel['amount']
+        # FIXME
+        self._balance = payment_balance['remaining']
+        if type(self._balance) == bytes:
+            self._balance = unpack_uint256(self._balance)
+
+        self._seq = payment_balance['seq']
 
         return self._balance
 
@@ -161,22 +213,9 @@ class SimpleBuyer(object):
         """
         assert self._session and self._session.is_attached()
 
-        payment_channel = await self._session.call('xbr.marketmaker.get_payment_channel', self._addr)
+        payment_balance = await self._session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
 
-        if not payment_channel:
-            raise Exception('no active payment channel found for delegate')
-        if payment_channel['state'] != 1:
-            raise Exception('payment channel not open')
-        if payment_channel['remaining'] == 0:
-            raise Exception('payment channel (amount={}) has no balance remaining'.format(payment_channel['remaining']))
-
-        balance = {
-            'amount': payment_channel['amount'],
-            'remaining': payment_channel['remaining'],
-            'inflight': payment_channel['inflight'],
-        }
-
-        return balance
+        return payment_balance
 
     async def open_channel(self, buyer_addr, amount, details=None):
         """
@@ -237,7 +276,7 @@ class SimpleBuyer(object):
         """
         assert type(key_id) == bytes and len(key_id) == 16
         # FIXME: support more app payload serializers
-        assert type(serializer) == str and serializer == 'cbor'
+        assert type(serializer) == str and serializer in ['cbor']
         assert type(ciphertext) == bytes
 
         # if we don't have the key, buy it!
@@ -250,24 +289,58 @@ class SimpleBuyer(object):
 
             if quote['price'] > self._max_price:
                 raise ApplicationError('xbr.error.max_price_exceeded',
-                                       'key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(uuid.UUID(bytes=key_id), quote['price'], self._max_price))
+                                       '{}.unwrap() - key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(self.__class__.__name__, uuid.UUID(bytes=key_id), int(quote['price'] / 10 ** 18), int(self._max_price / 10 ** 18)))
 
             # set price we pay set to the (current) quoted price
             amount = quote['price']
 
-            # FIXME
-            channel_seq = 1
-
             # check (locally) we have enough balance left in the payment channel to buy the key
             balance = self._balance - amount
             if balance < 0:
-                raise ApplicationError('xbr.error.insufficient_balance',
-                                       'key {} needed cannot be bought: insufficient balance {} in payment channel for amount {}'.format(uuid.UUID(bytes=key_id), self._balance, amount))
+                if self._auto_close_channel:
+                    # FIXME: sign last transaction (from persisted local history)
+                    last_tx = None
+                    txns = self.past_transactions()
+                    if txns:
+                        last_tx = txns[0]
+
+                    if last_tx:
+                        # tx1 is the delegate portion, and tx2 is the market maker portion:
+                        tx1, tx2 = last_tx
+
+                        # call market maker to initiate closing of payment channel
+                        await self._session.call('xbr.marketmaker.close_channel',
+                                                 tx1.channel,
+                                                 tx1.pubkey,
+                                                 tx1.key_id,
+                                                 tx1.channel_seq,
+                                                 tx1.amount,
+                                                 tx1.balance,
+                                                 market_maker_signature=tx2.signature,
+                                                 delegate_signature=tx1.signature)
+
+                        # FIXME: wait for and acquire new payment channel instead of bailing out ..
+
+                        raise ApplicationError('xbr.error.channel_closed',
+                                               '{}.unwrap() - key {} cannot be bought: payment channel 0x{} ran empty and we initiated close at remaining balance of {}'.format(self.__class__.__name__,
+                                                                                                                                                                                uuid.UUID(bytes=key_id),
+                                                                                                                                                                                binascii.b2a_hex(tx1.channel).decode(),
+                                                                                                                                                                                int(tx1.balance / 10 ** 18)))
+                else:
+                    raise ApplicationError('xbr.error.insufficient_balance',
+                                           '{}.unwrap() - key {} cannot be bought: insufficient balance {} in payment channel for amount {}'.format(self.__class__.__name__,
+                                                                                                                                                    uuid.UUID(bytes=key_id),
+                                                                                                                                                    int(self._balance / 10 ** 18),
+                                                                                                                                                    int(amount / 10 ** 18)))
 
             buyer_pubkey = self._receive_key.public_key.encode(encoder=nacl.encoding.RawEncoder)
+            channel_seq = self._seq + 1
 
             # XBRSIG[1/8]: compute EIP712 typed data signature
             signature = sign_eip712_data(self._pkey_raw, buyer_pubkey, key_id, channel_seq, amount, balance)
+
+            # persist 1st phase of the transaction locally
+            self._save_transaction_phase1(self._channel['channel'], self._addr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
 
             # call the market maker to buy the key
             try:
@@ -284,16 +357,30 @@ class SimpleBuyer(object):
                 raise e
             else:
                 self._balance -= amount
+                self._seq += 1
 
             # XBRSIG[8/8]: check market maker signature
             marketmaker_signature = receipt['signature']
-            signer_address = recover_eip712_signer(self._market_maker_adr, buyer_pubkey, key_id, channel_seq, amount, balance, marketmaker_signature)
+            marketmaker_amount_paid = receipt['amount_paid']
+            marketmaker_channel_seq = receipt['channel_seq']
+            marketmaker_remaining = receipt['remaining']
+
+            signer_address = recover_eip712_signer(self._market_maker_adr, buyer_pubkey, key_id,
+                                                   marketmaker_channel_seq, marketmaker_amount_paid,
+                                                   marketmaker_remaining, marketmaker_signature)
             if signer_address != self._market_maker_adr:
-                self.log.warn('EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
+                self.log.warn('{klass}.unwrap()::XBRSIG[8/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
+                              klass=self.__class__.__name__,
                               signer_address=hl(binascii.b2a_hex(signer_address).decode()),
                               delegate_adr=hl(binascii.b2a_hex(self._market_maker_adr).decode()))
                 raise ApplicationError('xbr.error.invalid_signature',
-                                       'EIP712 signature invalid or not signed by market maker')
+                                       '{}.unwrap()::XBRSIG[8/8] - EIP712 signature invalid or not signed by market maker'.format(self.__class__.__name__))
+
+            # FIXME: compare above to what we know locally
+
+            # persist 2nd phase of the transaction locally
+            self._save_transaction_phase2(self._channel['channel'], self._market_maker_adr, buyer_pubkey, key_id, marketmaker_channel_seq,
+                                          marketmaker_amount_paid, marketmaker_remaining, marketmaker_signature)
 
             # unseal the data encryption key
             sealed_key = receipt['sealed_key']
@@ -302,26 +389,30 @@ class SimpleBuyer(object):
                 key = unseal_box.decrypt(sealed_key)
             except nacl.exceptions.CryptoError as e:
                 self._keys[key_id] = e
-                raise ApplicationError('xbr.error.decryption_failed', 'could not unseal data encryption key: {}'.format(e))
+                raise ApplicationError('xbr.error.decryption_failed', '{}.unwrap() - could not unseal data encryption key: {}'.format(self.__class__.__name__, e))
 
             # remember the key, so we can use it to actually decrypt application payload data
             self._keys[key_id] = nacl.secret.SecretBox(key)
 
+            transactions_count = self.count_transactions()
             self.log.info(
-                '{tx_type} key "{key_id}" bought for {amount_paid} [payment_channel="{payment_channel}", remaining={remaining}, inflight={inflight}, buyer_pubkey="{buyer_pubkey}"]',
+                '{klass}.unwrap() - {tx_type} key {key_id} bought for {amount_paid} [payment_channel={payment_channel}, remaining={remaining}, inflight={inflight}, buyer_pubkey={buyer_pubkey}, transactions={transactions}]',
+                klass=self.__class__.__name__,
                 tx_type=hl('XBR BUY   ', color='magenta'),
                 key_id=hl(uuid.UUID(bytes=key_id)),
-                amount_paid=hl(str(receipt['amount_paid']) + ' XBR', color='magenta'),
+                amount_paid=hl(str(int(receipt['amount_paid'] / 10 ** 18)) + ' XBR', color='magenta'),
                 payment_channel=hl(binascii.b2a_hex(receipt['payment_channel']).decode()),
-                remaining=hl(receipt['remaining']),
-                inflight=hl(receipt['inflight']),
-                buyer_pubkey=hl(binascii.b2a_hex(buyer_pubkey).decode()))
+                remaining=hl(int(receipt['remaining'] / 10 ** 18)),
+                inflight=hl(int(receipt['inflight'] / 10 ** 18)),
+                buyer_pubkey=hl(binascii.b2a_hex(buyer_pubkey).decode()),
+                transactions=transactions_count)
 
         # if the key is already being bought, wait until the one buying path of execution has succeeded and done
         log_counter = 0
         while self._keys[key_id] is False:
             if log_counter % 100:
-                self.log.info('Waiting for key "{key_id}" currently being bought ..', key_id=hl(uuid.UUID(bytes=key_id)))
+                self.log.info('{klass}.unwrap() - waiting for key "{key_id}" currently being bought ..',
+                              klass=self.__class__.__name__, key_id=hl(uuid.UUID(bytes=key_id)))
                 log_counter += 1
             await sleep(.2)
 
@@ -331,11 +422,12 @@ class SimpleBuyer(object):
             raise e
 
         # now that we have the data encryption key, decrypt the application payload
+        # the decryption key here is an instance of nacl.secret.SecretBox
         try:
             message = self._keys[key_id].decrypt(ciphertext)
         except nacl.exceptions.CryptoError as e:
             # Decryption failed. Ciphertext failed verification
-            raise ApplicationError('xbr.error.decryption_failed', 'failed to unwrap encrypted data: {}'.format(e))
+            raise ApplicationError('xbr.error.decryption_failed', '{}.unwrap() - failed to unwrap encrypted data: {}'.format(self.__class__.__name__, e))
 
         # deserialize the application payload
         # FIXME: support more app payload serializers
@@ -343,9 +435,126 @@ class SimpleBuyer(object):
             payload = cbor2.loads(message)
         except cbor2.decoder.CBORDecodeError as e:
             # premature end of stream (expected to read 4187 bytes, got 27 instead)
-            raise ApplicationError('xbr.error.deserialization_failed', 'failed to deserialize application payload: {}'.format(e))
+            raise ApplicationError('xbr.error.deserialization_failed', '{}.unwrap() - failed to deserialize application payload: {}'.format(self.__class__.__name__, e))
 
         return payload
+
+    def _save_transaction_phase1(self, channel_adr, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature):
+        """
+
+        :param channel_adr:
+        :param delegate_adr:
+        :param buyer_pubkey:
+        :param key_id:
+        :param channel_seq:
+        :param amount:
+        :param balance:
+        :param signature:
+        :return:
+        """
+        if key_id in self._transaction_idx:
+            raise RuntimeError('save_transaction_phase1: duplicate transaction for key 0x{}'.format(binascii.b2a_hex(key_id)))
+
+        tx1 = Transaction(channel_adr, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
+
+        key_idx = len(self._transactions)
+        self._transactions.append([tx1, None])
+        self._transaction_idx[key_id] = key_idx
+
+    def _save_transaction_phase2(self, channel_adr, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature):
+        """
+
+        :param channel_adr:
+        :param delegate_adr:
+        :param buyer_pubkey:
+        :param key_id:
+        :param channel_seq:
+        :param amount:
+        :param balance:
+        :param signature:
+        :return:
+        """
+        if key_id not in self._transaction_idx:
+            raise RuntimeError('save_transaction_phase2: transaction for key 0x{} not found'.format(binascii.b2a_hex(key_id)))
+
+        key_idx = self._transaction_idx[key_id]
+
+        if self._transactions[key_idx][1]:
+            raise RuntimeError(
+                'save_transaction_phase2: duplicate transaction for key 0x{}'.format(binascii.b2a_hex(key_id)))
+
+        tx1 = self._transactions[key_idx][0]
+        tx2 = Transaction(channel_adr, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
+
+        assert tx1.channel == tx2.channel
+        # assert tx1.delegate == tx2.delegate
+        assert tx1.pubkey == tx2.pubkey
+        assert tx1.key_id == tx2.key_id
+        assert tx1.channel_seq == tx2.channel_seq
+        assert tx1.amount == tx2.amount
+        assert tx1.balance == tx2.balance
+
+        # note: signatures will differ (obviously)!
+        assert tx1.signature != tx2.signature
+
+        self._transactions[key_idx][1] = tx2
+
+    def past_transactions(self, filter_complete=True, limit=1):
+        """
+
+        :param filter_complete:
+        :param limit:
+        :return:
+        """
+        assert type(filter_complete) == bool
+        assert type(limit) == int and limit > 0
+
+        n = 0
+        res = []
+        while n < limit:
+            tx = self._transactions[-n]
+            if not filter_complete or (tx[0] and tx[1]):
+                res.append(tx)
+                n += 1
+        return res
+
+    def count_transactions(self):
+        """
+
+        :return:
+        """
+        res = {
+            'complete': 0,
+            'pending': 0,
+        }
+        for tx1, tx2 in self._transactions:
+            if tx1 and tx2:
+                res['complete'] += 1
+            else:
+                res['pending'] += 1
+        return res
+
+    def get_transaction(self, key_id):
+        """
+
+        :param key_id:
+        :return:
+        """
+        idx = self._transaction_idx.get(key_id, None)
+        if idx:
+            return self._transactions[idx]
+
+    def is_complete(self, key_id):
+        """
+
+        :param key_id:
+        :return:
+        """
+        idx = self._transaction_idx.get(key_id, None)
+        if idx:
+            tx1, tx2 = self._transactions[idx]
+            return tx1 and tx2
+        return False
 
 
 IBuyer.register(SimpleBuyer)

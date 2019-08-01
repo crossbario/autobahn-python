@@ -39,7 +39,7 @@ import web3
 
 XBR_TOKEN_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRToken.json')
 XBR_NETWORK_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRNetwork.json')
-XBR_PAYMENT_CHANNEL_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRPaymentChannel.json')
+XBR_CHANNEL_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRChannel.json')
 
 
 if 'XBR_DEBUG_TOKEN_ADDR' in os.environ:
