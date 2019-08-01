@@ -5,6 +5,12 @@
 Changelog
 =========
 
+19.8.1
+------
+
+* new: implement XBR off-chain delegate transaction signing and verification (#1202)
+* new: update XBR for new contract ABIs
+
 19.7.2
 ------
 

@@ -297,9 +297,7 @@ class SimpleSeller(object):
         assert type(api_id) == bytes and len(api_id) == 16 and api_id not in self._keys
         assert type(price) == int and price > 0
         assert type(interval) == int and interval > 0
-        assert categories is None or (type(categories) == dict and
-                                      (type(k) == str for k in categories.keys()) and
-                                      (type(v) == str for v in categories.values())), 'invalid categories type (must be dict) or category key or value type (must both be string)'
+        assert categories is None or (type(categories) == dict and (type(k) == str for k in categories.keys()) and (type(v) == str for v in categories.values())), 'invalid categories type (must be dict) or category key or value type (must both be string)'
 
         @inlineCallbacks
         def on_rotate(key_series):
@@ -455,7 +453,7 @@ class SimpleSeller(object):
         :return: Current paying balance.
         :rtype: dict
         """
-        if not self._state in [SimpleSeller.STATE_STARTED]:
+        if self._state not in [SimpleSeller.STATE_STARTED]:
             raise RuntimeError('seller not running')
         if not self._session or not self._session.is_attached():
             raise RuntimeError('market-maker session not attached')
