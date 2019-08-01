@@ -393,12 +393,14 @@ class SimpleSeller(object):
         for key_series in self._keys.values():
             key_series.start()
 
-        paying_channel, paying_balance = yield session.call('xbr.marketmaker.get_paying_channel', self._addr)
+        # get the currently active (if any) paying channel for the delegate
+        self._channel = yield session.call('xbr.marketmaker.get_active_paying_channel', self._addr)
 
-        self.log.info('Delegate has current paying channel address {paying_channel_adr}',
-                      paying_channel_adr=hl('0x' + binascii.b2a_hex(paying_channel['channel']).decode()))
+        # get the current (off-chain) balance of the paying channel
+        paying_balance = yield session.call('xbr.marketmaker.get_paying_channel_balance', self._channel['channel'])
 
-        self._channel = paying_channel
+        self.log.info('Delegate has currently active paying channel address {paying_channel_adr}',
+                      paying_channel_adr=hl('0x' + binascii.b2a_hex(self._channel['channel']).decode()))
 
         # FIXME
         self._balance = paying_balance['remaining']
@@ -458,23 +460,9 @@ class SimpleSeller(object):
         if not self._session or not self._session.is_attached():
             raise RuntimeError('market-maker session not attached')
 
-        paying_channel = await self._session.call('xbr.marketmaker.get_paying_channel', self._addr)
+        paying_balance = await self._session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
 
-        if not paying_channel:
-            raise RuntimeError('no active paying channel found for delegate')
-        if paying_channel['state'] != 1:
-            raise RuntimeError('paying channel not open')
-        if paying_channel['remaining'] == 0:
-            raise RuntimeError('paying channel (amount={}) has no balance remaining'.format(int(paying_channel['remaining'] / 10 ** 18)))
-
-        balance = {
-            'amount': paying_channel['amount'],
-            'remaining': paying_channel['remaining'],
-            'inflight': paying_channel['inflight'],
-            'seq': paying_channel['seq'],
-        }
-
-        return balance
+        return paying_balance
 
     async def wrap(self, api_id, uri, payload):
         """

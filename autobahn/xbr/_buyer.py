@@ -174,12 +174,14 @@ class SimpleBuyer(object):
                       address=hl('0x' + self._acct.address),
                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
-        payment_channel, payment_balance = yield session.call('xbr.marketmaker.get_payment_channel', self._addr)
+        # get the currently active (if any) payment channel for the delegate
+        self._channel = yield session.call('xbr.marketmaker.get_active_payment_channel', self._addr)
+
+        # get the current (off-chain) balance of the payment channel
+        payment_balance = yield session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
 
         self.log.info('Delegate has current payment channel address {payment_channel_adr}',
-                      payment_channel_adr=hl('0x' + binascii.b2a_hex(payment_channel['channel']).decode()))
-
-        self._channel = payment_channel
+                      payment_channel_adr=hl('0x' + binascii.b2a_hex(self._channel['channel']).decode()))
 
         # FIXME
         self._balance = payment_balance['remaining']
@@ -211,16 +213,9 @@ class SimpleBuyer(object):
         """
         assert self._session and self._session.is_attached()
 
-        payment_channel, payment_balance = await self._session.call('xbr.marketmaker.get_payment_channel', self._addr)
+        payment_balance = await self._session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
 
-        balance = {
-            'amount': payment_channel['amount'],
-            'remaining': payment_balance['remaining'],
-            'inflight': payment_channel['inflight'],
-            'seq': payment_channel['seq'],
-        }
-
-        return balance
+        return payment_balance
 
     async def open_channel(self, buyer_addr, amount, details=None):
         """
