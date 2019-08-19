@@ -32,7 +32,7 @@ from autobahn.xbr import XBR_DEBUG_NETWORK_ADDR
 import eth_keys
 from py_eth_sig_utils import signing
 
-from crossbarfx.cfxdb import unpack_uint256, unpack_uint128
+from cfxdb import unpack_uint256, unpack_uint128
 
 _EIP712_SIG_LEN = 32 + 32 + 1
 
