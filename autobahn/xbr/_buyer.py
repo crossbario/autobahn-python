@@ -40,7 +40,7 @@ import txaio
 from autobahn.twisted.util import sleep
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.protocol import ApplicationSession
-from crossbarfx.cfxdb import unpack_uint256
+from cfxdb import unpack_uint256
 
 import web3
 import eth_keys
