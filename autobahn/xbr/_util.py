@@ -35,6 +35,28 @@ from py_eth_sig_utils import signing
 
 _EIP712_SIG_LEN = 32 + 32 + 1
 
+
+def unpack_uint128(data):
+    assert data is None or type(data) == bytes, 'data must by bytes, was {}'.format(type(data))
+    if data and type(data) == bytes:
+        assert len(data) == 16, 'data must be bytes[16], but was bytes[{}]'.format(len(data))
+
+    if data:
+        return web3.Web3.toInt(data)
+    else:
+        return 0
+
+
+def pack_uint128(value):
+    assert value is None or (type(value) == int and value >= 0 and value < 2**128)
+
+    if value:
+        data = web3.Web3.toBytes(value)
+        return b'\x00' * (16 - len(data)) + data
+    else:
+        return b'\x00' * 16
+
+
 def unpack_uint256(data):
     assert data is None or type(data) == bytes, 'data must by bytes, was {}'.format(type(data))
     if data and type(data) == bytes:
@@ -45,6 +67,7 @@ def unpack_uint256(data):
     else:
         return 0
 
+
 def pack_uint256(value):
     assert value is None or (type(value) == int and value >= 0 and value < 2**256), 'value must be uint256, but was {}'.format(value)
 
@@ -53,6 +76,7 @@ def pack_uint256(value):
         return b'\x00' * (32 - len(data)) + data
     else:
         return b'\x00' * 32
+
 
 def hl(text, bold=True, color='yellow'):
     if not isinstance(text, str):
