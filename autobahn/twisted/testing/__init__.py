@@ -40,7 +40,10 @@ from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address
 from twisted.internet._resolver import HostResolution  # "internal" class, but it's simple
 from twisted.internet.interfaces import ISSLTransport, IReactorPluggableNameResolver
-from twisted.test.proto_helpers import MemoryReactorClock
+try:
+    from twisted.internet.testing import MemoryReactorClock
+except ImportError:
+    from twisted.test.proto_helpers import MemoryReactorClock
 from twisted.test import iosim
 
 from zope.interface import directlyProvides, implementer

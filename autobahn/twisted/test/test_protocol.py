@@ -38,7 +38,10 @@ from twisted.python.failure import Failure
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
 from twisted.trial import unittest
-from twisted.test.proto_helpers import StringTransport
+try:
+    from twisted.internet.testing import StringTransport
+except ImportError:
+    from twisted.test.proto_helpers import StringTransport
 from autobahn.test import FakeTransport
 
 
