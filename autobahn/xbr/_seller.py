@@ -45,7 +45,7 @@ from autobahn.wamp.types import RegisterOptions, CallDetails
 from autobahn.wamp.exception import ApplicationError, TransportLost
 from autobahn.wamp.protocol import ApplicationSession
 from autobahn.twisted.util import sleep
-from cfxdb import unpack_uint256
+from ._util import unpack_uint256
 
 from autobahn import xbr
 

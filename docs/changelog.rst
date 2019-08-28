@@ -5,6 +5,11 @@
 Changelog
 =========
 
+19.9.1
+------
+
+* new: update XBR for new contract ABIs
+
 19.8.1
 ------
 
