@@ -116,6 +116,19 @@ class WebSocketResource(object):
         the request, create a :class:`autobahn.twisted.websocket.WebSocketServerProtocol`
         and let that do any subsequent communication.
         """
+        # for reasons unknown, the transport is already None when the
+        # request is over HTTP2. request.channel.getPeer() is valid at
+        # this point however
+        if request.channel.transport is None:
+            # render an "error, you're doing HTTPS over WSS" webpage
+            from autobahn.websocket import protocol
+            request.setResponseCode(426, b"Upgrade required")
+            # RFC says MUST set upgrade along with 426 code:
+            # https://tools.ietf.org/html/rfc7231#section-6.5.15
+            request.setHeader(b"Upgrade", b"WebSocket")
+            html = protocol._SERVER_STATUS_TEMPLATE % ("", protocol.__version__)
+            return html.encode('utf8')
+
         # Create Autobahn WebSocket protocol.
         #
         protocol = self._factory.buildProtocol(request.transport.getPeer())
