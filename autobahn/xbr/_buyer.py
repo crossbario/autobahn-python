@@ -174,12 +174,16 @@ class SimpleBuyer(object):
                       address=hl('0x' + self._acct.address),
                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
-        # get the currently active (if any) payment channel for the delegate
-        assert type(self._addr) == bytes and len(self._addr) == 20
-        self._channel = yield session.call('xbr.marketmaker.get_active_payment_channel', self._addr)
+        try:
+            # get the currently active (if any) payment channel for the delegate
+            assert type(self._addr) == bytes and len(self._addr) == 20
+            self._channel = yield session.call('xbr.marketmaker.get_active_payment_channel', self._addr)
 
-        # get the current (off-chain) balance of the payment channel
-        payment_balance = yield session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
+            # get the current (off-chain) balance of the payment channel
+            payment_balance = yield session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
+        except:
+            session.leave()
+            raise
 
         # FIXME
         self._balance = payment_balance['remaining']
