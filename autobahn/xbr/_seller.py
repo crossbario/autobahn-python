@@ -410,11 +410,14 @@ class SimpleSeller(object):
 
         # get the current (off-chain) balance of the paying channel
         paying_balance = yield session.call('xbr.marketmaker.get_paying_channel_balance', channel['channel'])
+        # FIXME
+        if type(paying_balance['remaining']) == bytes:
+            paying_balance['remaining'] = unpack_uint256(paying_balance['remaining'])
 
         self.log.info('Delegate has currently active paying channel address {paying_channel_adr}',
-                      paying_channel_adr=hl('0x' + binascii.b2a_hex(self._channel['channel']).decode()))
+                      paying_channel_adr=hl('0x' + binascii.b2a_hex(channel['channel']).decode()))
 
-        self._channels[channel.channel] = PayingChannel(channel['channel'], paying_balance['seq'], paying_balance['remaining'])
+        self._channels[channel['channel']] = PayingChannel(channel['channel'], paying_balance['seq'], paying_balance['remaining'])
         self._state = SimpleSeller.STATE_STARTED
 
         # FIXME
@@ -562,9 +565,10 @@ class SimpleSeller(object):
         key_series = self._keys_map[key_id]
 
         # FIXME: must be the currently active channel .. and we need to track all of these
-        if channel_adr != self._channel.channel:
+        if channel_adr != self._channel['channel']:
+            self._session.leave()
             raise ApplicationError('xbr.error.unexpected_channel_adr',
-                                   '{}.sell() - unexpected paying channel address: expected 0x{}, but got 0x{}'.format(self.__class__.__name__, binascii.b2a_hex(self._channel.channel).decode(), binascii.b2a_hex(channel_adr).decode()))
+                                   '{}.sell() - unexpected paying channel address: expected 0x{}, but got 0x{}'.format(self.__class__.__name__, binascii.b2a_hex(self._channel['channel']).decode(), binascii.b2a_hex(channel_adr).decode()))
 
         # channel sequence number: check we have consensus on off-chain channel state with peer (which is the market maker)
         if channel_seq != self._seq + 1:

@@ -30,7 +30,7 @@ import click
 import web3
 # from autobahn.xbr import XBR_DEBUG_NETWORK_ADDR
 
-import eth_keys
+# import eth_keys
 from py_eth_sig_utils import signing
 
 _EIP712_SIG_LEN = 32 + 32 + 1
@@ -153,11 +153,11 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance):
     assert type(balance) == int and balance >= 0
 
     # make a private key object from the raw private key bytes
-    pkey = eth_keys.keys.PrivateKey(eth_privkey)
+    # pkey = eth_keys.keys.PrivateKey(eth_privkey)
 
     # get the canonical address of the account
     # eth_adr = web3.Web3.toChecksumAddress(pkey.public_key.to_canonical_address())
-    eth_adr = pkey.public_key.to_canonical_address()
+    # eth_adr = pkey.public_key.to_canonical_address()
 
     # create EIP712 typed data object
     data = _create_eip712_data(channel_adr, channel_seq, balance)
