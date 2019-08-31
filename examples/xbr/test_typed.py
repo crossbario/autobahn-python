@@ -60,46 +60,31 @@ data2 = {
             {'name': 'verifyingContract', 'type': 'address'},
         ],
         'Transaction': [
-                # The buyer/seller delegate Ed25519 public key.
-                {'name': 'pubkey', 'type': 'uint256'},
-
-                # The UUID of the data encryption key bought/sold in the transaction.
-                {'name': 'key_id', 'type': 'uint128'},
-
-                 # Channel transaction sequence number.
-                {'name': 'channel_seq', 'type': 'uint32'},
-
-                # Amount paid / earned.
-                {'name': 'amount', 'type': 'uint256'},
-
-                # Amount remaining in the payment/paying channel after the transaction.
-                {'name': 'balance', 'type': 'uint256'},
+            {'name': 'channel_adr', 'type': 'address'},
+            {'name': 'channel_seq', 'type': 'uint256'},
+            {'name': 'balance', 'type': 'uint256'},
         ],
     },
     'primaryType': 'Transaction',
     'domain': {
         'name': 'XBR',
         'version': '1',
-
-        # test chain/network ID
         'chainId': 5777,
-
-        # XBRNetwork contract address
         'verifyingContract': '0x254dffcd3277c0b1660f6d42efbb754edababc2b',
     },
-    'message': {
-        'pubkey': unpack_uint256(a2b_hex('ebdfef6d225155873355bd4afeb2ed3100b0e0b5fddad12bd3cd498c1e0c1fbd')),
-        'key_id': unpack_uint128(a2b_hex('c37ba03c32608744c3c06302bf81d174')),
-        'channel_seq': 1,
-        'amount': 35000000000000000000,
-        'balance': 2000,
-    }
+    'message': None
 }
 
 def main(accounts):
     from py_eth_sig_utils import signing
 
     data = data2
+    data['message'] = {
+        'channel_adr': '0x254dffcd3277c0b1660f6d42efbb754edababc2b',
+        'channel_seq': 13,
+        'balance': 2000,
+    }
+    # signature: 0x1d2388c1bdccd5e86f7424dec52f9b81f75de6102f352a0f4c5e2373c2c62c5068eb5da4be564cacf49125eaf6cf1d65cdcf3f2f7093da621cd1a23d6acd1eaa1b
 
     # generate a new raw random private key
     if True:
@@ -107,7 +92,8 @@ def main(accounts):
         # pkey_raw = a2b_hex('6370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c')
 
         # consumer_delegate_key
-        pkey_raw = a2b_hex('e485d098507f54e7733a205420dfddbe58db035fa577fc294ebd14db90767a52')
+        #pkey_raw = a2b_hex('e485d098507f54e7733a205420dfddbe58db035fa577fc294ebd14db90767a52')
+        pkey_raw = a2b_hex('a4985a2ed93107886e9a1f12c7b8e2e351cc1d26c42f3aab7f220f3a7d08fda6')
     else:
         pkey_raw = os.urandom(32)
     print('Using private key: {}'.format(b2a_hex(pkey_raw).decode()))
@@ -159,7 +145,7 @@ if __name__ == '__main__':
         print('could not connect to Web3/Ethereum at "{}"'.format(args.gateway or 'auto'))
         sys.exit(1)
     else:
-        print('connected to network {} at provider "{}"'.format(w3.version.network, args.gateway or 'auto'))
+        print('connected via provider "{}"'.format(args.gateway or 'auto'))
 
     # set new provider on XBR library
     xbr.setProvider(w3)

@@ -64,8 +64,7 @@ if __name__ == '__main__':
         print('could not connect to Web3/Ethereum at: {}'.format(args.gateway or 'auto'))
         sys.exit(1)
     else:
-        print('connected to network {} at provider "{}"'.format(w3.version.network,
-                                                                args.gateway or 'auto'))
+        print('connected via provider "{}"'.format(args.gateway or 'auto'))
 
     # set new provider on XBR library
     xbr.setProvider(w3)
