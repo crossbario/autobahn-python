@@ -8,50 +8,50 @@ from autobahn import xbr
 
 import eth_keys
 from eth_account import Account
-
+from ethereum import utils
 from crossbarfx.cfxdb import pack_uint256, unpack_uint256, pack_uint128, unpack_uint128
 
-
-data1 = {
-    'types': {
-        'EIP712Domain': [
-            {'name': 'name', 'type': 'string'},
-            {'name': 'version', 'type': 'string'},
-            {'name': 'chainId', 'type': 'uint256'},
-            {'name': 'verifyingContract', 'type': 'address'},
+# https://lib.rs/crates/eip-712
+# hash: be609aee343fb3c4b28e1df9e632fca64fcfaede20f02e86244efddf30957bd2
+data2 = {
+    "primaryType": "Mail",
+    "domain": {
+        "name": "Ether Mail",
+        "version": "1",
+        "chainId": 1,
+        "verifyingContract": "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"
+    },
+    "message": {
+        "from": {
+            "name": "Cow",
+            "wallet": "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826"
+        },
+        "to": {
+            "name": "Bob",
+            "wallet": "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB"
+        },
+        "contents": "Hello, Bob!"
+    },
+    "types": {
+        "EIP712Domain": [
+            {"name": "name", "type": "string"},
+            {"name": "version", "type": "string"},
+            {"name": "chainId", "type": "uint256"},
+            {"name": "verifyingContract", "type": "address"}
         ],
-        'Person': [
-            {'name': 'name', 'type': 'string'},
-            {'name': 'wallet', 'type': 'address'}
+        "Person": [
+            {"name": "name", "type": "string"},
+            {"name": "wallet", "type": "address"}
         ],
-        'Mail': [
-            {'name': 'from', 'type': 'Person'},
-            {'name': 'to', 'type': 'Person'},
-            {'name': 'contents', 'type': 'string'}
+        "Mail": [
+            {"name": "from", "type": "Person"},
+            {"name": "to", "type": "Person"},
+            {"name": "contents", "type": "string"}
         ]
-    },
-    'primaryType': 'Mail',
-    'domain': {
-        'name': 'Ether Mail',
-        'version': '1',
-        'chainId': 1,
-        'verifyingContract': '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
-    },
-    'message': {
-        'from': {
-            'name': 'Cow',
-            'wallet': '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
-        },
-        'to': {
-            'name': 'Bob',
-            'wallet': '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
-            'foobar': 23,
-        },
-        'contents': 'Hello, Bob!',
-    },
+    }
 }
 
-data2 = {
+data = {
     'types': {
         'EIP712Domain': [
             {'name': 'name', 'type': 'string'},
@@ -59,18 +59,18 @@ data2 = {
             {'name': 'chainId', 'type': 'uint256'},
             {'name': 'verifyingContract', 'type': 'address'},
         ],
-        'Transaction': [
+        'ChannelClose': [
             {'name': 'channel_adr', 'type': 'address'},
-            {'name': 'channel_seq', 'type': 'uint256'},
+            {'name': 'channel_seq', 'type': 'uint32'},
             {'name': 'balance', 'type': 'uint256'},
         ],
     },
-    'primaryType': 'Transaction',
+    'primaryType': 'ChannelClose',
     'domain': {
         'name': 'XBR',
         'version': '1',
-        'chainId': 5777,
-        'verifyingContract': '0x254dffcd3277c0b1660f6d42efbb754edababc2b',
+        'chainId': 1,
+        'verifyingContract': '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
     },
     'message': None
 }
@@ -78,13 +78,12 @@ data2 = {
 def main(accounts):
     from py_eth_sig_utils import signing
 
-    data = data2
     data['message'] = {
-        'channel_adr': '0x254dffcd3277c0b1660f6d42efbb754edababc2b',
-        'channel_seq': 13,
-        'balance': 2000,
+        'channel_adr': '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
+        'channel_seq': 39,
+        'balance': 2700,
     }
-    # signature: 0x1d2388c1bdccd5e86f7424dec52f9b81f75de6102f352a0f4c5e2373c2c62c5068eb5da4be564cacf49125eaf6cf1d65cdcf3f2f7093da621cd1a23d6acd1eaa1b
+    # signature: 0xe32976b152f5d3107a789bee8512741493c262984145415c1ffb3a42c1a80e7224dd52cc552bf86665dd185d9e04004eb8d783f624eeb6aab0011c21757e6bb21b
 
     # generate a new raw random private key
     if True:
@@ -112,13 +111,21 @@ def main(accounts):
     caddr = web3.Web3.toChecksumAddress(addr)
     print('Account canonical address: {}'.format(caddr))
 
+    # step-wise computation of signature
+    msg_hash = signing.encode_typed_data(data)
+    print('Ok, MSG_HASH = 0x{}'.format(b2a_hex(msg_hash).decode()))
+    sig_vrs = utils.ecsign(msg_hash, pkey_raw)
+    sig = signing.v_r_s_to_signature(*sig_vrs)
+
     signature = signing.v_r_s_to_signature(*signing.sign_typed_data(data, pkey_raw))
     assert len(signature) == 32 + 32 + 1
-    print('Ok, signed typed data using {}:\nSIGNATURE = 0x{}'.format(caddr, b2a_hex(signature).decode()))
+    #assert signature == sig
+    print('Ok, signed typed data (using key {}):\nSIGNATURE = 0x{}'.format(caddr, b2a_hex(signature).decode()))
 
     signer_address = signing.recover_typed_data(data, *signing.signature_to_v_r_s(signature))
     assert signer_address == caddr
     print('Ok, verified signature was signed by {}'.format(signer_address))
+
 
 
 if __name__ == '__main__':
