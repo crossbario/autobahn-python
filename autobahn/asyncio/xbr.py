@@ -47,7 +47,6 @@ if HAS_XBR:
     class SimpleBlockchain(xbr.SimpleBlockchain):
         backgroundCaller = run_in_executor
 
-
     class KeySeries(xbr.KeySeries):
         log = txaio.make_logger()
 
@@ -81,7 +80,6 @@ if HAS_XBR:
 
             self.running = False
 
-
     class SimpleSeller(xbr.SimpleSeller):
         """
         Simple XBR seller component. This component can be used by a XBR seller delegate to
@@ -89,10 +87,8 @@ if HAS_XBR:
         """
         xbr.SimpleSeller.KeySeries = KeySeries
 
-
     class SimpleBuyer(xbr.SimpleBuyer):
         pass
-
 
     ISeller.register(SimpleSeller)
     IProvider.register(SimpleSeller)

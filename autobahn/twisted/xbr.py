@@ -43,10 +43,8 @@ if HAS_XBR:
     from autobahn.xbr._util import hl
     from autobahn.xbr._interfaces import IProvider, ISeller, IConsumer, IBuyer
 
-
     class SimpleBlockchain(xbr.SimpleBlockchain):
         backgroundCaller = deferToThread
-
 
     class KeySeries(xbr.KeySeries):
         log = txaio.make_logger()
@@ -85,7 +83,6 @@ if HAS_XBR:
 
             return self._started
 
-
     class SimpleSeller(xbr.SimpleSeller):
         """
         Simple XBR seller component. This component can be used by a XBR seller delegate to
@@ -93,10 +90,8 @@ if HAS_XBR:
         """
         xbr.SimpleSeller.KeySeries = KeySeries
 
-
     class SimpleBuyer(xbr.SimpleBuyer):
         pass
-
 
     ISeller.register(SimpleSeller)
     IProvider.register(SimpleSeller)
