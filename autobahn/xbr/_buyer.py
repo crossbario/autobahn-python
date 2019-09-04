@@ -76,7 +76,7 @@ class Transaction(object):
         return pformat(self.marshal())
 
 
-class BaseBuyer(object):
+class SimpleBuyer(object):
     """
     Simple XBR buyer component. This component can be used by a XBR buyer delegate to
     handle the automated buying of data encryption keys from the XBR market maker.

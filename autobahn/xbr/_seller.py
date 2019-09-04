@@ -47,7 +47,7 @@ import web3
 from ._util import hl, recover_eip712_signer, sign_eip712_data
 
 
-class BaseKeySeries(object):
+class KeySeries(object):
     """
     Data encryption key series with automatic (time-based) key rotation
     and key offering (to the XBR market maker).
@@ -175,7 +175,7 @@ class PayingChannel(object):
         self._balance = balance
 
 
-class BaseSeller(object):
+class SimpleSeller(object):
     log = txaio.make_logger()
 
     KeySeries = None
@@ -204,7 +204,7 @@ class BaseSeller(object):
         assert provider_id is None or type(provider_id) == str, 'provider_id must be None or string, but got "{}"'.format(provider_id)
 
         # current seller state
-        self._state = BaseSeller.STATE_NONE
+        self._state = SimpleSeller.STATE_NONE
 
         # market maker address
         self._market_maker_adr = market_maker_adr
@@ -334,7 +334,7 @@ class BaseSeller(object):
                 self.log.warn('Failed to place offer for key! Retrying {retries}/5 ..', retries=retries)
                 await asyncio.sleep(1)
 
-        key_series = BaseSeller.KeySeries(api_id, price, interval, on_rotate)
+        key_series = SimpleSeller.KeySeries(api_id, price, interval, on_rotate)
         self._keys[api_id] = key_series
 
         return key_series
@@ -347,9 +347,9 @@ class BaseSeller(object):
         :type session: :class:`autobahn.wamp.protocol.ApplicationSession`
         """
         assert isinstance(session, ApplicationSession), 'session must be an ApplicationSession, was "{}"'.format(session)
-        assert self._state in [BaseSeller.STATE_NONE, BaseSeller.STATE_STOPPED], 'seller already running'
+        assert self._state in [SimpleSeller.STATE_NONE, SimpleSeller.STATE_STOPPED], 'seller already running'
 
-        self._state = BaseSeller.STATE_STARTING
+        self._state = SimpleSeller.STATE_STARTING
         self._session = session
         self._session_regs = []
 
@@ -378,7 +378,7 @@ class BaseSeller(object):
                       paying_channel_adr=hl('0x' + binascii.b2a_hex(channel['channel']).decode()))
 
         self._channels[channel['channel']] = PayingChannel(channel['channel'], paying_balance['seq'], paying_balance['remaining'])
-        self._state = BaseSeller.STATE_STARTED
+        self._state = SimpleSeller.STATE_STARTED
 
         # FIXME
         self._channel = channel
@@ -393,9 +393,9 @@ class BaseSeller(object):
         """
         Stop rotating/offering keys to the XBR market maker.
         """
-        assert self._state in [BaseSeller.STATE_STARTED], 'seller not running'
+        assert self._state in [SimpleSeller.STATE_STARTED], 'seller not running'
 
-        self._state = BaseSeller.STATE_STOPPING
+        self._state = SimpleSeller.STATE_STOPPING
 
         dl = []
         for key_series in self._keys.values():
@@ -417,7 +417,7 @@ class BaseSeller(object):
         except:
             self.log.failure()
         finally:
-            self._state = BaseSeller.STATE_STOPPED
+            self._state = SimpleSeller.STATE_STOPPED
             self._session = None
 
     async def balance(self):
@@ -431,7 +431,7 @@ class BaseSeller(object):
         :return: Current paying balance.
         :rtype: dict
         """
-        if self._state not in [BaseSeller.STATE_STARTED]:
+        if self._state not in [SimpleSeller.STATE_STARTED]:
             raise RuntimeError('seller not running')
         if not self._session or not self._session.is_attached():
             raise RuntimeError('market-maker session not attached')
