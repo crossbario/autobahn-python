@@ -24,45 +24,33 @@
 #
 ###############################################################################
 
+import asyncio
+import binascii
 import os
 import uuid
-import binascii
-
-import cbor2
-import nacl.secret
-import nacl.utils
-
-from twisted.internet.defer import inlineCallbacks
-from twisted.internet.task import LoopingCall
-
-import web3
-
-import txaio
-
-from zlmdb import time_ns
 
 from autobahn.wamp.types import RegisterOptions, CallDetails
 from autobahn.wamp.exception import ApplicationError, TransportLost
 from autobahn.wamp.protocol import ApplicationSession
-from autobahn.twisted.util import sleep
 from ._util import unpack_uint256
+from zlmdb import time_ns
 
-from autobahn import xbr
-
+import cbor2
 import eth_keys
 from eth_account import Account
+import nacl.secret
+import nacl.utils
+import txaio
+import web3
 
-from ._interfaces import IProvider, ISeller
-from ._util import hl
+from ._util import hl, recover_eip712_signer, sign_eip712_data
 
 
-class KeySeries(object):
+class BaseKeySeries(object):
     """
     Data encryption key series with automatic (time-based) key rotation
     and key offering (to the XBR market maker).
     """
-
-    log = txaio.make_logger()
 
     def __init__(self, api_id, price, interval, on_rotate=None):
         """
@@ -93,9 +81,6 @@ class KeySeries(object):
         self._key = None
         self._box = None
         self._archive = {}
-
-        self._run_loop = None
-        self._started = None
 
     @property
     def key_id(self):
@@ -150,33 +135,12 @@ class KeySeries(object):
         return encrypted_key
 
     def start(self):
-        """
-        Start offering and selling data encryption keys in the background.
-        """
-        assert self._run_loop is None
-
-        self.log.info('Starting key rotation every {interval} seconds for api_id="{api_id}" ..',
-                      interval=hl(self._interval), api_id=hl(uuid.UUID(bytes=self._api_id)))
-
-        self._run_loop = LoopingCall(self._rotate)
-        self._started = self._run_loop.start(self._interval)
-
-        return self._started
+        raise NotImplementedError()
 
     def stop(self):
-        """
-        Stop offering/selling data encryption keys.
-        """
-        if not self._run_loop:
-            raise RuntimeError('cannot stop {} - not currently running'.format(self.__class__.__name__))
+        raise NotImplementedError()
 
-        self._run_loop.stop()
-        self._run_loop = None
-
-        return self._started
-
-    @inlineCallbacks
-    def _rotate(self):
+    async def _rotate(self):
         # generate new ID for next key in key series
         self._id = os.urandom(16)
 
@@ -197,7 +161,7 @@ class KeySeries(object):
 
         # maybe fire user callback
         if self._on_rotate:
-            yield self._on_rotate(self)
+            await self._on_rotate(self)
 
 
 class PayingChannel(object):
@@ -210,13 +174,10 @@ class PayingChannel(object):
         self._balance = balance
 
 
-class SimpleSeller(object):
-    """
-    Simple XBR seller component. This component can be used by a XBR seller delegate to
-    handle the automated selling of data encryption keys to the XBR market maker.
-    """
-
+class BaseSeller(object):
     log = txaio.make_logger()
+
+    KeySeries = None
 
     STATE_NONE = 0
     STATE_STARTING = 1
@@ -242,7 +203,7 @@ class SimpleSeller(object):
         assert provider_id is None or type(provider_id) == str, 'provider_id must be None or string, but got "{}"'.format(provider_id)
 
         # current seller state
-        self._state = SimpleSeller.STATE_NONE
+        self._state = BaseSeller.STATE_NONE
 
         # market maker address
         self._market_maker_adr = market_maker_adr
@@ -311,8 +272,7 @@ class SimpleSeller(object):
         assert type(interval) == int and interval > 0
         assert categories is None or (type(categories) == dict and (type(k) == str for k in categories.keys()) and (type(v) == str for v in categories.values())), 'invalid categories type (must be dict) or category key or value type (must both be string)'
 
-        @inlineCallbacks
-        def on_rotate(key_series):
+        async def on_rotate(key_series):
 
             key_id = key_series.key_id
 
@@ -330,7 +290,7 @@ class SimpleSeller(object):
                     signature = os.urandom(65)
                     provider_id = self._provider_id
 
-                    offer = yield self._session.call('xbr.marketmaker.place_offer',
+                    offer = await self._session.call('xbr.marketmaker.place_offer',
                                                      key_id,
                                                      api_id,
                                                      prefix,
@@ -371,15 +331,14 @@ class SimpleSeller(object):
 
                 retries -= 1
                 self.log.warn('Failed to place offer for key! Retrying {retries}/5 ..', retries=retries)
-                yield sleep(1)
+                await asyncio.sleep(1)
 
-        key_series = KeySeries(api_id, price, interval, on_rotate)
+        key_series = BaseSeller.KeySeries(api_id, price, interval, on_rotate)
         self._keys[api_id] = key_series
 
         return key_series
 
-    @inlineCallbacks
-    def start(self, session):
+    async def start(self, session):
         """
         Start rotating keys and placing key offers with the XBR market maker.
 
@@ -387,9 +346,9 @@ class SimpleSeller(object):
         :type session: :class:`autobahn.wamp.protocol.ApplicationSession`
         """
         assert isinstance(session, ApplicationSession), 'session must be an ApplicationSession, was "{}"'.format(session)
-        assert self._state in [SimpleSeller.STATE_NONE, SimpleSeller.STATE_STOPPED], 'seller already running'
+        assert self._state in [BaseSeller.STATE_NONE, BaseSeller.STATE_STOPPED], 'seller already running'
 
-        self._state = SimpleSeller.STATE_STARTING
+        self._state = BaseSeller.STATE_STARTING
         self._session = session
         self._session_regs = []
 
@@ -398,18 +357,18 @@ class SimpleSeller(object):
                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
         procedure = 'xbr.provider.{}.sell'.format(self._provider_id)
-        reg = yield session.register(self.sell, procedure, options=RegisterOptions(details_arg='details'))
+        reg = await session.register(self.sell, procedure, options=RegisterOptions(details_arg='details'))
         self._session_regs.append(reg)
         self.log.debug('Registered procedure "{procedure}"', procedure=hl(reg.procedure))
 
         for key_series in self._keys.values():
-            key_series.start()
+            await key_series.start()
 
         # get the currently active (if any) paying channel for the delegate
-        channel = yield session.call('xbr.marketmaker.get_active_paying_channel', self._addr)
+        channel = await session.call('xbr.marketmaker.get_active_paying_channel', self._addr)
 
         # get the current (off-chain) balance of the paying channel
-        paying_balance = yield session.call('xbr.marketmaker.get_paying_channel_balance', channel['channel'])
+        paying_balance = await session.call('xbr.marketmaker.get_paying_channel_balance', channel['channel'])
         # FIXME
         if type(paying_balance['remaining']) == bytes:
             paying_balance['remaining'] = unpack_uint256(paying_balance['remaining'])
@@ -418,7 +377,7 @@ class SimpleSeller(object):
                       paying_channel_adr=hl('0x' + binascii.b2a_hex(channel['channel']).decode()))
 
         self._channels[channel['channel']] = PayingChannel(channel['channel'], paying_balance['seq'], paying_balance['remaining'])
-        self._state = SimpleSeller.STATE_STARTED
+        self._state = BaseSeller.STATE_STARTED
 
         # FIXME
         self._channel = channel
@@ -429,13 +388,13 @@ class SimpleSeller(object):
 
         return paying_balance['remaining']
 
-    def stop(self):
+    async def stop(self):
         """
         Stop rotating/offering keys to the XBR market maker.
         """
-        assert self._state in [SimpleSeller.STATE_STARTED], 'seller not running'
+        assert self._state in [BaseSeller.STATE_STARTED], 'seller not running'
 
-        self._state = SimpleSeller.STATE_STOPPING
+        self._state = BaseSeller.STATE_STOPPING
 
         dl = []
         for key_series in self._keys.values():
@@ -453,11 +412,11 @@ class SimpleSeller(object):
         d = txaio.gather(dl)
 
         try:
-            yield d
+            await d
         except:
             self.log.failure()
         finally:
-            self._state = SimpleSeller.STATE_STOPPED
+            self._state = BaseSeller.STATE_STOPPED
             self._session = None
 
     async def balance(self):
@@ -471,7 +430,7 @@ class SimpleSeller(object):
         :return: Current paying balance.
         :rtype: dict
         """
-        if self._state not in [SimpleSeller.STATE_STARTED]:
+        if self._state not in [BaseSeller.STATE_STARTED]:
             raise RuntimeError('seller not running')
         if not self._session or not self._session.is_attached():
             raise RuntimeError('market-maker session not attached')
@@ -581,7 +540,7 @@ class SimpleSeller(object):
                                    '{}.sell() - unexpected channel (after tx) balance: expected {}, but got {}'.format(self.__class__.__name__, self._balance - amount, balance))
 
         # XBRSIG[4/8]: check the signature (over all input data for the buying of the key)
-        signer_address = xbr.recover_eip712_signer(channel_adr, channel_seq, balance, signature)
+        signer_address = recover_eip712_signer(channel_adr, channel_seq, balance, signature)
         if signer_address != market_maker_adr:
             self.log.warn('{klass}.sell()::XBRSIG[4/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                           klass=self.__class__.__name__,
@@ -600,7 +559,7 @@ class SimpleSeller(object):
         assert type(sealed_key) == bytes and len(sealed_key) == 80, '{}.sell() - unexpected sealed key computed (expected bytes[80]): {}'.format(self.__class__.__name__, sealed_key)
 
         # XBRSIG[5/8]: compute EIP712 typed data signature
-        seller_signature = xbr.sign_eip712_data(self._pkey_raw, self._channel['channel'], self._seq, self._balance)
+        seller_signature = sign_eip712_data(self._pkey_raw, self._channel['channel'], self._seq, self._balance)
 
         receipt = {
             # key ID that has been bought
@@ -641,7 +600,3 @@ class SimpleSeller(object):
                       buyer_pubkey=hl(binascii.b2a_hex(buyer_pubkey).decode()))
 
         return receipt
-
-
-ISeller.register(SimpleSeller)
-IProvider.register(SimpleSeller)
