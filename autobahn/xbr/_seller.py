@@ -362,6 +362,11 @@ class SimpleSeller(object):
         self._session_regs.append(reg)
         self.log.debug('Registered procedure "{procedure}"', procedure=hl(reg.procedure))
 
+        procedure = 'xbr.provider.{}.close_channel'.format(self._provider_id)
+        reg = await session.register(self.close_channel, procedure, options=RegisterOptions(details_arg='details'))
+        self._session_regs.append(reg)
+        self.log.debug('Registered procedure "{procedure}"', procedure=hl(reg.procedure))
+
         for key_series in self._keys.values():
             await key_series.start()
 
@@ -466,6 +471,71 @@ class SimpleSeller(object):
 
         return key_id, serializer, ciphertext
 
+    def close_channel(self, market_maker_adr, channel_adr, channel_seq, channel_balance, channel_is_final,
+                      marketmaker_signature, details=None):
+        """
+        Called by a XBR Market Maker to close a paying channel.
+        """
+        assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'market_maker_adr must be bytes[20]'
+        assert type(channel_adr) == bytes and len(channel_adr) == 20, 'channel_adr must be bytes[20]'
+        assert type(channel_seq) == int, 'channel_seq must be int'
+        assert type(channel_balance) == int and channel_balance >= 0, 'post_balance must be int (>= 0)'
+        assert type(channel_is_final) == bool, 'channel_is_final must be bool'
+        assert type(marketmaker_signature) == bytes and len(marketmaker_signature) == (32 + 32 + 1), 'marketmaker_signature must be bytes[65]'
+        assert details is None or isinstance(details, CallDetails), 'details must be autobahn.wamp.types.CallDetails'
+
+        # check that the delegate_adr fits what we expect for the market maker
+        if market_maker_adr != self._market_maker_adr:
+            raise ApplicationError('xbr.error.unexpected_delegate_adr',
+                                   '{}.sell() - unexpected market maker (delegate) address: expected 0x{}, but got 0x{}'.format(self.__class__.__name__, binascii.b2a_hex(self._market_maker_adr).decode(), binascii.b2a_hex(market_maker_adr).decode()))
+
+        # FIXME: must be the currently active channel .. and we need to track all of these
+        if channel_adr != self._channel['channel']:
+            self._session.leave()
+            raise ApplicationError('xbr.error.unexpected_channel_adr',
+                                   '{}.sell() - unexpected paying channel address: expected 0x{}, but got 0x{}'.format(self.__class__.__name__, binascii.b2a_hex(self._channel['channel']).decode(), binascii.b2a_hex(channel_adr).decode()))
+
+        # channel sequence number: check we have consensus on off-chain channel state with peer (which is the market maker)
+        if channel_seq != self._seq:
+            raise ApplicationError('xbr.error.unexpected_channel_seq',
+                                   '{}.sell() - unexpected channel (after tx) sequence number: expected {}, but got {}'.format(self.__class__.__name__, self._seq + 1, channel_seq))
+
+        # channel balance: check we have consensus on off-chain channel state with peer (which is the market maker)
+        if channel_balance != self._balance:
+            raise ApplicationError('xbr.error.unexpected_channel_balance',
+                                   '{}.sell() - unexpected channel (after tx) balance: expected {}, but got {}'.format(self.__class__.__name__, self._balance, channel_balance))
+
+        # XBRSIG: check the signature (over all input data for the buying of the key)
+        signer_address = recover_eip712_signer(channel_adr, channel_seq, channel_balance, channel_is_final, marketmaker_signature)
+        if signer_address != market_maker_adr:
+            self.log.warn('{klass}.sell()::XBRSIG[4/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
+                          klass=self.__class__.__name__,
+                          signer_address=hl(binascii.b2a_hex(signer_address).decode()),
+                          delegate_adr=hl(binascii.b2a_hex(market_maker_adr).decode()))
+            raise ApplicationError('xbr.error.invalid_signature', '{}.sell()::XBRSIG[4/8] - EIP712 signature invalid or not signed by market maker'.format(self.__class__.__name__))
+
+        # XBRSIG: compute EIP712 typed data signature
+        seller_signature = sign_eip712_data(self._pkey_raw, channel_adr, channel_seq, channel_balance, channel_is_final)
+
+        receipt = {
+            'delegate': self._addr,
+            'seq': channel_seq,
+            'balance': channel_balance,
+            'is_final': channel_is_final,
+            'signature': seller_signature,
+        }
+
+        self.log.info('{klass}.close_channel() - {tx_type} closing channel {channel_adr}, closing balance {channel_balance}, closing sequence {channel_seq} [caller={caller}, caller_authid="{caller_authid}"]',
+                      klass=self.__class__.__name__,
+                      tx_type=hl('XBR CLOSE  ', color='magenta'),
+                      channel_balance=hl(str(int(channel_balance / 10 ** 18)) + ' XBR', color='magenta'),
+                      channel_seq=hl(channel_seq),
+                      channel_adr=hl(binascii.b2a_hex(channel_adr).decode()),
+                      caller=hl(details.caller),
+                      caller_authid=hl(details.caller_authid))
+
+        return receipt
+
     def sell(self, market_maker_adr, buyer_pubkey, key_id, channel_adr, channel_seq, amount, balance, signature, details=None):
         """
         Called by a XBR Market Maker to buy a data encyption key. The XBR Market Maker here is
@@ -541,7 +611,7 @@ class SimpleSeller(object):
                                    '{}.sell() - unexpected channel (after tx) balance: expected {}, but got {}'.format(self.__class__.__name__, self._balance - amount, balance))
 
         # XBRSIG[4/8]: check the signature (over all input data for the buying of the key)
-        signer_address = recover_eip712_signer(channel_adr, channel_seq, balance, signature)
+        signer_address = recover_eip712_signer(channel_adr, channel_seq, balance, False, signature)
         if signer_address != market_maker_adr:
             self.log.warn('{klass}.sell()::XBRSIG[4/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                           klass=self.__class__.__name__,
@@ -590,11 +660,12 @@ class SimpleSeller(object):
             'signature': seller_signature,
         }
 
-        self.log.info('{klass}.sell() - {tx_type} key "{key_id}" sold for {amount_earned} [caller={caller}, caller_authid="{caller_authid}", buyer_pubkey="{buyer_pubkey}"]',
+        self.log.info('{klass}.sell() - {tx_type} key "{key_id}" sold for {amount_earned} - balance is {balance} [caller={caller}, caller_authid="{caller_authid}", buyer_pubkey="{buyer_pubkey}"]',
                       klass=self.__class__.__name__,
                       tx_type=hl('XBR SELL  ', color='magenta'),
                       key_id=hl(uuid.UUID(bytes=key_id)),
                       amount_earned=hl(str(int(amount / 10 ** 18)) + ' XBR', color='magenta'),
+                      balance=hl(str(int(self._balance / 10 ** 18)) + ' XBR', color='magenta'),
                       # paying_channel=hl(binascii.b2a_hex(paying_channel).decode()),
                       caller=hl(details.caller),
                       caller_authid=hl(details.caller_authid),

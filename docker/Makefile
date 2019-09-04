@@ -32,3 +32,12 @@ list:
 
 clean:
 	./removeall.sh
+
+
+#
+# Install Qemu (this is needed for cross-building armhf/aarch64 on amd64)
+#
+qemu_deps:
+	mkdir -p ./.qemu
+	cp /usr/bin/qemu-aarch64-static ./.qemu
+	cp /usr/bin/qemu-arm-static ./.qemu
