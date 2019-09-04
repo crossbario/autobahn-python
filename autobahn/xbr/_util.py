@@ -84,10 +84,11 @@ def hl(text, bold=True, color='yellow'):
     return click.style(text, fg=color, bold=bold)
 
 
-def _create_eip712_data(channel_adr, channel_seq, balance):
+def _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final):
     assert type(channel_adr) == bytes and len(channel_adr) == 20
     assert type(channel_seq) == int
     assert type(balance) == int
+    assert type(is_final) == bool
 
     data = {
         'types': {
@@ -97,39 +98,39 @@ def _create_eip712_data(channel_adr, channel_seq, balance):
                 {'name': 'chainId', 'type': 'uint256'},
                 {'name': 'verifyingContract', 'type': 'address'},
             ],
-            'Transaction': [
+            'ChannelClose': [
                 # The channel contract address.
-                {'name': 'channel', 'type': 'address'},
+                {'name': 'channel_adr', 'type': 'address'},
 
                 # Channel off-chain transaction sequence number.
                 {'name': 'channel_seq', 'type': 'uint32'},
 
                 # Balance remaining in after the transaction.
                 {'name': 'balance', 'type': 'uint256'},
+
+                # Transaction is marked as final.
+                {'name': 'is_final', 'type': 'bool'},
             ],
         },
-        'primaryType': 'Transaction',
+        'primaryType': 'ChannelClose',
         'domain': {
             'name': 'XBR',
             'version': '1',
-
-            # test chain/network ID
-            'chainId': 5777,
-
-            # XBRNetwork contract address (XBR_DEBUG_NETWORK_ADDR)
-            'verifyingContract': '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
+            'chainId': 1,
+            'verifyingContract': verifying_adr,
         },
         'message': {
-            'channel': channel_adr,
+            'channel_adr': channel_adr,
             'channel_seq': channel_seq,
             'balance': balance,
+            'is_final': is_final
         },
     }
 
     return data
 
 
-def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance):
+def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance, is_final=False):
     """
 
     :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
@@ -144,6 +145,9 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance):
     :param balance: Balance remaining in the payment/paying channel after buying/selling the key.
     :type balance: int
 
+    :param is_final: Flag to indicate the transaction is considered final.
+    :type is_final: bool
+
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
@@ -151,6 +155,9 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance):
     assert type(channel_adr) == bytes and len(channel_adr) == 20
     assert type(channel_seq) == int and channel_seq > 0
     assert type(balance) == int and balance >= 0
+    assert type(is_final) == bool
+
+    verifying_adr = '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'
 
     # make a private key object from the raw private key bytes
     # pkey = eth_keys.keys.PrivateKey(eth_privkey)
@@ -160,7 +167,7 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance):
     # eth_adr = pkey.public_key.to_canonical_address()
 
     # create EIP712 typed data object
-    data = _create_eip712_data(channel_adr, channel_seq, balance)
+    data = _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final)
 
     signature = signing.v_r_s_to_signature(*signing.sign_typed_data(data, eth_privkey))
     assert len(signature) == _EIP712_SIG_LEN
@@ -168,7 +175,7 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance):
     return signature
 
 
-def recover_eip712_signer(channel_adr, channel_seq, balance, signature):
+def recover_eip712_signer(channel_adr, channel_seq, balance, is_final, signature):
     """
     Recover the signer address the given EIP712 signature was signed with.
 
@@ -181,6 +188,9 @@ def recover_eip712_signer(channel_adr, channel_seq, balance, signature):
     :param balance: Balance remaining in the payment/paying channel after buying/selling the key.
     :type balance: int
 
+    :param is_final: Flag to indicate the transaction is considered final.
+    :type is_final: bool
+
     :param signature: The EIP712 (32+32+1 raw bytes) signature to verify.
     :type signature: bytes
 
@@ -190,10 +200,13 @@ def recover_eip712_signer(channel_adr, channel_seq, balance, signature):
     assert type(channel_adr) == bytes and len(channel_adr) == 20
     assert type(channel_seq) == int
     assert type(balance) == int
+    assert type(is_final) == bool
     assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
 
+    verifying_adr = '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'
+
     # recreate EIP712 typed data object
-    data = _create_eip712_data(channel_adr, channel_seq, balance)
+    data = _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final)
 
     # this returns the signer (checksummed) address as a string, eg "0xE11BA2b4D45Eaed5996Cd0823791E0C93114882d"
     signer_address = signing.recover_typed_data(data, *signing.signature_to_v_r_s(signature))
