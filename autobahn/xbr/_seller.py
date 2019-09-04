@@ -40,6 +40,7 @@ import eth_keys
 from eth_account import Account
 import nacl.secret
 import nacl.utils
+import nacl.public
 import txaio
 import web3
 

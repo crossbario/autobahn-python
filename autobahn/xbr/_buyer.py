@@ -35,9 +35,7 @@ import nacl.utils
 import nacl.exceptions
 import nacl.public
 
-from twisted.internet.defer import inlineCallbacks
 import txaio
-from autobahn.twisted.util import sleep
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.protocol import ApplicationSession
 from ._util import unpack_uint256
@@ -46,7 +44,6 @@ import web3
 import eth_keys
 from eth_account import Account
 
-from ._interfaces import IConsumer, IBuyer
 from ._util import hl, sign_eip712_data, recover_eip712_signer
 
 
@@ -79,7 +76,7 @@ class Transaction(object):
         return pformat(self.marshal())
 
 
-class SimpleBuyer(object):
+class BaseBuyer(object):
     """
     Simple XBR buyer component. This component can be used by a XBR buyer delegate to
     handle the automated buying of data encryption keys from the XBR market maker.
@@ -149,8 +146,7 @@ class SimpleBuyer(object):
         self._transaction_idx = {}
         self._transactions = []
 
-    @inlineCallbacks
-    def start(self, session, consumer_id):
+    async def start(self, session, consumer_id):
         """
         Start buying keys to decrypt XBR data by calling ``unwrap()``.
 
@@ -177,10 +173,10 @@ class SimpleBuyer(object):
         try:
             # get the currently active (if any) payment channel for the delegate
             assert type(self._addr) == bytes and len(self._addr) == 20
-            self._channel = yield session.call('xbr.marketmaker.get_active_payment_channel', self._addr)
+            self._channel = await session.call('xbr.marketmaker.get_active_payment_channel', self._addr)
 
             # get the current (off-chain) balance of the payment channel
-            payment_balance = yield session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
+            payment_balance = await session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
         except:
             session.leave()
             raise
@@ -423,7 +419,7 @@ class SimpleBuyer(object):
                 self.log.info('{klass}.unwrap() - waiting for key "{key_id}" currently being bought ..',
                               klass=self.__class__.__name__, key_id=hl(uuid.UUID(bytes=key_id)))
                 log_counter += 1
-            await sleep(.2)
+            await txaio.sleep(.2)
 
         # check if the key buying failed and fail the unwrapping in turn
         if isinstance(self._keys[key_id], Exception):
@@ -567,7 +563,3 @@ class SimpleBuyer(object):
             tx1, tx2 = self._transactions[idx]
             return tx1 and tx2
         return False
-
-
-IBuyer.register(SimpleBuyer)
-IConsumer.register(SimpleBuyer)
