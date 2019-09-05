@@ -24,34 +24,30 @@
 #
 ###############################################################################
 
-import txaio
-txaio.use_twisted()
-
-from twisted.internet.threads import deferToThread
-
 import web3
+import txaio
 from autobahn import xbr
-
-DomainStatus_NULL = 0
-DomainStatus_ACTIVE = 1
-DomainStatus_CLOSED = 2
-
-NodeType_NULL = 0
-NodeType_MASTER = 1
-NodeType_CORE = 2
-NodeType_EDGE = 3
-
-NodeLicense_NULL = 0
-NodeLicense_INFINITE = 1
-NodeLicense_FREE = 2
 
 
 class SimpleBlockchain(object):
     """
     Simple Ethereum blockchain XBR client.
     """
+    DomainStatus_NULL = 0
+    DomainStatus_ACTIVE = 1
+    DomainStatus_CLOSED = 2
+
+    NodeType_NULL = 0
+    NodeType_MASTER = 1
+    NodeType_CORE = 2
+    NodeType_EDGE = 3
+
+    NodeLicense_NULL = 0
+    NodeLicense_INFINITE = 1
+    NodeLicense_FREE = 2
 
     log = txaio.make_logger()
+    backgroundCaller = None
 
     def __init__(self, gateway=None):
         """
@@ -62,6 +58,7 @@ class SimpleBlockchain(object):
         """
         self._gateway = gateway
         self._w3 = None
+        assert self.backgroundCaller is not None
 
     def start(self):
         """
@@ -97,7 +94,7 @@ class SimpleBlockchain(object):
 
         self._w3 = None
 
-    def get_market_status(self, market_id):
+    async def get_market_status(self, market_id):
         """
 
         :param market_id:
@@ -111,9 +108,9 @@ class SimpleBlockchain(object):
                 return {
                     'owner': owner,
                 }
-        return deferToThread(_get_market_status, market_id)
+        return self.backgroundCaller(_get_market_status, market_id)
 
-    def get_domain_status(self, domain_id):
+    async def get_domain_status(self, domain_id):
         """
 
         :param domain_id:
@@ -124,13 +121,13 @@ class SimpleBlockchain(object):
         """
         def _get_domain_status(_domain_id):
             status = xbr.xbrnetwork.functions.getDomainStatus(_domain_id).call()
-            if status == DomainStatus_NULL:
+            if status == SimpleBlockchain.DomainStatus_NULL:
                 return None
-            elif status == DomainStatus_ACTIVE:
+            elif status == SimpleBlockchain.DomainStatus_ACTIVE:
                 return {'status': 'ACTIVE'}
-            elif status == DomainStatus_CLOSED:
+            elif status == SimpleBlockchain.DomainStatus_CLOSED:
                 return {'status': 'CLOSED'}
-        return deferToThread(_get_domain_status, domain_id)
+        return self.backgroundCaller(_get_domain_status, domain_id)
 
     def get_node_status(self, delegate_adr):
         """
@@ -176,7 +173,7 @@ class SimpleBlockchain(object):
         """
         raise NotImplementedError()
 
-    def get_member_status(self, member_adr):
+    async def get_member_status(self, member_adr):
         """
 
         :param member_adr:
@@ -202,9 +199,9 @@ class SimpleBlockchain(object):
                     'eula': eula,
                     'profile': profile,
                 }
-        return deferToThread(_get_member_status, member_adr)
+        return self.backgroundCaller(_get_member_status, member_adr)
 
-    def get_balances(self, account_adr):
+    async def get_balances(self, account_adr):
         """
         Return current ETH and XBR balances of account with given address.
 
@@ -224,7 +221,7 @@ class SimpleBlockchain(object):
                 'ETH': balance_eth,
                 'XBR': balance_xbr,
             }
-        return deferToThread(_get_balances, account_adr)
+        return self.backgroundCaller(_get_balances, account_adr)
 
     def get_contract_adrs(self):
         """
