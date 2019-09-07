@@ -35,7 +35,6 @@ from py_eth_sig_utils import signing
 
 _EIP712_SIG_LEN = 32 + 32 + 1
 
-
 def unpack_uint128(data):
     assert data is None or type(data) == bytes, 'data must by bytes, was {}'.format(type(data))
     if data and type(data) == bytes:
@@ -57,13 +56,15 @@ def pack_uint128(value):
         return b'\x00' * 16
 
 
+# FIXME: possibly use https://eth-abi.readthedocs.io/en/stable/decoding.html
+
 def unpack_uint256(data):
     assert data is None or type(data) == bytes, 'data must by bytes, was {}'.format(type(data))
     if data and type(data) == bytes:
         assert len(data) == 32, 'data must be bytes[32], but was bytes[{}]'.format(len(data))
 
     if data:
-        return web3.Web3.toInt(data)
+        return int(web3.Web3.toInt(data))
     else:
         return 0
 
