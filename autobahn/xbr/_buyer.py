@@ -38,7 +38,7 @@ import nacl.public
 import txaio
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.protocol import ApplicationSession
-from ._util import unpack_uint256
+from ._util import unpack_uint256, pack_uint256
 
 import web3
 import eth_keys
@@ -118,7 +118,7 @@ class SimpleBuyer(object):
         # buyer delegate ethereum account canonical checksummed address
         self._caddr = web3.Web3.toChecksumAddress(self._addr)
 
-        # FIXME: ephemeral data consumer key
+        # ephemeral data consumer key
         self._receive_key = nacl.public.PrivateKey.generate()
 
         # maximum price per key we are willing to pay
@@ -291,12 +291,12 @@ class SimpleBuyer(object):
             # get (current) price for key we want to buy
             quote = await self._session.call('xbr.marketmaker.get_quote', key_id)
 
-            if quote['price'] > self._max_price:
-                raise ApplicationError('xbr.error.max_price_exceeded',
-                                       '{}.unwrap() - key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(self.__class__.__name__, uuid.UUID(bytes=key_id), int(quote['price'] / 10 ** 18), int(self._max_price / 10 ** 18)))
-
             # set price we pay set to the (current) quoted price
-            amount = quote['price']
+            amount = unpack_uint256(quote['price'])
+
+            if amount > self._max_price:
+                raise ApplicationError('xbr.error.max_price_exceeded',
+                                       '{}.unwrap() - key {} needed cannot be bought: price {} exceeds maximum price of {}'.format(self.__class__.__name__, uuid.UUID(bytes=key_id), int(amount / 10 ** 18), int(self._max_price / 10 ** 18)))
 
             # check (locally) we have enough balance left in the payment channel to buy the key
             balance = self._balance - amount
@@ -323,8 +323,14 @@ class SimpleBuyer(object):
 
                         signature = sign_eip712_data(self._pkey_raw, close_adr, close_seq, close_balance, close_is_final)
 
+                        self.log.info('auto-closing payment channel {close_adr} [close_seq={close_seq}, close_balance={close_balance}, close_is_final={close_is_final}]',
+                                      close_adr=binascii.b2a_hex(close_adr).decode(),
+                                      close_seq=close_seq,
+                                      close_balance=int(close_balance / 10**18),
+                                      close_is_final=close_is_final)
+
                         # call market maker to initiate closing of payment channel
-                        await self._session.call('xbr.marketmaker.close_channel', close_adr, close_seq, close_balance, close_is_final, signature)
+                        await self._session.call('xbr.marketmaker.close_channel', close_adr, close_seq, pack_uint256(close_balance), close_is_final, signature)
 
                         # FIXME: wait for and acquire new payment channel instead of bailing out ..
 
@@ -333,12 +339,11 @@ class SimpleBuyer(object):
                                                                                                                                                                                 uuid.UUID(bytes=key_id),
                                                                                                                                                                                 binascii.b2a_hex(close_adr).decode(),
                                                                                                                                                                                 int(close_balance / 10 ** 18)))
-                else:
-                    raise ApplicationError('xbr.error.insufficient_balance',
-                                           '{}.unwrap() - key {} cannot be bought: insufficient balance {} in payment channel for amount {}'.format(self.__class__.__name__,
-                                                                                                                                                    uuid.UUID(bytes=key_id),
-                                                                                                                                                    int(self._balance / 10 ** 18),
-                                                                                                                                                    int(amount / 10 ** 18)))
+                raise ApplicationError('xbr.error.insufficient_balance',
+                                       '{}.unwrap() - key {} cannot be bought: insufficient balance {} in payment channel for amount {}'.format(self.__class__.__name__,
+                                                                                                                                                uuid.UUID(bytes=key_id),
+                                                                                                                                                int(self._balance / 10 ** 18),
+                                                                                                                                                int(amount / 10 ** 18)))
 
             buyer_pubkey = self._receive_key.public_key.encode(encoder=nacl.encoding.RawEncoder)
             channel_seq = self._seq + 1
@@ -357,8 +362,8 @@ class SimpleBuyer(object):
                                                    key_id,
                                                    channel_adr,
                                                    channel_seq,
-                                                   amount,
-                                                   balance,
+                                                   pack_uint256(amount),
+                                                   pack_uint256(balance),
                                                    signature)
             except ApplicationError as e:
                 if e.error == 'xbr.error.channel_closed':
@@ -372,9 +377,10 @@ class SimpleBuyer(object):
 
             # XBRSIG[8/8]: check market maker signature
             marketmaker_signature = receipt['signature']
-            marketmaker_amount_paid = receipt['amount_paid']
             marketmaker_channel_seq = receipt['channel_seq']
-            marketmaker_remaining = receipt['remaining']
+            marketmaker_amount_paid = unpack_uint256(receipt['amount_paid'])
+            marketmaker_remaining = unpack_uint256(receipt['remaining'])
+            marketmaker_inflight = unpack_uint256(receipt['inflight'])
 
             signer_address = recover_eip712_signer(channel_adr, marketmaker_channel_seq, marketmaker_remaining, False, marketmaker_signature)
             if signer_address != self._market_maker_adr:
@@ -385,16 +391,16 @@ class SimpleBuyer(object):
                 raise ApplicationError('xbr.error.invalid_signature',
                                        '{}.unwrap()::XBRSIG[8/8] - EIP712 signature invalid or not signed by market maker'.format(self.__class__.__name__))
 
-            if self._seq + 1 != receipt['channel_seq']:
+            if self._seq + 1 != marketmaker_channel_seq:
                 raise ApplicationError('xbr.error.invalid_transaction',
                                        '{}.buy_key(): invalid transaction (channel sequence number mismatch - expected {}, but got {})'.format(self.__class__.__name__, self._seq, receipt['channel_seq']))
 
-            if self._balance - amount != receipt['remaining']:
+            if self._balance - amount != marketmaker_remaining:
                 raise ApplicationError('xbr.error.invalid_transaction',
                                        '{}.buy_key(): invalid transaction (channel remaining amount mismatch - expected {}, but got {})'.format(self.__class__.__name__, self._balance - amount, receipt['remaining']))
 
-            self._seq = receipt['channel_seq']
-            self._balance = receipt['remaining']
+            self._seq = marketmaker_channel_seq
+            self._balance = marketmaker_remaining
 
             # persist 2nd phase of the transaction locally
             self._save_transaction_phase2(channel_adr, self._market_maker_adr, buyer_pubkey, key_id, marketmaker_channel_seq,
@@ -418,10 +424,10 @@ class SimpleBuyer(object):
                 klass=self.__class__.__name__,
                 tx_type=hl('XBR BUY   ', color='magenta'),
                 key_id=hl(uuid.UUID(bytes=key_id)),
-                amount_paid=hl(str(int(receipt['amount_paid'] / 10 ** 18)) + ' XBR', color='magenta'),
+                amount_paid=hl(str(int(marketmaker_amount_paid / 10 ** 18)) + ' XBR', color='magenta'),
                 payment_channel=hl(binascii.b2a_hex(receipt['payment_channel']).decode()),
-                remaining=hl(int(receipt['remaining'] / 10 ** 18)),
-                inflight=hl(int(receipt['inflight'] / 10 ** 18)),
+                remaining=hl(int(marketmaker_remaining / 10 ** 18)),
+                inflight=hl(int(marketmaker_inflight / 10 ** 18)),
                 buyer_pubkey=hl(binascii.b2a_hex(buyer_pubkey).decode()),
                 transactions=transactions_count)
 

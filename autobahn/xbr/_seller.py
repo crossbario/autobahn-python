@@ -32,7 +32,7 @@ import uuid
 from autobahn.wamp.types import RegisterOptions, CallDetails
 from autobahn.wamp.exception import ApplicationError, TransportLost
 from autobahn.wamp.protocol import ApplicationSession
-from ._util import unpack_uint256
+from ._util import unpack_uint256, pack_uint256
 from zlmdb import time_ns
 
 import cbor2
@@ -299,7 +299,7 @@ class SimpleSeller(object):
                                                      delegate,
                                                      signature,
                                                      privkey=None,
-                                                     price=price,
+                                                     price=pack_uint256(price) if price is not None else None,
                                                      categories=categories,
                                                      expires=None,
                                                      copies=None,
@@ -310,7 +310,7 @@ class SimpleSeller(object):
                         tx_type=hl('XBR OFFER ', color='magenta'),
                         key_id=hl(uuid.UUID(bytes=key_id)),
                         api_id=hl(uuid.UUID(bytes=api_id)),
-                        price=hl(str(int(price / 10 ** 18)) + ' XBR', color='magenta'),
+                        price=hl(str(int(price / 10 ** 18) if price is not None else 0) + ' XBR', color='magenta'),
                         delegate=hl(binascii.b2a_hex(delegate).decode()),
                         prefix=hl(prefix))
 
@@ -476,12 +476,12 @@ class SimpleSeller(object):
         """
         Called by a XBR Market Maker to close a paying channel.
         """
-        assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'market_maker_adr must be bytes[20]'
-        assert type(channel_adr) == bytes and len(channel_adr) == 20, 'channel_adr must be bytes[20]'
-        assert type(channel_seq) == int, 'channel_seq must be int'
-        assert type(channel_balance) == int and channel_balance >= 0, 'post_balance must be int (>= 0)'
-        assert type(channel_is_final) == bool, 'channel_is_final must be bool'
-        assert type(marketmaker_signature) == bytes and len(marketmaker_signature) == (32 + 32 + 1), 'marketmaker_signature must be bytes[65]'
+        assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'market_maker_adr must be bytes[20], but was {}'.format(type(market_maker_adr))
+        assert type(channel_adr) == bytes and len(channel_adr) == 20, 'channel_adr must be bytes[20], but was {}'.format(type(channel_adr))
+        assert type(channel_seq) == int, 'channel_seq must be int, but was {}'.format(type(channel_seq))
+        assert type(channel_balance) == bytes and len(channel_balance) == 32, 'channel_balance must be bytes[32], but was {}'.format(type(channel_balance))
+        assert type(channel_is_final) == bool, 'channel_is_final must be bool, but was {}'.format(type(channel_is_final))
+        assert type(marketmaker_signature) == bytes and len(marketmaker_signature) == (32 + 32 + 1), 'marketmaker_signature must be bytes[65], but was {}'.format(type(marketmaker_signature))
         assert details is None or isinstance(details, CallDetails), 'details must be autobahn.wamp.types.CallDetails'
 
         # check that the delegate_adr fits what we expect for the market maker
@@ -501,6 +501,7 @@ class SimpleSeller(object):
                                    '{}.sell() - unexpected channel (after tx) sequence number: expected {}, but got {}'.format(self.__class__.__name__, self._seq + 1, channel_seq))
 
         # channel balance: check we have consensus on off-chain channel state with peer (which is the market maker)
+        channel_balance = unpack_uint256(channel_balance)
         if channel_balance != self._balance:
             raise ApplicationError('xbr.error.unexpected_channel_balance',
                                    '{}.sell() - unexpected channel (after tx) balance: expected {}, but got {}'.format(self.__class__.__name__, self._balance, channel_balance))
@@ -520,7 +521,7 @@ class SimpleSeller(object):
         receipt = {
             'delegate': self._addr,
             'seq': channel_seq,
-            'balance': channel_balance,
+            'balance': pack_uint256(channel_balance),
             'is_final': channel_is_final,
             'signature': seller_signature,
         }
@@ -558,11 +559,11 @@ class SimpleSeller(object):
         :type channel_seq: int
 
         :param amount: The amount paid by the XBR Buyer via the XBR Market Maker.
-        :type amount: int
+        :type amount: bytes
 
         :param balance: Balance remaining in the payment channel (from the market maker to the
             seller) after successfully buying the key.
-        :type balance: int
+        :type balance: bytes
 
         :param signature: Signature over the supplied buying information, using the Ethereum
             private key of the market maker (which is the delegate of the marker operator).
@@ -579,15 +580,18 @@ class SimpleSeller(object):
         assert type(key_id) == bytes and len(key_id) == 16, 'key_id must be bytes[16]'
         assert type(channel_adr) == bytes and len(channel_adr) == 20, 'channel_adr must be bytes[20]'
         assert type(channel_seq) == int, 'channel_seq must be int'
-        assert type(amount) == int and amount >= 0, 'amount_paid must be int (>= 0)'
-        assert type(balance) == int and balance >= 0, 'post_balance must be int (>= 0)'
+        assert type(amount) == bytes and len(amount) == 32, 'amount_paid must be bytes[32], but was {}'.format(type(amount))
+        assert type(balance) == bytes and len(amount) == 32, 'post_balance must be bytes[32], but was {}'.format(type(balance))
         assert type(signature) == bytes and len(signature) == (32 + 32 + 1), 'signature must be bytes[65]'
         assert details is None or isinstance(details, CallDetails), 'details must be autobahn.wamp.types.CallDetails'
 
+        amount = unpack_uint256(amount)
+        balance = unpack_uint256(balance)
+
         # check that the delegate_adr fits what we expect for the market maker
         if market_maker_adr != self._market_maker_adr:
-            raise ApplicationError('xbr.error.unexpected_delegate_adr',
-                                   '{}.sell() - unexpected market maker (delegate) address: expected 0x{}, but got 0x{}'.format(self.__class__.__name__, binascii.b2a_hex(self._market_maker_adr).decode(), binascii.b2a_hex(market_maker_adr).decode()))
+            raise ApplicationError('xbr.error.unexpected_marketmaker_adr',
+                                   '{}.sell() - unexpected market maker address: expected 0x{}, but got 0x{}'.format(self.__class__.__name__, binascii.b2a_hex(self._market_maker_adr).decode(), binascii.b2a_hex(market_maker_adr).decode()))
 
         # get the key series given the key_id
         if key_id not in self._keys_map:
