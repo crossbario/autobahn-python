@@ -5,10 +5,22 @@
 Changelog
 =========
 
+19.9.3
+------
+
+* new: XBR - update XBR for new contract ABIs
+* new: XBR - payment channel close
+* new: XBR - implement EIP712 signing of messages in endpoints
+
+19.9.2
+------
+
+* new: XBR - update XBR for new contract ABIs
+
 19.9.1
 ------
 
-* new: update XBR for new contract ABIs
+* new: XBR - update XBR for new contract ABIs
 
 19.8.1
 ------
