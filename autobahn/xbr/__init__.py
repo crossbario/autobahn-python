@@ -164,6 +164,8 @@ __all__ = (
     'xbrnetwork',
     'sign_eip712_data',
     'recover_eip712_signer',
+    'pack_uint256',
+    'unpack_uint256',
 
     'MemberLevel',
     'ActorType',

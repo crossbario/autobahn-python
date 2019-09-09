@@ -28,12 +28,10 @@ from binascii import a2b_hex
 
 import click
 import web3
-# from autobahn.xbr import XBR_DEBUG_NETWORK_ADDR
-
-# import eth_keys
 from py_eth_sig_utils import signing
 
 _EIP712_SIG_LEN = 32 + 32 + 1
+
 
 def unpack_uint128(data):
     assert data is None or type(data) == bytes, 'data must by bytes, was {}'.format(type(data))
