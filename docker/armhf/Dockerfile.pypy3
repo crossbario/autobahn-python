@@ -33,6 +33,7 @@ ENV CBREALM realm1
 RUN ln -s /usr/local/bin/pypy3 /usr/local/bin/python
 
 # install Autobahn|Python
+# FIXME: add flavor "xbr" to below once we have this fixed: https://github.com/crossbario/autobahn-python/issues/1247
 RUN    pip install -U pip \
     && pip install autobahn[twisted,asyncio,serialization,encryption]==${AUTOBAHN_PYTHON_VERSION}
 

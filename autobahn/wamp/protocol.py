@@ -542,6 +542,7 @@ class ApplicationSession(BaseSession):
                         authmethod=self._authmethod,
                         authprovider=self._authprovider,
                         authextra=msg.authextra,
+                        serializer=self._transport._serializer.SERIALIZER_ID,
                         resumed=msg.resumed,
                         resumable=msg.resumable,
                         resume_token=msg.resume_token,
