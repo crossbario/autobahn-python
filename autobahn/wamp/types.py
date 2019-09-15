@@ -336,12 +336,14 @@ class SessionDetails(object):
         'authmethod',
         'authprovider',
         'authextra',
+        'serializer',
         'resumed',
         'resumable',
         'resume_token',
     )
 
-    def __init__(self, realm, session, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None, resumed=None, resumable=None, resume_token=None):
+    def __init__(self, realm, session, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None,
+                 serializer=None, resumed=None, resumable=None, resume_token=None):
         """
 
         :param realm: The realm this WAMP session is attached to.
@@ -366,6 +368,7 @@ class SessionDetails(object):
         assert(authmethod is None or type(authmethod) == six.text_type)
         assert(authprovider is None or type(authprovider) == six.text_type)
         assert(authextra is None or type(authextra) == dict)
+        assert(serializer is None or type(serializer) == six.text_type)
         assert(resumed is None or type(resumed) == bool)
         assert(resumable is None or type(resumable) == bool)
         assert(resume_token is None or type(resume_token) == six.text_type)
@@ -377,6 +380,7 @@ class SessionDetails(object):
         self.authmethod = authmethod
         self.authprovider = authprovider
         self.authextra = authextra
+        self.serializer = serializer
         self.resumed = resumed
         self.resumable = resumable
         self.resume_token = resume_token
@@ -390,6 +394,7 @@ class SessionDetails(object):
             u'authmethod': self.authmethod,
             u'authprovider': self.authprovider,
             u'authextra': self.authextra,
+            u'serializer': self.serializer,
             u'resumed': self.resumed,
             u'resumable': self.resumable,
             u'resume_token': self.resume_token
@@ -397,7 +402,18 @@ class SessionDetails(object):
         return obj
 
     def __str__(self):
-        return u"SessionDetails(realm=<{}>, session={}, authid=<{}>, authrole=<{}>, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
+        return u"""
+SessionDetails(realm=<{}>,
+               session={},
+               authid=<{}>,
+               authrole=<{}>,
+               authmethod={},
+               authprovider={},
+               authextra={},
+               serializer=<{}>,
+               resumed={},
+               resumable={},
+               resume_token={})""".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.serializer, self.resumed, self.resumable, self.resume_token)
 
 
 @public
