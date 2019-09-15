@@ -31,7 +31,7 @@ list:
 	docker images crossbario/autobahn-python*:*
 
 clean:
-	./removeall.sh
+	-./removeall.sh
 
 
 #
