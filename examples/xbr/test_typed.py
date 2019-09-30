@@ -8,7 +8,7 @@ from autobahn import xbr
 
 import eth_keys
 from eth_account import Account
-from crossbarfx.cfxdb import pack_uint256, unpack_uint256, pack_uint128, unpack_uint128
+from cfxdb import pack_uint256, unpack_uint256, pack_uint128, unpack_uint128
 
 
 def main(accounts):
