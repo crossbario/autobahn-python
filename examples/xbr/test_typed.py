@@ -8,90 +8,27 @@ from autobahn import xbr
 
 import eth_keys
 from eth_account import Account
-from ethereum import utils
 from crossbarfx.cfxdb import pack_uint256, unpack_uint256, pack_uint128, unpack_uint128
 
-# https://lib.rs/crates/eip-712
-# hash: be609aee343fb3c4b28e1df9e632fca64fcfaede20f02e86244efddf30957bd2
-data2 = {
-    "primaryType": "Mail",
-    "domain": {
-        "name": "Ether Mail",
-        "version": "1",
-        "chainId": 1,
-        "verifyingContract": "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"
-    },
-    "message": {
-        "from": {
-            "name": "Cow",
-            "wallet": "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826"
-        },
-        "to": {
-            "name": "Bob",
-            "wallet": "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB"
-        },
-        "contents": "Hello, Bob!"
-    },
-    "types": {
-        "EIP712Domain": [
-            {"name": "name", "type": "string"},
-            {"name": "version", "type": "string"},
-            {"name": "chainId", "type": "uint256"},
-            {"name": "verifyingContract", "type": "address"}
-        ],
-        "Person": [
-            {"name": "name", "type": "string"},
-            {"name": "wallet", "type": "address"}
-        ],
-        "Mail": [
-            {"name": "from", "type": "Person"},
-            {"name": "to", "type": "Person"},
-            {"name": "contents", "type": "string"}
-        ]
-    }
-}
-
-data = {
-    'types': {
-        'EIP712Domain': [
-            {'name': 'name', 'type': 'string'},
-            {'name': 'version', 'type': 'string'},
-            {'name': 'chainId', 'type': 'uint256'},
-            {'name': 'verifyingContract', 'type': 'address'},
-        ],
-        'ChannelClose': [
-            {'name': 'channel_adr', 'type': 'address'},
-            {'name': 'channel_seq', 'type': 'uint32'},
-            {'name': 'balance', 'type': 'uint256'},
-        ],
-    },
-    'primaryType': 'ChannelClose',
-    'domain': {
-        'name': 'XBR',
-        'version': '1',
-        'chainId': 1,
-        'verifyingContract': '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
-    },
-    'message': None
-}
 
 def main(accounts):
-    from py_eth_sig_utils import signing
+    from py_eth_sig_utils import signing, utils
+    from autobahn.xbr import _util
 
-    data['message'] = {
-        'channel_adr': '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
-        'channel_seq': 39,
-        'balance': 2700,
-    }
-    # signature: 0xe32976b152f5d3107a789bee8512741493c262984145415c1ffb3a42c1a80e7224dd52cc552bf86665dd185d9e04004eb8d783f624eeb6aab0011c21757e6bb21b
+    verifying_adr = a2b_hex('0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'[2:])
+    channel_adr = a2b_hex('0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'[2:])
 
-    # generate a new raw random private key
+    data = _util._create_eip712_data(
+        verifying_adr,
+        channel_adr,
+        39,
+        2700,
+        False
+    )
+
+    # use fixed or generate a new raw random private key
     if True:
         # maker_key
-        # pkey_raw = a2b_hex('6370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c')
-
-        # consumer_delegate_key
-        #pkey_raw = a2b_hex('e485d098507f54e7733a205420dfddbe58db035fa577fc294ebd14db90767a52')
         pkey_raw = a2b_hex('a4985a2ed93107886e9a1f12c7b8e2e351cc1d26c42f3aab7f220f3a7d08fda6')
     else:
         pkey_raw = os.urandom(32)
@@ -125,7 +62,6 @@ def main(accounts):
     signer_address = signing.recover_typed_data(data, *signing.signature_to_v_r_s(signature))
     assert signer_address == caddr
     print('Ok, verified signature was signed by {}'.format(signer_address))
-
 
 
 if __name__ == '__main__':
