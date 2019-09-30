@@ -5,6 +5,14 @@
 Changelog
 =========
 
+19.10.1
+-------
+
+* new: updated docker image scripts
+* new: add WAMP serializer in use to SessionDetails
+* fix: partial support for xb buyers/sellers in pypy
+* fix: remove dependency on "ethereum" package (part of pypy support)
+
 19.9.3
 ------
 

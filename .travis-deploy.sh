@@ -51,10 +51,13 @@ ls -la ./dist
 echo 'uploading package ..'
 aws s3 cp --recursive ./dist s3://${AWS_S3_BUCKET_NAME}/wheels
 
+pip install https://github.com/crossbario/py-eth-sig-utils/archive/master.zip#egg=py-eth-sig-utils
+pip install https://github.com/crossbario/txaio/archive/master.zip#egg=txaio
+pip install https://github.com/crossbario/zlmdb/archive/master.zip#egg=zlmdb
+pip install https://github.com/crossbario/autobahn-python/archive/master.zip#egg=autobahn[twisted,serialization,encryption,xbr]
+
 # tell crossbar-builder about this new wheel push
 # get 'wamp' command, always with latest autobahn master
-
-pip install https://github.com/crossbario/autobahn-python/archive/master.zip#egg=autobahn[twisted,serialization,encryption]
 wamp --max-failures 3 --authid wheel_pusher --url ws://office2dmz.crossbario.com:8008/ --realm webhook call builder.wheel_pushed --keyword name autobahn-python --keyword publish true
 
 # build and deploy latest docs
