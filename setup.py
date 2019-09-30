@@ -155,7 +155,7 @@ extras_require_xbr = [
 
     # FIXME: this is actually only needed for EIP712 ("signed typed data")
     'py-eth-sig-utils>=0.3.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
-    'ethereum>=2.3.2',          # MIT license (https://github.com/ethereum/pyethereum/blob/v2.3.2/LICENSE)
+    # 'ethereum>=2.3.2',          # MIT license (https://github.com/ethereum/pyethereum/blob/v2.3.2/LICENSE)
     'eth-abi>=1.3.0',           # MIT license (https://github.com/ethereum/eth-abi)
 ]
 

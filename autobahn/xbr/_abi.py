@@ -30,8 +30,7 @@ import pkg_resources
 
 os.environ['ETH_HASH_BACKEND'] = 'pycryptodome'
 
-import web3
-
+import binascii
 
 # from eth_hash.backends.pycryptodome import keccak256  # noqa
 # print('Using eth_hash backend {}'.format(keccak256))
@@ -43,13 +42,19 @@ XBR_CHANNEL_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRC
 
 
 if 'XBR_DEBUG_TOKEN_ADDR' in os.environ:
-    XBR_DEBUG_TOKEN_ADDR = web3.Web3.toChecksumAddress(os.environ['XBR_DEBUG_TOKEN_ADDR'])
+    _adr = os.environ['XBR_DEBUG_TOKEN_ADDR']
+    _adr = binascii.a2b_hex(_adr[2:])
+    # _adr = web3.Web3.toChecksumAddress(_adr)
+    XBR_DEBUG_TOKEN_ADDR = _adr
 else:
     XBR_DEBUG_TOKEN_ADDR = '0x0'
     print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_TOKEN_ADDR manually.')
 
 if 'XBR_DEBUG_NETWORK_ADDR' in os.environ:
-    XBR_DEBUG_NETWORK_ADDR = web3.Web3.toChecksumAddress(os.environ['XBR_DEBUG_NETWORK_ADDR'])
+    _adr = os.environ['XBR_DEBUG_NETWORK_ADDR']
+    _adr = binascii.a2b_hex(_adr[2:])
+    # _adr = web3.Web3.toChecksumAddress(_adr)
+    XBR_DEBUG_NETWORK_ADDR = _adr
 else:
     XBR_DEBUG_NETWORK_ADDR = '0x0'
     print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_NETWORK_ADDR manually.')
