@@ -27,7 +27,7 @@
 import sys
 
 try:
-    from autobahn import xbr
+    from autobahn import xbr  # noqa
     HAS_XBR = True
 except ImportError as e:
     sys.stderr.write('WARNING: could not import autobahn.xbr - {}\n'.format(e))

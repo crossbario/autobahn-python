@@ -169,7 +169,11 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance, is_final=Fa
     # create EIP712 typed data object
     data = _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final)
 
-    signature = signing.v_r_s_to_signature(*signing.sign_typed_data(data, eth_privkey))
+    # FIXME: this fails on PyPy (but ot on CPy!) with
+    #  Unknown format b'%M\xff\xcd2w\xc0\xb1f\x0fmB\xef\xbbuN\xda\xba\xbc+', attempted to normalize to 0x254dffcd3277c0b1660f6d42efbb754edababc2b
+    _args = signing.sign_typed_data(data, eth_privkey)
+
+    signature = signing.v_r_s_to_signature(*_args)
     assert len(signature) == _EIP712_SIG_LEN
 
     return signature

@@ -37,12 +37,12 @@ from zlmdb import time_ns
 
 import cbor2
 import eth_keys
-from eth_account import Account
+# from eth_account import Account
 import nacl.secret
 import nacl.utils
 import nacl.public
 import txaio
-import web3
+# import web3
 
 from ._util import hl, recover_eip712_signer, sign_eip712_data
 
@@ -216,13 +216,17 @@ class SimpleSeller(object):
         self._pkey = eth_keys.keys.PrivateKey(seller_key)
 
         # seller ethereum private account from raw private key
-        self._acct = Account.privateKeyToAccount(self._pkey)
+        # FIXME
+        # self._acct = Account.privateKeyToAccount(self._pkey)
+        self._acct = None
 
         # seller ethereum account canonical address
         self._addr = self._pkey.public_key.to_canonical_address()
 
         # seller ethereum account canonical checksummed address
-        self._caddr = web3.Web3.toChecksumAddress(self._addr)
+        # FIXME
+        # self._caddr = web3.Web3.toChecksumAddress(self._addr)
+        self._caddr = None
 
         # seller provider ID
         self._provider_id = provider_id or str(self._pkey.public_key)
@@ -355,7 +359,7 @@ class SimpleSeller(object):
         self._session_regs = []
 
         self.log.info('Start selling from seller delegate address {address} (public key 0x{public_key}..)',
-                      address=hl('0x' + self._acct.address),
+                      address=hl(self._caddr),
                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
         procedure = 'xbr.provider.{}.sell'.format(self._provider_id)

@@ -40,9 +40,9 @@ from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.protocol import ApplicationSession
 from ._util import unpack_uint256, pack_uint256
 
-import web3
 import eth_keys
-from eth_account import Account
+# import web3
+# from eth_account import Account
 
 from ._util import hl, sign_eip712_data, recover_eip712_signer
 
@@ -110,13 +110,17 @@ class SimpleBuyer(object):
         self._pkey = eth_keys.keys.PrivateKey(buyer_key)
 
         # buyer delegate ethereum private account from raw private key
-        self._acct = Account.privateKeyToAccount(self._pkey)
+        # FIXME
+        # self._acct = Account.privateKeyToAccount(self._pkey)
+        self._acct = None
 
         # buyer delegate ethereum account canonical address
         self._addr = self._pkey.public_key.to_canonical_address()
 
         # buyer delegate ethereum account canonical checksummed address
-        self._caddr = web3.Web3.toChecksumAddress(self._addr)
+        # FIXME
+        # self._caddr = web3.Web3.toChecksumAddress(self._addr)
+        self._caddr = None
 
         # ephemeral data consumer key
         self._receive_key = nacl.public.PrivateKey.generate()
@@ -167,7 +171,7 @@ class SimpleBuyer(object):
         self._running = True
 
         self.log.info('Start buying from consumer delegate address {address} (public key 0x{public_key}..)',
-                      address=hl('0x' + self._acct.address),
+                      address=hl(self._caddr),
                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
         try:
@@ -284,7 +288,12 @@ class SimpleBuyer(object):
         channel_adr = bytes(self._channel['channel'])
 
         # if we don't have the key, buy it!
-        if key_id not in self._keys:
+        if key_id in self._keys:
+            self.log.info('Key {key_id} already in key store (or currently being bought).',
+                          key_id=hl(uuid.UUID(bytes=key_id)))
+        else:
+            self.log.info('Key {key_id} not yet in key store - buying key ..', key_id=hl(uuid.UUID(bytes=key_id)))
+
             # mark the key as currently being bought already (the location of code here is multi-entrant)
             self._keys[key_id] = False
 
@@ -293,6 +302,9 @@ class SimpleBuyer(object):
 
             # set price we pay set to the (current) quoted price
             amount = unpack_uint256(quote['price'])
+
+            self.log.info('Key {key_id} has current price quote {amount}',
+                          key_id=hl(uuid.UUID(bytes=key_id)), amount=hl(int(amount / 10**18)))
 
             if amount > self._max_price:
                 raise ApplicationError('xbr.error.max_price_exceeded',
@@ -347,9 +359,10 @@ class SimpleBuyer(object):
 
             buyer_pubkey = self._receive_key.public_key.encode(encoder=nacl.encoding.RawEncoder)
             channel_seq = self._seq + 1
+            is_final = False
 
             # XBRSIG[1/8]: compute EIP712 typed data signature
-            signature = sign_eip712_data(self._pkey_raw, channel_adr, channel_seq, balance, is_final=False)
+            signature = sign_eip712_data(self._pkey_raw, channel_adr, channel_seq, balance, is_final=is_final)
 
             # persist 1st phase of the transaction locally
             self._save_transaction_phase1(channel_adr, self._addr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
