@@ -84,6 +84,7 @@ def hl(text, bold=True, color='yellow'):
 
 
 def _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final):
+    assert type(verifying_adr) == bytes and len(verifying_adr) == 20
     assert type(channel_adr) == bytes and len(channel_adr) == 20
     assert type(channel_seq) == int
     assert type(balance) == int
@@ -156,7 +157,7 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance, is_final=Fa
     assert type(balance) == int and balance >= 0
     assert type(is_final) == bool
 
-    verifying_adr = '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'
+    verifying_adr = a2b_hex('0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'[2:])
 
     # make a private key object from the raw private key bytes
     # pkey = eth_keys.keys.PrivateKey(eth_privkey)
@@ -168,7 +169,11 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance, is_final=Fa
     # create EIP712 typed data object
     data = _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final)
 
-    signature = signing.v_r_s_to_signature(*signing.sign_typed_data(data, eth_privkey))
+    # FIXME: this fails on PyPy (but ot on CPy!) with
+    #  Unknown format b'%M\xff\xcd2w\xc0\xb1f\x0fmB\xef\xbbuN\xda\xba\xbc+', attempted to normalize to 0x254dffcd3277c0b1660f6d42efbb754edababc2b
+    _args = signing.sign_typed_data(data, eth_privkey)
+
+    signature = signing.v_r_s_to_signature(*_args)
     assert len(signature) == _EIP712_SIG_LEN
 
     return signature
@@ -202,7 +207,7 @@ def recover_eip712_signer(channel_adr, channel_seq, balance, is_final, signature
     assert type(is_final) == bool
     assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
 
-    verifying_adr = '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'
+    verifying_adr = a2b_hex('0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'[2:])
 
     # recreate EIP712 typed data object
     data = _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final)

@@ -24,10 +24,13 @@
 #
 ###############################################################################
 
+import sys
+
 try:
-    from autobahn import xbr
+    from autobahn import xbr  # noqa
     HAS_XBR = True
-except ImportError:
+except ImportError as e:
+    sys.stderr.write('WARNING: could not import autobahn.xbr - {}\n'.format(e))
     HAS_XBR = False
 
 
@@ -42,11 +45,13 @@ if HAS_XBR:
 
     from autobahn.xbr._util import hl
     from autobahn.xbr._interfaces import IProvider, ISeller, IConsumer, IBuyer
+    from autobahn.xbr import _seller, _buyer, _blockchain
 
-    class SimpleBlockchain(xbr.SimpleBlockchain):
+    class SimpleBlockchain(_blockchain.SimpleBlockchain):
+        log = txaio.make_logger()
         backgroundCaller = deferToThread
 
-    class KeySeries(xbr.KeySeries):
+    class KeySeries(_seller.KeySeries):
         log = txaio.make_logger()
 
         def __init__(self, api_id, price, interval, on_rotate=None):
@@ -83,15 +88,16 @@ if HAS_XBR:
 
             return self._started
 
-    class SimpleSeller(xbr.SimpleSeller):
+    class SimpleSeller(_seller.SimpleSeller):
         """
         Simple XBR seller component. This component can be used by a XBR seller delegate to
         handle the automated selling of data encryption keys to the XBR market maker.
         """
-        xbr.SimpleSeller.KeySeries = KeySeries
+        log = txaio.make_logger()
+        KeySeries = KeySeries
 
-    class SimpleBuyer(xbr.SimpleBuyer):
-        pass
+    class SimpleBuyer(_buyer.SimpleBuyer):
+        log = txaio.make_logger()
 
     ISeller.register(SimpleSeller)
     IProvider.register(SimpleSeller)

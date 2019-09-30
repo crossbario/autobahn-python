@@ -15,6 +15,7 @@ install:
 	-pip uninstall -y pytest_asyncio # remove the broken shit
 	-pip uninstall -y pytest_cov # remove the broken shit
 	# enforce use of bundled libsodium
+	-pip install --force-reinstall git+https://github.com/crossbario/py-eth-sig-utils.git@master#egg=py-eth-sig-utils
 	AUTOBAHN_USE_NVX=1 SODIUM_INSTALL=bundled pip install -e .[all]
 
 build:

@@ -153,9 +153,10 @@ extras_require_xbr = [
     'autobahn>=18.11.2',        # MIT license
     'web3>=4.8.1',              # MIT license
 
-    # FIXME: this is actually only needed for EIP712 ("signed typed data")
+    # the following is needed for EIP712 ("signed typed data"):
+    # git+https://github.com/crossbario/py-eth-sig-utils.git@master#egg=py-eth-sig-utils
     'py-eth-sig-utils>=0.3.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
-    'ethereum>=2.3.2',          # MIT license (https://github.com/ethereum/pyethereum/blob/v2.3.2/LICENSE)
+    'py-ecc>=1.7.1',            # MIT license (https://github.com/ethereum/py_ecc)
     'eth-abi>=1.3.0',           # MIT license (https://github.com/ethereum/eth-abi)
 ]
 
