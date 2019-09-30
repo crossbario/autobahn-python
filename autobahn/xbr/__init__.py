@@ -82,9 +82,6 @@ if not hasattr(abi, 'process_type'):
 
 from autobahn.xbr._abi import XBR_TOKEN_ABI, XBR_NETWORK_ABI, XBR_CHANNEL_ABI
 from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR
-from autobahn.xbr._blockchain import SimpleBlockchain
-from autobahn.xbr._buyer import SimpleBuyer
-from autobahn.xbr._seller import SimpleSeller, KeySeries
 from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer
 from autobahn.xbr._util import sign_eip712_data, recover_eip712_signer, pack_uint256, unpack_uint256
 
@@ -181,9 +178,4 @@ __all__ = (
     'IConsumer',
     'ISeller',
     'IBuyer',
-
-    'SimpleBlockchain',
-    'SimpleBuyer',
-    'SimpleSeller',
-    'KeySeries',
 )

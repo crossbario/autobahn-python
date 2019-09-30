@@ -334,8 +334,9 @@ class SimpleSeller(object):
                 self.log.warn('Failed to place offer for key! Retrying {retries}/5 ..', retries=retries)
                 await asyncio.sleep(1)
 
-        key_series = SimpleSeller.KeySeries(api_id, price, interval, on_rotate)
+        key_series = self.KeySeries(api_id, price, interval, on_rotate)
         self._keys[api_id] = key_series
+        self.log.info('Created new key series {key_series}', key_series=key_series)
 
         return key_series
 
