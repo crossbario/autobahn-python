@@ -37,6 +37,8 @@ RUN ln -s /usr/local/bin/pypy3 /usr/local/bin/python
 RUN    pip install -U pip \
     && pip install autobahn[twisted,asyncio,serialization,encryption,xbr]==${AUTOBAHN_PYTHON_VERSION}
 
+RUN pip install --force-reinstall git+https://github.com/crossbario/py-eth-sig-utils@master#egg=py-eth-sig-utils
+
 # add example service
 COPY ./app /app
 RUN ln -s /app/client_tx.py /app/client.py

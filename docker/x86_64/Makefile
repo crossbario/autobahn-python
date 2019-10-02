@@ -9,6 +9,9 @@ build:
 		-t crossbario/autobahn-python:cpy2-${AUTOBAHN_PYTHON_VERSION} \
 		-f Dockerfile.cpy2 .
 
+	docker run --rm -it crossbario/autobahn-python:cpy2-${AUTOBAHN_PYTHON_VERSION} python \
+		-c "import autobahn; print(autobahn.version);"
+
 	time docker build \
 		--build-arg BUILD_DATE=${BUILD_DATE} \
 		--build-arg AUTOBAHN_PYTHON_VCS_REF=${AUTOBAHN_PYTHON_VCS_REF} \
@@ -16,6 +19,9 @@ build:
 		-t crossbario/autobahn-python:cpy3 \
 		-t crossbario/autobahn-python:cpy3-${AUTOBAHN_PYTHON_VERSION} \
 		-f Dockerfile.cpy3 .
+
+	docker run --rm -it crossbario/autobahn-python:cpy3-${AUTOBAHN_PYTHON_VERSION} python \
+		-c "import autobahn; print(autobahn.version); from autobahn import xbr"
 
 	time docker build \
 		--build-arg BUILD_DATE=${BUILD_DATE} \
@@ -25,6 +31,9 @@ build:
 		-t crossbario/autobahn-python:pypy2-${AUTOBAHN_PYTHON_VERSION} \
 		-f Dockerfile.pypy2 .
 
+	docker run --rm -it crossbario/autobahn-python:pypy2-${AUTOBAHN_PYTHON_VERSION} python \
+		-c "import autobahn; print(autobahn.version);"
+
 	time docker build \
 		--build-arg BUILD_DATE=${BUILD_DATE} \
 		--build-arg AUTOBAHN_PYTHON_VCS_REF=${AUTOBAHN_PYTHON_VCS_REF} \
@@ -32,6 +41,9 @@ build:
 		-t crossbario/autobahn-python:pypy3 \
 		-t crossbario/autobahn-python:pypy3-${AUTOBAHN_PYTHON_VERSION} \
 		-f Dockerfile.pypy3 .
+
+	docker run --rm -it crossbario/autobahn-python:pypy3-${AUTOBAHN_PYTHON_VERSION} python \
+		-c "import autobahn; print(autobahn.version); from autobahn import xbr"
 
 	time docker build \
 		--build-arg BUILD_DATE=${BUILD_DATE} \
@@ -41,6 +53,9 @@ build:
 		-t crossbario/autobahn-python:cpy2-alpine-${AUTOBAHN_PYTHON_VERSION} \
 		-f Dockerfile.cpy2-alpine .
 
+	docker run --rm -it crossbario/autobahn-python:cpy2-alpine-${AUTOBAHN_PYTHON_VERSION} python \
+		-c "import autobahn; print(autobahn.version);"
+
 	time docker build \
 		--build-arg BUILD_DATE=${BUILD_DATE} \
 		--build-arg AUTOBAHN_PYTHON_VCS_REF=${AUTOBAHN_PYTHON_VCS_REF} \
@@ -49,6 +64,9 @@ build:
 		-t crossbario/autobahn-python:cpy3-alpine \
 		-t crossbario/autobahn-python:cpy3-alpine-${AUTOBAHN_PYTHON_VERSION} \
 		-f Dockerfile.cpy3-alpine .
+
+	docker run --rm -it crossbario/autobahn-python:cpy3-alpine-${AUTOBAHN_PYTHON_VERSION} python \
+		-c "import autobahn; print(autobahn.version); from autobahn import xbr"
 
 	# time docker build \
 	# 	--build-arg BUILD_DATE=${BUILD_DATE} \
