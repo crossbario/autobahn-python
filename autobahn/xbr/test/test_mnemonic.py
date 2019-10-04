@@ -56,6 +56,7 @@ _EXPECTED = [
     ('0x3fD652C93dFA333979ad762Cf581Df89BaBa6795', '0xae9a2e131e9b359b198fa280de53ddbe2247730b881faae7af08e567e58915bd'),
 ]
 
+
 class TestEthereumMnemonic(unittest.TestCase):
 
     def test_check_seedphrase(self):
@@ -76,4 +77,3 @@ class TestEthereumMnemonic(unittest.TestCase):
 
             self.assertEqual(account.address, public_adr)
             self.assertEqual(account.privateKey, private_key)
-

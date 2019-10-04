@@ -25,7 +25,6 @@
 #
 ###############################################################################
 
-import binascii
 import hashlib
 import hmac
 import struct
@@ -54,7 +53,6 @@ def mnemonic_to_bip39seed(mnemonic, passphrase):
 def bip39seed_to_bip32masternode(seed):
     """ BIP32 master node derivation from a bip39 seed.
         Logic adapted from https://github.com/satoshilabs/slips/blob/master/slip-0010/testvectors.py. """
-    k = seed
     h = hmac.new(BIP32_SEED_MODIFIER, seed, hashlib.sha512).digest()
     key, chain_code = h[:32], h[32:]
     return key, chain_code
@@ -105,14 +103,8 @@ def fingerprint(public_key):
 def b58xprv(parent_fingerprint, private_key, chain, depth, childnr):
     """ Private key b58 serialization format. """
 
-    raw = (
-        b'\x04\x88\xad\xe4' +
-        bytes(chr(depth), 'utf-8') +
-        parent_fingerprint +
-        childnr.to_bytes(4, byteorder='big') +
-        chain +
-        b'\x00' +
-        private_key)
+    raw = (b'\x04\x88\xad\xe4' + bytes(chr(depth), 'utf-8') + parent_fingerprint + childnr.to_bytes(
+        4, byteorder='big') + chain + b'\x00' + private_key)
 
     return b58encode_check(raw)
 
@@ -120,13 +112,8 @@ def b58xprv(parent_fingerprint, private_key, chain, depth, childnr):
 def b58xpub(parent_fingerprint, public_key, chain, depth, childnr):
     """ Public key b58 serialization format. """
 
-    raw = (
-        b'\x04\x88\xb2\x1e' +
-        bytes(chr(depth), 'utf-8') +
-        parent_fingerprint +
-        childnr.to_bytes(4, byteorder='big') +
-        chain +
-        public_key)
+    raw = (b'\x04\x88\xb2\x1e' + bytes(chr(depth), 'utf-8') + parent_fingerprint + childnr.to_bytes(
+        4, byteorder='big') + chain + public_key)
 
     return b58encode_check(raw)
 
