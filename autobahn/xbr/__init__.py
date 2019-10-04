@@ -26,6 +26,9 @@
 
 from __future__ import absolute_import
 
+from mnemonic import Mnemonic
+from autobahn.xbr._mnemonic import mnemonic_to_private_key
+
 # monkey patch, see:
 # https://github.com/ethereum/web3.py/issues/1201
 # https://github.com/ethereum/eth-abi/pull/88
@@ -145,6 +148,32 @@ class ActorType(object):
     CONSUMER = 4
 
 
+def generate_seedphrase(strength=128, language='english'):
+    """
+    Generate a new BIP-39 mnemonic seed phrase for use in Ethereum (Metamask, etc).
+
+    :param strength: Strength of seed phrase in bits, one of the following ``[128, 160, 192, 224, 256]``,
+        generating seed phrase of 12 - 24 words inlength.
+
+    :return: Newly generated seed phrase (in english).
+    :rtype: string
+    """
+    return Mnemonic(language).generate(strength)
+
+
+def check_seedphrase(seedphrase, language='english'):
+    return Mnemonic(language).check(seedphrase)
+
+
+def account_from_seedphrase(seephrase, index=0):
+    from web3.auto import w3
+
+    derivation_path = "m/44'/60'/0'/0/{}".format(index)
+    key = mnemonic_to_private_key(seephrase, str_derivation_path=derivation_path)
+    account = w3.eth.account.privateKeyToAccount(key)
+    return account
+
+
 ASCII_BOMB = r"""
           _ ._  _ , _ ._
         (_ ' ( `  )_  .__)
@@ -167,6 +196,10 @@ __all__ = (
     'recover_eip712_signer',
     'pack_uint256',
     'unpack_uint256',
+
+    'generate_seedphrase',
+    'check_seedphrase',
+    'account_from_seedphrase',
 
     'MemberLevel',
     'ActorType',

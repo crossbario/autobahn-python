@@ -69,6 +69,10 @@ spelling:
 	cd docs && sphinx-build -b spelling . _spelling
 
 
+test_mnemonic:
+	# python -m pytest -rsx autobahn/xbr/test/test_mnemonic.py
+	USE_TWISTED=1 trial autobahn.xbr.test
+
 test_nvx:
 	python -m pytest -rsx autobahn/nvx/test
 	USE_TWISTED=1 trial autobahn.nvx.test.test_utf8validator

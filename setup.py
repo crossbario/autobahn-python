@@ -158,6 +158,11 @@ extras_require_xbr = [
     'py-eth-sig-utils>=0.3.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
     'py-ecc>=1.7.1',            # MIT license (https://github.com/ethereum/py_ecc)
     'eth-abi>=1.3.0',           # MIT license (https://github.com/ethereum/eth-abi)
+
+    # the following is needed (at least) for BIP32/39 mnemonic processing
+    'mnemonic>=0.13',           # MIT license (https://github.com/trezor/python-mnemonic)
+    'base58>=0.2.2',            # MIT license (https://github.com/keis/base58)
+    'ecdsa>=0.13',              # MIT license (https://github.com/warner/python-ecdsa)
 ]
 
 # everything
