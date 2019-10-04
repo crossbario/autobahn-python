@@ -108,10 +108,10 @@ def setProvider(_w3):
     global xbrtoken
     global xbrnetwork
 
-    print('Provider set - xbrtoken={}'.format(XBR_DEBUG_TOKEN_ADDR))
+    # print('Provider set - xbrtoken={}'.format(XBR_DEBUG_TOKEN_ADDR))
     xbrtoken = _w3.eth.contract(address=XBR_DEBUG_TOKEN_ADDR, abi=XBR_TOKEN_ABI)
 
-    print('Provider set - xbrnetwork={}'.format(XBR_DEBUG_NETWORK_ADDR))
+    # print('Provider set - xbrnetwork={}'.format(XBR_DEBUG_NETWORK_ADDR))
     xbrnetwork = _w3.eth.contract(address=XBR_DEBUG_NETWORK_ADDR, abi=XBR_NETWORK_ABI)
 
 
