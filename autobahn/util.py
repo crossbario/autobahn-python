@@ -455,17 +455,6 @@ def generate_serial_number():
     return generate_token(char_groups=6, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 
 
-def _get_clock_impl():
-    if sys.version_info >= (3, 3):
-        return time.process_time
-    else:
-        return time.clock
-
-
-def get_clock():
-    return _get_clock_impl()()
-
-
 # Select the most precise walltime measurement function available
 # on the platform
 #
@@ -474,7 +463,10 @@ if sys.platform.startswith('win'):
     # first call to this function, as a floating point number, based on the
     # Win32 function QueryPerformanceCounter(). The resolution is typically
     # better than one microsecond
-    _rtime = _get_clock_impl()
+    if sys.version_info > (3, 7):
+        _rtime = time.perf_counter
+    else:
+        _rtime = time.clock
     _ = _rtime()  # this starts wallclock
 else:
     # On Unix-like platforms, this used the first available from this list:
