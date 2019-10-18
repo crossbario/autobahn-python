@@ -463,7 +463,7 @@ if sys.platform.startswith('win'):
     # first call to this function, as a floating point number, based on the
     # Win32 function QueryPerformanceCounter(). The resolution is typically
     # better than one microsecond
-    if sys.version_info > (3, 7):
+    if sys.version_info >= (3, 8):
         _rtime = time.perf_counter
     else:
         _rtime = time.clock
