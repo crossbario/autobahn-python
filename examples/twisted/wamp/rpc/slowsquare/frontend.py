@@ -26,13 +26,11 @@
 
 import time
 from os import environ
-import sys
 
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
 
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
-from autobahn.util import get_clock
 
 
 class Component(ApplicationSession):
@@ -44,14 +42,14 @@ class Component(ApplicationSession):
         print("session attached")
 
         def got(res, started, msg):
-            duration = 1000. * (get_clock() - started)
+            duration = 1000. * (time.clock() - started)
             print("{}: {} in {}".format(msg, res, duration))
 
-        t1 = get_clock()
+        t1 = time.clock()
         d1 = self.call(u'com.math.slowsquare', 3)
         d1.addCallback(got, t1, "Slow Square")
 
-        t2 = get_clock()
+        t2 = time.clock()
         d2 = self.call(u'com.math.square', 3)
         d2.addCallback(got, t2, "Quick Square")
 
