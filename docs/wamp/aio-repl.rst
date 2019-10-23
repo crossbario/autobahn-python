@@ -20,18 +20,24 @@
         realm='realm1'
     )
 
+    counter = 0
+
     async def on_event(details=None):
+        global counter
         print('Event received', details)
+        counter += 1
 
     @comp.on_join
     async def joined(session, details):
+        global counter
         print('Session joined', details)
         sub = await session.subscribe(on_event, "io.crossbar.example", options=SubscribeOptions(details=True))
         print('Session subscribed', sub)
-        while True:
+        while counter < 10:
             pub = await session.publish("io.crossbar.example", options=PublishOptions(acknowledge=True, exclude_me=False))
             print('Event published', pub)
             await sleep(1)
+        session.leave()
 
     run([comp], start_loop=False)
 

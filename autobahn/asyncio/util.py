@@ -25,7 +25,7 @@
 ###############################################################################
 
 from __future__ import absolute_import
-from asyncio import sleep
+from asyncio import sleep  # noqa
 
 __all = (
     'sleep',
