@@ -29,6 +29,8 @@ from __future__ import absolute_import
 import unittest
 import binascii
 
+import six
+
 from autobahn.xbr import generate_seedphrase, check_seedphrase, account_from_seedphrase
 
 _SEEDPHRASE = "myth like bonus scare over problem client lizard pioneer submit female collect"
@@ -57,6 +59,7 @@ _EXPECTED = [
 ]
 
 
+@unittest.skipUnless(six.PY3, 'XBR needs Python 3')
 class TestEthereumMnemonic(unittest.TestCase):
 
     def test_check_seedphrase(self):
