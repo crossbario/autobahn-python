@@ -2202,7 +2202,7 @@ class WebSocketProtocol(ObservableMixin):
         """
         assert type(payload) == six.binary_type, '"payload" must have type bytes, but was "{}"'.format(type(payload))
         assert type(isBinary) == bool, '"isBinary" must have type bool, but was "{}"'.format(type(isBinary))
-        assert fragmentSize is None or type(fragmentSize) == bool, '"fragmentSize" must have type bool, but was "{}"'.format(type(fragmentSize))
+        assert fragmentSize is None or type(fragmentSize) == int, '"fragmentSize" must have type int, but was "{}"'.format(type(fragmentSize))
         assert type(sync) == bool, '"sync" must have type bool, but was "{}"'.format(type(sync))
         assert type(doNotCompress) == bool, '"doNotCompress" must have type bool, but was "{}"'.format(type(doNotCompress))
 
