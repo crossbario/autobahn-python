@@ -44,7 +44,7 @@ RUN    apt-get update \
 RUN    pip install -U pip \
     && pip install autobahn[twisted,asyncio,accelerate,serialization,encryption,xbr]==${AUTOBAHN_PYTHON_VERSION}
 
-RUN pip install --force-reinstall git+https://github.com/crossbario/py-eth-sig-utils@master#egg=py-eth-sig-utils
+RUN pip install --force-reinstall git+https://github.com/rmeissner/py-eth-sig-utils@master#egg=py-eth-sig-utils
 
 # add example service
 COPY ./app /app
