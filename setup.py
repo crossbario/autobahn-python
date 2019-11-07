@@ -166,10 +166,16 @@ extras_require_xbr = [
 ]
 
 # everything
-extras_require_all = extras_require_twisted + extras_require_asyncio + \
-    extras_require_accelerate + extras_require_compress + \
-    extras_require_serialization + extras_require_encryption + \
-    extras_require_scram + extras_require_nvx + extras_require_xbr
+if PY3:
+    extras_require_all = extras_require_twisted + extras_require_asyncio + \
+        extras_require_accelerate + extras_require_compress + \
+        extras_require_serialization + extras_require_encryption + \
+        extras_require_scram + extras_require_nvx + extras_require_xbr
+else:
+    extras_require_all = extras_require_twisted + extras_require_asyncio + \
+        extras_require_accelerate + extras_require_compress + \
+        extras_require_serialization + extras_require_encryption + \
+        extras_require_scram + extras_require_nvx
 
 # development dependencies
 extras_require_dev = [
