@@ -29,10 +29,11 @@ ENV NODE_PATH /usr/local/lib/node_modules/
 ENV CBURL ws://crossbar:8080/ws
 ENV CBREALM realm1
 
+# FIXME: once py-eth-sig-utils v0.4 is released, remove this:
+RUN pip install --force-reinstall git+https://github.com/rmeissner/py-eth-sig-utils@master#egg=py-eth-sig-utils
+
 # install Autobahn|Python
 RUN pip install -U pip && pip install autobahn[twisted,asyncio,accelerate,serialization,encryption,xbr]==${AUTOBAHN_PYTHON_VERSION}
-
-RUN pip install --force-reinstall git+https://github.com/rmeissner/py-eth-sig-utils@master#egg=py-eth-sig-utils
 
 # add example service
 COPY ./app /app

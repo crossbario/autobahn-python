@@ -5,6 +5,14 @@
 Changelog
 =========
 
+19.11.1
+-------
+
+* fix: argument type check for fragmentSize in sendMessage
+* new: start_loop option for WAMP components
+* new: ethereum bip39/32 helpers
+* new: enable XBR in Docker image build scripts
+
 19.10.1
 -------
 
