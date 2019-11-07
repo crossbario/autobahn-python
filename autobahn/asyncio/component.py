@@ -321,7 +321,7 @@ class Component(component.Component):
         return self._start(loop=loop)
 
 
-def run(components, log_level='info'):
+def run(components, start_loop=True, log_level='info'):
     """
     High-level API to run a series of components.
 
@@ -337,6 +337,10 @@ def run(components, log_level='info'):
 
     :param components: the Component(s) you wish to run
     :type components: Component or list of Components
+
+    :param start_loop: When ``True`` (the default) this method
+        start a new asyncio loop.
+    :type start_loop: bool
 
     :param log_level: a valid log-level (or None to avoid calling start_logging)
     :type log_level: string
@@ -397,17 +401,18 @@ def run(components, log_level='info'):
     # returns a future; could run_until_complete() but see below
     component._run(loop, components, done_callback)
 
-    try:
-        loop.run_forever()
-        # this is probably more-correct, but then you always get
-        # "Event loop stopped before Future completed":
-        # loop.run_until_complete(f)
-    except asyncio.CancelledError:
-        pass
-    # finally:
-    #     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    #     signal.signal(signal.SIGTERM, signal.SIG_DFL)
+    if start_loop:
+        try:
+            loop.run_forever()
+            # this is probably more-correct, but then you always get
+            # "Event loop stopped before Future completed":
+            # loop.run_until_complete(f)
+        except asyncio.CancelledError:
+            pass
+        # finally:
+        #     signal.signal(signal.SIGINT, signal.SIG_DFL)
+        #     signal.signal(signal.SIGTERM, signal.SIG_DFL)
 
-    # Close the event loop at the end, otherwise an exception is
-    # thrown. https://bugs.python.org/issue23548
-    loop.close()
+        # Close the event loop at the end, otherwise an exception is
+        # thrown. https://bugs.python.org/issue23548
+        loop.close()

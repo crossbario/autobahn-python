@@ -15,7 +15,6 @@ install:
 	-pip uninstall -y pytest_asyncio # remove the broken shit
 	-pip uninstall -y pytest_cov # remove the broken shit
 	# enforce use of bundled libsodium
-	-pip install --force-reinstall git+https://github.com/crossbario/py-eth-sig-utils.git@master#egg=py-eth-sig-utils
 	AUTOBAHN_USE_NVX=1 SODIUM_INSTALL=bundled pip install -e .[all]
 
 build:
@@ -68,6 +67,10 @@ docs:
 spelling:
 	cd docs && sphinx-build -b spelling . _spelling
 
+
+test_mnemonic:
+	# python -m pytest -rsx autobahn/xbr/test/test_mnemonic.py
+	USE_TWISTED=1 trial autobahn.xbr.test
 
 test_nvx:
 	python -m pytest -rsx autobahn/nvx/test

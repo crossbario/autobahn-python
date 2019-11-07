@@ -154,17 +154,27 @@ extras_require_xbr = [
     'web3>=4.8.1',              # MIT license
 
     # the following is needed for EIP712 ("signed typed data"):
-    # git+https://github.com/crossbario/py-eth-sig-utils.git@master#egg=py-eth-sig-utils
-    'py-eth-sig-utils>=0.3.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
+    'py-eth-sig-utils>=0.4.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
     'py-ecc>=1.7.1',            # MIT license (https://github.com/ethereum/py_ecc)
     'eth-abi>=1.3.0',           # MIT license (https://github.com/ethereum/eth-abi)
+
+    # the following is needed (at least) for BIP32/39 mnemonic processing
+    'mnemonic>=0.13',           # MIT license (https://github.com/trezor/python-mnemonic)
+    'base58>=0.2.2',            # MIT license (https://github.com/keis/base58)
+    'ecdsa>=0.13',              # MIT license (https://github.com/warner/python-ecdsa)
 ]
 
 # everything
-extras_require_all = extras_require_twisted + extras_require_asyncio + \
-    extras_require_accelerate + extras_require_compress + \
-    extras_require_serialization + extras_require_encryption + \
-    extras_require_scram + extras_require_nvx + extras_require_xbr
+if PY3:
+    extras_require_all = extras_require_twisted + extras_require_asyncio + \
+        extras_require_accelerate + extras_require_compress + \
+        extras_require_serialization + extras_require_encryption + \
+        extras_require_scram + extras_require_nvx + extras_require_xbr
+else:
+    extras_require_all = extras_require_twisted + extras_require_asyncio + \
+        extras_require_accelerate + extras_require_compress + \
+        extras_require_serialization + extras_require_encryption + \
+        extras_require_scram + extras_require_nvx
 
 # development dependencies
 extras_require_dev = [
