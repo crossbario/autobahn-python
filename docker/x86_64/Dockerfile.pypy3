@@ -43,12 +43,12 @@ ENV CBREALM realm1
 # make "pypy" available as "python"
 RUN ln -s /usr/local/bin/pypy3 /usr/local/bin/python
 
+# FIXME: once py-eth-sig-utils v0.4 is released, remove this:
+RUN pip install --force-reinstall git+https://github.com/rmeissner/py-eth-sig-utils@master#egg=py-eth-sig-utils
+
 # install Autobahn|Python
-# FIXME: add flavor "xbr" to below once we have this fixed: https://github.com/crossbario/autobahn-python/issues/1247
 RUN    pip install -U pip \
     && pip install autobahn[twisted,asyncio,serialization,encryption,xbr]==${AUTOBAHN_PYTHON_VERSION}
-
-RUN pip install --force-reinstall git+https://github.com/rmeissner/py-eth-sig-utils@master#egg=py-eth-sig-utils
 
 # add example service
 COPY ./app /app
