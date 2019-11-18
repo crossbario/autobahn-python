@@ -310,6 +310,7 @@ class Component(component.Component):
         - Something called ``.leave()`` on our session, and we left successfully;
         - ``.stop()`` was called, and completed successfully;
         - none of our transports were able to connect successfully (failure);
+
         :returns: a Future which will resolve (to ``None``) when we are
             "done" or with an error if something went wrong.
         """
@@ -336,7 +337,7 @@ def run(components, start_loop=True, log_level='info'):
     each component yourself.
 
     :param components: the Component(s) you wish to run
-    :type components: Component or list of Components
+    :type components: instance or list of :class:`autobahn.asyncio.component.Component`
 
     :param start_loop: When ``True`` (the default) this method
         start a new asyncio loop.
