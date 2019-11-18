@@ -30,6 +30,7 @@ import os
 import six
 import struct
 import platform
+import math
 
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
@@ -50,6 +51,11 @@ class Serializer(object):
     """
     Base class for WAMP serializers. A WAMP serializer is the core glue between
     parsed WAMP message objects and the bytes on wire (the transport).
+    """
+
+    RATED_MESSAGE_SIZE = 512
+    """
+    Serialized WAMP message payload size per rated WAMP message.
     """
 
     # WAMP defines the following 24 message types
@@ -90,12 +96,72 @@ class Serializer(object):
         :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
         """
         self._serializer = serializer
+        self._serialized_bytes = 0
+        self._serialized_messages = 0
+        self._serialized_rated_messages = 0
+        self._unserialized_bytes = 0
+        self._unserialized_messages = 0
+        self._unserialized_rated_messages = 0
+
+    def stats(self, reset=True):
+        """
+        Get (and reset) serializer statistics.
+
+        :param reset: If ``True``, reset the serializer statistics.
+        :type reset: bool
+
+        :return: Serializer statistics, eg:
+
+            .. code-block:: json
+
+                {
+                    "serialized": {
+                        "bytes": 0,
+                        "messages": 0,
+                        "rated_messages": 0
+                    },
+                    "unserialized": {
+                        "bytes": 0,
+                        "messages": 0,
+                        "rated_messages": 0
+                    }
+                }
+
+        :rtype: dict
+        """
+        data = {
+            'serialized': {
+                'bytes': self._serialized_bytes,
+                'messages': self._serialized_messages,
+                'rated_messages': self._serialized_rated_messages,
+            },
+            'unserialized': {
+                'bytes': self._unserialized_bytes,
+                'messages': self._unserialized_messages,
+                'rated_messages': self._unserialized_rated_messages,
+            }
+        }
+        if reset:
+            self._serialized_bytes = 0
+            self._serialized_messages = 0
+            self._serialized_rated_messages = 0
+            self._unserialized_bytes = 0
+            self._unserialized_messages = 0
+            self._unserialized_rated_messages = 0
+        return data
 
     def serialize(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.serialize`
         """
-        return msg.serialize(self._serializer), self._serializer.BINARY
+        data, is_binary = msg.serialize(self._serializer), self._serializer.BINARY
+
+        # maintain statistics for serialized WAMP message data
+        self._serialized_bytes += len(data)
+        self._serialized_messages += 1
+        self._serialized_rated_messages += int(math.ceil(float(len(data)) / self.RATED_MESSAGE_SIZE))
+
+        return data, is_binary
 
     def unserialize(self, payload, isBinary=None):
         """
@@ -139,6 +205,11 @@ class Serializer(object):
                 msg = Klass.parse(raw_msg)
 
                 msgs.append(msg)
+
+        # maintain statistics for unserialized WAMP message data
+        self._unserialized_bytes += len(payload)
+        self._unserialized_messages += len(msgs)
+        self._unserialized_rated_messages += int(math.ceil(float(len(payload)) / self.RATED_MESSAGE_SIZE))
 
         return msgs
 

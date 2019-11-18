@@ -1,4 +1,7 @@
-# asyncio REPL
+.. _asyncio_repl:
+
+Asyncio REPL
+============
 
 .. code-block:: console
 
@@ -31,10 +34,12 @@
     async def joined(session, details):
         global counter
         print('Session joined', details)
-        sub = await session.subscribe(on_event, "io.crossbar.example", options=SubscribeOptions(details=True))
+        sub = await session.subscribe(on_event, "io.crossbar.example",
+                                      options=SubscribeOptions(details=True))
         print('Session subscribed', sub)
         while counter < 10:
-            pub = await session.publish("io.crossbar.example", options=PublishOptions(acknowledge=True, exclude_me=False))
+            pub = await session.publish("io.crossbar.example",
+                                        options=PublishOptions(acknowledge=True, exclude_me=False))
             print('Event published', pub)
             await sleep(1)
         session.leave()

@@ -176,8 +176,8 @@ class PayingChannel(object):
 
 
 class SimpleSeller(object):
-    log = txaio.make_logger()
 
+    log = None
     KeySeries = None
 
     STATE_NONE = 0
@@ -202,6 +202,8 @@ class SimpleSeller(object):
         assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'market_maker_adr must be bytes[20], but got "{}"'.format(market_maker_adr)
         assert type(seller_key) == bytes and len(seller_key) == 32, 'seller delegate must be bytes[32], but got "{}"'.format(seller_key)
         assert provider_id is None or type(provider_id) == str, 'provider_id must be None or string, but got "{}"'.format(provider_id)
+
+        self.log = txaio.make_logger()
 
         # current seller state
         self._state = SimpleSeller.STATE_NONE
