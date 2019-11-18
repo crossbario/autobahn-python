@@ -39,9 +39,9 @@ try:
     from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR  # noqa
     from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer  # noqa
     from autobahn.xbr._util import sign_eip712_data, recover_eip712_signer, pack_uint256, unpack_uint256  # noqa
-    from autobahn.xbr._blockchain import SimpleBlockchain
-    from autobahn.xbr._seller import SimpleSeller, KeySeries
-    from autobahn.xbr._buyer import SimpleBuyer
+    from autobahn.xbr._blockchain import SimpleBlockchain  # noqa
+    from autobahn.xbr._seller import SimpleSeller, KeySeries  # noqa
+    from autobahn.xbr._buyer import SimpleBuyer  # noqa
 
     HAS_XBR = True
 

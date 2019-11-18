@@ -5,6 +5,11 @@
 Changelog
 =========
 
+19.11.2
+-------
+
+* new: statistics tracking on WAMP serializers
+
 19.11.1
 -------
 

@@ -32,6 +32,7 @@ import struct
 import platform
 import math
 
+from autobahn.util import time_ns
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
@@ -96,12 +97,43 @@ class Serializer(object):
         :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
         """
         self._serializer = serializer
+        self._stats_reset = time_ns()
         self._serialized_bytes = 0
         self._serialized_messages = 0
         self._serialized_rated_messages = 0
         self._unserialized_bytes = 0
         self._unserialized_messages = 0
         self._unserialized_rated_messages = 0
+
+    def stats_reset(self):
+        return self._stats_reset
+
+    def stats_bytes(self):
+        """
+        Get serializer statistics: bytes (serialized + unserialized).
+
+        :return: Number of bytes.
+        :rtype: int
+        """
+        return self._serialized_bytes + self._unserialized_bytes
+
+    def stats_messages(self):
+        """
+        Get serializer statistics: messages (serialized + unserialized).
+
+        :return: Number of messages.
+        :rtype: int
+        """
+        return self._serialized_messages + self._unserialized_messages
+
+    def stats_rated_messages(self):
+        """
+        Get serializer statistics: rated messages (serialized + unserialized).
+
+        :return: Number of rated messages.
+        :rtype: int
+        """
+        return self._serialized_rated_messages + self._unserialized_rated_messages
 
     def stats(self, reset=True):
         """
@@ -130,6 +162,8 @@ class Serializer(object):
         :rtype: dict
         """
         data = {
+            'timestamp': self._stats_reset,
+            'duration': time_ns() - self._stats_reset,
             'serialized': {
                 'bytes': self._serialized_bytes,
                 'messages': self._serialized_messages,
@@ -148,6 +182,7 @@ class Serializer(object):
             self._unserialized_bytes = 0
             self._unserialized_messages = 0
             self._unserialized_rated_messages = 0
+            self._stats_reset = time_ns()
         return data
 
     def serialize(self, msg):
