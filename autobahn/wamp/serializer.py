@@ -113,6 +113,12 @@ class Serializer(object):
         self._autoreset_callback = None
 
     def stats_reset(self):
+        """
+        Get serializer statistics: timestamp when statistics were last reset.
+
+        :return: Last reset time of statistics (UTC, ns since Unix epoch)
+        :rtype: int
+        """
         return self._stats_reset
 
     def stats_bytes(self):
@@ -154,7 +160,16 @@ class Serializer(object):
 
         :param duration: Duration in ns that when passed will trigger an auto-reset.
         :type duration: int
+
+        :param callback: User callback to be invoked when statistics are auto-reset. The function
+            will be invoked with a single positional argument: the accumulated statistics before the reset.
+        :type callback: callable
         """
+        assert(rated_messages is None or type(rated_messages) == int)
+        assert(duration is None or type(duration) == int)
+        assert(rated_messages or duration)
+        assert(callable(callback))
+
         self._autoreset_rated_messages = rated_messages
         self._autoreset_duration = duration
         self._autoreset_callback = callback
@@ -166,25 +181,26 @@ class Serializer(object):
         :param reset: If ``True``, reset the serializer statistics.
         :type reset: bool
 
+        :param details: If ``True``, return detailed statistics split up by serialization/unserialization.
+        :type details: bool
+
         :return: Serializer statistics, eg:
 
             .. code-block:: json
 
                 {
-                    "serialized": {
-                        "bytes": 0,
-                        "messages": 0,
-                        "rated_messages": 0
-                    },
-                    "unserialized": {
-                        "bytes": 0,
-                        "messages": 0,
-                        "rated_messages": 0
-                    }
+                    "timestamp": 1574156576688704693,
+                    "duration": 34000000000,
+                    "bytes": 0,
+                    "messages": 0,
+                    "rated_messages": 0
                 }
 
         :rtype: dict
         """
+        assert(type(reset) == bool)
+        assert(type(details) == bool)
+
         if details:
             data = {
                 'timestamp': self._stats_reset,
