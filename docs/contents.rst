@@ -14,6 +14,7 @@ Site Contents
    asynchronous-programming
    websocket/programming
    wamp/programming
+   wamp/aio-repl
    xbr
    websocket/examples
    wamp/examples

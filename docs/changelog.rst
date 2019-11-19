@@ -5,6 +5,12 @@
 Changelog
 =========
 
+19.11.2
+-------
+
+* new: statistics tracking on WAMP serializers :class:`autobahn.wamp.serializer.Serializer`
+* new: helper :func:`autobahn.util.time_ns`
+
 19.11.1
 -------
 

@@ -272,3 +272,120 @@ class TestSerializer(unittest.TestCase):
                     # serialization is gone
                     msg.uncache()
                     self.assertFalse(ser._serializer in msg._serialized)
+
+    def test_initial_stats(self):
+        """
+        Test initial serializer stats are indeed empty.
+        """
+        for ser in self._test_serializers:
+
+            stats = ser.stats(details=True)
+
+            self.assertEqual(stats['serialized']['bytes'], 0)
+            self.assertEqual(stats['serialized']['messages'], 0)
+            self.assertEqual(stats['serialized']['rated_messages'], 0)
+
+            self.assertEqual(stats['unserialized']['bytes'], 0)
+            self.assertEqual(stats['unserialized']['messages'], 0)
+            self.assertEqual(stats['unserialized']['rated_messages'], 0)
+
+    def test_serialize_stats(self):
+        """
+        Test serializer stats are non-empty after serializing/unserializing messages.
+        """
+        for ser in self._test_serializers:
+
+            for contains_binary, msg in self._test_messages:
+
+                if not must_skip(ser, contains_binary):
+                    # serialize message
+                    payload, binary = ser.serialize(msg)
+
+                    # unserialize message again
+                    ser.unserialize(payload, binary)
+
+            stats = ser.stats(details=False)
+
+            self.assertTrue(stats['bytes'] > 0)
+            self.assertTrue(stats['messages'] > 0)
+            self.assertTrue(stats['rated_messages'] > 0)
+
+    def test_serialize_stats_with_details(self):
+        """
+        Test serializer stats - with details - are non-empty after serializing/unserializing messages.
+        """
+        for ser in self._test_serializers:
+
+            for contains_binary, msg in self._test_messages:
+
+                if not must_skip(ser, contains_binary):
+                    # serialize message
+                    payload, binary = ser.serialize(msg)
+
+                    # unserialize message again
+                    ser.unserialize(payload, binary)
+
+            stats = ser.stats(details=True)
+
+            # {'serialized': {'bytes': 7923, 'messages': 59, 'rated_messages': 69}, 'unserialized': {'bytes': 7923, 'messages': 59, 'rated_messages': 69}}
+            # print(stats)
+
+            self.assertTrue(stats['serialized']['bytes'] > 0)
+            self.assertTrue(stats['serialized']['messages'] > 0)
+            self.assertTrue(stats['serialized']['rated_messages'] > 0)
+
+            self.assertTrue(stats['unserialized']['bytes'] > 0)
+            self.assertTrue(stats['unserialized']['messages'] > 0)
+            self.assertTrue(stats['unserialized']['rated_messages'] > 0)
+
+            self.assertEqual(stats['serialized']['bytes'], stats['unserialized']['bytes'])
+            self.assertEqual(stats['serialized']['messages'], stats['unserialized']['messages'])
+            self.assertEqual(stats['serialized']['rated_messages'], stats['unserialized']['rated_messages'])
+
+    def test_reset_stats(self):
+        """
+        Test serializer stats are reset after fetching stats - depending on option.
+        """
+        for ser in self._test_serializers:
+
+            for contains_binary, msg in self._test_messages:
+
+                if not must_skip(ser, contains_binary):
+                    # serialize message
+                    payload, binary = ser.serialize(msg)
+
+                    # unserialize message again
+                    ser.unserialize(payload, binary)
+
+            ser.stats()
+            stats = ser.stats(details=True)
+
+            self.assertEqual(stats['serialized']['bytes'], 0)
+            self.assertEqual(stats['serialized']['messages'], 0)
+            self.assertEqual(stats['serialized']['rated_messages'], 0)
+
+            self.assertEqual(stats['unserialized']['bytes'], 0)
+            self.assertEqual(stats['unserialized']['messages'], 0)
+            self.assertEqual(stats['unserialized']['rated_messages'], 0)
+
+    def test_auto_stats(self):
+        """
+        Test serializer stats are non-empty after serializing/unserializing messages.
+        """
+        for ser in self._test_serializers:
+
+            def on_stats(stats):
+                self.assertTrue(stats['bytes'] > 0)
+                self.assertTrue(stats['messages'] > 0)
+                self.assertTrue(stats['rated_messages'] > 0)
+
+            ser.set_stats_autoreset(10, 0, on_stats)
+
+            for contains_binary, msg in self._test_messages:
+
+                if not must_skip(ser, contains_binary):
+                    # serialize message
+                    payload, binary = ser.serialize(msg)
+
+                    # unserialize message again
+                    ser.unserialize(payload, binary)

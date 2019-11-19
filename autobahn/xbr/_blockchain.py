@@ -46,7 +46,7 @@ class SimpleBlockchain(object):
     NodeLicense_INFINITE = 1
     NodeLicense_FREE = 2
 
-    log = txaio.make_logger()
+    log = None
     backgroundCaller = None
 
     def __init__(self, gateway=None):
@@ -56,6 +56,7 @@ class SimpleBlockchain(object):
             If no explicit gateway is specified, let web3 auto-choose.
         :type gateway: str
         """
+        self.log = txaio.make_logger()
         self._gateway = gateway
         self._w3 = None
         assert self.backgroundCaller is not None

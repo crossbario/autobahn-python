@@ -326,6 +326,7 @@ class Component(component.Component):
         - Something called ``.leave()`` on our session, and we left successfully;
         - ``.stop()`` was called, and completed successfully;
         - none of our transports were able to connect successfully (failure);
+
         :returns: a Deferred that fires (with ``None``) when we are
             "done" or with a Failure if something went wrong.
         """
@@ -349,7 +350,7 @@ def run(components, log_level='info'):
     each component yourself.
 
     :param components: the Component(s) you wish to run
-    :type components: Component or list of Components
+    :type components: instance or list of :class:`autobahn.twisted.component.Component`
 
     :param log_level: a valid log-level (or None to avoid calling start_logging)
     :type log_level: string

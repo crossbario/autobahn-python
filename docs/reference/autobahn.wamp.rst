@@ -34,3 +34,20 @@ WAMP Authentication and Encryption
 
 .. automodule:: autobahn.wamp.cryptobox
     :members:
+
+
+WAMP Serializer
+---------------
+
+.. automodule:: autobahn.wamp.serializer
+    :members:
+
+
+WAMP Messages
+-------------
+
+.. automodule:: autobahn.wamp.message
+    :members:
+
+.. automodule:: autobahn.wamp.message_fbs
+    :members:

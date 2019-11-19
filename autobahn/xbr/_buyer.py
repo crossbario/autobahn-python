@@ -81,8 +81,7 @@ class SimpleBuyer(object):
     Simple XBR buyer component. This component can be used by a XBR buyer delegate to
     handle the automated buying of data encryption keys from the XBR market maker.
     """
-
-    log = txaio.make_logger()
+    log = None
 
     def __init__(self, market_maker_adr, buyer_key, max_price):
         """
@@ -99,6 +98,8 @@ class SimpleBuyer(object):
         assert type(market_maker_adr) == bytes and len(market_maker_adr) == 20, 'market_maker_adr must be bytes[20], but got "{}"'.format(market_maker_adr)
         assert type(buyer_key) == bytes and len(buyer_key) == 32, 'buyer delegate must be bytes[32], but got "{}"'.format(buyer_key)
         assert type(max_price) == int and max_price > 0
+
+        self.log = txaio.make_logger()
 
         # market maker address
         self._market_maker_adr = market_maker_adr

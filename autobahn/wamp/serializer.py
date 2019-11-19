@@ -30,7 +30,9 @@ import os
 import six
 import struct
 import platform
+import math
 
+from autobahn.util import time_ns
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
@@ -50,6 +52,11 @@ class Serializer(object):
     """
     Base class for WAMP serializers. A WAMP serializer is the core glue between
     parsed WAMP message objects and the bytes on wire (the transport).
+    """
+
+    RATED_MESSAGE_SIZE = 512
+    """
+    Serialized WAMP message payload size per rated WAMP message.
     """
 
     # WAMP defines the following 24 message types
@@ -91,11 +98,159 @@ class Serializer(object):
         """
         self._serializer = serializer
 
+        self._stats_reset = time_ns()
+
+        self._serialized_bytes = 0
+        self._serialized_messages = 0
+        self._serialized_rated_messages = 0
+
+        self._unserialized_bytes = 0
+        self._unserialized_messages = 0
+        self._unserialized_rated_messages = 0
+
+        self._autoreset_rated_messages = None
+        self._autoreset_duration = None
+        self._autoreset_callback = None
+
+    def stats_reset(self):
+        """
+        Get serializer statistics: timestamp when statistics were last reset.
+
+        :return: Last reset time of statistics (UTC, ns since Unix epoch)
+        :rtype: int
+        """
+        return self._stats_reset
+
+    def stats_bytes(self):
+        """
+        Get serializer statistics: bytes (serialized + unserialized).
+
+        :return: Number of bytes.
+        :rtype: int
+        """
+        return self._serialized_bytes + self._unserialized_bytes
+
+    def stats_messages(self):
+        """
+        Get serializer statistics: messages (serialized + unserialized).
+
+        :return: Number of messages.
+        :rtype: int
+        """
+        return self._serialized_messages + self._unserialized_messages
+
+    def stats_rated_messages(self):
+        """
+        Get serializer statistics: rated messages (serialized + unserialized).
+
+        :return: Number of rated messages.
+        :rtype: int
+        """
+        return self._serialized_rated_messages + self._unserialized_rated_messages
+
+    def set_stats_autoreset(self, rated_messages, duration, callback):
+        """
+        Configure a user callback invoked when accumulated stats hit specified threshold.
+        When the specified number of rated messages have been processed or the specified duration
+        has passed, statistics are automatically reset, and the last statistics is provided to
+        the user callback.
+
+        :param rated_messages: Number of rated messages that should trigger an auto-reset.
+        :type rated_messages: int
+
+        :param duration: Duration in ns that when passed will trigger an auto-reset.
+        :type duration: int
+
+        :param callback: User callback to be invoked when statistics are auto-reset. The function
+            will be invoked with a single positional argument: the accumulated statistics before the reset.
+        :type callback: callable
+        """
+        assert(rated_messages is None or type(rated_messages) == int)
+        assert(duration is None or type(duration) == int)
+        assert(rated_messages or duration)
+        assert(callable(callback))
+
+        self._autoreset_rated_messages = rated_messages
+        self._autoreset_duration = duration
+        self._autoreset_callback = callback
+
+    def stats(self, reset=True, details=False):
+        """
+        Get (and reset) serializer statistics.
+
+        :param reset: If ``True``, reset the serializer statistics.
+        :type reset: bool
+
+        :param details: If ``True``, return detailed statistics split up by serialization/unserialization.
+        :type details: bool
+
+        :return: Serializer statistics, eg:
+
+            .. code-block:: json
+
+                {
+                    "timestamp": 1574156576688704693,
+                    "duration": 34000000000,
+                    "bytes": 0,
+                    "messages": 0,
+                    "rated_messages": 0
+                }
+
+        :rtype: dict
+        """
+        assert(type(reset) == bool)
+        assert(type(details) == bool)
+
+        if details:
+            data = {
+                'timestamp': self._stats_reset,
+                'duration': time_ns() - self._stats_reset,
+                'serialized': {
+                    'bytes': self._serialized_bytes,
+                    'messages': self._serialized_messages,
+                    'rated_messages': self._serialized_rated_messages,
+                },
+                'unserialized': {
+                    'bytes': self._unserialized_bytes,
+                    'messages': self._unserialized_messages,
+                    'rated_messages': self._unserialized_rated_messages,
+                }
+            }
+        else:
+            data = {
+                'timestamp': self._stats_reset,
+                'duration': time_ns() - self._stats_reset,
+                'bytes': self._serialized_bytes + self._unserialized_bytes,
+                'messages': self._serialized_messages + self._unserialized_messages,
+                'rated_messages': self._serialized_rated_messages + self._unserialized_rated_messages,
+            }
+        if reset:
+            self._serialized_bytes = 0
+            self._serialized_messages = 0
+            self._serialized_rated_messages = 0
+            self._unserialized_bytes = 0
+            self._unserialized_messages = 0
+            self._unserialized_rated_messages = 0
+            self._stats_reset = time_ns()
+        return data
+
     def serialize(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.serialize`
         """
-        return msg.serialize(self._serializer), self._serializer.BINARY
+        data, is_binary = msg.serialize(self._serializer), self._serializer.BINARY
+
+        # maintain statistics for serialized WAMP message data
+        self._serialized_bytes += len(data)
+        self._serialized_messages += 1
+        self._serialized_rated_messages += int(math.ceil(float(len(data)) / self.RATED_MESSAGE_SIZE))
+
+        # maybe auto-reset and trigger user callback ..
+        if self._autoreset_callback and ((self._autoreset_duration and (time_ns() - self._stats_reset) >= self._autoreset_duration) or (self._autoreset_rated_messages and self.stats_rated_messages() >= self._autoreset_rated_messages)):
+            stats = self.stats(reset=True)
+            self._autoreset_callback(stats)
+
+        return data, is_binary
 
     def unserialize(self, payload, isBinary=None):
         """
@@ -139,6 +294,16 @@ class Serializer(object):
                 msg = Klass.parse(raw_msg)
 
                 msgs.append(msg)
+
+        # maintain statistics for unserialized WAMP message data
+        self._unserialized_bytes += len(payload)
+        self._unserialized_messages += len(msgs)
+        self._unserialized_rated_messages += int(math.ceil(float(len(payload)) / self.RATED_MESSAGE_SIZE))
+
+        # maybe auto-reset and trigger user callback ..
+        if self._autoreset_callback and ((self._autoreset_duration and (time_ns() - self._stats_reset) >= self._autoreset_duration) or(self._autoreset_rated_messages and self.stats_rated_messages() >= self._autoreset_rated_messages)):
+            stats = self.stats(reset=True)
+            self._autoreset_callback(stats)
 
         return msgs
 
