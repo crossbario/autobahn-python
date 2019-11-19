@@ -97,13 +97,20 @@ class Serializer(object):
         :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
         """
         self._serializer = serializer
+
         self._stats_reset = time_ns()
+
         self._serialized_bytes = 0
         self._serialized_messages = 0
         self._serialized_rated_messages = 0
+
         self._unserialized_bytes = 0
         self._unserialized_messages = 0
         self._unserialized_rated_messages = 0
+
+        self._autoreset_rated_messages = None
+        self._autoreset_duration = None
+        self._autoreset_callback = None
 
     def stats_reset(self):
         return self._stats_reset
@@ -135,7 +142,24 @@ class Serializer(object):
         """
         return self._serialized_rated_messages + self._unserialized_rated_messages
 
-    def stats(self, reset=True):
+    def set_stats_autoreset(self, rated_messages, duration, callback):
+        """
+        Configure a user callback invoked when accumulated stats hit specified threshold.
+        When the specified number of rated messages have been processed or the specified duration
+        has passed, statistics are automatically reset, and the last statistics is provided to
+        the user callback.
+
+        :param rated_messages: Number of rated messages that should trigger an auto-reset.
+        :type rated_messages: int
+
+        :param duration: Duration in ns that when passed will trigger an auto-reset.
+        :type duration: int
+        """
+        self._autoreset_rated_messages = rated_messages
+        self._autoreset_duration = duration
+        self._autoreset_callback = callback
+
+    def stats(self, reset=True, details=False):
         """
         Get (and reset) serializer statistics.
 
@@ -161,20 +185,29 @@ class Serializer(object):
 
         :rtype: dict
         """
-        data = {
-            'timestamp': self._stats_reset,
-            'duration': time_ns() - self._stats_reset,
-            'serialized': {
-                'bytes': self._serialized_bytes,
-                'messages': self._serialized_messages,
-                'rated_messages': self._serialized_rated_messages,
-            },
-            'unserialized': {
-                'bytes': self._unserialized_bytes,
-                'messages': self._unserialized_messages,
-                'rated_messages': self._unserialized_rated_messages,
+        if details:
+            data = {
+                'timestamp': self._stats_reset,
+                'duration': time_ns() - self._stats_reset,
+                'serialized': {
+                    'bytes': self._serialized_bytes,
+                    'messages': self._serialized_messages,
+                    'rated_messages': self._serialized_rated_messages,
+                },
+                'unserialized': {
+                    'bytes': self._unserialized_bytes,
+                    'messages': self._unserialized_messages,
+                    'rated_messages': self._unserialized_rated_messages,
+                }
             }
-        }
+        else:
+            data = {
+                'timestamp': self._stats_reset,
+                'duration': time_ns() - self._stats_reset,
+                'bytes': self._serialized_bytes + self._unserialized_bytes,
+                'messages': self._serialized_messages + self._unserialized_messages,
+                'rated_messages': self._serialized_rated_messages + self._unserialized_rated_messages,
+            }
         if reset:
             self._serialized_bytes = 0
             self._serialized_messages = 0
@@ -195,6 +228,11 @@ class Serializer(object):
         self._serialized_bytes += len(data)
         self._serialized_messages += 1
         self._serialized_rated_messages += int(math.ceil(float(len(data)) / self.RATED_MESSAGE_SIZE))
+
+        # maybe auto-reset and trigger user callback ..
+        if self._autoreset_callback and ((self._autoreset_duration and (time_ns() - self._stats_reset) >= self._autoreset_duration) or (self._autoreset_rated_messages and self.stats_rated_messages() >= self._autoreset_rated_messages)):
+            stats = self.stats(reset=True)
+            self._autoreset_callback(stats)
 
         return data, is_binary
 
@@ -245,6 +283,11 @@ class Serializer(object):
         self._unserialized_bytes += len(payload)
         self._unserialized_messages += len(msgs)
         self._unserialized_rated_messages += int(math.ceil(float(len(payload)) / self.RATED_MESSAGE_SIZE))
+
+        # maybe auto-reset and trigger user callback ..
+        if self._autoreset_callback and ((self._autoreset_duration and (time_ns() - self._stats_reset) >= self._autoreset_duration) or(self._autoreset_rated_messages and self.stats_rated_messages() >= self._autoreset_rated_messages)):
+            stats = self.stats(reset=True)
+            self._autoreset_callback(stats)
 
         return msgs
 
