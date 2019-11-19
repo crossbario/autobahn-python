@@ -33,6 +33,7 @@ except ImportError:
     import trollius as asyncio
 import struct
 import math
+import copy
 
 from autobahn.util import public, _LazyHexFormatter
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
@@ -408,7 +409,7 @@ class WampRawSocketClientProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
     @property
     def serializer_id(self):
         if not hasattr(self, '_serializer'):
-            self._serializer = self.factory._serializer
+            self._serializer = copy.copy(self.factory._serializer)
         return self._serializer.RAWSOCKET_SERIALIZER_ID
 
     def get_channel_id(self, channel_id_type=u'tls-unique'):

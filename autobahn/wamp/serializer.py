@@ -99,6 +99,7 @@ class Serializer(object):
         self._serializer = serializer
 
         self._stats_reset = time_ns()
+        self._stats_cycle = 0
 
         self._serialized_bytes = 0
         self._serialized_messages = 0
@@ -148,7 +149,7 @@ class Serializer(object):
         """
         return self._serialized_rated_messages + self._unserialized_rated_messages
 
-    def set_stats_autoreset(self, rated_messages, duration, callback):
+    def set_stats_autoreset(self, rated_messages, duration, callback, reset_now=False):
         """
         Configure a user callback invoked when accumulated stats hit specified threshold.
         When the specified number of rated messages have been processed or the specified duration
@@ -173,6 +174,12 @@ class Serializer(object):
         self._autoreset_rated_messages = rated_messages
         self._autoreset_duration = duration
         self._autoreset_callback = callback
+
+        # maybe auto-reset and trigger user callback ..
+        if self._autoreset_callback and reset_now:
+            stats = self.stats(reset=True)
+            self._autoreset_callback(stats)
+            return stats
 
     def stats(self, reset=True, details=False):
         """
@@ -201,8 +208,12 @@ class Serializer(object):
         assert(type(reset) == bool)
         assert(type(details) == bool)
 
+        self._stats_cycle += 1
+
         if details:
             data = {
+                'cycle': self._stats_cycle,
+                'serializer': self.SERIALIZER_ID,
                 'timestamp': self._stats_reset,
                 'duration': time_ns() - self._stats_reset,
                 'serialized': {
@@ -218,6 +229,8 @@ class Serializer(object):
             }
         else:
             data = {
+                'cycle': self._stats_cycle,
+                'serializer': self.SERIALIZER_ID,
                 'timestamp': self._stats_reset,
                 'duration': time_ns() - self._stats_reset,
                 'bytes': self._serialized_bytes + self._unserialized_bytes,
