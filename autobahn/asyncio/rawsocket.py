@@ -373,7 +373,7 @@ class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
 
     def supports_serializer(self, ser_id):
         if ser_id in self.factory._serializers:
-            self._serializer = self.factory._serializers[ser_id]()
+            self._serializer = copy.copy(self.factory._serializers[ser_id])
             self.log.debug(
                 "WampRawSocketProtocol: client wants to use serializer '{serializer}'",
                 serializer=ser_id,

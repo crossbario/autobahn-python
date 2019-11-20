@@ -335,7 +335,7 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
 
     def connectionMade(self):
         WampRawSocketProtocol.connectionMade(self)
-        self._serializer = self.factory._serializer
+        self._serializer = copy.copy(self.factory._serializer)
 
         # we request the peer to send messages of maximum length 2**reply_max_len_exp
         request_max_len_exp = int(math.ceil(math.log(self._max_message_size, 2)))
