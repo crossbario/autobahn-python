@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import
 
+import copy
 import traceback
 
 from autobahn.websocket import protocol
@@ -182,14 +183,17 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
         for subprotocol in request.protocols:
             version, serializerId = parseSubprotocolIdentifier(subprotocol)
             if version == 2 and serializerId in self.factory._serializers.keys():
-                self._serializer = self.factory._serializers[serializerId]
+
+                # copy over serializer form factory, so that we keep per-session serializer stats
+                self._serializer = copy.copy(self.factory._serializers[serializerId])
+
                 return subprotocol, headers
 
         if self.STRICT_PROTOCOL_NEGOTIATION:
             raise ConnectionDeny(ConnectionDeny.BAD_REQUEST, u'This server only speaks WebSocket subprotocols {}'.format(u', '.join(self.factory.protocols)))
         else:
             # assume wamp.2.json
-            self._serializer = self.factory._serializers[u'json']
+            self._serializer = copy.copy(self.factory._serializers[u'json'])
             return None, headers
 
 
@@ -213,7 +217,8 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
         else:
             version, serializerId = parseSubprotocolIdentifier(response.protocol)
 
-        self._serializer = self.factory._serializers[serializerId]
+        # copy over serializer form factory, so that we keep per-session serializer stats
+        self._serializer = copy.copy(self.factory._serializers[serializerId])
 
 
 class WampWebSocketFactory(object):
@@ -223,7 +228,6 @@ class WampWebSocketFactory(object):
 
     def __init__(self, factory, serializers=None):
         """
-        Ctor.
 
         :param factory: A callable that produces instances that implement
            :class:`autobahn.wamp.interfaces.ITransportHandler`
