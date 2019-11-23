@@ -175,6 +175,8 @@ class ApplicationRunner(object):
         assert(headers is None or type(headers) == dict)
         assert(proxy is None or type(proxy) == dict)
         self.url = url
+        self.url_type = None
+        self.url_type_secured = None 
         self.realm = realm
         self.extra = extra or dict()
         self.serializers = serializers
@@ -253,8 +255,11 @@ class ApplicationRunner(object):
             create = make
 
         if self.url.startswith(u'rs'):
+            self.url_type = 'rs:'
             # try to parse RawSocket URL ..
             isSecure, host, port = parse_rs_url(self.url)
+            if isSecure:
+                self.url_type_secured = 'rss:'
 
             # use the first configured serializer if any (which means, auto-choose "best")
             serializer = self.serializers[0] if self.serializers else None
@@ -263,8 +268,11 @@ class ApplicationRunner(object):
             transport_factory = WampRawSocketClientFactory(create, serializer=serializer)
 
         else:
+            self.url_type = 'ws:'
             # try to parse WebSocket URL ..
             isSecure, host, port, resource, path, params = parse_ws_url(self.url)
+            if isSecure:
+                self.url_type_secured = 'wss:'
 
             # create a WAMP-over-WebSocket transport client factory
             transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
@@ -307,9 +315,9 @@ class ApplicationRunner(object):
             if self.ssl is not None:
                 if not isSecure:
                     raise RuntimeError(
-                        'ssl= argument value passed to %s conflicts with the "ws:" '
-                        'prefix of the url argument. Did you mean to use "wss:"?' %
-                        self.__class__.__name__)
+                        'ssl= argument value passed to %s conflicts with the "%s" '
+                        'prefix of the url argument. Did you mean to use "%s"?' %
+                        self.__class__.__name__,self.url_type,self.url_type_secured)
                 context_factory = self.ssl
             elif isSecure:
                 from twisted.internet.ssl import optionsForClientTLS
