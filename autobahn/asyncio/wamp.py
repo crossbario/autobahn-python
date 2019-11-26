@@ -246,9 +246,13 @@ class ApplicationRunner(object):
         else:
             if self.ssl and not isSecure:
                 raise RuntimeError(
-                    'ssl= argument value passed to %s conflicts with the "%s" '
-                    'prefix of the url argument. Did you mean to use "%s"?' %
-                    self.__class__.__name__,self.url_type,self.url_type_secured)
+                    '''ssl argument value passed to {0} conflicts with the
+                    "{1}" prefix of the url argument. Did you mean to use
+                    "{2}"?'''.format(
+                        self.__class__.__name__,
+                        self.url_type,
+                        self.url_type_secured)
+                    )
             ssl = self.ssl
 
         # start the client connection
