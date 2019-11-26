@@ -176,7 +176,7 @@ class ApplicationRunner(object):
         assert(proxy is None or type(proxy) == dict)
         self.url = url
         self.url_type = None
-        self.url_type_secured = None 
+        self.url_type_secured = None
         self.realm = realm
         self.extra = extra or dict()
         self.serializers = serializers
@@ -321,7 +321,7 @@ class ApplicationRunner(object):
                             self.__class__.__name__,
                             self.url_type,
                             self.url_type_secured)
-                        )
+                            )
                 context_factory = self.ssl
             elif isSecure:
                 from twisted.internet.ssl import optionsForClientTLS
