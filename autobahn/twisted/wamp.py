@@ -315,9 +315,13 @@ class ApplicationRunner(object):
             if self.ssl is not None:
                 if not isSecure:
                     raise RuntimeError(
-                        'ssl= argument value passed to %s conflicts with the "%s" '
-                        'prefix of the url argument. Did you mean to use "%s"?' %
-                        self.__class__.__name__,self.url_type,self.url_type_secured)
+                        '''ssl argument value passed to {0} conflicts with the
+                        "{1}" prefix of the url argument. Did you mean to use
+                        "{2}"?'''.format(
+                            self.__class__.__name__,
+                            self.url_type,
+                            self.url_type_secured)
+                        )
                 context_factory = self.ssl
             elif isSecure:
                 from twisted.internet.ssl import optionsForClientTLS
