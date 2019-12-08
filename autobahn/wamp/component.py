@@ -765,7 +765,7 @@ class Component(ObservableMixin):
                             txaio.resolve(done, None)
                         else:
                             f = txaio.create_failure(
-                                ApplicationError(details.reason)
+                                ApplicationError(details.reason, details.message)
                             )
                             txaio.reject(done, f)
                 session.on('leave', on_leave)
