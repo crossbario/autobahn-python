@@ -159,7 +159,7 @@ def _create_transport_endpoint(reactor, endpoint_config):
                     trust_root = None
                     cert_fname = tls.get(u"trust_root", None)
                     if cert_fname is not None:
-                        trust_root = Certificate.loadPEM(six.u(open(cert_fname, 'r').read()))
+                        trust_root = Certificate.loadPEM(open(cert_fname, 'r').read())
                     context = optionsForClientTLS(hostname, trustRoot=trust_root)
 
                 elif isinstance(tls, CertificateOptions):

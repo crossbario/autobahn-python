@@ -740,7 +740,7 @@ class Hello(Message):
                 if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
                     if u'features' not in details[u'roles'][role.ROLE]:
                         details[u'roles'][role.ROLE] = {u'features': {}}
-                    details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
+                    details[u'roles'][role.ROLE][u'features'][feature] = getattr(role, feature)
 
         if self.authmethods is not None:
             details[u'authmethods'] = self.authmethods
@@ -1012,7 +1012,7 @@ class Welcome(Message):
                 if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
                     if u'features' not in details[u'roles'][role.ROLE]:
                         details[u'roles'][role.ROLE] = {u'features': {}}
-                    details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
+                    details[u'roles'][role.ROLE][u'features'][feature] = getattr(role, feature)
 
         return [Welcome.MESSAGE_TYPE, self.session, details]
 

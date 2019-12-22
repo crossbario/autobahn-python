@@ -146,8 +146,8 @@ class BaseSession(ObservableMixin):
             self._uri_to_ecls[exception._wampuris[0].uri()] = exception
         else:
             assert(not hasattr(exception, '_wampuris'))
-            self._ecls_to_uri_pat[exception] = [uri.Pattern(six.u(error), uri.Pattern.URI_TARGET_HANDLER)]
-            self._uri_to_ecls[six.u(error)] = exception
+            self._ecls_to_uri_pat[exception] = [uri.Pattern(error, uri.Pattern.URI_TARGET_HANDLER)]
+            self._uri_to_ecls[error] = exception
 
     def _message_from_exception(self, request_type, request, exc, tb=None, enc_algo=None):
         """
@@ -186,7 +186,7 @@ class BaseSession(ObservableMixin):
                 kwargs = {u'traceback': tb}
 
         if isinstance(exc, exception.ApplicationError):
-            error = exc.error if type(exc.error) == str else six.u(exc.error)
+            error = exc.error if type(exc.error) == str else exc.error
         else:
             if exc.__class__ in self._ecls_to_uri_pat:
                 error = self._ecls_to_uri_pat[exc.__class__][0]._uri
