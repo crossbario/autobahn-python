@@ -36,7 +36,7 @@ __all__ = ('IWebSocketServerChannelFactory',
 
 
 @six.add_metaclass(abc.ABCMeta)
-class IWebSocketClientAgent(object):
+class IWebSocketClientAgent(abc.ABC):
     """
     Instances implementing this interface create WebSocket
     connections.
@@ -63,7 +63,7 @@ class IWebSocketClientAgent(object):
 
 @public
 @six.add_metaclass(abc.ABCMeta)
-class IWebSocketServerChannelFactory(object):
+class IWebSocketServerChannelFactory(abc.ABC):
     """
     WebSocket server protocol factories implement this interface, and create
     protocol instances which in turn implement
@@ -242,7 +242,7 @@ class IWebSocketServerChannelFactory(object):
 
 @public
 @six.add_metaclass(abc.ABCMeta)
-class IWebSocketClientChannelFactory(object):
+class IWebSocketClientChannelFactory(abc.ABC):
     """
     WebSocket client protocol factories implement this interface, and create
     protocol instances which in turn implement
@@ -412,7 +412,7 @@ class IWebSocketClientChannelFactory(object):
 
 @public
 @six.add_metaclass(abc.ABCMeta)
-class IWebSocketChannel(object):
+class IWebSocketChannel(abc.ABC):
     """
     A WebSocket channel is a bidirectional, full-duplex, ordered, reliable message channel
     over a WebSocket connection as specified in RFC6455.
