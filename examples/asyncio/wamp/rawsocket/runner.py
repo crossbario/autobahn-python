@@ -1,6 +1,6 @@
 import asyncio
 import signal
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 from autobahn.wamp.types import ComponentConfig
 from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
 import txaio
