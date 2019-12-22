@@ -63,13 +63,6 @@ __all__ = [
     # 'run',  # should probably move this method to here? instead of component
 ]
 
-try:
-    from twisted.application import service
-except (ImportError, SyntaxError):
-    # Not on PY3 yet
-    service = None
-    __all__.pop(__all__.index('Service'))
-
 
 @public
 class ApplicationSession(protocol.ApplicationSession):
