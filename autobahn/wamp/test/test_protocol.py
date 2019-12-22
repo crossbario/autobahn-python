@@ -46,7 +46,6 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.wamp.auth import create_authenticator
     from autobahn.wamp.interfaces import IAuthenticator
 
-
     class MockTransport(object):
 
         def __init__(self, handler):
@@ -321,19 +320,19 @@ if os.environ.get('USE_TWISTED', False):
             MockTransport(handler)
 
             publication = yield handler.publish(u'com.myapp.topic1', options=types.PublishOptions(acknowledge=True))
-            self.assertTrue(type(publication.id)  == int)
+            self.assertTrue(type(publication.id) == int)
 
             publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, options=types.PublishOptions(acknowledge=True))
-            self.assertTrue(type(publication.id)  == int)
+            self.assertTrue(type(publication.id) == int)
 
             publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(acknowledge=True))
-            self.assertTrue(type(publication.id)  == int)
+            self.assertTrue(type(publication.id) == int)
 
             publication = yield handler.publish(u'com.myapp.topic1', options=types.PublishOptions(exclude_me=False, acknowledge=True))
-            self.assertTrue(type(publication.id)  == int)
+            self.assertTrue(type(publication.id) == int)
 
             publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300], acknowledge=True))
-            self.assertTrue(type(publication.id)  == int)
+            self.assertTrue(type(publication.id) == int)
 
         @inlineCallbacks
         def test_publish_undefined_exception(self):
@@ -402,13 +401,13 @@ if os.environ.get('USE_TWISTED', False):
                 print("got event", args, kwargs)
 
             subscription = yield handler.subscribe(on_event, u'com.myapp.topic1')
-            self.assertTrue(type(subscription.id)  == int)
+            self.assertTrue(type(subscription.id) == int)
 
             subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options=types.SubscribeOptions(match=u'wildcard'))
-            self.assertTrue(type(subscription.id)  == int)
+            self.assertTrue(type(subscription.id) == int)
 
             subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options=types.SubscribeOptions(match=u'wildcard', get_retained=True))
-            self.assertTrue(type(subscription.id)  == int)
+            self.assertTrue(type(subscription.id) == int)
 
         @inlineCallbacks
         def test_double_subscribe(self):
@@ -636,10 +635,10 @@ if os.environ.get('USE_TWISTED', False):
                 print("got call", args, kwargs)
 
             registration = yield handler.register(on_call, u'com.myapp.procedure1')
-            self.assertTrue(type(registration.id)  == int)
+            self.assertTrue(type(registration.id) == int)
 
             registration = yield handler.register(on_call, u'com.myapp.procedure1', options=types.RegisterOptions(match=u'prefix'))
-            self.assertTrue(type(registration.id)  == int)
+            self.assertTrue(type(registration.id) == int)
 
         @inlineCallbacks
         def test_unregister(self):

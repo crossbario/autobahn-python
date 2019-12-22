@@ -99,16 +99,16 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
         scheme = u"ws"
 
     if path is not None:
-        ppath = parse.quote(path)
+        ppath = urlparse.quote(path)
     else:
         ppath = u"/"
 
     if params is not None:
-        query = parse.urlencode(params)
+        query = urlparse.urlencode(params)
     else:
         query = None
 
-    return parse.urlunparse((scheme, netloc, ppath, None, query, None))
+    return urlparse.urlunparse((scheme, netloc, ppath, None, query, None))
 
 
 @public
@@ -149,7 +149,7 @@ def parse_url(url):
 
     if parsed.path is not None and parsed.path != "":
         ppath = parsed.path
-        path = parse.unquote(ppath)
+        path = urlparse.unquote(ppath)
     else:
         ppath = "/"
         path = ppath
