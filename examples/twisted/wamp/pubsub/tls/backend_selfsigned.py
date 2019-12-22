@@ -59,7 +59,7 @@ if __name__ == '__main__':
     cert_fname = join(examples_dir, 'router', '.crossbar', 'server.crt')
     cert = crypto.load_certificate(
         crypto.FILETYPE_PEM,
-        six.u(open(cert_fname, 'r').read())
+        open(cert_fname, 'r').read()
     )
     # tell Twisted to use just the one certificate we loaded to verify connections
     options = CertificateOptions(
