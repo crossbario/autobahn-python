@@ -27,7 +27,6 @@
 from __future__ import absolute_import
 
 from twisted.trial.unittest import TestCase
-import six
 
 
 class PluginTests(TestCase):

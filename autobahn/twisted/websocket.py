@@ -27,7 +27,6 @@
 from __future__ import absolute_import
 
 from base64 import b64encode, b64decode
-import six
 
 from zope.interface import implementer
 

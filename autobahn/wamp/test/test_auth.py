@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import unittest
 import platform
 
-import six
 import re
 import json
 import binascii

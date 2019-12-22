@@ -26,7 +26,6 @@
 
 from __future__ import absolute_import
 
-import six
 import txaio
 import inspect
 from functools import reduce

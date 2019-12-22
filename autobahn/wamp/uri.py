@@ -29,7 +29,6 @@ from __future__ import absolute_import
 
 import re
 
-import six
 
 from autobahn.util import public
 from autobahn.wamp.types import RegisterOptions, SubscribeOptions

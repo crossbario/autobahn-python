@@ -39,7 +39,6 @@ from datetime import datetime, timedelta
 from pprint import pformat
 from array import array
 
-import six
 
 import txaio
 

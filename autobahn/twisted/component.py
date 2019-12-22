@@ -46,7 +46,6 @@ except ImportError:
     # there's no optionsForClientTLS in older Twisteds or we might be
     # missing OpenSSL entirely.
 
-import six
 import txaio
 
 from autobahn.twisted.websocket import WampWebSocketClientFactory

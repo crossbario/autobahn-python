@@ -27,7 +27,6 @@
 
 from __future__ import absolute_import, print_function
 
-import six
 import ssl  # XXX what Python version is this always available at?
 import signal
 from functools import wraps

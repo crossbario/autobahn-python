@@ -30,7 +30,6 @@ from __future__ import print_function
 import binascii
 import struct
 
-import six
 import txaio
 
 from autobahn import util

@@ -27,7 +27,6 @@
 from __future__ import absolute_import
 import signal
 
-import six
 
 try:
     import asyncio

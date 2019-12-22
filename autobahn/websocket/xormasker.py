@@ -24,7 +24,6 @@
 #
 ###############################################################################
 
-import six
 
 try:
     # use Cython implementation of XorMasker validator if available

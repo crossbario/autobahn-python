@@ -26,7 +26,6 @@
 
 from __future__ import absolute_import
 
-import six
 
 from autobahn.util import public
 from autobahn.wamp.interfaces import IPayloadCodec

@@ -25,7 +25,6 @@
 ###############################################################################
 
 import abc
-import six
 
 from autobahn.util import public
 

@@ -64,7 +64,6 @@ except ImportError:
     # Do NOT touch this code unless you know what you are doing!
     # https://github.com/oberstet/scratchbox/tree/master/python/utf8
 
-    import six
 
     if six.PY3:
 

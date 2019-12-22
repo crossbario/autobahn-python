@@ -28,7 +28,6 @@ from __future__ import absolute_import
 
 import os
 import unittest
-import six
 
 from autobahn.wamp import message
 from autobahn.wamp import role

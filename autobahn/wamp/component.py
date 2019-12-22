@@ -28,7 +28,6 @@
 from __future__ import absolute_import
 
 import itertools
-import six
 import random
 from functools import partial
 

@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import re
 import binascii
 
-import six
 
 import autobahn
 from autobahn.wamp.exception import ProtocolError, InvalidUriError

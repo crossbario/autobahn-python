@@ -27,7 +27,6 @@
 from __future__ import absolute_import
 
 import os
-import six
 import struct
 import platform
 import math

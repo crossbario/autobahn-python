@@ -29,7 +29,6 @@ from __future__ import absolute_import
 from autobahn.util import public
 
 import json
-import six
 
 __all__ = (
     'ConnectionRequest',

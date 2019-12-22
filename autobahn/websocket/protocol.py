@@ -35,7 +35,6 @@ import os
 import pickle
 import copy
 import json
-import six
 
 from pprint import pformat
 from collections import deque

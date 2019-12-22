@@ -26,7 +26,6 @@
 
 from __future__ import absolute_import
 
-import six
 import inspect
 import binascii
 import random

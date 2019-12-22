@@ -31,7 +31,6 @@ from autobahn.xbr import HAS_XBR
 if HAS_XBR:
     import unittest
     import binascii
-    import six
     from autobahn.xbr import generate_seedphrase, check_seedphrase, account_from_seedphrase
 
     _SEEDPHRASE = "myth like bonus scare over problem client lizard pioneer submit female collect"

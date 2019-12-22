@@ -28,7 +28,6 @@ from __future__ import absolute_import
 
 import os
 import base64
-import six
 import struct
 import time
 import binascii

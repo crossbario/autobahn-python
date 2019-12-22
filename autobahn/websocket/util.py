@@ -28,7 +28,6 @@ from __future__ import absolute_import
 
 from autobahn.util import public
 
-import six
 from six.moves import urllib
 # The Python urlparse module currently does not contain the ws/wss
 # schemes, so we add those dynamically (which is a hack of course).
