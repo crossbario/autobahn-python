@@ -201,7 +201,7 @@ def is_valid_enc_serializer(enc_serializer):
 def b2a(data, max_len=40):
     if type(data) == str:
         s = data
-    elif type(data) == six.binary_type:
+    elif type(data) == bytes:
         s = binascii.b2a_hex(data).decode('ascii')
     elif data is None:
         s = u'-'
@@ -1462,7 +1462,7 @@ class Error(Message):
         assert(type(error) == str)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
 
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
@@ -1547,7 +1547,7 @@ class Error(Message):
         callee_authrole = None
         forward_for = None
 
-        if len(wmsg) == 6 and type(wmsg[5]) == six.binary_type:
+        if len(wmsg) == 6 and type(wmsg[5]) == bytes:
 
             payload = wmsg[5]
 
@@ -1829,9 +1829,9 @@ class Publish(Message):
         """
         assert(request is None or type(request) in six.integer_types)
         assert(topic is None or type(topic) == str)
-        assert(args is None or type(args) in [list, tuple, str, six.binary_type])
-        assert(kwargs is None or type(kwargs) in [dict, str, six.binary_type])
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(args is None or type(args) in [list, tuple, str, bytes])
+        assert(kwargs is None or type(kwargs) in [dict, str, bytes])
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(retain is None or type(retain) == bool)
@@ -2376,7 +2376,7 @@ class Publish(Message):
         kwargs = None
         payload = None
 
-        if len(wmsg) == 5 and type(wmsg[4]) in [str, six.binary_type]:
+        if len(wmsg) == 5 and type(wmsg[4]) in [str, bytes]:
 
             payload = wmsg[4]
 
@@ -2395,12 +2395,12 @@ class Publish(Message):
         else:
             if len(wmsg) > 4:
                 args = wmsg[4]
-                if type(args) not in [list, str, six.binary_type]:
+                if type(args) not in [list, str, bytes]:
                     raise ProtocolError("invalid type {0} for 'args' in PUBLISH".format(type(args)))
 
             if len(wmsg) > 5:
                 kwargs = wmsg[5]
-                if type(kwargs) not in [dict, str, six.binary_type]:
+                if type(kwargs) not in [dict, str, bytes]:
                     raise ProtocolError("invalid type {0} for 'kwargs' in PUBLISH".format(type(kwargs)))
 
             enc_algo = None
@@ -3262,7 +3262,7 @@ class Event(Message):
         assert(publication is None or type(publication) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(publisher is None or type(publisher) in six.integer_types)
         assert(publisher_authid is None or type(publisher_authid) == str)
@@ -3629,7 +3629,7 @@ class Event(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 5 and type(wmsg[4]) == six.binary_type:
+        if len(wmsg) == 5 and type(wmsg[4]) == bytes:
 
             payload = wmsg[4]
 
@@ -3961,7 +3961,7 @@ class Call(Message):
         assert(type(procedure) == str)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
@@ -4031,7 +4031,7 @@ class Call(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 5 and type(wmsg[4]) in [str, six.binary_type]:
+        if len(wmsg) == 5 and type(wmsg[4]) in [str, bytes]:
 
             payload = wmsg[4]
 
@@ -4422,7 +4422,7 @@ class Result(Message):
         assert(type(request) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
 
@@ -4494,7 +4494,7 @@ class Result(Message):
         callee_authrole = None
         forward_for = None
 
-        if len(wmsg) == 4 and type(wmsg[3]) in [str, six.binary_type]:
+        if len(wmsg) == 4 and type(wmsg[3]) in [str, bytes]:
 
             payload = wmsg[3]
 
@@ -5254,7 +5254,7 @@ class Invocation(Message):
         assert(type(registration) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
@@ -5321,7 +5321,7 @@ class Invocation(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 5 and type(wmsg[4]) == six.binary_type:
+        if len(wmsg) == 5 and type(wmsg[4]) == bytes:
 
             payload = wmsg[4]
 
@@ -5740,7 +5740,7 @@ class Yield(Message):
         assert(type(request) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
@@ -5804,7 +5804,7 @@ class Yield(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 4 and type(wmsg[3]) == six.binary_type:
+        if len(wmsg) == 4 and type(wmsg[3]) == bytes:
 
             payload = wmsg[3]
 

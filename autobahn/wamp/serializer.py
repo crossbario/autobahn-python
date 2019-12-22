@@ -346,7 +346,7 @@ else:
     class _WAMPJsonEncoder(json.JSONEncoder):
 
         def default(self, obj):
-            if isinstance(obj, six.binary_type):
+            if isinstance(obj, bytes):
                 return u'\x00' + base64.b64encode(obj).decode('ascii')
             else:
                 return json.JSONEncoder.default(self, obj)

@@ -540,9 +540,9 @@ def derive_key(secret, salt, iterations=1000, keylen=32):
     :return: The derived key in Base64 encoding.
     :rtype: bytes
     """
-    if not (type(secret) in [str, six.binary_type]):
+    if not (type(secret) in [str, bytes]):
         raise ValueError("'secret' must be bytes")
-    if not (type(salt) in [str, six.binary_type]):
+    if not (type(salt) in [str, bytes]):
         raise ValueError("'salt' must be bytes")
     if not (type(iterations) in six.integer_types):
         raise ValueError("'iterations' must be an integer")
@@ -597,8 +597,8 @@ def compute_wcs(key, challenge):
     :return: The authentication signature.
     :rtype: bytes
     """
-    assert(type(key) in [str, six.binary_type])
-    assert(type(challenge) in [str, six.binary_type])
+    assert(type(key) in [str, bytes])
+    assert(type(challenge) in [str, bytes])
     if type(key) == str:
         key = key.encode('utf8')
     if type(challenge) == str:

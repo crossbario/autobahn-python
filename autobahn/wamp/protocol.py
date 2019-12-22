@@ -619,7 +619,7 @@ class ApplicationSession(BaseSession):
                 def success(signature):
                     if signature is None:
                         raise Exception('onChallenge user callback did not return a signature')
-                    if type(signature) == six.binary_type:
+                    if type(signature) == bytes:
                         signature = signature.decode('utf8')
                     if type(signature) != str:
                         raise Exception('signature must be unicode (was {})'.format(type(signature)))

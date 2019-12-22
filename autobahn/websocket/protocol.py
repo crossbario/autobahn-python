@@ -2199,7 +2199,7 @@ class WebSocketProtocol(ObservableMixin):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage`
         """
-        assert type(payload) == six.binary_type, '"payload" must have type bytes, but was "{}"'.format(type(payload))
+        assert type(payload) == bytes, '"payload" must have type bytes, but was "{}"'.format(type(payload))
         assert type(isBinary) == bool, '"isBinary" must have type bool, but was "{}"'.format(type(isBinary))
         assert fragmentSize is None or type(fragmentSize) == int, '"fragmentSize" must have type int, but was "{}"'.format(type(fragmentSize))
         assert type(sync) == bool, '"sync" must have type bool, but was "{}"'.format(type(sync))

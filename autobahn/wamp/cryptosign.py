@@ -435,7 +435,7 @@ if HAS_CRYPTOSIGN:
             if not self._can_sign:
                 raise Exception("a signing key required to sign")
 
-            if type(data) != six.binary_type:
+            if type(data) != bytes:
                 raise Exception("data to be signed must be binary")
 
             # sig is a nacl.signing.SignedMessage
@@ -515,7 +515,7 @@ if HAS_CRYPTOSIGN:
             if not (comment is None or type(comment) == str):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
-            if type(keydata) != six.binary_type:
+            if type(keydata) != bytes:
                 raise ValueError("invalid key type {} (expected binary)".format(type(keydata)))
 
             if len(keydata) != 32:

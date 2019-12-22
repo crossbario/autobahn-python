@@ -1272,7 +1272,7 @@ class EncodedPayload(object):
         :param enc_key: If using payload transparency with an encryption algorithm, the payload encryption key.
         :type enc_key: str or None
         """
-        assert(type(payload) == six.binary_type)
+        assert(type(payload) == bytes)
         assert(type(enc_algo) == str)
         assert(enc_serializer is None or type(enc_serializer) == str)
         assert(enc_key is None or type(enc_key) == str)
