@@ -40,7 +40,6 @@ __all__ = (
 
 
 @public
-@six.add_metaclass(abc.ABCMeta)
 class IObjectSerializer(abc.ABC):
     """
     Raw Python object serialization and deserialization. Object serializers are
@@ -84,7 +83,6 @@ class IObjectSerializer(abc.ABC):
 
 
 @public
-@six.add_metaclass(abc.ABCMeta)
 class ISerializer(abc.ABC):
     """
     WAMP message serialization and deserialization.
@@ -136,7 +134,6 @@ class ISerializer(abc.ABC):
 
 
 @public
-@six.add_metaclass(abc.ABCMeta)
 class IMessage(abc.ABC):
     """
     """
@@ -187,7 +184,6 @@ class IMessage(abc.ABC):
 
 
 @public
-@six.add_metaclass(abc.ABCMeta)
 class ITransport(abc.ABC):
     """
     A WAMP transport is a bidirectional, full-duplex, reliable, ordered,
@@ -286,7 +282,6 @@ class ITransport(abc.ABC):
 
 
 @public
-@six.add_metaclass(abc.ABCMeta)
 class ITransportHandler(abc.ABC):
 
     @public
@@ -334,7 +329,6 @@ class ITransportHandler(abc.ABC):
 
 
 @public
-@six.add_metaclass(abc.ABCMeta)
 class ISession(abc.ABC):
     """
     Interface for WAMP sessions.
@@ -684,7 +678,6 @@ class ISession(abc.ABC):
 
 
 # experimental authentication API
-@six.add_metaclass(abc.ABCMeta)
 class IAuthenticator(abc.ABC):
 
     @abc.abstractmethod
@@ -708,7 +701,6 @@ class IAuthenticator(abc.ABC):
 
 
 @public
-@six.add_metaclass(abc.ABCMeta)
 class IPayloadCodec(abc.ABC):
     """
     WAMP payload codecs are used with WAMP payload transparency mode.

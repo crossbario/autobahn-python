@@ -27,7 +27,6 @@
 import abc
 
 
-@six.add_metaclass(abc.ABCMeta)
 class IMarketMaker(abc.ABC):
     """
     XBR Market Maker interface.
@@ -103,7 +102,6 @@ class IMarketMaker(abc.ABC):
         """
 
 
-@six.add_metaclass(abc.ABCMeta)
 class IProvider(abc.ABC):
     """
     XBR Provider interface.
@@ -123,14 +121,12 @@ class IProvider(abc.ABC):
         """
 
 
-@six.add_metaclass(abc.ABCMeta)
 class IConsumer(abc.ABC):
     """
     XBR Consumer interface.
     """
 
 
-@six.add_metaclass(abc.ABCMeta)
 class ISeller(abc.ABC):
     """
     XBR Seller interface.
@@ -154,7 +150,6 @@ class ISeller(abc.ABC):
         """
 
 
-@six.add_metaclass(abc.ABCMeta)
 class IBuyer(abc.ABC):
     """
     XBR Buyer interface.
