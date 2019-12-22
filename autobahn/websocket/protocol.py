@@ -1974,7 +1974,7 @@ class WebSocketProtocol(ObservableMixin):
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
         """
         if code is not None:
-            if type(code) not in six.integer_types:
+            if type(code) not in (int, ):
                 raise Exception("invalid type '{}' for close code (must be an integer)".format(type(code)))
 
             # 1000 Normal Closure
@@ -3326,7 +3326,7 @@ class WebSocketServerFactory(WebSocketFactory):
             self.autoPingTimeout = autoPingTimeout
 
         if autoPingSize is not None and autoPingSize != self.autoPingSize:
-            assert(type(autoPingSize) == float or type(autoPingSize) in six.integer_types)
+            assert(type(autoPingSize) == float or type(autoPingSize) in (int, ))
             assert(4 <= autoPingSize <= 125)
             self.autoPingSize = autoPingSize
 
@@ -3345,12 +3345,12 @@ class WebSocketServerFactory(WebSocketFactory):
         self.allowNullOrigin = allowNullOrigin
 
         if maxConnections is not None and maxConnections != self.maxConnections:
-            assert(type(maxConnections) in six.integer_types)
+            assert(type(maxConnections) in (int, ))
             assert(maxConnections >= 0)
             self.maxConnections = maxConnections
 
         if trustXForwardedFor is not None and trustXForwardedFor != self.trustXForwardedFor:
-            assert(type(trustXForwardedFor) in six.integer_types)
+            assert(type(trustXForwardedFor) in (int, ))
             assert(trustXForwardedFor >= 0)
             self.trustXForwardedFor = trustXForwardedFor
 
@@ -4067,6 +4067,6 @@ class WebSocketClientFactory(WebSocketFactory):
             self.autoPingTimeout = autoPingTimeout
 
         if autoPingSize is not None and autoPingSize != self.autoPingSize:
-            assert(type(autoPingSize) == float or type(autoPingSize) in six.integer_types)
+            assert(type(autoPingSize) == float or type(autoPingSize) in (int, ))
             assert(4 <= autoPingSize <= 125)
             self.autoPingSize = autoPingSize

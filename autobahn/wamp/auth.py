@@ -391,7 +391,7 @@ def generate_totp_secret(length=10):
        The length of the generated secret is ``length * 8 / 5`` octets.
     :rtype: unicode
     """
-    assert(type(length) in six.integer_types)
+    assert(type(length) in (int, ))
     return base64.b32encode(os.urandom(length)).decode('ascii')
 
 
@@ -410,7 +410,7 @@ def compute_totp(secret, offset=0):
     :rtype: unicode
     """
     assert(type(secret) == str)
-    assert(type(offset) in six.integer_types)
+    assert(type(offset) in (int, ))
     try:
         key = base64.b32decode(secret)
     except TypeError:
@@ -495,8 +495,8 @@ def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
     """
     if not (type(data) == bytes) or \
        not (type(salt) == bytes) or \
-       not (type(iterations) in six.integer_types) or \
-       not (type(keylen) in six.integer_types):
+       not (type(iterations) in (int, )) or \
+       not (type(keylen) in (int, )):
         raise ValueError("Invalid argument types")
 
     # justification: WAMP-CRA uses SHA256 and users shouldn't have any
@@ -544,9 +544,9 @@ def derive_key(secret, salt, iterations=1000, keylen=32):
         raise ValueError("'secret' must be bytes")
     if not (type(salt) in [str, bytes]):
         raise ValueError("'salt' must be bytes")
-    if not (type(iterations) in six.integer_types):
+    if not (type(iterations) in (int, )):
         raise ValueError("'iterations' must be an integer")
-    if not (type(keylen) in six.integer_types):
+    if not (type(keylen) in (int, )):
         raise ValueError("'keylen' must be an integer")
     if type(secret) == str:
         secret = secret.encode('utf8')
@@ -579,7 +579,7 @@ def generate_wcs(length=14):
     :return: The generated secret. The length of the generated is ``length`` octets.
     :rtype: bytes
     """
-    assert(type(length) in six.integer_types)
+    assert(type(length) in (int, ))
     return u"".join([random.choice(WCS_SECRET_CHARSET) for _ in range(length)]).encode('ascii')
 
 
