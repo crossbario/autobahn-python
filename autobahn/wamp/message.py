@@ -850,7 +850,7 @@ class Welcome(Message):
         :param custom: Implementation-specific "custom attributes" (`x_my_impl_attribute`) to be set.
         :type custom: dict or None
         """
-        assert(type(session) in (int, ))
+        assert(type(session) == int)
         assert(type(roles) == dict)
         assert(len(roles) > 0)
         for role in roles:
@@ -1457,8 +1457,8 @@ class Error(Message):
         :param forward_for: When this Error is forwarded for a client/callee (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request_type) in (int, ))
-        assert(type(request) in (int, ))
+        assert(type(request_type) == int)
+        assert(type(request) == int)
         assert(type(error) == str)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
@@ -1470,7 +1470,7 @@ class Error(Message):
         assert(enc_key is None or type(enc_key) == str)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
-        assert(callee is None or type(callee) in (int, ))
+        assert(callee is None or type(callee) == int)
         assert(callee_authid is None or type(callee_authid) == str)
         assert(callee_authrole is None or type(callee_authrole) == str)
 
@@ -1478,7 +1478,7 @@ class Error(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -1827,7 +1827,7 @@ class Publish(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(request is None or type(request) in (int, ))
+        assert(request is None or type(request) == int)
         assert(topic is None or type(topic) == str)
         assert(args is None or type(args) in [list, tuple, str, bytes])
         assert(kwargs is None or type(kwargs) in [dict, str, bytes])
@@ -1842,7 +1842,7 @@ class Publish(Message):
         assert(exclude is None or type(exclude) == list)
         if exclude:
             for sessionid in exclude:
-                assert(type(sessionid) in (int, ))
+                assert(type(sessionid) == int)
 
         assert(exclude_authid is None or type(exclude_authid) == list)
         if exclude_authid:
@@ -1857,7 +1857,7 @@ class Publish(Message):
         assert(eligible is None or type(eligible) == list)
         if eligible:
             for sessionid in eligible:
-                assert(type(sessionid) in (int, ))
+                assert(type(sessionid) == int)
 
         assert(eligible_authid is None or type(eligible_authid) == list)
         if eligible_authid:
@@ -1878,7 +1878,7 @@ class Publish(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -1964,7 +1964,7 @@ class Publish(Message):
 
     @request.setter
     def request(self, value):
-        assert(value is None or type(value) in (int, ))
+        assert(value is None or type(value) == int)
         self._request = value
 
     @property
@@ -2638,8 +2638,8 @@ class Published(Message):
         :param publication: The publication ID for the published event.
         :type publication: int
         """
-        assert(type(request) in (int, ))
-        assert(type(publication) in (int, ))
+        assert(type(request) == int)
+        assert(type(publication) == int)
 
         Message.__init__(self)
         self.request = request
@@ -2732,7 +2732,7 @@ class Subscribe(Message):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert(type(request) in (int, ))
+        assert(type(request) == int)
         assert(type(topic) == str)
         assert(match is None or type(match) == str)
         assert(match is None or match in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD])
@@ -2741,7 +2741,7 @@ class Subscribe(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -2871,8 +2871,8 @@ class Subscribed(Message):
         :param subscription: The subscription ID for the subscribed topic (or topic pattern).
         :type subscription: int
         """
-        assert(type(request) in (int, ))
-        assert(type(subscription) in (int, ))
+        assert(type(request) == int)
+        assert(type(subscription) == int)
 
         Message.__init__(self)
         self.request = request
@@ -2951,12 +2951,12 @@ class Unsubscribe(Message):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert(type(request) in (int, ))
-        assert(type(subscription) in (int, ))
+        assert(type(request) == int)
+        assert(type(subscription) == int)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -3068,8 +3068,8 @@ class Unsubscribed(Message):
         :param reason: The reason (an URI) for an active (router initiated) revocation.
         :type reason: str or None.
         """
-        assert(type(request) in (int, ))
-        assert(subscription is None or type(subscription) in (int, ))
+        assert(type(request) == int)
+        assert(subscription is None or type(subscription) == int)
         assert(reason is None or type(reason) == str)
         assert((request != 0 and subscription is None) or (request == 0 and subscription != 0))
 
@@ -3258,13 +3258,13 @@ class Event(Message):
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(subscription is None or type(subscription) in (int, ))
-        assert(publication is None or type(publication) in (int, ))
+        assert(subscription is None or type(subscription) == int)
+        assert(publication is None or type(publication) == int)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
         assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
-        assert(publisher is None or type(publisher) in (int, ))
+        assert(publisher is None or type(publisher) == int)
         assert(publisher_authid is None or type(publisher_authid) == str)
         assert(publisher_authrole is None or type(publisher_authrole) == str)
         assert(topic is None or type(topic) == str)
@@ -3279,7 +3279,7 @@ class Event(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -3348,7 +3348,7 @@ class Event(Message):
 
     @subscription.setter
     def subscription(self, value):
-        assert(value is None or type(value) in (int, ))
+        assert(value is None or type(value) == int)
         self._subscription = value
 
     @property
@@ -3359,7 +3359,7 @@ class Event(Message):
 
     @publication.setter
     def publication(self, value):
-        assert(value is None or type(value) in (int, ))
+        assert(value is None or type(value) == int)
         self._publication = value
 
     @property
@@ -3817,7 +3817,7 @@ class EventReceived(Message):
         :param publication: The publication ID for the sent event.
         :type publication: int
         """
-        assert(type(publication) in (int, ))
+        assert(type(publication) == int)
 
         Message.__init__(self)
         self.publication = publication
@@ -3957,13 +3957,13 @@ class Call(Message):
         :param forward_for: When this Publish is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in (int, ))
+        assert(type(request) == int)
         assert(type(procedure) == str)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
         assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
-        assert(timeout is None or type(timeout) in (int, ))
+        assert(timeout is None or type(timeout) == int)
         assert(receive_progress is None or type(receive_progress) == bool)
 
         # payload transparency related knobs
@@ -3972,7 +3972,7 @@ class Call(Message):
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
-        assert(caller is None or type(caller) in (int, ))
+        assert(caller is None or type(caller) == int)
         assert(caller_authid is None or type(caller_authid) == str)
         assert(caller_authrole is None or type(caller_authrole) == str)
 
@@ -3980,7 +3980,7 @@ class Call(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -4234,7 +4234,7 @@ class Cancel(Message):
         :param forward_for: When this Cancel is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in (int, ))
+        assert(type(request) == int)
         assert(mode is None or type(mode) == str)
         assert(mode in [None, self.SKIP, self.KILLNOWAIT, self.KILL])
         assert(forward_for is None or type(forward_for) == list)
@@ -4242,7 +4242,7 @@ class Cancel(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -4419,7 +4419,7 @@ class Result(Message):
         :param forward_for: When this Result is forwarded for a client/callee (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in (int, ))
+        assert(type(request) == int)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
         assert(payload is None or type(payload) == bytes)
@@ -4431,7 +4431,7 @@ class Result(Message):
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
-        assert(callee is None or type(callee) in (int, ))
+        assert(callee is None or type(callee) == int)
         assert(callee_authid is None or type(callee_authid) == str)
         assert(callee_authrole is None or type(callee_authrole) == str)
 
@@ -4439,7 +4439,7 @@ class Result(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -4692,19 +4692,19 @@ class Register(Message):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert(type(request) in (int, ))
+        assert(type(request) == int)
         assert(type(procedure) == str)
         assert(match is None or type(match) == str)
         assert(match is None or match in [Register.MATCH_EXACT, Register.MATCH_PREFIX, Register.MATCH_WILDCARD])
         assert(invoke is None or type(invoke) == str)
         assert(invoke is None or invoke in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM])
-        assert(concurrency is None or (type(concurrency) in (int, ) and concurrency > 0))
+        assert(concurrency is None or (type(concurrency) == int and concurrency > 0))
         assert force_reregister in [None, True, False]
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -4887,8 +4887,8 @@ class Registered(Message):
         :param registration: The registration ID for the registered procedure (or procedure pattern).
         :type registration: int
         """
-        assert(type(request) in (int, ))
-        assert(type(registration) in (int, ))
+        assert(type(request) == int)
+        assert(type(registration) == int)
 
         Message.__init__(self)
         self.request = request
@@ -4967,8 +4967,8 @@ class Unregister(Message):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert(type(request) in (int, ))
-        assert(type(registration) in (int, ))
+        assert(type(request) == int)
+        assert(type(registration) == int)
 
         Message.__init__(self)
         self.request = request
@@ -5077,8 +5077,8 @@ class Unregistered(Message):
         :param reason: The reason (an URI) for revocation.
         :type reason: str or None.
         """
-        assert(type(request) in (int, ))
-        assert(registration is None or type(registration) in (int, ))
+        assert(type(request) == int)
+        assert(registration is None or type(registration) == int)
         assert(reason is None or type(reason) == str)
         assert((request != 0 and registration is None) or (request == 0 and registration != 0))
 
@@ -5250,15 +5250,15 @@ class Invocation(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in (int, ))
-        assert(type(registration) in (int, ))
+        assert(type(request) == int)
+        assert(type(registration) == int)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
         assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
-        assert(timeout is None or type(timeout) in (int, ))
+        assert(timeout is None or type(timeout) == int)
         assert(receive_progress is None or type(receive_progress) == bool)
-        assert(caller is None or type(caller) in (int, ))
+        assert(caller is None or type(caller) == int)
         assert(caller_authid is None or type(caller_authid) == str)
         assert(caller_authrole is None or type(caller_authrole) == str)
         assert(procedure is None or type(procedure) == str)
@@ -5271,7 +5271,7 @@ class Invocation(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -5542,7 +5542,7 @@ class Interrupt(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in (int, ))
+        assert(type(request) == int)
         assert(mode is None or type(mode) == str)
         assert(mode is None or mode in [self.KILL, self.KILLNOWAIT])
         assert(reason is None or type(reason) == str)
@@ -5551,7 +5551,7 @@ class Interrupt(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -5737,7 +5737,7 @@ class Yield(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in (int, ))
+        assert(type(request) == int)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
         assert(payload is None or type(payload) == bytes)
@@ -5748,7 +5748,7 @@ class Yield(Message):
         assert(enc_key is None or type(enc_key) == str)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
-        assert(callee is None or type(callee) in (int, ))
+        assert(callee is None or type(callee) == int)
         assert(callee_authid is None or type(callee_authid) == str)
         assert(callee_authrole is None or type(callee_authrole) == str)
 
@@ -5756,7 +5756,7 @@ class Yield(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 

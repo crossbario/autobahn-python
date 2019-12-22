@@ -299,7 +299,7 @@ class HelloDetails(object):
         assert(authrole is None or type(authrole) == str)
         assert(authextra is None or type(authextra) == dict)
         # assert(session_roles is None or ...)  # FIXME
-        assert(pending_session is None or type(pending_session) in (int, ))
+        assert(pending_session is None or type(pending_session) == int)
         assert(resumable is None or type(resumable) == bool)
         assert(resume_session is None or type(resume_session) == int)
         assert(resume_token is None or type(resume_token) == str)
@@ -361,7 +361,7 @@ class SessionDetails(object):
         :type resume_token: str or None
         """
         assert(type(realm) == str)
-        assert(type(session) in (int, ))
+        assert(type(session) == int)
         assert(authid is None or type(authid) == str)
         assert(authrole is None or type(authrole) == str)
         assert(authmethod is None or type(authmethod) == str)
@@ -449,7 +449,7 @@ class SessionIdent(object):
         :param authrole: The WAMP authrole of the session.
         :type authrole: str
         """
-        assert(session is None or type(session) in (int, ))
+        assert(session is None or type(session) == int)
         assert(authid is None or type(authid) == str)
         assert(type(authrole) == str)
 
@@ -607,7 +607,7 @@ class SubscribeOptions(object):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -705,8 +705,8 @@ class EventDetails(object):
         :type forward_for: list[dict]
         """
         assert(isinstance(subscription, Subscription))
-        assert(type(publication) in (int, ))
-        assert(publisher is None or type(publisher) in (int, ))
+        assert(type(publication) == int)
+        assert(publisher is None or type(publisher) == int)
         assert(publisher_authid is None or type(publisher_authid) == str)
         assert(publisher_authrole is None or type(publisher_authrole) == str)
         assert(topic is None or type(topic) == str)
@@ -716,7 +716,7 @@ class EventDetails(object):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -809,10 +809,10 @@ class PublishOptions(object):
         """
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(exclude_me is None or type(exclude_me) == bool)
-        assert(exclude is None or type(exclude) in (int, ) or (type(exclude) == list and all(type(x) in (int, ) for x in exclude)))
+        assert(exclude is None or type(exclude) == int or (type(exclude) == list and all(type(x) == int for x in exclude)))
         assert(exclude_authid is None or type(exclude_authid) == str or (type(exclude_authid) == list and all(type(x) == str for x in exclude_authid)))
         assert(exclude_authrole is None or type(exclude_authrole) == str or (type(exclude_authrole) == list and all(type(x) == str for x in exclude_authrole)))
-        assert(eligible is None or type(eligible) in (int, ) or (type(eligible) == list and all(type(x) in (int, ) for x in eligible)))
+        assert(eligible is None or type(eligible) == int or (type(eligible) == list and all(type(x) == int for x in eligible)))
         assert(eligible_authid is None or type(eligible_authid) == str or (type(eligible_authid) == list and all(type(x) == str for x in eligible_authid)))
         assert(eligible_authrole is None or type(eligible_authrole) == str or (type(eligible_authrole) == list and all(type(x) == str for x in eligible_authrole)))
         assert(retain is None or type(retain) == bool)
@@ -822,7 +822,7 @@ class PublishOptions(object):
             for ff in forward_for:
                 assert type(ff) == dict, 'forward_for must be type dict - was {}'.format(type(ff))
                 assert 'session' in ff, 'forward_for must have session attribute'
-                assert type(ff['session']) in (int, ), 'forward_for.session must have integer type - was {}'.format(type(ff['session']))
+                assert type(ff['session']) == int, 'forward_for.session must have integer type - was {}'.format(type(ff['session']))
                 assert 'authid' in ff, 'forward_for must have authid attributed'
                 assert type(ff['authid']) == str, 'forward_for.authid must have str type - was {}'.format(type(ff['authid']))
                 assert 'authrole' in ff, 'forward_for must have authrole attribute'
@@ -944,7 +944,7 @@ class RegisterOptions(object):
         """
         assert(match is None or (type(match) == str and match in [u'exact', u'prefix', u'wildcard']))
         assert(invoke is None or (type(invoke) == str and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
-        assert(concurrency is None or (type(concurrency) in (int, ) and concurrency > 0))
+        assert(concurrency is None or (type(concurrency) == int and concurrency > 0))
         assert(details is None or (type(details) == bool and details_arg is None))
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert force_reregister in [None, True, False]
@@ -953,7 +953,7 @@ class RegisterOptions(object):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -1054,7 +1054,7 @@ class CallDetails(object):
         """
         assert(isinstance(registration, Registration))
         assert(progress is None or callable(progress))
-        assert(caller is None or type(caller) in (int, ))
+        assert(caller is None or type(caller) == int)
         assert(caller_authid is None or type(caller_authid) == str)
         assert(caller_authrole is None or type(caller_authrole) == str)
         assert(procedure is None or type(procedure) == str)
@@ -1064,7 +1064,7 @@ class CallDetails(object):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -1128,14 +1128,14 @@ class CallOptions(object):
         assert(on_progress is None or callable(on_progress))
         assert(timeout is None or (type(timeout) in list((int, )) + [float] and timeout > 0))
         assert(details is None or type(details) == bool)
-        assert(caller is None or type(caller) in (int, ))
+        assert(caller is None or type(caller) == int)
         assert(caller_authid is None or type(caller_authid) == str)
         assert(caller_authrole is None or type(caller_authrole) == str)
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 
@@ -1219,7 +1219,7 @@ class CallResult(object):
         callee_authid = kwresults.pop('callee_authid', None)
         callee_authrole = kwresults.pop('callee_authrole', None)
 
-        assert callee is None or type(callee) in (int, )
+        assert callee is None or type(callee) == int
         assert callee_authid is None or type(callee_authid) == str
         assert callee_authrole is None or type(callee_authrole) == str
 
@@ -1228,7 +1228,7 @@ class CallResult(object):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in (int, )
+                assert 'session' in ff and type(ff['session']) == int
                 assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
                 assert 'authrole' in ff and type(ff['authrole']) == str
 

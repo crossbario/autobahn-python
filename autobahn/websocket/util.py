@@ -83,7 +83,7 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     if hostname == 'unix':
         netloc = u"unix:%s" % port
     else:
-        assert port is None or (type(port) in (int, ) and port in range(0, 65535))
+        assert port is None or (type(port) == int and port in range(0, 65535))
 
         if port is not None:
             netloc = u"%s:%d" % (hostname, port)

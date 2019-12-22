@@ -3306,7 +3306,7 @@ class WebSocketServerFactory(WebSocketFactory):
             self.autoPingTimeout = autoPingTimeout
 
         if autoPingSize is not None and autoPingSize != self.autoPingSize:
-            assert(type(autoPingSize) == float or type(autoPingSize) in (int, ))
+            assert(type(autoPingSize) == float or type(autoPingSize) == int)
             assert(4 <= autoPingSize <= 125)
             self.autoPingSize = autoPingSize
 
@@ -3325,12 +3325,12 @@ class WebSocketServerFactory(WebSocketFactory):
         self.allowNullOrigin = allowNullOrigin
 
         if maxConnections is not None and maxConnections != self.maxConnections:
-            assert(type(maxConnections) in (int, ))
+            assert(type(maxConnections) == int)
             assert(maxConnections >= 0)
             self.maxConnections = maxConnections
 
         if trustXForwardedFor is not None and trustXForwardedFor != self.trustXForwardedFor:
-            assert(type(trustXForwardedFor) in (int, ))
+            assert(type(trustXForwardedFor) == int)
             assert(trustXForwardedFor >= 0)
             self.trustXForwardedFor = trustXForwardedFor
 
@@ -4047,6 +4047,6 @@ class WebSocketClientFactory(WebSocketFactory):
             self.autoPingTimeout = autoPingTimeout
 
         if autoPingSize is not None and autoPingSize != self.autoPingSize:
-            assert(type(autoPingSize) == float or type(autoPingSize) in (int, ))
+            assert(type(autoPingSize) == float or type(autoPingSize) == int)
             assert(4 <= autoPingSize <= 125)
             self.autoPingSize = autoPingSize
