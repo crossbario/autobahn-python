@@ -50,7 +50,6 @@ class ClientSession(ApplicationSession):
 
 
 if __name__ == '__main__':
-    import six
     url = os.environ.get('CBURL', u'ws://localhost:8080/ws')
     realm = os.environ.get('CBREALM', u'realm1')
 
