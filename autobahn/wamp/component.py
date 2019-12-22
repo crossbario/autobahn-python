@@ -443,7 +443,7 @@ class Component(ObservableMixin):
                 - ``retry_delay_jitter``: A 0-argument callable that introduces nose into the delay. (Default random.random)
                 - ``serializer`` (only for raw socket): Specify an accepted serializer (e.g. 'json', 'msgpack', 'cbor', 'ubjson', 'flatbuffers')
                 - ``serializers``: Specify list of accepted serializers
-                - ``options``: tbd, 
+                - ``options``: tbd
                 - ``proxy``: tbd
 
         :type transports: None or unicode or list of dicts
