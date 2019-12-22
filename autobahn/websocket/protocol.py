@@ -38,6 +38,7 @@ import json
 
 from pprint import pformat
 from collections import deque
+from urllib import parse
 
 from autobahn import __version__
 
@@ -58,7 +59,6 @@ from autobahn.websocket.util import parse_url
 from autobahn.exception import PayloadExceededError
 from autobahn.util import _maybe_tls_reason
 
-from six.moves import urllib
 import txaio
 
 if six.PY3:
@@ -83,7 +83,7 @@ def _url_to_origin(url):
     if url.lower() == 'null':
         return 'null'
 
-    res = urllib.parse.urlsplit(url)
+    res = parse.urlsplit(url)
     scheme = res.scheme.lower()
     if scheme == 'file':
         # when browsing local files, Chrome sends file:// URLs,
@@ -2575,7 +2575,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             #
             self.http_request_uri = rl[1].strip()
             try:
-                (scheme, netloc, path, params, query, fragment) = urllib.parse.urlparse(self.http_request_uri)
+                (scheme, netloc, path, params, query, fragment) = parse.urlparse(self.http_request_uri)
 
                 # FIXME: check that if absolute resource URI is given,
                 # the scheme/netloc matches the server
@@ -2590,7 +2590,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 # resource path and query parameters .. this will get forwarded
                 # to onConnect()
                 self.http_request_path = path
-                self.http_request_params = urllib.parse.parse_qs(query)
+                self.http_request_params = parse.parse_qs(query)
             except:
                 return self.failHandshake("Bad HTTP request resource - could not parse '%s'" % rl[1].strip())
 

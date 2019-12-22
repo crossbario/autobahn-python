@@ -28,7 +28,7 @@ from __future__ import absolute_import
 
 from autobahn.util import public
 
-from six.moves import urllib
+from urllib import parse as urlparse
 # The Python urlparse module currently does not contain the ws/wss
 # schemes, so we add those dynamically (which is a hack of course).
 # Since the urllib from six.moves does not seem to expose the stuff
@@ -37,13 +37,6 @@ from six.moves import urllib
 # Important: if you change this stuff (you shouldn't), make sure
 # _all_ our unit tests for WS URLs succeed
 #
-if not six.PY3:
-    # Python 2
-    import urlparse
-else:
-    # Python 3
-    from urllib import parse as urlparse
-
 wsschemes = ["ws", "wss"]
 urlparse.uses_relative.extend(wsschemes)
 urlparse.uses_netloc.extend(wsschemes)
@@ -108,16 +101,16 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
         scheme = u"ws"
 
     if path is not None:
-        ppath = urllib.parse.quote(path)
+        ppath = parse.quote(path)
     else:
         ppath = u"/"
 
     if params is not None:
-        query = urllib.parse.urlencode(params)
+        query = parse.urlencode(params)
     else:
         query = None
 
-    return urllib.parse.urlunparse((scheme, netloc, ppath, None, query, None))
+    return parse.urlunparse((scheme, netloc, ppath, None, query, None))
 
 
 @public
@@ -158,7 +151,7 @@ def parse_url(url):
 
     if parsed.path is not None and parsed.path != "":
         ppath = parsed.path
-        path = urllib.parse.unquote(ppath)
+        path = parse.unquote(ppath)
     else:
         ppath = "/"
         path = ppath
