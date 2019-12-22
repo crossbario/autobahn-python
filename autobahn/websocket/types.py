@@ -308,15 +308,15 @@ class ConnectionAccept(object):
             tuple/list.
         :type headers: dict or None
         """
-        assert(subprotocol is None or type(subprotocol) == six.text_type)
+        assert(subprotocol is None or type(subprotocol) == str)
         assert(headers is None or type(headers) == dict)
         if headers is not None:
             for k, v in headers.items():
-                assert(type(k) == six.text_type)
-                assert(type(v) == six.text_type or type(v) == list or type(v) == tuple)
+                assert(type(k) == str)
+                assert(type(v) == str or type(v) == list or type(v) == tuple)
                 if type(v) == list or type(v) == tuple:
                     for vv in v:
-                        assert(type(vv) == six.text_type)
+                        assert(type(vv) == str)
 
         self.subprotocol = subprotocol
         self.headers = headers
@@ -381,7 +381,7 @@ class ConnectionDeny(Exception):
         :type reason: unicode
         """
         assert(type(code) == int)
-        assert(reason is None or type(reason) == six.text_type)
+        assert(reason is None or type(reason) == str)
 
         self.code = code
         self.reason = reason

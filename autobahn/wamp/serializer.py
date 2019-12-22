@@ -415,7 +415,7 @@ class JsonObjectSerializer(object):
         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
         """
         s = _dumps(obj)
-        if isinstance(s, six.text_type):
+        if isinstance(s, str):
             s = s.encode('utf8')
         if self._batched:
             return s + b'\30'

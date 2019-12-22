@@ -273,7 +273,7 @@ class ApplicationError(Error):
         """
         return u'{0}: {1}'.format(
             self.error,
-            u' '.join([six.text_type(a) for a in self.args]),
+            u' '.join([str(a) for a in self.args]),
         )
 
     def __unicode__(self):

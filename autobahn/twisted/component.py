@@ -126,7 +126,7 @@ def _create_transport_endpoint(reactor, endpoint_config):
                 raise ValueError('invalid IP version {} in client endpoint configuration'.format(version))
 
             host = endpoint_config[u'host']
-            if type(host) != six.text_type:
+            if type(host) != str:
                 raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
 
             port = endpoint_config[u'port']
@@ -154,7 +154,7 @@ def _create_transport_endpoint(reactor, endpoint_config):
                         if k not in [u"hostname", u"trust_root"]:
                             raise ValueError("Invalid key '{}' in 'tls' config".format(k))
                     hostname = tls.get(u'hostname', host)
-                    if type(hostname) != six.text_type:
+                    if type(hostname) != str:
                         raise ValueError('invalid type {} for hostname in TLS client endpoint configuration'.format(hostname))
                     trust_root = None
                     cert_fname = tls.get(u"trust_root", None)

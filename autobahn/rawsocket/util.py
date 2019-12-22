@@ -77,7 +77,7 @@ def create_url(hostname, port=None, isSecure=False):
     :returns: Constructed RawSocket URL.
     :rtype: str
     """
-    # assert type(hostname) == six.text_type
+    # assert type(hostname) == str
     assert type(isSecure) == bool
 
     if hostname == 'unix':

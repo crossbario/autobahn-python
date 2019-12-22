@@ -178,7 +178,7 @@ class Component(component.Component):
                 raise ValueError('invalid IP version {} in client endpoint configuration'.format(version))
 
             host = transport.endpoint[u'host']
-            if type(host) != six.text_type:
+            if type(host) != str:
                 raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
 
             port = transport.endpoint[u'port']
@@ -199,7 +199,7 @@ class Component(component.Component):
                         if k not in [u"hostname", u"trust_root"]:
                             raise ValueError("Invalid key '{}' in 'tls' config".format(k))
                     hostname = tls.get(u'hostname', host)
-                    if type(hostname) != six.text_type:
+                    if type(hostname) != str:
                         raise ValueError('invalid type {} for hostname in TLS client endpoint configuration'.format(hostname))
                     cert_fname = tls.get(u'trust_root', None)
 

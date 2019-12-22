@@ -86,7 +86,7 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     :returns: Constructed WebSocket URL.
     :rtype: str
     """
-    # assert type(hostname) == six.text_type
+    # assert type(hostname) == str
     assert type(isSecure) == bool
 
     if hostname == 'unix':

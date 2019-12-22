@@ -1989,7 +1989,7 @@ class WebSocketProtocol(ObservableMixin):
             if code is None:
                 raise Exception("close reason without close code")
 
-            if type(reason) != six.text_type:
+            if type(reason) != str:
                 raise Exception("reason must be of type unicode (was '{}')".format(type(reason)))
 
             reasonUtf8 = encode_truncate(reason, 123)

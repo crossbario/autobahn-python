@@ -123,7 +123,7 @@ def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
     :returns: The truncated string.
     :rtype: str or bytes
     """
-    assert(text is None or type(text) == six.text_type)
+    assert(text is None or type(text) == str)
     assert(type(limit) in six.integer_types)
     assert(limit >= 0)
 
@@ -422,7 +422,7 @@ def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_cas
     """
     assert(type(char_groups) in six.integer_types)
     assert(type(chars_per_group) in six.integer_types)
-    assert(chars is None or type(chars) == six.text_type)
+    assert(chars is None or type(chars) == str)
     chars = chars or DEFAULT_TOKEN_CHARS
     if lower_case:
         chars = chars.lower()

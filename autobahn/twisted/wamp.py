@@ -168,8 +168,8 @@ class ApplicationRunner(object):
         :param retry_delay_jitter: A 0-argument callable that introduces nose into the delay. (Default random.random)
         :type retry_delay_jitter: float
         """
-        assert(type(url) == six.text_type)
-        assert(realm is None or type(realm) == six.text_type)
+        assert(type(url) == str)
+        assert(realm is None or type(realm) == str)
         assert(extra is None or type(extra) == dict)
         assert(headers is None or type(headers) == dict)
         assert(proxy is None or type(proxy) == dict)
@@ -850,7 +850,7 @@ class AuthWampCra(object):
 
         self._args = kw
         self._secret = kw.pop(u'secret')
-        if not isinstance(self._secret, six.text_type):
+        if not isinstance(self._secret, str):
             self._secret = self._secret.decode('utf8')
 
     def on_challenge(self, session, challenge):

@@ -94,7 +94,7 @@ def check_transport_config(transport_config):
     raises a ValueError if `transport_config` is invalid
     """
     # XXX move me to "autobahn.websocket.util"
-    if not isinstance(transport_config, six.text_type):
+    if not isinstance(transport_config, str):
         raise ValueError(
             "'transport_config' must be a string, found {}".format(type(transport_config))
         )

@@ -133,8 +133,8 @@ class ApplicationRunner(object):
         :param headers: Additional headers to send (only applies to WAMP-over-WebSocket).
         :type headers: dict
         """
-        assert(type(url) == six.text_type)
-        assert(realm is None or type(realm) == six.text_type)
+        assert(type(url) == str)
+        assert(realm is None or type(realm) == str)
         assert(extra is None or type(extra) == dict)
         assert(headers is None or type(headers) == dict)
         assert(proxy is None or type(proxy) == dict)

@@ -131,9 +131,9 @@ if HAS_CRYPTOBOX:
 
             Create a new key ring to hold public and private keys mapped from an URI space.
             """
-            assert(default_key is None or isinstance(default_key, Key) or type(default_key == six.text_type))
+            assert(default_key is None or isinstance(default_key, Key) or type(default_key == str))
             self._uri_to_key = StringTrie()
-            if type(default_key) == six.text_type:
+            if type(default_key) == str:
                 default_key = Key(originator_priv=default_key, responder_priv=default_key)
             self._default_key = default_key
 
@@ -164,9 +164,9 @@ if HAS_CRYPTOBOX:
             """
             Add a key set for a given URI.
             """
-            assert(type(uri) == six.text_type)
-            assert(key is None or isinstance(key, Key) or type(key) == six.text_type)
-            if type(key) == six.text_type:
+            assert(type(uri) == str)
+            assert(key is None or isinstance(key, Key) or type(key) == str)
+            if type(key) == str:
                 key = Key(originator_priv=key, responder_priv=key)
             if uri == u'':
                 self._default_key = key
@@ -179,7 +179,7 @@ if HAS_CRYPTOBOX:
 
         @public
         def rotate_key(self, uri):
-            assert(type(uri) == six.text_type)
+            assert(type(uri) == str)
             if uri in self._uri_to_key:
                 self._uri_to_key[uri].rotate()
             else:
@@ -209,7 +209,7 @@ if HAS_CRYPTOBOX:
             if the URI should not be encrypted.
             """
             assert(type(is_originating) == bool)
-            assert(type(uri) == six.text_type)
+            assert(type(uri) == str)
             assert(args is None or type(args) in (list, tuple))
             assert(kwargs is None or type(kwargs) == dict)
 
@@ -243,7 +243,7 @@ if HAS_CRYPTOBOX:
             """
             Decrypt the given WAMP URI and EncodedPayload into a tuple ``(uri, args, kwargs)``.
             """
-            assert(type(uri) == six.text_type)
+            assert(type(uri) == str)
             assert(isinstance(encoded_payload, EncodedPayload))
             assert(encoded_payload.enc_algo == u'cryptobox')
 

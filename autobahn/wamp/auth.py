@@ -347,7 +347,7 @@ class AuthWampCra(object):
 
         self._args = kw
         self._secret = kw.pop(u'secret')
-        if not isinstance(self._secret, six.text_type):
+        if not isinstance(self._secret, str):
             self._secret = self._secret.decode('utf8')
 
     @property
@@ -409,7 +409,7 @@ def compute_totp(secret, offset=0):
     :returns: TOTP for current time (+/- offset).
     :rtype: unicode
     """
-    assert(type(secret) == six.text_type)
+    assert(type(secret) == str)
     assert(type(offset) in six.integer_types)
     try:
         key = base64.b32decode(secret)
@@ -451,10 +451,10 @@ def check_totp(secret, ticket):
 
 @public
 def qrcode_from_totp(secret, label, issuer):
-    if type(secret) != six.text_type:
+    if type(secret) != str:
         raise Exception('secret must be of type unicode, not {}'.format(type(secret)))
 
-    if type(label) != six.text_type:
+    if type(label) != str:
         raise Exception('label must be of type unicode, not {}'.format(type(label)))
 
     try:
@@ -540,17 +540,17 @@ def derive_key(secret, salt, iterations=1000, keylen=32):
     :return: The derived key in Base64 encoding.
     :rtype: bytes
     """
-    if not (type(secret) in [six.text_type, six.binary_type]):
+    if not (type(secret) in [str, six.binary_type]):
         raise ValueError("'secret' must be bytes")
-    if not (type(salt) in [six.text_type, six.binary_type]):
+    if not (type(salt) in [str, six.binary_type]):
         raise ValueError("'salt' must be bytes")
     if not (type(iterations) in six.integer_types):
         raise ValueError("'iterations' must be an integer")
     if not (type(keylen) in six.integer_types):
         raise ValueError("'keylen' must be an integer")
-    if type(secret) == six.text_type:
+    if type(secret) == str:
         secret = secret.encode('utf8')
-    if type(salt) == six.text_type:
+    if type(salt) == str:
         salt = salt.encode('utf8')
     key = pbkdf2(secret, salt, iterations, keylen)
     return binascii.b2a_base64(key).strip()
@@ -597,11 +597,11 @@ def compute_wcs(key, challenge):
     :return: The authentication signature.
     :rtype: bytes
     """
-    assert(type(key) in [six.text_type, six.binary_type])
-    assert(type(challenge) in [six.text_type, six.binary_type])
-    if type(key) == six.text_type:
+    assert(type(key) in [str, six.binary_type])
+    assert(type(challenge) in [str, six.binary_type])
+    if type(key) == str:
         key = key.encode('utf8')
-    if type(challenge) == six.text_type:
+    if type(challenge) == str:
         challenge = challenge.encode('utf8')
     sig = hmac.new(key, challenge, hashlib.sha256).digest()
     return binascii.b2a_base64(sig).strip()
