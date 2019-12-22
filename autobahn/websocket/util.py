@@ -31,8 +31,6 @@ from autobahn.util import public
 from urllib import parse as urlparse
 # The Python urlparse module currently does not contain the ws/wss
 # schemes, so we add those dynamically (which is a hack of course).
-# Since the urllib from six.moves does not seem to expose the stuff
-# we monkey patch here, we do it manually.
 #
 # Important: if you change this stuff (you shouldn't), make sure
 # _all_ our unit tests for WS URLs succeed

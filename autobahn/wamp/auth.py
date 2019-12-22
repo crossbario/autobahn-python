@@ -418,7 +418,7 @@ def compute_totp(secret, offset=0):
     interval = offset + int(time.time()) // 30
     msg = struct.pack('>Q', interval)
     digest = hmac.new(key, msg, hashlib.sha1).digest()
-    o = 15 & (digest[19] if six.PY3 else ord(digest[19]))
+    o = 15 & (digest[19])
     token = (struct.unpack('>I', digest[o:o + 4])[0] & 0x7fffffff) % 1000000
     return u'{0:06d}'.format(token)
 

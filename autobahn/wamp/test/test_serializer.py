@@ -34,15 +34,6 @@ from autobahn.wamp import role
 from autobahn.wamp import serializer
 
 
-# FIXME: autobahn.wamp.serializer.JsonObjectSerializer uses a patched JSON
-# encoder/decoder - however, the patching currently only works on Python 3!
-def must_skip(ser, contains_binary):
-    if contains_binary and ser.SERIALIZER_ID.startswith(u'json') and six.PY2:
-        return True
-    else:
-        return False
-
-
 def generate_test_messages():
     """
     List of WAMP test message used for serializers. Expand this if you add more
@@ -135,16 +126,13 @@ def create_serializers():
     _serializers.append(serializer.UBJSONSerializer(batched=True))
 
     # FIXME: implement full FlatBuffers serializer for WAMP
-    if six.PY3:
-        # WAMP-FlatBuffers currently only supports Python 3
-        # _serializers.append(serializer.FlatBuffersSerializer())
-        # _serializers.append(serializer.FlatBuffersSerializer(batched=True))
-        pass
+    # WAMP-FlatBuffers currently only supports Python 3
+    # _serializers.append(serializer.FlatBuffersSerializer())
+    # _serializers.append(serializer.FlatBuffersSerializer(batched=True))
 
     return _serializers
 
 
-@unittest.skipIf(not six.PY3, 'WAMP-FlatBuffers currently only supports Python 3')
 class TestFlatBuffersSerializer(unittest.TestCase):
 
     def test_basic(self):
@@ -207,15 +195,14 @@ class TestSerializer(unittest.TestCase):
 
             for contains_binary, msg in self._test_messages:
 
-                if not must_skip(ser, contains_binary):
-                    # serialize message
-                    payload, binary = ser.serialize(msg)
+                # serialize message
+                payload, binary = ser.serialize(msg)
 
-                    # unserialize message again
-                    msg2 = ser.unserialize(payload, binary)
+                # unserialize message again
+                msg2 = ser.unserialize(payload, binary)
 
-                    # must be equal: message roundtrips via the serializer
-                    self.assertEqual([msg], msg2)
+                # must be equal: message roundtrips via the serializer
+                self.assertEqual([msg], msg2)
 
     def test_crosstrip_msg(self):
         """
@@ -225,26 +212,24 @@ class TestSerializer(unittest.TestCase):
 
             for contains_binary, msg in self._test_messages:
 
-                if not must_skip(ser1, contains_binary):
+                # serialize message
+                payload, binary = ser1.serialize(msg)
+
+                # unserialize message again
+                msg1 = ser1.unserialize(payload, binary)
+                msg1 = msg1[0]
+
+                for ser2 in self._test_serializers:
+
                     # serialize message
-                    payload, binary = ser1.serialize(msg)
+                    payload, binary = ser2.serialize(msg1)
 
                     # unserialize message again
-                    msg1 = ser1.unserialize(payload, binary)
-                    msg1 = msg1[0]
+                    msg2 = ser2.unserialize(payload, binary)
 
-                    for ser2 in self._test_serializers:
-
-                        if not must_skip(ser2, contains_binary):
-                            # serialize message
-                            payload, binary = ser2.serialize(msg1)
-
-                            # unserialize message again
-                            msg2 = ser2.unserialize(payload, binary)
-
-                            # must be equal: message crosstrips via
-                            # the serializers ser1 -> ser2
-                            self.assertEqual([msg], msg2)
+                    # must be equal: message crosstrips via
+                    # the serializers ser1 -> ser2
+                    self.assertEqual([msg], msg2)
 
     def test_cache_msg(self):
         """
@@ -257,20 +242,18 @@ class TestSerializer(unittest.TestCase):
 
             for ser in self._test_serializers:
 
-                if not must_skip(ser, contains_binary):
+                # verify message serialization is not yet cached
+                self.assertFalse(ser._serializer in msg._serialized)
+                payload, binary = ser.serialize(msg)
 
-                    # verify message serialization is not yet cached
-                    self.assertFalse(ser._serializer in msg._serialized)
-                    payload, binary = ser.serialize(msg)
+                # now the message serialization must be cached
+                self.assertTrue(ser._serializer in msg._serialized)
+                self.assertEqual(msg._serialized[ser._serializer], payload)
 
-                    # now the message serialization must be cached
-                    self.assertTrue(ser._serializer in msg._serialized)
-                    self.assertEqual(msg._serialized[ser._serializer], payload)
-
-                    # and after resetting the serialization cache, message
-                    # serialization is gone
-                    msg.uncache()
-                    self.assertFalse(ser._serializer in msg._serialized)
+                # and after resetting the serialization cache, message
+                # serialization is gone
+                msg.uncache()
+                self.assertFalse(ser._serializer in msg._serialized)
 
     def test_initial_stats(self):
         """
@@ -296,12 +279,11 @@ class TestSerializer(unittest.TestCase):
 
             for contains_binary, msg in self._test_messages:
 
-                if not must_skip(ser, contains_binary):
-                    # serialize message
-                    payload, binary = ser.serialize(msg)
+                # serialize message
+                payload, binary = ser.serialize(msg)
 
-                    # unserialize message again
-                    ser.unserialize(payload, binary)
+                # unserialize message again
+                ser.unserialize(payload, binary)
 
             stats = ser.stats(details=False)
 
@@ -317,12 +299,11 @@ class TestSerializer(unittest.TestCase):
 
             for contains_binary, msg in self._test_messages:
 
-                if not must_skip(ser, contains_binary):
-                    # serialize message
-                    payload, binary = ser.serialize(msg)
+                # serialize message
+                payload, binary = ser.serialize(msg)
 
-                    # unserialize message again
-                    ser.unserialize(payload, binary)
+                # unserialize message again
+                ser.unserialize(payload, binary)
 
             stats = ser.stats(details=True)
 
@@ -349,12 +330,11 @@ class TestSerializer(unittest.TestCase):
 
             for contains_binary, msg in self._test_messages:
 
-                if not must_skip(ser, contains_binary):
-                    # serialize message
-                    payload, binary = ser.serialize(msg)
+                # serialize message
+                payload, binary = ser.serialize(msg)
 
-                    # unserialize message again
-                    ser.unserialize(payload, binary)
+                # unserialize message again
+                ser.unserialize(payload, binary)
 
             ser.stats()
             stats = ser.stats(details=True)
@@ -382,9 +362,8 @@ class TestSerializer(unittest.TestCase):
 
             for contains_binary, msg in self._test_messages:
 
-                if not must_skip(ser, contains_binary):
-                    # serialize message
-                    payload, binary = ser.serialize(msg)
+                # serialize message
+                payload, binary = ser.serialize(msg)
 
-                    # unserialize message again
-                    ser.unserialize(payload, binary)
+                # unserialize message again
+                ser.unserialize(payload, binary)

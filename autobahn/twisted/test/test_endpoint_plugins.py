@@ -30,7 +30,7 @@ from twisted.trial.unittest import TestCase
 
 
 class PluginTests(TestCase):
-    if six.PY3:
+    if True:
         skip = "Plugins don't work under Python3 yet"
 
     def test_import(self):

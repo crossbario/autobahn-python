@@ -173,12 +173,6 @@ class BaseSession(ObservableMixin):
         if hasattr(exc, 'kwargs'):
             kwargs = exc.kwargs
 
-        if kwargs and six.PY2:
-            kwargs = {
-                k.decode('utf8'): v
-                for k, v in kwargs.iteritems()
-            }
-
         if tb:
             if kwargs:
                 kwargs[u'traceback'] = tb
@@ -969,12 +963,6 @@ class ApplicationSession(BaseSession):
                                         assert(args is None or type(args) in (list, tuple))
                                         assert(kwargs is None or type(kwargs) == dict)
 
-                                        if kwargs and six.PY2:
-                                            kwargs = {
-                                                k.decode('utf8'): v
-                                                for k, v in kwargs.iteritems()
-                                            }
-
                                         encoded_payload = None
                                         if msg.enc_algo:
                                             if not self._payload_codec:
@@ -1383,12 +1371,6 @@ class ApplicationSession(BaseSession):
         if options and not isinstance(options, types.PublishOptions):
             raise Exception("options must be of type a.w.t.PublishOptions")
 
-        if kwargs and six.PY2:
-            kwargs = {
-                k.decode('utf8'): v
-                for k, v in kwargs.iteritems()
-            }
-
         if not self._transport:
             raise exception.TransportLost()
 
@@ -1580,12 +1562,6 @@ class ApplicationSession(BaseSession):
         options = kwargs.pop('options', None)
         if options and not isinstance(options, types.CallOptions):
             raise Exception("options must be of type a.w.t.CallOptions")
-
-        if kwargs and six.PY2:
-            kwargs = {
-                k.decode('utf8'): v
-                for k, v in kwargs.iteritems()
-            }
 
         if not self._transport:
             raise exception.TransportLost()

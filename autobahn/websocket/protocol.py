@@ -61,10 +61,6 @@ from autobahn.util import _maybe_tls_reason
 
 import txaio
 
-if six.PY3:
-    # Python 3
-    # noinspection PyShadowingBuiltins
-    xrange = range
 
 __all__ = ("WebSocketProtocol",
            "WebSocketFactory",
@@ -1368,20 +1364,14 @@ class WebSocketProtocol(ObservableMixin):
 
                 # FIN, RSV, OPCODE
                 #
-                if six.PY3:
-                    b = self.data[0]
-                else:
-                    b = ord(self.data[0])
+                b = self.data[0]
                 frame_fin = (b & 0x80) != 0
                 frame_rsv = (b & 0x70) >> 4
                 frame_opcode = b & 0x0f
 
                 # MASK, PAYLOAD LEN 1
                 #
-                if six.PY3:
-                    b = self.data[1]
-                else:
-                    b = ord(self.data[1])
+                b = self.data[1]
                 frame_masked = (b & 0x80) != 0
                 frame_payload_len1 = b & 0x7f
 
@@ -1862,11 +1852,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             raise Exception("invalid payload length")
 
-        if six.PY3:
-            raw = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv, plm])
-        else:
-            raw = b''.join([chr(b0), chr(b1), el, mv, plm])
-
+        raw = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv, plm])
         if opcode in [0, 1, 2]:
             self.trafficStats.outgoingWebSocketFrames += 1
 
@@ -2100,10 +2086,7 @@ class WebSocketProtocol(ObservableMixin):
 
         # write message frame header
         #
-        if six.PY3:
-            header = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv])
-        else:
-            header = b''.join([chr(b0), chr(b1), el, mv])
+        header = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv])
 
         self.sendData(header)
 
@@ -2391,10 +2374,7 @@ class PreparedMessage(object):
 
         # raw WS message (single frame)
         #
-        if six.PY3:
-            self.payloadHybi = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mask, plm])
-        else:
-            self.payloadHybi = b''.join([chr(b0), chr(b1), el, mask, plm])
+        self.payloadHybi = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mask, plm])
 
 
 class WebSocketFactory(object):
@@ -2969,7 +2949,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # headers from factory, headers from onConnect
         for headers_source in (self.factory.headers.items(), headers.items()):
             for uh in headers_source:
-                if isinstance(uh[1], six.string_types):
+                if isinstance(uh[1], (str, )):
                     header_values = [uh[1]]
                 else:
                     try:

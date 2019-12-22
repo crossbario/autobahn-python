@@ -177,10 +177,7 @@ def xor(d1, d2):
     for i in range(len(d1)):
         d1[i] ^= d2[i]
 
-    if six.PY3:
-        return d1.tobytes()
-    else:
-        return d1.tostring()
+    return d1.tobytes()
 
 
 @public

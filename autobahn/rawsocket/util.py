@@ -31,18 +31,11 @@ from autobahn.util import public
 
 # The Python urlparse module currently does not contain the rs/rss
 # schemes, so we add those dynamically (which is a hack of course).
-# Since the urllib from six.moves does not seem to expose the stuff
-# we monkey patch here, we do it manually.
 #
 # Important: if you change this stuff (you shouldn't), make sure
 # _all_ our unit tests for WS URLs succeed
 #
-if not six.PY3:
-    # Python 2
-    import urlparse
-else:
-    # Python 3
-    from urllib import parse as urlparse
+from urllib import parse as urlparse
 
 wsschemes = ["rs", "rss"]
 urlparse.uses_relative.extend(wsschemes)

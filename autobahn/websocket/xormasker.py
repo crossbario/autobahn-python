@@ -87,10 +87,7 @@ except ImportError:
             for k in xrange(dlen):
                 payload[k] ^= self._msk[self._ptr & 3]
                 self._ptr += 1
-            if six.PY3:
-                return payload.tobytes()
-            else:
-                return payload.tostring()
+            return payload.tobytes()
 
     class XorMaskerShifted1(object):
 
@@ -100,18 +97,11 @@ except ImportError:
             assert len(mask) == 4
             self._ptr = 0
             self._mskarray = [array('B'), array('B'), array('B'), array('B')]
-            if six.PY3:
-                for j in xrange(4):
-                    self._mskarray[0].append(mask[j & 3])
-                    self._mskarray[1].append(mask[(j + 1) & 3])
-                    self._mskarray[2].append(mask[(j + 2) & 3])
-                    self._mskarray[3].append(mask[(j + 3) & 3])
-            else:
-                for j in xrange(4):
-                    self._mskarray[0].append(ord(mask[j & 3]))
-                    self._mskarray[1].append(ord(mask[(j + 1) & 3]))
-                    self._mskarray[2].append(ord(mask[(j + 2) & 3]))
-                    self._mskarray[3].append(ord(mask[(j + 3) & 3]))
+            for j in xrange(4):
+                self._mskarray[0].append(mask[j & 3])
+                self._mskarray[1].append(mask[(j + 1) & 3])
+                self._mskarray[2].append(mask[(j + 2) & 3])
+                self._mskarray[3].append(mask[(j + 3) & 3])
 
         def pointer(self):
             return self._ptr
@@ -126,10 +116,7 @@ except ImportError:
             for k in xrange(dlen):
                 payload[k] ^= msk[k & 3]
             self._ptr += dlen
-            if six.PY3:
-                return payload.tobytes()
-            else:
-                return payload.tostring()
+            return payload.tobytes()
 
     def create_xor_masker(mask, length=None):
         if length is None or length < 128:

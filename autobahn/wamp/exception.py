@@ -286,10 +286,7 @@ class ApplicationError(Error):
             self.error, list(self.args), self.kwargs, self.enc_algo, self.callee, self.callee_authid, self.callee_authrole, self.forward_for, tb)
 
     def __str__(self):
-        if six.PY3:
-            return self.__unicode__()
-        else:
-            return self.__unicode__().encode('utf8')
+        return self.__unicode__()
 
 
 @error(ApplicationError.NOT_AUTHORIZED)
