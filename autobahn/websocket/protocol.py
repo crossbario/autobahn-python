@@ -1960,7 +1960,7 @@ class WebSocketProtocol(ObservableMixin):
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
         """
         if code is not None:
-            if type(code) not in (int, ):
+            if type(code) != int:
                 raise Exception("invalid type '{}' for close code (must be an integer)".format(type(code)))
 
             # 1000 Normal Closure

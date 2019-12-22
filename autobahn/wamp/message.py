@@ -290,7 +290,7 @@ def check_or_raise_id(value, message=u"WAMP message invalid"):
 
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
-    if type(value) not in (int, ):
+    if type(value) != int:
         raise ProtocolError(u"{0}: invalid type {1} for ID".format(message, type(value)))
     # the value 0 for WAMP IDs is possible in certain WAMP messages, e.g. UNREGISTERED with
     # router revocation signaling!
@@ -1520,7 +1520,7 @@ class Error(Message):
             raise ProtocolError("invalid message length {0} for ERROR".format(len(wmsg)))
 
         request_type = wmsg[1]
-        if type(request_type) not in (int, ):
+        if type(request_type) != int:
             raise ProtocolError("invalid type {0} for 'request_type' in ERROR".format(request_type))
 
         if request_type not in [Subscribe.MESSAGE_TYPE,
@@ -1577,7 +1577,7 @@ class Error(Message):
         if u'callee' in details:
 
             detail_callee = details[u'callee']
-            if type(detail_callee) not in (int, ):
+            if type(detail_callee) != int:
                 raise ProtocolError("invalid type {0} for 'callee' detail in ERROR".format(type(detail_callee)))
 
             callee = detail_callee
@@ -1605,7 +1605,7 @@ class Error(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -2441,7 +2441,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'exclude' option in PUBLISH".format(type(option_exclude)))
 
             for _sessionid in option_exclude:
-                if type(_sessionid) not in (int, ):
+                if type(_sessionid) != int:
                     raise ProtocolError("invalid type {0} for value in 'exclude' option in PUBLISH".format(type(_sessionid)))
 
             exclude = option_exclude
@@ -2477,7 +2477,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'eligible' option in PUBLISH".format(type(option_eligible)))
 
             for sessionId in option_eligible:
-                if type(sessionId) not in (int, ):
+                if type(sessionId) != int:
                     raise ProtocolError("invalid type {0} for value in 'eligible' option in PUBLISH".format(type(sessionId)))
 
             eligible = option_eligible
@@ -2518,7 +2518,7 @@ class Publish(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -2800,7 +2800,7 @@ class Subscribe(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -2996,7 +2996,7 @@ class Unsubscribe(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -3105,7 +3105,7 @@ class Unsubscribed(Message):
 
             if u"subscription" in details:
                 details_subscription = details[u"subscription"]
-                if type(details_subscription) not in (int, ):
+                if type(details_subscription) != int:
                     raise ProtocolError("invalid type {0} for 'subscription' detail in UNSUBSCRIBED".format(type(details_subscription)))
                 subscription = details_subscription
 
@@ -3666,7 +3666,7 @@ class Event(Message):
         if u'publisher' in details:
 
             detail_publisher = details[u'publisher']
-            if type(detail_publisher) not in (int, ):
+            if type(detail_publisher) != int:
                 raise ProtocolError("invalid type {0} for 'publisher' detail in EVENT".format(type(detail_publisher)))
 
             publisher = detail_publisher
@@ -3712,7 +3712,7 @@ class Event(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -4068,7 +4068,7 @@ class Call(Message):
         if u'timeout' in options:
 
             option_timeout = options[u'timeout']
-            if type(option_timeout) not in (int, ):
+            if type(option_timeout) != int:
                 raise ProtocolError("invalid type {0} for 'timeout' option in CALL".format(type(option_timeout)))
 
             if option_timeout < 0:
@@ -4087,7 +4087,7 @@ class Call(Message):
         if u'caller' in options:
 
             option_caller = options[u'caller']
-            if type(option_caller) not in (int, ):
+            if type(option_caller) != int:
                 raise ProtocolError("invalid type {0} for 'caller' detail in CALL".format(type(option_caller)))
 
             caller = option_caller
@@ -4115,7 +4115,7 @@ class Call(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -4295,7 +4295,7 @@ class Cancel(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -4532,7 +4532,7 @@ class Result(Message):
         if u'callee' in details:
 
             detail_callee = details[u'callee']
-            if type(detail_callee) not in (int, ):
+            if type(detail_callee) != int:
                 raise ProtocolError("invalid type {0} for 'callee' detail in RESULT".format(type(detail_callee)))
 
             callee = detail_callee
@@ -4560,7 +4560,7 @@ class Result(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -4784,7 +4784,7 @@ class Register(Message):
         if u'concurrency' in options:
 
             options_concurrency = options[u'concurrency']
-            if type(options_concurrency) not in (int, ):
+            if type(options_concurrency) != int:
                 raise ProtocolError("invalid type {0} for 'concurrency' option in REGISTER".format(type(options_concurrency)))
 
             if options_concurrency < 1:
@@ -4809,7 +4809,7 @@ class Register(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -5006,7 +5006,7 @@ class Unregister(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -5114,7 +5114,7 @@ class Unregistered(Message):
 
             if u"registration" in details:
                 details_registration = details[u"registration"]
-                if type(details_registration) not in (int, ):
+                if type(details_registration) != int:
                     raise ProtocolError("invalid type {0} for 'registration' detail in UNREGISTERED".format(type(details_registration)))
                 registration = details_registration
 
@@ -5359,7 +5359,7 @@ class Invocation(Message):
         if u'timeout' in details:
 
             detail_timeout = details[u'timeout']
-            if type(detail_timeout) not in (int, ):
+            if type(detail_timeout) != int:
                 raise ProtocolError("invalid type {0} for 'timeout' detail in INVOCATION".format(type(detail_timeout)))
 
             if detail_timeout < 0:
@@ -5378,7 +5378,7 @@ class Invocation(Message):
         if u'caller' in details:
 
             detail_caller = details[u'caller']
-            if type(detail_caller) not in (int, ):
+            if type(detail_caller) != int:
                 raise ProtocolError("invalid type {0} for 'caller' detail in INVOCATION".format(type(detail_caller)))
 
             caller = detail_caller
@@ -5414,7 +5414,7 @@ class Invocation(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -5609,7 +5609,7 @@ class Interrupt(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break
@@ -5848,7 +5848,7 @@ class Yield(Message):
         if u'callee' in options:
 
             option_callee = options[u'callee']
-            if type(option_callee) not in (int, ):
+            if type(option_callee) != int:
                 raise ProtocolError("invalid type {0} for 'callee' detail in YIELD".format(type(option_callee)))
 
             callee = option_callee
@@ -5876,7 +5876,7 @@ class Yield(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in (int, ):
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
                     if 'authid' not in ff or type(ff['authid']) != str:
                         break

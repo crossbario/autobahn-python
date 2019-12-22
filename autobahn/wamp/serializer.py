@@ -292,7 +292,7 @@ class Serializer(object):
 
                 message_type = raw_msg[0]
 
-                if type(message_type) not in (int, ):
+                if type(message_type) != int:
                     # CBOR doesn't roundtrip number types
                     # https://bitbucket.org/bodhisnarkva/cbor/issues/6/number-types-dont-roundtrip
                     raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))

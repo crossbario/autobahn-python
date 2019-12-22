@@ -159,7 +159,7 @@ class Component(component.Component):
 
         if transport.proxy:
             timeout = transport.endpoint.get(u'timeout', 10)  # in seconds
-            if type(timeout) not in (int, ):
+            if type(timeout) != int:
                 raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
             # do we support HTTPS proxies?
 
@@ -182,11 +182,11 @@ class Component(component.Component):
                 raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
 
             port = transport.endpoint[u'port']
-            if type(port) not in (int, ):
+            if type(port) != int:
                 raise ValueError('invalid type {} for port in client endpoint configuration'.format(type(port)))
 
             timeout = transport.endpoint.get(u'timeout', 10)  # in seconds
-            if type(timeout) not in (int, ):
+            if type(timeout) != int:
                 raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
 
             tls = transport.endpoint.get(u'tls', None)
