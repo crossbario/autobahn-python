@@ -32,8 +32,8 @@ class ApplicationRunnerRawSocket(object):
         :param serializer:  WAMP serializer to use (or None for default serializer).
         :type serializer: `autobahn.wamp.interfaces.ISerializer`
         """
-        assert(type(url) == six.text_type)
-        assert(type(realm) == six.text_type)
+        assert(type(url) == str)
+        assert(type(realm) == str)
         assert(extra is None or type(extra) == dict)
         self.url = url
         self.realm = realm
