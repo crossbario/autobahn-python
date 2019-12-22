@@ -28,7 +28,6 @@ from __future__ import print_function
 
 from os import environ
 from os.path import join, split
-import six
 
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner

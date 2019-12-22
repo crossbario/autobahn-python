@@ -24,7 +24,6 @@
 #
 ###############################################################################
 
-import six
 from os import environ
 
 from twisted.internet.defer import inlineCallbacks

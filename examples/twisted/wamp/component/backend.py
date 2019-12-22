@@ -9,7 +9,6 @@ from twisted.internet.ssl import CertificateOptions
 from twisted.internet.ssl import optionsForClientTLS, Certificate
 from OpenSSL import crypto
 from os.path import join, split
-import six
 
 
 examples_dir = join(split(__file__)[0], '..', '..', '..')

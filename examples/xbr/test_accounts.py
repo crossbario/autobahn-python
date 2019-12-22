@@ -7,7 +7,6 @@
 import web3
 from autobahn import xbr
 import click
-import six
 
 
 def hl(text, bold=True, color='yellow'):

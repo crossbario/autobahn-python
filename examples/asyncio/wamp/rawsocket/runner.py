@@ -1,4 +1,3 @@
-import six
 import asyncio
 import signal
 from six.moves.urllib.parse import urlparse
