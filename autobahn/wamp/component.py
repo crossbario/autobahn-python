@@ -436,6 +436,15 @@ class Component(ObservableMixin):
                       instance (such as returned from
                       ``twisted.internet.ssl.optionsForClientTLS``) or
                       ``CertificateOptions`` instance.
+                - ``max_retries``: Maximum number of reconnection attempts. Unlimited if set to -1.
+                - ``initial_retry_delay``: Initial delay for reconnection attempt in seconds (Default: 1.0s).
+                - ``max_retry_delay``: Maximum delay for reconnection attempts in seconds (Default: 60s).
+                - ``retry_delay_growth``: The growth factor applied to the retry delay between reconnection attempts (Default 1.5).
+                - ``retry_delay_jitter``: A 0-argument callable that introduces nose into the delay. (Default random.random)
+                - ``serializer`` (only for raw socket): Specify an accepted serializer (e.g. 'json', 'msgpack', 'cbor', 'ubjson', 'flatbuffers')
+                - ``serializers``: Specify list of accepted serializers
+                - ``options``: tbd
+                - ``proxy``: tbd
 
         :type transports: None or unicode or list of dicts
 
