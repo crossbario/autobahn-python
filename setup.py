@@ -86,10 +86,8 @@ else:
 
 # non-standard WebSocket compression support (FIXME: consider removing altogether)
 # Ubuntu: sudo apt-get install libsnappy-dev
-# lz4: do we need that anyway?
 extras_require_compress = [
     "python-snappy>=0.5",       # BSD license
-    "lz4>=0.7.0"                # BSD license
 ]
 
 # accelerated JSON and non-JSON WAMP serialization support (namely MessagePack, CBOR and UBJSON)
