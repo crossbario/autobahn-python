@@ -8,6 +8,8 @@ Changelog
 19.11.2
 -------
 
+* IMPORTANT: release v19.11.2 will be the last release supporting Python 2. We will support Python 3.5 and later beginning with Autobahn v20.1.1.
+* fix: add docs for parameters to component.py (#1276)
 * new: statistics tracking on WAMP serializers :class:`autobahn.wamp.serializer.Serializer`
 * new: helper :func:`autobahn.util.time_ns`
 
