@@ -28,7 +28,6 @@ from __future__ import print_function
 
 from os import environ
 from os.path import join, split
-import six
 
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
@@ -60,7 +59,7 @@ if __name__ == '__main__':
     cert_fname = join(examples_dir, 'router', '.crossbar', 'server.crt')
     cert = crypto.load_certificate(
         crypto.FILETYPE_PEM,
-        six.u(open(cert_fname, 'r').read())
+        open(cert_fname, 'r').read()
     )
     # tell Twisted to use just the one certificate we loaded to verify connections
     options = CertificateOptions(

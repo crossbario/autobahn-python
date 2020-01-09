@@ -26,7 +26,6 @@
 
 from __future__ import absolute_import
 
-import six
 
 from autobahn.util import public
 from autobahn.wamp.uri import error
@@ -274,7 +273,7 @@ class ApplicationError(Error):
         """
         return u'{0}: {1}'.format(
             self.error,
-            u' '.join([six.text_type(a) for a in self.args]),
+            u' '.join([str(a) for a in self.args]),
         )
 
     def __unicode__(self):
@@ -287,10 +286,7 @@ class ApplicationError(Error):
             self.error, list(self.args), self.kwargs, self.enc_algo, self.callee, self.callee_authid, self.callee_authrole, self.forward_for, tb)
 
     def __str__(self):
-        if six.PY3:
-            return self.__unicode__()
-        else:
-            return self.__unicode__().encode('utf8')
+        return self.__unicode__()
 
 
 @error(ApplicationError.NOT_AUTHORIZED)

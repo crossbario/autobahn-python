@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import re
 import binascii
 
-import six
 
 import autobahn
 from autobahn.wamp.exception import ProtocolError, InvalidUriError
@@ -171,7 +170,7 @@ def is_valid_enc_algo(enc_algo):
         algorithm identifier is valid.
     :rtype: bool
     """
-    return type(enc_algo) == six.text_type and (enc_algo in PAYLOAD_ENC_STANDARD_IDENTIFIERS or _CUSTOM_ATTRIBUTE.match(enc_algo))
+    return type(enc_algo) == str and (enc_algo in PAYLOAD_ENC_STANDARD_IDENTIFIERS or _CUSTOM_ATTRIBUTE.match(enc_algo))
 
 
 def is_valid_enc_serializer(enc_serializer):
@@ -196,13 +195,13 @@ def is_valid_enc_serializer(enc_serializer):
         serializer identifier is valid.
     :rtype: bool
     """
-    return type(enc_serializer) == six.text_type and (enc_serializer in PAYLOAD_ENC_STANDARD_SERIALIZERS or _CUSTOM_ATTRIBUTE.match(enc_serializer))
+    return type(enc_serializer) == str and (enc_serializer in PAYLOAD_ENC_STANDARD_SERIALIZERS or _CUSTOM_ATTRIBUTE.match(enc_serializer))
 
 
 def b2a(data, max_len=40):
-    if type(data) == six.text_type:
+    if type(data) == str:
         s = data
-    elif type(data) == six.binary_type:
+    elif type(data) == bytes:
         s = binascii.b2a_hex(data).decode('ascii')
     elif data is None:
         s = u'-'
@@ -248,7 +247,7 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
         else:
             raise InvalidUriError(u"{0}: URI cannot be null".format(message))
 
-    if type(value) != six.text_type:
+    if type(value) != str:
         if not (value is None and allow_none):
             raise InvalidUriError(u"{0}: invalid type {1} for URI".format(message, type(value)))
 
@@ -291,7 +290,7 @@ def check_or_raise_id(value, message=u"WAMP message invalid"):
 
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
-    if type(value) not in six.integer_types:
+    if type(value) != int:
         raise ProtocolError(u"{0}: invalid type {1} for ID".format(message, type(value)))
     # the value 0 for WAMP IDs is possible in certain WAMP messages, e.g. UNREGISTERED with
     # router revocation signaling!
@@ -321,7 +320,7 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
     if type(value) != dict:
         raise ProtocolError(u"{0}: invalid type {1} for WAMP extra".format(message, type(value)))
     for k in value.keys():
-        if not isinstance(k, six.text_type):
+        if not isinstance(k, str):
             raise ProtocolError(u"{0}: invalid type {1} for key in WAMP extra ('{2}')".format(message, type(k), k))
     return value
 
@@ -357,7 +356,7 @@ def _validate_kwargs(kwargs, message=u"WAMP message invalid"):
         if type(kwargs) != dict:
             raise ProtocolError(u"{0}: invalid type {1} for WAMP kwargs".format(message, type(kwargs)))
         for k in kwargs.keys():
-            if not isinstance(k, six.text_type):
+            if not isinstance(k, str):
                 raise ProtocolError(u"{0}: invalid type {1} for key in WAMP kwargs ('{2}')".format(message, type(k), k))
         return kwargs
 
@@ -402,7 +401,7 @@ class Message(object):
 
     @correlation_id.setter
     def correlation_id(self, value):
-        assert(value is None or type(value) == six.text_type)
+        assert(value is None or type(value) == str)
         self._correlation_id = value
 
     @property
@@ -411,7 +410,7 @@ class Message(object):
 
     @correlation_uri.setter
     def correlation_uri(self, value):
-        assert(value is None or type(value) == six.text_type)
+        assert(value is None or type(value) == str)
         self._correlation_uri = value
 
     @property
@@ -591,7 +590,7 @@ class Hello(Message):
         :param resume_token: The secure authorisation token to resume the session.
         :type resume_token: str or None
         """
-        assert(realm is None or isinstance(realm, six.text_type))
+        assert(realm is None or isinstance(realm, str))
         assert(type(roles) == dict)
         assert(len(roles) > 0)
         for role in roles:
@@ -600,13 +599,13 @@ class Hello(Message):
         if authmethods:
             assert(type(authmethods) == list)
             for authmethod in authmethods:
-                assert(type(authmethod) == six.text_type)
-        assert(authid is None or type(authid) == six.text_type)
-        assert(authrole is None or type(authrole) == six.text_type)
+                assert(type(authmethod) == str)
+        assert(authid is None or type(authid) == str)
+        assert(authrole is None or type(authrole) == str)
         assert(authextra is None or type(authextra) == dict)
         assert(resumable is None or type(resumable) == bool)
         assert(resume_session is None or type(resume_session) == int)
-        assert(resume_token is None or type(resume_token) == six.text_type)
+        assert(resume_token is None or type(resume_token) == str)
 
         Message.__init__(self)
         self.realm = realm
@@ -673,7 +672,7 @@ class Hello(Message):
                 raise ProtocolError("invalid type {0} for 'authmethods' detail in HELLO".format(type(details_authmethods)))
 
             for auth_method in details_authmethods:
-                if type(auth_method) != six.text_type:
+                if type(auth_method) != str:
                     raise ProtocolError("invalid type {0} for item in 'authmethods' detail in HELLO".format(type(auth_method)))
 
             authmethods = details_authmethods
@@ -681,7 +680,7 @@ class Hello(Message):
         authid = None
         if u'authid' in details:
             details_authid = details[u'authid']
-            if type(details_authid) != six.text_type:
+            if type(details_authid) != str:
                 raise ProtocolError("invalid type {0} for 'authid' detail in HELLO".format(type(details_authid)))
 
             authid = details_authid
@@ -689,7 +688,7 @@ class Hello(Message):
         authrole = None
         if u'authrole' in details:
             details_authrole = details[u'authrole']
-            if type(details_authrole) != six.text_type:
+            if type(details_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'authrole' detail in HELLO".format(type(details_authrole)))
 
             authrole = details_authrole
@@ -717,7 +716,7 @@ class Hello(Message):
         resume_token = None
         if u'resume-token' in details:
             resume_token = details[u'resume-token']
-            if type(resume_token) != six.text_type:
+            if type(resume_token) != str:
                 raise ProtocolError("invalid type {0} for 'resume-token' detail in HELLO".format(type(resume_token)))
         else:
             if resume_session:
@@ -741,7 +740,7 @@ class Hello(Message):
                 if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
                     if u'features' not in details[u'roles'][role.ROLE]:
                         details[u'roles'][role.ROLE] = {u'features': {}}
-                    details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
+                    details[u'roles'][role.ROLE][u'features'][feature] = getattr(role, feature)
 
         if self.authmethods is not None:
             details[u'authmethods'] = self.authmethods
@@ -851,21 +850,21 @@ class Welcome(Message):
         :param custom: Implementation-specific "custom attributes" (`x_my_impl_attribute`) to be set.
         :type custom: dict or None
         """
-        assert(type(session) in six.integer_types)
+        assert(type(session) == int)
         assert(type(roles) == dict)
         assert(len(roles) > 0)
         for role in roles:
             assert(role in [u'broker', u'dealer'])
             assert(isinstance(roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]))
-        assert(realm is None or type(realm) == six.text_type)
-        assert(authid is None or type(authid) == six.text_type)
-        assert(authrole is None or type(authrole) == six.text_type)
-        assert(authmethod is None or type(authmethod) == six.text_type)
-        assert(authprovider is None or type(authprovider) == six.text_type)
+        assert(realm is None or type(realm) == str)
+        assert(authid is None or type(authid) == str)
+        assert(authrole is None or type(authrole) == str)
+        assert(authmethod is None or type(authmethod) == str)
+        assert(authprovider is None or type(authprovider) == str)
         assert(authextra is None or type(authextra) == dict)
         assert(resumed is None or type(resumed) == bool)
         assert(resumable is None or type(resumable) == bool)
-        assert(resume_token is None or type(resume_token) == six.text_type)
+        assert(resume_token is None or type(resume_token) == str)
         assert(custom is None or type(custom) == dict)
         if custom:
             for k in custom:
@@ -927,7 +926,7 @@ class Welcome(Message):
         resume_token = None
         if u'resume_token' in details:
             resume_token = details[u'resume_token']
-            if not type(resume_token) == six.text_type:
+            if not type(resume_token) == str:
                 raise ProtocolError("invalid type {0} for 'resume_token' detail in WELCOME".format(type(resume_token)))
         elif resumable:
             raise ProtocolError("resume_token required when resumable is given in WELCOME")
@@ -1013,7 +1012,7 @@ class Welcome(Message):
                 if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
                     if u'features' not in details[u'roles'][role.ROLE]:
                         details[u'roles'][role.ROLE] = {u'features': {}}
-                    details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
+                    details[u'roles'][role.ROLE][u'features'][feature] = getattr(role, feature)
 
         return [Welcome.MESSAGE_TYPE, self.session, details]
 
@@ -1050,8 +1049,8 @@ class Abort(Message):
         :param message: Optional human-readable closing message, e.g. for logging purposes.
         :type message: str or None
         """
-        assert(type(reason) == six.text_type)
-        assert(message is None or type(message) == six.text_type)
+        assert(type(reason) == str)
+        assert(message is None or type(message) == str)
 
         Message.__init__(self)
         self.reason = reason
@@ -1081,7 +1080,7 @@ class Abort(Message):
         if u'message' in details:
 
             details_message = details[u'message']
-            if type(details_message) != six.text_type:
+            if type(details_message) != str:
                 raise ProtocolError("invalid type {0} for 'message' detail in ABORT".format(type(details_message)))
 
             message = details_message
@@ -1136,7 +1135,7 @@ class Challenge(Message):
         :param extra: Authentication method specific information.
         :type extra: dict or None
         """
-        assert(type(method) == six.text_type)
+        assert(type(method) == str)
         assert(extra is None or type(extra) == dict)
 
         Message.__init__(self)
@@ -1160,7 +1159,7 @@ class Challenge(Message):
             raise ProtocolError("invalid message length {0} for CHALLENGE".format(len(wmsg)))
 
         method = wmsg[1]
-        if type(method) != six.text_type:
+        if type(method) != str:
             raise ProtocolError("invalid type {0} for 'method' in CHALLENGE".format(type(method)))
 
         extra = check_or_raise_extra(wmsg[2], u"'extra' in CHALLENGE")
@@ -1211,7 +1210,7 @@ class Authenticate(Message):
         :param extra: Authentication method specific information.
         :type extra: dict or None
         """
-        assert(type(signature) == six.text_type)
+        assert(type(signature) == str)
         assert(extra is None or type(extra) == dict)
 
         Message.__init__(self)
@@ -1235,7 +1234,7 @@ class Authenticate(Message):
             raise ProtocolError("invalid message length {0} for AUTHENTICATE".format(len(wmsg)))
 
         signature = wmsg[1]
-        if type(signature) != six.text_type:
+        if type(signature) != str:
             raise ProtocolError("invalid type {0} for 'signature' in AUTHENTICATE".format(type(signature)))
 
         extra = check_or_raise_extra(wmsg[2], u"'extra' in AUTHENTICATE")
@@ -1295,8 +1294,8 @@ class Goodbye(Message):
         :param resumable: From the server: Whether the session is able to be resumed (true) or destroyed (false). From the client: Whether it should be resumable (true) or destroyed (false).
         :type resumable: bool or None
         """
-        assert(type(reason) == six.text_type)
-        assert(message is None or type(message) == six.text_type)
+        assert(type(reason) == str)
+        assert(message is None or type(message) == str)
         assert(resumable is None or type(resumable) == bool)
 
         Message.__init__(self)
@@ -1329,7 +1328,7 @@ class Goodbye(Message):
         if u'message' in details:
 
             details_message = details[u'message']
-            if type(details_message) != six.text_type:
+            if type(details_message) != str:
                 raise ProtocolError("invalid type {0} for 'message' detail in GOODBYE".format(type(details_message)))
 
             message = details_message
@@ -1458,30 +1457,30 @@ class Error(Message):
         :param forward_for: When this Error is forwarded for a client/callee (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request_type) in six.integer_types)
-        assert(type(request) in six.integer_types)
-        assert(type(error) == six.text_type)
+        assert(type(request_type) == int)
+        assert(type(request) == int)
+        assert(type(error) == str)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
 
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
-        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_key is None or type(enc_key) == str)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
-        assert(callee is None or type(callee) in six.integer_types)
-        assert(callee_authid is None or type(callee_authid) == six.text_type)
-        assert(callee_authrole is None or type(callee_authrole) == six.text_type)
+        assert(callee is None or type(callee) == int)
+        assert(callee_authid is None or type(callee_authid) == str)
+        assert(callee_authrole is None or type(callee_authrole) == str)
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self)
         self.request_type = request_type
@@ -1521,7 +1520,7 @@ class Error(Message):
             raise ProtocolError("invalid message length {0} for ERROR".format(len(wmsg)))
 
         request_type = wmsg[1]
-        if type(request_type) not in six.integer_types:
+        if type(request_type) != int:
             raise ProtocolError("invalid type {0} for 'request_type' in ERROR".format(request_type))
 
         if request_type not in [Subscribe.MESSAGE_TYPE,
@@ -1548,7 +1547,7 @@ class Error(Message):
         callee_authrole = None
         forward_for = None
 
-        if len(wmsg) == 6 and type(wmsg[5]) == six.binary_type:
+        if len(wmsg) == 6 and type(wmsg[5]) == bytes:
 
             payload = wmsg[5]
 
@@ -1557,7 +1556,7 @@ class Error(Message):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
-            if enc_key and type(enc_key) != six.text_type:
+            if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
@@ -1578,7 +1577,7 @@ class Error(Message):
         if u'callee' in details:
 
             detail_callee = details[u'callee']
-            if type(detail_callee) not in six.integer_types:
+            if type(detail_callee) != int:
                 raise ProtocolError("invalid type {0} for 'callee' detail in ERROR".format(type(detail_callee)))
 
             callee = detail_callee
@@ -1586,7 +1585,7 @@ class Error(Message):
         if u'callee_authid' in details:
 
             detail_callee_authid = details[u'callee_authid']
-            if type(detail_callee_authid) != six.text_type:
+            if type(detail_callee_authid) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authid' detail in ERROR".format(type(detail_callee_authid)))
 
             callee_authid = detail_callee_authid
@@ -1594,7 +1593,7 @@ class Error(Message):
         if u'callee_authrole' in details:
 
             detail_callee_authrole = details[u'callee_authrole']
-            if type(detail_callee_authrole) != six.text_type:
+            if type(detail_callee_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authrole' detail in ERROR".format(type(detail_callee_authrole)))
 
             callee_authrole = detail_callee_authrole
@@ -1606,11 +1605,11 @@ class Error(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -1828,11 +1827,11 @@ class Publish(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(request is None or type(request) in six.integer_types)
-        assert(topic is None or type(topic) == six.text_type)
-        assert(args is None or type(args) in [list, tuple, six.text_type, six.binary_type])
-        assert(kwargs is None or type(kwargs) in [dict, six.text_type, six.binary_type])
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(request is None or type(request) == int)
+        assert(topic is None or type(topic) == str)
+        assert(args is None or type(args) in [list, tuple, str, bytes])
+        assert(kwargs is None or type(kwargs) in [dict, str, bytes])
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(retain is None or type(retain) == bool)
@@ -1843,45 +1842,45 @@ class Publish(Message):
         assert(exclude is None or type(exclude) == list)
         if exclude:
             for sessionid in exclude:
-                assert(type(sessionid) in six.integer_types)
+                assert(type(sessionid) == int)
 
         assert(exclude_authid is None or type(exclude_authid) == list)
         if exclude_authid:
             for authid in exclude_authid:
-                assert(type(authid) == six.text_type)
+                assert(type(authid) == str)
 
         assert(exclude_authrole is None or type(exclude_authrole) == list)
         if exclude_authrole:
             for authrole in exclude_authrole:
-                assert(type(authrole) == six.text_type)
+                assert(type(authrole) == str)
 
         assert(eligible is None or type(eligible) == list)
         if eligible:
             for sessionid in eligible:
-                assert(type(sessionid) in six.integer_types)
+                assert(type(sessionid) == int)
 
         assert(eligible_authid is None or type(eligible_authid) == list)
         if eligible_authid:
             for authid in eligible_authid:
-                assert(type(authid) == six.text_type)
+                assert(type(authid) == str)
 
         assert(eligible_authrole is None or type(eligible_authrole) == list)
         if eligible_authrole:
             for authrole in eligible_authrole:
-                assert(type(authrole) == six.text_type)
+                assert(type(authrole) == str)
 
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
-        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_key is None or type(enc_key) == str)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self, from_fbs=from_fbs)
         self._request = request
@@ -1965,7 +1964,7 @@ class Publish(Message):
 
     @request.setter
     def request(self, value):
-        assert(value is None or type(value) in six.integer_types)
+        assert(value is None or type(value) == int)
         self._request = value
 
     @property
@@ -2377,7 +2376,7 @@ class Publish(Message):
         kwargs = None
         payload = None
 
-        if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
+        if len(wmsg) == 5 and type(wmsg[4]) in [str, bytes]:
 
             payload = wmsg[4]
 
@@ -2386,7 +2385,7 @@ class Publish(Message):
                 raise ProtocolError("invalid value {0} for 'enc_algo' option in PUBLISH".format(enc_algo))
 
             enc_key = options.get(u'enc_key', None)
-            if enc_key and type(enc_key) != six.text_type:
+            if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' option in PUBLISH".format(type(enc_key)))
 
             enc_serializer = options.get(u'enc_serializer', None)
@@ -2396,12 +2395,12 @@ class Publish(Message):
         else:
             if len(wmsg) > 4:
                 args = wmsg[4]
-                if type(args) not in [list, six.text_type, six.binary_type]:
+                if type(args) not in [list, str, bytes]:
                     raise ProtocolError("invalid type {0} for 'args' in PUBLISH".format(type(args)))
 
             if len(wmsg) > 5:
                 kwargs = wmsg[5]
-                if type(kwargs) not in [dict, six.text_type, six.binary_type]:
+                if type(kwargs) not in [dict, str, bytes]:
                     raise ProtocolError("invalid type {0} for 'kwargs' in PUBLISH".format(type(kwargs)))
 
             enc_algo = None
@@ -2442,7 +2441,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'exclude' option in PUBLISH".format(type(option_exclude)))
 
             for _sessionid in option_exclude:
-                if type(_sessionid) not in six.integer_types:
+                if type(_sessionid) != int:
                     raise ProtocolError("invalid type {0} for value in 'exclude' option in PUBLISH".format(type(_sessionid)))
 
             exclude = option_exclude
@@ -2454,7 +2453,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'exclude_authid' option in PUBLISH".format(type(option_exclude_authid)))
 
             for _authid in option_exclude_authid:
-                if type(_authid) != six.text_type:
+                if type(_authid) != str:
                     raise ProtocolError("invalid type {0} for value in 'exclude_authid' option in PUBLISH".format(type(_authid)))
 
             exclude_authid = option_exclude_authid
@@ -2466,7 +2465,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'exclude_authrole' option in PUBLISH".format(type(option_exclude_authrole)))
 
             for _authrole in option_exclude_authrole:
-                if type(_authrole) != six.text_type:
+                if type(_authrole) != str:
                     raise ProtocolError("invalid type {0} for value in 'exclude_authrole' option in PUBLISH".format(type(_authrole)))
 
             exclude_authrole = option_exclude_authrole
@@ -2478,7 +2477,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'eligible' option in PUBLISH".format(type(option_eligible)))
 
             for sessionId in option_eligible:
-                if type(sessionId) not in six.integer_types:
+                if type(sessionId) != int:
                     raise ProtocolError("invalid type {0} for value in 'eligible' option in PUBLISH".format(type(sessionId)))
 
             eligible = option_eligible
@@ -2490,7 +2489,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'eligible_authid' option in PUBLISH".format(type(option_eligible_authid)))
 
             for _authid in option_eligible_authid:
-                if type(_authid) != six.text_type:
+                if type(_authid) != str:
                     raise ProtocolError("invalid type {0} for value in 'eligible_authid' option in PUBLISH".format(type(_authid)))
 
             eligible_authid = option_eligible_authid
@@ -2502,7 +2501,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'eligible_authrole' option in PUBLISH".format(type(option_eligible_authrole)))
 
             for _authrole in option_eligible_authrole:
-                if type(_authrole) != six.text_type:
+                if type(_authrole) != str:
                     raise ProtocolError("invalid type {0} for value in 'eligible_authrole' option in PUBLISH".format(type(_authrole)))
 
             eligible_authrole = option_eligible_authrole
@@ -2519,11 +2518,11 @@ class Publish(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -2639,8 +2638,8 @@ class Published(Message):
         :param publication: The publication ID for the published event.
         :type publication: int
         """
-        assert(type(request) in six.integer_types)
-        assert(type(publication) in six.integer_types)
+        assert(type(request) == int)
+        assert(type(publication) == int)
 
         Message.__init__(self)
         self.request = request
@@ -2733,18 +2732,18 @@ class Subscribe(Message):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
-        assert(type(topic) == six.text_type)
-        assert(match is None or type(match) == six.text_type)
+        assert(type(request) == int)
+        assert(type(topic) == str)
+        assert(match is None or type(match) == str)
         assert(match is None or match in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD])
         assert(get_retained is None or type(get_retained) is bool)
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self)
         self.request = request
@@ -2780,7 +2779,7 @@ class Subscribe(Message):
         if u'match' in options:
 
             option_match = options[u'match']
-            if type(option_match) != six.text_type:
+            if type(option_match) != str:
                 raise ProtocolError("invalid type {0} for 'match' option in SUBSCRIBE".format(type(option_match)))
 
             if option_match not in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD]:
@@ -2801,11 +2800,11 @@ class Subscribe(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -2872,8 +2871,8 @@ class Subscribed(Message):
         :param subscription: The subscription ID for the subscribed topic (or topic pattern).
         :type subscription: int
         """
-        assert(type(request) in six.integer_types)
-        assert(type(subscription) in six.integer_types)
+        assert(type(request) == int)
+        assert(type(subscription) == int)
 
         Message.__init__(self)
         self.request = request
@@ -2952,14 +2951,14 @@ class Unsubscribe(Message):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
-        assert(type(subscription) in six.integer_types)
+        assert(type(request) == int)
+        assert(type(subscription) == int)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self)
         self.request = request
@@ -2997,11 +2996,11 @@ class Unsubscribe(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -3069,9 +3068,9 @@ class Unsubscribed(Message):
         :param reason: The reason (an URI) for an active (router initiated) revocation.
         :type reason: str or None.
         """
-        assert(type(request) in six.integer_types)
-        assert(subscription is None or type(subscription) in six.integer_types)
-        assert(reason is None or type(reason) == six.text_type)
+        assert(type(request) == int)
+        assert(subscription is None or type(subscription) == int)
+        assert(reason is None or type(reason) == str)
         assert((request != 0 and subscription is None) or (request == 0 and subscription != 0))
 
         Message.__init__(self)
@@ -3106,7 +3105,7 @@ class Unsubscribed(Message):
 
             if u"subscription" in details:
                 details_subscription = details[u"subscription"]
-                if type(details_subscription) not in six.integer_types:
+                if type(details_subscription) != int:
                     raise ProtocolError("invalid type {0} for 'subscription' detail in UNSUBSCRIBED".format(type(details_subscription)))
                 subscription = details_subscription
 
@@ -3259,30 +3258,30 @@ class Event(Message):
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(subscription is None or type(subscription) in six.integer_types)
-        assert(publication is None or type(publication) in six.integer_types)
+        assert(subscription is None or type(subscription) == int)
+        assert(publication is None or type(publication) == int)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
-        assert(publisher is None or type(publisher) in six.integer_types)
-        assert(publisher_authid is None or type(publisher_authid) == six.text_type)
-        assert(publisher_authrole is None or type(publisher_authrole) == six.text_type)
-        assert(topic is None or type(topic) == six.text_type)
+        assert(publisher is None or type(publisher) == int)
+        assert(publisher_authid is None or type(publisher_authid) == str)
+        assert(publisher_authrole is None or type(publisher_authrole) == str)
+        assert(topic is None or type(topic) == str)
         assert(retained is None or type(retained) == bool)
         assert(x_acknowledged_delivery is None or type(x_acknowledged_delivery) == bool)
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
-        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_key is None or type(enc_key) == str)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self, from_fbs=from_fbs)
         self._subscription = subscription
@@ -3349,7 +3348,7 @@ class Event(Message):
 
     @subscription.setter
     def subscription(self, value):
-        assert(value is None or type(value) in six.integer_types)
+        assert(value is None or type(value) == int)
         self._subscription = value
 
     @property
@@ -3360,7 +3359,7 @@ class Event(Message):
 
     @publication.setter
     def publication(self, value):
-        assert(value is None or type(value) in six.integer_types)
+        assert(value is None or type(value) == int)
         self._publication = value
 
     @property
@@ -3630,7 +3629,7 @@ class Event(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 5 and type(wmsg[4]) == six.binary_type:
+        if len(wmsg) == 5 and type(wmsg[4]) == bytes:
 
             payload = wmsg[4]
 
@@ -3639,7 +3638,7 @@ class Event(Message):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
-            if enc_key and type(enc_key) != six.text_type:
+            if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
@@ -3667,7 +3666,7 @@ class Event(Message):
         if u'publisher' in details:
 
             detail_publisher = details[u'publisher']
-            if type(detail_publisher) not in six.integer_types:
+            if type(detail_publisher) != int:
                 raise ProtocolError("invalid type {0} for 'publisher' detail in EVENT".format(type(detail_publisher)))
 
             publisher = detail_publisher
@@ -3675,7 +3674,7 @@ class Event(Message):
         if u'publisher_authid' in details:
 
             detail_publisher_authid = details[u'publisher_authid']
-            if type(detail_publisher_authid) != six.text_type:
+            if type(detail_publisher_authid) != str:
                 raise ProtocolError("invalid type {0} for 'publisher_authid' detail in EVENT".format(type(detail_publisher_authid)))
 
             publisher_authid = detail_publisher_authid
@@ -3683,7 +3682,7 @@ class Event(Message):
         if u'publisher_authrole' in details:
 
             detail_publisher_authrole = details[u'publisher_authrole']
-            if type(detail_publisher_authrole) != six.text_type:
+            if type(detail_publisher_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'publisher_authrole' detail in EVENT".format(type(detail_publisher_authrole)))
 
             publisher_authrole = detail_publisher_authrole
@@ -3691,7 +3690,7 @@ class Event(Message):
         if u'topic' in details:
 
             detail_topic = details[u'topic']
-            if type(detail_topic) != six.text_type:
+            if type(detail_topic) != str:
                 raise ProtocolError("invalid type {0} for 'topic' detail in EVENT".format(type(detail_topic)))
 
             topic = detail_topic
@@ -3713,11 +3712,11 @@ class Event(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -3818,7 +3817,7 @@ class EventReceived(Message):
         :param publication: The publication ID for the sent event.
         :type publication: int
         """
-        assert(type(publication) in six.integer_types)
+        assert(type(publication) == int)
 
         Message.__init__(self)
         self.publication = publication
@@ -3958,32 +3957,32 @@ class Call(Message):
         :param forward_for: When this Publish is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
-        assert(type(procedure) == six.text_type)
+        assert(type(request) == int)
+        assert(type(procedure) == str)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
-        assert(timeout is None or type(timeout) in six.integer_types)
+        assert(timeout is None or type(timeout) == int)
         assert(receive_progress is None or type(receive_progress) == bool)
 
         # payload transparency related knobs
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
-        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_key is None or type(enc_key) == str)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
-        assert(caller is None or type(caller) in six.integer_types)
-        assert(caller_authid is None or type(caller_authid) == six.text_type)
-        assert(caller_authrole is None or type(caller_authrole) == six.text_type)
+        assert(caller is None or type(caller) == int)
+        assert(caller_authid is None or type(caller_authid) == str)
+        assert(caller_authrole is None or type(caller_authrole) == str)
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self)
         self.request = request
@@ -4032,7 +4031,7 @@ class Call(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
+        if len(wmsg) == 5 and type(wmsg[4]) in [str, bytes]:
 
             payload = wmsg[4]
 
@@ -4041,7 +4040,7 @@ class Call(Message):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in CALL".format(enc_algo))
 
             enc_key = options.get(u'enc_key', None)
-            if enc_key and type(enc_key) != six.text_type:
+            if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in CALL".format(type(enc_key)))
 
             enc_serializer = options.get(u'enc_serializer', None)
@@ -4069,7 +4068,7 @@ class Call(Message):
         if u'timeout' in options:
 
             option_timeout = options[u'timeout']
-            if type(option_timeout) not in six.integer_types:
+            if type(option_timeout) != int:
                 raise ProtocolError("invalid type {0} for 'timeout' option in CALL".format(type(option_timeout)))
 
             if option_timeout < 0:
@@ -4088,7 +4087,7 @@ class Call(Message):
         if u'caller' in options:
 
             option_caller = options[u'caller']
-            if type(option_caller) not in six.integer_types:
+            if type(option_caller) != int:
                 raise ProtocolError("invalid type {0} for 'caller' detail in CALL".format(type(option_caller)))
 
             caller = option_caller
@@ -4096,7 +4095,7 @@ class Call(Message):
         if u'caller_authid' in options:
 
             option_caller_authid = options[u'caller_authid']
-            if type(option_caller_authid) != six.text_type:
+            if type(option_caller_authid) != str:
                 raise ProtocolError("invalid type {0} for 'caller_authid' detail in CALL".format(type(option_caller_authid)))
 
             caller_authid = option_caller_authid
@@ -4104,7 +4103,7 @@ class Call(Message):
         if u'caller_authrole' in options:
 
             option_caller_authrole = options[u'caller_authrole']
-            if type(option_caller_authrole) != six.text_type:
+            if type(option_caller_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'caller_authrole' detail in CALL".format(type(option_caller_authrole)))
 
             caller_authrole = option_caller_authrole
@@ -4116,11 +4115,11 @@ class Call(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -4235,17 +4234,17 @@ class Cancel(Message):
         :param forward_for: When this Cancel is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
-        assert(mode is None or type(mode) == six.text_type)
+        assert(type(request) == int)
+        assert(mode is None or type(mode) == str)
         assert(mode in [None, self.SKIP, self.KILLNOWAIT, self.KILL])
         assert(forward_for is None or type(forward_for) == list)
 
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self)
         self.request = request
@@ -4281,7 +4280,7 @@ class Cancel(Message):
         if u'mode' in options:
 
             option_mode = options[u'mode']
-            if type(option_mode) != six.text_type:
+            if type(option_mode) != str:
                 raise ProtocolError("invalid type {0} for 'mode' option in CANCEL".format(type(option_mode)))
 
             if option_mode not in [Cancel.SKIP, Cancel.KILLNOWAIT, Cancel.KILL]:
@@ -4296,11 +4295,11 @@ class Cancel(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -4420,29 +4419,29 @@ class Result(Message):
         :param forward_for: When this Result is forwarded for a client/callee (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
+        assert(type(request) == int)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
 
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
-        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_key is None or type(enc_key) == str)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
-        assert(callee is None or type(callee) in six.integer_types)
-        assert(callee_authid is None or type(callee_authid) == six.text_type)
-        assert(callee_authrole is None or type(callee_authrole) == six.text_type)
+        assert(callee is None or type(callee) == int)
+        assert(callee_authid is None or type(callee_authid) == str)
+        assert(callee_authrole is None or type(callee_authrole) == str)
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self)
         self.request = request
@@ -4495,7 +4494,7 @@ class Result(Message):
         callee_authrole = None
         forward_for = None
 
-        if len(wmsg) == 4 and type(wmsg[3]) in [six.text_type, six.binary_type]:
+        if len(wmsg) == 4 and type(wmsg[3]) in [str, bytes]:
 
             payload = wmsg[3]
 
@@ -4504,7 +4503,7 @@ class Result(Message):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in RESULT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
-            if enc_key and type(enc_key) != six.text_type:
+            if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in RESULT".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
@@ -4533,7 +4532,7 @@ class Result(Message):
         if u'callee' in details:
 
             detail_callee = details[u'callee']
-            if type(detail_callee) not in six.integer_types:
+            if type(detail_callee) != int:
                 raise ProtocolError("invalid type {0} for 'callee' detail in RESULT".format(type(detail_callee)))
 
             callee = detail_callee
@@ -4541,7 +4540,7 @@ class Result(Message):
         if u'callee_authid' in details:
 
             detail_callee_authid = details[u'callee_authid']
-            if type(detail_callee_authid) != six.text_type:
+            if type(detail_callee_authid) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authid' detail in RESULT".format(type(detail_callee_authid)))
 
             callee_authid = detail_callee_authid
@@ -4549,7 +4548,7 @@ class Result(Message):
         if u'callee_authrole' in details:
 
             detail_callee_authrole = details[u'callee_authrole']
-            if type(detail_callee_authrole) != six.text_type:
+            if type(detail_callee_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authrole' detail in RESULT".format(type(detail_callee_authrole)))
 
             callee_authrole = detail_callee_authrole
@@ -4561,11 +4560,11 @@ class Result(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -4693,21 +4692,21 @@ class Register(Message):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
-        assert(type(procedure) == six.text_type)
-        assert(match is None or type(match) == six.text_type)
+        assert(type(request) == int)
+        assert(type(procedure) == str)
+        assert(match is None or type(match) == str)
         assert(match is None or match in [Register.MATCH_EXACT, Register.MATCH_PREFIX, Register.MATCH_WILDCARD])
-        assert(invoke is None or type(invoke) == six.text_type)
+        assert(invoke is None or type(invoke) == str)
         assert(invoke is None or invoke in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM])
-        assert(concurrency is None or (type(concurrency) in six.integer_types and concurrency > 0))
+        assert(concurrency is None or (type(concurrency) == int and concurrency > 0))
         assert force_reregister in [None, True, False]
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self)
         self.request = request
@@ -4746,7 +4745,7 @@ class Register(Message):
         if u'match' in options:
 
             option_match = options[u'match']
-            if type(option_match) != six.text_type:
+            if type(option_match) != str:
                 raise ProtocolError("invalid type {0} for 'match' option in REGISTER".format(type(option_match)))
 
             if option_match not in [Register.MATCH_EXACT, Register.MATCH_PREFIX, Register.MATCH_WILDCARD]:
@@ -4774,7 +4773,7 @@ class Register(Message):
         if u'invoke' in options:
 
             option_invoke = options[u'invoke']
-            if type(option_invoke) != six.text_type:
+            if type(option_invoke) != str:
                 raise ProtocolError("invalid type {0} for 'invoke' option in REGISTER".format(type(option_invoke)))
 
             if option_invoke not in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM]:
@@ -4785,7 +4784,7 @@ class Register(Message):
         if u'concurrency' in options:
 
             options_concurrency = options[u'concurrency']
-            if type(options_concurrency) not in six.integer_types:
+            if type(options_concurrency) != int:
                 raise ProtocolError("invalid type {0} for 'concurrency' option in REGISTER".format(type(options_concurrency)))
 
             if options_concurrency < 1:
@@ -4810,11 +4809,11 @@ class Register(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -4888,8 +4887,8 @@ class Registered(Message):
         :param registration: The registration ID for the registered procedure (or procedure pattern).
         :type registration: int
         """
-        assert(type(request) in six.integer_types)
-        assert(type(registration) in six.integer_types)
+        assert(type(request) == int)
+        assert(type(registration) == int)
 
         Message.__init__(self)
         self.request = request
@@ -4968,8 +4967,8 @@ class Unregister(Message):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
-        assert(type(registration) in six.integer_types)
+        assert(type(request) == int)
+        assert(type(registration) == int)
 
         Message.__init__(self)
         self.request = request
@@ -5007,11 +5006,11 @@ class Unregister(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -5078,9 +5077,9 @@ class Unregistered(Message):
         :param reason: The reason (an URI) for revocation.
         :type reason: str or None.
         """
-        assert(type(request) in six.integer_types)
-        assert(registration is None or type(registration) in six.integer_types)
-        assert(reason is None or type(reason) == six.text_type)
+        assert(type(request) == int)
+        assert(registration is None or type(registration) == int)
+        assert(reason is None or type(reason) == str)
         assert((request != 0 and registration is None) or (request == 0 and registration != 0))
 
         Message.__init__(self)
@@ -5115,7 +5114,7 @@ class Unregistered(Message):
 
             if u"registration" in details:
                 details_registration = details[u"registration"]
-                if type(details_registration) not in six.integer_types:
+                if type(details_registration) != int:
                     raise ProtocolError("invalid type {0} for 'registration' detail in UNREGISTERED".format(type(details_registration)))
                 registration = details_registration
 
@@ -5251,20 +5250,20 @@ class Invocation(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
-        assert(type(registration) in six.integer_types)
+        assert(type(request) == int)
+        assert(type(registration) == int)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
-        assert(timeout is None or type(timeout) in six.integer_types)
+        assert(timeout is None or type(timeout) == int)
         assert(receive_progress is None or type(receive_progress) == bool)
-        assert(caller is None or type(caller) in six.integer_types)
-        assert(caller_authid is None or type(caller_authid) == six.text_type)
-        assert(caller_authrole is None or type(caller_authrole) == six.text_type)
-        assert(procedure is None or type(procedure) == six.text_type)
+        assert(caller is None or type(caller) == int)
+        assert(caller_authid is None or type(caller_authid) == str)
+        assert(caller_authrole is None or type(caller_authrole) == str)
+        assert(procedure is None or type(procedure) == str)
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
-        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_key is None or type(enc_key) == str)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
 
@@ -5272,9 +5271,9 @@ class Invocation(Message):
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self)
         self.request = request
@@ -5322,7 +5321,7 @@ class Invocation(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 5 and type(wmsg[4]) == six.binary_type:
+        if len(wmsg) == 5 and type(wmsg[4]) == bytes:
 
             payload = wmsg[4]
 
@@ -5331,7 +5330,7 @@ class Invocation(Message):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in INVOCATION".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
-            if enc_key and type(enc_key) != six.text_type:
+            if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in INVOCATION".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
@@ -5360,7 +5359,7 @@ class Invocation(Message):
         if u'timeout' in details:
 
             detail_timeout = details[u'timeout']
-            if type(detail_timeout) not in six.integer_types:
+            if type(detail_timeout) != int:
                 raise ProtocolError("invalid type {0} for 'timeout' detail in INVOCATION".format(type(detail_timeout)))
 
             if detail_timeout < 0:
@@ -5379,7 +5378,7 @@ class Invocation(Message):
         if u'caller' in details:
 
             detail_caller = details[u'caller']
-            if type(detail_caller) not in six.integer_types:
+            if type(detail_caller) != int:
                 raise ProtocolError("invalid type {0} for 'caller' detail in INVOCATION".format(type(detail_caller)))
 
             caller = detail_caller
@@ -5387,7 +5386,7 @@ class Invocation(Message):
         if u'caller_authid' in details:
 
             detail_caller_authid = details[u'caller_authid']
-            if type(detail_caller_authid) != six.text_type:
+            if type(detail_caller_authid) != str:
                 raise ProtocolError("invalid type {0} for 'caller_authid' detail in INVOCATION".format(type(detail_caller_authid)))
 
             caller_authid = detail_caller_authid
@@ -5395,7 +5394,7 @@ class Invocation(Message):
         if u'caller_authrole' in details:
 
             detail_caller_authrole = details[u'caller_authrole']
-            if type(detail_caller_authrole) != six.text_type:
+            if type(detail_caller_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'caller_authrole' detail in INVOCATION".format(type(detail_caller_authrole)))
 
             caller_authrole = detail_caller_authrole
@@ -5403,7 +5402,7 @@ class Invocation(Message):
         if u'procedure' in details:
 
             detail_procedure = details[u'procedure']
-            if type(detail_procedure) != six.text_type:
+            if type(detail_procedure) != str:
                 raise ProtocolError("invalid type {0} for 'procedure' detail in INVOCATION".format(type(detail_procedure)))
 
             procedure = detail_procedure
@@ -5415,11 +5414,11 @@ class Invocation(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -5543,18 +5542,18 @@ class Interrupt(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
-        assert(mode is None or type(mode) == six.text_type)
+        assert(type(request) == int)
+        assert(mode is None or type(mode) == str)
         assert(mode is None or mode in [self.KILL, self.KILLNOWAIT])
-        assert(reason is None or type(reason) == six.text_type)
+        assert(reason is None or type(reason) == str)
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self)
         self.request = request
@@ -5592,7 +5591,7 @@ class Interrupt(Message):
         if u'mode' in options:
 
             option_mode = options[u'mode']
-            if type(option_mode) != six.text_type:
+            if type(option_mode) != str:
                 raise ProtocolError("invalid type {0} for 'mode' option in INTERRUPT".format(type(option_mode)))
 
             if option_mode not in [Interrupt.KILL, Interrupt.KILLNOWAIT]:
@@ -5610,11 +5609,11 @@ class Interrupt(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 
@@ -5738,28 +5737,28 @@ class Yield(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert(type(request) in six.integer_types)
+        assert(type(request) == int)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) == six.binary_type)
+        assert(payload is None or type(payload) == bytes)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
-        assert(enc_key is None or type(enc_key) == six.text_type)
+        assert(enc_key is None or type(enc_key) == str)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
 
-        assert(callee is None or type(callee) in six.integer_types)
-        assert(callee_authid is None or type(callee_authid) == six.text_type)
-        assert(callee_authrole is None or type(callee_authrole) == six.text_type)
+        assert(callee is None or type(callee) == int)
+        assert(callee_authid is None or type(callee_authid) == str)
+        assert(callee_authrole is None or type(callee_authrole) == str)
 
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
             for ff in forward_for:
                 assert type(ff) == dict
-                assert 'session' in ff and type(ff['session']) in six.integer_types
-                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == six.text_type)
-                assert 'authrole' in ff and type(ff['authrole']) == six.text_type
+                assert 'session' in ff and type(ff['session']) == int
+                assert 'authid' in ff and (ff['authid'] is None or type(ff['authid']) == str)
+                assert 'authrole' in ff and type(ff['authrole']) == str
 
         Message.__init__(self)
         self.request = request
@@ -5805,7 +5804,7 @@ class Yield(Message):
         enc_key = None
         enc_serializer = None
 
-        if len(wmsg) == 4 and type(wmsg[3]) == six.binary_type:
+        if len(wmsg) == 4 and type(wmsg[3]) == bytes:
 
             payload = wmsg[3]
 
@@ -5814,7 +5813,7 @@ class Yield(Message):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in YIELD".format(enc_algo))
 
             enc_key = options.get(u'enc_key', None)
-            if enc_key and type(enc_key) != six.text_type:
+            if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in YIELD".format(type(enc_key)))
 
             enc_serializer = options.get(u'enc_serializer', None)
@@ -5849,7 +5848,7 @@ class Yield(Message):
         if u'callee' in options:
 
             option_callee = options[u'callee']
-            if type(option_callee) not in six.integer_types:
+            if type(option_callee) != int:
                 raise ProtocolError("invalid type {0} for 'callee' detail in YIELD".format(type(option_callee)))
 
             callee = option_callee
@@ -5857,7 +5856,7 @@ class Yield(Message):
         if u'callee_authid' in options:
 
             option_callee_authid = options[u'callee_authid']
-            if type(option_callee_authid) != six.text_type:
+            if type(option_callee_authid) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authid' detail in YIELD".format(type(option_callee_authid)))
 
             callee_authid = option_callee_authid
@@ -5865,7 +5864,7 @@ class Yield(Message):
         if u'callee_authrole' in options:
 
             option_callee_authrole = options[u'callee_authrole']
-            if type(option_callee_authrole) != six.text_type:
+            if type(option_callee_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authrole' detail in YIELD".format(type(option_callee_authrole)))
 
             callee_authrole = option_callee_authrole
@@ -5877,11 +5876,11 @@ class Yield(Message):
                 for ff in forward_for:
                     if type(ff) != dict:
                         break
-                    if 'session' not in ff or type(ff['session']) not in six.integer_types:
+                    if 'session' not in ff or type(ff['session']) != int:
                         break
-                    if 'authid' not in ff or type(ff['authid']) != six.text_type:
+                    if 'authid' not in ff or type(ff['authid']) != str:
                         break
-                    if 'authrole' not in ff or type(ff['authrole']) != six.text_type:
+                    if 'authrole' not in ff or type(ff['authrole']) != str:
                         break
                 valid = True
 

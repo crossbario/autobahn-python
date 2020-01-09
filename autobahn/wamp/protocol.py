@@ -26,7 +26,6 @@
 
 from __future__ import absolute_import
 
-import six
 import txaio
 import inspect
 from functools import reduce
@@ -147,8 +146,8 @@ class BaseSession(ObservableMixin):
             self._uri_to_ecls[exception._wampuris[0].uri()] = exception
         else:
             assert(not hasattr(exception, '_wampuris'))
-            self._ecls_to_uri_pat[exception] = [uri.Pattern(six.u(error), uri.Pattern.URI_TARGET_HANDLER)]
-            self._uri_to_ecls[six.u(error)] = exception
+            self._ecls_to_uri_pat[exception] = [uri.Pattern(error, uri.Pattern.URI_TARGET_HANDLER)]
+            self._uri_to_ecls[error] = exception
 
     def _message_from_exception(self, request_type, request, exc, tb=None, enc_algo=None):
         """
@@ -174,12 +173,6 @@ class BaseSession(ObservableMixin):
         if hasattr(exc, 'kwargs'):
             kwargs = exc.kwargs
 
-        if kwargs and six.PY2:
-            kwargs = {
-                k.decode('utf8'): v
-                for k, v in kwargs.iteritems()
-            }
-
         if tb:
             if kwargs:
                 kwargs[u'traceback'] = tb
@@ -187,7 +180,7 @@ class BaseSession(ObservableMixin):
                 kwargs = {u'traceback': tb}
 
         if isinstance(exc, exception.ApplicationError):
-            error = exc.error if type(exc.error) == six.text_type else six.u(exc.error)
+            error = exc.error if type(exc.error) == str else exc.error
         else:
             if exc.__class__ in self._ecls_to_uri_pat:
                 error = self._ecls_to_uri_pat[exc.__class__][0]._uri
@@ -408,13 +401,13 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.join`
         """
-        assert(realm is None or type(realm) == six.text_type)
+        assert(realm is None or type(realm) == str)
         assert(authmethods is None or type(authmethods) == list)
         if type(authmethods) == list:
             for authmethod in authmethods:
-                assert(type(authmethod) == six.text_type)
-        assert(authid is None or type(authid) == six.text_type)
-        assert(authrole is None or type(authrole) == six.text_type)
+                assert(type(authmethod) == str)
+        assert(authid is None or type(authid) == str)
+        assert(authrole is None or type(authrole) == str)
         assert(authextra is None or type(authextra) == dict)
 
         if self._session_id:
@@ -620,9 +613,9 @@ class ApplicationSession(BaseSession):
                 def success(signature):
                     if signature is None:
                         raise Exception('onChallenge user callback did not return a signature')
-                    if type(signature) == six.binary_type:
+                    if type(signature) == bytes:
                         signature = signature.decode('utf8')
-                    if type(signature) != six.text_type:
+                    if type(signature) != str:
                         raise Exception('signature must be unicode (was {})'.format(type(signature)))
                     reply = message.Authenticate(signature)
                     self._transport.send(reply)
@@ -969,12 +962,6 @@ class ApplicationSession(BaseSession):
                                     def progress(*args, **kwargs):
                                         assert(args is None or type(args) in (list, tuple))
                                         assert(kwargs is None or type(kwargs) == dict)
-
-                                        if kwargs and six.PY2:
-                                            kwargs = {
-                                                k.decode('utf8'): v
-                                                for k, v in kwargs.iteritems()
-                                            }
 
                                         encoded_payload = None
                                         if msg.enc_algo:
@@ -1370,7 +1357,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
         """
-        assert(type(topic) == six.text_type)
+        assert(type(topic) == str)
         assert(args is None or type(args) in (list, tuple))
         assert(kwargs is None or type(kwargs) == dict)
 
@@ -1383,12 +1370,6 @@ class ApplicationSession(BaseSession):
         options = kwargs.pop('options', None)
         if options and not isinstance(options, types.PublishOptions):
             raise Exception("options must be of type a.w.t.PublishOptions")
-
-        if kwargs and six.PY2:
-            kwargs = {
-                k.decode('utf8'): v
-                for k, v in kwargs.iteritems()
-            }
 
         if not self._transport:
             raise exception.TransportLost()
@@ -1468,7 +1449,7 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
         """
         assert((callable(handler) and topic is not None) or hasattr(handler, '__class__'))
-        assert(topic is None or type(topic) == six.text_type)
+        assert(topic is None or type(topic) == str)
         assert(options is None or isinstance(options, types.SubscribeOptions))
 
         if not self._transport:
@@ -1568,7 +1549,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ICaller.call`
         """
-        assert(type(procedure) == six.text_type)
+        assert(type(procedure) == str)
         assert(args is None or type(args) in (list, tuple))
         assert(kwargs is None or type(kwargs) == dict)
 
@@ -1581,12 +1562,6 @@ class ApplicationSession(BaseSession):
         options = kwargs.pop('options', None)
         if options and not isinstance(options, types.CallOptions):
             raise Exception("options must be of type a.w.t.CallOptions")
-
-        if kwargs and six.PY2:
-            kwargs = {
-                k.decode('utf8'): v
-                for k, v in kwargs.iteritems()
-            }
 
         if not self._transport:
             raise exception.TransportLost()
@@ -1673,9 +1648,9 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ICallee.register`
         """
         assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__'))
-        assert(procedure is None or type(procedure) == six.text_type)
+        assert(procedure is None or type(procedure) == str)
         assert(options is None or isinstance(options, types.RegisterOptions))
-        assert prefix is None or isinstance(prefix, six.text_type)
+        assert prefix is None or isinstance(prefix, str)
 
         if not self._transport:
             raise exception.TransportLost()

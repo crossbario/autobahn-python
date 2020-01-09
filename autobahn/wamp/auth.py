@@ -28,7 +28,6 @@ from __future__ import absolute_import
 
 import os
 import base64
-import six
 import struct
 import time
 import binascii
@@ -348,7 +347,7 @@ class AuthWampCra(object):
 
         self._args = kw
         self._secret = kw.pop(u'secret')
-        if not isinstance(self._secret, six.text_type):
+        if not isinstance(self._secret, str):
             self._secret = self._secret.decode('utf8')
 
     @property
@@ -392,7 +391,7 @@ def generate_totp_secret(length=10):
        The length of the generated secret is ``length * 8 / 5`` octets.
     :rtype: unicode
     """
-    assert(type(length) in six.integer_types)
+    assert(type(length) == int)
     return base64.b32encode(os.urandom(length)).decode('ascii')
 
 
@@ -410,8 +409,8 @@ def compute_totp(secret, offset=0):
     :returns: TOTP for current time (+/- offset).
     :rtype: unicode
     """
-    assert(type(secret) == six.text_type)
-    assert(type(offset) in six.integer_types)
+    assert(type(secret) == str)
+    assert(type(offset) == int)
     try:
         key = base64.b32decode(secret)
     except TypeError:
@@ -419,7 +418,7 @@ def compute_totp(secret, offset=0):
     interval = offset + int(time.time()) // 30
     msg = struct.pack('>Q', interval)
     digest = hmac.new(key, msg, hashlib.sha1).digest()
-    o = 15 & (digest[19] if six.PY3 else ord(digest[19]))
+    o = 15 & (digest[19])
     token = (struct.unpack('>I', digest[o:o + 4])[0] & 0x7fffffff) % 1000000
     return u'{0:06d}'.format(token)
 
@@ -452,10 +451,10 @@ def check_totp(secret, ticket):
 
 @public
 def qrcode_from_totp(secret, label, issuer):
-    if type(secret) != six.text_type:
+    if type(secret) != str:
         raise Exception('secret must be of type unicode, not {}'.format(type(secret)))
 
-    if type(label) != six.text_type:
+    if type(label) != str:
         raise Exception('label must be of type unicode, not {}'.format(type(label)))
 
     try:
@@ -496,8 +495,8 @@ def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
     """
     if not (type(data) == bytes) or \
        not (type(salt) == bytes) or \
-       not (type(iterations) in six.integer_types) or \
-       not (type(keylen) in six.integer_types):
+       not (type(iterations) == int) or \
+       not (type(keylen) == int):
         raise ValueError("Invalid argument types")
 
     # justification: WAMP-CRA uses SHA256 and users shouldn't have any
@@ -541,17 +540,17 @@ def derive_key(secret, salt, iterations=1000, keylen=32):
     :return: The derived key in Base64 encoding.
     :rtype: bytes
     """
-    if not (type(secret) in [six.text_type, six.binary_type]):
+    if not (type(secret) in [str, bytes]):
         raise ValueError("'secret' must be bytes")
-    if not (type(salt) in [six.text_type, six.binary_type]):
+    if not (type(salt) in [str, bytes]):
         raise ValueError("'salt' must be bytes")
-    if not (type(iterations) in six.integer_types):
+    if not (type(iterations) == int):
         raise ValueError("'iterations' must be an integer")
-    if not (type(keylen) in six.integer_types):
+    if not (type(keylen) == int):
         raise ValueError("'keylen' must be an integer")
-    if type(secret) == six.text_type:
+    if type(secret) == str:
         secret = secret.encode('utf8')
-    if type(salt) == six.text_type:
+    if type(salt) == str:
         salt = salt.encode('utf8')
     key = pbkdf2(secret, salt, iterations, keylen)
     return binascii.b2a_base64(key).strip()
@@ -580,7 +579,7 @@ def generate_wcs(length=14):
     :return: The generated secret. The length of the generated is ``length`` octets.
     :rtype: bytes
     """
-    assert(type(length) in six.integer_types)
+    assert(type(length) == int)
     return u"".join([random.choice(WCS_SECRET_CHARSET) for _ in range(length)]).encode('ascii')
 
 
@@ -598,11 +597,11 @@ def compute_wcs(key, challenge):
     :return: The authentication signature.
     :rtype: bytes
     """
-    assert(type(key) in [six.text_type, six.binary_type])
-    assert(type(challenge) in [six.text_type, six.binary_type])
-    if type(key) == six.text_type:
+    assert(type(key) in [str, bytes])
+    assert(type(challenge) in [str, bytes])
+    if type(key) == str:
         key = key.encode('utf8')
-    if type(challenge) == six.text_type:
+    if type(challenge) == str:
         challenge = challenge.encode('utf8')
     sig = hmac.new(key, challenge, hashlib.sha256).digest()
     return binascii.b2a_base64(sig).strip()

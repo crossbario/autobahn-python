@@ -27,7 +27,6 @@
 from __future__ import absolute_import
 
 from base64 import b64encode, b64decode
-import six
 
 from zope.interface import implementer
 
@@ -95,7 +94,7 @@ def check_transport_config(transport_config):
     raises a ValueError if `transport_config` is invalid
     """
     # XXX move me to "autobahn.websocket.util"
-    if not isinstance(transport_config, six.text_type):
+    if not isinstance(transport_config, str):
         raise ValueError(
             "'transport_config' must be a string, found {}".format(type(transport_config))
         )

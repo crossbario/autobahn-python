@@ -7,11 +7,10 @@
 import web3
 from autobahn import xbr
 import click
-import six
 
 
 def hl(text, bold=True, color='yellow'):
-    if not isinstance(text, six.text_type):
+    if not isinstance(text, str):
         text = '{}'.format(text)
     return click.style(text, fg=color, bold=bold)
 

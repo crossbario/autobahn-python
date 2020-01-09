@@ -30,7 +30,6 @@ from __future__ import print_function
 import binascii
 import struct
 
-import six
 import txaio
 
 from autobahn import util
@@ -92,7 +91,7 @@ def _read_ssh_ed25519_pubkey(keydata):
     :returns: pair of raw public key (32 bytes) and comment
     :rtype: tuple
     """
-    if type(keydata) != six.text_type:
+    if type(keydata) != str:
         raise Exception("invalid type {} for keydata".format(type(keydata)))
 
     parts = keydata.strip().split()
@@ -373,7 +372,7 @@ if HAS_CRYPTOSIGN:
             if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
                 raise Exception("invalid type {} for key".format(type(key)))
 
-            if not (comment is None or type(comment) == six.text_type):
+            if not (comment is None or type(comment) == str):
                 raise Exception("invalid type {} for comment".format(type(comment)))
 
             self._key = key
@@ -436,7 +435,7 @@ if HAS_CRYPTOSIGN:
             if not self._can_sign:
                 raise Exception("a signing key required to sign")
 
-            if type(data) != six.binary_type:
+            if type(data) != bytes:
                 raise Exception("data to be signed must be binary")
 
             # sig is a nacl.signing.SignedMessage
@@ -471,7 +470,7 @@ if HAS_CRYPTOSIGN:
             # the challenge sent by the router (a 32 bytes random value)
             challenge_hex = challenge.extra[u'challenge']
 
-            if type(challenge_hex) != six.text_type:
+            if type(challenge_hex) != str:
                 raise Exception(u"invalid type {} for challenge (expected a hex string)".format(type(challenge_hex)))
 
             if len(challenge_hex) != 64:
@@ -513,10 +512,10 @@ if HAS_CRYPTOSIGN:
         @util.public
         @classmethod
         def from_key_bytes(cls, keydata, comment=None):
-            if not (comment is None or type(comment) == six.text_type):
+            if not (comment is None or type(comment) == str):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
-            if type(keydata) != six.binary_type:
+            if type(keydata) != bytes:
                 raise ValueError("invalid key type {} (expected binary)".format(type(keydata)))
 
             if len(keydata) != 32:
@@ -542,10 +541,10 @@ if HAS_CRYPTOSIGN:
             :param comment: Comment for key (optional).
             :type comment: str or None
             """
-            if not (comment is None or type(comment) == six.text_type):
+            if not (comment is None or type(comment) == str):
                 raise Exception("invalid type {} for comment".format(type(comment)))
 
-            if type(filename) != six.text_type:
+            if type(filename) != str:
                 raise Exception("invalid type {} for filename".format(filename))
 
             with open(filename, 'rb') as f:

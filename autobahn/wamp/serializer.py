@@ -27,7 +27,6 @@
 from __future__ import absolute_import
 
 import os
-import six
 import struct
 import platform
 import math
@@ -293,7 +292,7 @@ class Serializer(object):
 
                 message_type = raw_msg[0]
 
-                if type(message_type) not in six.integer_types:
+                if type(message_type) != int:
                     # CBOR doesn't roundtrip number types
                     # https://bitbucket.org/bodhisnarkva/cbor/issues/6/number-types-dont-roundtrip
                     raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
@@ -347,7 +346,7 @@ else:
     class _WAMPJsonEncoder(json.JSONEncoder):
 
         def default(self, obj):
-            if isinstance(obj, six.binary_type):
+            if isinstance(obj, bytes):
                 return u'\x00' + base64.b64encode(obj).decode('ascii')
             else:
                 return json.JSONEncoder.default(self, obj)
@@ -416,7 +415,7 @@ class JsonObjectSerializer(object):
         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
         """
         s = _dumps(obj)
-        if isinstance(s, six.text_type):
+        if isinstance(s, str):
             s = s.encode('utf8')
         if self._batched:
             return s + b'\30'

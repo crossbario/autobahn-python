@@ -33,7 +33,6 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
     from twisted.internet.address import IPv4Address
     from twisted.internet.task import Clock
-    from six import PY3
 
     from autobahn.twisted.websocket import WebSocketServerProtocol
     from autobahn.twisted.websocket import WebSocketServerFactory
@@ -264,10 +263,7 @@ if os.environ.get('USE_TWISTED', False):
                 self.assertTrue(self.transport.write.called)
                 data = self.transport.write.call_args[0][0]
 
-                if PY3:
-                    _data = bytes([data[0]])
-                else:
-                    _data = data[0]
+                _data = bytes([data[0]])
 
                 # the opcode is the lower 7 bits of the first byte.
                 (opcode,) = struct.unpack("B", _data)

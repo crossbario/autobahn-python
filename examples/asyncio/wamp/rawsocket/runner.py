@@ -1,7 +1,6 @@
-import six
 import asyncio
 import signal
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 from autobahn.wamp.types import ComponentConfig
 from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
 import txaio
@@ -32,8 +31,8 @@ class ApplicationRunnerRawSocket(object):
         :param serializer:  WAMP serializer to use (or None for default serializer).
         :type serializer: `autobahn.wamp.interfaces.ISerializer`
         """
-        assert(type(url) == six.text_type)
-        assert(type(realm) == six.text_type)
+        assert(type(url) == str)
+        assert(type(realm) == str)
         assert(extra is None or type(extra) == dict)
         self.url = url
         self.realm = realm

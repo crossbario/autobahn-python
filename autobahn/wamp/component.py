@@ -28,7 +28,6 @@
 from __future__ import absolute_import
 
 import itertools
-import six
 import random
 from functools import partial
 
@@ -190,7 +189,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
             if not isinstance(transport['serializers'], (list, tuple)):
                 raise ValueError("'serializers' must be a list of strings")
             if not all([
-                    isinstance(s, (six.text_type, str))
+                    isinstance(s, (str, str))
                     for s in transport['serializers']]):
                 raise ValueError("'serializers' must be a list of strings")
             valid_serializers = SERID_TO_SER.keys()
@@ -232,7 +231,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
             raise ValueError("'serializers' is only for websocket; use 'serializer'")
         # always a list; len == 1 for rawsocket
         if 'serializer' in transport:
-            if not isinstance(transport['serializer'], (six.text_type, str)):
+            if not isinstance(transport['serializer'], (str, str)):
                 raise ValueError("'serializer' must be a string")
             serializer_config = [transport['serializer']]
         else:
@@ -491,7 +490,7 @@ class Component(ObservableMixin):
             transports = u'ws://127.0.0.1:8080/ws'
 
         # allows to provide an URL instead of a list of transports
-        if isinstance(transports, (six.text_type, str)):
+        if isinstance(transports, (str, str)):
             url = transports
             # 'endpoint' will get filled in by parsing the 'url'
             transport = {

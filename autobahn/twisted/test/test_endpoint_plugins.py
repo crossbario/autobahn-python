@@ -27,11 +27,10 @@
 from __future__ import absolute_import
 
 from twisted.trial.unittest import TestCase
-import six
 
 
 class PluginTests(TestCase):
-    if six.PY3:
+    if True:
         skip = "Plugins don't work under Python3 yet"
 
     def test_import(self):

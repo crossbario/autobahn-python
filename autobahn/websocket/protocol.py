@@ -35,10 +35,10 @@ import os
 import pickle
 import copy
 import json
-import six
 
 from pprint import pformat
 from collections import deque
+from urllib import parse
 
 from autobahn import __version__
 
@@ -59,13 +59,8 @@ from autobahn.websocket.util import parse_url
 from autobahn.exception import PayloadExceededError
 from autobahn.util import _maybe_tls_reason
 
-from six.moves import urllib
 import txaio
 
-if six.PY3:
-    # Python 3
-    # noinspection PyShadowingBuiltins
-    xrange = range
 
 __all__ = ("WebSocketProtocol",
            "WebSocketFactory",
@@ -84,7 +79,7 @@ def _url_to_origin(url):
     if url.lower() == 'null':
         return 'null'
 
-    res = urllib.parse.urlsplit(url)
+    res = parse.urlsplit(url)
     scheme = res.scheme.lower()
     if scheme == 'file':
         # when browsing local files, Chrome sends file:// URLs,
@@ -1369,20 +1364,14 @@ class WebSocketProtocol(ObservableMixin):
 
                 # FIN, RSV, OPCODE
                 #
-                if six.PY3:
-                    b = self.data[0]
-                else:
-                    b = ord(self.data[0])
+                b = self.data[0]
                 frame_fin = (b & 0x80) != 0
                 frame_rsv = (b & 0x70) >> 4
                 frame_opcode = b & 0x0f
 
                 # MASK, PAYLOAD LEN 1
                 #
-                if six.PY3:
-                    b = self.data[1]
-                else:
-                    b = ord(self.data[1])
+                b = self.data[1]
                 frame_masked = (b & 0x80) != 0
                 frame_payload_len1 = b & 0x7f
 
@@ -1863,11 +1852,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             raise Exception("invalid payload length")
 
-        if six.PY3:
-            raw = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv, plm])
-        else:
-            raw = b''.join([chr(b0), chr(b1), el, mv, plm])
-
+        raw = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv, plm])
         if opcode in [0, 1, 2]:
             self.trafficStats.outgoingWebSocketFrames += 1
 
@@ -1975,7 +1960,7 @@ class WebSocketProtocol(ObservableMixin):
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
         """
         if code is not None:
-            if type(code) not in six.integer_types:
+            if type(code) != int:
                 raise Exception("invalid type '{}' for close code (must be an integer)".format(type(code)))
 
             # 1000 Normal Closure
@@ -1990,7 +1975,7 @@ class WebSocketProtocol(ObservableMixin):
             if code is None:
                 raise Exception("close reason without close code")
 
-            if type(reason) != six.text_type:
+            if type(reason) != str:
                 raise Exception("reason must be of type unicode (was '{}')".format(type(reason)))
 
             reasonUtf8 = encode_truncate(reason, 123)
@@ -2101,10 +2086,7 @@ class WebSocketProtocol(ObservableMixin):
 
         # write message frame header
         #
-        if six.PY3:
-            header = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv])
-        else:
-            header = b''.join([chr(b0), chr(b1), el, mv])
+        header = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv])
 
         self.sendData(header)
 
@@ -2200,7 +2182,7 @@ class WebSocketProtocol(ObservableMixin):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage`
         """
-        assert type(payload) == six.binary_type, '"payload" must have type bytes, but was "{}"'.format(type(payload))
+        assert type(payload) == bytes, '"payload" must have type bytes, but was "{}"'.format(type(payload))
         assert type(isBinary) == bool, '"isBinary" must have type bool, but was "{}"'.format(type(isBinary))
         assert fragmentSize is None or type(fragmentSize) == int, '"fragmentSize" must have type int, but was "{}"'.format(type(fragmentSize))
         assert type(sync) == bool, '"sync" must have type bool, but was "{}"'.format(type(sync))
@@ -2392,10 +2374,7 @@ class PreparedMessage(object):
 
         # raw WS message (single frame)
         #
-        if six.PY3:
-            self.payloadHybi = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mask, plm])
-        else:
-            self.payloadHybi = b''.join([chr(b0), chr(b1), el, mask, plm])
+        self.payloadHybi = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mask, plm])
 
 
 class WebSocketFactory(object):
@@ -2576,7 +2555,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             #
             self.http_request_uri = rl[1].strip()
             try:
-                (scheme, netloc, path, params, query, fragment) = urllib.parse.urlparse(self.http_request_uri)
+                (scheme, netloc, path, params, query, fragment) = parse.urlparse(self.http_request_uri)
 
                 # FIXME: check that if absolute resource URI is given,
                 # the scheme/netloc matches the server
@@ -2591,7 +2570,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 # resource path and query parameters .. this will get forwarded
                 # to onConnect()
                 self.http_request_path = path
-                self.http_request_params = urllib.parse.parse_qs(query)
+                self.http_request_params = parse.parse_qs(query)
             except:
                 return self.failHandshake("Bad HTTP request resource - could not parse '%s'" % rl[1].strip())
 
@@ -2970,7 +2949,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # headers from factory, headers from onConnect
         for headers_source in (self.factory.headers.items(), headers.items()):
             for uh in headers_source:
-                if isinstance(uh[1], six.string_types):
+                if isinstance(uh[1], (str, )):
                     header_values = [uh[1]]
                 else:
                     try:
@@ -3327,7 +3306,7 @@ class WebSocketServerFactory(WebSocketFactory):
             self.autoPingTimeout = autoPingTimeout
 
         if autoPingSize is not None and autoPingSize != self.autoPingSize:
-            assert(type(autoPingSize) == float or type(autoPingSize) in six.integer_types)
+            assert(type(autoPingSize) == float or type(autoPingSize) == int)
             assert(4 <= autoPingSize <= 125)
             self.autoPingSize = autoPingSize
 
@@ -3346,12 +3325,12 @@ class WebSocketServerFactory(WebSocketFactory):
         self.allowNullOrigin = allowNullOrigin
 
         if maxConnections is not None and maxConnections != self.maxConnections:
-            assert(type(maxConnections) in six.integer_types)
+            assert(type(maxConnections) == int)
             assert(maxConnections >= 0)
             self.maxConnections = maxConnections
 
         if trustXForwardedFor is not None and trustXForwardedFor != self.trustXForwardedFor:
-            assert(type(trustXForwardedFor) in six.integer_types)
+            assert(type(trustXForwardedFor) == int)
             assert(trustXForwardedFor >= 0)
             self.trustXForwardedFor = trustXForwardedFor
 
@@ -4068,6 +4047,6 @@ class WebSocketClientFactory(WebSocketFactory):
             self.autoPingTimeout = autoPingTimeout
 
         if autoPingSize is not None and autoPingSize != self.autoPingSize:
-            assert(type(autoPingSize) == float or type(autoPingSize) in six.integer_types)
+            assert(type(autoPingSize) == float or type(autoPingSize) == int)
             assert(4 <= autoPingSize <= 125)
             self.autoPingSize = autoPingSize

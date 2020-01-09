@@ -26,7 +26,6 @@
 
 from __future__ import absolute_import
 
-import six
 import inspect
 import binascii
 import random
@@ -35,6 +34,7 @@ import txaio
 txaio.use_twisted()  # noqa
 
 from twisted.internet.defer import inlineCallbacks, succeed
+from twisted.application import service
 
 from autobahn.util import public
 
@@ -63,13 +63,6 @@ __all__ = [
     'Session',
     # 'run',  # should probably move this method to here? instead of component
 ]
-
-try:
-    from twisted.application import service
-except (ImportError, SyntaxError):
-    # Not on PY3 yet
-    service = None
-    __all__.pop(__all__.index('Service'))
 
 
 @public
@@ -169,8 +162,8 @@ class ApplicationRunner(object):
         :param retry_delay_jitter: A 0-argument callable that introduces nose into the delay. (Default random.random)
         :type retry_delay_jitter: float
         """
-        assert(type(url) == six.text_type)
-        assert(realm is None or type(realm) == six.text_type)
+        assert(type(url) == str)
+        assert(realm is None or type(realm) == str)
         assert(extra is None or type(extra) == dict)
         assert(headers is None or type(headers) == dict)
         assert(proxy is None or type(proxy) == dict)
@@ -688,85 +681,82 @@ class Application(object):
                 self.log.info("Warning: exception in signal handler swallowed: {err}", err=e)
 
 
-if service:
-    # Don't define it if Twisted's service support isn't here
+class Service(service.MultiService):
+    """
+    A WAMP application as a twisted service.
+    The application object provides a simple way of creating, debugging and running WAMP application
+    components inside a traditional twisted application
 
-    class Service(service.MultiService):
+    This manages application lifecycle of the wamp connection using startService and stopService
+    Using services also allows to create integration tests that properly terminates their connections
+
+    It can host a WAMP application component in a WAMP-over-WebSocket client
+    connecting to a WAMP router.
+    """
+    factory = WampWebSocketClientFactory
+
+    def __init__(self, url, realm, make, extra=None, context_factory=None):
         """
-        A WAMP application as a twisted service.
-        The application object provides a simple way of creating, debugging and running WAMP application
-        components inside a traditional twisted application
 
-        This manages application lifecycle of the wamp connection using startService and stopService
-        Using services also allows to create integration tests that properly terminates their connections
+        :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
+        :type url: unicode
 
-        It can host a WAMP application component in a WAMP-over-WebSocket client
-        connecting to a WAMP router.
+        :param realm: The WAMP realm to join the application session to.
+        :type realm: unicode
+
+        :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
+           when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
+        :type make: callable
+
+        :param extra: Optional extra configuration to forward to the application component.
+        :type extra: dict
+
+        :param context_factory: optional, only for secure connections. Passed as contextFactory to
+            the ``listenSSL()`` call; see https://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IReactorSSL.connectSSL.html
+        :type context_factory: twisted.internet.ssl.ClientContextFactory or None
+
+        You can replace the attribute factory in order to change connectionLost or connectionFailed behaviour.
+        The factory attribute must return a WampWebSocketClientFactory object
         """
-        factory = WampWebSocketClientFactory
+        self.url = url
+        self.realm = realm
+        self.extra = extra or dict()
+        self.make = make
+        self.context_factory = context_factory
+        service.MultiService.__init__(self)
+        self.setupService()
 
-        def __init__(self, url, realm, make, extra=None, context_factory=None):
-            """
+    def setupService(self):
+        """
+        Setup the application component.
+        """
+        is_secure, host, port, resource, path, params = parse_ws_url(self.url)
 
-            :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
-            :type url: unicode
+        # factory for use ApplicationSession
+        def create():
+            cfg = ComponentConfig(self.realm, self.extra)
+            session = self.make(cfg)
+            return session
 
-            :param realm: The WAMP realm to join the application session to.
-            :type realm: unicode
+        # create a WAMP-over-WebSocket transport client factory
+        transport_factory = self.factory(create, url=self.url)
 
-            :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
-               when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
-            :type make: callable
+        # setup the client from a Twisted endpoint
 
-            :param extra: Optional extra configuration to forward to the application component.
-            :type extra: dict
+        if is_secure:
+            from twisted.application.internet import SSLClient
+            ctx = self.context_factory
+            if ctx is None:
+                from twisted.internet.ssl import optionsForClientTLS
+                ctx = optionsForClientTLS(host)
+            client = SSLClient(host, port, transport_factory, contextFactory=ctx)
+        else:
+            if self.context_factory is not None:
+                raise Exception("context_factory specified on non-secure URI")
+            from twisted.application.internet import TCPClient
+            client = TCPClient(host, port, transport_factory)
 
-            :param context_factory: optional, only for secure connections. Passed as contextFactory to
-                the ``listenSSL()`` call; see https://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IReactorSSL.connectSSL.html
-            :type context_factory: twisted.internet.ssl.ClientContextFactory or None
-
-            You can replace the attribute factory in order to change connectionLost or connectionFailed behaviour.
-            The factory attribute must return a WampWebSocketClientFactory object
-            """
-            self.url = url
-            self.realm = realm
-            self.extra = extra or dict()
-            self.make = make
-            self.context_factory = context_factory
-            service.MultiService.__init__(self)
-            self.setupService()
-
-        def setupService(self):
-            """
-            Setup the application component.
-            """
-            is_secure, host, port, resource, path, params = parse_ws_url(self.url)
-
-            # factory for use ApplicationSession
-            def create():
-                cfg = ComponentConfig(self.realm, self.extra)
-                session = self.make(cfg)
-                return session
-
-            # create a WAMP-over-WebSocket transport client factory
-            transport_factory = self.factory(create, url=self.url)
-
-            # setup the client from a Twisted endpoint
-
-            if is_secure:
-                from twisted.application.internet import SSLClient
-                ctx = self.context_factory
-                if ctx is None:
-                    from twisted.internet.ssl import optionsForClientTLS
-                    ctx = optionsForClientTLS(host)
-                client = SSLClient(host, port, transport_factory, contextFactory=ctx)
-            else:
-                if self.context_factory is not None:
-                    raise Exception("context_factory specified on non-secure URI")
-                from twisted.application.internet import TCPClient
-                client = TCPClient(host, port, transport_factory)
-
-            client.setServiceParent(self)
+        client.setServiceParent(self)
 
 
 # new API
@@ -851,7 +841,7 @@ class AuthWampCra(object):
 
         self._args = kw
         self._secret = kw.pop(u'secret')
-        if not isinstance(self._secret, six.text_type):
+        if not isinstance(self._secret, str):
             self._secret = self._secret.decode('utf8')
 
     def on_challenge(self, session, challenge):

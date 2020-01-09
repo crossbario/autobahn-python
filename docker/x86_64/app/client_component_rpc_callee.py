@@ -3,7 +3,6 @@ from autobahn.twisted.util import sleep
 from twisted.internet.defer import inlineCallbacks
 import os
 import argparse
-import six
 import datetime
 
 url = os.environ.get('CBURL', u'ws://localhost:8080/ws')

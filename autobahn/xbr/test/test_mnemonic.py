@@ -31,7 +31,6 @@ from autobahn.xbr import HAS_XBR
 if HAS_XBR:
     import unittest
     import binascii
-    import six
     from autobahn.xbr import generate_seedphrase, check_seedphrase, account_from_seedphrase
 
     _SEEDPHRASE = "myth like bonus scare over problem client lizard pioneer submit female collect"
@@ -59,7 +58,6 @@ if HAS_XBR:
         ('0x3fD652C93dFA333979ad762Cf581Df89BaBa6795', '0xae9a2e131e9b359b198fa280de53ddbe2247730b881faae7af08e567e58915bd'),
     ]
 
-    @unittest.skip(six.PY2)
     class TestEthereumMnemonic(unittest.TestCase):
 
         def test_check_seedphrase(self):

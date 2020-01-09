@@ -25,7 +25,6 @@
 ###############################################################################
 
 from unittest import TestCase
-from six import PY3
 
 from autobahn.wamp.exception import ApplicationError
 
@@ -38,10 +37,7 @@ class ApplicationErrorTestCase(TestCase):
         str()'d.
         """
         error = ApplicationError(u"some.url", u"\u2603")
-        if PY3:
-            self.assertIn(u"\u2603", str(error))
-        else:
-            self.assertIn("\\u2603", str(error))
+        self.assertIn(u"\u2603", str(error))
 
     def test_unicode_errormessage(self):
         """
@@ -49,7 +45,6 @@ class ApplicationErrorTestCase(TestCase):
         the error_message method is called.
         """
         error = ApplicationError(u"some.url", u"\u2603")
-        if PY3:
-            # on py27-tw189: exceptions.UnicodeEncodeError: 'ascii' codec can't encode character u'\u2603' in position 10: ordinal not in
-            print(error.error_message())
+        # on py27-tw189: exceptions.UnicodeEncodeError: 'ascii' codec can't encode character u'\u2603' in position 10: ordinal not in
+        print(error.error_message())
         self.assertIn(u"\u2603", error.error_message())

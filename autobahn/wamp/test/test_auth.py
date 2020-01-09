@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import unittest
 import platform
 
-import six
 import re
 import json
 import binascii
@@ -81,20 +80,20 @@ class TestWampAuthHelpers(unittest.TestCase):
 
     def test_generate_totp_secret_default(self):
         secret = auth.generate_totp_secret()
-        self.assertEqual(type(secret), six.text_type)
+        self.assertEqual(type(secret), str)
         self.assertEqual(len(secret), 10 * 8 / 5)
 
     def test_generate_totp_secret_length(self):
         for length in [5, 10, 20, 30, 40, 50]:
             secret = auth.generate_totp_secret(length)
-            self.assertEqual(type(secret), six.text_type)
+            self.assertEqual(type(secret), str)
             self.assertEqual(len(secret), length * 8 / 5)
 
     def test_compute_totp(self):
         pat = re.compile(r"\d\d\d\d\d\d")
         secret = u"MFRGGZDFMZTWQ2LK"
         signature = auth.compute_totp(secret)
-        self.assertEqual(type(signature), six.text_type)
+        self.assertEqual(type(signature), str)
         self.assertTrue(pat.match(signature) is not None)
 
     def test_compute_totp_offset(self):
@@ -102,7 +101,7 @@ class TestWampAuthHelpers(unittest.TestCase):
         secret = u"MFRGGZDFMZTWQ2LK"
         for offset in range(-10, 10):
             signature = auth.compute_totp(secret, offset)
-            self.assertEqual(type(signature), six.text_type)
+            self.assertEqual(type(signature), str)
             self.assertTrue(pat.match(signature) is not None)
 
     def test_derive_key(self):

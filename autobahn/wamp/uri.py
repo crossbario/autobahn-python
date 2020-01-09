@@ -29,7 +29,6 @@ from __future__ import absolute_import
 
 import re
 
-import six
 
 from autobahn.util import public
 from autobahn.wamp.types import RegisterOptions, SubscribeOptions
@@ -72,7 +71,7 @@ def convert_starred_uri(uri):
     matches a strict superset of the former!). This is one reason we don't use
     starred URIs for WAMP at the protocol level.
     """
-    assert(type(uri) == six.text_type)
+    assert(type(uri) == str)
 
     cnt_stars = uri.count(u'*')
 
@@ -146,7 +145,7 @@ class Pattern(object):
         :param options: An optional options object
         :type options: None or RegisterOptions or SubscribeOptions
         """
-        assert(type(uri) == six.text_type)
+        assert(type(uri) == str)
         assert(len(uri) > 0)
         assert(target in [Pattern.URI_TARGET_ENDPOINT,
                           Pattern.URI_TARGET_HANDLER,
@@ -332,10 +331,7 @@ def register(uri, options=None):
     def decorate(f):
         assert(callable(f))
         if uri is None:
-            if six.PY2:
-                real_uri = u'{}'.format(f.func_name)
-            else:
-                real_uri = u'{}'.format(f.__name__)
+            real_uri = u'{}'.format(f.__name__)
         else:
             real_uri = uri
         if not hasattr(f, '_wampuris'):

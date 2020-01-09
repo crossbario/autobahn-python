@@ -39,7 +39,6 @@ from datetime import datetime, timedelta
 from pprint import pformat
 from array import array
 
-import six
 
 import txaio
 
@@ -124,8 +123,8 @@ def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
     :returns: The truncated string.
     :rtype: str or bytes
     """
-    assert(text is None or type(text) == six.text_type)
-    assert(type(limit) in six.integer_types)
+    assert(text is None or type(text) == str)
+    assert(type(limit) == int)
     assert(limit >= 0)
 
     if text is None:
@@ -165,9 +164,9 @@ def xor(d1, d2):
     :returns: XOR of the binary strings (``XOR(d1, d2)``)
     :rtype: bytes
     """
-    if type(d1) != six.binary_type:
+    if type(d1) != bytes:
         raise Exception("invalid type {} for d1 - must be binary".format(type(d1)))
-    if type(d2) != six.binary_type:
+    if type(d2) != bytes:
         raise Exception("invalid type {} for d2 - must be binary".format(type(d2)))
     if len(d1) != len(d2):
         raise Exception("cannot XOR binary string of differing length ({} != {})".format(len(d1), len(d2)))
@@ -178,10 +177,7 @@ def xor(d1, d2):
     for i in range(len(d1)):
         d1[i] ^= d2[i]
 
-    if six.PY3:
-        return d1.tobytes()
-    else:
-        return d1.tostring()
+    return d1.tobytes()
 
 
 @public
@@ -421,9 +417,9 @@ def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_cas
     :returns: The generated token.
     :rtype: str
     """
-    assert(type(char_groups) in six.integer_types)
-    assert(type(chars_per_group) in six.integer_types)
-    assert(chars is None or type(chars) == six.text_type)
+    assert(type(char_groups) == int)
+    assert(type(chars_per_group) == int)
+    assert(chars is None or type(chars) == str)
     chars = chars or DEFAULT_TOKEN_CHARS
     if lower_case:
         chars = chars.lower()

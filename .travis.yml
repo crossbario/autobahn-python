@@ -96,26 +96,6 @@ matrix:
       env:
       - TOX_ENV=py35-asyncio
 
-    #
-    # CPython 2.7
-    #
-    - python: "2.7"
-      env:
-      - TOX_ENV=py27-tw154
-
-    - python: "2.7"
-      env:
-      - TOX_ENV=py27-tw189
-
-    - python: "2.7"
-      env:
-      - TOX_ENV=py27-twtrunk
-
-    - python: "2.7"
-      env:
-      - TOX_ENV=py27-asyncio
-
-
     - python: "3.7"
       skip_cleanup: true
       env: TOX_ENV=coverage

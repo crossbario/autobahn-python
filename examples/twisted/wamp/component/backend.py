@@ -9,7 +9,6 @@ from twisted.internet.ssl import CertificateOptions
 from twisted.internet.ssl import optionsForClientTLS, Certificate
 from OpenSSL import crypto
 from os.path import join, split
-import six
 
 
 examples_dir = join(split(__file__)[0], '..', '..', '..')
@@ -17,14 +16,14 @@ cert_fname = join(examples_dir, 'router', '.crossbar', 'server.crt')
 if False:
     cert = crypto.load_certificate(
         crypto.FILETYPE_PEM,
-        six.u(open(cert_fname, 'r').read())
+        open(cert_fname, 'r').read()
     )
     # tell Twisted to use just the one certificate we loaded to verify connections
     options = CertificateOptions(
         trustRoot=OpenSSLCertificateAuthorities([cert]),
     )
 else:
-    cert = Certificate.loadPEM(six.u(open(cert_fname, 'r').read()))
+    cert = Certificate.loadPEM(open(cert_fname, 'r').read())
     options = optionsForClientTLS(
         hostname=u'localhost',
         trustRoot=cert,

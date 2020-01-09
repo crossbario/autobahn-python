@@ -46,7 +46,6 @@ except ImportError:
     # there's no optionsForClientTLS in older Twisteds or we might be
     # missing OpenSSL entirely.
 
-import six
 import txaio
 
 from autobahn.twisted.websocket import WampWebSocketClientFactory
@@ -127,15 +126,15 @@ def _create_transport_endpoint(reactor, endpoint_config):
                 raise ValueError('invalid IP version {} in client endpoint configuration'.format(version))
 
             host = endpoint_config[u'host']
-            if type(host) != six.text_type:
+            if type(host) != str:
                 raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
 
             port = endpoint_config[u'port']
-            if type(port) not in six.integer_types:
+            if type(port) != int:
                 raise ValueError('invalid type {} for port in client endpoint configuration'.format(type(port)))
 
             timeout = endpoint_config.get(u'timeout', 10)  # in seconds
-            if type(timeout) not in six.integer_types:
+            if type(timeout) != int:
                 raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
 
             tls = endpoint_config.get(u'tls', None)
@@ -155,12 +154,12 @@ def _create_transport_endpoint(reactor, endpoint_config):
                         if k not in [u"hostname", u"trust_root"]:
                             raise ValueError("Invalid key '{}' in 'tls' config".format(k))
                     hostname = tls.get(u'hostname', host)
-                    if type(hostname) != six.text_type:
+                    if type(hostname) != str:
                         raise ValueError('invalid type {} for hostname in TLS client endpoint configuration'.format(hostname))
                     trust_root = None
                     cert_fname = tls.get(u"trust_root", None)
                     if cert_fname is not None:
-                        trust_root = Certificate.loadPEM(six.u(open(cert_fname, 'r').read()))
+                        trust_root = Certificate.loadPEM(open(cert_fname, 'r').read())
                     context = optionsForClientTLS(hostname, trustRoot=trust_root)
 
                 elif isinstance(tls, CertificateOptions):
