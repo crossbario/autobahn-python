@@ -130,21 +130,18 @@ That is, **use an assert if the following holds true: if the assert fails, it me
 In contrast, to check e.g. for user errors, such as application code using the wrong type when calling into the library, use Exceptions:
 
 ```python
-import six
-
 def foo(uri):
-    if type(uri) != six.text_type:
+    if type(uri) != str:
         raise RuntimeError(u"URIs for foo() must be unicode - got {} instead".format(type(uri)))
 ```
 
 In this specific example, we also have a WAMP defined error (which would be preferred compared to the generic exception used above):
 
 ```python
-import six
 from autobahn.wamp import ApplicationError
 
 def foo(uri):
-    if type(uri) != six.text_type:
+    if type(uri) != str:
         raise ApplicationError(ApplicationError.INVALID_URI,
                                u"URIs for foo() must be unicode - got {} instead".format(type(uri)))
 ```
