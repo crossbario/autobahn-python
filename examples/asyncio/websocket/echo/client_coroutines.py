@@ -24,13 +24,10 @@
 #
 ###############################################################################
 
+import asyncio
+
 from autobahn.asyncio.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory
-
-try:
-    import asyncio
-except ImportError:
-    import trollius as asyncio
 
 
 class MyClientProtocol(WebSocketClientProtocol):

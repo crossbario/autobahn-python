@@ -24,10 +24,11 @@
 #
 ###############################################################################
 
-from autobahn.asyncio.websocket import WebSocketServerProtocol, \
-    WebSocketServerFactory
 import asyncio
 import json
+
+from autobahn.asyncio.websocket import WebSocketServerProtocol, \
+    WebSocketServerFactory
 
 
 class SlowSquareServerProtocol(WebSocketServerProtocol):

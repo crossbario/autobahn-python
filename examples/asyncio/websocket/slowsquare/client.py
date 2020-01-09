@@ -24,6 +24,8 @@
 #
 ###############################################################################
 
+import asyncio
+
 from autobahn.asyncio.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory
 
@@ -51,8 +53,6 @@ class SlowSquareClientProtocol(WebSocketClientProtocol):
 
 
 if __name__ == '__main__':
-    import asyncio
-
     factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = SlowSquareClientProtocol
 

@@ -24,14 +24,8 @@
 #
 ###############################################################################
 
+import asyncio
 import signal
-
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed to asyncio
-    # noinspection PyUnresolvedReferences
-    import trollius as asyncio
 
 import txaio
 txaio.use_asyncio()  # noqa

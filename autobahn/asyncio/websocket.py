@@ -24,6 +24,9 @@
 #
 ###############################################################################
 
+import asyncio
+from asyncio import iscoroutine
+from asyncio import Future
 from collections import deque
 
 import txaio
@@ -34,22 +37,6 @@ from autobahn.asyncio.util import transport_channel_id, peer2str
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
 from autobahn.websocket.types import TransportDetails
-
-try:
-    import asyncio
-    from asyncio import iscoroutine
-    from asyncio import Future
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    # noinspection PyUnresolvedReferences
-    import trollius as asyncio
-    from trollius import iscoroutine
-    from trollius import Future
-
-if hasattr(asyncio, 'ensure_future'):
-    ensure_future = asyncio.ensure_future
-else:  # Deprecated since Python 3.4.4
-    ensure_future = getattr(asyncio, 'async')
 
 __all__ = (
     'WebSocketServerProtocol',
@@ -124,57 +111,57 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
     def _onOpen(self):
         res = self.onOpen()
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def _onMessageBegin(self, isBinary):
         res = self.onMessageBegin(isBinary)
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def _onMessageFrameBegin(self, length):
         res = self.onMessageFrameBegin(length)
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def _onMessageFrameData(self, payload):
         res = self.onMessageFrameData(payload)
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def _onMessageFrameEnd(self):
         res = self.onMessageFrameEnd()
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def _onMessageFrame(self, payload):
         res = self.onMessageFrame(payload)
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def _onMessageEnd(self):
         res = self.onMessageEnd()
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def _onMessage(self, payload, isBinary):
         res = self.onMessage(payload, isBinary)
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def _onPing(self, payload):
         res = self.onPing(payload)
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def _onPong(self, payload):
         res = self.onPong(payload)
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def _onClose(self, wasClean, code, reason):
         res = self.onClose(wasClean, code, reason)
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def registerProducer(self, producer, streaming):
         raise Exception("not implemented")
@@ -222,7 +209,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     def _onConnect(self, response):
         res = self.onConnect(response)
         if yields(res):
-            ensure_future(res)
+            asyncio.ensure_future(res)
 
     def startTLS(self):
         raise Exception("WSS over explicit proxies not implemented")

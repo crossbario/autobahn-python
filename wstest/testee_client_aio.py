@@ -24,15 +24,11 @@
 #
 ###############################################################################
 
+import asyncio
 import argparse
 
 import txaio
 txaio.use_asyncio()
-
-try:
-    import asyncio
-except ImportError:
-    import trollius as asyncio
 
 import autobahn
 

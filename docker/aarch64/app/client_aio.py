@@ -1,11 +1,8 @@
-import os
 import argparse
-import txaio
+import asyncio
+import os
 
-try:
-    import asyncio
-except ImportError:
-    import trollius as asyncio
+import txaio
 
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 

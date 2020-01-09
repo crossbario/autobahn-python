@@ -24,11 +24,7 @@
 #
 ###############################################################################
 
-try:
-    import asyncio
-except ImportError:
-    # trollious for py2 support - however it has been deprecated
-    import trollius as asyncio
+import asyncio
 import struct
 import math
 import copy

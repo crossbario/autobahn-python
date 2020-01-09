@@ -90,15 +90,9 @@ if os.environ.get('USE_TWISTED', False):
                 )
                 self.assertTrue(mockreactor.stop_called)
 else:
-    # Asyncio tests.
-    try:
-        import asyncio
-        from unittest.mock import patch, Mock
-    except ImportError:
-        # Trollius >= 0.3 was renamed to asyncio
-        # noinspection PyUnresolvedReferences
-        import trollius as asyncio
-        from mock import patch, Mock
+    import asyncio
+    from unittest.mock import patch, Mock
+
     from autobahn.asyncio.wamp import ApplicationRunner
 
     class TestApplicationRunner(unittest.TestCase):
