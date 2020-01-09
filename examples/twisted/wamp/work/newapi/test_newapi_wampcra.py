@@ -12,9 +12,9 @@ component = Component(
     transports=u'ws://localhost:8080/auth_ws',
     realm=u'crossbardemo',
     authentication={
-        u"wampcra": {
-            "authid": u"username",
-            "secret": u"p4ssw0rd",
+        "wampcra": {
+            "authid": "username",
+            "secret": "p4ssw0rd",
         }
     }
 )

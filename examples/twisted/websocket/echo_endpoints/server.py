@@ -70,7 +70,7 @@ if __name__ == '__main__':
     parser.add_argument("--websocket", default="tcp:9000",
                         help='WebSocket server Twisted endpoint descriptor, e.g. "tcp:9000" or "unix:/tmp/mywebsocket".')
 
-    parser.add_argument("--wsurl", default=u"ws://127.0.0.1:9000",
+    parser.add_argument("--wsurl", default="ws://127.0.0.1:9000",
                         help='WebSocket URL (must suit the endpoint), e.g. ws://127.0.0.1:9000.')
 
     parser.add_argument("--web", default="tcp:8080",

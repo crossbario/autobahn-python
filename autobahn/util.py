@@ -197,7 +197,7 @@ def utcstr(ts=None):
     assert(ts is None or isinstance(ts, datetime))
     if ts is None:
         ts = datetime.utcnow()
-    return u"{0}Z".format(ts.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
+    return "{0}Z".format(ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3])
 
 
 @public
@@ -876,8 +876,8 @@ def _maybe_tls_reason(instance):
     """
     if _is_tls_error(instance):
         ssl_error = instance.args[0][0]
-        return u"SSL error: {msg} (in {func})".format(
+        return "SSL error: {msg} (in {func})".format(
             func=ssl_error[1],
             msg=ssl_error[2],
         )
-    return u""
+    return ""

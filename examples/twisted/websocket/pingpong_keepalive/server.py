@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    factory = WebSocketServerFactory(u"ws://127.0.0.1:9000")
+    factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = WebSocketServerProtocol
 
     factory.setProtocolOptions(autoPingInterval=1, autoPingTimeout=3, autoPingSize=20)

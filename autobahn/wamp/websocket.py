@@ -122,7 +122,7 @@ class WampWebSocketProtocol(object):
             except Exception as e:
                 self.log.error("WAMP message serialization error: {}".format(e))
                 # all exceptions raised from above should be serialization errors ..
-                raise SerializationError(u"WAMP message serialization error: {0}".format(e))
+                raise SerializationError("WAMP message serialization error: {0}".format(e))
             else:
                 self.sendMessage(payload, isBinary)
         else:

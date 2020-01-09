@@ -5,10 +5,10 @@ from twisted.internet.defer import inlineCallbacks
 demo = Component(
     transports=[
         {
-            u"url": u"wss://demo.crossbar.io/ws",
+            "url": "wss://demo.crossbar.io/ws",
         }
     ],
-    realm=u"crossbardemo",
+    realm="crossbardemo",
 )
 
 # 1. subscribe to a topic

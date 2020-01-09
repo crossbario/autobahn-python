@@ -75,24 +75,24 @@ def create_url(hostname, port=None, isSecure=False):
 
     if hostname == 'unix':
 
-        netloc = u"unix:%s" % port
+        netloc = "unix:%s" % port
     else:
         assert port is None or (type(port) == int and port in range(0, 65535))
 
         if port is not None:
-            netloc = u"%s:%d" % (hostname, port)
+            netloc = "%s:%d" % (hostname, port)
         else:
             if isSecure:
-                netloc = u"{}:443".format(hostname)
+                netloc = "{}:443".format(hostname)
             else:
-                netloc = u"{}:80".format(hostname)
+                netloc = "{}:80".format(hostname)
 
     if isSecure:
-        scheme = u"rss"
+        scheme = "rss"
     else:
-        scheme = u"rs"
+        scheme = "rs"
 
-    return u"{}://{}".format(scheme, netloc)
+    return "{}://{}".format(scheme, netloc)
 
 
 @public
@@ -133,7 +133,7 @@ def parse_url(url):
     if parsed.fragment is not None and parsed.fragment != "":
         raise Exception("invalid RawSocket URL: non-empty fragment '{}'".format(parsed.fragment))
 
-    if parsed.hostname == u"unix":
+    if parsed.hostname == "unix":
         # Unix domain sockets sockets
 
         # rs://unix:/tmp/file.sock => unix:/tmp/file.sock => /tmp/file.sock

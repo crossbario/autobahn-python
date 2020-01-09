@@ -23,7 +23,7 @@ class WebApplication(object):
         self._wamp.on('join', self._initialize)
         self._wamp.on('leave', self._uninitialize)
         # hook up Klein routes
-        self._app.route(u"/", branch=True)(self._render_slash)
+        self._app.route("/", branch=True)(self._render_slash)
 
     def _initialize(self, session, details):
         print("Connected to WAMP router")
@@ -38,15 +38,15 @@ class WebApplication(object):
         if self._session is None:
             request.setResponseCode(500)
             return b"No WAMP session\n"
-        self._session.publish(u"com.myapp.request_served")
+        self._session.publish("com.myapp.request_served")
         return b"Published to 'com.myapp.request_served'\n"
 
 
 @inlineCallbacks
 def main(reactor):
     component = Component(
-        transports=u"ws://localhost:8080/ws",
-        realm=u"crossbardemo",
+        transports="ws://localhost:8080/ws",
+        realm="crossbardemo",
     )
     app = Klein()
     webapp = WebApplication(app, component)

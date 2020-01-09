@@ -161,7 +161,7 @@ def is_valid_enc_algo(enc_algo):
     * ``"mqtt"``
     * ``"xbr"``
 
-    Users can select arbitrary identifiers too, but these MUST start with ``u"x_"``.
+    Users can select arbitrary identifiers too, but these MUST start with ``"x_"``.
 
     :param enc_algo: The payload transparency algorithm identifier to check.
     :type enc_algo: str
@@ -186,7 +186,7 @@ def is_valid_enc_serializer(enc_serializer):
     * ``"ubjson"``
     * ``"flatbuffers"``
 
-    Users can select arbitrary identifiers too, but these MUST start with ``u"x_"``.
+    Users can select arbitrary identifiers too, but these MUST start with ``"x_"``.
 
     :param enc_serializer: The payload transparency serializer identifier to check.
     :type enc_serializer: str
@@ -213,7 +213,7 @@ def b2a(data, max_len=40):
         return s
 
 
-def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allow_empty_components=False, allow_last_empty=False, allow_none=False):
+def check_or_raise_uri(value, message="WAMP message invalid", strict=False, allow_empty_components=False, allow_last_empty=False, allow_none=False):
     """
     Check a value for being a valid WAMP URI.
 
@@ -245,11 +245,11 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
         if allow_none:
             return
         else:
-            raise InvalidUriError(u"{0}: URI cannot be null".format(message))
+            raise InvalidUriError("{0}: URI cannot be null".format(message))
 
     if type(value) != str:
         if not (value is None and allow_none):
-            raise InvalidUriError(u"{0}: invalid type {1} for URI".format(message, type(value)))
+            raise InvalidUriError("{0}: invalid type {1} for URI".format(message, type(value)))
 
     if strict:
         if allow_last_empty:
@@ -272,7 +272,7 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
         return value
 
 
-def check_or_raise_id(value, message=u"WAMP message invalid"):
+def check_or_raise_id(value, message="WAMP message invalid"):
     """
     Check a value for being a valid WAMP ID.
 
@@ -291,15 +291,15 @@ def check_or_raise_id(value, message=u"WAMP message invalid"):
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
     if type(value) != int:
-        raise ProtocolError(u"{0}: invalid type {1} for ID".format(message, type(value)))
+        raise ProtocolError("{0}: invalid type {1} for ID".format(message, type(value)))
     # the value 0 for WAMP IDs is possible in certain WAMP messages, e.g. UNREGISTERED with
     # router revocation signaling!
     if value < 0 or value > 9007199254740992:  # 2**53
-        raise ProtocolError(u"{0}: invalid value {1} for ID".format(message, value))
+        raise ProtocolError("{0}: invalid value {1} for ID".format(message, value))
     return value
 
 
-def check_or_raise_extra(value, message=u"WAMP message invalid"):
+def check_or_raise_extra(value, message="WAMP message invalid"):
     """
     Check a value for being a valid WAMP extra dictionary.
 
@@ -318,14 +318,14 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
     if type(value) != dict:
-        raise ProtocolError(u"{0}: invalid type {1} for WAMP extra".format(message, type(value)))
+        raise ProtocolError("{0}: invalid type {1} for WAMP extra".format(message, type(value)))
     for k in value.keys():
         if not isinstance(k, str):
-            raise ProtocolError(u"{0}: invalid type {1} for key in WAMP extra ('{2}')".format(message, type(k), k))
+            raise ProtocolError("{0}: invalid type {1} for key in WAMP extra ('{2}')".format(message, type(k), k))
     return value
 
 
-def _validate_kwargs(kwargs, message=u"WAMP message invalid"):
+def _validate_kwargs(kwargs, message="WAMP message invalid"):
     """
     Check a value for being a valid WAMP kwargs dictionary.
 
@@ -354,10 +354,10 @@ def _validate_kwargs(kwargs, message=u"WAMP message invalid"):
     """
     if kwargs is not None:
         if type(kwargs) != dict:
-            raise ProtocolError(u"{0}: invalid type {1} for WAMP kwargs".format(message, type(kwargs)))
+            raise ProtocolError("{0}: invalid type {1} for WAMP kwargs".format(message, type(kwargs)))
         for k in kwargs.keys():
             if not isinstance(k, str):
-                raise ProtocolError(u"{0}: invalid type {1} for key in WAMP kwargs ('{2}')".format(message, type(k), k))
+                raise ProtocolError("{0}: invalid type {1} for key in WAMP kwargs ('{2}')".format(message, type(k), k))
         return kwargs
 
 
@@ -634,18 +634,18 @@ class Hello(Message):
         if len(wmsg) != 3:
             raise ProtocolError("invalid message length {0} for HELLO".format(len(wmsg)))
 
-        realm = check_or_raise_uri(wmsg[1], u"'realm' in HELLO", allow_none=True)
-        details = check_or_raise_extra(wmsg[2], u"'details' in HELLO")
+        realm = check_or_raise_uri(wmsg[1], "'realm' in HELLO", allow_none=True)
+        details = check_or_raise_extra(wmsg[2], "'details' in HELLO")
 
         roles = {}
 
         if u'roles' not in details:
-            raise ProtocolError(u"missing mandatory roles attribute in options in HELLO")
+            raise ProtocolError("missing mandatory roles attribute in options in HELLO")
 
-        details_roles = check_or_raise_extra(details[u'roles'], u"'roles' in 'details' in HELLO")
+        details_roles = check_or_raise_extra(details[u'roles'], "'roles' in 'details' in HELLO")
 
         if len(details_roles) == 0:
-            raise ProtocolError(u"empty 'roles' in 'details' in HELLO")
+            raise ProtocolError("empty 'roles' in 'details' in HELLO")
 
         for role in details_roles:
             if role not in [u'subscriber', u'publisher', u'caller', u'callee']:
@@ -769,7 +769,7 @@ class Hello(Message):
         """
         Return a string representation of this message.
         """
-        return u"Hello(realm={}, roles={}, authmethods={}, authid={}, authrole={}, authextra={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole, self.authextra, self.resumable, self.resume_session, self.resume_token)
+        return "Hello(realm={}, roles={}, authmethods={}, authid={}, authrole={}, authextra={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole, self.authextra, self.resumable, self.resume_session, self.resume_token)
 
 
 class Welcome(Message):
@@ -900,8 +900,8 @@ class Welcome(Message):
         if len(wmsg) != 3:
             raise ProtocolError("invalid message length {0} for WELCOME".format(len(wmsg)))
 
-        session = check_or_raise_id(wmsg[1], u"'session' in WELCOME")
-        details = check_or_raise_extra(wmsg[2], u"'details' in WELCOME")
+        session = check_or_raise_id(wmsg[1], "'session' in WELCOME")
+        details = check_or_raise_extra(wmsg[2], "'details' in WELCOME")
 
         # FIXME: tigher value checking (types, URIs etc)
         realm = details.get(u'realm', None)
@@ -934,12 +934,12 @@ class Welcome(Message):
         roles = {}
 
         if u'roles' not in details:
-            raise ProtocolError(u"missing mandatory roles attribute in options in WELCOME")
+            raise ProtocolError("missing mandatory roles attribute in options in WELCOME")
 
-        details_roles = check_or_raise_extra(details['roles'], u"'roles' in 'details' in WELCOME")
+        details_roles = check_or_raise_extra(details['roles'], "'roles' in 'details' in WELCOME")
 
         if len(details_roles) == 0:
-            raise ProtocolError(u"empty 'roles' in 'details' in WELCOME")
+            raise ProtocolError("empty 'roles' in 'details' in WELCOME")
 
         for role in details_roles:
             if role not in [u'broker', u'dealer']:
@@ -1020,7 +1020,7 @@ class Welcome(Message):
         """
         Returns string representation of this message.
         """
-        return u"Welcome(session={}, roles={}, realm={}, authid={}, authrole={}, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
+        return "Welcome(session={}, roles={}, realm={}, authid={}, authrole={}, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
 
 
 class Abort(Message):
@@ -1072,8 +1072,8 @@ class Abort(Message):
         if len(wmsg) != 3:
             raise ProtocolError("invalid message length {0} for ABORT".format(len(wmsg)))
 
-        details = check_or_raise_extra(wmsg[1], u"'details' in ABORT")
-        reason = check_or_raise_uri(wmsg[2], u"'reason' in ABORT")
+        details = check_or_raise_extra(wmsg[1], "'details' in ABORT")
+        reason = check_or_raise_uri(wmsg[2], "'reason' in ABORT")
 
         message = None
 
@@ -1106,7 +1106,7 @@ class Abort(Message):
         """
         Returns string representation of this message.
         """
-        return u"Abort(message={0}, reason={1})".format(self.message, self.reason)
+        return "Abort(message={0}, reason={1})".format(self.message, self.reason)
 
 
 class Challenge(Message):
@@ -1162,7 +1162,7 @@ class Challenge(Message):
         if type(method) != str:
             raise ProtocolError("invalid type {0} for 'method' in CHALLENGE".format(type(method)))
 
-        extra = check_or_raise_extra(wmsg[2], u"'extra' in CHALLENGE")
+        extra = check_or_raise_extra(wmsg[2], "'extra' in CHALLENGE")
 
         obj = Challenge(method, extra)
 
@@ -1181,7 +1181,7 @@ class Challenge(Message):
         """
         Returns string representation of this message.
         """
-        return u"Challenge(method={0}, extra={1})".format(self.method, self.extra)
+        return "Challenge(method={0}, extra={1})".format(self.method, self.extra)
 
 
 class Authenticate(Message):
@@ -1237,7 +1237,7 @@ class Authenticate(Message):
         if type(signature) != str:
             raise ProtocolError("invalid type {0} for 'signature' in AUTHENTICATE".format(type(signature)))
 
-        extra = check_or_raise_extra(wmsg[2], u"'extra' in AUTHENTICATE")
+        extra = check_or_raise_extra(wmsg[2], "'extra' in AUTHENTICATE")
 
         obj = Authenticate(signature, extra)
 
@@ -1256,7 +1256,7 @@ class Authenticate(Message):
         """
         Returns string representation of this message.
         """
-        return u"Authenticate(signature={0}, extra={1})".format(self.signature, self.extra)
+        return "Authenticate(signature={0}, extra={1})".format(self.signature, self.extra)
 
 
 class Goodbye(Message):
@@ -1271,7 +1271,7 @@ class Goodbye(Message):
     The WAMP message code for this type of message.
     """
 
-    DEFAULT_REASON = u"wamp.close.normal"
+    DEFAULT_REASON = "wamp.close.normal"
     """
     Default WAMP closing reason.
     """
@@ -1319,8 +1319,8 @@ class Goodbye(Message):
         if len(wmsg) != 3:
             raise ProtocolError("invalid message length {0} for GOODBYE".format(len(wmsg)))
 
-        details = check_or_raise_extra(wmsg[1], u"'details' in GOODBYE")
-        reason = check_or_raise_uri(wmsg[2], u"'reason' in GOODBYE")
+        details = check_or_raise_extra(wmsg[1], "'details' in GOODBYE")
+        reason = check_or_raise_uri(wmsg[2], "'reason' in GOODBYE")
 
         message = None
         resumable = None
@@ -1364,7 +1364,7 @@ class Goodbye(Message):
         """
         Returns string representation of this message.
         """
-        return u"Goodbye(message={}, reason={}, resumable={})".format(self.message, self.reason, self.resumable)
+        return "Goodbye(message={}, reason={}, resumable={})".format(self.message, self.reason, self.resumable)
 
 
 class Error(Message):
@@ -1532,9 +1532,9 @@ class Error(Message):
                                 Invocation.MESSAGE_TYPE]:
             raise ProtocolError("invalid value {0} for 'request_type' in ERROR".format(request_type))
 
-        request = check_or_raise_id(wmsg[2], u"'request' in ERROR")
-        details = check_or_raise_extra(wmsg[3], u"'details' in ERROR")
-        error = check_or_raise_uri(wmsg[4], u"'error' in ERROR")
+        request = check_or_raise_id(wmsg[2], "'request' in ERROR")
+        details = check_or_raise_extra(wmsg[3], "'details' in ERROR")
+        error = check_or_raise_uri(wmsg[4], "'error' in ERROR")
 
         args = None
         kwargs = None
@@ -1670,7 +1670,7 @@ class Error(Message):
         """
         Returns string representation of this message.
         """
-        return u"Error(request_type={0}, request={1}, error={2}, args={3}, kwargs={4}, enc_algo={5}, enc_key={6}, enc_serializer={7}, payload={8}, callee={9}, callee_authid={10}, callee_authrole={11}, forward_for={12})".format(self.request_type, self.request, self.error, self.args, self.kwargs, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
+        return "Error(request_type={0}, request={1}, error={2}, args={3}, kwargs={4}, enc_algo={5}, enc_key={6}, enc_serializer={7}, payload={8}, callee={9}, callee_authid={10}, callee_authrole={11}, forward_for={12})".format(self.request_type, self.request, self.error, self.args, self.kwargs, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
 
 
 class Publish(Message):
@@ -2368,9 +2368,9 @@ class Publish(Message):
         if len(wmsg) not in (4, 5, 6):
             raise ProtocolError("invalid message length {0} for PUBLISH".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in PUBLISH")
-        options = check_or_raise_extra(wmsg[2], u"'options' in PUBLISH")
-        topic = check_or_raise_uri(wmsg[3], u"'topic' in PUBLISH")
+        request = check_or_raise_id(wmsg[1], "'request' in PUBLISH")
+        options = check_or_raise_extra(wmsg[2], "'options' in PUBLISH")
+        topic = check_or_raise_uri(wmsg[3], "'topic' in PUBLISH")
 
         args = None
         kwargs = None
@@ -2609,7 +2609,7 @@ class Publish(Message):
         """
         Returns string representation of this message.
         """
-        return u"Publish(request={}, topic={}, args={}, kwargs={}, acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
+        return "Publish(request={}, topic={}, args={}, kwargs={}, acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
 
 
 class Published(Message):
@@ -2661,8 +2661,8 @@ class Published(Message):
         if len(wmsg) != 3:
             raise ProtocolError("invalid message length {0} for PUBLISHED".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in PUBLISHED")
-        publication = check_or_raise_id(wmsg[2], u"'publication' in PUBLISHED")
+        request = check_or_raise_id(wmsg[1], "'request' in PUBLISHED")
+        publication = check_or_raise_id(wmsg[2], "'publication' in PUBLISHED")
 
         obj = Published(request, publication)
 
@@ -2681,7 +2681,7 @@ class Published(Message):
         """
         Returns string representation of this message.
         """
-        return u"Published(request={0}, publication={1})".format(self.request, self.publication)
+        return "Published(request={0}, publication={1})".format(self.request, self.publication)
 
 
 class Subscribe(Message):
@@ -2768,9 +2768,9 @@ class Subscribe(Message):
         if len(wmsg) != 4:
             raise ProtocolError("invalid message length {0} for SUBSCRIBE".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in SUBSCRIBE")
-        options = check_or_raise_extra(wmsg[2], u"'options' in SUBSCRIBE")
-        topic = check_or_raise_uri(wmsg[3], u"'topic' in SUBSCRIBE", allow_empty_components=True)
+        request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBE")
+        options = check_or_raise_extra(wmsg[2], "'options' in SUBSCRIBE")
+        topic = check_or_raise_uri(wmsg[3], "'topic' in SUBSCRIBE", allow_empty_components=True)
 
         match = Subscribe.MATCH_EXACT
         get_retained = None
@@ -2842,7 +2842,7 @@ class Subscribe(Message):
         """
         Returns string representation of this message.
         """
-        return u"Subscribe(request={0}, topic={1}, match={2}, get_retained={3}, forward_for={4})".format(self.request, self.topic, self.match, self.get_retained, self.forward_for)
+        return "Subscribe(request={0}, topic={1}, match={2}, get_retained={3}, forward_for={4})".format(self.request, self.topic, self.match, self.get_retained, self.forward_for)
 
 
 class Subscribed(Message):
@@ -2894,8 +2894,8 @@ class Subscribed(Message):
         if len(wmsg) != 3:
             raise ProtocolError("invalid message length {0} for SUBSCRIBED".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in SUBSCRIBED")
-        subscription = check_or_raise_id(wmsg[2], u"'subscription' in SUBSCRIBED")
+        request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBED")
+        subscription = check_or_raise_id(wmsg[2], "'subscription' in SUBSCRIBED")
 
         obj = Subscribed(request, subscription)
 
@@ -2914,7 +2914,7 @@ class Subscribed(Message):
         """
         Returns string representation of this message.
         """
-        return u"Subscribed(request={0}, subscription={1})".format(self.request, self.subscription)
+        return "Subscribed(request={0}, subscription={1})".format(self.request, self.subscription)
 
 
 class Unsubscribe(Message):
@@ -2981,12 +2981,12 @@ class Unsubscribe(Message):
         if len(wmsg) not in [3, 4]:
             raise ProtocolError("invalid message length {0} for WAMP UNSUBSCRIBE".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in UNSUBSCRIBE")
-        subscription = check_or_raise_id(wmsg[2], u"'subscription' in UNSUBSCRIBE")
+        request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBE")
+        subscription = check_or_raise_id(wmsg[2], "'subscription' in UNSUBSCRIBE")
 
         options = None
         if len(wmsg) > 3:
-            options = check_or_raise_extra(wmsg[3], u"'options' in UNSUBSCRIBE")
+            options = check_or_raise_extra(wmsg[3], "'options' in UNSUBSCRIBE")
 
         forward_for = None
         if options and u'forward_for' in options:
@@ -3030,7 +3030,7 @@ class Unsubscribe(Message):
         """
         Returns string representation of this message.
         """
-        return u"Unsubscribe(request={0}, subscription={1}, forward_for={2})".format(self.request, self.subscription, self.forward_for)
+        return "Unsubscribe(request={0}, subscription={1}, forward_for={2})".format(self.request, self.subscription, self.forward_for)
 
 
 class Unsubscribed(Message):
@@ -3094,23 +3094,23 @@ class Unsubscribed(Message):
         if len(wmsg) not in [2, 3]:
             raise ProtocolError("invalid message length {0} for UNSUBSCRIBED".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in UNSUBSCRIBED")
+        request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBED")
 
         subscription = None
         reason = None
 
         if len(wmsg) > 2:
 
-            details = check_or_raise_extra(wmsg[2], u"'details' in UNSUBSCRIBED")
+            details = check_or_raise_extra(wmsg[2], "'details' in UNSUBSCRIBED")
 
-            if u"subscription" in details:
-                details_subscription = details[u"subscription"]
+            if "subscription" in details:
+                details_subscription = details["subscription"]
                 if type(details_subscription) != int:
                     raise ProtocolError("invalid type {0} for 'subscription' detail in UNSUBSCRIBED".format(type(details_subscription)))
                 subscription = details_subscription
 
-            if u"reason" in details:
-                reason = check_or_raise_uri(details[u"reason"], u"'reason' in UNSUBSCRIBED")
+            if "reason" in details:
+                reason = check_or_raise_uri(details["reason"], "'reason' in UNSUBSCRIBED")
 
         obj = Unsubscribed(request, subscription, reason)
 
@@ -3126,9 +3126,9 @@ class Unsubscribed(Message):
         if self.reason is not None or self.subscription is not None:
             details = {}
             if self.reason is not None:
-                details[u"reason"] = self.reason
+                details["reason"] = self.reason
             if self.subscription is not None:
-                details[u"subscription"] = self.subscription
+                details["subscription"] = self.subscription
             return [Unsubscribed.MESSAGE_TYPE, self.request, details]
         else:
             return [Unsubscribed.MESSAGE_TYPE, self.request]
@@ -3137,7 +3137,7 @@ class Unsubscribed(Message):
         """
         Returns string representation of this message.
         """
-        return u"Unsubscribed(request={0}, reason={1}, subscription={2})".format(self.request, self.reason, self.subscription)
+        return "Unsubscribed(request={0}, reason={1}, subscription={2})".format(self.request, self.reason, self.subscription)
 
 
 class Event(Message):
@@ -3618,9 +3618,9 @@ class Event(Message):
         if len(wmsg) not in (4, 5, 6):
             raise ProtocolError("invalid message length {0} for EVENT".format(len(wmsg)))
 
-        subscription = check_or_raise_id(wmsg[1], u"'subscription' in EVENT")
-        publication = check_or_raise_id(wmsg[2], u"'publication' in EVENT")
-        details = check_or_raise_extra(wmsg[3], u"'details' in EVENT")
+        subscription = check_or_raise_id(wmsg[1], "'subscription' in EVENT")
+        publication = check_or_raise_id(wmsg[2], "'publication' in EVENT")
+        details = check_or_raise_extra(wmsg[3], "'details' in EVENT")
 
         args = None
         kwargs = None
@@ -3791,7 +3791,7 @@ class Event(Message):
         """
         Returns string representation of this message.
         """
-        return u"Event(subscription={}, publication={}, args={}, kwargs={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic={}, retained={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
+        return "Event(subscription={}, publication={}, args={}, kwargs={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic={}, retained={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
 
 
 class EventReceived(Message):
@@ -3838,7 +3838,7 @@ class EventReceived(Message):
         if len(wmsg) != 2:
             raise ProtocolError("invalid message length {0} for EVENT_RECEIVED".format(len(wmsg)))
 
-        publication = check_or_raise_id(wmsg[1], u"'publication' in EVENT_RECEIVED")
+        publication = check_or_raise_id(wmsg[1], "'publication' in EVENT_RECEIVED")
 
         obj = EventReceived(publication)
 
@@ -3857,7 +3857,7 @@ class EventReceived(Message):
         """
         Returns string representation of this message.
         """
-        return u"EventReceived(publication={})".format(self.publication)
+        return "EventReceived(publication={})".format(self.publication)
 
 
 class Call(Message):
@@ -4020,9 +4020,9 @@ class Call(Message):
         if len(wmsg) not in (4, 5, 6):
             raise ProtocolError("invalid message length {0} for CALL".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in CALL")
-        options = check_or_raise_extra(wmsg[2], u"'options' in CALL")
-        procedure = check_or_raise_uri(wmsg[3], u"'procedure' in CALL")
+        request = check_or_raise_id(wmsg[1], "'request' in CALL")
+        options = check_or_raise_extra(wmsg[2], "'options' in CALL")
+        procedure = check_or_raise_uri(wmsg[3], "'procedure' in CALL")
 
         args = None
         kwargs = None
@@ -4195,7 +4195,7 @@ class Call(Message):
         """
         Returns string representation of this message.
         """
-        return u"Call(request={}, procedure={}, args={}, kwargs={}, timeout={}, receive_progress={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.caller, self.caller_authid, self.caller_authrole, self.forward_for)
+        return "Call(request={}, procedure={}, args={}, kwargs={}, timeout={}, receive_progress={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.caller, self.caller_authid, self.caller_authrole, self.forward_for)
 
 
 class Cancel(Message):
@@ -4269,8 +4269,8 @@ class Cancel(Message):
         if len(wmsg) != 3:
             raise ProtocolError("invalid message length {0} for CANCEL".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in CANCEL")
-        options = check_or_raise_extra(wmsg[2], u"'options' in CANCEL")
+        request = check_or_raise_id(wmsg[1], "'request' in CANCEL")
+        options = check_or_raise_extra(wmsg[2], "'options' in CANCEL")
 
         # options
         #
@@ -4330,7 +4330,7 @@ class Cancel(Message):
         """
         Returns string representation of this message.
         """
-        return u"Cancel(request={0}, mode={1})".format(self.request, self.mode)
+        return "Cancel(request={0}, mode={1})".format(self.request, self.mode)
 
 
 class Result(Message):
@@ -4479,8 +4479,8 @@ class Result(Message):
         if len(wmsg) not in (3, 4, 5):
             raise ProtocolError("invalid message length {0} for RESULT".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in RESULT")
-        details = check_or_raise_extra(wmsg[2], u"'details' in RESULT")
+        request = check_or_raise_id(wmsg[1], "'request' in RESULT")
+        details = check_or_raise_extra(wmsg[2], "'details' in RESULT")
 
         args = None
         kwargs = None
@@ -4627,7 +4627,7 @@ class Result(Message):
         """
         Returns string representation of this message.
         """
-        return u"Result(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7}, callee={8}, callee_authid={9}, callee_authrole={10}, forward_for={11})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
+        return "Result(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7}, callee={8}, callee_authid={9}, callee_authrole={10}, forward_for={11})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
 
 
 class Register(Message):
@@ -4733,8 +4733,8 @@ class Register(Message):
         if len(wmsg) != 4:
             raise ProtocolError("invalid message length {0} for REGISTER".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in REGISTER")
-        options = check_or_raise_extra(wmsg[2], u"'options' in REGISTER")
+        request = check_or_raise_id(wmsg[1], "'request' in REGISTER")
+        options = check_or_raise_extra(wmsg[2], "'options' in REGISTER")
 
         match = Register.MATCH_EXACT
         invoke = Register.INVOKE_SINGLE
@@ -4768,7 +4768,7 @@ class Register(Message):
         else:
             raise Exception("logic error")
 
-        procedure = check_or_raise_uri(wmsg[3], u"'procedure' in REGISTER", allow_empty_components=allow_empty_components, allow_last_empty=allow_last_empty)
+        procedure = check_or_raise_uri(wmsg[3], "'procedure' in REGISTER", allow_empty_components=allow_empty_components, allow_last_empty=allow_last_empty)
 
         if u'invoke' in options:
 
@@ -4858,7 +4858,7 @@ class Register(Message):
         """
         Returns string representation of this message.
         """
-        return u"Register(request={0}, procedure={1}, match={2}, invoke={3}, concurrency={4}, force_reregister={5}, forward_for={6})".format(self.request, self.procedure, self.match, self.invoke, self.concurrency, self.force_reregister, self.forward_for)
+        return "Register(request={0}, procedure={1}, match={2}, invoke={3}, concurrency={4}, force_reregister={5}, forward_for={6})".format(self.request, self.procedure, self.match, self.invoke, self.concurrency, self.force_reregister, self.forward_for)
 
 
 class Registered(Message):
@@ -4910,8 +4910,8 @@ class Registered(Message):
         if len(wmsg) != 3:
             raise ProtocolError("invalid message length {0} for REGISTERED".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in REGISTERED")
-        registration = check_or_raise_id(wmsg[2], u"'registration' in REGISTERED")
+        request = check_or_raise_id(wmsg[1], "'request' in REGISTERED")
+        registration = check_or_raise_id(wmsg[2], "'registration' in REGISTERED")
 
         obj = Registered(request, registration)
 
@@ -4930,7 +4930,7 @@ class Registered(Message):
         """
         Returns string representation of this message.
         """
-        return u"Registered(request={0}, registration={1})".format(self.request, self.registration)
+        return "Registered(request={0}, registration={1})".format(self.request, self.registration)
 
 
 class Unregister(Message):
@@ -4991,12 +4991,12 @@ class Unregister(Message):
         if len(wmsg) not in [3, 4]:
             raise ProtocolError("invalid message length {0} for WAMP UNREGISTER".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in UNREGISTER")
-        registration = check_or_raise_id(wmsg[2], u"'registration' in UNREGISTER")
+        request = check_or_raise_id(wmsg[1], "'request' in UNREGISTER")
+        registration = check_or_raise_id(wmsg[2], "'registration' in UNREGISTER")
 
         options = None
         if len(wmsg) > 3:
-            options = check_or_raise_extra(wmsg[3], u"'options' in UNREGISTER")
+            options = check_or_raise_extra(wmsg[3], "'options' in UNREGISTER")
 
         forward_for = None
         if options and u'forward_for' in options:
@@ -5040,7 +5040,7 @@ class Unregister(Message):
         """
         Returns string representation of this message.
         """
-        return u"Unregister(request={0}, registration={1})".format(self.request, self.registration)
+        return "Unregister(request={0}, registration={1})".format(self.request, self.registration)
 
 
 class Unregistered(Message):
@@ -5103,23 +5103,23 @@ class Unregistered(Message):
         if len(wmsg) not in [2, 3]:
             raise ProtocolError("invalid message length {0} for UNREGISTERED".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in UNREGISTERED")
+        request = check_or_raise_id(wmsg[1], "'request' in UNREGISTERED")
 
         registration = None
         reason = None
 
         if len(wmsg) > 2:
 
-            details = check_or_raise_extra(wmsg[2], u"'details' in UNREGISTERED")
+            details = check_or_raise_extra(wmsg[2], "'details' in UNREGISTERED")
 
-            if u"registration" in details:
-                details_registration = details[u"registration"]
+            if "registration" in details:
+                details_registration = details["registration"]
                 if type(details_registration) != int:
                     raise ProtocolError("invalid type {0} for 'registration' detail in UNREGISTERED".format(type(details_registration)))
                 registration = details_registration
 
-            if u"reason" in details:
-                reason = check_or_raise_uri(details[u"reason"], u"'reason' in UNREGISTERED")
+            if "reason" in details:
+                reason = check_or_raise_uri(details["reason"], "'reason' in UNREGISTERED")
 
         obj = Unregistered(request, registration, reason)
 
@@ -5135,9 +5135,9 @@ class Unregistered(Message):
         if self.reason is not None or self.registration is not None:
             details = {}
             if self.reason is not None:
-                details[u"reason"] = self.reason
+                details["reason"] = self.reason
             if self.registration is not None:
-                details[u"registration"] = self.registration
+                details["registration"] = self.registration
             return [Unregistered.MESSAGE_TYPE, self.request, details]
         else:
             return [Unregistered.MESSAGE_TYPE, self.request]
@@ -5146,7 +5146,7 @@ class Unregistered(Message):
         """
         Returns string representation of this message.
         """
-        return u"Unregistered(request={0}, reason={1}, registration={2})".format(self.request, self.reason, self.registration)
+        return "Unregistered(request={0}, reason={1}, registration={2})".format(self.request, self.reason, self.registration)
 
 
 class Invocation(Message):
@@ -5310,9 +5310,9 @@ class Invocation(Message):
         if len(wmsg) not in (4, 5, 6):
             raise ProtocolError("invalid message length {0} for INVOCATION".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in INVOCATION")
-        registration = check_or_raise_id(wmsg[2], u"'registration' in INVOCATION")
-        details = check_or_raise_extra(wmsg[3], u"'details' in INVOCATION")
+        request = check_or_raise_id(wmsg[1], "'request' in INVOCATION")
+        registration = check_or_raise_id(wmsg[2], "'registration' in INVOCATION")
+        details = check_or_raise_extra(wmsg[3], "'details' in INVOCATION")
 
         args = None
         kwargs = None
@@ -5493,7 +5493,7 @@ class Invocation(Message):
         """
         Returns string representation of this message.
         """
-        return u"Invocation(request={0}, registration={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, caller={6}, caller_authid={7}, caller_authrole={8}, procedure={9}, enc_algo={10}, enc_key={11}, enc_serializer={12}, payload={13})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return "Invocation(request={0}, registration={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, caller={6}, caller_authid={7}, caller_authrole={8}, procedure={9}, enc_algo={10}, enc_key={11}, enc_serializer={12}, payload={13})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Interrupt(Message):
@@ -5579,8 +5579,8 @@ class Interrupt(Message):
         if len(wmsg) != 3:
             raise ProtocolError("invalid message length {0} for INTERRUPT".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in INTERRUPT")
-        options = check_or_raise_extra(wmsg[2], u"'options' in INTERRUPT")
+        request = check_or_raise_id(wmsg[1], "'request' in INTERRUPT")
+        options = check_or_raise_extra(wmsg[2], "'options' in INTERRUPT")
 
         # options
         #
@@ -5648,7 +5648,7 @@ class Interrupt(Message):
         """
         Returns string representation of this message.
         """
-        return u"Interrupt(request={0}, mode={1}, reason={2})".format(self.request, self.mode, self.reason)
+        return "Interrupt(request={0}, mode={1}, reason={2})".format(self.request, self.mode, self.reason)
 
 
 class Yield(Message):
@@ -5794,8 +5794,8 @@ class Yield(Message):
         if len(wmsg) not in (3, 4, 5):
             raise ProtocolError("invalid message length {0} for YIELD".format(len(wmsg)))
 
-        request = check_or_raise_id(wmsg[1], u"'request' in YIELD")
-        options = check_or_raise_extra(wmsg[2], u"'options' in YIELD")
+        request = check_or_raise_id(wmsg[1], "'request' in YIELD")
+        options = check_or_raise_extra(wmsg[2], "'options' in YIELD")
 
         args = None
         kwargs = None
@@ -5943,4 +5943,4 @@ class Yield(Message):
         """
         Returns string representation of this message.
         """
-        return u"Yield(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7}, callee={8}, callee_authid={9}, callee_authrole={10}, forward_for={11})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
+        return "Yield(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7}, callee={8}, callee_authid={9}, callee_authrole={10}, forward_for={11})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)

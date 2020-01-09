@@ -49,11 +49,11 @@ class TestPeerExceptions(unittest.TestCase):
     def test_exception_from_message(self):
         session = protocol.BaseSession()
 
-        @wamp.error(u"com.myapp.error1")
+        @wamp.error("com.myapp.error1")
         class AppError1(Exception):
             pass
 
-        @wamp.error(u"com.myapp.error2")
+        @wamp.error("com.myapp.error2")
         class AppError2(Exception):
             pass
 
@@ -96,11 +96,11 @@ class TestPeerExceptions(unittest.TestCase):
     def test_message_from_exception(self):
         session = protocol.BaseSession()
 
-        @wamp.error(u"com.myapp.error1")
+        @wamp.error("com.myapp.error1")
         class AppError1(Exception):
             pass
 
-        @wamp.error(u"com.myapp.error2")
+        @wamp.error("com.myapp.error2")
         class AppError2(Exception):
             pass
 

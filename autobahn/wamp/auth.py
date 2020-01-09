@@ -133,7 +133,7 @@ class AuthTicket(object):
         return self._args.get(u'authextra', dict())
 
     def on_challenge(self, session, challenge):
-        assert challenge.method == u"ticket"
+        assert challenge.method == "ticket"
         return self._ticket
 
     def on_welcome(self, msg, authextra):
@@ -247,11 +247,11 @@ class AuthScram(object):
         if self._client_nonce is None:
             self._client_nonce = base64.b64encode(os.urandom(16)).decode('ascii')
         return {
-            u"nonce": self._client_nonce,
+            "nonce": self._client_nonce,
         }
 
     def on_challenge(self, session, challenge):
-        assert challenge.method == u"scram"
+        assert challenge.method == "scram"
         assert self._client_nonce is not None
         required_args = ['nonce', 'kdf', 'salt', 'iterations']
         optional_args = ['memory', 'channel_binding']
@@ -278,10 +278,10 @@ class AuthScram(object):
         client_nonce = self._client_nonce
 
         self._auth_message = (
-            u"{client_first_bare},{server_first},{client_final_no_proof}".format(
-                client_first_bare=u"n={},r={}".format(authid, client_nonce),
-                server_first=u"r={},s={},i={}".format(server_nonce, salt, iterations),
-                client_final_no_proof=u"c={},r={}".format(channel_binding, server_nonce),
+            "{client_first_bare},{server_first},{client_final_no_proof}".format(
+                client_first_bare="n={},r={}".format(authid, client_nonce),
+                server_first="r={},s={},i={}".format(server_nonce, salt, iterations),
+                client_final_no_proof="c={},r={}".format(channel_binding, server_nonce),
             )
         ).encode('ascii')
 
@@ -556,7 +556,7 @@ def derive_key(secret, salt, iterations=1000, keylen=32):
     return binascii.b2a_base64(key).strip()
 
 
-WCS_SECRET_CHARSET = u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+WCS_SECRET_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 """
 The characters from which :func:`autobahn.wamp.auth.generate_wcs` generates secrets.
 """
@@ -580,7 +580,7 @@ def generate_wcs(length=14):
     :rtype: bytes
     """
     assert(type(length) == int)
-    return u"".join([random.choice(WCS_SECRET_CHARSET) for _ in range(length)]).encode('ascii')
+    return "".join([random.choice(WCS_SECRET_CHARSET) for _ in range(length)]).encode('ascii')
 
 
 @public

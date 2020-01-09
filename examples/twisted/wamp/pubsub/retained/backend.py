@@ -42,7 +42,7 @@ class Component(Session):
     def onJoin(self, details):
         print("session attached {}".format(details))
 
-        for topic in [u"com.example.history", u"com.example.no_history_here"]:
+        for topic in ["com.example.history", "com.example.no_history_here"]:
             print("publishing '{}' as retained event".format(topic))
             pub = yield self.publish(
                 topic, "some data, topic was '{}'".format(topic),
@@ -53,7 +53,7 @@ class Component(Session):
 
 if __name__ == '__main__':
     runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/auth_ws"),
-        u"crossbardemo",
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
+        "crossbardemo",
     )
     runner.run(Component)

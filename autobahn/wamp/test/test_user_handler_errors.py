@@ -142,7 +142,7 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("boom")
             session.onLeave = exception_raiser(exception)
-            msg = message.Abort(u"testing")
+            msg = message.Abort("testing")
 
             # we haven't done anything, so this is "abort before we've
             # connected"
@@ -156,7 +156,7 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("boom")
             session.onLeave = async_exception_raiser(exception)
-            msg = message.Abort(u"testing")
+            msg = message.Abort("testing")
 
             # we haven't done anything, so this is "abort before we've
             # connected"
@@ -212,7 +212,7 @@ if os.environ.get('USE_TWISTED', False):
             session.onChallenge = exception_raiser(exception)
             # make a challenge (which will fail, and then the
             # subsequent onLeave will also fail)
-            msg = message.Challenge(u"foo")
+            msg = message.Challenge("foo")
             session.onMessage(msg)
 
             self.assertEqual(2, len(session.errors))
@@ -250,7 +250,7 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("such challenge")
             session.onChallenge = exception_raiser(exception)
-            msg = message.Challenge(u"foo")
+            msg = message.Challenge("foo")
 
             # execute
             session.onMessage(msg)
@@ -269,7 +269,7 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("such challenge")
             session.onChallenge = async_exception_raiser(exception)
-            msg = message.Challenge(u"foo")
+            msg = message.Challenge("foo")
 
             # execute
             session.onMessage(msg)

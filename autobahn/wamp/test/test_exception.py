@@ -36,15 +36,15 @@ class ApplicationErrorTestCase(TestCase):
         Unicode arguments in ApplicationError will not raise an exception when
         str()'d.
         """
-        error = ApplicationError(u"some.url", u"\u2603")
-        self.assertIn(u"\u2603", str(error))
+        error = ApplicationError("some.url", "\u2603")
+        self.assertIn("\u2603", str(error))
 
     def test_unicode_errormessage(self):
         """
         Unicode arguments in ApplicationError will not raise an exception when
         the error_message method is called.
         """
-        error = ApplicationError(u"some.url", u"\u2603")
+        error = ApplicationError("some.url", "\u2603")
         # on py27-tw189: exceptions.UnicodeEncodeError: 'ascii' codec can't encode character u'\u2603' in position 10: ordinal not in
         print(error.error_message())
-        self.assertIn(u"\u2603", error.error_message())
+        self.assertIn("\u2603", error.error_message())

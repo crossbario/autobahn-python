@@ -12,8 +12,8 @@ component = Component(
     transports=u'ws://localhost:8080/auth_ws',
     realm=u'crossbardemo',
     authentication={
-        u"cryptosign": {
-            "authid": u"alice",
+        "cryptosign": {
+            "authid": "alice",
             "privkey": privkey_hex,
         }
     }

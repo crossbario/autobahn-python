@@ -44,11 +44,11 @@ class Component(ApplicationSession):
             return a + b
 
         def stars(nick="somebody", stars=0):
-            return u"{} starred {}x".format(nick, stars)
+            return "{} starred {}x".format(nick, stars)
 
         # noinspection PyUnusedLocal
         def orders(product, limit=5):
-            return [u"Product {}".format(i) for i in range(50)][:limit]
+            return ["Product {}".format(i) for i in range(50)][:limit]
 
         def arglen(*args, **kwargs):
             return [len(args), len(kwargs)]
@@ -62,7 +62,7 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)
     runner.run(Component)

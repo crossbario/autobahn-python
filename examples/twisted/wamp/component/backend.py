@@ -32,24 +32,24 @@ else:
 component = Component(
     transports=[
         {
-            u"type": u"websocket",
-            u"url": u"ws://localhost:8080/ws",
-            u"endpoint": {
-                u"type": u"tcp",
-                u"host": u"localhost",
-                u"port": 8080,
+            "type": "websocket",
+            "url": "ws://localhost:8080/ws",
+            "endpoint": {
+                "type": "tcp",
+                "host": "localhost",
+                "port": 8080,
 #                "tls": options,
 #                "tls": {
-#                    u"hostname": u"localhost",
-#                    u"trust_root": cert_fname,
+#                    "hostname": "localhost",
+#                    "trust_root": cert_fname,
 #                },
             },
-            u"options": {
-                u"open_handshake_timeout": 100,
+            "options": {
+                "open_handshake_timeout": 100,
             }
         },
     ],
-    realm=u"crossbardemo",
+    realm="crossbardemo",
 )
 
 
@@ -59,7 +59,7 @@ def join(session, details):
 
 
 @component.register(
-    u"example.foo",
+    "example.foo",
     options=RegisterOptions(details_arg='details'),
 )
 @inlineCallbacks

@@ -518,7 +518,7 @@ class Application(object):
         self.session = _ApplicationSession(config, self)
         return self.session
 
-    def run(self, url=u"ws://localhost:8080/ws", realm=u"realm1", start_reactor=True):
+    def run(self, url="ws://localhost:8080/ws", realm="realm1", start_reactor=True):
         """
         Run the application.
 

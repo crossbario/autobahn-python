@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    factory = WebSocketServerFactory(u"ws://127.0.0.1:9000")
+    factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = MyServerProtocol
 
     # reactor.listenTCP(9000, factory)

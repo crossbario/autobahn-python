@@ -48,7 +48,7 @@ class Component(Session):
         # note: we're relying on 'com.example.history' (the one with
         # event-history enabled) being last so that "pub" has the
         # right ID for wamp.subscription.get_events after the loop
-        for topic in [u"com.example.no_history_here", u"com.example.history"]:
+        for topic in ["com.example.no_history_here", "com.example.history"]:
             print("subscribing to '{}'".format(topic))
             pub = yield self.subscribe(
                 got_event, topic,
@@ -56,7 +56,7 @@ class Component(Session):
             )
             print("id={}".format(pub.id))
 
-        events = yield self.call(u"wamp.subscription.get_events", pub.id)
+        events = yield self.call("wamp.subscription.get_events", pub.id)
         print("Using the WAMP Meta API:")
         print("wamp.subscription.get_events {}: {}".format(pub.id, len(events)))
         for event in events:
@@ -65,7 +65,7 @@ class Component(Session):
 
 if __name__ == '__main__':
     runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/auth_ws"),
-        u"crossbardemo",
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
+        "crossbardemo",
     )
     runner.run(Component)

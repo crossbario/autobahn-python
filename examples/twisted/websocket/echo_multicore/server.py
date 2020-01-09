@@ -255,7 +255,7 @@ def master(options):
     ##
     for i in range(options.workers):
 
-        args = [executable, "-u", __file__, "--fd", str(port.fileno()), "--cpuid", str(i)]
+        args = [executable, "-", __file__, "--fd", str(port.fileno()), "--cpuid", str(i)]
 
         # pass on cmd line args to worker ..
         args.extend(sys.argv[1:])

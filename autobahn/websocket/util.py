@@ -81,27 +81,27 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     assert type(isSecure) == bool
 
     if hostname == 'unix':
-        netloc = u"unix:%s" % port
+        netloc = "unix:%s" % port
     else:
         assert port is None or (type(port) == int and port in range(0, 65535))
 
         if port is not None:
-            netloc = u"%s:%d" % (hostname, port)
+            netloc = "%s:%d" % (hostname, port)
         else:
             if isSecure:
-                netloc = u"%s:443" % hostname
+                netloc = "%s:443" % hostname
             else:
-                netloc = u"%s:80" % hostname
+                netloc = "%s:80" % hostname
 
     if isSecure:
-        scheme = u"wss"
+        scheme = "wss"
     else:
-        scheme = u"ws"
+        scheme = "ws"
 
     if path is not None:
         ppath = urlparse.quote(path)
     else:
-        ppath = u"/"
+        ppath = "/"
 
     if params is not None:
         query = urlparse.urlencode(params)
@@ -161,7 +161,7 @@ def parse_url(url):
         resource = ppath
         params = {}
 
-    if parsed.hostname == u"unix":
+    if parsed.hostname == "unix":
         # Unix domain sockets sockets
 
         # ws://unix:/tmp/file.sock => unix:/tmp/file.sock => /tmp/file.sock

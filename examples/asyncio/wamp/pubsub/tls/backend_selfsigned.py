@@ -54,8 +54,8 @@ if __name__ == '__main__':
     options = ssl.create_default_context(cadata=open(cert_path, 'r').read())
     # ...which we pass as "ssl=" to ApplicationRunner (passed to loop.create_connection)
     runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", u"wss://127.0.0.1:8083/ws"),
-        u"crossbardemo",
+        environ.get("AUTOBAHN_DEMO_ROUTER", "wss://127.0.0.1:8083/ws"),
+        "crossbardemo",
         ssl=options,  # try removing this, but still use self-signed cert
     )
     runner.run(Component)

@@ -50,7 +50,7 @@ if __name__ == '__main__':
     contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
                                                       'keys/server.crt')
 
-    factory = WebSocketServerFactory(u"wss://127.0.0.1:8080")
+    factory = WebSocketServerFactory("wss://127.0.0.1:8080")
     factory.protocol = EchoServerProtocol
 
     resource = WebSocketResource(factory)

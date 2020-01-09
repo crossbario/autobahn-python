@@ -367,7 +367,7 @@ class Component(ObservableMixin):
         For example::
 
             @component.subscribe(
-                u"some.topic",
+                "some.topic",
                 options=SubscribeOptions(match=u'prefix'),
             )
             def topic(*args, **kw):
@@ -390,7 +390,7 @@ class Component(ObservableMixin):
         For example::
 
             @component.register(
-                u"com.example.add",
+                "com.example.add",
                 options=RegisterOptions(invoke='round_robin'),
             )
             def add(*args, **kw):
@@ -608,12 +608,12 @@ class Component(ObservableMixin):
                 # If this is a "fatal error" that will never work,
                 # we bail out now
                 if isinstance(fail.value, ApplicationError):
-                    self.log.error(u"{msg}", msg=fail.value.error_message())
+                    self.log.error("{msg}", msg=fail.value.error_message())
 
                 elif isinstance(fail.value, OSError):
                     # failed to connect entirely, like nobody
                     # listening etc.
-                    self.log.info(u"Connection failed: {msg}", msg=txaio.failure_message(fail))
+                    self.log.info("Connection failed: {msg}", msg=txaio.failure_message(fail))
 
                 elif self._is_ssl_error(fail.value):
                     # Quoting pyOpenSSL docs: "Whenever
@@ -627,7 +627,7 @@ class Component(ObservableMixin):
                     # (and 'args' is a 1-tuple containing the above
                     # 3-tuple...)
                     ssl_lib, ssl_func, ssl_reason = fail.value.args[0][0]
-                    self.log.error(u"TLS failure: {reason}", reason=ssl_reason)
+                    self.log.error("TLS failure: {reason}", reason=ssl_reason)
                 else:
                     self.log.error(
                         u'Connection failed: {error}',
@@ -676,7 +676,7 @@ class Component(ObservableMixin):
             self.log.debug('Entering re-connect loop')
 
             if not self._can_reconnect():
-                err_msg = u"Component failed: Exhausted all transport connect attempts"
+                err_msg = "Component failed: Exhausted all transport connect attempts"
                 self.log.info(err_msg)
                 try:
                     raise RuntimeError(err_msg)
@@ -769,7 +769,7 @@ class Component(ObservableMixin):
                         details=details,
                     )
                     if not txaio.is_called(done):
-                        if details.reason in [u"wamp.close.normal"]:
+                        if details.reason in ["wamp.close.normal"]:
                             txaio.resolve(done, None)
                         else:
                             f = txaio.create_failure(
@@ -817,7 +817,7 @@ class Component(ObservableMixin):
                     if not txaio.is_called(done):
                         if not was_clean:
                             self.log.warn(
-                                u"Session disconnected uncleanly"
+                                "Session disconnected uncleanly"
                             )
                         else:
                             # eg the session has left the realm, and the transport was properly

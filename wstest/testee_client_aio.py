@@ -119,9 +119,9 @@ if __name__ == '__main__':
 
         factory.currentCaseId += 1
         if factory.currentCaseId <= factory.endCaseId:
-            factory.resource = u"/runCase?case={}&agent={}".format(factory.currentCaseId, factory.agent)
+            factory.resource = "/runCase?case={}&agent={}".format(factory.currentCaseId, factory.agent)
         elif factory.updateReports:
-            factory.resource = u"/updateReports?agent={}".format(factory.agent)
+            factory.resource = "/updateReports?agent={}".format(factory.agent)
             factory.updateReports = False
         else:
             break

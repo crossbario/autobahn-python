@@ -288,7 +288,7 @@ class Serializer(object):
                     raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
 
                 if len(raw_msg) == 0:
-                    raise ProtocolError(u"missing message type in WAMP message")
+                    raise ProtocolError("missing message type in WAMP message")
 
                 message_type = raw_msg[0]
 
@@ -441,7 +441,7 @@ SERID_TO_OBJSER[JsonObjectSerializer.NAME] = JsonObjectSerializer
 
 class JsonSerializer(Serializer):
 
-    SERIALIZER_ID = u"json"
+    SERIALIZER_ID = "json"
     """
     ID used as part of the WebSocket subprotocol name to identify the
     serializer with WAMP-over-WebSocket.
@@ -453,7 +453,7 @@ class JsonSerializer(Serializer):
     handshake identify the serializer with WAMP-over-RawSocket.
     """
 
-    MIME_TYPE = u"application/json"
+    MIME_TYPE = "application/json"
     """
     MIME type announced in HTTP request/response headers when running
     WAMP-over-Longpoll HTTP fallback.
@@ -468,7 +468,7 @@ class JsonSerializer(Serializer):
         """
         Serializer.__init__(self, JsonObjectSerializer(batched=batched))
         if batched:
-            self.SERIALIZER_ID = u"json.batched"
+            self.SERIALIZER_ID = "json.batched"
 
 
 ISerializer.register(JsonSerializer)
@@ -580,7 +580,7 @@ if _HAS_MSGPACK:
 
     class MsgPackSerializer(Serializer):
 
-        SERIALIZER_ID = u"msgpack"
+        SERIALIZER_ID = "msgpack"
         """
         ID used as part of the WebSocket subprotocol name to identify the
         serializer with WAMP-over-WebSocket.
@@ -592,7 +592,7 @@ if _HAS_MSGPACK:
         handshake identify the serializer with WAMP-over-RawSocket.
         """
 
-        MIME_TYPE = u"application/x-msgpack"
+        MIME_TYPE = "application/x-msgpack"
         """
         MIME type announced in HTTP request/response headers when running
         WAMP-over-Longpoll HTTP fallback.
@@ -607,7 +607,7 @@ if _HAS_MSGPACK:
             """
             Serializer.__init__(self, MsgPackObjectSerializer(batched=batched))
             if batched:
-                self.SERIALIZER_ID = u"msgpack.batched"
+                self.SERIALIZER_ID = "msgpack.batched"
 
     ISerializer.register(MsgPackSerializer)
     SERID_TO_SER[MsgPackSerializer.SERIALIZER_ID] = MsgPackSerializer
@@ -717,7 +717,7 @@ if _HAS_CBOR:
 
     class CBORSerializer(Serializer):
 
-        SERIALIZER_ID = u"cbor"
+        SERIALIZER_ID = "cbor"
         """
         ID used as part of the WebSocket subprotocol name to identify the
         serializer with WAMP-over-WebSocket.
@@ -729,7 +729,7 @@ if _HAS_CBOR:
         handshake identify the serializer with WAMP-over-RawSocket.
         """
 
-        MIME_TYPE = u"application/cbor"
+        MIME_TYPE = "application/cbor"
         """
         MIME type announced in HTTP request/response headers when running
         WAMP-over-Longpoll HTTP fallback.
@@ -744,7 +744,7 @@ if _HAS_CBOR:
             """
             Serializer.__init__(self, CBORObjectSerializer(batched=batched))
             if batched:
-                self.SERIALIZER_ID = u"cbor.batched"
+                self.SERIALIZER_ID = "cbor.batched"
 
     ISerializer.register(CBORSerializer)
     SERID_TO_SER[CBORSerializer.SERIALIZER_ID] = CBORSerializer
@@ -832,7 +832,7 @@ else:
 
     class UBJSONSerializer(Serializer):
 
-        SERIALIZER_ID = u"ubjson"
+        SERIALIZER_ID = "ubjson"
         """
         ID used as part of the WebSocket subprotocol name to identify the
         serializer with WAMP-over-WebSocket.
@@ -844,7 +844,7 @@ else:
         handshake identify the serializer with WAMP-over-RawSocket.
         """
 
-        MIME_TYPE = u"application/ubjson"
+        MIME_TYPE = "application/ubjson"
         """
         MIME type announced in HTTP request/response headers when running
         WAMP-over-Longpoll HTTP fallback.
@@ -859,7 +859,7 @@ else:
             """
             Serializer.__init__(self, UBJSONObjectSerializer(batched=batched))
             if batched:
-                self.SERIALIZER_ID = u"ubjson.batched"
+                self.SERIALIZER_ID = "ubjson.batched"
 
     ISerializer.register(UBJSONSerializer)
     SERID_TO_SER[UBJSONSerializer.SERIALIZER_ID] = UBJSONSerializer
@@ -934,7 +934,7 @@ if _HAS_FLATBUFFERS:
 
     class FlatBuffersSerializer(Serializer):
 
-        SERIALIZER_ID = u"flatbuffers"
+        SERIALIZER_ID = "flatbuffers"
         """
         ID used as part of the WebSocket subprotocol name to identify the
         serializer with WAMP-over-WebSocket.
@@ -946,7 +946,7 @@ if _HAS_FLATBUFFERS:
         handshake identify the serializer with WAMP-over-RawSocket.
         """
 
-        MIME_TYPE = u"application/x-flatbuffers"
+        MIME_TYPE = "application/x-flatbuffers"
         """
         MIME type announced in HTTP request/response headers when running
         WAMP-over-Longpoll HTTP fallback.
@@ -960,7 +960,7 @@ if _HAS_FLATBUFFERS:
             """
             Serializer.__init__(self, FlatBuffersObjectSerializer(batched=batched))
             if batched:
-                self.SERIALIZER_ID = u"flatbuffers.batched"
+                self.SERIALIZER_ID = "flatbuffers.batched"
 
     ISerializer.register(FlatBuffersSerializer)
     SERID_TO_SER[FlatBuffersSerializer.SERIALIZER_ID] = FlatBuffersSerializer

@@ -44,22 +44,22 @@ class TestIds(unittest.TestCase):
             self.assertEqual(val, message.check_or_raise_id(val))
 
     def test_invalid_ids(self):
-        for val in [-1, -9007199254740992, None, b"", b"abc", u"", u"abc", 0.9, Foo(), False, True, [], {}]:
+        for val in [-1, -9007199254740992, None, b"", b"abc", "", "abc", 0.9, Foo(), False, True, [], {}]:
             self.assertRaises(ProtocolError, message.check_or_raise_id, val)
 
 
 class TestUris(unittest.TestCase):
 
     def test_valid_uris_loose_nonempty(self):
-        for u in [u"com.myapp.topic1",
-                  u"com.myapp.product.123",
-                  u"com.myapp.product.1.delete",
-                  u"Com-star.MyApp.**+$for",
-                  u"\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5",
-                  u"hello\x24world",
-                  u"hello\xC2\xA2world",
-                  u"hello\xE2\x82\xACworld",
-                  u"hello\xF0\xA4\xAD\xA2world",
+        for u in ["com.myapp.topic1",
+                  "com.myapp.product.123",
+                  "com.myapp.product.1.delete",
+                  "Com-star.MyApp.**+$for",
+                  "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5",
+                  "hello\x24world",
+                  "hello\xC2\xA2world",
+                  "hello\xE2\x82\xACworld",
+                  "hello\xF0\xA4\xAD\xA2world",
                   ]:
             self.assertEqual(u, message.check_or_raise_uri(u))
 
@@ -71,31 +71,31 @@ class TestUris(unittest.TestCase):
                   0.8,
                   b"abc",
                   Foo(),
-                  u"",
-                  u".",
-                  u"com.",
-                  u"com..product",
-                  u"com.my app.product",
-                  u"com.my\tapp.product",
-                  u"com.my\napp.product",
-                  u"com.myapp.product#",
-                  u"com.#.product",
+                  "",
+                  ".",
+                  "com.",
+                  "com..product",
+                  "com.my app.product",
+                  "com.my\tapp.product",
+                  "com.my\napp.product",
+                  "com.myapp.product#",
+                  "com.#.product",
                   ]:
             self.assertRaises(InvalidUriError, message.check_or_raise_uri, u)
 
     def test_valid_uris_loose_empty(self):
-        for u in [u"com.myapp.topic1",
-                  u"com.myapp..123",
-                  u"com.myapp.product.1.",
-                  u"com.",
-                  u".",
-                  u"",
-                  u"Com-star.MyApp.**+$for..foo",
-                  u"\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5..foo",
-                  u"hello\x24world..foo",
-                  u"hello\xC2\xA2world..foo",
-                  u"hello\xE2\x82\xACworld..foo",
-                  u"hello\xF0\xA4\xAD\xA2world..foo",
+        for u in ["com.myapp.topic1",
+                  "com.myapp..123",
+                  "com.myapp.product.1.",
+                  "com.",
+                  ".",
+                  "",
+                  "Com-star.MyApp.**+$for..foo",
+                  "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5..foo",
+                  "hello\x24world..foo",
+                  "hello\xC2\xA2world..foo",
+                  "hello\xE2\x82\xACworld..foo",
+                  "hello\xF0\xA4\xAD\xA2world..foo",
                   ]:
             self.assertEqual(u, message.check_or_raise_uri(u, allow_empty_components=True))
 
@@ -107,18 +107,18 @@ class TestUris(unittest.TestCase):
                   0.8,
                   b"abc",
                   Foo(),
-                  u"com.my app.product",
-                  u"com.my\tapp.product",
-                  u"com.my\napp.product",
-                  u"com.myapp.product#",
-                  u"com.#.product",
+                  "com.my app.product",
+                  "com.my\tapp.product",
+                  "com.my\napp.product",
+                  "com.myapp.product#",
+                  "com.#.product",
                   ]:
             self.assertRaises(InvalidUriError, message.check_or_raise_uri, u, allow_empty_components=True)
 
     def test_valid_uris_strict_nonempty(self):
-        for u in [u"com.myapp.topic1",
-                  u"com.myapp.product.123",
-                  u"com.myapp.product.1.delete",
+        for u in ["com.myapp.topic1",
+                  "com.myapp.product.123",
+                  "com.myapp.product.1.delete",
                   ]:
             self.assertEqual(u, message.check_or_raise_uri(u, strict=True))
 
@@ -130,31 +130,31 @@ class TestUris(unittest.TestCase):
                   0.8,
                   b"abc",
                   Foo(),
-                  u"",
-                  u".",
-                  u"com.",
-                  u"com..product",
-                  u"com.my app.product",
-                  u"com.my\tapp.product",
-                  u"com.my\napp.product",
-                  u"com.myapp.product#",
-                  u"com.#.product",
-                  u"Com-star.MyApp.**+$for",
-                  u"\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5",
-                  u"hello\x24world",
-                  u"hello\xC2\xA2world",
-                  u"hello\xE2\x82\xACworld",
-                  u"hello\xF0\xA4\xAD\xA2world",
+                  "",
+                  ".",
+                  "com.",
+                  "com..product",
+                  "com.my app.product",
+                  "com.my\tapp.product",
+                  "com.my\napp.product",
+                  "com.myapp.product#",
+                  "com.#.product",
+                  "Com-star.MyApp.**+$for",
+                  "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5",
+                  "hello\x24world",
+                  "hello\xC2\xA2world",
+                  "hello\xE2\x82\xACworld",
+                  "hello\xF0\xA4\xAD\xA2world",
                   ]:
             self.assertRaises(InvalidUriError, message.check_or_raise_uri, u, strict=True)
 
     def test_valid_uris_strict_empty(self):
-        for u in [u"com.myapp.topic1",
-                  u"com.myapp..123",
-                  u"com.myapp.product.1.",
-                  u"com.",
-                  u".",
-                  u"",
+        for u in ["com.myapp.topic1",
+                  "com.myapp..123",
+                  "com.myapp.product.1.",
+                  "com.",
+                  ".",
+                  "",
                   ]:
             self.assertEqual(u, message.check_or_raise_uri(u, strict=True, allow_empty_components=True))
 
@@ -166,17 +166,17 @@ class TestUris(unittest.TestCase):
                   0.8,
                   b"abc",
                   Foo(),
-                  u"com.my app.product",
-                  u"com.my\tapp.product",
-                  u"com.my\napp.product",
-                  u"com.myapp.product#",
-                  u"com.#.product",
-                  u"Com-star.MyApp.**+$for..foo",
-                  u"\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5..foo",
-                  u"hello\x24world..foo",
-                  u"hello\xC2\xA2world..foo",
-                  u"hello\xE2\x82\xACworld..foo",
-                  u"hello\xF0\xA4\xAD\xA2world..foo",
+                  "com.my app.product",
+                  "com.my\tapp.product",
+                  "com.my\napp.product",
+                  "com.myapp.product#",
+                  "com.#.product",
+                  "Com-star.MyApp.**+$for..foo",
+                  "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5..foo",
+                  "hello\x24world..foo",
+                  "hello\xC2\xA2world..foo",
+                  "hello\xE2\x82\xACworld..foo",
+                  "hello\xF0\xA4\xAD\xA2world..foo",
                   ]:
             self.assertRaises(InvalidUriError, message.check_or_raise_uri, u, strict=True, allow_empty_components=True)
 
@@ -349,12 +349,12 @@ class TestUnsubscribedMessage(unittest.TestCase):
         self.assertEqual(msg[1], 0)
         self.assertEqual(msg[2], {u'subscription': 123456})
 
-        e = message.Unsubscribed(0, subscription=123456, reason=u"wamp.subscription.revoked")
+        e = message.Unsubscribed(0, subscription=123456, reason="wamp.subscription.revoked")
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Unsubscribed.MESSAGE_TYPE)
         self.assertEqual(msg[1], 0)
-        self.assertEqual(msg[2], {u'subscription': 123456, u'reason': u"wamp.subscription.revoked"})
+        self.assertEqual(msg[2], {u'subscription': 123456, u'reason': "wamp.subscription.revoked"})
 
     def test_parse_and_marshal(self):
         wmsg = [message.Unsubscribed.MESSAGE_TYPE, 123456]
@@ -373,12 +373,12 @@ class TestUnsubscribedMessage(unittest.TestCase):
         self.assertEqual(msg.reason, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Unsubscribed.MESSAGE_TYPE, 0, {u'subscription': 123456, u'reason': u"wamp.subscription.revoked"}]
+        wmsg = [message.Unsubscribed.MESSAGE_TYPE, 0, {u'subscription': 123456, u'reason': "wamp.subscription.revoked"}]
         msg = message.Unsubscribed.parse(wmsg)
         self.assertIsInstance(msg, message.Unsubscribed)
         self.assertEqual(msg.request, 0)
         self.assertEqual(msg.subscription, 123456)
-        self.assertEqual(msg.reason, u"wamp.subscription.revoked")
+        self.assertEqual(msg.reason, "wamp.subscription.revoked")
         self.assertEqual(msg.marshal(), wmsg)
 
 
@@ -700,12 +700,12 @@ class TestUnregisteredMessage(unittest.TestCase):
         self.assertEqual(msg[1], 0)
         self.assertEqual(msg[2], {u'registration': 123456})
 
-        e = message.Unregistered(0, registration=123456, reason=u"wamp.registration.revoked")
+        e = message.Unregistered(0, registration=123456, reason="wamp.registration.revoked")
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Unregistered.MESSAGE_TYPE)
         self.assertEqual(msg[1], 0)
-        self.assertEqual(msg[2], {u'registration': 123456, u'reason': u"wamp.registration.revoked"})
+        self.assertEqual(msg[2], {u'registration': 123456, u'reason': "wamp.registration.revoked"})
 
     def test_parse_and_marshal(self):
         wmsg = [message.Unregistered.MESSAGE_TYPE, 123456]
@@ -724,12 +724,12 @@ class TestUnregisteredMessage(unittest.TestCase):
         self.assertEqual(msg.reason, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Unregistered.MESSAGE_TYPE, 0, {u'registration': 123456, u'reason': u"wamp.registration.revoked"}]
+        wmsg = [message.Unregistered.MESSAGE_TYPE, 0, {u'registration': 123456, u'reason': "wamp.registration.revoked"}]
         msg = message.Unregistered.parse(wmsg)
         self.assertIsInstance(msg, message.Unregistered)
         self.assertEqual(msg.request, 0)
         self.assertEqual(msg.registration, 123456)
-        self.assertEqual(msg.reason, u"wamp.registration.revoked")
+        self.assertEqual(msg.reason, "wamp.registration.revoked")
         self.assertEqual(msg.marshal(), wmsg)
 
 
@@ -1034,63 +1034,63 @@ class TestYieldMessage(unittest.TestCase):
 class TestHelloMessage(unittest.TestCase):
 
     def test_ctor(self):
-        e = message.Hello(u"realm1", {u'publisher': role.RolePublisherFeatures()})
+        e = message.Hello("realm1", {u'publisher': role.RolePublisherFeatures()})
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
-        self.assertEqual(msg[1], u"realm1")
+        self.assertEqual(msg[1], "realm1")
         self.assertEqual(msg[2], {u'roles': {u'publisher': {}}})
 
-        e = message.Hello(u"realm1", {u'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)})
+        e = message.Hello("realm1", {u'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)})
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
-        self.assertEqual(msg[1], u"realm1")
+        self.assertEqual(msg[1], "realm1")
         self.assertEqual(msg[2], {u'roles': {u'publisher': {u'features': {u'subscriber_blackwhite_listing': True}}}})
 
-        e = message.Hello(u"realm1", {u'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)}, resumable=True)
+        e = message.Hello("realm1", {u'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)}, resumable=True)
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
-        self.assertEqual(msg[1], u"realm1")
+        self.assertEqual(msg[1], "realm1")
         self.assertEqual(msg[2], {u'roles': {u'publisher': {u'features': {u'subscriber_blackwhite_listing': True}}}, u'resumable': True})
 
     def test_parse_and_marshal(self):
-        wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'publisher': {}}}]
+        wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {u'roles': {u'publisher': {}}}]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
-        self.assertEqual(msg.realm, u"realm1")
+        self.assertEqual(msg.realm, "realm1")
         self.assertEqual(msg.roles, {u'publisher': role.RolePublisherFeatures()})
         self.assertEqual(msg.resumable, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'publisher': {u'features': {u'subscriber_blackwhite_listing': True}}}}]
+        wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {u'roles': {u'publisher': {u'features': {u'subscriber_blackwhite_listing': True}}}}]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
-        self.assertEqual(msg.realm, u"realm1")
+        self.assertEqual(msg.realm, "realm1")
         self.assertEqual(msg.roles, {u'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)})
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'publisher': {}}, u'resumable': False}]
+        wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {u'roles': {u'publisher': {}}, u'resumable': False}]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
-        self.assertEqual(msg.realm, u"realm1")
+        self.assertEqual(msg.realm, "realm1")
         self.assertEqual(msg.roles, {u'publisher': role.RolePublisherFeatures()})
         self.assertEqual(msg.resumable, False)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'publisher': {}}, u'resumable': True, u'resume-session': 1234, u'resume-token': u"dsjgsg"}]
+        wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {u'roles': {u'publisher': {}}, u'resumable': True, u'resume-session': 1234, u'resume-token': "dsjgsg"}]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
-        self.assertEqual(msg.realm, u"realm1")
+        self.assertEqual(msg.realm, "realm1")
         self.assertEqual(msg.roles, {u'publisher': role.RolePublisherFeatures()})
         self.assertEqual(msg.resumable, True)
         self.assertEqual(msg.resume_session, 1234)
-        self.assertEqual(msg.resume_token, u"dsjgsg")
+        self.assertEqual(msg.resume_token, "dsjgsg")
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_str(self):
-        e = message.Hello(u"realm1", {u'publisher': role.RolePublisherFeatures()})
+        e = message.Hello("realm1", {u'publisher': role.RolePublisherFeatures()})
         self.assertIsInstance(str(e), str)
 
 

@@ -7,14 +7,14 @@ from twisted.internet.defer import inlineCallbacks
 
 
 component = Component(
-    transports=u"ws://localhost:8080/auth_ws",
-    realm=u"crossbardemo",
+    transports="ws://localhost:8080/auth_ws",
+    realm="crossbardemo",
     authentication={
-        u"scram": {
-            u"authid": u"carol",
-            u"authrole": u"authenticated",
-            u"password": u"p4ssw0rd",
-            u"kdf": u"argon2id13",
+        "scram": {
+            "authid": "carol",
+            "authrole": "authenticated",
+            "password": "p4ssw0rd",
+            "kdf": "argon2id13",
         }
     }
 )

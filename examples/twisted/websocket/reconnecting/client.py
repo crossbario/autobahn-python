@@ -40,7 +40,7 @@ class MyClientProtocol(WebSocketClientProtocol):
         print("WebSocket connection open.")
 
         def hello():
-            self.sendMessage(u"Hello, world!".encode('utf8'))
+            self.sendMessage("Hello, world!".encode('utf8'))
             self.sendMessage(b"\x00\x01\x03\x04", isBinary=True)
             self.factory.reactor.callLater(1, hello)
 
@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    factory = MyClientFactory(u"ws://127.0.0.1:9000")
+    factory = MyClientFactory("ws://127.0.0.1:9000")
 
     reactor.connectTCP("127.0.0.1", 9000, factory)
     reactor.run()

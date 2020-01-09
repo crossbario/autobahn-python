@@ -195,7 +195,7 @@ if os.environ.get('USE_TWISTED', False):
             session = Prefix()
 
             session._transport = mock.Mock()
-            session.register(session, prefix=u"com.example.prefix.")
+            session.register(session, prefix="com.example.prefix.")
 
             # we should have registered one method, with the prefix
             # put in front
@@ -203,7 +203,7 @@ if os.environ.get('USE_TWISTED', False):
             call = session._transport.mock_calls[0]
             self.assertEqual("send", call[0])
             reg = call.call_list()[0][1][0]
-            self.assertEqual(u"com.example.prefix.method_name", reg.procedure)
+            self.assertEqual("com.example.prefix.method_name", reg.procedure)
 
         def test_auto_name(self):
 
@@ -215,14 +215,14 @@ if os.environ.get('USE_TWISTED', False):
             session = Magic()
 
             session._transport = mock.Mock()
-            session.register(session, prefix=u"com.example.")
+            session.register(session, prefix="com.example.")
 
             # Should auto-discover name by passing uri=None above
             self.assertEqual(1, len(session._transport.mock_calls))
             call = session._transport.mock_calls[0]
             self.assertEqual("send", call[0])
             reg = call.call_list()[0][1][0]
-            self.assertEqual(u"com.example.some_method", reg.procedure)
+            self.assertEqual("com.example.some_method", reg.procedure)
 
     class TestPublisher(unittest.TestCase):
 
@@ -958,7 +958,7 @@ if os.environ.get('USE_TWISTED', False):
             def raiser():
                 raise exception
 
-            registration0 = yield handler.register(raiser, u"com.myapp.myproc_error")
+            registration0 = yield handler.register(raiser, "com.myapp.myproc_error")
             try:
                 yield handler.call(u'com.myapp.myproc_error')
                 self.fail()
@@ -977,7 +977,7 @@ if os.environ.get('USE_TWISTED', False):
             def raiser():
                 raise exception
 
-            registration0 = yield handler.register(raiser, u"com.myapp.myproc_error")
+            registration0 = yield handler.register(raiser, "com.myapp.myproc_error")
             try:
                 yield handler.call(u'com.myapp.myproc_error')
                 self.fail()
@@ -1008,13 +1008,13 @@ if os.environ.get('USE_TWISTED', False):
             session = Session(mock.Mock())
             auth0 = create_authenticator(
                 "wampcra",
-                authid=u"alice",
-                secret=u"p4ssw0rd",
+                authid="alice",
+                secret="p4ssw0rd",
             )
             auth1 = create_authenticator(
                 "wampcra",
-                authid=u"bob",
-                secret=u"password42",
+                authid="bob",
+                secret="password42",
             )
 
             session.add_authenticator(auth0)

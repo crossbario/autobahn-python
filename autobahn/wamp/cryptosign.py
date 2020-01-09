@@ -462,19 +462,19 @@ if HAS_CRYPTOSIGN:
             :rtype: str
             """
             if not isinstance(challenge, Challenge):
-                raise Exception(u"challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
+                raise Exception("challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
 
             if u'challenge' not in challenge.extra:
-                raise Exception(u"missing challenge value in challenge.extra")
+                raise Exception("missing challenge value in challenge.extra")
 
             # the challenge sent by the router (a 32 bytes random value)
             challenge_hex = challenge.extra[u'challenge']
 
             if type(challenge_hex) != str:
-                raise Exception(u"invalid type {} for challenge (expected a hex string)".format(type(challenge_hex)))
+                raise Exception("invalid type {} for challenge (expected a hex string)".format(type(challenge_hex)))
 
             if len(challenge_hex) != 64:
-                raise Exception(u"unexpected challenge (hex) length: was {}, but expected 64".format(len(challenge_hex)))
+                raise Exception("unexpected challenge (hex) length: was {}, but expected 64".format(len(challenge_hex)))
 
             # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
             challenge_raw = binascii.a2b_hex(challenge_hex)

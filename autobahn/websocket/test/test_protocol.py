@@ -159,7 +159,7 @@ class WebSocketServerProtocolTests(unittest.TestCase):
         """
         sendClose with a str reason works.
         """
-        self.protocol.sendClose(code=1000, reason=u"oh no")
+        self.protocol.sendClose(code=1000, reason="oh no")
 
         # We closed properly
         self.assertEqual(self.transport._written[2:], b"\x03\xe8oh no")
@@ -169,7 +169,7 @@ class WebSocketServerProtocolTests(unittest.TestCase):
         """
         sendClose with a unicode reason works.
         """
-        self.protocol.sendClose(code=1000, reason=u"oh no")
+        self.protocol.sendClose(code=1000, reason="oh no")
 
         # We closed properly
         self.assertEqual(self.transport._written[2:], b"\x03\xe8oh no")
@@ -179,7 +179,7 @@ class WebSocketServerProtocolTests(unittest.TestCase):
         """
         sendClose with a too-long reason will truncate it.
         """
-        self.protocol.sendClose(code=1000, reason=u"abc" * 1000)
+        self.protocol.sendClose(code=1000, reason="abc" * 1000)
 
         # We closed properly
         self.assertEqual(self.transport._written[2:],
@@ -191,7 +191,7 @@ class WebSocketServerProtocolTests(unittest.TestCase):
         Trying to sendClose with a reason but no code will raise an Exception.
         """
         with self.assertRaises(Exception) as e:
-            self.protocol.sendClose(reason=u"abc")
+            self.protocol.sendClose(reason="abc")
 
         self.assertIn("close reason without close code", str(e.exception))
 

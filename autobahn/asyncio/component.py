@@ -196,7 +196,7 @@ class Component(component.Component):
             if tls:
                 if isinstance(tls, dict):
                     for k in tls.keys():
-                        if k not in [u"hostname", u"trust_root"]:
+                        if k not in ["hostname", "trust_root"]:
                             raise ValueError("Invalid key '{}' in 'tls' config".format(k))
                     hostname = tls.get(u'hostname', host)
                     if type(hostname) != str:

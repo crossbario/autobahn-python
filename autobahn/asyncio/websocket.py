@@ -88,7 +88,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         try:
             self.peer = peer2str(transport.get_extra_info('peername'))
         except:
-            self.peer = u"?"
+            self.peer = "?"
 
         self._connectionMade()
 

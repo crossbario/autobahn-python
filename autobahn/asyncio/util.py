@@ -67,11 +67,11 @@ def transport_channel_id(transport, is_server, channel_id_type):
 def peer2str(peer):
     if isinstance(peer, tuple):
         ip_ver = 4 if len(peer) == 2 else 6
-        return u"tcp{2}:{0}:{1}".format(peer[0], peer[1], ip_ver)
+        return "tcp{2}:{0}:{1}".format(peer[0], peer[1], ip_ver)
     elif isinstance(peer, str):
-        return u"unix:{0}".format(peer)
+        return "unix:{0}".format(peer)
     else:
-        return u"?:{0}".format(peer)
+        return "?:{0}".format(peer)
 
 
 def get_serializers():

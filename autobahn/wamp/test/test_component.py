@@ -118,11 +118,11 @@ if os.environ.get('USE_TWISTED', False):
 
             def stars(nick="somebody", stars=0):
                 self.log("stars() is invoked", nick, stars)
-                return u"{0} starred {1}x".format(nick, stars)
+                return "{0} starred {1}x".format(nick, stars)
 
             def orders(product, limit=5):
                 self.log("orders() is invoked", product, limit)
-                return [u"Product {0}".format(i) for i in range(50)][:limit]
+                return ["Product {0}".format(i) for i in range(50)][:limit]
 
             def arglen(*args, **kwargs):
                 self.log("arglen() is invoked", args, kwargs)
@@ -193,7 +193,7 @@ if os.environ.get('USE_TWISTED', False):
 
         def setUp(self):
             self.url = os.environ.get("WAMP_ROUTER_URL")
-            self.realm = u"realm1"
+            self.realm = "realm1"
 
         @defer.inlineCallbacks
         def runOneTest(self, components):

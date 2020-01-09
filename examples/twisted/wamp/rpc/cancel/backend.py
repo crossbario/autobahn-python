@@ -46,10 +46,10 @@ class Component(ApplicationSession):
          return a + b
 
       def stars(nick = "somebody", stars = 0):
-         return u"{} starred {}x".format(nick, stars)
+         return "{} starred {}x".format(nick, stars)
 
       def orders(product, limit = 5):
-         return [u"Product {}".format(i) for i in range(50)][:limit]
+         return ["Product {}".format(i) for i in range(50)][:limit]
 
       def arglen(*args, **kwargs):
          return [len(args), len(kwargs)]

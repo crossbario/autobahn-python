@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    factory = WebSocketClientFactory(u"ws://127.0.0.1:9000")
+    factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = SlowSquareClientProtocol
 
     reactor.connectTCP("127.0.0.1", 9000, factory)

@@ -77,10 +77,10 @@ if __name__ == '__main__':
     extra=dict(
         max_events=5,  # [A] pass in additional configuration
     )
-    #url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://192.168.0.15:8080/ws")
+    #url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://192.168.0.15:8080/ws")
     #if six.PY2 and type(url) == six.binary_type:
     #    url = url.decode('utf8')
-    #realm = u"realm1"
+    #realm = "realm1"
     runner = ApplicationRunner(url=args.url, realm=args.realm, extra=extra)
     runner.run(ClientSession, auto_reconnect=True)
 

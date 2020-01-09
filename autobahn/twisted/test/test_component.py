@@ -125,14 +125,14 @@ if os.environ.get('USE_TWISTED', False):
             directlyProvides(endpoint, IStreamClientEndpoint)
             component = Component(
                 transports={
-                    u"type": u"websocket",
-                    u"url": u"ws://127.0.0.1/ws",
-                    u"endpoint": endpoint,
-                    u"proxy": {
-                        u"host": u"10.0.0.0",
-                        u"port": 65000,
+                    "type": "websocket",
+                    "url": "ws://127.0.0.1/ws",
+                    "endpoint": endpoint,
+                    "proxy": {
+                        "host": "10.0.0.0",
+                        "port": 65000,
                     },
-                    u"max_retries": 0,
+                    "max_retries": 0,
                 },
                 is_fatal=lambda _: True,
             )
@@ -216,9 +216,9 @@ if os.environ.get('USE_TWISTED', False):
                     "type": "websocket",
                     "url": "ws://127.0.0.1/ws",
                     "endpoint": endpoint,
-                    u"max_retries": 0,
-                    u"max_retry_delay": 5,
-                    u"initial_retry_delay": 5,
+                    "max_retries": 0,
+                    "max_retry_delay": 5,
+                    "initial_retry_delay": 5,
                 },
             )
 
@@ -231,7 +231,7 @@ if os.environ.get('USE_TWISTED', False):
 
                 def connect(factory, **kw):
                     d = Deferred()
-                    reactor.callLater(10, d.errback(RuntimeError("no connect for you")))
+                    reactor.callLater(10, d.errback(RuntimeError("no connect for yo")))
                     return d
                 endpoint.connect = connect
 
@@ -281,14 +281,14 @@ if os.environ.get('USE_TWISTED', False):
                 from autobahn.wamp import role
                 subrole = role.RoleSubscriberFeatures()
 
-                msg = Hello(u"realm", roles=dict(subscriber=subrole), authmethods=[u"anonymous"])
+                msg = Hello("realm", roles=dict(subscriber=subrole), authmethods=["anonymous"])
                 serializer = JsonSerializer()
                 data, is_binary = serializer.serialize(msg)
                 proto.onMessage(data, is_binary)
 
-                msg = Abort(reason=u"wamp.error.no_auth_method")
+                msg = Abort(reason="wamp.error.no_auth_method")
                 proto.onMessage(*serializer.serialize(msg))
-                proto.onClose(False, 100, u"wamp.error.no_auth_method")
+                proto.onClose(False, 100, "wamp.error.no_auth_method")
 
                 return succeed(proto)
             endpoint.connect = connect

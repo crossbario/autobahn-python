@@ -38,5 +38,5 @@ if __name__ == '__main__':
         level = 'debug'
     runner = ApplicationRunnerRawSocket(
         "tcp://localhost:9090",
-        u"realm1")
+        "realm1")
     runner.run(MyComponent, logging_level=level)

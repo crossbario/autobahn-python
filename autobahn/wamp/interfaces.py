@@ -546,7 +546,7 @@ class ISession(abc.ABC):
         When the *Caller* and *Dealer* implementations support canceling of calls, the call may
         be canceled by canceling the returned Deferred/Future.
 
-        :param procedure: The URI of the remote procedure to be called, e.g. ``u"com.myapp.hello"``.
+        :param procedure: The URI of the remote procedure to be called, e.g. ``"com.myapp.hello"``.
         :type procedure: unicode
 
         :param args: Any positional arguments for the call.
@@ -627,7 +627,7 @@ class ISession(abc.ABC):
         - If the publication fails the Deferred/Future will reject with an instance
           of :class:`autobahn.wamp.exception.ApplicationError`.
 
-        :param topic: The URI of the topic to publish to, e.g. ``u"com.myapp.mytopic1"``.
+        :param topic: The URI of the topic to publish to, e.g. ``"com.myapp.mytopic1"``.
         :type topic: unicode
 
         :param args: Arbitrary application payload for the event (positional arguments).

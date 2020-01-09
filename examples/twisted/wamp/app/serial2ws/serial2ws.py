@@ -59,7 +59,7 @@ class McuProtocol(LineReceiver):
             payload = {u'id': data[0], u'value': data[1]}
 
             # publish WAMP event to all subscribers on topic
-            self.session.publish(u"com.myapp.mcu.on_analog_value", payload)
+            self.session.publish("com.myapp.mcu.on_analog_value", payload)
 
     def controlLed(self, turnOn):
         """
@@ -95,7 +95,7 @@ class McuComponent(ApplicationSession):
             print('Could not open serial port: {0}'.format(e))
             self.leave()
         else:
-            yield self.register(serialProtocol.controlLed, u"com.myapp.mcu.control_led")
+            yield self.register(serialProtocol.controlLed, "com.myapp.mcu.control_led")
 
 
 if __name__ == '__main__':
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument("--web", type=int, default=8000,
                         help='Web port to use for embedded Web server. Use 0 to disable.')
 
-    router_default = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
+    router_default = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     parser.add_argument("--router", type=str, default=router_default,
                         help='WAMP router URL (a WAMP-over-WebSocket endpoint, default: "{}")'.format(router_default))
 

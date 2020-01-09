@@ -22,22 +22,22 @@ component = Component(
 )
 
 # @component.subscribe(
-#     u"com.example.",
-#     options=SubscribeOptions(match=u"prefix"),
+#     "com.example.",
+#     options=SubscribeOptions(match="prefix"),
 # )
 # def catch_all(*args, **kw):
 #     print("catch_all({}, {})".format(args, kw))
 
 @component.subscribe(
-    u"com.example.",
-    options=SubscribeOptions(match=u"prefix", details_arg='details'),
+    "com.example.",
+    options=SubscribeOptions(match="prefix", details_arg='details'),
 )
 def an_event(details=None):
     print("topic '{}'".format(details.topic))
 
 
 @component.register(
-    u"com.example.progressive",
+    "com.example.progressive",
     options=RegisterOptions(details_arg='details'),
 )
 @inlineCallbacks

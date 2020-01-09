@@ -36,6 +36,6 @@ if __name__ == '__main__':
     path = os.path.join(os.path.dirname(__file__), '.crossbar/socket1')
     runner = ApplicationRunnerRawSocket(
         path,
-        u"realm1",
+        "realm1",
     )
     runner.run(MyComponent, logging_level=level)

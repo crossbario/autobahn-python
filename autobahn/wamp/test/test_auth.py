@@ -91,14 +91,14 @@ class TestWampAuthHelpers(unittest.TestCase):
 
     def test_compute_totp(self):
         pat = re.compile(r"\d\d\d\d\d\d")
-        secret = u"MFRGGZDFMZTWQ2LK"
+        secret = "MFRGGZDFMZTWQ2LK"
         signature = auth.compute_totp(secret)
         self.assertEqual(type(signature), str)
         self.assertTrue(pat.match(signature) is not None)
 
     def test_compute_totp_offset(self):
         pat = re.compile(r"\d\d\d\d\d\d")
-        secret = u"MFRGGZDFMZTWQ2LK"
+        secret = "MFRGGZDFMZTWQ2LK"
         for offset in range(-10, 10):
             signature = auth.compute_totp(secret, offset)
             self.assertEqual(type(signature), str)

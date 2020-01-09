@@ -76,7 +76,7 @@ if __name__ == '__main__':
     contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
                                                       'keys/server.crt')
 
-    factory = PingServerFactory(u"wss://127.0.0.1:9000")
+    factory = PingServerFactory("wss://127.0.0.1:9000")
 
     factory.protocol = PingServerProtocol
     listenWS(factory, contextFactory)

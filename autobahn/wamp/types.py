@@ -116,7 +116,7 @@ class ComponentConfig(object):
         self.runner = runner
 
     def __str__(self):
-        return u"ComponentConfig(realm=<{}>, extra={}, keyring={}, controller={}, shared={}, runner={})".format(self.realm, self.extra, self.keyring, self.controller, self.shared, self.runner)
+        return "ComponentConfig(realm=<{}>, extra={}, keyring={}, controller={}, shared={}, runner={})".format(self.realm, self.extra, self.keyring, self.controller, self.shared, self.runner)
 
 
 @public
@@ -177,7 +177,7 @@ class Accept(HelloReturn):
         self.authextra = authextra
 
     def __str__(self):
-        return u"Accept(realm=<{}>, authid=<{}>, authrole=<{}>, authmethod={}, authprovider={}, authextra={})".format(self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
+        return "Accept(realm=<{}>, authid=<{}>, authrole=<{}>, authmethod={}, authprovider={}, authextra={})".format(self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
 
 
 @public
@@ -207,7 +207,7 @@ class Deny(HelloReturn):
         self.message = message
 
     def __str__(self):
-        return u"Deny(reason=<{}>, message='{}')".format(self.reason, self.message)
+        return "Deny(reason=<{}>, message='{}')".format(self.reason, self.message)
 
 
 @public
@@ -238,7 +238,7 @@ class Challenge(HelloReturn):
         self.extra = extra or {}
 
     def __str__(self):
-        return u"Challenge(method={}, extra={})".format(self.method, self.extra)
+        return "Challenge(method={}, extra={})".format(self.method, self.extra)
 
 
 @public
@@ -316,7 +316,7 @@ class HelloDetails(object):
         self.resume_token = resume_token
 
     def __str__(self):
-        return u"HelloDetails(realm=<{}>, authmethods={}, authid=<{}>, authrole=<{}>, authextra={}, session_roles={}, pending_session={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.authmethods, self.authid, self.authrole, self.authextra, self.session_roles, self.pending_session, self.resumable, self.resume_session, self.resume_token)
+        return "HelloDetails(realm=<{}>, authmethods={}, authid=<{}>, authrole=<{}>, authextra={}, session_roles={}, pending_session={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.authmethods, self.authid, self.authrole, self.authextra, self.session_roles, self.pending_session, self.resumable, self.resume_session, self.resume_token)
 
 
 @public
@@ -401,7 +401,7 @@ class SessionDetails(object):
         return obj
 
     def __str__(self):
-        return u"""
+        return """
 SessionDetails(realm=<{}>,
                session={},
                authid=<{}>,
@@ -458,7 +458,7 @@ class SessionIdent(object):
         self.authrole = authrole
 
     def __str__(self):
-        return u"SessionIdent(session={}, authid={}, authrole={})".format(self.session, self.authid, self.authrole)
+        return "SessionIdent(session={}, authid={}, authrole={})".format(self.session, self.authid, self.authrole)
 
     def marshal(self):
         obj = {
@@ -526,8 +526,8 @@ class CloseDetails(object):
 
     .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onLeave`
     """
-    REASON_DEFAULT = u"wamp.close.normal"
-    REASON_TRANSPORT_LOST = u"wamp.close.transport_lost"
+    REASON_DEFAULT = "wamp.close.normal"
+    REASON_TRANSPORT_LOST = "wamp.close.transport_lost"
 
     __slots__ = (
         'reason',
@@ -557,7 +557,7 @@ class CloseDetails(object):
         return obj
 
     def __str__(self):
-        return u"CloseDetails(reason=<{}>, message='{}')".format(self.reason, self.message)
+        return "CloseDetails(reason=<{}>, message='{}')".format(self.reason, self.message)
 
 
 @public
@@ -646,7 +646,7 @@ class SubscribeOptions(object):
         return options
 
     def __str__(self):
-        return u"SubscribeOptions(match={}, details={}, details_arg={}, get_retained={}, forward_for={})".format(self.match, self.details, self.details_arg, self.get_retained, self.forward_for)
+        return "SubscribeOptions(match={}, details={}, details_arg={}, get_retained={}, forward_for={})".format(self.match, self.details, self.details_arg, self.get_retained, self.forward_for)
 
 
 @public
@@ -731,7 +731,7 @@ class EventDetails(object):
         self.forward_for = forward_for
 
     def __str__(self):
-        return u"EventDetails(subscription={}, publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={}, forward_for={})".format(self.subscription, self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.forward_for)
+        return "EventDetails(subscription={}, publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={}, forward_for={})".format(self.subscription, self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.forward_for)
 
 
 @public
@@ -883,7 +883,7 @@ class PublishOptions(object):
         return options
 
     def __str__(self):
-        return u"PublishOptions(acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, forward_for={})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.forward_for)
+        return "PublishOptions(acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, forward_for={})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.forward_for)
 
 
 @public
@@ -999,7 +999,7 @@ class RegisterOptions(object):
         return options
 
     def __str__(self):
-        return u"RegisterOptions(match={}, invoke={}, concurrency={}, details={}, details_arg={}, force_reregister={}, forward_for={})".format(self.match, self.invoke, self.concurrency, self.details, self.details_arg, self.force_reregister, self.forward_for)
+        return "RegisterOptions(match={}, invoke={}, concurrency={}, details={}, details_arg={}, force_reregister={}, forward_for={})".format(self.match, self.invoke, self.concurrency, self.details, self.details_arg, self.force_reregister, self.forward_for)
 
 
 @public
@@ -1078,7 +1078,7 @@ class CallDetails(object):
         self.forward_for = forward_for
 
     def __str__(self):
-        return u"CallDetails(registration={}, progress={}, caller={}, caller_authid={}, caller_authrole={}, procedure=<{}>, enc_algo={}, forward_for={})".format(self.registration, self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo, self.forward_for)
+        return "CallDetails(registration={}, progress={}, caller={}, caller_authid={}, caller_authrole={}, procedure=<{}>, enc_algo={}, forward_for={})".format(self.registration, self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo, self.forward_for)
 
 
 @public
@@ -1183,7 +1183,7 @@ class CallOptions(object):
         return options
 
     def __str__(self):
-        return u"CallOptions(on_progress={}, timeout={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={}, details={})".format(self.on_progress, self.timeout, self.caller, self.caller_authid, self.caller_authrole, self.forward_for, self.details)
+        return "CallOptions(on_progress={}, timeout={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={}, details={})".format(self.on_progress, self.timeout, self.caller, self.caller_authid, self.caller_authrole, self.forward_for, self.details)
 
 
 @public
@@ -1241,7 +1241,7 @@ class CallResult(object):
         self.kwresults = kwresults
 
     def __str__(self):
-        return u"CallResult(results={}, kwresults={}, enc_algo={}, callee={}, callee_authid={}, callee_authrole={}, forward_for={})".format(self.results, self.kwresults, self.enc_algo, self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
+        return "CallResult(results={}, kwresults={}, enc_algo={}, callee={}, callee_authid={}, callee_authrole={}, forward_for={})".format(self.results, self.kwresults, self.enc_algo, self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
 
 
 @public

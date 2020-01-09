@@ -155,7 +155,7 @@ if __name__ == '__main__':
     app._frame.Show()
     reactor.registerWxApp(app)
 
-    app._factory = MyClientFactory(u"ws://127.0.0.1:9000", app)
+    app._factory = MyClientFactory("ws://127.0.0.1:9000", app)
 
     reactor.connectTCP("127.0.0.1", 9000, app._factory)
 
