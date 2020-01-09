@@ -320,8 +320,7 @@ class ApplicationRunner(object):
                         "{2}"?'''.format(
                             self.__class__.__name__,
                             self.url_type,
-                            self.url_type_secured)
-                            )
+                            self.url_type_secured))
                 context_factory = self.ssl
             elif isSecure:
                 from twisted.internet.ssl import optionsForClientTLS

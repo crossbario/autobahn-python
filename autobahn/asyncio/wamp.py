@@ -251,8 +251,7 @@ class ApplicationRunner(object):
                     "{2}"?'''.format(
                         self.__class__.__name__,
                         self.url_type,
-                        self.url_type_secured)
-                        )
+                        self.url_type_secured))
             ssl = self.ssl
 
         # start the client connection
