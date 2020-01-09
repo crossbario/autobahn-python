@@ -5,6 +5,12 @@
 Changelog
 =========
 
+20.1.1
+------
+
+* IMPORTANT: beginning release v20.1.1, Autobahn|Python only supports Python 3.5 or later.
+* fix: first part of cleaning up code, dropping Python 2 support (#1282).
+
 19.11.2
 -------
 
