@@ -10,16 +10,16 @@ def main(transport):
     session = ApplicationSession()
 
     # join a first realm and do something
-    yield session.join(transport, u'myrealm1')
-    result = yield session.call(u'com.myapp.add2', 2, 3)
+    yield session.join(transport, 'myrealm1')
+    result = yield session.call('com.myapp.add2', 2, 3)
     print("Result: {}".format(result))
 
     # leave the realm. the transport will NOT be closed!
     yield session.leave()
 
     # join a different realm and do something
-    yield session.join(transport, u'myrealm2')
-    result = yield session.call(u'com.foobar.mul2', 2, 3)
+    yield session.join(transport, 'myrealm2')
+    result = yield session.call('com.foobar.mul2', 2, 3)
     print("Result: {}".format(result))
 
     # leave the realm. the transport will NOT be closed!

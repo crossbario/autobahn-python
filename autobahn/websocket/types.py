@@ -214,7 +214,7 @@ class TransportDetails(object):
         :param dict secure_channel_id: information about our
             channel-binding or None if not using TLS. The only
             channel-binding currently is `tls-unique` so if this is a
-            `dict` it will be: `{u'tls-unique': bytes}`
+            `dict` it will be: `{'tls-unique': bytes}`
         """
         self.peer = peer
         self.is_secure = is_secure

@@ -46,7 +46,7 @@ class Component(ApplicationSession):
         def on_event(i):
             print("Got event: {}".format(i))
 
-        yield self.subscribe(on_event, u'com.myapp.topic1')
+        yield self.subscribe(on_event, 'com.myapp.topic1')
 
         counter = 0
         while True:
@@ -56,7 +56,7 @@ class Component(ApplicationSession):
                 exclude_me=False
             )
             publication = yield self.publish(
-                u'com.myapp.topic1', counter,
+                'com.myapp.topic1', counter,
                 options=pub_options,
             )
             print("Published with publication ID {}".format(publication.id))

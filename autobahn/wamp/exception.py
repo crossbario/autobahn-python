@@ -271,17 +271,17 @@ class ApplicationError(Error):
         :returns: The error message.
         :rtype: str
         """
-        return u'{0}: {1}'.format(
+        return '{0}: {1}'.format(
             self.error,
-            u' '.join([str(a) for a in self.args]),
+            ' '.join([str(a) for a in self.args]),
         )
 
     def __unicode__(self):
         if self.kwargs and 'traceback' in self.kwargs:
-            tb = u':\n' + u'\n'.join(self.kwargs.pop('traceback')) + u'\n'
-            self.kwargs['traceback'] = u'...'
+            tb = ':\n' + '\n'.join(self.kwargs.pop('traceback')) + '\n'
+            self.kwargs['traceback'] = '...'
         else:
-            tb = u''
+            tb = ''
         return "ApplicationError(error=<{0}>, args={1}, kwargs={2}, enc_algo={3}, callee={4}, callee_authid={5}, callee_authrole={6}, forward_for={7}){8}".format(
             self.error, list(self.args), self.kwargs, self.enc_algo, self.callee, self.callee_authid, self.callee_authrole, self.forward_for, tb)
 

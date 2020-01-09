@@ -81,7 +81,7 @@ if os.environ.get('USE_TWISTED', False):
             except ImportError:
                 raise unittest.SkipTest('No twisted')
 
-            runner = ApplicationRunner(u'ws://localhost:1', u'realm')
+            runner = ApplicationRunner('ws://localhost:1', 'realm')
             exception = ConnectionRefusedError("It's a trap!")
 
             with patch('twisted.internet.reactor', FakeReactor(exception)) as mockreactor:
@@ -126,7 +126,7 @@ else:
                 with patch.object(asyncio, 'get_event_loop', return_value=loop):
                     loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
                     ssl = {}
-                    runner = ApplicationRunner(u'ws://127.0.0.1:8080/ws', u'realm',
+                    runner = ApplicationRunner('ws://127.0.0.1:8080/ws', 'realm',
                                                ssl=ssl)
                     runner.run('_unused_')
                     self.assertIs(ssl, loop.create_connection.call_args[1]['ssl'])
@@ -140,7 +140,7 @@ else:
             with replace_loop(Mock()) as loop:
                 with patch.object(asyncio, 'get_event_loop', return_value=loop):
                     loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
-                    runner = ApplicationRunner(u'ws://127.0.0.1:8080/ws', u'realm')
+                    runner = ApplicationRunner('ws://127.0.0.1:8080/ws', 'realm')
                     runner.run('_unused_')
                     self.assertIs(False, loop.create_connection.call_args[1]['ssl'])
 
@@ -153,7 +153,7 @@ else:
             with replace_loop(Mock()) as loop:
                 with patch.object(asyncio, 'get_event_loop', return_value=loop):
                     loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
-                    runner = ApplicationRunner(u'wss://127.0.0.1:8080/wss', u'realm')
+                    runner = ApplicationRunner('wss://127.0.0.1:8080/wss', 'realm')
                     runner.run(self.fail)
                     self.assertIs(True, loop.create_connection.call_args[1]['ssl'])
 
@@ -164,7 +164,7 @@ else:
             '''
             with replace_loop(Mock()) as loop:
                 loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
-                runner = ApplicationRunner(u'ws://127.0.0.1:8080/wss', u'realm',
+                runner = ApplicationRunner('ws://127.0.0.1:8080/wss', 'realm',
                                            ssl=True)
                 error = (r'^ssl argument value passed to ApplicationRunner '
                          r'conflicts with the "ws:" prefix of the url '
@@ -196,7 +196,7 @@ else:
 
             with replace_loop(Mock()) as loop:
                 loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
-                runner = ApplicationRunner(u'ws://127.0.0.1:8080/wss', u'realm',
+                runner = ApplicationRunner('ws://127.0.0.1:8080/wss', 'realm',
                                            ssl=context)
                 error = (r'^ssl argument value passed to ApplicationRunner '
                          r'conflicts with the "ws:" prefix of the url '

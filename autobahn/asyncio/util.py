@@ -52,7 +52,7 @@ def transport_channel_id(transport, is_server, channel_id_type):
     received on one TLS channel cannot be forwarded on another.
 
     """
-    if channel_id_type not in [u'tls-unique']:
+    if channel_id_type not in ['tls-unique']:
         raise Exception("invalid channel ID type {}".format(channel_id_type))
 
     ssl_obj = transport.get_extra_info('ssl_object')

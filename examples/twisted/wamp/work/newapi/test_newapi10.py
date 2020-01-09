@@ -8,15 +8,15 @@ session2 = ApplicationSession()
 def main(reactor, transport):
     transport1 = yield transport.split()
     session = yield transport.join()
-    yield session1.join(transport, u'myrealm1')
-    yield session2.join(transport, u'myrealm1')
+    yield session1.join(transport, 'myrealm1')
+    yield session2.join(transport, 'myrealm1')
 
 
 def main1(reactor, transport):
-    yield session1.join(transport, u'myrealm1')
+    yield session1.join(transport, 'myrealm1')
 
 def main2(reactor, transport):
-    yield session2.join(transport, u'myrealm1')
+    yield session2.join(transport, 'myrealm1')
 
 
 if __name__ == '__main__':
@@ -32,11 +32,11 @@ if __name__ == '__main__':
         }
     ]
 
-    realm = u'myrealm1'
+    realm = 'myrealm1'
 
     extra = {
-        u'foo': 23,
-        u'bar': u'baz'
+        'foo': 23,
+        'bar': 'baz'
     }
 
     client = Client([main1, main2])

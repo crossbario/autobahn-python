@@ -41,17 +41,17 @@ from autobahn.wamp import types
 # these test vectors are all for HMAC-SHA1
 PBKDF2_TEST_VECTORS = [
     # From RFC 6070
-    (b'password', b'salt', 1, 20, u'0c60c80f961f0e71f3a9b524af6012062fe037a6'),
-    (b'password', b'salt', 2, 20, u'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957'),
+    (b'password', b'salt', 1, 20, '0c60c80f961f0e71f3a9b524af6012062fe037a6'),
+    (b'password', b'salt', 2, 20, 'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957'),
 
     # From Crypt-PBKDF2
-    (b'password', b'ATHENA.MIT.EDUraeburn', 1, 16, u'cdedb5281bb2f801565a1122b2563515'),
-    (b'password', b'ATHENA.MIT.EDUraeburn', 1, 32, u'cdedb5281bb2f801565a1122b25635150ad1f7a04bb9f3a333ecc0e2e1f70837'),
-    (b'password', b'ATHENA.MIT.EDUraeburn', 2, 16, u'01dbee7f4a9e243e988b62c73cda935d'),
-    (b'password', b'ATHENA.MIT.EDUraeburn', 2, 32, u'01dbee7f4a9e243e988b62c73cda935da05378b93244ec8f48a99e61ad799d86'),
-    (b'password', b'ATHENA.MIT.EDUraeburn', 1200, 32, u'5c08eb61fdf71e4e4ec3cf6ba1f5512ba7e52ddbc5e5142f708a31e2e62b1e13'),
-    (b'X' * 64, b'pass phrase equals block size', 1200, 32, u'139c30c0966bc32ba55fdbf212530ac9c5ec59f1a452f5cc9ad940fea0598ed1'),
-    (b'X' * 65, b'pass phrase exceeds block size', 1200, 32, u'9ccad6d468770cd51b10e6a68721be611a8b4d282601db3b36be9246915ec82a'),
+    (b'password', b'ATHENA.MIT.EDUraeburn', 1, 16, 'cdedb5281bb2f801565a1122b2563515'),
+    (b'password', b'ATHENA.MIT.EDUraeburn', 1, 32, 'cdedb5281bb2f801565a1122b25635150ad1f7a04bb9f3a333ecc0e2e1f70837'),
+    (b'password', b'ATHENA.MIT.EDUraeburn', 2, 16, '01dbee7f4a9e243e988b62c73cda935d'),
+    (b'password', b'ATHENA.MIT.EDUraeburn', 2, 32, '01dbee7f4a9e243e988b62c73cda935da05378b93244ec8f48a99e61ad799d86'),
+    (b'password', b'ATHENA.MIT.EDUraeburn', 1200, 32, '5c08eb61fdf71e4e4ec3cf6ba1f5512ba7e52ddbc5e5142f708a31e2e62b1e13'),
+    (b'X' * 64, b'pass phrase equals block size', 1200, 32, '139c30c0966bc32ba55fdbf212530ac9c5ec59f1a452f5cc9ad940fea0598ed1'),
+    (b'X' * 65, b'pass phrase exceeds block size', 1200, 32, '9ccad6d468770cd51b10e6a68721be611a8b4d282601db3b36be9246915ec82a'),
 ]
 
 if platform.python_implementation() != 'PyPy':
@@ -60,12 +60,12 @@ if platform.python_implementation() != 'PyPy':
     PBKDF2_TEST_VECTORS.extend(
         [
             # From RFC 6070
-            (b'password', b'salt', 4096, 20, u'4b007901b765489abead49d926f721d065a429c1'),
-            (b'passwordPASSWORDpassword', b'saltSALTsaltSALTsaltSALTsaltSALTsalt', 4096, 25, u'3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038'),
-            (b'pass\x00word', b'sa\x00lt', 4096, 16, u'56fa6aa75548099dcc37d7f03425e0c3'),
+            (b'password', b'salt', 4096, 20, '4b007901b765489abead49d926f721d065a429c1'),
+            (b'passwordPASSWORDpassword', b'saltSALTsaltSALTsaltSALTsaltSALTsalt', 4096, 25, '3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038'),
+            (b'pass\x00word', b'sa\x00lt', 4096, 16, '56fa6aa75548099dcc37d7f03425e0c3'),
 
             # This one is from the RFC but it just takes for ages
-            # (b'password', b'salt', 16777216, 20, u'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984'),
+            # (b'password', b'salt', 16777216, 20, 'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984'),
         ]
     )
 
@@ -105,8 +105,8 @@ class TestWampAuthHelpers(unittest.TestCase):
             self.assertTrue(pat.match(signature) is not None)
 
     def test_derive_key(self):
-        secret = u'L3L1YUE8Txlw'
-        salt = u'salt123'
+        secret = 'L3L1YUE8Txlw'
+        salt = 'salt123'
         key = auth.derive_key(secret.encode('utf8'), salt.encode('utf8'))
         self.assertEqual(type(key), bytes)
         self.assertEqual(key, b"qzcdsr9uu/L5hnss3kjNTRe490ETgA70ZBaB5rvnJ5Y=")
@@ -123,7 +123,7 @@ class TestWampAuthHelpers(unittest.TestCase):
             self.assertEqual(len(secret), length)
 
     def test_compute_wcs(self):
-        secret = u'L3L1YUE8Txlw'
+        secret = 'L3L1YUE8Txlw'
         challenge = json.dumps([1, 2, 3], ensure_ascii=False).encode('utf8')
         signature = auth.compute_wcs(secret.encode('utf8'), challenge)
         self.assertEqual(type(signature), bytes)
@@ -154,26 +154,26 @@ class TestScram(unittest.TestCase):
 
     def test_basic(self):
         scram = auth.AuthScram(
-            nonce=u'1234567890abcdef',
-            kdf=u'argon2id13',
+            nonce='1234567890abcdef',
+            kdf='argon2id13',
             salt=binascii.b2a_hex(b'1234567890abcdef').decode('ascii'),
             iterations=32,  # far too few; use 4096 or more for production
             memory=512,
-            password=u'p4ssw0rd',
-            authid=u'username',
+            password='p4ssw0rd',
+            authid='username',
         )
         # thought: if we could import crossbar code here, we could
         # test the "other side" of this with fewer mocks
         # (i.e. hard-coding the client nonce)
         scram._client_nonce = binascii.b2a_hex(b'1234567890abcdef').decode('ascii')
         self.assertEqual(
-            {'nonce': u'31323334353637383930616263646566'},
+            {'nonce': '31323334353637383930616263646566'},
             scram.authextra,
         )
 
-        challenge = types.Challenge(u'scram', {
-            'nonce': u'1234567890abcdeffedcba0987654321',
-            'kdf': u'argon2id-13',
+        challenge = types.Challenge('scram', {
+            'nonce': '1234567890abcdeffedcba0987654321',
+            'kdf': 'argon2id-13',
             'salt': binascii.b2a_hex(b'1234567890abcdef').decode('ascii'),
             'iterations': 32,
             'memory': 512,
@@ -191,20 +191,20 @@ class TestScram(unittest.TestCase):
 
     def test_no_memory_arg(self):
         scram = auth.AuthScram(
-            nonce=u'1234567890abcdef',
-            kdf=u'argon2id13',
+            nonce='1234567890abcdef',
+            kdf='argon2id13',
             salt=binascii.b2a_hex(b'1234567890abcdef').decode('ascii'),
             iterations=4096,
             memory=512,
-            password=u'p4ssw0rd',
-            authid=u'username',
+            password='p4ssw0rd',
+            authid='username',
         )
         scram.authextra
 
         with self.assertRaises(ValueError) as ctx:
-            challenge = types.Challenge(u'scram', {
-                'nonce': u'1234567890abcdeffedcba0987654321',
-                'kdf': u'argon2id-13',
+            challenge = types.Challenge('scram', {
+                'nonce': '1234567890abcdeffedcba0987654321',
+                'kdf': 'argon2id-13',
                 'salt': binascii.b2a_hex(b'1234567890abcdef'),
                 'iterations': 4096,
                 # no 'memory' key
@@ -222,15 +222,15 @@ class TestScram(unittest.TestCase):
             salt=binascii.b2a_hex(b'1234567890abcdef'),
             iterations=4096,
             memory=512,
-            password=u'p4ssw0rd',
-            authid=u'username',
+            password='p4ssw0rd',
+            authid='username',
         )
         scram.authextra
 
         with self.assertRaises(RuntimeError) as ctx:
-            challenge = types.Challenge(u'scram', {
-                'nonce': u'1234567890abcdeffedcba0987654321',
-                'kdf': u'argon2id-13',
+            challenge = types.Challenge('scram', {
+                'nonce': '1234567890abcdeffedcba0987654321',
+                'kdf': 'argon2id-13',
                 'salt': binascii.b2a_hex(b'1234567890abcdef'),
                 'iterations': 4096,
                 'memory': 512,

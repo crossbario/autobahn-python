@@ -40,10 +40,10 @@ class Component(ApplicationSession):
         def on_event(val):
             print("Someone requested to square non-positive: {}".format(val))
 
-        await self.subscribe(on_event, u'com.myapp.square_on_nonpositive')
+        await self.subscribe(on_event, 'com.myapp.square_on_nonpositive')
 
         for val in [2, 0, -2]:
-            res = await self.call(u'com.myapp.square', val, options=CallOptions())
+            res = await self.call('com.myapp.square', val, options=CallOptions())
             print("Squared {} = {}".format(val, res))
 
         await self.leave()

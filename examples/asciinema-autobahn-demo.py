@@ -51,7 +51,7 @@ commands = [
     colors.red('# http://crossbar.io/autobahn example'),
     colors.red('# (Note there are many other examples to try)'),
     colors.red('#'),
-    colors.red("# I presume you've got a clone of https://github.com/crossbario/autobahn-python"),
+    colors.red("# I presume yo've got a clone of https://github.com/crossbario/autobahn-python"),
     colors.red("# in ~/autobahn-python"),
     "sleep 5",
     "clear",

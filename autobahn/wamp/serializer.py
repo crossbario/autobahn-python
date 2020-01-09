@@ -278,7 +278,7 @@ class Serializer(object):
         except Exception as e:
             raise ProtocolError("invalid serialization of WAMP message: {0} {1}".format(type(e).__name__, e))
 
-        if self._serializer.NAME == u'flatbuffers':
+        if self._serializer.NAME == 'flatbuffers':
             msgs = raw_msgs
         else:
             msgs = []
@@ -347,7 +347,7 @@ else:
 
         def default(self, obj):
             if isinstance(obj, bytes):
-                return u'\x00' + base64.b64encode(obj).decode('ascii')
+                return '\x00' + base64.b64encode(obj).decode('ascii')
             else:
                 return json.JSONEncoder.default(self, obj)
 
@@ -360,7 +360,7 @@ else:
 
     def _parse_string(*args, **kwargs):
         s, idx = scanstring(*args, **kwargs)
-        if s and s[0] == u'\x00':
+        if s and s[0] == '\x00':
             s = base64.b64decode(s[1:])
         return s, idx
 
@@ -397,7 +397,7 @@ class JsonObjectSerializer(object):
     The JSON module used (now only stdlib).
     """
 
-    NAME = u'json'
+    NAME = 'json'
 
     BINARY = False
 
@@ -476,7 +476,7 @@ SERID_TO_SER[JsonSerializer.SERIALIZER_ID] = JsonSerializer
 
 
 _HAS_MSGPACK = False
-_USE_UMSGPACK = platform.python_implementation() == u'PyPy' or 'AUTOBAHN_USE_UMSGPACK' in os.environ
+_USE_UMSGPACK = platform.python_implementation() == 'PyPy' or 'AUTOBAHN_USE_UMSGPACK' in os.environ
 
 if not _USE_UMSGPACK:
     try:
@@ -512,7 +512,7 @@ if _HAS_MSGPACK:
 
     class MsgPackObjectSerializer(object):
 
-        NAME = u'msgpack'
+        NAME = 'msgpack'
 
         MSGPACK_MODULE = _msgpack
 
@@ -648,7 +648,7 @@ if _HAS_CBOR:
 
     class CBORObjectSerializer(object):
 
-        NAME = u'cbor'
+        NAME = 'cbor'
 
         CBOR_MODULE = _cbor
 
@@ -764,7 +764,7 @@ else:
 
     class UBJSONObjectSerializer(object):
 
-        NAME = u'ubjson'
+        NAME = 'ubjson'
 
         UBJSON_MODULE = ubjson
 
@@ -881,7 +881,7 @@ if _HAS_FLATBUFFERS:
 
     class FlatBuffersObjectSerializer(object):
 
-        NAME = u'flatbuffers'
+        NAME = 'flatbuffers'
 
         FLATBUFFERS_MODULE = flatbuffers
 

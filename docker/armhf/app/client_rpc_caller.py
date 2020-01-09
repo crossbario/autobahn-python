@@ -42,7 +42,7 @@ class ClientSession(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
         try:
-            now = yield self.call(u'my.com.date')
+            now = yield self.call('my.com.date')
         except Exception as e:
             print("Error: {}".format(e))
         else:
@@ -56,8 +56,8 @@ class ClientSession(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = os.environ.get('CBURL', u'ws://localhost:8080/ws')
-    realm = os.environ.get('CBREALM', u'realm1')
+    url = os.environ.get('CBURL', 'ws://localhost:8080/ws')
+    realm = os.environ.get('CBREALM', 'realm1')
 
     # parse command line parameters
     parser = argparse.ArgumentParser()
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # any extra info we want to forward to our ClientSession (in self.config.extra)
     extra = {
-        u'foobar': u'A custom value'
+        'foobar': 'A custom value'
     }
  
     runner = ApplicationRunner(url=args.url, realm=args.realm, extra=extra)

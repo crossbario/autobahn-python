@@ -53,11 +53,11 @@ class Component(ApplicationSession):
         def arglen(*args, **kwargs):
             return [len(args), len(kwargs)]
 
-        await self.register(ping, u'com.arguments.ping')
-        await self.register(add2, u'com.arguments.add2')
-        await self.register(stars, u'com.arguments.stars')
-        await self.register(orders, u'com.arguments.orders')
-        await self.register(arglen, u'com.arguments.arglen')
+        await self.register(ping, 'com.arguments.ping')
+        await self.register(add2, 'com.arguments.add2')
+        await self.register(stars, 'com.arguments.stars')
+        await self.register(orders, 'com.arguments.orders')
+        await self.register(arglen, 'com.arguments.arglen')
         print("Registered methods; ready for frontend.")
 
 

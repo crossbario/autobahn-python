@@ -8,8 +8,8 @@ class MyAuthorizer(ApplicationSession):
     def onJoin(self, details):
        print("MyAuthorizer.onJoin({})".format(details))
        try:
-           yield self.register(self.authorize, u'com.example.authorize')
-           yield self.register(self.scram_authorize, u'com.example.scram_auth')
+           yield self.register(self.authorize, 'com.example.authorize')
+           yield self.register(self.scram_authorize, 'com.example.scram_auth')
            print("MyAuthorizer: authorizer registered")
        except Exception as e:
            print("MyAuthorizer: failed to register authorizer procedure ({})".format(e))
@@ -38,7 +38,7 @@ class MyAuthorizer(ApplicationSession):
         if False:
             print("I allow everything.")
         else:
-            if uri == u'com.foo.private':
+            if uri == 'com.foo.private':
                 return False
             if options.get("match", "exact") != "exact":
                 print("only exact-match subscriptions allowed")

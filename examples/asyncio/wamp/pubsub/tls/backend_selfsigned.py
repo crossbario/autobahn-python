@@ -41,7 +41,7 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             print("publish: com.myapp.topic1", counter)
-            self.publish(u'com.myapp.topic1', counter)
+            self.publish('com.myapp.topic1', counter)
             counter += 1
             await asyncio.sleep(1)
 

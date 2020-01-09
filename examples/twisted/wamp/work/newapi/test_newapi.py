@@ -25,7 +25,7 @@ def on_create(connection):
     """
     def on_connect(session):
         session.on_join(on_join)
-        session.join(u'public')
+        session.join('public')
 
     # we attach our listener code on the connection. whenever there
     # is a session created which has joined, our callback code is run
@@ -50,7 +50,7 @@ def run(on_create):
     # a connection connects and automatically reconnects WAMP client
     # transports to a WAMP router. A connection has a listener system
     # where user code can hook into different events : on_join
-    connection = Connection(on_create, realm=u'public',
+    connection = Connection(on_create, realm='public',
         transports=transports, reactor=reactor)
 
     # the following returns a deferred that fires when the connection is

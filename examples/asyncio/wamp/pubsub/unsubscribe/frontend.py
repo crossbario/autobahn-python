@@ -55,7 +55,7 @@ class Component(ApplicationSession):
                     await asyncio.sleep(5)
                     await self.test()
 
-        self.subscription = await self.subscribe(on_event, u'com.myapp.topic1')
+        self.subscription = await self.subscribe(on_event, 'com.myapp.topic1')
         print("Subscribed with subscription ID {}".format(self.subscription.id))
 
     async def onJoin(self, details):

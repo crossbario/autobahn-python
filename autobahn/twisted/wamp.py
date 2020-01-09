@@ -245,7 +245,7 @@ class ApplicationRunner(object):
         else:
             create = make
 
-        if self.url.startswith(u'rs'):
+        if self.url.startswith('rs'):
             # try to parse RawSocket URL ..
             isSecure, host, port = parse_rs_url(self.url)
 
@@ -786,35 +786,35 @@ class AuthCryptoSign(object):
     def __init__(self, **kw):
         # should put in checkconfig or similar
         for key in kw.keys():
-            if key not in [u'authextra', u'authid', u'authrole', u'privkey']:
+            if key not in ['authextra', 'authid', 'authrole', 'privkey']:
                 raise ValueError(
                     "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
                 )
-        for key in [u'privkey', u'authid']:
+        for key in ['privkey', 'authid']:
             if key not in kw:
                 raise ValueError(
                     "Must provide '{}' for cryptosign".format(key)
                 )
         for key in kw.get('authextra', dict()):
-            if key not in [u'pubkey']:
+            if key not in ['pubkey']:
                 raise ValueError(
                     "Unexpected key '{}' in 'authextra'".format(key)
                 )
 
         from autobahn.wamp.cryptosign import SigningKey
         self._privkey = SigningKey.from_key_bytes(
-            binascii.a2b_hex(kw[u'privkey'])
+            binascii.a2b_hex(kw['privkey'])
         )
 
-        if u'pubkey' in kw.get(u'authextra', dict()):
-            pubkey = kw[u'authextra'][u'pubkey']
+        if 'pubkey' in kw.get('authextra', dict()):
+            pubkey = kw['authextra']['pubkey']
             if pubkey != self._privkey.public_key():
                 raise ValueError(
                     "Public key doesn't correspond to private key"
                 )
         else:
-            kw[u'authextra'] = kw.get(u'authextra', dict())
-            kw[u'authextra'][u'pubkey'] = self._privkey.public_key()
+            kw['authextra'] = kw.get('authextra', dict())
+            kw['authextra']['pubkey'] = self._privkey.public_key()
         self._args = kw
 
     def on_challenge(self, session, challenge):
@@ -829,24 +829,24 @@ class AuthWampCra(object):
     def __init__(self, **kw):
         # should put in checkconfig or similar
         for key in kw.keys():
-            if key not in [u'authextra', u'authid', u'authrole', u'secret']:
+            if key not in ['authextra', 'authid', 'authrole', 'secret']:
                 raise ValueError(
                     "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
                 )
-        for key in [u'secret', u'authid']:
+        for key in ['secret', 'authid']:
             if key not in kw:
                 raise ValueError(
                     "Must provide '{}' for wampcra".format(key)
                 )
 
         self._args = kw
-        self._secret = kw.pop(u'secret')
+        self._secret = kw.pop('secret')
         if not isinstance(self._secret, str):
             self._secret = self._secret.decode('utf8')
 
     def on_challenge(self, session, challenge):
         key = self._secret.encode('utf8')
-        if u'salt' in challenge.extra:
+        if 'salt' in challenge.extra:
             key = auth.derive_key(
                 key,
                 challenge.extra['salt'],

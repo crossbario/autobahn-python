@@ -1,7 +1,7 @@
 @coroutine
 def main(reactor, session):
     # the session is joined and ready
-    result = yield session.call(u'com.example.add2', 2, 3)
+    result = yield session.call('com.example.add2', 2, 3)
     print('result={}'.format(result))
     # as we exit, this signals we are done with the session! the session
     # can be recycled
@@ -16,7 +16,7 @@ def setup(reactor, session):
     # the session is joined and ready also!
     def add2(a, b):
         return a + b
-    yield session.register(u'com.example.add2', add2)
+    yield session.register('com.example.add2', add2)
     print('procedure registered')
     # as we exit, this signals we are ready! the session must be kept.
 
@@ -35,7 +35,7 @@ def client_main(reactor, client):
 
         @coroutine
         def session_main(reactor, session):
-            result = yield session.call(u'com.example.add2', 2, 3)
+            result = yield session.call('com.example.add2', 2, 3)
             print('result={}'.format(result))
 
         # returns when the session_main has finished (!), the session
@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
 @coroutine
 def session_main(reactor, session):
-    result = yield session.call(u'com.example.add2', 2, 3)
+    result = yield session.call('com.example.add2', 2, 3)
     print('result={}'.format(result))
 
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
 def session_main(reactor, session):
     def add2(a, b):
         return a + b
-    yield session.register(u'com.example.add2', add2)
+    yield session.register('com.example.add2', add2)
     print('procedure registered')
     txaio.return_value(txaio.create_future())
 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 @coroutine
 def main1(reactor, session, details):
 
-    result = yield session.call(u'com.example.add2', 2, 3)
+    result = yield session.call('com.example.add2', 2, 3)
     print('result={}'.format(result))
 
     yield session.leave()
@@ -101,7 +101,7 @@ def main1(reactor, transport, details):
     session = yield transport.join(details.config.realm)
 
     # the session is joined and can be used
-    result = yield session.call(u'com.example.add2', 2, 3)
+    result = yield session.call('com.example.add2', 2, 3)
     print('result={}'.format(result))
 
     yield session.leave()
@@ -125,7 +125,7 @@ def main1(reactor, client, details):
 
     # create a session running over the transport
     session = yield transport.join(config.realm)
-    result = yield session.call(u'com.example.add2', 2, 3)
+    result = yield session.call('com.example.add2', 2, 3)
     print('result={}'.format(result))
     yield session.leave()
     yield transport.close()
@@ -144,7 +144,7 @@ if __name__ == '__main__':
 def main1(reactor, client, config):
     transport = yield client.open()
     session = yield transport.join(config.realm)
-    result = yield session.call(u'com.example.add2', 2, 3)
+    result = yield session.call('com.example.add2', 2, 3)
     print('result={}'.format(result))
     yield session.leave()
     yield transport.close()
@@ -172,7 +172,7 @@ def main1(reactor, client, config):
             with yield client.open() as transport:
                 try:
                     with yield transport.join(config.realm) as session:
-                        result = yield session.call(u'com.example.add2', 2, 3)
+                        result = yield session.call('com.example.add2', 2, 3)
                         print('result={}'.format(result))
                 except Exception as e:
                     pass
@@ -201,10 +201,10 @@ def main2(reactor, connection):
     def add2(a, b):
         return a + b
 
-    yield session.register(u'com.example.add2', add2)
+    yield session.register('com.example.add2', add2)
 
     # and call the procedure
-    result = yield session.call(u'com.example.add2', 2, 3)
+    result = yield session.call('com.example.add2', 2, 3)
     print('result={}'.format(result))
 
     # now leave the realm, which frees the underlying transport
@@ -228,7 +228,7 @@ def main2(reactor, connection):
     session2 = transport.join(connection.config.realm)
 
     # call the procedure registered on the (resumed) session running on transport2
-    result = yield session.call(u'com.example.add2', 2, 3)
+    result = yield session.call('com.example.add2', 2, 3)
     print('result={}'.format(result))
 
     # if the transport supports multiplexing, multiple session can run
@@ -257,6 +257,6 @@ if __name__ == '__main__':
             }
         }
     ]
-    config = Config(realm=u'myrealm1')
+    config = Config(realm='myrealm1')
     connection = Connection(main, transports=transports, config=config)
     react(connection.start)

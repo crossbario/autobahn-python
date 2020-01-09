@@ -40,7 +40,7 @@ class Component(ApplicationSession):
         def on_progress(i):
             print("Progress: {}".format(i))
 
-        res = await self.call(u'com.myapp.longop', 3, options=CallOptions(on_progress=on_progress))
+        res = await self.call('com.myapp.longop', 3, options=CallOptions(on_progress=on_progress))
 
         print("Final: {}".format(res))
 

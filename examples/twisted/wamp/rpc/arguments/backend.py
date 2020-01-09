@@ -55,11 +55,11 @@ class Component(ApplicationSession):
         def arglen(*args, **kwargs):
             return [len(args), len(kwargs)]
 
-        yield self.register(ping, u'com.arguments.ping')
-        yield self.register(add2, u'com.arguments.add2')
-        yield self.register(stars, u'com.arguments.stars')
-        yield self.register(orders, u'com.arguments.orders')
-        yield self.register(arglen, u'com.arguments.arglen')
+        yield self.register(ping, 'com.arguments.ping')
+        yield self.register(add2, 'com.arguments.add2')
+        yield self.register(stars, 'com.arguments.stars')
+        yield self.register(orders, 'com.arguments.orders')
+        yield self.register(arglen, 'com.arguments.arglen')
         print("Procedures registered; ready for frontend.")
 
 

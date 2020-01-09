@@ -17,8 +17,8 @@ from autobahn.wamp.types import RegisterOptions, CallOptions
 
 
 component = Component(
-    transports=u'ws://localhost:8080/ws',
-    realm=u'crossbardemo',
+    transports='ws://localhost:8080/ws',
+    realm='crossbardemo',
 )
 
 # @component.subscribe(
@@ -73,10 +73,10 @@ def join(session, details):
             options=CallOptions(on_progress=on_progress)
         )
 
-    reactor.callLater(1, pub, u'com.example.foo')
-    reactor.callLater(2, pub, u'com.non_matching')
-    reactor.callLater(3, pub, u'com.example.some.other.uri')
-    reactor.callLater(4, call_progress, u'com.example.progressive')
+    reactor.callLater(1, pub, 'com.example.foo')
+    reactor.callLater(2, pub, 'com.non_matching')
+    reactor.callLater(3, pub, 'com.example.some.other.uri')
+    reactor.callLater(4, call_progress, 'com.example.progressive')
     reactor.callLater(7, session.leave)
 
 @component.on_leave

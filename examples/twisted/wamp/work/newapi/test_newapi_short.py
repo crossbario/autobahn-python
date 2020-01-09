@@ -5,7 +5,7 @@ from autobahn.twisted import Client
 @coroutine
 def on_join(session):
     try:
-        res = yield session.call(u'com.example.add2', 2, 3)
+        res = yield session.call('com.example.add2', 2, 3)
         print("Result: {}".format(res))
     except Exception as e:
         print("Error: {}".format(e))

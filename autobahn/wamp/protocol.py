@@ -175,9 +175,9 @@ class BaseSession(ObservableMixin):
 
         if tb:
             if kwargs:
-                kwargs[u'traceback'] = tb
+                kwargs['traceback'] = tb
             else:
-                kwargs = {u'traceback': tb}
+                kwargs = {'traceback': tb}
 
         if isinstance(exc, exception.ApplicationError):
             error = exc.error if type(exc.error) == str else exc.error
@@ -1055,13 +1055,13 @@ class ApplicationSession(BaseSession):
                                 except SerializationError as e:
                                     # the application-level payload returned from the invoked procedure can't be serialized
                                     reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
-                                                          args=[u'success return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
+                                                          args=['success return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
                                     self._transport.send(reply)
                                 except PayloadExceededError as e:
                                     # the application-level payload returned from the invoked procedure, when serialized and framed
                                     # for the transport, exceeds the transport message/frame size limit
                                     reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.PAYLOAD_SIZE_EXCEEDED,
-                                                          args=[u'success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
+                                                          args=['success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
                                     self._transport.send(reply)
 
                             def error(err):
@@ -1091,13 +1091,13 @@ class ApplicationSession(BaseSession):
                                 except SerializationError as e:
                                     # the application-level payload returned from the invoked procedure can't be serialized
                                     reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
-                                                          args=[u'error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
+                                                          args=['error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
                                     self._transport.send(reply)
                                 except PayloadExceededError as e:
                                     # the application-level payload returned from the invoked procedure, when serialized and framed
                                     # for the transport, exceeds the transport message/frame size limit
                                     reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.PAYLOAD_SIZE_EXCEEDED,
-                                                          args=[u'success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
+                                                          args=['success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
                                     self._transport.send(reply)
 
                                 # we have handled the error, so we eat it
@@ -1220,7 +1220,7 @@ class ApplicationSession(BaseSession):
             # fire callback and close the transport
             details = types.CloseDetails(
                 reason=types.CloseDetails.REASON_TRANSPORT_LOST,
-                message=u'WAMP transport was lost without closing the session {} before'.format(self._session_id),
+                message='WAMP transport was lost without closing the session {} before'.format(self._session_id),
             )
             d = txaio.as_future(self.onLeave, details)
 
@@ -1739,7 +1739,7 @@ class _SessionShim(ApplicationSession):
     **NOTE:** this is not public or intended for use; you should import
     either :class:`autobahn.asyncio.wamp.Session` or
     :class:`autobahn.twisted.wamp.Session` depending on which async
-    framework you're using.
+    framework yo're using.
     """
 
     #: name -> IAuthenticator
@@ -1762,8 +1762,8 @@ class _SessionShim(ApplicationSession):
             self.join(
                 self.config.realm,
                 authmethods=list(self._authenticators.keys()),
-                authid=authid or u'public',
-                authrole=authrole or u'default',
+                authid=authid or 'public',
+                authrole=authrole or 'default',
                 authextra=authextra,
             )
         else:

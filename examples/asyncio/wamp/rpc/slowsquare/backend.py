@@ -39,13 +39,13 @@ class Component(ApplicationSession):
         def square(x):
             return x * x
 
-        await self.register(square, u'com.math.square')
+        await self.register(square, 'com.math.square')
 
         async def slowsquare(x, delay=1):
             await asyncio.sleep(delay)
             return x * x
 
-        await self.register(slowsquare, u'com.math.slowsquare')
+        await self.register(slowsquare, 'com.math.slowsquare')
         print("Registered com.math.slowsquare")
 
 

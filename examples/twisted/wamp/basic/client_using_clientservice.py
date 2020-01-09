@@ -34,10 +34,10 @@ class MyAppSession(ApplicationSession):
     def onJoin(self, details):
         self.log.info('session joined: {}'.format(details))
 
-        yield self.register(add2, u'com.example.add2')
+        yield self.register(add2, 'com.example.add2')
 
         for i in range(10):
-            res = yield self.call(u'com.example.add2', 23, i)
+            res = yield self.call('com.example.add2', 23, i)
             self.log.info('result: {}'.format(res))
 
         yield self.leave()
@@ -63,10 +63,10 @@ if __name__ == '__main__':
 
     # create a WAMP session object. this is reused across multiple
     # reconnects (if automatically reconnected)
-    session = MyAppSession(ComponentConfig(u'realm1', {}))
+    session = MyAppSession(ComponentConfig('realm1', {}))
 
     # create a WAMP transport factory
-    transport = WampWebSocketClientFactory(session, url=u'ws://localhost:8080/ws')
+    transport = WampWebSocketClientFactory(session, url='ws://localhost:8080/ws')
 
     # create a connecting endpoint
     endpoint = TCP4ClientEndpoint(reactor, 'localhost', 8080)

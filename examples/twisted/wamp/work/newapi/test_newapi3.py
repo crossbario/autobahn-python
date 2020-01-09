@@ -18,10 +18,10 @@ def main(reactor, connection):
             print("add2() called", a, b)
             return a + b
 
-        yield session.register(add2, u'com.example.add2')
+        yield session.register(add2, 'com.example.add2')
 
         try:
-            res = yield session.call(u'com.example.add2', 2, 3)
+            res = yield session.call('com.example.add2', 2, 3)
             print("result: {}".format(res))
         except Exception as e:
             print("error: {}".format(e))

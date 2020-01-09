@@ -7,8 +7,8 @@ from autobahn.twisted.connection import Connection
 def main(reactor, connection):
 
     transport = yield connection.connect()
-    session = yield transport.join(u'realm1')
-    result = yield session.call(u'com.example.add2', 2, 3)
+    session = yield transport.join('realm1')
+    result = yield session.call('com.example.add2', 2, 3)
     yield session.leave()
     yield transport.disconnect()
     yield connection.close()

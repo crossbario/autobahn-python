@@ -61,7 +61,7 @@ if os.environ.get('USE_TWISTED', False):
 
             self._my_session_id = util.id()
 
-            roles = {u'broker': role.RoleBrokerFeatures(), u'dealer': role.RoleDealerFeatures()}
+            roles = {'broker': role.RoleBrokerFeatures(), 'dealer': role.RoleDealerFeatures()}
 
             msg = message.Welcome(self._my_session_id, roles)
             self._handler.onMessage(msg)
@@ -80,25 +80,25 @@ if os.environ.get('USE_TWISTED', False):
             reply = None
 
             if isinstance(msg, message.Publish):
-                if msg.topic.startswith(u'com.myapp'):
+                if msg.topic.startswith('com.myapp'):
                     if msg.acknowledge:
                         reply = message.Published(msg.request, self._fake_router_session._request_id_gen.next())
                 elif len(msg.topic) == 0:
-                    reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, u'wamp.error.invalid_uri')
-                elif msg.topic.startswith(u'noreply.'):
+                    reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, 'wamp.error.invalid_uri')
+                elif msg.topic.startswith('noreply.'):
                     pass
                 else:
-                    reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, u'wamp.error.not_authorized')
+                    reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, 'wamp.error.not_authorized')
 
             elif isinstance(msg, message.Call):
-                if msg.procedure == u'com.myapp.procedure1':
+                if msg.procedure == 'com.myapp.procedure1':
                     reply = message.Result(msg.request, args=[100])
-                elif msg.procedure == u'com.myapp.procedure2':
+                elif msg.procedure == 'com.myapp.procedure2':
                     reply = message.Result(msg.request, args=[1, 2, 3])
-                elif msg.procedure == u'com.myapp.procedure3':
-                    reply = message.Result(msg.request, args=[1, 2, 3], kwargs={u'foo': u'bar', u'baz': 23})
+                elif msg.procedure == 'com.myapp.procedure3':
+                    reply = message.Result(msg.request, args=[1, 2, 3], kwargs={'foo': 'bar', 'baz': 23})
 
-                elif msg.procedure.startswith(u'com.myapp.myproc'):
+                elif msg.procedure.startswith('com.myapp.myproc'):
                     registration = self._registrations[msg.procedure]
                     request = self._fake_router_session._request_id_gen.next()
                     if request in self._invocations:
@@ -111,7 +111,7 @@ if os.environ.get('USE_TWISTED', False):
                         receive_progress=msg.receive_progress,
                     )
                 else:
-                    reply = message.Error(message.Call.MESSAGE_TYPE, msg.request, u'wamp.error.no_such_procedure')
+                    reply = message.Error(message.Call.MESSAGE_TYPE, msg.request, 'wamp.error.no_such_procedure')
 
             elif isinstance(msg, message.Yield):
                 if msg.request in self._invocations:
@@ -189,7 +189,7 @@ if os.environ.get('USE_TWISTED', False):
 
             class Prefix(ApplicationSession):
 
-                @uri.register(u'method_name')
+                @uri.register('method_name')
                 def some_method(self):
                     pass
             session = Prefix()
@@ -231,22 +231,22 @@ if os.environ.get('USE_TWISTED', False):
             handler = ApplicationSession()
             MockTransport(handler)
 
-            publication = yield handler.publish(u'com.myapp.topic1')
+            publication = yield handler.publish('com.myapp.topic1')
             self.assertEqual(publication, None)
 
-            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3)
+            publication = yield handler.publish('com.myapp.topic1', 1, 2, 3)
             self.assertEqual(publication, None)
 
-            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello')
+            publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo=23, bar='hello')
             self.assertEqual(publication, None)
 
-            publication = yield handler.publish(u'com.myapp.topic1', options=types.PublishOptions(exclude_me=False))
+            publication = yield handler.publish('com.myapp.topic1', options=types.PublishOptions(exclude_me=False))
             self.assertEqual(publication, None)
 
-            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300]))
+            publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300]))
             self.assertEqual(publication, None)
 
-            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300], retain=True))
+            publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300], retain=True))
             self.assertEqual(publication, None)
 
         @inlineCallbacks
@@ -258,20 +258,20 @@ if os.environ.get('USE_TWISTED', False):
             # handled specially in MockTransport; so this request will
             # be outstanding
             publication = handler.publish(
-                u'noreply.foo',
+                'noreply.foo',
                 options=types.PublishOptions(acknowledge=True),
             )
             # "leave" the session, which should trigger errbacks on
             # all outstanding requests.
-            details = types.CloseDetails(reason=u'testing', message=u'how are you?')
+            details = types.CloseDetails(reason='testing', message='how are you?')
             yield handler.onLeave(details)
 
             # ensure we got our errback
             try:
                 yield publication
             except ApplicationError as e:
-                self.assertEqual(u'testing', e.error)
-                self.assertEqual(u'how are you?', e.message)
+                self.assertEqual('testing', e.error)
+                self.assertEqual('how are you?', e.message)
 
         @inlineCallbacks
         def test_publish_outstanding_errors_async_errback(self):
@@ -283,7 +283,7 @@ if os.environ.get('USE_TWISTED', False):
             # handled specially in MockTransport; so this request will
             # be outstanding
             publication_d = handler.publish(
-                u'noreply.foo',
+                'noreply.foo',
                 options=types.PublishOptions(acknowledge=True),
             )
             # further, we add an errback that does some arbitrary async work
@@ -295,7 +295,7 @@ if os.environ.get('USE_TWISTED', False):
             publication_d.addErrback(errback)
             # "leave" the session, which should trigger errbacks on
             # all outstanding requests.
-            details = types.CloseDetails(reason=u'testing', message=u'how are you?')
+            details = types.CloseDetails(reason='testing', message='how are you?')
             handler.onLeave(details)
 
             # since our errback is async, onLeave should not have
@@ -311,27 +311,27 @@ if os.environ.get('USE_TWISTED', False):
             try:
                 yield publication_d
             except ApplicationError as e:
-                self.assertEqual(u'testing', e.error)
-                self.assertEqual(u'how are you?', e.message)
+                self.assertEqual('testing', e.error)
+                self.assertEqual('how are you?', e.message)
 
         @inlineCallbacks
         def test_publish_acknowledged(self):
             handler = ApplicationSession()
             MockTransport(handler)
 
-            publication = yield handler.publish(u'com.myapp.topic1', options=types.PublishOptions(acknowledge=True))
+            publication = yield handler.publish('com.myapp.topic1', options=types.PublishOptions(acknowledge=True))
             self.assertTrue(type(publication.id) == int)
 
-            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, options=types.PublishOptions(acknowledge=True))
+            publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, options=types.PublishOptions(acknowledge=True))
             self.assertTrue(type(publication.id) == int)
 
-            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(acknowledge=True))
+            publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(acknowledge=True))
             self.assertTrue(type(publication.id) == int)
 
-            publication = yield handler.publish(u'com.myapp.topic1', options=types.PublishOptions(exclude_me=False, acknowledge=True))
+            publication = yield handler.publish('com.myapp.topic1', options=types.PublishOptions(exclude_me=False, acknowledge=True))
             self.assertTrue(type(publication.id) == int)
 
-            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300], acknowledge=True))
+            publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300], acknowledge=True))
             self.assertTrue(type(publication.id) == int)
 
         @inlineCallbacks
@@ -341,8 +341,8 @@ if os.environ.get('USE_TWISTED', False):
 
             options = types.PublishOptions(acknowledge=True)
 
-            yield self.assertFailure(handler.publish(u'de.myapp.topic1', options=options), ApplicationError)
-            yield self.assertFailure(handler.publish(u'foobar', options=options), ApplicationError)
+            yield self.assertFailure(handler.publish('de.myapp.topic1', options=options), ApplicationError)
+            yield self.assertFailure(handler.publish('foobar', options=options), ApplicationError)
 
         @inlineCallbacks
         def test_publish_defined_exception(self):
@@ -352,29 +352,29 @@ if os.environ.get('USE_TWISTED', False):
             options = types.PublishOptions(acknowledge=True)
 
             handler.define(NotAuthorized)
-            yield self.assertFailure(handler.publish(u'de.myapp.topic1', options=options), NotAuthorized)
+            yield self.assertFailure(handler.publish('de.myapp.topic1', options=options), NotAuthorized)
 
             handler.define(InvalidUri)
-            yield self.assertFailure(handler.publish(u'foobar', options=options), NotAuthorized)
+            yield self.assertFailure(handler.publish('foobar', options=options), NotAuthorized)
 
         @inlineCallbacks
         def test_call(self):
             handler = ApplicationSession()
             MockTransport(handler)
 
-            res = yield handler.call(u'com.myapp.procedure1')
+            res = yield handler.call('com.myapp.procedure1')
             self.assertEqual(res, 100)
 
-            res = yield handler.call(u'com.myapp.procedure1', 1, 2, 3)
+            res = yield handler.call('com.myapp.procedure1', 1, 2, 3)
             self.assertEqual(res, 100)
 
-            res = yield handler.call(u'com.myapp.procedure1', 1, 2, 3, foo=23, bar='hello')
+            res = yield handler.call('com.myapp.procedure1', 1, 2, 3, foo=23, bar='hello')
             self.assertEqual(res, 100)
 
-            res = yield handler.call(u'com.myapp.procedure1', options=types.CallOptions(timeout=10000))
+            res = yield handler.call('com.myapp.procedure1', options=types.CallOptions(timeout=10000))
             self.assertEqual(res, 100)
 
-            res = yield handler.call(u'com.myapp.procedure1', 1, 2, 3, foo=23, bar='hello', options=types.CallOptions(timeout=10000))
+            res = yield handler.call('com.myapp.procedure1', 1, 2, 3, foo=23, bar='hello', options=types.CallOptions(timeout=10000))
             self.assertEqual(res, 100)
 
         @inlineCallbacks
@@ -382,12 +382,12 @@ if os.environ.get('USE_TWISTED', False):
             handler = ApplicationSession()
             MockTransport(handler)
 
-            res = yield handler.call(u'com.myapp.procedure2')
+            res = yield handler.call('com.myapp.procedure2')
             self.assertIsInstance(res, types.CallResult)
             self.assertEqual(res.results, (1, 2, 3))
             self.assertEqual(res.kwresults, {})
 
-            res = yield handler.call(u'com.myapp.procedure3')
+            res = yield handler.call('com.myapp.procedure3')
             self.assertIsInstance(res, types.CallResult)
             self.assertEqual(res.results, (1, 2, 3))
             self.assertEqual(res.kwresults, {'foo': 'bar', 'baz': 23})
@@ -400,13 +400,13 @@ if os.environ.get('USE_TWISTED', False):
             def on_event(*args, **kwargs):
                 print("got event", args, kwargs)
 
-            subscription = yield handler.subscribe(on_event, u'com.myapp.topic1')
+            subscription = yield handler.subscribe(on_event, 'com.myapp.topic1')
             self.assertTrue(type(subscription.id) == int)
 
-            subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options=types.SubscribeOptions(match=u'wildcard'))
+            subscription = yield handler.subscribe(on_event, 'com.myapp.topic1', options=types.SubscribeOptions(match='wildcard'))
             self.assertTrue(type(subscription.id) == int)
 
-            subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options=types.SubscribeOptions(match=u'wildcard', get_retained=True))
+            subscription = yield handler.subscribe(on_event, 'com.myapp.topic1', options=types.SubscribeOptions(match='wildcard', get_retained=True))
             self.assertTrue(type(subscription.id) == int)
 
         @inlineCallbacks
@@ -418,9 +418,9 @@ if os.environ.get('USE_TWISTED', False):
             event1 = Deferred()
 
             subscription0 = yield handler.subscribe(
-                lambda: event0.callback(42), u'com.myapp.topic1')
+                lambda: event0.callback(42), 'com.myapp.topic1')
             subscription1 = yield handler.subscribe(
-                lambda: event1.callback('foo'), u'com.myapp.topic1')
+                lambda: event1.callback('foo'), 'com.myapp.topic1')
             # same topic, same ID
             self.assertTrue(subscription0.id == subscription1.id)
 
@@ -428,7 +428,7 @@ if os.environ.get('USE_TWISTED', False):
             # message) and then do an actual publish event. The IDs
             # are the same, so we just do one Event.
             publish = yield handler.publish(
-                u'com.myapp.topic1',
+                'com.myapp.topic1',
                 options=types.PublishOptions(acknowledge=True, exclude_me=False),
             )
             handler.onMessage(message.Event(subscription0.id, publish.id))
@@ -459,9 +459,9 @@ if os.environ.get('USE_TWISTED', False):
             event1 = Deferred()
 
             subscription0 = yield handler.subscribe(
-                lambda: event0.callback(42), u'com.myapp.topic1')
+                lambda: event0.callback(42), 'com.myapp.topic1')
             subscription1 = yield handler.subscribe(
-                lambda: event1.callback('foo'), u'com.myapp.topic1')
+                lambda: event1.callback('foo'), 'com.myapp.topic1')
 
             self.assertTrue(subscription0.id == subscription1.id)
             yield subscription1.unsubscribe()
@@ -470,7 +470,7 @@ if os.environ.get('USE_TWISTED', False):
             # message) and then do an actual publish event. Note the
             # IDs are the same, so there's only one Event.
             publish = yield handler.publish(
-                u'com.myapp.topic1',
+                'com.myapp.topic1',
                 options=types.PublishOptions(acknowledge=True, exclude_me=False),
             )
             handler.onMessage(message.Event(subscription0.id, publish.id))
@@ -502,9 +502,9 @@ if os.environ.get('USE_TWISTED', False):
             event1 = Deferred()
 
             subscription0 = yield handler.subscribe(
-                lambda: event0.callback(42), u'com.myapp.topic1')
+                lambda: event0.callback(42), 'com.myapp.topic1')
             subscription1 = yield handler.subscribe(
-                lambda: event1.callback('foo'), u'com.myapp.topic1')
+                lambda: event1.callback('foo'), 'com.myapp.topic1')
 
             self.assertTrue(subscription0.id == subscription1.id)
             yield subscription0.unsubscribe()
@@ -519,7 +519,7 @@ if os.environ.get('USE_TWISTED', False):
             # the Event should be an error, as we have no
             # subscriptions left.
             publish = yield handler.publish(
-                u'com.myapp.topic1',
+                'com.myapp.topic1',
                 options=types.PublishOptions(acknowledge=True, exclude_me=False),
             )
             try:
@@ -554,9 +554,9 @@ if os.environ.get('USE_TWISTED', False):
                 event1.callback(args)
 
             subscription0 = yield handler.subscribe(
-                lambda arg: event0.callback(arg), u'com.myapp.topic1')
+                lambda arg: event0.callback(arg), 'com.myapp.topic1')
             subscription1 = yield handler.subscribe(
-                second, u'com.myapp.topic1',
+                second, 'com.myapp.topic1',
                 types.SubscribeOptions(details_arg='boom'),
             )
             # same topic, same ID
@@ -565,7 +565,7 @@ if os.environ.get('USE_TWISTED', False):
             # MockTransport gives us the ack reply and then we do our
             # own event message.
             publish = yield handler.publish(
-                u'com.myapp.topic1',
+                'com.myapp.topic1',
                 options=types.PublishOptions(acknowledge=True, exclude_me=False),
             )
             # note that the protocol serializer converts all sequences
@@ -600,12 +600,12 @@ if os.environ.get('USE_TWISTED', False):
             def boom():
                 raise error_instance
 
-            sub = yield handler.subscribe(boom, u'com.myapp.topic1')
+            sub = yield handler.subscribe(boom, 'com.myapp.topic1')
 
             # MockTransport gives us the ack reply and then we do our
             # own event message
             publish = yield handler.publish(
-                u'com.myapp.topic1',
+                'com.myapp.topic1',
                 options=types.PublishOptions(acknowledge=True, exclude_me=False),
             )
             msg = message.Event(sub.id, publish.id)
@@ -623,7 +623,7 @@ if os.environ.get('USE_TWISTED', False):
             def on_event(*args, **kwargs):
                 print("got event", args, kwargs)
 
-            subscription = yield handler.subscribe(on_event, u'com.myapp.topic1')
+            subscription = yield handler.subscribe(on_event, 'com.myapp.topic1')
             yield subscription.unsubscribe()
 
         @inlineCallbacks
@@ -634,10 +634,10 @@ if os.environ.get('USE_TWISTED', False):
             def on_call(*args, **kwargs):
                 print("got call", args, kwargs)
 
-            registration = yield handler.register(on_call, u'com.myapp.procedure1')
+            registration = yield handler.register(on_call, 'com.myapp.procedure1')
             self.assertTrue(type(registration.id) == int)
 
-            registration = yield handler.register(on_call, u'com.myapp.procedure1', options=types.RegisterOptions(match=u'prefix'))
+            registration = yield handler.register(on_call, 'com.myapp.procedure1', options=types.RegisterOptions(match='prefix'))
             self.assertTrue(type(registration.id) == int)
 
         @inlineCallbacks
@@ -648,7 +648,7 @@ if os.environ.get('USE_TWISTED', False):
             def on_call(*args, **kwargs):
                 print("got call", args, kwargs)
 
-            registration = yield handler.register(on_call, u'com.myapp.procedure1')
+            registration = yield handler.register(on_call, 'com.myapp.procedure1')
             yield registration.unregister()
 
         def test_unregister_no_such_registration(self):
@@ -675,7 +675,7 @@ if os.environ.get('USE_TWISTED', False):
                 on_call.called = True
             on_call.called = False
 
-            registration = yield handler.register(on_call, u'com.myapp.procedure1')
+            registration = yield handler.register(on_call, 'com.myapp.procedure1')
             transport.drop_registration(registration.id)
             self.assertFalse(on_call.called)
 
@@ -711,9 +711,9 @@ if os.environ.get('USE_TWISTED', False):
             def myproc1():
                 return 23
 
-            yield handler.register(myproc1, u'com.myapp.myproc1')
+            yield handler.register(myproc1, 'com.myapp.myproc1')
 
-            res = yield handler.call(u'com.myapp.myproc1')
+            res = yield handler.call('com.myapp.myproc1')
             self.assertEqual(res, 23)
 
         @inlineCallbacks
@@ -724,10 +724,10 @@ if os.environ.get('USE_TWISTED', False):
             def myproc1():
                 return 23
 
-            yield handler.register(myproc1, u'com.myapp.myproc1')
+            yield handler.register(myproc1, 'com.myapp.myproc1')
 
-            d0 = handler.call(u'com.myapp.myproc1')
-            d1 = handler.call(u'com.myapp.myproc1')
+            d0 = handler.call('com.myapp.myproc1')
+            d1 = handler.call('com.myapp.myproc1')
             res = yield DeferredList([d0, d1])
             self.assertEqual(res, [(True, 23), (True, 23)])
 
@@ -757,11 +757,11 @@ if os.environ.get('USE_TWISTED', False):
             def myproc1():
                 return 23
 
-            yield handler0.register(myproc1, u'com.myapp.myproc1')
-            yield handler1.register(myproc1, u'com.myapp.myproc1')
+            yield handler0.register(myproc1, 'com.myapp.myproc1')
+            yield handler1.register(myproc1, 'com.myapp.myproc1')
 
-            d0 = handler0.call(u'com.myapp.myproc1')
-            d1 = handler1.call(u'com.myapp.myproc1')
+            d0 = handler0.call('com.myapp.myproc1')
+            d1 = handler1.call('com.myapp.myproc1')
             res = yield DeferredList([d0, d1])
             self.assertEqual(res, [(True, 23), (True, 23)])
 
@@ -782,10 +782,10 @@ if os.environ.get('USE_TWISTED', False):
                 raise name_error
 
             # see MockTransport, must start with "com.myapp.myproc"
-            yield handler.register(bing, u'com.myapp.myproc99')
+            yield handler.register(bing, 'com.myapp.myproc99')
 
             try:
-                yield handler.call(u'com.myapp.myproc99')
+                yield handler.call('com.myapp.myproc99')
                 self.fail("Expected an error")
             except Exception as e:
                 # XXX should/could we export all the builtin types?
@@ -820,11 +820,11 @@ if os.environ.get('USE_TWISTED', False):
             # see MockTransport, must start with "com.myapp.myproc"
             yield handler.register(
                 bing,
-                u'com.myapp.myproc2',
+                'com.myapp.myproc2',
                 types.RegisterOptions(details_arg='details'),
             )
             res = yield handler.call(
-                u'com.myapp.myproc2',
+                'com.myapp.myproc2',
                 options=types.CallOptions(on_progress=progress),
             )
             self.assertEqual(42, res)
@@ -864,12 +864,12 @@ if os.environ.get('USE_TWISTED', False):
             # see MockTransport, must start with "com.myapp.myproc"
             yield handler.register(
                 bing,
-                u'com.myapp.myproc2',
+                'com.myapp.myproc2',
                 types.RegisterOptions(details_arg='details'),
             )
 
             res = yield handler.call(
-                u'com.myapp.myproc2',
+                'com.myapp.myproc2',
                 'arg',
                 options=types.CallOptions(on_progress=progress),
                 key='word',
@@ -905,12 +905,12 @@ if os.environ.get('USE_TWISTED', False):
             # see MockTransport, must start with "com.myapp.myproc"
             yield handler.register(
                 bing,
-                u'com.myapp.myproc2',
+                'com.myapp.myproc2',
                 types.RegisterOptions(details_arg='details'),
             )
 
             res = yield handler.call(
-                u'com.myapp.myproc2',
+                'com.myapp.myproc2',
                 options=types.CallOptions(on_progress=progress),
             )
             self.assertEqual(42, res)
@@ -937,12 +937,12 @@ if os.environ.get('USE_TWISTED', False):
             # see MockTransport, must start with "com.myapp.myproc"
             yield handler.register(
                 bing,
-                u'com.myapp.myproc2',
+                'com.myapp.myproc2',
                 types.RegisterOptions(details_arg='details'),
             )
 
             res = yield handler.call(
-                u'com.myapp.myproc2',
+                'com.myapp.myproc2',
                 options=types.CallOptions(on_progress=progress),
             )
             self.assertEqual(42, res)
@@ -960,7 +960,7 @@ if os.environ.get('USE_TWISTED', False):
 
             registration0 = yield handler.register(raiser, "com.myapp.myproc_error")
             try:
-                yield handler.call(u'com.myapp.myproc_error')
+                yield handler.call('com.myapp.myproc_error')
                 self.fail()
             except Exception as e:
                 self.assertIsInstance(e, ApplicationError)
@@ -979,7 +979,7 @@ if os.environ.get('USE_TWISTED', False):
 
             registration0 = yield handler.register(raiser, "com.myapp.myproc_error")
             try:
-                yield handler.call(u'com.myapp.myproc_error')
+                yield handler.call('com.myapp.myproc_error')
                 self.fail()
             except Exception as e:
                 self.assertIsInstance(e, ApplicationError)
@@ -988,19 +988,19 @@ if os.environ.get('USE_TWISTED', False):
 
         # ## variant 1: works
         # def test_publish1(self):
-        #    d = self.handler.publish(u'de.myapp.topic1')
+        #    d = self.handler.publish('de.myapp.topic1')
         #    self.assertFailure(d, ApplicationError)
 
         # ## variant 2: works
         # @inlineCallbacks
         # def test_publish2(self):
-        #    yield self.assertFailure(self.handler.publish(u'de.myapp.topic1'), ApplicationError)
+        #    yield self.assertFailure(self.handler.publish('de.myapp.topic1'), ApplicationError)
 
         # ## variant 3: does NOT work
         # @inlineCallbacks
         # def test_publish3(self):
         #    with self.assertRaises(ApplicationError):
-        #       yield self.handler.publish(u'de.myapp.topic1')
+        #       yield self.handler.publish('de.myapp.topic1')
 
     class TestAuthenticator(unittest.TestCase):
 

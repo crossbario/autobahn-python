@@ -25,7 +25,7 @@ if False:
 else:
     cert = Certificate.loadPEM(open(cert_fname, 'r').read())
     options = optionsForClientTLS(
-        hostname=u'localhost',
+        hostname='localhost',
         trustRoot=cert,
     )
 

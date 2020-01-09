@@ -19,12 +19,12 @@ class MyComponent(ApplicationSession):
         def add2(x, y):
             log.debug('add2 called with %s %s', x, y)
             return x + y
-        await self.register(add2, u'com.myapp.add2')
+        await self.register(add2, 'com.myapp.add2')
 
         # publish an event every second. The event payloads can be
         # anything JSON- and msgpack- serializable
         while True:
-            self.publish(u'com.myapp.hello', 'Hello, world! Time is %s' % datetime.utcnow())
+            self.publish('com.myapp.hello', 'Hello, world! Time is %s' % datetime.utcnow())
             log.debug('Published msg')
             await asyncio.sleep(1)
 

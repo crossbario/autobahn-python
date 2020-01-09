@@ -96,7 +96,7 @@ if os.environ.get('USE_TWISTED', False):
                     payload_encryption_cryptobox=True,
                 )
 
-                msg = Welcome(123456, dict(broker=features), realm=u'realm')
+                msg = Welcome(123456, dict(broker=features), realm='realm')
                 serializer = JsonSerializer()
                 data, is_binary = serializer.serialize(msg)
                 proto.onMessage(data, is_binary)

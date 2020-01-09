@@ -11,7 +11,7 @@ class Component(ApplicationSession):
         # publish an event every second. The event payloads can be
         # anything JSON- and msgpack- serializable
         def publish():
-            return self.publish(u'com.myapp.hello', 'Hello, world!')
+            return self.publish('com.myapp.hello', 'Hello, world!')
         LoopingCall(publish).start(1)
 
         # a remote procedure; see frontend.py for a Python front-end
@@ -19,7 +19,7 @@ class Component(ApplicationSession):
         # this procedure if its connected to the same router and realm.
         def add2(x, y):
             return x + y
-        yield self.register(add2, u'com.myapp.add2')
+        yield self.register(add2, 'com.myapp.add2')
 
 
 if __name__ == '__main__':

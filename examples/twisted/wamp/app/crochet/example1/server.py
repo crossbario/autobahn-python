@@ -55,7 +55,7 @@ app._visits = 0
 @app.route('/')
 def index():
     app._visits += 1
-    publish(u'com.example.on_visit', app._visits, msg="hello from flask")
+    publish('com.example.on_visit', app._visits, msg="hello from flask")
     return "Visit {}".format(app._visits)
 
 

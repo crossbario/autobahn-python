@@ -52,7 +52,7 @@ class Component(ApplicationSession):
         ##
         for x in [2, 0, -2]:
             try:
-                res = await self.call(u'com.myapp.sqrt', x)
+                res = await self.call('com.myapp.sqrt', x)
             except Exception as e:
                 print("Error: {} {}".format(e, e.args))
             else:
@@ -62,7 +62,7 @@ class Component(ApplicationSession):
         ##
         for name in ['foo', 'a', '*' * 11, 'Hello']:
             try:
-                res = await self.call(u'com.myapp.checkname', name)
+                res = await self.call('com.myapp.checkname', name)
             except ApplicationError as e:
                 print("Error: {} {} {} {}".format(e, e.error, e.args, e.kwargs))
             else:
@@ -73,7 +73,7 @@ class Component(ApplicationSession):
         self.define(AppError1)
 
         try:
-            await self.call(u'com.myapp.compare', 3, 17)
+            await self.call('com.myapp.compare', 3, 17)
         except AppError1 as e:
             print("Compare Error: {}".format(e))
 

@@ -4,8 +4,8 @@ from autobahn.twisted.wamp import Connection
 
 @coroutine
 def main(transport):
-    session = yield transport.join(u'myrealm1')
-    result = yield session.call(u'com.myapp.add2', 2, 3)
+    session = yield transport.join('myrealm1')
+    result = yield session.call('com.myapp.add2', 2, 3)
     print("Result: {}".format(result))
     yield session.leave()
     yield transport.close()

@@ -189,7 +189,7 @@ class ApplicationRunner(object):
         else:
             create = make
 
-        if self.url.startswith(u'rs'):
+        if self.url.startswith('rs'):
             # try to parse RawSocket URL ..
             isSecure, host, port = parse_rs_url(self.url)
 

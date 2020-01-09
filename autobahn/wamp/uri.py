@@ -73,18 +73,18 @@ def convert_starred_uri(uri):
     """
     assert(type(uri) == str)
 
-    cnt_stars = uri.count(u'*')
+    cnt_stars = uri.count('*')
 
     if cnt_stars == 0:
-        match = u'exact'
+        match = 'exact'
 
-    elif cnt_stars == 1 and uri[-1] == u'*':
-        match = u'prefix'
+    elif cnt_stars == 1 and uri[-1] == '*':
+        match = 'prefix'
         uri = uri[:-1]
 
     else:
-        match = u'wildcard'
-        uri = uri.replace(u'*', u'')
+        match = 'wildcard'
+        uri = uri.replace('*', '')
 
     return uri, match
 
@@ -331,7 +331,7 @@ def register(uri, options=None):
     def decorate(f):
         assert(callable(f))
         if uri is None:
-            real_uri = u'{}'.format(f.__name__)
+            real_uri = '{}'.format(f.__name__)
         else:
             real_uri = uri
         if not hasattr(f, '_wampuris'):

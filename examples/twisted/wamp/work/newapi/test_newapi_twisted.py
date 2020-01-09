@@ -14,7 +14,7 @@ from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import Session
 
 # This uses the new-api with various Twisted native objects. For the
-# Unix socket things, you'll have to add a transport to "config.json"
+# Unix socket things, yo'll have to add a transport to "config.json"
 # like this:
 #    {
 #        "type": "websocket",
@@ -24,7 +24,7 @@ from autobahn.twisted.wamp import Session
 #        }
 #    }
 # ...then, the socket will appear in the .crossbar directory as
-# "unix-websocket". Everything in here presumes you're using the
+# "unix-websocket". Everything in here presumes yo're using the
 # "example/router/.crossbar" with config.json linked to either
 # "config-no-tls.json" or "config-tls.json"
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
         "endpoint": SSL4ClientEndpoint(
             reactor, '127.0.0.1', 8083,
             optionsForClientTLS(
-                u'localhost',
+                'localhost',
                 # XXX why do I need BOTH the intermediate and actual
                 # cert? Did I create the CA/intermediate certificates
                 # incorrectly?
@@ -96,7 +96,7 @@ if __name__ == '__main__':
             reactor,
             '127.0.0.1',
             8080,
-            optionsForClientTLS(u'localhost'),
+            optionsForClientTLS('localhost'),
         ),
     }
 
@@ -113,8 +113,8 @@ if __name__ == '__main__':
     ]
 
     # try main= vs. setup= to see different exit behavior
-    component = Component(main=setup, transports=transports, realm=u'crossbardemo')
-    #component = Component(setup=setup, transports=transports, realm=u'crossbardemo')
+    component = Component(main=setup, transports=transports, realm='crossbardemo')
+    #component = Component(setup=setup, transports=transports, realm='crossbardemo')
 
     # can add this confirm logging of more error-cases
     #component.session_factory = Foo

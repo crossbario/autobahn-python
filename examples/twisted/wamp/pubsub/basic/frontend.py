@@ -43,7 +43,7 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
         self.received = 0
-        sub = yield self.subscribe(self.on_event, u'com.myapp.topic1')
+        sub = yield self.subscribe(self.on_event, 'com.myapp.topic1')
         print("Subscribed to com.myapp.topic1 with {}".format(sub.id))
 
     def on_event(self, i):

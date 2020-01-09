@@ -57,27 +57,27 @@ class TestUris(unittest.TestCase):
     def test_parse_uris(self):
         tests = [
             ("com.myapp.<product:int>.update", [
-                ("com.myapp.0.update", {u'product': 0}),
-                ("com.myapp.123456.update", {u'product': 123456}),
+                ("com.myapp.0.update", {'product': 0}),
+                ("com.myapp.123456.update", {'product': 123456}),
                 ("com.myapp.aaa.update", None),
                 ("com.myapp..update", None),
                 ("com.myapp.0.delete", None),
             ]
             ),
             ("com.myapp.<product:string>.update", [
-                ("com.myapp.box.update", {u'product': u'box'}),
-                ("com.myapp.123456.update", {u'product': u'123456'}),
+                ("com.myapp.box.update", {'product': 'box'}),
+                ("com.myapp.123456.update", {'product': '123456'}),
                 ("com.myapp..update", None),
             ]
             ),
             ("com.myapp.<product>.update", [
-                ("com.myapp.0.update", {u'product': u'0'}),
-                ("com.myapp.abc.update", {u'product': u'abc'}),
+                ("com.myapp.0.update", {'product': '0'}),
+                ("com.myapp.abc.update", {'product': 'abc'}),
                 ("com.myapp..update", None),
             ]
             ),
             ("com.myapp.<category:string>.<subcategory:string>.list", [
-                ("com.myapp.cosmetic.shampoo.list", {u'category': u'cosmetic', u'subcategory': u'shampoo'}),
+                ("com.myapp.cosmetic.shampoo.list", {'category': 'cosmetic', 'subcategory': 'shampoo'}),
                 ("com.myapp...list", None),
                 ("com.myapp.cosmetic..list", None),
                 ("com.myapp..shampoo.list", None),

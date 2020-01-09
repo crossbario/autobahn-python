@@ -337,7 +337,7 @@ class TestNvxUtf8Validator(unittest.TestCase):
             k = 2
 
         validator.reset()
-        self.assertEqual((True, True, 15, 15)[:k], validator.validate(u'µ@ßöäüàá'.encode('utf8'))[:k])
+        self.assertEqual((True, True, 15, 15)[:k], validator.validate('µ@ßöäüàá'.encode('utf8'))[:k])
 
         validator.reset()
         self.assertEqual((False, False, 0, 0)[:k], validator.validate(b"\xF5")[:k])

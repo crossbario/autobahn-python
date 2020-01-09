@@ -40,10 +40,10 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
 
-        procs = [u'com.mathservice.add2',
-                 u'com.mathservice.mul2',
-                 u'com.mathservice.square2',
-                 u'com.mathservice.div2']
+        procs = ['com.mathservice.add2',
+                 'com.mathservice.mul2',
+                 'com.mathservice.square2',
+                 'com.mathservice.div2']
 
         try:
             for proc in procs:

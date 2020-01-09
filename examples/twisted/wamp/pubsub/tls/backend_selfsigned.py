@@ -48,7 +48,7 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             print("publish: com.myapp.topic1", counter)
-            yield self.publish(u'com.myapp.topic1', counter)
+            yield self.publish('com.myapp.topic1', counter)
             counter += 1
             yield sleep(1)
 

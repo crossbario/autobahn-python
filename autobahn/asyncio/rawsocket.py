@@ -388,7 +388,7 @@ class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
             self.abort()
             return False
 
-    def get_channel_id(self, channel_id_type=u'tls-unique'):
+    def get_channel_id(self, channel_id_type='tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
@@ -412,7 +412,7 @@ class WampRawSocketClientProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
             self._serializer = copy.copy(self.factory._serializer)
         return self._serializer.RAWSOCKET_SERIALIZER_ID
 
-    def get_channel_id(self, channel_id_type=u'tls-unique'):
+    def get_channel_id(self, channel_id_type='tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """

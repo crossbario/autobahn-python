@@ -29,7 +29,7 @@ from autobahn.twisted.wamp import Application
 app = Application()
 
 
-@app.register(u'com.example.square')
+@app.register('com.example.square')
 def square(x):
     print("square() called with {}".format(x))
     return x * x

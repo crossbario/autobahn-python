@@ -40,11 +40,11 @@ class Component(ApplicationSession):
 
         def on_event(i):
             print("Got event: {}".format(i))
-        await self.subscribe(on_event, u'com.myapp.topic1')
+        await self.subscribe(on_event, 'com.myapp.topic1')
 
         counter = 0
         while True:
-            publication = await self.publish(u'com.myapp.topic1',
+            publication = await self.publish('com.myapp.topic1',
                                                   counter,
                                                   options=PublishOptions(acknowledge=True, exclude_me=False))
             print("Event published with publication ID {}".format(publication.id))

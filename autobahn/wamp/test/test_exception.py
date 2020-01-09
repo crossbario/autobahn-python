@@ -45,6 +45,6 @@ class ApplicationErrorTestCase(TestCase):
         the error_message method is called.
         """
         error = ApplicationError("some.url", "\u2603")
-        # on py27-tw189: exceptions.UnicodeEncodeError: 'ascii' codec can't encode character u'\u2603' in position 10: ordinal not in
+        # on py27-tw189: exceptions.UnicodeEncodeError: 'ascii' codec can't encode character '\u2603' in position 10: ordinal not in
         print(error.error_message())
         self.assertIn("\u2603", error.error_message())

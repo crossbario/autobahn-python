@@ -101,19 +101,19 @@ _CUSTOM_ATTRIBUTE = re.compile(r"^x_([a-z][0-9a-z_]+)?$")
 # Value for algo attribute in end-to-end encrypted messages using cryptobox, which
 # is a scheme based on Curve25519, SHA512, Salsa20 and Poly1305.
 # See: http://cr.yp.to/highspeed/coolnacl-20120725.pdf
-PAYLOAD_ENC_CRYPTO_BOX = u'cryptobox'
+PAYLOAD_ENC_CRYPTO_BOX = 'cryptobox'
 
 # Payload transparency identifier for MQTT payloads (which are arbitrary binary).
-PAYLOAD_ENC_MQTT = u'mqtt'
+PAYLOAD_ENC_MQTT = 'mqtt'
 
 # Payload transparency identifier for XBR payloads
-PAYLOAD_ENC_XBR = u'xbr'
+PAYLOAD_ENC_XBR = 'xbr'
 
 # Payload transparency algorithm identifiers from the WAMP spec.
 PAYLOAD_ENC_STANDARD_IDENTIFIERS = [PAYLOAD_ENC_CRYPTO_BOX, PAYLOAD_ENC_MQTT, PAYLOAD_ENC_XBR]
 
 # Payload transparency serializer identifiers from the WAMP spec.
-PAYLOAD_ENC_STANDARD_SERIALIZERS = [u'json', u'msgpack', u'cbor', u'ubjson', u'flatbuffers']
+PAYLOAD_ENC_STANDARD_SERIALIZERS = ['json', 'msgpack', 'cbor', 'ubjson', 'flatbuffers']
 
 ENC_ALGO_NONE = 0
 ENC_ALGO_CRYPTOBOX = 1
@@ -121,10 +121,10 @@ ENC_ALGO_MQTT = 2
 ENC_ALGO_XBR = 3
 
 ENC_ALGOS = {
-    ENC_ALGO_NONE: u'null',
-    ENC_ALGO_CRYPTOBOX: u'cryptobox',
-    ENC_ALGO_MQTT: u'mqtt',
-    ENC_ALGO_XBR: u'xbr',
+    ENC_ALGO_NONE: 'null',
+    ENC_ALGO_CRYPTOBOX: 'cryptobox',
+    ENC_ALGO_MQTT: 'mqtt',
+    ENC_ALGO_XBR: 'xbr',
 }
 
 ENC_ALGOS_FROMSTR = {key: value for value, key in ENC_ALGOS.items()}
@@ -138,13 +138,13 @@ ENC_SER_OPAQUE = 5
 ENC_SER_FLATBUFFERS = 6
 
 ENC_SERS = {
-    ENC_SER_NONE: u'null',
-    ENC_SER_JSON: u'json',
-    ENC_SER_MSGPACK: u'msgpack',
-    ENC_SER_CBOR: u'cbor',
-    ENC_SER_UBJSON: u'ubjson',
-    ENC_SER_OPAQUE: u'opaque',
-    ENC_SER_FLATBUFFERS: u'flatbuffers',
+    ENC_SER_NONE: 'null',
+    ENC_SER_JSON: 'json',
+    ENC_SER_MSGPACK: 'msgpack',
+    ENC_SER_CBOR: 'cbor',
+    ENC_SER_UBJSON: 'ubjson',
+    ENC_SER_OPAQUE: 'opaque',
+    ENC_SER_FLATBUFFERS: 'flatbuffers',
 }
 
 ENC_SERS_FROMSTR = {key: value for value, key in ENC_SERS.items()}
@@ -204,11 +204,11 @@ def b2a(data, max_len=40):
     elif type(data) == bytes:
         s = binascii.b2a_hex(data).decode('ascii')
     elif data is None:
-        s = u'-'
+        s = '-'
     else:
-        s = u'{}'.format(data)
+        s = '{}'.format(data)
     if len(s) > max_len:
-        return s[:max_len] + u'..'
+        return s[:max_len] + '..'
     else:
         return s
 
@@ -267,7 +267,7 @@ def check_or_raise_uri(value, message="WAMP message invalid", strict=False, allo
             pat = _URI_PAT_LOOSE_NON_EMPTY
 
     if not pat.match(value):
-        raise InvalidUriError(u'{0}: invalid value "{1}" for URI (did not match pattern "{2}" with options strict={3}, allow_empty_components={4}, allow_last_empty={5}, allow_none={6})'.format(message, value, pat.pattern, strict, allow_empty_components, allow_last_empty, allow_none))
+        raise InvalidUriError('{0}: invalid value "{1}" for URI (did not match pattern "{2}" with options strict={3}, allow_empty_components={4}, allow_last_empty={5}, allow_none={6})'.format(message, value, pat.pattern, strict, allow_empty_components, allow_last_empty, allow_none))
     else:
         return value
 
@@ -508,7 +508,7 @@ class Message(object):
         """
         # only serialize if not cached ..
         if serializer not in self._serialized:
-            if serializer.NAME == u'flatbuffers':
+            if serializer.NAME == 'flatbuffers':
                 # flatbuffers get special treatment ..
                 builder = flatbuffers.Builder(1024)
 
@@ -594,7 +594,7 @@ class Hello(Message):
         assert(type(roles) == dict)
         assert(len(roles) > 0)
         for role in roles:
-            assert(role in [u'subscriber', u'publisher', u'caller', u'callee'])
+            assert(role in ['subscriber', 'publisher', 'caller', 'callee'])
             assert(isinstance(roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]))
         if authmethods:
             assert(type(authmethods) == list)
@@ -639,26 +639,26 @@ class Hello(Message):
 
         roles = {}
 
-        if u'roles' not in details:
+        if 'roles' not in details:
             raise ProtocolError("missing mandatory roles attribute in options in HELLO")
 
-        details_roles = check_or_raise_extra(details[u'roles'], "'roles' in 'details' in HELLO")
+        details_roles = check_or_raise_extra(details['roles'], "'roles' in 'details' in HELLO")
 
         if len(details_roles) == 0:
             raise ProtocolError("empty 'roles' in 'details' in HELLO")
 
         for role in details_roles:
-            if role not in [u'subscriber', u'publisher', u'caller', u'callee']:
+            if role not in ['subscriber', 'publisher', 'caller', 'callee']:
                 raise ProtocolError("invalid role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
             role_cls = ROLE_NAME_TO_CLASS[role]
 
             details_role = check_or_raise_extra(details_roles[role], "role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
-            if u'features' in details_role:
-                check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in HELLO".format(role))
+            if 'features' in details_role:
+                check_or_raise_extra(details_role['features'], "'features' in role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
-                role_features = role_cls(**details_role[u'features'])
+                role_features = role_cls(**details_role['features'])
 
             else:
                 role_features = role_cls()
@@ -666,8 +666,8 @@ class Hello(Message):
             roles[role] = role_features
 
         authmethods = None
-        if u'authmethods' in details:
-            details_authmethods = details[u'authmethods']
+        if 'authmethods' in details:
+            details_authmethods = details['authmethods']
             if type(details_authmethods) != list:
                 raise ProtocolError("invalid type {0} for 'authmethods' detail in HELLO".format(type(details_authmethods)))
 
@@ -678,44 +678,44 @@ class Hello(Message):
             authmethods = details_authmethods
 
         authid = None
-        if u'authid' in details:
-            details_authid = details[u'authid']
+        if 'authid' in details:
+            details_authid = details['authid']
             if type(details_authid) != str:
                 raise ProtocolError("invalid type {0} for 'authid' detail in HELLO".format(type(details_authid)))
 
             authid = details_authid
 
         authrole = None
-        if u'authrole' in details:
-            details_authrole = details[u'authrole']
+        if 'authrole' in details:
+            details_authrole = details['authrole']
             if type(details_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'authrole' detail in HELLO".format(type(details_authrole)))
 
             authrole = details_authrole
 
         authextra = None
-        if u'authextra' in details:
-            details_authextra = details[u'authextra']
+        if 'authextra' in details:
+            details_authextra = details['authextra']
             if type(details_authextra) != dict:
                 raise ProtocolError("invalid type {0} for 'authextra' detail in HELLO".format(type(details_authextra)))
 
             authextra = details_authextra
 
         resumable = None
-        if u'resumable' in details:
-            resumable = details[u'resumable']
+        if 'resumable' in details:
+            resumable = details['resumable']
             if type(resumable) != bool:
                 raise ProtocolError("invalid type {0} for 'resumable' detail in HELLO".format(type(resumable)))
 
         resume_session = None
-        if u'resume-session' in details:
-            resume_session = details[u'resume-session']
+        if 'resume-session' in details:
+            resume_session = details['resume-session']
             if type(resume_session) != int:
                 raise ProtocolError("invalid type {0} for 'resume-session' detail in HELLO".format(type(resume_session)))
 
         resume_token = None
-        if u'resume-token' in details:
-            resume_token = details[u'resume-token']
+        if 'resume-token' in details:
+            resume_token = details['resume-token']
             if type(resume_token) != str:
                 raise ProtocolError("invalid type {0} for 'resume-token' detail in HELLO".format(type(resume_token)))
         else:
@@ -733,35 +733,35 @@ class Hello(Message):
         :returns: The serialized raw message.
         :rtype: list
         """
-        details = {u'roles': {}}
+        details = {'roles': {}}
         for role in self.roles.values():
-            details[u'roles'][role.ROLE] = {}
+            details['roles'][role.ROLE] = {}
             for feature in role.__dict__:
                 if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
-                    if u'features' not in details[u'roles'][role.ROLE]:
-                        details[u'roles'][role.ROLE] = {u'features': {}}
-                    details[u'roles'][role.ROLE][u'features'][feature] = getattr(role, feature)
+                    if 'features' not in details['roles'][role.ROLE]:
+                        details['roles'][role.ROLE] = {'features': {}}
+                    details['roles'][role.ROLE]['features'][feature] = getattr(role, feature)
 
         if self.authmethods is not None:
-            details[u'authmethods'] = self.authmethods
+            details['authmethods'] = self.authmethods
 
         if self.authid is not None:
-            details[u'authid'] = self.authid
+            details['authid'] = self.authid
 
         if self.authrole is not None:
-            details[u'authrole'] = self.authrole
+            details['authrole'] = self.authrole
 
         if self.authextra is not None:
-            details[u'authextra'] = self.authextra
+            details['authextra'] = self.authextra
 
         if self.resumable is not None:
-            details[u'resumable'] = self.resumable
+            details['resumable'] = self.resumable
 
         if self.resume_session is not None:
-            details[u'resume-session'] = self.resume_session
+            details['resume-session'] = self.resume_session
 
         if self.resume_token is not None:
-            details[u'resume-token'] = self.resume_token
+            details['resume-token'] = self.resume_token
 
         return [Hello.MESSAGE_TYPE, self.realm, details]
 
@@ -854,7 +854,7 @@ class Welcome(Message):
         assert(type(roles) == dict)
         assert(len(roles) > 0)
         for role in roles:
-            assert(role in [u'broker', u'dealer'])
+            assert(role in ['broker', 'dealer'])
             assert(isinstance(roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]))
         assert(realm is None or type(realm) == str)
         assert(authid is None or type(authid) == str)
@@ -904,28 +904,28 @@ class Welcome(Message):
         details = check_or_raise_extra(wmsg[2], "'details' in WELCOME")
 
         # FIXME: tigher value checking (types, URIs etc)
-        realm = details.get(u'realm', None)
-        authid = details.get(u'authid', None)
-        authrole = details.get(u'authrole', None)
-        authmethod = details.get(u'authmethod', None)
-        authprovider = details.get(u'authprovider', None)
-        authextra = details.get(u'authextra', None)
+        realm = details.get('realm', None)
+        authid = details.get('authid', None)
+        authrole = details.get('authrole', None)
+        authmethod = details.get('authmethod', None)
+        authprovider = details.get('authprovider', None)
+        authextra = details.get('authextra', None)
 
         resumed = None
-        if u'resumed' in details:
-            resumed = details[u'resumed']
+        if 'resumed' in details:
+            resumed = details['resumed']
             if not type(resumed) == bool:
                 raise ProtocolError("invalid type {0} for 'resumed' detail in WELCOME".format(type(resumed)))
 
         resumable = None
-        if u'resumable' in details:
-            resumable = details[u'resumable']
+        if 'resumable' in details:
+            resumable = details['resumable']
             if not type(resumable) == bool:
                 raise ProtocolError("invalid type {0} for 'resumable' detail in WELCOME".format(type(resumable)))
 
         resume_token = None
-        if u'resume_token' in details:
-            resume_token = details[u'resume_token']
+        if 'resume_token' in details:
+            resume_token = details['resume_token']
             if not type(resume_token) == str:
                 raise ProtocolError("invalid type {0} for 'resume_token' detail in WELCOME".format(type(resume_token)))
         elif resumable:
@@ -933,7 +933,7 @@ class Welcome(Message):
 
         roles = {}
 
-        if u'roles' not in details:
+        if 'roles' not in details:
             raise ProtocolError("missing mandatory roles attribute in options in WELCOME")
 
         details_roles = check_or_raise_extra(details['roles'], "'roles' in 'details' in WELCOME")
@@ -942,17 +942,17 @@ class Welcome(Message):
             raise ProtocolError("empty 'roles' in 'details' in WELCOME")
 
         for role in details_roles:
-            if role not in [u'broker', u'dealer']:
+            if role not in ['broker', 'dealer']:
                 raise ProtocolError("invalid role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
             role_cls = ROLE_NAME_TO_CLASS[role]
 
             details_role = check_or_raise_extra(details_roles[role], "role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
-            if u'features' in details_role:
-                check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
+            if 'features' in details_role:
+                check_or_raise_extra(details_role['features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
-                role_features = role_cls(**details_roles[role][u'features'])
+                role_features = role_cls(**details_roles[role]['features'])
 
             else:
                 role_features = role_cls()
@@ -979,40 +979,40 @@ class Welcome(Message):
         details.update(self.custom)
 
         if self.realm:
-            details[u'realm'] = self.realm
+            details['realm'] = self.realm
 
         if self.authid:
-            details[u'authid'] = self.authid
+            details['authid'] = self.authid
 
         if self.authrole:
-            details[u'authrole'] = self.authrole
+            details['authrole'] = self.authrole
 
         if self.authrole:
-            details[u'authmethod'] = self.authmethod
+            details['authmethod'] = self.authmethod
 
         if self.authprovider:
-            details[u'authprovider'] = self.authprovider
+            details['authprovider'] = self.authprovider
 
         if self.authextra:
-            details[u'authextra'] = self.authextra
+            details['authextra'] = self.authextra
 
         if self.resumed:
-            details[u'resumed'] = self.resumed
+            details['resumed'] = self.resumed
 
         if self.resumable:
-            details[u'resumable'] = self.resumable
+            details['resumable'] = self.resumable
 
         if self.resume_token:
-            details[u'resume_token'] = self.resume_token
+            details['resume_token'] = self.resume_token
 
-        details[u'roles'] = {}
+        details['roles'] = {}
         for role in self.roles.values():
-            details[u'roles'][role.ROLE] = {}
+            details['roles'][role.ROLE] = {}
             for feature in role.__dict__:
                 if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
-                    if u'features' not in details[u'roles'][role.ROLE]:
-                        details[u'roles'][role.ROLE] = {u'features': {}}
-                    details[u'roles'][role.ROLE][u'features'][feature] = getattr(role, feature)
+                    if 'features' not in details['roles'][role.ROLE]:
+                        details['roles'][role.ROLE] = {'features': {}}
+                    details['roles'][role.ROLE]['features'][feature] = getattr(role, feature)
 
         return [Welcome.MESSAGE_TYPE, self.session, details]
 
@@ -1077,9 +1077,9 @@ class Abort(Message):
 
         message = None
 
-        if u'message' in details:
+        if 'message' in details:
 
-            details_message = details[u'message']
+            details_message = details['message']
             if type(details_message) != str:
                 raise ProtocolError("invalid type {0} for 'message' detail in ABORT".format(type(details_message)))
 
@@ -1098,7 +1098,7 @@ class Abort(Message):
         """
         details = {}
         if self.message:
-            details[u'message'] = self.message
+            details['message'] = self.message
 
         return [Abort.MESSAGE_TYPE, details, self.reason]
 
@@ -1325,16 +1325,16 @@ class Goodbye(Message):
         message = None
         resumable = None
 
-        if u'message' in details:
+        if 'message' in details:
 
-            details_message = details[u'message']
+            details_message = details['message']
             if type(details_message) != str:
                 raise ProtocolError("invalid type {0} for 'message' detail in GOODBYE".format(type(details_message)))
 
             message = details_message
 
-        if u'resumable' in details:
-            resumable = details[u'resumable']
+        if 'resumable' in details:
+            resumable = details['resumable']
             if type(resumable) != bool:
                 raise ProtocolError("invalid type {0} for 'resumable' detail in GOODBYE".format(type(resumable)))
 
@@ -1353,10 +1353,10 @@ class Goodbye(Message):
         """
         details = {}
         if self.message:
-            details[u'message'] = self.message
+            details['message'] = self.message
 
         if self.resumable:
-            details[u'resumable'] = self.resumable
+            details['resumable'] = self.resumable
 
         return [Goodbye.MESSAGE_TYPE, details, self.reason]
 
@@ -1551,15 +1551,15 @@ class Error(Message):
 
             payload = wmsg[5]
 
-            enc_algo = details.get(u'enc_algo', None)
+            enc_algo = details.get('enc_algo', None)
             if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
-            enc_key = details.get(u'enc_key', None)
+            enc_key = details.get('enc_key', None)
             if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
-            enc_serializer = details.get(u'enc_serializer', None)
+            enc_serializer = details.get('enc_serializer', None)
             if enc_serializer and not is_valid_enc_serializer(enc_serializer):
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
 
@@ -1574,32 +1574,32 @@ class Error(Message):
                 if type(kwargs) != dict:
                     raise ProtocolError("invalid type {0} for 'kwargs' in ERROR".format(type(kwargs)))
 
-        if u'callee' in details:
+        if 'callee' in details:
 
-            detail_callee = details[u'callee']
+            detail_callee = details['callee']
             if type(detail_callee) != int:
                 raise ProtocolError("invalid type {0} for 'callee' detail in ERROR".format(type(detail_callee)))
 
             callee = detail_callee
 
-        if u'callee_authid' in details:
+        if 'callee_authid' in details:
 
-            detail_callee_authid = details[u'callee_authid']
+            detail_callee_authid = details['callee_authid']
             if type(detail_callee_authid) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authid' detail in ERROR".format(type(detail_callee_authid)))
 
             callee_authid = detail_callee_authid
 
-        if u'callee_authrole' in details:
+        if 'callee_authrole' in details:
 
-            detail_callee_authrole = details[u'callee_authrole']
+            detail_callee_authrole = details['callee_authrole']
             if type(detail_callee_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authrole' detail in ERROR".format(type(detail_callee_authrole)))
 
             callee_authrole = detail_callee_authrole
 
-        if u'forward_for' in details:
-            forward_for = details[u'forward_for']
+        if 'forward_for' in details:
+            forward_for = details['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -1642,21 +1642,21 @@ class Error(Message):
         details = {}
 
         if self.callee is not None:
-            details[u'callee'] = self.callee
+            details['callee'] = self.callee
         if self.callee_authid is not None:
-            details[u'callee_authid'] = self.callee_authid
+            details['callee_authid'] = self.callee_authid
         if self.callee_authrole is not None:
-            details[u'callee_authrole'] = self.callee_authrole
+            details['callee_authrole'] = self.callee_authrole
         if self.forward_for is not None:
-            details[u'forward_for'] = self.forward_for
+            details['forward_for'] = self.forward_for
 
         if self.payload:
             if self.enc_algo is not None:
-                details[u'enc_algo'] = self.enc_algo
+                details['enc_algo'] = self.enc_algo
             if self.enc_key is not None:
-                details[u'enc_key'] = self.enc_key
+                details['enc_key'] = self.enc_key
             if self.enc_serializer is not None:
-                details[u'enc_serializer'] = self.enc_serializer
+                details['enc_serializer'] = self.enc_serializer
             return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error, self.payload]
         else:
             if self.kwargs:
@@ -2380,15 +2380,15 @@ class Publish(Message):
 
             payload = wmsg[4]
 
-            enc_algo = options.get(u'enc_algo', None)
+            enc_algo = options.get('enc_algo', None)
             if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' option in PUBLISH".format(enc_algo))
 
-            enc_key = options.get(u'enc_key', None)
+            enc_key = options.get('enc_key', None)
             if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' option in PUBLISH".format(type(enc_key)))
 
-            enc_serializer = options.get(u'enc_serializer', None)
+            enc_serializer = options.get('enc_serializer', None)
             if enc_serializer and not is_valid_enc_serializer(enc_serializer):
                 raise ProtocolError("invalid value {0} for 'enc_serializer' option in PUBLISH".format(enc_serializer))
 
@@ -2418,25 +2418,25 @@ class Publish(Message):
         retain = None
         forward_for = None
 
-        if u'acknowledge' in options:
+        if 'acknowledge' in options:
 
-            option_acknowledge = options[u'acknowledge']
+            option_acknowledge = options['acknowledge']
             if type(option_acknowledge) != bool:
                 raise ProtocolError("invalid type {0} for 'acknowledge' option in PUBLISH".format(type(option_acknowledge)))
 
             acknowledge = option_acknowledge
 
-        if u'exclude_me' in options:
+        if 'exclude_me' in options:
 
-            option_exclude_me = options[u'exclude_me']
+            option_exclude_me = options['exclude_me']
             if type(option_exclude_me) != bool:
                 raise ProtocolError("invalid type {0} for 'exclude_me' option in PUBLISH".format(type(option_exclude_me)))
 
             exclude_me = option_exclude_me
 
-        if u'exclude' in options:
+        if 'exclude' in options:
 
-            option_exclude = options[u'exclude']
+            option_exclude = options['exclude']
             if type(option_exclude) != list:
                 raise ProtocolError("invalid type {0} for 'exclude' option in PUBLISH".format(type(option_exclude)))
 
@@ -2446,9 +2446,9 @@ class Publish(Message):
 
             exclude = option_exclude
 
-        if u'exclude_authid' in options:
+        if 'exclude_authid' in options:
 
-            option_exclude_authid = options[u'exclude_authid']
+            option_exclude_authid = options['exclude_authid']
             if type(option_exclude_authid) != list:
                 raise ProtocolError("invalid type {0} for 'exclude_authid' option in PUBLISH".format(type(option_exclude_authid)))
 
@@ -2458,9 +2458,9 @@ class Publish(Message):
 
             exclude_authid = option_exclude_authid
 
-        if u'exclude_authrole' in options:
+        if 'exclude_authrole' in options:
 
-            option_exclude_authrole = options[u'exclude_authrole']
+            option_exclude_authrole = options['exclude_authrole']
             if type(option_exclude_authrole) != list:
                 raise ProtocolError("invalid type {0} for 'exclude_authrole' option in PUBLISH".format(type(option_exclude_authrole)))
 
@@ -2470,9 +2470,9 @@ class Publish(Message):
 
             exclude_authrole = option_exclude_authrole
 
-        if u'eligible' in options:
+        if 'eligible' in options:
 
-            option_eligible = options[u'eligible']
+            option_eligible = options['eligible']
             if type(option_eligible) != list:
                 raise ProtocolError("invalid type {0} for 'eligible' option in PUBLISH".format(type(option_eligible)))
 
@@ -2482,9 +2482,9 @@ class Publish(Message):
 
             eligible = option_eligible
 
-        if u'eligible_authid' in options:
+        if 'eligible_authid' in options:
 
-            option_eligible_authid = options[u'eligible_authid']
+            option_eligible_authid = options['eligible_authid']
             if type(option_eligible_authid) != list:
                 raise ProtocolError("invalid type {0} for 'eligible_authid' option in PUBLISH".format(type(option_eligible_authid)))
 
@@ -2494,9 +2494,9 @@ class Publish(Message):
 
             eligible_authid = option_eligible_authid
 
-        if u'eligible_authrole' in options:
+        if 'eligible_authrole' in options:
 
-            option_eligible_authrole = options[u'eligible_authrole']
+            option_eligible_authrole = options['eligible_authrole']
             if type(option_eligible_authrole) != list:
                 raise ProtocolError("invalid type {0} for 'eligible_authrole' option in PUBLISH".format(type(option_eligible_authrole)))
 
@@ -2506,13 +2506,13 @@ class Publish(Message):
 
             eligible_authrole = option_eligible_authrole
 
-        if u'retain' in options:
-            retain = options[u'retain']
+        if 'retain' in options:
+            retain = options['retain']
             if type(retain) != bool:
                 raise ProtocolError("invalid type {0} for 'retain' option in PUBLISH".format(type(retain)))
 
-        if u'forward_for' in options:
-            forward_for = options[u'forward_for']
+        if 'forward_for' in options:
+            forward_for = options['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -2554,35 +2554,35 @@ class Publish(Message):
         options = {}
 
         if self.acknowledge is not None:
-            options[u'acknowledge'] = self.acknowledge
+            options['acknowledge'] = self.acknowledge
 
         if self.exclude_me is not None:
-            options[u'exclude_me'] = self.exclude_me
+            options['exclude_me'] = self.exclude_me
         if self.exclude is not None:
-            options[u'exclude'] = self.exclude
+            options['exclude'] = self.exclude
         if self.exclude_authid is not None:
-            options[u'exclude_authid'] = self.exclude_authid
+            options['exclude_authid'] = self.exclude_authid
         if self.exclude_authrole is not None:
-            options[u'exclude_authrole'] = self.exclude_authrole
+            options['exclude_authrole'] = self.exclude_authrole
         if self.eligible is not None:
-            options[u'eligible'] = self.eligible
+            options['eligible'] = self.eligible
         if self.eligible_authid is not None:
-            options[u'eligible_authid'] = self.eligible_authid
+            options['eligible_authid'] = self.eligible_authid
         if self.eligible_authrole is not None:
-            options[u'eligible_authrole'] = self.eligible_authrole
+            options['eligible_authrole'] = self.eligible_authrole
         if self.retain is not None:
-            options[u'retain'] = self.retain
+            options['retain'] = self.retain
 
         if self.payload:
             if self.enc_algo is not None:
-                options[u'enc_algo'] = self.enc_algo
+                options['enc_algo'] = self.enc_algo
             if self.enc_key is not None:
-                options[u'enc_key'] = self.enc_key
+                options['enc_key'] = self.enc_key
             if self.enc_serializer is not None:
-                options[u'enc_serializer'] = self.enc_serializer
+                options['enc_serializer'] = self.enc_serializer
 
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         return options
 
@@ -2696,9 +2696,9 @@ class Subscribe(Message):
     The WAMP message code for this type of message.
     """
 
-    MATCH_EXACT = u'exact'
-    MATCH_PREFIX = u'prefix'
-    MATCH_WILDCARD = u'wildcard'
+    MATCH_EXACT = 'exact'
+    MATCH_PREFIX = 'prefix'
+    MATCH_WILDCARD = 'wildcard'
 
     __slots__ = (
         'request',
@@ -2776,9 +2776,9 @@ class Subscribe(Message):
         get_retained = None
         forward_for = None
 
-        if u'match' in options:
+        if 'match' in options:
 
-            option_match = options[u'match']
+            option_match = options['match']
             if type(option_match) != str:
                 raise ProtocolError("invalid type {0} for 'match' option in SUBSCRIBE".format(type(option_match)))
 
@@ -2787,14 +2787,14 @@ class Subscribe(Message):
 
             match = option_match
 
-        if u'get_retained' in options:
-            get_retained = options[u'get_retained']
+        if 'get_retained' in options:
+            get_retained = options['get_retained']
 
             if type(get_retained) != bool:
                 raise ProtocolError("invalid type {0} for 'get_retained' option in SUBSCRIBE".format(type(get_retained)))
 
-        if u'forward_for' in options:
-            forward_for = options[u'forward_for']
+        if 'forward_for' in options:
+            forward_for = options['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -2819,13 +2819,13 @@ class Subscribe(Message):
         options = {}
 
         if self.match and self.match != Subscribe.MATCH_EXACT:
-            options[u'match'] = self.match
+            options['match'] = self.match
 
         if self.get_retained is not None:
-            options[u'get_retained'] = self.get_retained
+            options['get_retained'] = self.get_retained
 
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         return options
 
@@ -2989,8 +2989,8 @@ class Unsubscribe(Message):
             options = check_or_raise_extra(wmsg[3], "'options' in UNSUBSCRIBE")
 
         forward_for = None
-        if options and u'forward_for' in options:
-            forward_for = options[u'forward_for']
+        if options and 'forward_for' in options:
+            forward_for = options['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -3020,7 +3020,7 @@ class Unsubscribe(Message):
         """
         if self.forward_for:
             options = {
-                u'forward_for': self.forward_for,
+                'forward_for': self.forward_for,
             }
             return [Unsubscribe.MESSAGE_TYPE, self.request, self.subscription, options]
         else:
@@ -3633,15 +3633,15 @@ class Event(Message):
 
             payload = wmsg[4]
 
-            enc_algo = details.get(u'enc_algo', None)
+            enc_algo = details.get('enc_algo', None)
             if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
-            enc_key = details.get(u'enc_key', None)
+            enc_key = details.get('enc_key', None)
             if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
-            enc_serializer = details.get(u'enc_serializer', None)
+            enc_serializer = details.get('enc_serializer', None)
             if enc_serializer and not is_valid_enc_serializer(enc_serializer):
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
 
@@ -3663,50 +3663,50 @@ class Event(Message):
         forward_for = None
         x_acknowledged_delivery = None
 
-        if u'publisher' in details:
+        if 'publisher' in details:
 
-            detail_publisher = details[u'publisher']
+            detail_publisher = details['publisher']
             if type(detail_publisher) != int:
                 raise ProtocolError("invalid type {0} for 'publisher' detail in EVENT".format(type(detail_publisher)))
 
             publisher = detail_publisher
 
-        if u'publisher_authid' in details:
+        if 'publisher_authid' in details:
 
-            detail_publisher_authid = details[u'publisher_authid']
+            detail_publisher_authid = details['publisher_authid']
             if type(detail_publisher_authid) != str:
                 raise ProtocolError("invalid type {0} for 'publisher_authid' detail in EVENT".format(type(detail_publisher_authid)))
 
             publisher_authid = detail_publisher_authid
 
-        if u'publisher_authrole' in details:
+        if 'publisher_authrole' in details:
 
-            detail_publisher_authrole = details[u'publisher_authrole']
+            detail_publisher_authrole = details['publisher_authrole']
             if type(detail_publisher_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'publisher_authrole' detail in EVENT".format(type(detail_publisher_authrole)))
 
             publisher_authrole = detail_publisher_authrole
 
-        if u'topic' in details:
+        if 'topic' in details:
 
-            detail_topic = details[u'topic']
+            detail_topic = details['topic']
             if type(detail_topic) != str:
                 raise ProtocolError("invalid type {0} for 'topic' detail in EVENT".format(type(detail_topic)))
 
             topic = detail_topic
 
-        if u'retained' in details:
-            retained = details[u'retained']
+        if 'retained' in details:
+            retained = details['retained']
             if type(retained) != bool:
                 raise ProtocolError("invalid type {0} for 'retained' detail in EVENT".format(type(retained)))
 
-        if u'x_acknowledged_delivery' in details:
-            x_acknowledged_delivery = details[u'x_acknowledged_delivery']
+        if 'x_acknowledged_delivery' in details:
+            x_acknowledged_delivery = details['x_acknowledged_delivery']
             if type(x_acknowledged_delivery) != bool:
                 raise ProtocolError("invalid type {0} for 'x_acknowledged_delivery' detail in EVENT".format(type(x_acknowledged_delivery)))
 
-        if u'forward_for' in details:
-            forward_for = details[u'forward_for']
+        if 'forward_for' in details:
+            forward_for = details['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -3751,33 +3751,33 @@ class Event(Message):
         details = {}
 
         if self.publisher is not None:
-            details[u'publisher'] = self.publisher
+            details['publisher'] = self.publisher
 
         if self.publisher_authid is not None:
-            details[u'publisher_authid'] = self.publisher_authid
+            details['publisher_authid'] = self.publisher_authid
 
         if self.publisher_authrole is not None:
-            details[u'publisher_authrole'] = self.publisher_authrole
+            details['publisher_authrole'] = self.publisher_authrole
 
         if self.topic is not None:
-            details[u'topic'] = self.topic
+            details['topic'] = self.topic
 
         if self.retained is not None:
-            details[u'retained'] = self.retained
+            details['retained'] = self.retained
 
         if self.x_acknowledged_delivery is not None:
-            details[u'x_acknowledged_delivery'] = self.x_acknowledged_delivery
+            details['x_acknowledged_delivery'] = self.x_acknowledged_delivery
 
         if self.forward_for is not None:
-            details[u'forward_for'] = self.forward_for
+            details['forward_for'] = self.forward_for
 
         if self.payload:
             if self.enc_algo is not None:
-                details[u'enc_algo'] = self.enc_algo
+                details['enc_algo'] = self.enc_algo
             if self.enc_key is not None:
-                details[u'enc_key'] = self.enc_key
+                details['enc_key'] = self.enc_key
             if self.enc_serializer is not None:
-                details[u'enc_serializer'] = self.enc_serializer
+                details['enc_serializer'] = self.enc_serializer
             return [Event.MESSAGE_TYPE, self.subscription, self.publication, details, self.payload]
         else:
             if self.kwargs:
@@ -4035,15 +4035,15 @@ class Call(Message):
 
             payload = wmsg[4]
 
-            enc_algo = options.get(u'enc_algo', None)
+            enc_algo = options.get('enc_algo', None)
             if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in CALL".format(enc_algo))
 
-            enc_key = options.get(u'enc_key', None)
+            enc_key = options.get('enc_key', None)
             if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in CALL".format(type(enc_key)))
 
-            enc_serializer = options.get(u'enc_serializer', None)
+            enc_serializer = options.get('enc_serializer', None)
             if enc_serializer and not is_valid_enc_serializer(enc_serializer):
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in CALL".format(enc_serializer))
 
@@ -4065,9 +4065,9 @@ class Call(Message):
         caller_authrole = None
         forward_for = None
 
-        if u'timeout' in options:
+        if 'timeout' in options:
 
-            option_timeout = options[u'timeout']
+            option_timeout = options['timeout']
             if type(option_timeout) != int:
                 raise ProtocolError("invalid type {0} for 'timeout' option in CALL".format(type(option_timeout)))
 
@@ -4076,40 +4076,40 @@ class Call(Message):
 
             timeout = option_timeout
 
-        if u'receive_progress' in options:
+        if 'receive_progress' in options:
 
-            option_receive_progress = options[u'receive_progress']
+            option_receive_progress = options['receive_progress']
             if type(option_receive_progress) != bool:
                 raise ProtocolError("invalid type {0} for 'receive_progress' option in CALL".format(type(option_receive_progress)))
 
             receive_progress = option_receive_progress
 
-        if u'caller' in options:
+        if 'caller' in options:
 
-            option_caller = options[u'caller']
+            option_caller = options['caller']
             if type(option_caller) != int:
                 raise ProtocolError("invalid type {0} for 'caller' detail in CALL".format(type(option_caller)))
 
             caller = option_caller
 
-        if u'caller_authid' in options:
+        if 'caller_authid' in options:
 
-            option_caller_authid = options[u'caller_authid']
+            option_caller_authid = options['caller_authid']
             if type(option_caller_authid) != str:
                 raise ProtocolError("invalid type {0} for 'caller_authid' detail in CALL".format(type(option_caller_authid)))
 
             caller_authid = option_caller_authid
 
-        if u'caller_authrole' in options:
+        if 'caller_authrole' in options:
 
-            option_caller_authrole = options[u'caller_authrole']
+            option_caller_authrole = options['caller_authrole']
             if type(option_caller_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'caller_authrole' detail in CALL".format(type(option_caller_authrole)))
 
             caller_authrole = option_caller_authrole
 
-        if u'forward_for' in options:
-            forward_for = options[u'forward_for']
+        if 'forward_for' in options:
+            forward_for = options['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -4147,28 +4147,28 @@ class Call(Message):
         options = {}
 
         if self.timeout is not None:
-            options[u'timeout'] = self.timeout
+            options['timeout'] = self.timeout
 
         if self.receive_progress is not None:
-            options[u'receive_progress'] = self.receive_progress
+            options['receive_progress'] = self.receive_progress
 
         if self.payload:
             if self.enc_algo is not None:
-                options[u'enc_algo'] = self.enc_algo
+                options['enc_algo'] = self.enc_algo
             if self.enc_key is not None:
-                options[u'enc_key'] = self.enc_key
+                options['enc_key'] = self.enc_key
             if self.enc_serializer is not None:
-                options[u'enc_serializer'] = self.enc_serializer
+                options['enc_serializer'] = self.enc_serializer
 
         if self.caller is not None:
-            options[u'caller'] = self.caller
+            options['caller'] = self.caller
         if self.caller_authid is not None:
-            options[u'caller_authid'] = self.caller_authid
+            options['caller_authid'] = self.caller_authid
         if self.caller_authrole is not None:
-            options[u'caller_authrole'] = self.caller_authrole
+            options['caller_authrole'] = self.caller_authrole
 
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         return options
 
@@ -4212,9 +4212,9 @@ class Cancel(Message):
     The WAMP message code for this type of message.
     """
 
-    SKIP = u'skip'
-    KILL = u'kill'
-    KILLNOWAIT = u'killnowait'
+    SKIP = 'skip'
+    KILL = 'kill'
+    KILLNOWAIT = 'killnowait'
 
     __slots__ = (
         'request',
@@ -4277,9 +4277,9 @@ class Cancel(Message):
         mode = None
         forward_for = None
 
-        if u'mode' in options:
+        if 'mode' in options:
 
-            option_mode = options[u'mode']
+            option_mode = options['mode']
             if type(option_mode) != str:
                 raise ProtocolError("invalid type {0} for 'mode' option in CANCEL".format(type(option_mode)))
 
@@ -4288,8 +4288,8 @@ class Cancel(Message):
 
             mode = option_mode
 
-        if u'forward_for' in options:
-            forward_for = options[u'forward_for']
+        if 'forward_for' in options:
+            forward_for = options['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -4320,9 +4320,9 @@ class Cancel(Message):
         options = {}
 
         if self.mode is not None:
-            options[u'mode'] = self.mode
+            options['mode'] = self.mode
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         return [Cancel.MESSAGE_TYPE, self.request, options]
 
@@ -4498,15 +4498,15 @@ class Result(Message):
 
             payload = wmsg[3]
 
-            enc_algo = details.get(u'enc_algo', None)
+            enc_algo = details.get('enc_algo', None)
             if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in RESULT".format(enc_algo))
 
-            enc_key = details.get(u'enc_key', None)
+            enc_key = details.get('enc_key', None)
             if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in RESULT".format(type(enc_key)))
 
-            enc_serializer = details.get(u'enc_serializer', None)
+            enc_serializer = details.get('enc_serializer', None)
             if enc_serializer and not is_valid_enc_serializer(enc_serializer):
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in RESULT".format(enc_serializer))
 
@@ -4521,40 +4521,40 @@ class Result(Message):
                 if type(kwargs) != dict:
                     raise ProtocolError("invalid type {0} for 'kwargs' in RESULT".format(type(kwargs)))
 
-        if u'progress' in details:
+        if 'progress' in details:
 
-            detail_progress = details[u'progress']
+            detail_progress = details['progress']
             if type(detail_progress) != bool:
                 raise ProtocolError("invalid type {0} for 'progress' option in RESULT".format(type(detail_progress)))
 
             progress = detail_progress
 
-        if u'callee' in details:
+        if 'callee' in details:
 
-            detail_callee = details[u'callee']
+            detail_callee = details['callee']
             if type(detail_callee) != int:
                 raise ProtocolError("invalid type {0} for 'callee' detail in RESULT".format(type(detail_callee)))
 
             callee = detail_callee
 
-        if u'callee_authid' in details:
+        if 'callee_authid' in details:
 
-            detail_callee_authid = details[u'callee_authid']
+            detail_callee_authid = details['callee_authid']
             if type(detail_callee_authid) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authid' detail in RESULT".format(type(detail_callee_authid)))
 
             callee_authid = detail_callee_authid
 
-        if u'callee_authrole' in details:
+        if 'callee_authrole' in details:
 
-            detail_callee_authrole = details[u'callee_authrole']
+            detail_callee_authrole = details['callee_authrole']
             if type(detail_callee_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authrole' detail in RESULT".format(type(detail_callee_authrole)))
 
             callee_authrole = detail_callee_authrole
 
-        if u'forward_for' in details:
-            forward_for = details[u'forward_for']
+        if 'forward_for' in details:
+            forward_for = details['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -4596,24 +4596,24 @@ class Result(Message):
         details = {}
 
         if self.progress is not None:
-            details[u'progress'] = self.progress
+            details['progress'] = self.progress
 
         if self.callee is not None:
-            details[u'callee'] = self.callee
+            details['callee'] = self.callee
         if self.callee_authid is not None:
-            details[u'callee_authid'] = self.callee_authid
+            details['callee_authid'] = self.callee_authid
         if self.callee_authrole is not None:
-            details[u'callee_authrole'] = self.callee_authrole
+            details['callee_authrole'] = self.callee_authrole
         if self.forward_for is not None:
-            details[u'forward_for'] = self.forward_for
+            details['forward_for'] = self.forward_for
 
         if self.payload:
             if self.enc_algo is not None:
-                details[u'enc_algo'] = self.enc_algo
+                details['enc_algo'] = self.enc_algo
             if self.enc_key is not None:
-                details[u'enc_key'] = self.enc_key
+                details['enc_key'] = self.enc_key
             if self.enc_serializer is not None:
-                details[u'enc_serializer'] = self.enc_serializer
+                details['enc_serializer'] = self.enc_serializer
             return [Result.MESSAGE_TYPE, self.request, details, self.payload]
         else:
             if self.kwargs:
@@ -4642,16 +4642,16 @@ class Register(Message):
     The WAMP message code for this type of message.
     """
 
-    MATCH_EXACT = u'exact'
-    MATCH_PREFIX = u'prefix'
-    MATCH_WILDCARD = u'wildcard'
+    MATCH_EXACT = 'exact'
+    MATCH_PREFIX = 'prefix'
+    MATCH_WILDCARD = 'wildcard'
 
-    INVOKE_SINGLE = u'single'
-    INVOKE_FIRST = u'first'
-    INVOKE_LAST = u'last'
-    INVOKE_ROUNDROBIN = u'roundrobin'
-    INVOKE_RANDOM = u'random'
-    INVOKE_ALL = u'all'
+    INVOKE_SINGLE = 'single'
+    INVOKE_FIRST = 'first'
+    INVOKE_LAST = 'last'
+    INVOKE_ROUNDROBIN = 'roundrobin'
+    INVOKE_RANDOM = 'random'
+    INVOKE_ALL = 'all'
 
     __slots__ = (
         'request',
@@ -4742,9 +4742,9 @@ class Register(Message):
         force_reregister = None
         forward_for = None
 
-        if u'match' in options:
+        if 'match' in options:
 
-            option_match = options[u'match']
+            option_match = options['match']
             if type(option_match) != str:
                 raise ProtocolError("invalid type {0} for 'match' option in REGISTER".format(type(option_match)))
 
@@ -4770,9 +4770,9 @@ class Register(Message):
 
         procedure = check_or_raise_uri(wmsg[3], "'procedure' in REGISTER", allow_empty_components=allow_empty_components, allow_last_empty=allow_last_empty)
 
-        if u'invoke' in options:
+        if 'invoke' in options:
 
-            option_invoke = options[u'invoke']
+            option_invoke = options['invoke']
             if type(option_invoke) != str:
                 raise ProtocolError("invalid type {0} for 'invoke' option in REGISTER".format(type(option_invoke)))
 
@@ -4781,9 +4781,9 @@ class Register(Message):
 
             invoke = option_invoke
 
-        if u'concurrency' in options:
+        if 'concurrency' in options:
 
-            options_concurrency = options[u'concurrency']
+            options_concurrency = options['concurrency']
             if type(options_concurrency) != int:
                 raise ProtocolError("invalid type {0} for 'concurrency' option in REGISTER".format(type(options_concurrency)))
 
@@ -4792,7 +4792,7 @@ class Register(Message):
 
             concurrency = options_concurrency
 
-        options_reregister = options.get(u'force_reregister', None)
+        options_reregister = options.get('force_reregister', None)
         if options_reregister not in [True, False, None]:
             raise ProtocolError(
                 "invalid type {0} for 'force_reregister option in REGISTER".format(
@@ -4802,8 +4802,8 @@ class Register(Message):
         if options_reregister is not None:
             force_reregister = options_reregister
 
-        if u'forward_for' in options:
-            forward_for = options[u'forward_for']
+        if 'forward_for' in options:
+            forward_for = options['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -4829,19 +4829,19 @@ class Register(Message):
         options = {}
 
         if self.match and self.match != Register.MATCH_EXACT:
-            options[u'match'] = self.match
+            options['match'] = self.match
 
         if self.invoke and self.invoke != Register.INVOKE_SINGLE:
-            options[u'invoke'] = self.invoke
+            options['invoke'] = self.invoke
 
         if self.concurrency:
-            options[u'concurrency'] = self.concurrency
+            options['concurrency'] = self.concurrency
 
         if self.force_reregister is not None:
-            options[u'force_reregister'] = self.force_reregister
+            options['force_reregister'] = self.force_reregister
 
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         return options
 
@@ -4999,8 +4999,8 @@ class Unregister(Message):
             options = check_or_raise_extra(wmsg[3], "'options' in UNREGISTER")
 
         forward_for = None
-        if options and u'forward_for' in options:
-            forward_for = options[u'forward_for']
+        if options and 'forward_for' in options:
+            forward_for = options['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -5030,7 +5030,7 @@ class Unregister(Message):
         """
         if self.forward_for:
             options = {
-                u'forward_for': self.forward_for,
+                'forward_for': self.forward_for,
             }
             return [Unregister.MESSAGE_TYPE, self.request, self.registration, options]
         else:
@@ -5325,15 +5325,15 @@ class Invocation(Message):
 
             payload = wmsg[4]
 
-            enc_algo = details.get(u'enc_algo', None)
+            enc_algo = details.get('enc_algo', None)
             if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in INVOCATION".format(enc_algo))
 
-            enc_key = details.get(u'enc_key', None)
+            enc_key = details.get('enc_key', None)
             if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in INVOCATION".format(type(enc_key)))
 
-            enc_serializer = details.get(u'enc_serializer', None)
+            enc_serializer = details.get('enc_serializer', None)
             if enc_serializer and not is_valid_enc_serializer(enc_serializer):
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in INVOCATION".format(enc_serializer))
 
@@ -5356,9 +5356,9 @@ class Invocation(Message):
         procedure = None
         forward_for = None
 
-        if u'timeout' in details:
+        if 'timeout' in details:
 
-            detail_timeout = details[u'timeout']
+            detail_timeout = details['timeout']
             if type(detail_timeout) != int:
                 raise ProtocolError("invalid type {0} for 'timeout' detail in INVOCATION".format(type(detail_timeout)))
 
@@ -5367,48 +5367,48 @@ class Invocation(Message):
 
             timeout = detail_timeout
 
-        if u'receive_progress' in details:
+        if 'receive_progress' in details:
 
-            detail_receive_progress = details[u'receive_progress']
+            detail_receive_progress = details['receive_progress']
             if type(detail_receive_progress) != bool:
                 raise ProtocolError("invalid type {0} for 'receive_progress' detail in INVOCATION".format(type(detail_receive_progress)))
 
             receive_progress = detail_receive_progress
 
-        if u'caller' in details:
+        if 'caller' in details:
 
-            detail_caller = details[u'caller']
+            detail_caller = details['caller']
             if type(detail_caller) != int:
                 raise ProtocolError("invalid type {0} for 'caller' detail in INVOCATION".format(type(detail_caller)))
 
             caller = detail_caller
 
-        if u'caller_authid' in details:
+        if 'caller_authid' in details:
 
-            detail_caller_authid = details[u'caller_authid']
+            detail_caller_authid = details['caller_authid']
             if type(detail_caller_authid) != str:
                 raise ProtocolError("invalid type {0} for 'caller_authid' detail in INVOCATION".format(type(detail_caller_authid)))
 
             caller_authid = detail_caller_authid
 
-        if u'caller_authrole' in details:
+        if 'caller_authrole' in details:
 
-            detail_caller_authrole = details[u'caller_authrole']
+            detail_caller_authrole = details['caller_authrole']
             if type(detail_caller_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'caller_authrole' detail in INVOCATION".format(type(detail_caller_authrole)))
 
             caller_authrole = detail_caller_authrole
 
-        if u'procedure' in details:
+        if 'procedure' in details:
 
-            detail_procedure = details[u'procedure']
+            detail_procedure = details['procedure']
             if type(detail_procedure) != str:
                 raise ProtocolError("invalid type {0} for 'procedure' detail in INVOCATION".format(type(detail_procedure)))
 
             procedure = detail_procedure
 
-        if u'forward_for' in details:
-            forward_for = details[u'forward_for']
+        if 'forward_for' in details:
+            forward_for = details['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -5453,33 +5453,33 @@ class Invocation(Message):
         options = {}
 
         if self.timeout is not None:
-            options[u'timeout'] = self.timeout
+            options['timeout'] = self.timeout
 
         if self.receive_progress is not None:
-            options[u'receive_progress'] = self.receive_progress
+            options['receive_progress'] = self.receive_progress
 
         if self.caller is not None:
-            options[u'caller'] = self.caller
+            options['caller'] = self.caller
 
         if self.caller_authid is not None:
-            options[u'caller_authid'] = self.caller_authid
+            options['caller_authid'] = self.caller_authid
 
         if self.caller_authrole is not None:
-            options[u'caller_authrole'] = self.caller_authrole
+            options['caller_authrole'] = self.caller_authrole
 
         if self.procedure is not None:
-            options[u'procedure'] = self.procedure
+            options['procedure'] = self.procedure
 
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         if self.payload:
             if self.enc_algo is not None:
-                options[u'enc_algo'] = self.enc_algo
+                options['enc_algo'] = self.enc_algo
             if self.enc_key is not None:
-                options[u'enc_key'] = self.enc_key
+                options['enc_key'] = self.enc_key
             if self.enc_serializer is not None:
-                options[u'enc_serializer'] = self.enc_serializer
+                options['enc_serializer'] = self.enc_serializer
             return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.payload]
         else:
             if self.kwargs:
@@ -5510,8 +5510,8 @@ class Interrupt(Message):
     The WAMP message code for this type of message.
     """
 
-    KILL = u'kill'
-    KILLNOWAIT = u'killnowait'
+    KILL = 'kill'
+    KILLNOWAIT = 'killnowait'
 
     __slots__ = (
         'request',
@@ -5588,9 +5588,9 @@ class Interrupt(Message):
         reason = None
         forward_for = None
 
-        if u'mode' in options:
+        if 'mode' in options:
 
-            option_mode = options[u'mode']
+            option_mode = options['mode']
             if type(option_mode) != str:
                 raise ProtocolError("invalid type {0} for 'mode' option in INTERRUPT".format(type(option_mode)))
 
@@ -5599,11 +5599,11 @@ class Interrupt(Message):
 
             mode = option_mode
 
-        if u'reason' in options:
-            reason = check_or_raise_uri(options[u'reason'], u'"reason" in INTERRUPT')
+        if 'reason' in options:
+            reason = check_or_raise_uri(options['reason'], '"reason" in INTERRUPT')
 
-        if u'forward_for' in options:
-            forward_for = options[u'forward_for']
+        if 'forward_for' in options:
+            forward_for = options['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -5634,13 +5634,13 @@ class Interrupt(Message):
         options = {}
 
         if self.mode is not None:
-            options[u'mode'] = self.mode
+            options['mode'] = self.mode
 
         if self.reason is not None:
-            options[u'reason'] = self.reason
+            options['reason'] = self.reason
 
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         return [Interrupt.MESSAGE_TYPE, self.request, options]
 
@@ -5808,15 +5808,15 @@ class Yield(Message):
 
             payload = wmsg[3]
 
-            enc_algo = options.get(u'enc_algo', None)
+            enc_algo = options.get('enc_algo', None)
             if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in YIELD".format(enc_algo))
 
-            enc_key = options.get(u'enc_key', None)
+            enc_key = options.get('enc_key', None)
             if enc_key and type(enc_key) != str:
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in YIELD".format(type(enc_key)))
 
-            enc_serializer = options.get(u'enc_serializer', None)
+            enc_serializer = options.get('enc_serializer', None)
             if enc_serializer and not is_valid_enc_serializer(enc_serializer):
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in YIELD".format(enc_serializer))
 
@@ -5837,40 +5837,40 @@ class Yield(Message):
         callee_authrole = None
         forward_for = None
 
-        if u'progress' in options:
+        if 'progress' in options:
 
-            option_progress = options[u'progress']
+            option_progress = options['progress']
             if type(option_progress) != bool:
                 raise ProtocolError("invalid type {0} for 'progress' option in YIELD".format(type(option_progress)))
 
             progress = option_progress
 
-        if u'callee' in options:
+        if 'callee' in options:
 
-            option_callee = options[u'callee']
+            option_callee = options['callee']
             if type(option_callee) != int:
                 raise ProtocolError("invalid type {0} for 'callee' detail in YIELD".format(type(option_callee)))
 
             callee = option_callee
 
-        if u'callee_authid' in options:
+        if 'callee_authid' in options:
 
-            option_callee_authid = options[u'callee_authid']
+            option_callee_authid = options['callee_authid']
             if type(option_callee_authid) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authid' detail in YIELD".format(type(option_callee_authid)))
 
             callee_authid = option_callee_authid
 
-        if u'callee_authrole' in options:
+        if 'callee_authrole' in options:
 
-            option_callee_authrole = options[u'callee_authrole']
+            option_callee_authrole = options['callee_authrole']
             if type(option_callee_authrole) != str:
                 raise ProtocolError("invalid type {0} for 'callee_authrole' detail in YIELD".format(type(option_callee_authrole)))
 
             callee_authrole = option_callee_authrole
 
-        if u'forward_for' in options:
-            forward_for = options[u'forward_for']
+        if 'forward_for' in options:
+            forward_for = options['forward_for']
             valid = False
             if type(forward_for) == list:
                 for ff in forward_for:
@@ -5912,24 +5912,24 @@ class Yield(Message):
         options = {}
 
         if self.progress is not None:
-            options[u'progress'] = self.progress
+            options['progress'] = self.progress
 
         if self.callee is not None:
-            options[u'callee'] = self.callee
+            options['callee'] = self.callee
         if self.callee_authid is not None:
-            options[u'callee_authid'] = self.callee_authid
+            options['callee_authid'] = self.callee_authid
         if self.callee_authrole is not None:
-            options[u'callee_authrole'] = self.callee_authrole
+            options['callee_authrole'] = self.callee_authrole
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         if self.payload:
             if self.enc_algo is not None:
-                options[u'enc_algo'] = self.enc_algo
+                options['enc_algo'] = self.enc_algo
             if self.enc_key is not None:
-                options[u'enc_key'] = self.enc_key
+                options['enc_key'] = self.enc_key
             if self.enc_serializer is not None:
-                options[u'enc_serializer'] = self.enc_serializer
+                options['enc_serializer'] = self.enc_serializer
             return [Yield.MESSAGE_TYPE, self.request, options, self.payload]
         else:
             if self.kwargs:

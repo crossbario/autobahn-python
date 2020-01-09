@@ -60,7 +60,7 @@ class Component(ApplicationSession):
                 # this also will raise, if x < 0
                 return math.sqrt(x)
 
-        yield self.register(sqrt, u'com.myapp.sqrt')
+        yield self.register(sqrt, 'com.myapp.sqrt')
 
         # raising WAMP application exceptions
         ##
@@ -76,7 +76,7 @@ class Component(ApplicationSession):
                 # forward keyword arguments in exceptions
                 raise ApplicationError("com.myapp.error.invalid_length", min=3, max=10)
 
-        yield self.register(checkname, u'com.myapp.checkname')
+        yield self.register(checkname, 'com.myapp.checkname')
 
         # defining and automapping WAMP application exceptions
         ##
@@ -86,7 +86,7 @@ class Component(ApplicationSession):
             if a < b:
                 raise AppError1(b - a)
 
-        yield self.register(compare, u'com.myapp.compare')
+        yield self.register(compare, 'com.myapp.compare')
 
         print("procedures registered")
 

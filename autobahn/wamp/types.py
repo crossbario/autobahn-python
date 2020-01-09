@@ -191,10 +191,10 @@ class Deny(HelloReturn):
         'message',
     )
 
-    def __init__(self, reason=u'wamp.error.not_authorized', message=None):
+    def __init__(self, reason='wamp.error.not_authorized', message=None):
         """
 
-        :param reason: The reason of denying the authentication (an URI, e.g. ``u'wamp.error.not_authorized'``)
+        :param reason: The reason of denying the authentication (an URI, e.g. ``'wamp.error.not_authorized'``)
         :type reason: str
 
         :param message: A human readable message (for logging purposes).
@@ -386,17 +386,17 @@ class SessionDetails(object):
 
     def marshal(self):
         obj = {
-            u'realm': self.realm,
-            u'session': self.session,
-            u'authid': self.authid,
-            u'authrole': self.authrole,
-            u'authmethod': self.authmethod,
-            u'authprovider': self.authprovider,
-            u'authextra': self.authextra,
-            u'serializer': self.serializer,
-            u'resumed': self.resumed,
-            u'resumable': self.resumable,
-            u'resume_token': self.resume_token
+            'realm': self.realm,
+            'session': self.session,
+            'authid': self.authid,
+            'authrole': self.authrole,
+            'authmethod': self.authmethod,
+            'authprovider': self.authprovider,
+            'authextra': self.authextra,
+            'serializer': self.serializer,
+            'resumed': self.resumed,
+            'resumable': self.resumable,
+            'resume_token': self.resume_token
         }
         return obj
 
@@ -462,9 +462,9 @@ class SessionIdent(object):
 
     def marshal(self):
         obj = {
-            u'session': self.session,
-            u'authid': self.authid,
-            u'authrole': self.authrole,
+            'session': self.session,
+            'authid': self.authid,
+            'authrole': self.authrole,
         }
         return obj
 
@@ -551,8 +551,8 @@ class CloseDetails(object):
 
     def marshal(self):
         obj = {
-            u'reason': self.reason,
-            u'message': self.message
+            'reason': self.reason,
+            'message': self.message
         }
         return obj
 
@@ -598,7 +598,7 @@ class SubscribeOptions(object):
         :param get_retained: Whether the client wants the retained message we may have along with the subscription.
         :type get_retained: bool or None
         """
-        assert(match is None or (type(match) == str and match in [u'exact', u'prefix', u'wildcard']))
+        assert(match is None or (type(match) == str and match in ['exact', 'prefix', 'wildcard']))
         assert(details is None or (type(details) == bool and details_arg is None))
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert(get_retained is None or type(get_retained) is bool)
@@ -635,13 +635,13 @@ class SubscribeOptions(object):
         options = {}
 
         if self.match is not None:
-            options[u'match'] = self.match
+            options['match'] = self.match
 
         if self.get_retained is not None:
-            options[u'get_retained'] = self.get_retained
+            options['get_retained'] = self.get_retained
 
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         return options
 
@@ -698,7 +698,7 @@ class EventDetails(object):
         :type retained: bool or None
 
         :param enc_algo: Payload encryption algorithm that
-            was in use (currently, either ``None`` or ``u'cryptobox'``).
+            was in use (currently, either ``None`` or ``'cryptobox'``).
         :type enc_algo: str or None
 
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
@@ -851,34 +851,34 @@ class PublishOptions(object):
         options = {}
 
         if self.acknowledge is not None:
-            options[u'acknowledge'] = self.acknowledge
+            options['acknowledge'] = self.acknowledge
 
         if self.exclude_me is not None:
-            options[u'exclude_me'] = self.exclude_me
+            options['exclude_me'] = self.exclude_me
 
         if self.exclude is not None:
-            options[u'exclude'] = self.exclude if type(self.exclude) == list else [self.exclude]
+            options['exclude'] = self.exclude if type(self.exclude) == list else [self.exclude]
 
         if self.exclude_authid is not None:
-            options[u'exclude_authid'] = self.exclude_authid if type(self.exclude_authid) == list else [self.exclude_authid]
+            options['exclude_authid'] = self.exclude_authid if type(self.exclude_authid) == list else [self.exclude_authid]
 
         if self.exclude_authrole is not None:
-            options[u'exclude_authrole'] = self.exclude_authrole if type(self.exclude_authrole) == list else [self.exclude_authrole]
+            options['exclude_authrole'] = self.exclude_authrole if type(self.exclude_authrole) == list else [self.exclude_authrole]
 
         if self.eligible is not None:
-            options[u'eligible'] = self.eligible if type(self.eligible) == list else [self.eligible]
+            options['eligible'] = self.eligible if type(self.eligible) == list else [self.eligible]
 
         if self.eligible_authid is not None:
-            options[u'eligible_authid'] = self.eligible_authid if type(self.eligible_authid) == list else [self.eligible_authid]
+            options['eligible_authid'] = self.eligible_authid if type(self.eligible_authid) == list else [self.eligible_authid]
 
         if self.eligible_authrole is not None:
-            options[u'eligible_authrole'] = self.eligible_authrole if type(self.eligible_authrole) == list else [self.eligible_authrole]
+            options['eligible_authrole'] = self.eligible_authrole if type(self.eligible_authrole) == list else [self.eligible_authrole]
 
         if self.retain is not None:
-            options[u'retain'] = self.retain
+            options['retain'] = self.retain
 
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         return options
 
@@ -942,8 +942,8 @@ class RegisterOptions(object):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert(match is None or (type(match) == str and match in [u'exact', u'prefix', u'wildcard']))
-        assert(invoke is None or (type(invoke) == str and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
+        assert(match is None or (type(match) == str and match in ['exact', 'prefix', 'wildcard']))
+        assert(invoke is None or (type(invoke) == str and invoke in ['single', 'first', 'last', 'roundrobin', 'random']))
         assert(concurrency is None or (type(concurrency) == int and concurrency > 0))
         assert(details is None or (type(details) == bool and details_arg is None))
         assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
@@ -982,19 +982,19 @@ class RegisterOptions(object):
         options = {}
 
         if self.match is not None:
-            options[u'match'] = self.match
+            options['match'] = self.match
 
         if self.invoke is not None:
-            options[u'invoke'] = self.invoke
+            options['invoke'] = self.invoke
 
         if self.concurrency is not None:
-            options[u'concurrency'] = self.concurrency
+            options['concurrency'] = self.concurrency
 
         if self.force_reregister is not None:
-            options[u'force_reregister'] = self.force_reregister
+            options['force_reregister'] = self.force_reregister
 
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         return options
 
@@ -1163,22 +1163,22 @@ class CallOptions(object):
         # other attributes are for client-side/client-internal use only
 
         if self.timeout is not None:
-            options[u'timeout'] = self.timeout
+            options['timeout'] = self.timeout
 
         if self.on_progress is not None:
-            options[u'receive_progress'] = True
+            options['receive_progress'] = True
 
         if self.forward_for is not None:
-            options[u'forward_for'] = self.forward_for
+            options['forward_for'] = self.forward_for
 
         if self.caller is not None:
-            options[u'caller'] = self.caller
+            options['caller'] = self.caller
 
         if self.caller_authid is not None:
-            options[u'caller_authid'] = self.caller_authid
+            options['caller_authid'] = self.caller_authid
 
         if self.caller_authrole is not None:
-            options[u'caller_authrole'] = self.caller_authrole
+            options['caller_authrole'] = self.caller_authrole
 
         return options
 

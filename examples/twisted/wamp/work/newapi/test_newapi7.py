@@ -12,14 +12,14 @@ def on_join(session):
 def on_leave(session, details):
     print("Session {} has left: {}".format(session.id, details.reason))
 
-@session.register(u'com.myapp.add2')  # registering in on_join
+@session.register('com.myapp.add2')  # registering in on_join
 def add2(a, b):
     return a + b
 
 @coroutine
 def main(transport):
-    yield session.join(transport, u'myrealm1')
-    result = yield session.call(u'com.myapp.add2', 2, 3)
+    yield session.join(transport, 'myrealm1')
+    result = yield session.call('com.myapp.add2', 2, 3)
     print("Result: {}".format(result))
     yield session.leave()
     yield transport.close()

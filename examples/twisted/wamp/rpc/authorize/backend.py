@@ -46,9 +46,9 @@ class Component(Session):
             print("foo(): {} {}".format(args, kw))
             return None
         reg = yield self.register(
-            foo, u'example.foo',
+            foo, 'example.foo',
             options=RegisterOptions(
-                invoke=u'roundrobin',
+                invoke='roundrobin',
             )
         )
         print("registered example.foo: {}".format(reg))
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     def make(config):
         session = Component(config)
         session.add_authenticator(
-            "wampcra", authid=u'bob', secret=u'p4ssw0rd'
+            "wampcra", authid='bob', secret='p4ssw0rd'
         )
         return session
     runner.run(make)

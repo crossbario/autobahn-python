@@ -55,11 +55,11 @@ class Component(ApplicationSession):
             if isinstance(sub, Failure):
                 print("subscribe failed:", sub.getErrorMessage())
 
-    @wamp.subscribe(u'com.myapp.topic1')
+    @wamp.subscribe('com.myapp.topic1')
     def onEvent1(self, i):
         print("Got event on topic1: {}".format(i))
 
-    @wamp.subscribe(u'com.myapp.topic2')
+    @wamp.subscribe('com.myapp.topic2')
     def onEvent2(self, msg):
         print("Got event on topic2: {}".format(msg))
 

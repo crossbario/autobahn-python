@@ -201,7 +201,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
                             ', '.join([repr(s) for s in valid_serializers]),
                         )
                     )
-        serializer_config = transport.get('serializers', [u'cbor', u'json'])
+        serializer_config = transport.get('serializers', ['cbor', 'json'])
 
     elif kind == 'rawsocket':
         if 'endpoint' not in transport:
@@ -235,7 +235,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
                 raise ValueError("'serializer' must be a string")
             serializer_config = [transport['serializer']]
         else:
-            serializer_config = [u'cbor']
+            serializer_config = ['cbor']
 
     else:
         assert False, 'should not arrive here'
@@ -368,7 +368,7 @@ class Component(ObservableMixin):
 
             @component.subscribe(
                 "some.topic",
-                options=SubscribeOptions(match=u'prefix'),
+                options=SubscribeOptions(match='prefix'),
             )
             def topic(*args, **kw):
                 print("some.topic({}, {}): event received".format(args, kw))
@@ -406,7 +406,7 @@ class Component(ObservableMixin):
             return fn
         return decorator
 
-    def __init__(self, main=None, transports=None, config=None, realm=u'realm1', extra=None,
+    def __init__(self, main=None, transports=None, config=None, realm='realm1', extra=None,
                  authentication=None, session_factory=None, is_fatal=None):
         """
         :param main: After a transport has been connected and a session
@@ -487,7 +487,7 @@ class Component(ObservableMixin):
 
         # use WAMP-over-WebSocket to localhost when no transport is specified at all
         if transports is None:
-            transports = u'ws://127.0.0.1:8080/ws'
+            transports = 'ws://127.0.0.1:8080/ws'
 
         # allows to provide an URL instead of a list of transports
         if isinstance(transports, (str, str)):
@@ -603,8 +603,8 @@ class Component(ObservableMixin):
                 # if txaio.using_asyncio and isinstance(fail.value, asyncio.CancelledError):
                 #     unrecoverable_error = True
 
-                self.log.debug(u'component failed: {error}', error=txaio.failure_message(fail))
-                self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(fail))
+                self.log.debug('component failed: {error}', error=txaio.failure_message(fail))
+                self.log.debug('{tb}', tb=txaio.failure_format_traceback(fail))
                 # If this is a "fatal error" that will never work,
                 # we bail out now
                 if isinstance(fail.value, ApplicationError):
@@ -630,7 +630,7 @@ class Component(ObservableMixin):
                     self.log.error("TLS failure: {reason}", reason=ssl_reason)
                 else:
                     self.log.error(
-                        u'Connection failed: {error}',
+                        'Connection failed: {error}',
                         error=txaio.failure_message(fail),
                     )
 

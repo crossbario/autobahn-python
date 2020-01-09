@@ -33,11 +33,11 @@ from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class MyService1(object):
-    @wamp.register(u'com.mathservice.add2')
+    @wamp.register('com.mathservice.add2')
     def add2(self, x, y):
         return x + y
 
-    @wamp.register(u'com.mathservice.mul2')
+    @wamp.register('com.mathservice.mul2')
     def mul2(self, x, y):
         return x * y
 
@@ -74,11 +74,11 @@ class Component(ApplicationSession):
             else:
                 print("registration ID {}: {}".format(res.id, res.procedure))
 
-    @wamp.register(u'com.mathservice.square2')
+    @wamp.register('com.mathservice.square2')
     def square2(self, x, y):
         return x * x + y * y
 
-    @wamp.register(u'com.mathservice.div2')
+    @wamp.register('com.mathservice.div2')
     def div2(self, x, y):
         if y:
             return float(x) / float(y)

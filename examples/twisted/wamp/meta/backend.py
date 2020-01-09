@@ -44,19 +44,19 @@ class Component(Session):
         while True:
             counter += 1
 
-            pub = yield self.publish(u'event.foo.{}'.format(counter), "some data")
+            pub = yield self.publish('event.foo.{}'.format(counter), "some data")
             print("published {}".format(pub))
             yield sleep(1)
 
-            sub = yield self.subscribe(lambda: None, u'event.sub_{}'.format(counter))
+            sub = yield self.subscribe(lambda: None, 'event.sub_{}'.format(counter))
             print("subscribed {sub.id}".format(sub=sub))
             yield sleep(1)
 
-            reg = yield self.register(lambda: 42, u'event.rpc.test_{}'.format(counter))
+            reg = yield self.register(lambda: 42, 'event.rpc.test_{}'.format(counter))
             print("registered {reg.id}".format(reg=reg))
             yield sleep(1)
 
-            call = yield self.call(u'event.rpc.test_{}'.format(counter))
+            call = yield self.call('event.rpc.test_{}'.format(counter))
             print("called {}".format(call))
             yield sleep(1)
 

@@ -28,7 +28,7 @@ from __future__ import absolute_import
 import os
 
 # we need to select a txaio subsystem because we're importing the base
-# protocol classes here for testing purposes. "normally" you'd import
+# protocol classes here for testing purposes. "normally" yo'd import
 # from autobahn.twisted.wamp or autobahn.asyncio.wamp explicitly.
 import txaio
 if os.environ.get('USE_TWISTED', False):
@@ -61,37 +61,37 @@ class TestPeerExceptions(unittest.TestCase):
         session.define(AppError2)
 
         # map defined errors to user exceptions
-        emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1')
+        emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1')
         exc = session._exception_from_message(emsg)
         self.assertIsInstance(exc, AppError1)
         self.assertEqual(exc.args, ())
 
-        emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error2')
+        emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error2')
         exc = session._exception_from_message(emsg)
         self.assertIsInstance(exc, AppError2)
         self.assertEqual(exc.args, ())
 
         # map undefined error to (generic) exception
-        emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error3')
+        emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error3')
         exc = session._exception_from_message(emsg)
         self.assertIsInstance(exc, exception.ApplicationError)
-        self.assertEqual(exc.error, u'com.myapp.error3')
+        self.assertEqual(exc.error, 'com.myapp.error3')
         self.assertEqual(exc.args, ())
         self.assertEqual(exc.kwargs, {})
 
-        emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error3', args=[1, 2, u'hello'])
+        emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error3', args=[1, 2, 'hello'])
         exc = session._exception_from_message(emsg)
         self.assertIsInstance(exc, exception.ApplicationError)
-        self.assertEqual(exc.error, u'com.myapp.error3')
-        self.assertEqual(exc.args, (1, 2, u'hello'))
+        self.assertEqual(exc.error, 'com.myapp.error3')
+        self.assertEqual(exc.args, (1, 2, 'hello'))
         self.assertEqual(exc.kwargs, {})
 
-        emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error3', args=[1, 2, u'hello'], kwargs={u'foo': 23, u'bar': u'baz'})
+        emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error3', args=[1, 2, 'hello'], kwargs={'foo': 23, 'bar': 'baz'})
         exc = session._exception_from_message(emsg)
         self.assertIsInstance(exc, exception.ApplicationError)
-        self.assertEqual(exc.error, u'com.myapp.error3')
-        self.assertEqual(exc.args, (1, 2, u'hello'))
-        self.assertEqual(exc.kwargs, {u'foo': 23, u'bar': u'baz'})
+        self.assertEqual(exc.error, 'com.myapp.error3')
+        self.assertEqual(exc.args, (1, 2, 'hello'))
+        self.assertEqual(exc.kwargs, {'foo': 23, 'bar': 'baz'})
 
     def test_message_from_exception(self):
         session = protocol.BaseSession()

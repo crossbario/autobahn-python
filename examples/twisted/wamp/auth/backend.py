@@ -50,7 +50,7 @@ if __name__ == '__main__':
     def make(config):
         session = Component(config)
         session.add_authenticator(
-            "wampcra", authid=u'username', secret=u'p4ssw0rd'
+            "wampcra", authid='username', secret='p4ssw0rd'
         )
         return session
     runner.run(make)

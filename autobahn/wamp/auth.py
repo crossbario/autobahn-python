@@ -95,14 +95,14 @@ def create_authenticator(name, **kwargs):
 
 # experimental authentication API
 class AuthAnonymous(object):
-    name = u'anonymous'
+    name = 'anonymous'
 
     def __init__(self, **kw):
         self._args = kw
 
     @property
     def authextra(self):
-        return self._args.get(u'authextra', dict())
+        return self._args.get('authextra', dict())
 
     def on_challenge(self, session, challenge):
         raise RuntimeError(
@@ -117,12 +117,12 @@ IAuthenticator.register(AuthAnonymous)
 
 
 class AuthTicket(object):
-    name = u'ticket'
+    name = 'ticket'
 
     def __init__(self, **kw):
         self._args = kw
         try:
-            self._ticket = self._args.pop(u'ticket')
+            self._ticket = self._args.pop('ticket')
         except KeyError:
             raise ValueError(
                 "ticket authentication requires 'ticket=' kwarg"
@@ -130,7 +130,7 @@ class AuthTicket(object):
 
     @property
     def authextra(self):
-        return self._args.get(u'authextra', dict())
+        return self._args.get('authextra', dict())
 
     def on_challenge(self, session, challenge):
         assert challenge.method == "ticket"
@@ -144,45 +144,45 @@ IAuthenticator.register(AuthTicket)
 
 
 class AuthCryptoSign(object):
-    name = u'cryptosign'
+    name = 'cryptosign'
 
     def __init__(self, **kw):
         # should put in checkconfig or similar
         for key in kw.keys():
-            if key not in [u'authextra', u'authid', u'authrole', u'privkey']:
+            if key not in ['authextra', 'authid', 'authrole', 'privkey']:
                 raise ValueError(
                     "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
                 )
-        for key in [u'privkey', u'authid']:
+        for key in ['privkey', 'authid']:
             if key not in kw:
                 raise ValueError(
                     "Must provide '{}' for cryptosign".format(key)
                 )
         for key in kw.get('authextra', dict()):
-            if key not in [u'pubkey']:
+            if key not in ['pubkey']:
                 raise ValueError(
                     "Unexpected key '{}' in 'authextra'".format(key)
                 )
 
         from autobahn.wamp.cryptosign import SigningKey
         self._privkey = SigningKey.from_key_bytes(
-            binascii.a2b_hex(kw[u'privkey'])
+            binascii.a2b_hex(kw['privkey'])
         )
 
-        if u'pubkey' in kw.get(u'authextra', dict()):
-            pubkey = kw[u'authextra'][u'pubkey']
+        if 'pubkey' in kw.get('authextra', dict()):
+            pubkey = kw['authextra']['pubkey']
             if pubkey != self._privkey.public_key():
                 raise ValueError(
                     "Public key doesn't correspond to private key"
                 )
         else:
-            kw[u'authextra'] = kw.get(u'authextra', dict())
-            kw[u'authextra'][u'pubkey'] = self._privkey.public_key()
+            kw['authextra'] = kw.get('authextra', dict())
+            kw['authextra']['pubkey'] = self._privkey.public_key()
         self._args = kw
 
     @property
     def authextra(self):
-        return self._args.get(u'authextra', dict())
+        return self._args.get('authextra', dict())
 
     def on_challenge(self, session, challenge):
         return self._privkey.sign_challenge(session, challenge)
@@ -230,7 +230,7 @@ class AuthScram(object):
     NOTE: This is a prototype of a draft spec; see
     https://github.com/wamp-proto/wamp-proto/issues/135
     """
-    name = u'scram'
+    name = 'scram'
 
     def __init__(self, **kw):
         if not HAS_ARGON:
@@ -267,14 +267,14 @@ class AuthScram(object):
                     "WAMP-SCRAM challenge has unknown attribute '{}'".format(k)
                 )
 
-        channel_binding = challenge.extra.get(u'channel_binding', u'')
-        server_nonce = challenge.extra[u'nonce']  # base64
-        salt = challenge.extra[u'salt']  # base64
-        iterations = int(challenge.extra[u'iterations'])
-        memory = int(challenge.extra.get(u'memory', -1))
+        channel_binding = challenge.extra.get('channel_binding', '')
+        server_nonce = challenge.extra['nonce']  # base64
+        salt = challenge.extra['salt']  # base64
+        iterations = int(challenge.extra['iterations'])
+        memory = int(challenge.extra.get('memory', -1))
         password = self._args['password'].encode('utf8')  # supplied by user
         authid = saslprep(self._args['authid'])
-        algorithm = challenge.extra[u'kdf']
+        algorithm = challenge.extra['kdf']
         client_nonce = self._client_nonce
 
         self._auth_message = (
@@ -285,13 +285,13 @@ class AuthScram(object):
             )
         ).encode('ascii')
 
-        if algorithm == u'argon2id-13':
+        if algorithm == 'argon2id-13':
             if memory == -1:
                 raise ValueError(
                     "WAMP-SCRAM 'argon2id-13' challenge requires 'memory' parameter"
                 )
             self._salted_password = _hash_argon2id13_secret(password, salt, iterations, memory)
-        elif algorithm == u'pbkdf2':
+        elif algorithm == 'pbkdf2':
             self._salted_password = _hash_pbkdf2_secret(password, salt, iterations)
         else:
             raise RuntimeError(
@@ -330,33 +330,33 @@ IAuthenticator.register(AuthScram)
 
 
 class AuthWampCra(object):
-    name = u'wampcra'
+    name = 'wampcra'
 
     def __init__(self, **kw):
         # should put in checkconfig or similar
         for key in kw.keys():
-            if key not in [u'authextra', u'authid', u'authrole', u'secret']:
+            if key not in ['authextra', 'authid', 'authrole', 'secret']:
                 raise ValueError(
                     "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
                 )
-        for key in [u'secret', u'authid']:
+        for key in ['secret', 'authid']:
             if key not in kw:
                 raise ValueError(
                     "Must provide '{}' for wampcra".format(key)
                 )
 
         self._args = kw
-        self._secret = kw.pop(u'secret')
+        self._secret = kw.pop('secret')
         if not isinstance(self._secret, str):
             self._secret = self._secret.decode('utf8')
 
     @property
     def authextra(self):
-        return self._args.get(u'authextra', dict())
+        return self._args.get('authextra', dict())
 
     def on_challenge(self, session, challenge):
         key = self._secret.encode('utf8')
-        if u'salt' in challenge.extra:
+        if 'salt' in challenge.extra:
             key = derive_key(
                 key,
                 challenge.extra['salt'],
@@ -420,7 +420,7 @@ def compute_totp(secret, offset=0):
     digest = hmac.new(key, msg, hashlib.sha1).digest()
     o = 15 & (digest[19])
     token = (struct.unpack('>I', digest[o:o + 4])[0] & 0x7fffffff) % 1000000
-    return u'{0:06d}'.format(token)
+    return '{0:06d}'.format(token)
 
 
 @public
@@ -465,7 +465,7 @@ def qrcode_from_totp(secret, label, issuer):
     import io
     buffer = io.BytesIO()
 
-    data = pyqrcode.create(u'otpauth://totp/{}?secret={}&issuer={}'.format(label, secret, issuer))
+    data = pyqrcode.create('otpauth://totp/{}?secret={}&issuer={}'.format(label, secret, issuer))
     data.svg(buffer, omithw=True)
 
     return buffer.getvalue()

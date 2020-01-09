@@ -44,7 +44,7 @@ class ClientSession(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
         self.received = 0
-        sub = yield self.subscribe(self.on_event, u'com.myapp.hello')
+        sub = yield self.subscribe(self.on_event, 'com.myapp.hello')
         print("Subscribed to com.myapp.hello with {}".format(sub.id))
 
     def on_event(self, i):
@@ -62,8 +62,8 @@ class ClientSession(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = os.environ.get('CBURL', u'ws://localhost:8080/ws')
-    realm = os.environ.get('CBREALM', u'realm1')
+    url = os.environ.get('CBURL', 'ws://localhost:8080/ws')
+    realm = os.environ.get('CBREALM', 'realm1')
 
     # any extra info we want to forward to our ClientSession (in self.config.extra)
     extra=dict(

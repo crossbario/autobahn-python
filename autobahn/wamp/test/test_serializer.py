@@ -42,47 +42,47 @@ def generate_test_messages():
     This list of WAMP message does not contain any binary app payloads!
     """
     msgs = [
-        message.Hello("realm1", {u'subscriber': role.RoleSubscriberFeatures()}),
+        message.Hello("realm1", {'subscriber': role.RoleSubscriberFeatures()}),
         message.Goodbye(),
         message.Yield(123456),
-        message.Yield(123456, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
-        message.Yield(123456, args=[u'hello']),
+        message.Yield(123456, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
+        message.Yield(123456, args=['hello']),
         message.Yield(123456, progress=True),
         message.Interrupt(123456),
         message.Interrupt(123456, mode=message.Interrupt.KILL),
         message.Invocation(123456, 789123),
-        message.Invocation(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
+        message.Invocation(123456, 789123, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
         message.Invocation(123456, 789123, timeout=10000),
         message.Result(123456),
-        message.Result(123456, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
+        message.Result(123456, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
         message.Result(123456, progress=True),
         message.Cancel(123456),
         message.Cancel(123456, mode=message.Cancel.KILL),
-        message.Call(123456, u'com.myapp.procedure1'),
-        message.Call(123456, u'com.myapp.procedure1', args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
-        message.Call(123456, u'com.myapp.procedure1', timeout=10000),
+        message.Call(123456, 'com.myapp.procedure1'),
+        message.Call(123456, 'com.myapp.procedure1', args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
+        message.Call(123456, 'com.myapp.procedure1', timeout=10000),
         message.Unregistered(123456),
         message.Unregister(123456, 789123),
         message.Registered(123456, 789123),
-        message.Register(123456, u'com.myapp.procedure1'),
-        message.Register(123456, u'com.myapp.procedure1', match=u'prefix'),
-        message.Register(123456, u'com.myapp.procedure1', invoke=u'roundrobin'),
+        message.Register(123456, 'com.myapp.procedure1'),
+        message.Register(123456, 'com.myapp.procedure1', match='prefix'),
+        message.Register(123456, 'com.myapp.procedure1', invoke='roundrobin'),
         message.Event(123456, 789123),
-        message.Event(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
+        message.Event(123456, 789123, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
         message.Event(123456, 789123, publisher=300),
         message.Published(123456, 789123),
-        message.Publish(123456, u'com.myapp.topic1'),
-        message.Publish(123456, u'com.myapp.topic1', args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
-        message.Publish(123456, u'com.myapp.topic1', exclude_me=False, exclude=[300], eligible=[100, 200, 300]),
+        message.Publish(123456, 'com.myapp.topic1'),
+        message.Publish(123456, 'com.myapp.topic1', args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
+        message.Publish(123456, 'com.myapp.topic1', exclude_me=False, exclude=[300], eligible=[100, 200, 300]),
         message.Unsubscribed(123456),
         message.Unsubscribe(123456, 789123),
         message.Subscribed(123456, 789123),
-        message.Subscribe(123456, u'com.myapp.topic1'),
-        message.Subscribe(123456, u'com.myapp.topic1', match=message.Subscribe.MATCH_PREFIX),
-        message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1'),
-        message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1', args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
-        message.Call(123456, u'com.myapp.\u4f60\u597d\u4e16\u754c', args=[1, 2, 3]),
-        message.Result(123456, args=[1, 2, 3], kwargs={u'en': u'Hello World', u'jp': u'\u3053\u3093\u306b\u3061\u306f\u4e16\u754c'})
+        message.Subscribe(123456, 'com.myapp.topic1'),
+        message.Subscribe(123456, 'com.myapp.topic1', match=message.Subscribe.MATCH_PREFIX),
+        message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1'),
+        message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1', args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
+        message.Call(123456, 'com.myapp.\u4f60\u597d\u4e16\u754c', args=[1, 2, 3]),
+        message.Result(123456, args=[1, 2, 3], kwargs={'en': 'Hello World', 'jp': '\u3053\u3093\u306b\u3061\u306f\u4e16\u754c'})
     ]
     return [(False, msg) for msg in msgs]
 
@@ -106,7 +106,7 @@ def generate_test_messages_binary():
                    os.urandom(512),
                    os.urandom(1024)]:
         msgs.append(message.Event(123456, 789123, args=[binary]))
-        msgs.append(message.Event(123456, 789123, args=[binary], kwargs={u'foo': binary}))
+        msgs.append(message.Event(123456, 789123, args=[binary], kwargs={'foo': binary}))
     return [(True, msg) for msg in msgs]
 
 
@@ -140,13 +140,13 @@ class TestFlatBuffersSerializer(unittest.TestCase):
             message.Event(123456,
                           789123,
                           args=[1, 2, 3],
-                          kwargs={u'foo': 23, u'bar': u'hello'},
+                          kwargs={'foo': 23, 'bar': 'hello'},
                           publisher=666,
                           retained=True),
             message.Publish(123456,
                             'com.example.topic1',
                             args=[1, 2, 3],
-                            kwargs={u'foo': 23, u'bar': u'hello'},
+                            kwargs={'foo': 23, 'bar': 'hello'},
                             retain=True)
         ]
 
@@ -183,8 +183,8 @@ class TestSerializer(unittest.TestCase):
         Test deep object equality assert (because I am paranoid).
         """
         v = os.urandom(10)
-        o1 = [1, 2, {u'foo': u'bar', u'bar': v, u'baz': [9, 3, 2], u'goo': {u'moo': [1, 2, 3]}}, v]
-        o2 = [1, 2, {u'goo': {u'moo': [1, 2, 3]}, u'bar': v, u'baz': [9, 3, 2], u'foo': u'bar'}, v]
+        o1 = [1, 2, {'foo': 'bar', 'bar': v, 'baz': [9, 3, 2], 'goo': {'moo': [1, 2, 3]}}, v]
+        o2 = [1, 2, {'goo': {'moo': [1, 2, 3]}, 'bar': v, 'baz': [9, 3, 2], 'foo': 'bar'}, v]
         self.assertEqual(o1, o2)
 
     def test_roundtrip_msg(self):

@@ -40,7 +40,7 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
         try:
-            now = yield self.call(u'com.timeservice.now')
+            now = yield self.call('com.timeservice.now')
         except Exception as e:
             print("Error: {}".format(e))
         else:

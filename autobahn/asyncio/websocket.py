@@ -202,7 +202,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
 
     log = txaio.make_logger()
 
-    def get_channel_id(self, channel_id_type=u'tls-unique'):
+    def get_channel_id(self, channel_id_type='tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
@@ -229,7 +229,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     def startTLS(self):
         raise Exception("WSS over explicit proxies not implemented")
 
-    def get_channel_id(self, channel_id_type=u'tls-unique'):
+    def get_channel_id(self, channel_id_type='tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
@@ -243,7 +243,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         is_secure = self.transport.get_extra_info('peercert', None) is not None
         if is_secure:
             secure_channel_id = {
-                u'tls-unique': transport_channel_id(self.transport, False, 'tls-unique'),
+                'tls-unique': transport_channel_id(self.transport, False, 'tls-unique'),
             }
         else:
             secure_channel_id = {}

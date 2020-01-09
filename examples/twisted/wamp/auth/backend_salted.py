@@ -35,8 +35,8 @@ if False:
     # this is (one way) to get the encoded/salted secret to put in
     # config.json (see examples/router/.crossbar/config.json)
     print("encoded secret:", auth.derive_key(
-        secret=u's33kr1t',
-        salt=u'salt123',
+        secret='s33kr1t',
+        salt='salt123',
         iterations=100,
         keylen=32,
     ).decode('ascii'))
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     def make(config):
         session = Component(config)
         session.add_authenticator(
-            "wampcra", authid=u'salted', secret=u's33kr1t'
+            "wampcra", authid='salted', secret='s33kr1t'
         )
         return session
     runner.run(make)

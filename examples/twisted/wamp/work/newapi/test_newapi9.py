@@ -14,12 +14,12 @@ def add2(a, b):
 @coroutine
 def main(transport):
     # join a realm and try to resume the session
-    details = yield session.join(transport, u'myrealm1', resume=True)
+    details = yield session.join(transport, 'myrealm1', resume=True)
 
     if not details.is_resumed:
         # if the session is fresh, register a procedure ..
 
-        yield session.register(u'com.myapp.add2', add2)
+        yield session.register('com.myapp.add2', add2)
 
         # and leave the realm, freezing the session
         yield session.leave(freeze=True)
@@ -28,7 +28,7 @@ def main(transport):
         # if the session is resumed, our registration will have been
         # reestablished automatically
 
-        result = yield session.call(u'com.myapp.add2', 2, 3)
+        result = yield session.call('com.myapp.add2', 2, 3)
         print("Result: {}", result)
 
         # leave the realm finally

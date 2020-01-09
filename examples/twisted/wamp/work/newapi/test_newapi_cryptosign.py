@@ -9,8 +9,8 @@ privkey_hex = '6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c'
 
 
 component = Component(
-    transports=u'ws://localhost:8080/auth_ws',
-    realm=u'crossbardemo',
+    transports='ws://localhost:8080/auth_ws',
+    realm='crossbardemo',
     authentication={
         "cryptosign": {
             "authid": "alice",

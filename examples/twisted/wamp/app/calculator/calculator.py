@@ -42,13 +42,13 @@ class Calculator(ApplicationSession):
         yield self.register(self)
         print("Ok, calculator procedures registered!")
 
-    @wamp.register(u'com.example.calculator.clear')
+    @wamp.register('com.example.calculator.clear')
     def clear(self, arg=None):
         self.op = None
         self.current = decimal.Decimal(0)
         return str(self.current)
 
-    @wamp.register(u'com.example.calculator.calc')
+    @wamp.register('com.example.calculator.calc')
     def calc(self, op, num):
         num = decimal.Decimal(num)
         if self.op:

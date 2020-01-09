@@ -13,10 +13,10 @@ class MySession(Session):
         def add2(a, b):
             return a + b
 
-        yield self.register(add2, u'com.example.add2')
+        yield self.register(add2, 'com.example.add2')
 
         try:
-            res = yield self.call(u'com.example.add2', 2, 3)
+            res = yield self.call('com.example.add2', 2, 3)
             print("result: {}".format(res))
         except Exception as e:
             print("error: {}".format(e))
@@ -35,7 +35,7 @@ class MySession(Session):
 
 if __name__ == '__main__':
 
-    transports = u'ws://localhost:8080/ws'
+    transports = 'ws://localhost:8080/ws'
 
     connection = Connection(transports=transports)
     connection.session = MySession

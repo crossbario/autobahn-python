@@ -46,7 +46,7 @@ class Component(ApplicationSession):
                 await asyncio.sleep(1 * n)
             return n
 
-        await self.register(longop, u'com.myapp.longop', RegisterOptions(details_arg='details'))
+        await self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg='details'))
 
 
 if __name__ == '__main__':

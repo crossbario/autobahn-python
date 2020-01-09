@@ -18,14 +18,14 @@ def main(reactor, session):
 
     res = yield from session.register(
         lambda: None, "should.work",
-        options=RegisterOptions(match=u'exact'),
+        options=RegisterOptions(match='exact'),
     )
     print("registered 'should.work' with id {}".format(res.id))
 
     try:
         res = yield from session.register(
             lambda: None, "prefix.fail.",
-            options=RegisterOptions(match=u'prefix'),
+            options=RegisterOptions(match='prefix'),
         )
         print("\n\nshould have failed\n\n")
     except ApplicationError as e:

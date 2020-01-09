@@ -44,14 +44,14 @@ class Component(ApplicationSession):
         def square(x):
             return x * x
 
-        yield self.register(square, u'com.math.square')
+        yield self.register(square, 'com.math.square')
 
         @inlineCallbacks
         def slowsquare(x, delay=1):
             yield sleep(delay)
             returnValue(x * x)
 
-        yield self.register(slowsquare, u'com.math.slowsquare')
+        yield self.register(slowsquare, 'com.math.slowsquare')
 
         print("procedures registered")
 
