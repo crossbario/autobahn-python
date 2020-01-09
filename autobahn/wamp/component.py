@@ -25,8 +25,6 @@
 ###############################################################################
 
 
-from __future__ import absolute_import
-
 import itertools
 import random
 from functools import partial

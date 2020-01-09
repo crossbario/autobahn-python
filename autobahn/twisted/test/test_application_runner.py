@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 # t.i.reactor doesn't exist until we've imported it once, but we
 # need it to exist so we can @patch it out in the tests ...
 from twisted.internet import reactor  # noqa

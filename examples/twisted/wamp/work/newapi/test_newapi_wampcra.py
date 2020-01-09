@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from autobahn.twisted.component import Component, run
 from autobahn.wamp import cryptosign
 import binascii

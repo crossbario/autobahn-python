@@ -25,8 +25,6 @@
 ###############################################################################
 
 
-from __future__ import absolute_import
-
 from zope.interface import implementer
 
 from twisted.protocols.policies import ProtocolWrapper

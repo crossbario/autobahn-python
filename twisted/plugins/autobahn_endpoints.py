@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 from zope.interface import implementer
 
 from twisted.plugin import IPlugin

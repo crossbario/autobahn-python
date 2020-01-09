@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 from autobahn import wamp
 from autobahn.wamp.uri import Pattern, RegisterOptions, SubscribeOptions
 

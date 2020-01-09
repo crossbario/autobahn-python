@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import print_function
-
 import asyncio
 from os import environ
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner

@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import unittest
 
 from autobahn.websocket.util import create_url, parse_url

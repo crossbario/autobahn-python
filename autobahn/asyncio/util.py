@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 try:
     from asyncio import sleep  # noqa
 except ImportError:

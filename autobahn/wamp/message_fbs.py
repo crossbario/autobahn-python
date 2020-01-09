@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import flatbuffers
 from autobahn.wamp.gen.wamp.proto import Event as EventGen
 from autobahn.wamp.gen.wamp.proto import Publish as PublishGen

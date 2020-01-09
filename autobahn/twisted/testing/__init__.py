@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 # IHostnameResolver et al. were added in Twisted 17.1.0 .. before
 # that, it was IResolverSimple only.
 

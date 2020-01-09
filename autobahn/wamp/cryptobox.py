@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 
 from autobahn.util import public
 from autobahn.wamp.interfaces import IPayloadCodec

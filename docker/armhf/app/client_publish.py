@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import print_function
-from os import environ
 import os
 import argparse
 from twisted.internet.defer import inlineCallbacks

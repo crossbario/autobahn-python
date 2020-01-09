@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import bz2
 
 from autobahn.websocket.compress_base import PerMessageCompressOffer, \

@@ -24,7 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
 import os
 
 # we need to select a txaio subsystem because we're importing the base
