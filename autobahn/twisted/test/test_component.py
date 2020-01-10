@@ -25,7 +25,7 @@
 ###############################################################################
 
 import os
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 
 if os.environ.get('USE_TWISTED', False):
     from autobahn.twisted.component import Component

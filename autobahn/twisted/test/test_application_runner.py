@@ -27,10 +27,10 @@
 # t.i.reactor doesn't exist until we've imported it once, but we
 # need it to exist so we can @patch it out in the tests ...
 from twisted.internet import reactor  # noqa
+from unittest.mock import patch, Mock
+
 from twisted.internet.defer import inlineCallbacks, succeed
 from twisted.trial import unittest
-
-from mock import patch, Mock
 
 from autobahn.twisted.wamp import ApplicationRunner
 

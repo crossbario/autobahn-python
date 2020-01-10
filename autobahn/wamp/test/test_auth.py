@@ -25,12 +25,12 @@
 ###############################################################################
 
 import unittest
+from unittest.mock import Mock
 import platform
 
 import re
 import json
 import binascii
-from mock import Mock
 
 from autobahn.wamp import auth
 from autobahn.wamp import types

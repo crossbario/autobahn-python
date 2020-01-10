@@ -28,6 +28,7 @@ import os
 import unittest
 from hashlib import sha1
 from base64 import b64encode
+from unittest.mock import Mock
 
 from autobahn.websocket.protocol import WebSocketServerProtocol
 from autobahn.websocket.protocol import WebSocketServerFactory
@@ -38,8 +39,6 @@ from autobahn.websocket.types import ConnectingRequest
 from autobahn.test import FakeTransport
 
 import txaio
-
-from mock import Mock
 
 
 class WebSocketClientProtocolTests(unittest.TestCase):

@@ -3,10 +3,7 @@ import os
 import sys
 
 # because py.test tries to collect it as a test-case
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
+from unittest.mock import Mock
 
 from autobahn.asyncio.websocket import WebSocketServerFactory
 from unittest import TestCase

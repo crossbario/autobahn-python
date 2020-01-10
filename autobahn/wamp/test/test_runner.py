@@ -29,7 +29,7 @@ import unittest
 from txaio.testutil import replace_loop
 
 if os.environ.get('USE_TWISTED', False):
-    from mock import patch
+    from unittest.mock import patch
     from zope.interface import implementer
     from twisted.internet.interfaces import IReactorTime
 
