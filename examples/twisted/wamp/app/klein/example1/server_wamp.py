@@ -29,11 +29,11 @@ from autobahn.twisted.wamp import Application
 app = Application()
 
 
-@app.register(u'com.example.square')
+@app.register('com.example.square')
 def square(x):
     print("square() called with {}".format(x))
     return x * x
 
 
 if __name__ == "__main__":
-    app.run(u"ws://127.0.0.1:9000", u"realm1", standalone=True)
+    app.run("ws://127.0.0.1:9000", "realm1", standalone=True)

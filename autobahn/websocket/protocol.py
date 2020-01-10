@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import binascii
 import hashlib
 import base64
@@ -366,7 +364,7 @@ class WebSocketProtocol(ObservableMixin):
       * :class:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi`
     """
 
-    peer = u'<never connected>'
+    peer = '<never connected>'
 
     SUPPORTED_SPEC_VERSIONS = [10, 11, 12, 13, 14, 15, 16, 17, 18]
     """
@@ -579,12 +577,12 @@ class WebSocketProtocol(ObservableMixin):
                 self.wasMaxMessagePayloadSizeExceeded = True
                 self._max_message_size_exceeded(self.message_data_total_length,
                                                 self.maxMessagePayloadSize,
-                                                u'received WebSocket message size {} exceeds payload limit of {} octets'.format(self.message_data_total_length, self.maxMessagePayloadSize))
+                                                'received WebSocket message size {} exceeds payload limit of {} octets'.format(self.message_data_total_length, self.maxMessagePayloadSize))
             elif 0 < self.maxFramePayloadSize < length:
                 self.wasMaxFramePayloadSizeExceeded = True
                 self._max_message_size_exceeded(length,
                                                 self.maxFramePayloadSize,
-                                                u'received WebSocket frame size {} exceeds payload limit of {} octets'.format(length, self.maxFramePayloadSize))
+                                                'received WebSocket frame size {} exceeds payload limit of {} octets'.format(length, self.maxFramePayloadSize))
 
     def onMessageFrameData(self, payload):
         """
@@ -597,7 +595,7 @@ class WebSocketProtocol(ObservableMixin):
                     self.wasMaxMessagePayloadSizeExceeded = True
                     self._max_message_size_exceeded(self.message_data_total_length,
                                                     self.maxMessagePayloadSize,
-                                                    u'received (partial) WebSocket message size {} (already) exceeds payload limit of {} octets'.format(self.message_data_total_length, self.maxMessagePayloadSize))
+                                                    'received (partial) WebSocket message size {} (already) exceeds payload limit of {} octets'.format(self.message_data_total_length, self.maxMessagePayloadSize))
                 self.message_data.append(payload)
             else:
                 self.frame_data.append(payload)
@@ -701,7 +699,7 @@ class WebSocketProtocol(ObservableMixin):
         # reserved close codes: 0-999, 1004, 1005, 1006, 1011-2999, >= 5000
         #
         if code is not None and (code < 1000 or (1000 <= code <= 2999 and code not in WebSocketProtocol.CLOSE_STATUS_CODES_ALLOWED) or code >= 5000):
-            if self._protocol_violation(u'invalid close code {}'.format(code)):
+            if self._protocol_violation('invalid close code {}'.format(code)):
                 return True
             else:
                 self.remoteCloseCode = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL
@@ -718,7 +716,7 @@ class WebSocketProtocol(ObservableMixin):
 
             # the UTF8 must be valid _and_ end on a Unicode code point
             if not (val[0] and val[1]):
-                if self._invalid_payload(u'invalid close reason (non-UTF8 payload)'):
+                if self._invalid_payload('invalid close reason (non-UTF8 payload)'):
                     return True
             else:
                 self.remoteCloseReason = reasonRaw.decode('utf8')
@@ -792,7 +790,7 @@ class WebSocketProtocol(ObservableMixin):
 
         if self.state != WebSocketProtocol.STATE_CLOSED:
             self.wasClean = False
-            self.wasNotCleanReason = u'WebSocket closing handshake timeout (server did not drop TCP connection in time)'
+            self.wasNotCleanReason = 'WebSocket closing handshake timeout (server did not drop TCP connection in time)'
             self.wasServerConnectionDropTimeout = True
             self.dropConnection(abort=True)
         else:
@@ -808,7 +806,7 @@ class WebSocketProtocol(ObservableMixin):
 
         if self.state in [WebSocketProtocol.STATE_CONNECTING, WebSocketProtocol.STATE_PROXY_CONNECTING]:
             self.wasClean = False
-            self.wasNotCleanReason = u'WebSocket opening handshake timeout (peer did not finish the opening handshake in time)'
+            self.wasNotCleanReason = 'WebSocket opening handshake timeout (peer did not finish the opening handshake in time)'
             self.wasOpenHandshakeTimeout = True
             self.dropConnection(abort=True)
         elif self.state == WebSocketProtocol.STATE_OPEN:
@@ -831,7 +829,7 @@ class WebSocketProtocol(ObservableMixin):
 
         if self.state != WebSocketProtocol.STATE_CLOSED:
             self.wasClean = False
-            self.wasNotCleanReason = u'WebSocket closing handshake timeout (peer did not finish the opening handshake in time)'
+            self.wasNotCleanReason = 'WebSocket closing handshake timeout (peer did not finish the opening handshake in time)'
             self.wasCloseHandshakeTimeout = True
             self.dropConnection(abort=True)
         else:
@@ -843,7 +841,7 @@ class WebSocketProtocol(ObservableMixin):
         did not reply in time to our ping. We drop the connection.
         """
         self.wasClean = False
-        self.wasNotCleanReason = u'WebSocket ping timeout (peer did not respond with pong in time)'
+        self.wasNotCleanReason = 'WebSocket ping timeout (peer did not respond with pong in time)'
         self.autoPingTimeoutCall = None
         self.dropConnection(abort=True)
 
@@ -878,7 +876,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             raise PayloadExceededError(reason)
 
-    def _fail_connection(self, code=CLOSE_STATUS_CODE_GOING_AWAY, reason=u'going away'):
+    def _fail_connection(self, code=CLOSE_STATUS_CODE_GOING_AWAY, reason='going away'):
         """
         Fails the WebSocket connection.
         """
@@ -890,7 +888,7 @@ class WebSocketProtocol(ObservableMixin):
             if self.failByDrop:
                 # brutally drop the TCP connection
                 self.wasClean = False
-                self.wasNotCleanReason = u'I dropped the WebSocket TCP connection: {0}'.format(reason)
+                self.wasNotCleanReason = 'I dropped the WebSocket TCP connection: {0}'.format(reason)
                 self.dropConnection(abort=True)
 
             else:
@@ -1124,7 +1122,7 @@ class WebSocketProtocol(ObservableMixin):
                     if reason_string:
                         self.wasNotCleanReason = reason_string
                     else:
-                        self.wasNotCleanReason = u'peer dropped the TCP connection without previous WebSocket closing handshake'
+                        self.wasNotCleanReason = 'peer dropped the TCP connection without previous WebSocket closing handshake'
                 self._onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
             else:
                 self._onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
@@ -1382,19 +1380,19 @@ class WebSocketProtocol(ObservableMixin):
                     if self._perMessageCompress is not None and frame_rsv == 4:
                         pass
                     else:
-                        if self._protocol_violation(u'RSV = {} and no extension negotiated'.format(frame_rsv)):
+                        if self._protocol_violation('RSV = {} and no extension negotiated'.format(frame_rsv)):
                             return False
 
                 # all client-to-server frames MUST be masked
                 #
                 if self.factory.isServer and self.requireMaskedClientFrames and not frame_masked:
-                    if self._protocol_violation(u'unmasked client-to-server frame'):
+                    if self._protocol_violation('unmasked client-to-server frame'):
                         return False
 
                 # all server-to-client frames MUST NOT be masked
                 #
                 if not self.factory.isServer and not self.acceptMaskedServerFrames and frame_masked:
-                    if self._protocol_violation(u'masked server-to-client frame'):
+                    if self._protocol_violation('masked server-to-client frame'):
                         return False
 
                 # check frame
@@ -1404,32 +1402,32 @@ class WebSocketProtocol(ObservableMixin):
                     # control frames MUST NOT be fragmented
                     #
                     if not frame_fin:
-                        if self._protocol_violation(u'fragmented control frame'):
+                        if self._protocol_violation('fragmented control frame'):
                             return False
 
                     # control frames MUST have payload 125 octets or less
                     #
                     if frame_payload_len1 > 125:
-                        if self._protocol_violation(u'control frame with payload length > 125 octets'):
+                        if self._protocol_violation('control frame with payload length > 125 octets'):
                             return False
 
                     # check for reserved control frame opcodes
                     #
                     if frame_opcode not in [8, 9, 10]:
-                        if self._protocol_violation(u'control frame using reserved opcode {}'.format(frame_opcode)):
+                        if self._protocol_violation('control frame using reserved opcode {}'.format(frame_opcode)):
                             return False
 
                     # close frame : if there is a body, the first two bytes of the body MUST be a 2-byte
                     # unsigned integer (in network byte order) representing a status code
                     #
                     if frame_opcode == 8 and frame_payload_len1 == 1:
-                        if self._protocol_violation(u'received close control frame with payload len 1'):
+                        if self._protocol_violation('received close control frame with payload len 1'):
                             return False
 
                     # control frames MUST NOT be compressed
                     #
                     if self._perMessageCompress is not None and frame_rsv == 4:
-                        if self._protocol_violation(u'received compressed control frame [{}]'.format(self._perMessageCompress.EXTENSION_NAME)):
+                        if self._protocol_violation('received compressed control frame [{}]'.format(self._perMessageCompress.EXTENSION_NAME)):
                             return False
 
                 else:  # data frame
@@ -1437,25 +1435,25 @@ class WebSocketProtocol(ObservableMixin):
                     # check for reserved data frame opcodes
                     #
                     if frame_opcode not in [0, 1, 2]:
-                        if self._protocol_violation(u'data frame using reserved opcode {}'.format(frame_opcode)):
+                        if self._protocol_violation('data frame using reserved opcode {}'.format(frame_opcode)):
                             return False
 
                     # check opcode vs message fragmentation state 1/2
                     #
                     if not self.inside_message and frame_opcode == 0:
-                        if self._protocol_violation(u'received continuation data frame outside fragmented message'):
+                        if self._protocol_violation('received continuation data frame outside fragmented message'):
                             return False
 
                     # check opcode vs message fragmentation state 2/2
                     #
                     if self.inside_message and frame_opcode != 0:
-                        if self._protocol_violation(u'received non-continuation data frame while inside fragmented message'):
+                        if self._protocol_violation('received non-continuation data frame while inside fragmented message'):
                             return False
 
                     # continuation data frames MUST NOT have the compressed bit set
                     #
                     if self._perMessageCompress is not None and frame_rsv == 4 and self.inside_message:
-                        if self._protocol_violation(u'received continuation data frame with compress bit set [{}]'.format(self._perMessageCompress.EXTENSION_NAME)):
+                        if self._protocol_violation('received continuation data frame with compress bit set [{}]'.format(self._perMessageCompress.EXTENSION_NAME)):
                             return False
 
                 # compute complete header length
@@ -1488,16 +1486,16 @@ class WebSocketProtocol(ObservableMixin):
                     if frame_payload_len1 == 126:
                         frame_payload_len = struct.unpack("!H", self.data[i:i + 2])[0]
                         if frame_payload_len < 126:
-                            if self._protocol_violation(u'invalid data frame length (not using minimal length encoding)'):
+                            if self._protocol_violation('invalid data frame length (not using minimal length encoding)'):
                                 return False
                         i += 2
                     elif frame_payload_len1 == 127:
                         frame_payload_len = struct.unpack("!Q", self.data[i:i + 8])[0]
                         if frame_payload_len > 0x7FFFFFFFFFFFFFFF:  # 2**63
-                            if self._protocol_violation(u'invalid data frame length (>2^63)'):
+                            if self._protocol_violation('invalid data frame length (>2^63)'):
                                 return False
                         if frame_payload_len < 65536:
-                            if self._protocol_violation(u'invalid data frame length (not using minimal length encoding)'):
+                            if self._protocol_violation('invalid data frame length (not using minimal length encoding)'):
                                 return False
                         i += 8
                     else:
@@ -1661,7 +1659,7 @@ class WebSocketProtocol(ObservableMixin):
             if self.utf8validateIncomingCurrentMessage:
                 self.utf8validateLast = self.utf8validator.validate(payload)
                 if not self.utf8validateLast[0]:
-                    if self._invalid_payload(u'encountered invalid UTF-8 while processing text message at payload octet index {}'.format(self.utf8validateLast[3])):
+                    if self._invalid_payload('encountered invalid UTF-8 while processing text message at payload octet index {}'.format(self.utf8validateLast[3])):
                         return False
 
             self._onMessageFrameData(payload)
@@ -1693,7 +1691,7 @@ class WebSocketProtocol(ObservableMixin):
                 #
                 if self.utf8validateIncomingCurrentMessage:
                     if not self.utf8validateLast[1]:
-                        if self._invalid_payload(u'UTF-8 text message payload ended within Unicode code point at payload octet index {}'.format(self.utf8validateLast[3])):
+                        if self._invalid_payload('UTF-8 text message payload ended within Unicode code point at payload octet index {}'.format(self.utf8validateLast[3])):
                             return False
 
                 if self.state == WebSocketProtocol.STATE_OPEN:
@@ -2228,7 +2226,7 @@ class WebSocketProtocol(ObservableMixin):
 
         if 0 < self.maxMessagePayloadSize < payload_len:
             self.wasMaxMessagePayloadSizeExceeded = True
-            emsg = u'tried to send WebSocket message with size {} exceeding payload limit of {} octets'.format(payload_len, self.maxMessagePayloadSize)
+            emsg = 'tried to send WebSocket message with size {} exceeding payload limit of {} octets'.format(payload_len, self.maxMessagePayloadSize)
             self.log.warn(emsg)
             raise PayloadExceededError(emsg)
 
@@ -3197,7 +3195,7 @@ class WebSocketServerFactory(WebSocketFactory):
         self.closeHandshakeTimeout = 1
         self.tcpNoDelay = True
         self.serveFlashSocketPolicy = False
-        self.flashSocketPolicy = u'''<cross-domain-policy>
+        self.flashSocketPolicy = '''<cross-domain-policy>
      <allow-access-from domain="*" to-ports="*" />
 </cross-domain-policy>\x00'''
 
@@ -3825,7 +3823,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             except Exception as e:
                 # immediately close the WS connection
                 #
-                self._fail_connection(1000, u'{}'.format(e))
+                self._fail_connection(1000, '{}'.format(e))
             else:
                 # fire handler on derived class
                 #

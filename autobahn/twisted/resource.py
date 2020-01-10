@@ -25,8 +25,6 @@
 ###############################################################################
 
 
-from __future__ import absolute_import
-
 from zope.interface import implementer
 
 from twisted.protocols.policies import ProtocolWrapper
@@ -119,7 +117,7 @@ class WebSocketResource(object):
         # request is over HTTP2. request.channel.getPeer() is valid at
         # this point however
         if request.channel.transport is None:
-            # render an "error, you're doing HTTPS over WSS" webpage
+            # render an "error, yo're doing HTTPS over WSS" webpage
             from autobahn.websocket import protocol
             request.setResponseCode(426, b"Upgrade required")
             # RFC says MUST set upgrade along with 426 code:

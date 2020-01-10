@@ -5,20 +5,20 @@ from twisted.internet.defer import inlineCallbacks
 demo = Component(
     transports=[
         {
-            u"url": u"wss://demo.crossbar.io/ws",
+            "url": "wss://demo.crossbar.io/ws",
         }
     ],
-    realm=u"crossbardemo",
+    realm="crossbardemo",
 )
 
 # 1. subscribe to a topic
-@demo.subscribe(u'io.crossbar.demo.hello')
+@demo.subscribe('io.crossbar.demo.hello')
 def hello(msg):
     print("Got hello: {}".format(msg))
 
 
 # 2. register a procedure for remote calling
-@demo.register(u'io.crossbar.demo.add2')
+@demo.register('io.crossbar.demo.add2')
 def add2(x, y):
     return x + y
 

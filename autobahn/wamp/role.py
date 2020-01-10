@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import json
 
 from autobahn import util
@@ -77,7 +75,7 @@ class RoleBrokerFeatures(RoleFeatures):
     WAMP broker role features.
     """
 
-    ROLE = u'broker'
+    ROLE = 'broker'
 
     def __init__(self,
                  publisher_identification=None,
@@ -116,7 +114,7 @@ class RoleSubscriberFeatures(RoleFeatures):
     WAMP subscriber role features.
     """
 
-    ROLE = u'subscriber'
+    ROLE = 'subscriber'
 
     def __init__(self,
                  publisher_identification=None,
@@ -143,7 +141,7 @@ class RolePublisherFeatures(RoleFeatures):
     WAMP publisher role features.
     """
 
-    ROLE = u'publisher'
+    ROLE = 'publisher'
 
     def __init__(self,
                  publisher_identification=None,
@@ -168,7 +166,7 @@ class RoleDealerFeatures(RoleFeatures):
     WAMP dealer role features.
     """
 
-    ROLE = u'dealer'
+    ROLE = 'dealer'
 
     def __init__(self,
                  caller_identification=None,
@@ -207,7 +205,7 @@ class RoleCallerFeatures(RoleFeatures):
     WAMP caller role features.
     """
 
-    ROLE = u'caller'
+    ROLE = 'caller'
 
     def __init__(self,
                  caller_identification=None,
@@ -232,7 +230,7 @@ class RoleCalleeFeatures(RoleFeatures):
     WAMP callee role features.
     """
 
-    ROLE = u'callee'
+    ROLE = 'callee'
 
     def __init__(self,
                  caller_identification=None,
@@ -261,25 +259,25 @@ class RoleCalleeFeatures(RoleFeatures):
 
 # map of role names to role class
 ROLE_NAME_TO_CLASS = {
-    u'broker': RoleBrokerFeatures,
-    u'subscriber': RoleSubscriberFeatures,
-    u'publisher': RolePublisherFeatures,
-    u'dealer': RoleDealerFeatures,
-    u'caller': RoleCallerFeatures,
-    u'callee': RoleCalleeFeatures,
+    'broker': RoleBrokerFeatures,
+    'subscriber': RoleSubscriberFeatures,
+    'publisher': RolePublisherFeatures,
+    'dealer': RoleDealerFeatures,
+    'caller': RoleCallerFeatures,
+    'callee': RoleCalleeFeatures,
 }
 
 
 # default role features for client roles supported
 DEFAULT_CLIENT_ROLES = {
-    u'subscriber': RoleSubscriberFeatures(
+    'subscriber': RoleSubscriberFeatures(
         publisher_identification=True,
         pattern_based_subscription=True,
         subscription_revocation=True,
         payload_transparency=True,
         payload_encryption_cryptobox=True,
     ),
-    u'publisher': RolePublisherFeatures(
+    'publisher': RolePublisherFeatures(
         publisher_identification=True,
         subscriber_blackwhite_listing=True,
         publisher_exclusion=True,
@@ -287,14 +285,14 @@ DEFAULT_CLIENT_ROLES = {
         x_acknowledged_event_delivery=True,
         payload_encryption_cryptobox=True,
     ),
-    u'caller': RoleCallerFeatures(
+    'caller': RoleCallerFeatures(
         caller_identification=True,
         progressive_call_results=True,
         payload_transparency=True,
         payload_encryption_cryptobox=True,
         call_canceling=True,
     ),
-    u'callee': RoleCalleeFeatures(
+    'callee': RoleCalleeFeatures(
         caller_identification=True,
         pattern_based_registration=True,
         shared_registration=True,

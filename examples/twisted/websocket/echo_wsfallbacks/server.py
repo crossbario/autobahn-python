@@ -51,7 +51,7 @@ if __name__ == '__main__':
     wsPort = 9000
 
     # Our WebSocket server
-    factory = WebSocketServerFactory(u"ws://127.0.0.1:%d" % wsPort)
+    factory = WebSocketServerFactory("ws://127.0.0.1:%d" % wsPort)
     factory.protocol = EchoServerProtocol
     listenWS(factory)
 

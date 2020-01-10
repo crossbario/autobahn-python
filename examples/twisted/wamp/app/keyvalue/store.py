@@ -44,7 +44,7 @@ class KeyValueStore(ApplicationSession):
         yield self.register(self)
         print("Ok, keyvalue-store procedures registered!")
 
-    @wamp.register(u"com.example.keyvalue.set")
+    @wamp.register("com.example.keyvalue.set")
     def set(self, key=None, value=None):
         if key is not None:
             k = str(key)
@@ -57,7 +57,7 @@ class KeyValueStore(ApplicationSession):
             self.store.clear()
         self.store.sync()
 
-    @wamp.register(u"com.example.keyvalue.get")
+    @wamp.register("com.example.keyvalue.get")
     def get(self, key=None):
         if key is None:
             res = {}
@@ -67,7 +67,7 @@ class KeyValueStore(ApplicationSession):
         else:
             return self.store.get(str(key), None)
 
-    @wamp.register(u"com.example.keyvalue.keys")
+    @wamp.register("com.example.keyvalue.keys")
     def keys(self):
         return self.store.keys()
 
@@ -103,9 +103,9 @@ if __name__ == '__main__':
 
     # run WAMP application component
     from autobahn.twisted.wamp import ApplicationRunner
-    router = args.router or u'ws://127.0.0.1:9000'
+    router = args.router or 'ws://127.0.0.1:9000'
 
-    runner = ApplicationRunner(router, u"realm1", standalone=not args.router)
+    runner = ApplicationRunner(router, "realm1", standalone=not args.router)
 
     # start the component and the Twisted reactor ..
     runner.run(KeyValueStore)

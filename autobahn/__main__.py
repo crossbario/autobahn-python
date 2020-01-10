@@ -24,10 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-from __future__ import print_function
-
-
 # this module is available as the 'wamp' command-line tool or as
 # 'python -m autobahn'
 

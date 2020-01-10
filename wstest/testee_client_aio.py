@@ -24,15 +24,11 @@
 #
 ###############################################################################
 
+import asyncio
 import argparse
 
 import txaio
 txaio.use_asyncio()
-
-try:
-    import asyncio
-except ImportError:
-    import trollius as asyncio
 
 import autobahn
 
@@ -92,8 +88,8 @@ class TesteeClientFactory(WebSocketClientFactory):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Autobahn Testee Client (asyncio)')
-    parser.add_argument('--url', dest='url', type=str, default=u'ws://127.0.0.1:9001', help='The WebSocket fuzzing server URL.')
-    parser.add_argument('--loglevel', dest='loglevel', type=str, default=u'info', help='Log level, eg "info" or "debug".')
+    parser.add_argument('--url', dest='url', type=str, default='ws://127.0.0.1:9001', help='The WebSocket fuzzing server URL.')
+    parser.add_argument('--loglevel', dest='loglevel', type=str, default='info', help='Log level, eg "info" or "debug".')
 
     options = parser.parse_args()
 
@@ -105,7 +101,7 @@ if __name__ == '__main__':
 
     loop = asyncio.get_event_loop()
 
-    factory.resource = u'/getCaseCount'
+    factory.resource = '/getCaseCount'
     factory.endCaseId = None
     factory.currentCaseId = 0
     factory.updateReports = True
@@ -119,9 +115,9 @@ if __name__ == '__main__':
 
         factory.currentCaseId += 1
         if factory.currentCaseId <= factory.endCaseId:
-            factory.resource = u"/runCase?case={}&agent={}".format(factory.currentCaseId, factory.agent)
+            factory.resource = "/runCase?case={}&agent={}".format(factory.currentCaseId, factory.agent)
         elif factory.updateReports:
-            factory.resource = u"/updateReports?agent={}".format(factory.agent)
+            factory.resource = "/updateReports?agent={}".format(factory.agent)
             factory.updateReports = False
         else:
             break

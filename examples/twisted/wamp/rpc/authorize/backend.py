@@ -46,9 +46,9 @@ class Component(Session):
             print("foo(): {} {}".format(args, kw))
             return None
         reg = yield self.register(
-            foo, u'example.foo',
+            foo, 'example.foo',
             options=RegisterOptions(
-                invoke=u'roundrobin',
+                invoke='roundrobin',
             )
         )
         print("registered example.foo: {}".format(reg))
@@ -57,9 +57,9 @@ class Component(Session):
             print("bar(): {} {}".format(args, kw))
             return None
         sub = yield self.subscribe(
-            bar, u"example.",
+            bar, "example.",
             options=SubscribeOptions(
-                match=u"prefix",
+                match="prefix",
             )
         )
         print("subscribed: {}".format(sub))
@@ -67,14 +67,14 @@ class Component(Session):
 
 if __name__ == '__main__':
     runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/auth_ws"),
-        u"crossbardemo",
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
+        "crossbardemo",
     )
 
     def make(config):
         session = Component(config)
         session.add_authenticator(
-            u"wampcra", authid=u'bob', secret=u'p4ssw0rd'
+            "wampcra", authid='bob', secret='p4ssw0rd'
         )
         return session
     runner.run(make)

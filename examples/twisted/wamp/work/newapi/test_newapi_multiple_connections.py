@@ -43,8 +43,8 @@ if __name__ == '__main__':
         }
     ]
 
-    component1 = Component(on_join=setup_alice, transports=transports, realm=u'crossbardemo')
-    component2 = Component(main=setup_bob, transports=transports, realm=u'crossbardemo')
+    component1 = Component(on_join=setup_alice, transports=transports, realm='crossbardemo')
+    component2 = Component(main=setup_bob, transports=transports, realm='crossbardemo')
     #run([component1, component2], log_level='debug')
     #run([component1, component2], log_level='info')
     run([component1], log_level='info')

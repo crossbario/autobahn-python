@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
-
 # this is mostly for testing that the examples run without errors
 #
 # To use this script:

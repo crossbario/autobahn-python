@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import, print_function
-
 from mock import Mock
 
 from autobahn.util import wildcards2patterns
@@ -138,7 +136,7 @@ class WebSocketOriginMatching(unittest.TestCase):
     def setUp(self):
         self.factory = WebSocketServerFactory()
         self.factory.setProtocolOptions(
-            allowedOrigins=[u'127.0.0.1:*', u'*.example.com:*']
+            allowedOrigins=['127.0.0.1:*', '*.example.com:*']
         )
         self.proto = WebSocketServerProtocol()
         self.proto.transport = StringTransport()
@@ -178,7 +176,7 @@ class WebSocketOriginMatching(unittest.TestCase):
         # some monkey-business since we already did this in setUp, but
         # we want a different set of matching origins
         self.factory.setProtocolOptions(
-            allowedOrigins=[u'http://*.example.com:*']
+            allowedOrigins=['http://*.example.com:*']
         )
         self.proto.allowedOriginsPatterns = self.factory.allowedOriginsPatterns
         self.proto.allowedOrigins = self.factory.allowedOrigins

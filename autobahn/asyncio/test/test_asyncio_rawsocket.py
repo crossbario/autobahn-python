@@ -19,7 +19,7 @@ class Test(TestCase):
     def test_sers(self):
         serializers = get_serializers()
         self.assertTrue(len(serializers) > 0)
-        m = serializers[0]().serialize(message.Abort(u'close'))
+        m = serializers[0]().serialize(message.Abort('close'))
         print(m)
         self.assertTrue(m)
 
@@ -187,7 +187,7 @@ class Test(TestCase):
         s = proto._serializer.RAWSOCKET_SERIALIZER_ID
         proto.data_received(bytes(bytearray([0x7F, 0xF0 | s, 0, 0])))
         client.onOpen.assert_called_once_with(proto)
-        proto.send(message.Abort(u'close'))
+        proto.send(message.Abort('close'))
         for d in messages[1:]:
             proto.data_received(d)
         self.assertTrue(client.onMessage.called)
@@ -210,7 +210,7 @@ class Test(TestCase):
         proto.data_received(bytes(bytearray([0x7F, 0xF0 | s, 0, 0])))
         self.assertTrue(proto._serializer)
         server.onOpen.assert_called_once_with(proto)
-        proto.send(message.Abort(u'close'))
+        proto.send(message.Abort('close'))
         for d in messages[1:]:
             proto.data_received(d)
         self.assertTrue(server.onMessage.called)

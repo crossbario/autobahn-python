@@ -3,8 +3,8 @@ from autobahn.twisted.util import sleep
 from twisted.internet.defer import inlineCallbacks
 import os
 
-url = os.environ.get('CBURL', u'ws://localhost:8080/ws')
-realmvalue = os.environ.get('CBREALM', u'realm1')
+url = os.environ.get('CBURL', 'ws://localhost:8080/ws')
+realmvalue = os.environ.get('CBREALM', 'realm1')
 component = Component(transports=url, realm=realmvalue)
 
 
@@ -17,7 +17,7 @@ def joined(session, details):
         print("event received: {0}", count)
 
     try:
-        yield session.subscribe(oncounter, u'com.myapp.hello')
+        yield session.subscribe(oncounter, 'com.myapp.hello')
         print("subscribed to topic")
     except Exception as e:
         print("could not subscribe to topic: {0}".format(e))

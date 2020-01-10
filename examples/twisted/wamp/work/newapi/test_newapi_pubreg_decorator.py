@@ -1,5 +1,3 @@
-from __future__ import print_function
-import os
 import txaio
 
 from twisted.internet.defer import inlineCallbacks
@@ -17,27 +15,27 @@ from autobahn.wamp.types import RegisterOptions, CallOptions
 
 
 component = Component(
-    transports=u'ws://localhost:8080/ws',
-    realm=u'crossbardemo',
+    transports='ws://localhost:8080/ws',
+    realm='crossbardemo',
 )
 
 # @component.subscribe(
-#     u"com.example.",
-#     options=SubscribeOptions(match=u"prefix"),
+#     "com.example.",
+#     options=SubscribeOptions(match="prefix"),
 # )
 # def catch_all(*args, **kw):
 #     print("catch_all({}, {})".format(args, kw))
 
 @component.subscribe(
-    u"com.example.",
-    options=SubscribeOptions(match=u"prefix", details_arg='details'),
+    "com.example.",
+    options=SubscribeOptions(match="prefix", details_arg='details'),
 )
 def an_event(details=None):
     print("topic '{}'".format(details.topic))
 
 
 @component.register(
-    u"com.example.progressive",
+    "com.example.progressive",
     options=RegisterOptions(details_arg='details'),
 )
 @inlineCallbacks
@@ -73,10 +71,10 @@ def join(session, details):
             options=CallOptions(on_progress=on_progress)
         )
 
-    reactor.callLater(1, pub, u'com.example.foo')
-    reactor.callLater(2, pub, u'com.non_matching')
-    reactor.callLater(3, pub, u'com.example.some.other.uri')
-    reactor.callLater(4, call_progress, u'com.example.progressive')
+    reactor.callLater(1, pub, 'com.example.foo')
+    reactor.callLater(2, pub, 'com.non_matching')
+    reactor.callLater(3, pub, 'com.example.some.other.uri')
+    reactor.callLater(4, call_progress, 'com.example.progressive')
     reactor.callLater(7, session.leave)
 
 @component.on_leave

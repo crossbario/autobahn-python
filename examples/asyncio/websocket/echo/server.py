@@ -24,6 +24,8 @@
 #
 ###############################################################################
 
+import asyncio
+
 from autobahn.asyncio.websocket import WebSocketServerProtocol, \
     WebSocketServerFactory
 
@@ -50,9 +52,7 @@ class MyServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == '__main__':
-    import asyncio
-
-    factory = WebSocketServerFactory(u"ws://127.0.0.1:9000")
+    factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = MyServerProtocol
 
     loop = asyncio.get_event_loop()

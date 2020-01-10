@@ -30,7 +30,7 @@ class TestAgent(unittest.TestCase):
                 self.sendMessage(msg)
 
         agent = create_memory_agent(self.reactor, self.pumper, EchoServer)
-        proto = yield agent.open(u"ws://localhost:1234/ws", dict())
+        proto = yield agent.open("ws://localhost:1234/ws", dict())
 
         messages = []
 
@@ -57,7 +57,7 @@ class TestAgent(unittest.TestCase):
                 self.sendMessage(msg)
 
         agent = create_memory_agent(self.reactor, self.pumper, EchoServer)
-        proto = yield agent.open(u"wss://localhost:1234/ws", dict())
+        proto = yield agent.open("wss://localhost:1234/ws", dict())
 
         messages = []
 

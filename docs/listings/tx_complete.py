@@ -12,30 +12,30 @@ component = Component(
     # transports which both exist in the demo router
     transports=[
         {
-            u"type": u"websocket",
-            u"url": u"ws://localhost:8080/auth_ws",
-            u"endpoint": {
-                u"type": u"tcp",
-                u"host": u"localhost",
-                u"port": 8080,
+            "type": "websocket",
+            "url": "ws://localhost:8080/auth_ws",
+            "endpoint": {
+                "type": "tcp",
+                "host": "localhost",
+                "port": 8080,
             },
             # you can set various websocket options here if you want
-            u"options": {
-                u"open_handshake_timeout": 100,
+            "options": {
+                "open_handshake_timeout": 100,
             }
         },
     ],
     # authentication can also be configured (this will only work on
     # the demo router on the first transport above)
     authentication={
-        u"cryptosign": {
-            u'authid': u'alice',
+        "cryptosign": {
+            'authid': 'alice',
             # this key should be loaded from disk, database etc never burned into code like this...
-            u'privkey': '6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c',
+            'privkey': '6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c',
         }
     },
     # must provide a realm
-    realm=u"crossbardemo",
+    realm="crossbardemo",
 )
 
 
@@ -45,13 +45,13 @@ def join(session, details):
     print("joined {}: {}".format(session, details))
     yield sleep(1)
     print("Calling 'com.example'")
-    res = yield session.call(u"example.foo", 42, something="nothing")
+    res = yield session.call("example.foo", 42, something="nothing")
     print("Result: {}".format(res))
     yield session.leave()
 
 
 @component.register(
-    u"example.foo",
+    "example.foo",
     options=RegisterOptions(details_arg='details'),
 )
 @inlineCallbacks

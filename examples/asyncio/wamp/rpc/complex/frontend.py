@@ -38,10 +38,10 @@ class Component(ApplicationSession):
 
     async def onJoin(self, details):
 
-        res = await self.call(u'com.myapp.add_complex', 2, 3, 4, 5)
+        res = await self.call('com.myapp.add_complex', 2, 3, 4, 5)
         print("Result: {} + {}i".format(res.kwresults['c'], res.kwresults['ci']))
 
-        res = await self.call(u'com.myapp.split_name', 'Homer Simpson')
+        res = await self.call('com.myapp.split_name', 'Homer Simpson')
         print("Forname: {}, Surname: {}".format(res.results[0], res.results[1]))
 
         self.leave()
@@ -51,7 +51,7 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)
     runner.run(Component)

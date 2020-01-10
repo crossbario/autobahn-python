@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 try:
     from mnemonic import Mnemonic
     from autobahn.xbr._mnemonic import mnemonic_to_private_key

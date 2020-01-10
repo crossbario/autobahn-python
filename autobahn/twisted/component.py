@@ -25,8 +25,6 @@
 ###############################################################################
 
 
-from __future__ import absolute_import, print_function
-
 from functools import wraps
 
 from twisted.internet.interfaces import IStreamClientEndpoint
@@ -76,7 +74,7 @@ def _create_transport_factory(reactor, transport, session_factory):
     """
     Create a WAMP-over-XXX transport factory.
     """
-    if transport.type == u'websocket':
+    if transport.type == 'websocket':
         serializers = create_transport_serializers(transport)
         factory = WampWebSocketClientFactory(
             session_factory,
@@ -85,7 +83,7 @@ def _create_transport_factory(reactor, transport, session_factory):
             proxy=transport.proxy,  # either None or a dict with host, port
         )
 
-    elif transport.type == u'rawsocket':
+    elif transport.type == 'rawsocket':
         serializer = create_transport_serializer(transport.serializers[0])
         factory = WampRawSocketClientFactory(session_factory, serializer=serializer)
 
@@ -119,25 +117,25 @@ def _create_transport_endpoint(reactor, endpoint_config):
         endpoint = IStreamClientEndpoint(endpoint_config)
     else:
         # create a connecting TCP socket
-        if endpoint_config[u'type'] == u'tcp':
+        if endpoint_config['type'] == 'tcp':
 
-            version = endpoint_config.get(u'version', 4)
+            version = endpoint_config.get('version', 4)
             if version not in [4, 6]:
                 raise ValueError('invalid IP version {} in client endpoint configuration'.format(version))
 
-            host = endpoint_config[u'host']
+            host = endpoint_config['host']
             if type(host) != str:
                 raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
 
-            port = endpoint_config[u'port']
+            port = endpoint_config['port']
             if type(port) != int:
                 raise ValueError('invalid type {} for port in client endpoint configuration'.format(type(port)))
 
-            timeout = endpoint_config.get(u'timeout', 10)  # in seconds
+            timeout = endpoint_config.get('timeout', 10)  # in seconds
             if type(timeout) != int:
                 raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
 
-            tls = endpoint_config.get(u'tls', None)
+            tls = endpoint_config.get('tls', None)
 
             # create a TLS enabled connecting TCP socket
             if tls:
@@ -151,13 +149,13 @@ def _create_transport_endpoint(reactor, endpoint_config):
 
                 elif isinstance(tls, dict):
                     for k in tls.keys():
-                        if k not in [u"hostname", u"trust_root"]:
+                        if k not in ["hostname", "trust_root"]:
                             raise ValueError("Invalid key '{}' in 'tls' config".format(k))
-                    hostname = tls.get(u'hostname', host)
+                    hostname = tls.get('hostname', host)
                     if type(hostname) != str:
                         raise ValueError('invalid type {} for hostname in TLS client endpoint configuration'.format(hostname))
                     trust_root = None
-                    cert_fname = tls.get(u"trust_root", None)
+                    cert_fname = tls.get("trust_root", None)
                     if cert_fname is not None:
                         trust_root = Certificate.loadPEM(open(cert_fname, 'r').read())
                     context = optionsForClientTLS(hostname, trustRoot=trust_root)
@@ -205,9 +203,9 @@ def _create_transport_endpoint(reactor, endpoint_config):
                     assert(False), 'should not arrive here'
 
         # create a connecting Unix domain socket
-        elif endpoint_config[u'type'] == u'unix':
-            path = endpoint_config[u'path']
-            timeout = int(endpoint_config.get(u'timeout', 10))  # in seconds
+        elif endpoint_config['type'] == 'unix':
+            path = endpoint_config['path']
+            timeout = int(endpoint_config.get('timeout', 10))  # in seconds
             endpoint = UNIXClientEndpoint(reactor, path, timeout=timeout)
 
         else:
@@ -248,8 +246,8 @@ class Component(component.Component):
         if IStreamClientEndpoint.providedBy(endpoint):
             pass
         elif isinstance(endpoint, dict):
-            if u'tls' in endpoint:
-                tls = endpoint[u'tls']
+            if 'tls' in endpoint:
+                tls = endpoint['tls']
                 if isinstance(tls, (dict, bool)):
                     pass
                 elif IOpenSSLClientConnectionCreator.providedBy(tls):

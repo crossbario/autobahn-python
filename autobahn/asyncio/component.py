@@ -24,19 +24,10 @@
 #
 ###############################################################################
 
-
-from __future__ import absolute_import, print_function
-
-import ssl  # XXX what Python version is this always available at?
+import asyncio
+import ssl
 import signal
 from functools import wraps
-
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed to asyncio
-    # noinspection PyUnresolvedReferences
-    import trollius as asyncio
 
 import txaio
 txaio.use_asyncio()  # noqa
@@ -71,7 +62,7 @@ def _create_transport_factory(loop, transport, session_factory):
     """
     Create a WAMP-over-XXX transport factory.
     """
-    if transport.type == u'websocket':
+    if transport.type == 'websocket':
         serializers = create_transport_serializers(transport)
         factory = WampWebSocketClientFactory(
             session_factory,
@@ -80,7 +71,7 @@ def _create_transport_factory(loop, transport, session_factory):
             proxy=transport.proxy,  # either None or a dict with host, port
         )
 
-    elif transport.type == u'rawsocket':
+    elif transport.type == 'rawsocket':
         serializer = create_transport_serializer(transport.serializers[0])
         factory = WampRawSocketClientFactory(session_factory, serializer=serializer)
 
@@ -130,8 +121,8 @@ class Component(component.Component):
 
     def _check_native_endpoint(self, endpoint):
         if isinstance(endpoint, dict):
-            if u'tls' in endpoint:
-                tls = endpoint[u'tls']
+            if 'tls' in endpoint:
+                tls = endpoint['tls']
                 if isinstance(tls, (dict, bool)):
                     pass
                 elif isinstance(tls, ssl.SSLContext):
@@ -158,7 +149,7 @@ class Component(component.Component):
         # own method (or three!)...
 
         if transport.proxy:
-            timeout = transport.endpoint.get(u'timeout', 10)  # in seconds
+            timeout = transport.endpoint.get('timeout', 10)  # in seconds
             if type(timeout) != int:
                 raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
             # do we support HTTPS proxies?
@@ -171,37 +162,37 @@ class Component(component.Component):
             time_f = asyncio.ensure_future(asyncio.wait_for(f, timeout=timeout))
             return self._wrap_connection_future(transport, done, time_f)
 
-        elif transport.endpoint[u'type'] == u'tcp':
+        elif transport.endpoint['type'] == 'tcp':
 
-            version = transport.endpoint.get(u'version', 4)
+            version = transport.endpoint.get('version', 4)
             if version not in [4, 6]:
                 raise ValueError('invalid IP version {} in client endpoint configuration'.format(version))
 
-            host = transport.endpoint[u'host']
+            host = transport.endpoint['host']
             if type(host) != str:
                 raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
 
-            port = transport.endpoint[u'port']
+            port = transport.endpoint['port']
             if type(port) != int:
                 raise ValueError('invalid type {} for port in client endpoint configuration'.format(type(port)))
 
-            timeout = transport.endpoint.get(u'timeout', 10)  # in seconds
+            timeout = transport.endpoint.get('timeout', 10)  # in seconds
             if type(timeout) != int:
                 raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
 
-            tls = transport.endpoint.get(u'tls', None)
+            tls = transport.endpoint.get('tls', None)
             tls_hostname = None
 
             # create a TLS enabled connecting TCP socket
             if tls:
                 if isinstance(tls, dict):
                     for k in tls.keys():
-                        if k not in [u"hostname", u"trust_root"]:
+                        if k not in ["hostname", "trust_root"]:
                             raise ValueError("Invalid key '{}' in 'tls' config".format(k))
-                    hostname = tls.get(u'hostname', host)
+                    hostname = tls.get('hostname', host)
                     if type(hostname) != str:
                         raise ValueError('invalid type {} for hostname in TLS client endpoint configuration'.format(hostname))
-                    cert_fname = tls.get(u'trust_root', None)
+                    cert_fname = tls.get('trust_root', None)
 
                     tls_hostname = hostname
                     tls = True
@@ -232,9 +223,9 @@ class Component(component.Component):
             time_f = asyncio.ensure_future(asyncio.wait_for(f, timeout=timeout))
             return self._wrap_connection_future(transport, done, time_f)
 
-        elif transport.endpoint[u'type'] == u'unix':
-            path = transport.endpoint[u'path']
-            timeout = int(transport.endpoint.get(u'timeout', 10))  # in seconds
+        elif transport.endpoint['type'] == 'unix':
+            path = transport.endpoint['path']
+            timeout = int(transport.endpoint.get('timeout', 10))  # in seconds
 
             f = loop.create_unix_connection(
                 protocol_factory=factory,

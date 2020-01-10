@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import print_function
-
 import random
 from os import environ
 
@@ -48,11 +46,11 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             print("publish: com.myapp.heartbeat")
-            self.publish(u'com.myapp.heartbeat')
+            self.publish('com.myapp.heartbeat')
 
             obj = {'counter': counter, 'foo': [1, 2, 3]}
             print("publish: com.myapp.topic2", obj)
-            self.publish(u'com.myapp.topic2', random.randint(0, 100), 23,
+            self.publish('com.myapp.topic2', random.randint(0, 100), 23,
                          c="Hello", d=obj)
 
             counter += 1
@@ -60,7 +58,7 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)
     runner.run(Component)

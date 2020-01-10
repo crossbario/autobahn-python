@@ -24,24 +24,19 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import os
 import sys
 import platform
 from setuptools import setup
 from setuptools.command.test import test as test_command
 
-# remember if we already had six _before_ installation
 try:
-    import six  # noqa
+    import six
     _HAD_SIX = True
 except ImportError:
     _HAD_SIX = False
 
 CPY = platform.python_implementation() == 'CPython'
-PY3 = sys.version_info >= (3,)
-PY33 = (3, 3) <= sys.version_info < (3, 4)
 
 # read version string
 with open('autobahn/_version.py') as f:
@@ -57,23 +52,6 @@ extras_require_twisted = [
     "zope.interface>=3.6.0",        # Zope Public License
     "Twisted >= 12.1.0"             # MIT license
 ]
-
-# asyncio dependencies
-if PY3:
-    if PY33:
-        # "Tulip"
-        extras_require_asyncio = [
-            "asyncio>=3.4.3"        # Apache 2.0
-        ]
-    else:
-        # Python 3.4+ has asyncio builtin
-        extras_require_asyncio = []
-else:
-    # backport of asyncio for Python 2
-    extras_require_asyncio = [
-        "trollius>=2.0",            # Apache 2.0
-        "futures>=3.0.4"            # BSD license
-    ]
 
 # C-based WebSocket acceleration (only use on CPython, not PyPy!)
 if CPY and sys.platform != 'win32':
@@ -163,16 +141,9 @@ extras_require_xbr = [
 ]
 
 # everything
-if PY3:
-    extras_require_all = extras_require_twisted + extras_require_asyncio + \
-        extras_require_accelerate + extras_require_compress + \
-        extras_require_serialization + extras_require_encryption + \
-        extras_require_scram + extras_require_nvx + extras_require_xbr
-else:
-    extras_require_all = extras_require_twisted + extras_require_asyncio + \
-        extras_require_accelerate + extras_require_compress + \
-        extras_require_serialization + extras_require_encryption + \
-        extras_require_scram + extras_require_nvx
+extras_require_all = extras_require_twisted + extras_require_accelerate + extras_require_compress + \
+                     extras_require_serialization + extras_require_encryption + extras_require_scram + \
+                     extras_require_nvx + extras_require_xbr
 
 # development dependencies
 extras_require_dev = [
@@ -199,13 +170,12 @@ extras_require_dev = [
     'wheel',                            # MIT license
 ]
 
-if PY3:
-    extras_require_dev.extend([
-        # pytest-asyncio 0.6 has dropped support for Py <3.5
-        # https://github.com/pytest-dev/pytest-asyncio/issues/57
-        'pytest_asyncio<0.6',               # Apache 2.0
-        'pytest-aiohttp',                   # Apache 2.0
-    ])
+extras_require_dev.extend([
+    # pytest-asyncio 0.6 has dropped support for Py <3.5
+    # https://github.com/pytest-dev/pytest-asyncio/issues/57
+    'pytest_asyncio<0.6',  # Apache 2.0
+    'pytest-aiohttp',  # Apache 2.0
+])
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
 test_requirements = [
@@ -251,7 +221,7 @@ setup(
     ],
     extras_require={
         'all': extras_require_all,
-        'asyncio': extras_require_asyncio,
+        'asyncio': [], # backwards compatibility
         'twisted': extras_require_twisted,
         'accelerate': extras_require_accelerate,
         'compress': extras_require_compress,
@@ -308,13 +278,11 @@ setup(
                  "Intended Audience :: Developers",
                  "Operating System :: OS Independent",
                  "Programming Language :: Python",
-                 "Programming Language :: Python :: 2",
-                 "Programming Language :: Python :: 2.7",
                  "Programming Language :: Python :: 3",
-                 "Programming Language :: Python :: 3.4",
                  "Programming Language :: Python :: 3.5",
                  "Programming Language :: Python :: 3.6",
                  "Programming Language :: Python :: 3.7",
+                 "Programming Language :: Python :: 3.8",
                  "Programming Language :: Python :: Implementation :: CPython",
                  "Programming Language :: Python :: Implementation :: PyPy",
                  "Programming Language :: Python :: Implementation :: Jython",

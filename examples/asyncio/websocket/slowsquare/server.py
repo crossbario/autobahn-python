@@ -24,10 +24,11 @@
 #
 ###############################################################################
 
-from autobahn.asyncio.websocket import WebSocketServerProtocol, \
-    WebSocketServerFactory
 import asyncio
 import json
+
+from autobahn.asyncio.websocket import WebSocketServerProtocol, \
+    WebSocketServerFactory
 
 
 class SlowSquareServerProtocol(WebSocketServerProtocol):
@@ -52,7 +53,7 @@ class SlowSquareServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-    factory = WebSocketServerFactory(u"ws://127.0.0.1:9000")
+    factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = SlowSquareServerProtocol
 
     loop = asyncio.get_event_loop()

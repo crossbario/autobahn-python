@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import print_function
-
 from os import environ
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
@@ -54,7 +52,7 @@ class Component(ApplicationSession):
             if self.received > 5:
                 self.leave()
 
-        yield self.subscribe(on_event, u'com.myapp.topic1',
+        yield self.subscribe(on_event, 'com.myapp.topic1',
                              options=SubscribeOptions(details_arg='details'))
 
     def onDisconnect(self):
@@ -63,7 +61,7 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)
     runner.run(Component)

@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 try:
     from asyncio import sleep  # noqa
 except ImportError:
@@ -52,7 +50,7 @@ def transport_channel_id(transport, is_server, channel_id_type):
     received on one TLS channel cannot be forwarded on another.
 
     """
-    if channel_id_type not in [u'tls-unique']:
+    if channel_id_type not in ['tls-unique']:
         raise Exception("invalid channel ID type {}".format(channel_id_type))
 
     ssl_obj = transport.get_extra_info('ssl_object')
@@ -67,11 +65,11 @@ def transport_channel_id(transport, is_server, channel_id_type):
 def peer2str(peer):
     if isinstance(peer, tuple):
         ip_ver = 4 if len(peer) == 2 else 6
-        return u"tcp{2}:{0}:{1}".format(peer[0], peer[1], ip_ver)
+        return "tcp{2}:{0}:{1}".format(peer[0], peer[1], ip_ver)
     elif isinstance(peer, str):
-        return u"unix:{0}".format(peer)
+        return "unix:{0}".format(peer)
     else:
-        return u"?:{0}".format(peer)
+        return "?:{0}".format(peer)
 
 
 def get_serializers():

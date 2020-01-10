@@ -9,7 +9,7 @@ from twisted.internet.defer import inlineCallbacks, CancelledError
 @inlineCallbacks
 def main(reactor, session):
     print("Client session={}".format(session))
-    d = session.call(u"example.foo", "some", "args")
+    d = session.call("example.foo", "some", "args")
     print("Called 'example.foo': {}".format(d))
     print("cancel()-ing the above Deferred")
 
@@ -24,9 +24,9 @@ def main(reactor, session):
 
 
 component = Component(
-    transports=u"ws://localhost:8080/auth_ws",
+    transports="ws://localhost:8080/auth_ws",
     main=main,
-    realm=u"crossbardemo",
+    realm="crossbardemo",
 )
 
 

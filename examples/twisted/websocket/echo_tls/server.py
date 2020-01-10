@@ -52,7 +52,7 @@ if __name__ == '__main__':
     contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
                                                       'keys/server.crt')
 
-    factory = WebSocketServerFactory(u"wss://127.0.0.1:9000")
+    factory = WebSocketServerFactory("wss://127.0.0.1:9000")
     # by default, allowedOrigins is "*" and will work fine out of the
     # box, but we can do better and be more-explicit about what we
     # allow. We are serving the Web content on 8080, but our WebSocket

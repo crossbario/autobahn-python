@@ -24,13 +24,10 @@
 #
 ###############################################################################
 
+import asyncio
+
 from autobahn.asyncio.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory
-
-try:
-    import asyncio
-except ImportError:
-    import trollius as asyncio
 
 
 class MyClientProtocol(WebSocketClientProtocol):
@@ -43,7 +40,7 @@ class MyClientProtocol(WebSocketClientProtocol):
 
         # start sending messages every second ..
         while True:
-            self.sendMessage(u"Hello, world!".encode('utf8'))
+            self.sendMessage("Hello, world!".encode('utf8'))
             self.sendMessage(b"\x00\x01\x03\x04", isBinary=True)
             await asyncio.sleep(1)
 
@@ -59,7 +56,7 @@ class MyClientProtocol(WebSocketClientProtocol):
 
 if __name__ == '__main__':
 
-    factory = WebSocketClientFactory(u"ws://127.0.0.1:9000")
+    factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = MyClientProtocol
 
     loop = asyncio.get_event_loop()

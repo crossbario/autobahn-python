@@ -24,16 +24,8 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
+import asyncio
 import signal
-
-
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed to asyncio
-    # noinspection PyUnresolvedReferences
-    import trollius as asyncio
 
 import txaio
 txaio.use_asyncio()  # noqa
@@ -189,7 +181,7 @@ class ApplicationRunner(object):
         else:
             create = make
 
-        if self.url.startswith(u'rs'):
+        if self.url.startswith('rs'):
             # try to parse RawSocket URL ..
             isSecure, host, port = parse_rs_url(self.url)
 

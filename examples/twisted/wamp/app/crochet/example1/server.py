@@ -55,7 +55,7 @@ app._visits = 0
 @app.route('/')
 def index():
     app._visits += 1
-    publish(u'com.example.on_visit', app._visits, msg="hello from flask")
+    publish('com.example.on_visit', app._visits, msg="hello from flask")
     return "Visit {}".format(app._visits)
 
 
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     #
     @run_in_reactor
     def start_wamp():
-        wapp.run(u"ws://127.0.0.1:8080/ws", u"realm1", start_reactor=False)
+        wapp.run("ws://127.0.0.1:8080/ws", "realm1", start_reactor=False)
 
     start_wamp()
 

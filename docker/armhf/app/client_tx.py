@@ -14,7 +14,7 @@ class ClientSession(ApplicationSession):
 
     def onConnect(self):
         self.log.info("Client connected")
-        self.join(self.config.realm, [u'anonymous'])
+        self.join(self.config.realm, ['anonymous'])
 
     def onChallenge(self, challenge):
         self.log.info("Challenge for method {authmethod} received", authmethod=challenge.method)
@@ -42,8 +42,8 @@ class ClientSession(ApplicationSession):
 if __name__ == '__main__':
 
     # Crossbar.io connection configuration
-    url = os.environ.get('CBURL', u'ws://localhost:8080/ws')
-    realm = os.environ.get('CBREALM', u'realm1')
+    url = os.environ.get('CBURL', 'ws://localhost:8080/ws')
+    realm = os.environ.get('CBREALM', 'realm1')
 
     # parse command line parameters
     parser = argparse.ArgumentParser()
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     # any extra info we want to forward to our ClientSession (in self.config.extra)
     extra = {
-        u'foobar': u'A custom value'
+        'foobar': 'A custom value'
     }
 
     # now actually run a WAMP client using our session class ClientSession

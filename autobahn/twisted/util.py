@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import hashlib
 
 from twisted.internet.defer import Deferred
@@ -77,16 +75,16 @@ def peer2str(addr):
     :rtype: unicode
     """
     if isinstance(addr, IPv4Address):
-        res = u"tcp4:{0}:{1}".format(addr.host, addr.port)
+        res = "tcp4:{0}:{1}".format(addr.host, addr.port)
     elif _HAS_IPV6 and isinstance(addr, IPv6Address):
-        res = u"tcp6:{0}:{1}".format(addr.host, addr.port)
+        res = "tcp6:{0}:{1}".format(addr.host, addr.port)
     elif isinstance(addr, UNIXAddress):
-        res = u"unix:{0}".format(addr.name)
+        res = "unix:{0}".format(addr.name)
     elif isinstance(addr, PipeAddress):
-        res = u"<pipe>"
+        res = "<pipe>"
     else:
         # gracefully fallback if we can't map the peer's address
-        res = u"?:{0}".format(addr)
+        res = "?:{0}".format(addr)
 
     return res
 
@@ -103,7 +101,7 @@ def transport_channel_id(transport, is_server, channel_id_type):
     received on one TLS channel cannot be forwarded on another.
 
     """
-    if channel_id_type not in [u'tls-unique']:
+    if channel_id_type not in ['tls-unique']:
         raise Exception("invalid channel ID type {}".format(channel_id_type))
 
     if hasattr(transport, '_tlsConnection'):

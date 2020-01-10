@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from autobahn.twisted.component import Component, run
 from autobahn.wamp import cryptosign
 import binascii
@@ -9,12 +7,12 @@ privkey_hex = '6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c'
 
 
 component = Component(
-    transports=u'ws://localhost:8080/auth_ws',
-    realm=u'crossbardemo',
+    transports='ws://localhost:8080/auth_ws',
+    realm='crossbardemo',
     authentication={
-        u"wampcra": {
-            "authid": u"username",
-            "secret": u"p4ssw0rd",
+        "wampcra": {
+            "authid": "username",
+            "secret": "p4ssw0rd",
         }
     }
 )

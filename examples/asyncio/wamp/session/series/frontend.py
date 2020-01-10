@@ -45,7 +45,7 @@ class Component(ApplicationSession):
         print("Realm joined (WAMP session started).")
 
         try:
-            now = await self.call(u'com.timeservice.now')
+            now = await self.call('com.timeservice.now')
         except Exception as e:
             print("Error: {}".format(e))
         else:
@@ -57,7 +57,7 @@ class Component(ApplicationSession):
         print("Realm left (WAMP session ended).")
         self.count += 1
         if self.count < 3:
-            self.join(u"realm1")
+            self.join("realm1")
         else:
             self.disconnect()
 

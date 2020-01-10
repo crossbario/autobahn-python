@@ -25,8 +25,6 @@
 ###############################################################################
 
 
-from __future__ import absolute_import
-
 import sys
 import platform
 
@@ -51,7 +49,7 @@ __all__ = (
     'ApplicationSession',
 )
 
-__ident__ = u'Autobahn/{}-asyncio-{}/{}'.format(autobahn.__version__, platform.python_implementation(), '.'.join([str(x) for x in list(sys.version_info[:3])]))
+__ident__ = 'Autobahn/{}-asyncio-{}/{}'.format(autobahn.__version__, platform.python_implementation(), '.'.join([str(x) for x in list(sys.version_info[:3])]))
 """
 AutobahnPython library implementation (eg. "Autobahn/0.13.0-asyncio-CPython/3.5.1")
 """

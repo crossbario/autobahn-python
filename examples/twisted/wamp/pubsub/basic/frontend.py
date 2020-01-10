@@ -24,7 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import print_function
 from os import environ
 
 from twisted.internet import reactor
@@ -43,7 +42,7 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
         self.received = 0
-        sub = yield self.subscribe(self.on_event, u'com.myapp.topic1')
+        sub = yield self.subscribe(self.on_event, 'com.myapp.topic1')
         print("Subscribed to com.myapp.topic1 with {}".format(sub.id))
 
     def on_event(self, i):
@@ -61,8 +60,8 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     extra=dict(
         max_events=5,  # [A] pass in additional configuration
     )

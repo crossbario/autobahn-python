@@ -24,13 +24,7 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
-try:
-    import asyncio
-except ImportError:
-    # trollious for py2 support - however it has been deprecated
-    import trollius as asyncio
+import asyncio
 import struct
 import math
 import copy
@@ -388,7 +382,7 @@ class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
             self.abort()
             return False
 
-    def get_channel_id(self, channel_id_type=u'tls-unique'):
+    def get_channel_id(self, channel_id_type='tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
@@ -412,7 +406,7 @@ class WampRawSocketClientProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
             self._serializer = copy.copy(self.factory._serializer)
         return self._serializer.RAWSOCKET_SERIALIZER_ID
 
-    def get_channel_id(self, channel_id_type=u'tls-unique'):
+    def get_channel_id(self, channel_id_type='tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """

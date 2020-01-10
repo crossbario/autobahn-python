@@ -17,13 +17,13 @@ class MyComponent(ApplicationSession):
         # (any session that .publish()es to this topic).
         def onevent(msg):
             log.info("Got event: {}".format(msg))
-        await self.subscribe(onevent, u'com.myapp.hello')
+        await self.subscribe(onevent, 'com.myapp.hello')
 
         # call a remote procedure.
         count = 0
         while True:
             try:
-                res = await self.call(u'com.myapp.add2', count, count+1)
+                res = await self.call('com.myapp.add2', count, count+1)
                 log.info("Got result: {}".format(res))
             except ApplicationError:
                 pass
@@ -38,5 +38,5 @@ if __name__ == '__main__':
         level = 'debug'
     runner = ApplicationRunnerRawSocket(
         "tcp://localhost:9090",
-        u"realm1")
+        "realm1")
     runner.run(MyComponent, logging_level=level)

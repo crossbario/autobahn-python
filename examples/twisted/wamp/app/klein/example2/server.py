@@ -33,7 +33,7 @@ from autobahn.twisted.wamp import Application
 
 # This is our WAMP application
 ##
-wampapp = Application(u'com.example')
+wampapp = Application('com.example')
 
 
 @wampapp.register()
@@ -52,7 +52,7 @@ webapp.templates = jinja2.Environment(loader=jinja2.FileSystemLoader('templates'
 @webapp.route('/')
 def home(request):
     webapp.visits += 1
-    wampapp.session.publish(u'com.example.onvisit', visits=webapp.visits)
+    wampapp.session.publish('com.example.onvisit', visits=webapp.visits)
     page = webapp.templates.get_template('index.html')
     return page.render(visits=webapp.visits)
 
@@ -60,7 +60,7 @@ def home(request):
 @webapp.route('/square/<int:x>')
 @inlineCallbacks
 def square(request, x):
-    result = yield wampapp.session.call(u'com.example.square', x)
+    result = yield wampapp.session.call('com.example.square', x)
     page = webapp.templates.get_template('result.html')
     content = page.render(x=x, result=result)
     returnValue(content)
@@ -80,4 +80,4 @@ if __name__ == "__main__":
     log.startLogging(sys.stdout)
 
     reactor.listenTCP(8080, Site(webapp.resource()))
-    wampapp.run(u"ws://127.0.0.1:9000", u"realm1", standalone=True)
+    wampapp.run("ws://127.0.0.1:9000", "realm1", standalone=True)

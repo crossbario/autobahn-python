@@ -39,16 +39,16 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             print("publish: com.myapp.topic1", counter)
-            self.publish(u'com.myapp.topic1', counter)
+            self.publish('com.myapp.topic1', counter)
 
             print("publish: com.myapp.topic2 'Hello world.'")
-            self.publish(u'com.myapp.topic2', "Hello world.")
+            self.publish('com.myapp.topic2', "Hello world.")
             counter += 1
             await asyncio.sleep(1)
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)
     runner.run(Component)

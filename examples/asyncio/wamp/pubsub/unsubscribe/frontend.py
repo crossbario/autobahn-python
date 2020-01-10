@@ -55,7 +55,7 @@ class Component(ApplicationSession):
                     await asyncio.sleep(5)
                     await self.test()
 
-        self.subscription = await self.subscribe(on_event, u'com.myapp.topic1')
+        self.subscription = await self.subscribe(on_event, 'com.myapp.topic1')
         print("Subscribed with subscription ID {}".format(self.subscription.id))
 
     async def onJoin(self, details):
@@ -67,7 +67,7 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)
     runner.run(Component)

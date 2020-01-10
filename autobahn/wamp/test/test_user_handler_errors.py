@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import os
 
 if os.environ.get('USE_TWISTED', False):
@@ -55,7 +53,7 @@ if os.environ.get('USE_TWISTED', False):
         def __init__(self, *args, **kw):
             ApplicationSession.__init__(self, *args, **kw)
             self.errors = []
-            self._realm = u'dummy'
+            self._realm = 'dummy'
             self._transport = MockTransport()
 
         def onUserError(self, e, msg):
@@ -90,7 +88,7 @@ if os.environ.get('USE_TWISTED', False):
         return message.Welcome(
             1234,
             {
-                u'broker': role.RoleBrokerFeatures(),
+                'broker': role.RoleBrokerFeatures(),
             },
         )
 
@@ -142,7 +140,7 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("boom")
             session.onLeave = exception_raiser(exception)
-            msg = message.Abort(u"testing")
+            msg = message.Abort("testing")
 
             # we haven't done anything, so this is "abort before we've
             # connected"
@@ -156,7 +154,7 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("boom")
             session.onLeave = async_exception_raiser(exception)
-            msg = message.Abort(u"testing")
+            msg = message.Abort("testing")
 
             # we haven't done anything, so this is "abort before we've
             # connected"
@@ -212,7 +210,7 @@ if os.environ.get('USE_TWISTED', False):
             session.onChallenge = exception_raiser(exception)
             # make a challenge (which will fail, and then the
             # subsequent onLeave will also fail)
-            msg = message.Challenge(u"foo")
+            msg = message.Challenge("foo")
             session.onMessage(msg)
 
             self.assertEqual(2, len(session.errors))
@@ -250,7 +248,7 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("such challenge")
             session.onChallenge = exception_raiser(exception)
-            msg = message.Challenge(u"foo")
+            msg = message.Challenge("foo")
 
             # execute
             session.onMessage(msg)
@@ -269,7 +267,7 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("such challenge")
             session.onChallenge = async_exception_raiser(exception)
-            msg = message.Challenge(u"foo")
+            msg = message.Challenge("foo")
 
             # execute
             session.onMessage(msg)

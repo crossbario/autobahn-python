@@ -40,10 +40,10 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
 
-        procs = [u'com.mathservice.add2',
-                 u'com.mathservice.mul2',
-                 u'com.mathservice.square2',
-                 u'com.mathservice.div2']
+        procs = ['com.mathservice.add2',
+                 'com.mathservice.mul2',
+                 'com.mathservice.square2',
+                 'com.mathservice.div2']
 
         try:
             for proc in procs:
@@ -60,7 +60,7 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)
     runner.run(Component)

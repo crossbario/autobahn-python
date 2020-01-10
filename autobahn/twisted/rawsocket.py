@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import copy
 import math
 import txaio
@@ -187,7 +185,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
             else:
                 payload_len = len(payload)
                 if 0 < self._max_len_send < payload_len:
-                    emsg = u'tried to send RawSocket message with size {} exceeding payload limit of {} octets'.format(
+                    emsg = 'tried to send RawSocket message with size {} exceeding payload limit of {} octets'.format(
                         payload_len, self._max_len_send)
                     self.log.warn(emsg)
                     raise PayloadExceededError(emsg)
@@ -316,7 +314,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
             if data:
                 self.dataReceived(data)
 
-    def get_channel_id(self, channel_id_type=u'tls-unique'):
+    def get_channel_id(self, channel_id_type='tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
@@ -408,7 +406,7 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
             if data:
                 self.dataReceived(data)
 
-    def get_channel_id(self, channel_id_type=u'tls-unique'):
+    def get_channel_id(self, channel_id_type='tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """

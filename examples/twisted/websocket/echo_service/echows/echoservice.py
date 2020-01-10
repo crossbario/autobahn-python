@@ -58,7 +58,7 @@ class EchoService(service.Service):
 
     def startService(self):
 
-        factory = WebSocketServerFactory(u"ws://127.0.0.1:%d" % self.port)
+        factory = WebSocketServerFactory("ws://127.0.0.1:%d" % self.port)
         factory.protocol = EchoServerProtocol
 
         # FIXME: Site.start/stopFactory should start/stop factories wrapped as Resources

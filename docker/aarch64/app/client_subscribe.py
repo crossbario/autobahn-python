@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import print_function
-from os import environ
 
 import os
 import argparse
@@ -45,7 +43,7 @@ class ClientSession(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
         self.received = 0
-        sub = yield self.subscribe(self.on_event, u'com.myapp.hello')
+        sub = yield self.subscribe(self.on_event, 'com.myapp.hello')
         print("Subscribed to com.myapp.hello with {}".format(sub.id))
 
     def on_event(self, i):
@@ -63,8 +61,8 @@ class ClientSession(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = os.environ.get('CBURL', u'ws://localhost:8080/ws')
-    realm = os.environ.get('CBREALM', u'realm1')
+    url = os.environ.get('CBURL', 'ws://localhost:8080/ws')
+    realm = os.environ.get('CBREALM', 'realm1')
 
     # parse command line parameters
     parser = argparse.ArgumentParser()
@@ -77,10 +75,10 @@ if __name__ == '__main__':
     extra=dict(
         max_events=5,  # [A] pass in additional configuration
     )
-    #url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://192.168.0.15:8080/ws")
+    #url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://192.168.0.15:8080/ws")
     #if six.PY2 and type(url) == six.binary_type:
     #    url = url.decode('utf8')
-    #realm = u"realm1"
+    #realm = "realm1"
     runner = ApplicationRunner(url=args.url, realm=args.realm, extra=extra)
     runner.run(ClientSession, auto_reconnect=True)
 

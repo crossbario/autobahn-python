@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import print_function
-
 from os import environ
 from os.path import join, split
 
@@ -48,7 +46,7 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             print("publish: com.myapp.topic1", counter)
-            yield self.publish(u'com.myapp.topic1', counter)
+            yield self.publish('com.myapp.topic1', counter)
             counter += 1
             yield sleep(1)
 
@@ -67,8 +65,8 @@ if __name__ == '__main__':
     )
     # ...which we pass as "ssl=" to ApplicationRunner (passed to SSL4ClientEndpoint)
     runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", u"wss://127.0.0.1:8083/ws"),
-        u"crossbardemo",
+        environ.get("AUTOBAHN_DEMO_ROUTER", "wss://127.0.0.1:8083/ws"),
+        "crossbardemo",
         ssl=options,  # try removing this, but still use self-signed cert
     )
     runner.run(Component)

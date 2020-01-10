@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import os
 import sys
 import mock
@@ -44,9 +42,9 @@ if os.environ.get('USE_ASYNCIO', False):
         comp = Component(
             transports=[
                 {
-                    u"url": u"ws://localhost:12/bogus",
-                    u"max_retries": 1,
-                    u"max_retry_delay": 0.1,
+                    "url": "ws://localhost:12/bogus",
+                    "max_retries": 1,
+                    "max_retry_delay": 0.1,
                 }
             ]
         )
@@ -112,9 +110,9 @@ if os.environ.get('USE_ASYNCIO', False):
             comp = Component(
                 transports=[
                     {
-                        u"url": u"ws://localhost:12/bogus",
-                        u"max_retries": 1,
-                        u"max_retry_delay": 0.1,
+                        "url": "ws://localhost:12/bogus",
+                        "max_retries": 1,
+                        "max_retry_delay": 0.1,
                     }
                 ]
             )

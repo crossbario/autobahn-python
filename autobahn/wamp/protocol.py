@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import txaio
 import inspect
 from functools import reduce
@@ -175,9 +173,9 @@ class BaseSession(ObservableMixin):
 
         if tb:
             if kwargs:
-                kwargs[u'traceback'] = tb
+                kwargs['traceback'] = tb
             else:
-                kwargs = {u'traceback': tb}
+                kwargs = {'traceback': tb}
 
         if isinstance(exc, exception.ApplicationError):
             error = exc.error if type(exc.error) == str else exc.error
@@ -185,7 +183,7 @@ class BaseSession(ObservableMixin):
             if exc.__class__ in self._ecls_to_uri_pat:
                 error = self._ecls_to_uri_pat[exc.__class__][0]._uri
             else:
-                error = u"wamp.error.runtime_error"
+                error = "wamp.error.runtime_error"
 
         encoded_payload = None
         if self._payload_codec:
@@ -226,7 +224,7 @@ class BaseSession(ObservableMixin):
         if msg.enc_algo:
 
             if not self._payload_codec:
-                log_msg = u"received encoded payload, but no payload codec active"
+                log_msg = "received encoded payload, but no payload codec active"
                 self.log.warn(log_msg)
                 enc_err = ApplicationError(ApplicationError.ENC_NO_PAYLOAD_CODEC, log_msg, enc_algo=msg.enc_algo)
             else:
@@ -237,19 +235,19 @@ class BaseSession(ObservableMixin):
                     self.log.warn("failed to decrypt application payload 1: {err}", err=e)
                     enc_err = ApplicationError(
                         ApplicationError.ENC_DECRYPT_ERROR,
-                        u"failed to decrypt application payload 1: {}".format(e),
+                        "failed to decrypt application payload 1: {}".format(e),
                         enc_algo=msg.enc_algo,
                     )
                 else:
                     if msg.error != decrypted_error:
                         self.log.warn(
-                            u"URI within encrypted payload ('{decrypted_error}') does not match the envelope ('{error}')",
+                            "URI within encrypted payload ('{decrypted_error}') does not match the envelope ('{error}')",
                             decrypted_error=decrypted_error,
                             error=msg.error,
                         )
                         enc_err = ApplicationError(
                             ApplicationError.ENC_TRUSTED_URI_MISMATCH,
-                            u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_error, msg.error),
+                            "URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_error, msg.error),
                             enc_algo=msg.enc_algo,
                         )
 
@@ -320,7 +318,7 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession`
         """
         BaseSession.__init__(self)
-        self.config = config or types.ComponentConfig(realm=u"realm1")
+        self.config = config or types.ComponentConfig(realm="realm1")
 
         # set client role features supported and announced
         self._session_roles = role.DEFAULT_CLIENT_ROLES
@@ -514,7 +512,7 @@ class ApplicationSession(BaseSession):
                     if res is not None:
                         self.log.info("Session denied by onWelcome")
                         reply = message.Abort(
-                            u"wamp.error.cannot_authenticate", u"{0}".format(res)
+                            "wamp.error.cannot_authenticate", "{0}".format(res)
                         )
                         self._transport.send(reply)
                         return
@@ -578,7 +576,7 @@ class ApplicationSession(BaseSession):
 
                 def error(e):
                     reply = message.Abort(
-                        u"wamp.error.cannot_authenticate", u"Error calling onWelcome handler"
+                        "wamp.error.cannot_authenticate", "Error calling onWelcome handler"
                     )
                     self._transport.send(reply)
                     return self._swallow_error(e, "While firing onWelcome")
@@ -622,7 +620,7 @@ class ApplicationSession(BaseSession):
 
                 def error(err):
                     self.onUserError(err, "Authentication failed")
-                    reply = message.Abort(u"wamp.error.cannot_authenticate", u"{0}".format(err.value))
+                    reply = message.Abort("wamp.error.cannot_authenticate", "{0}".format(err.value))
                     self._transport.send(reply)
                     # fire callback and close the transport
                     details = types.CloseDetails(reply.reason, reply.message)
@@ -791,7 +789,7 @@ class ApplicationSession(BaseSession):
                     if msg.enc_algo:
 
                         if not self._payload_codec:
-                            log_msg = u"received encoded payload, but no payload codec active"
+                            log_msg = "received encoded payload, but no payload codec active"
                             self.log.warn(log_msg)
                             enc_err = ApplicationError(ApplicationError.ENC_NO_PAYLOAD_CODEC, log_msg)
                         else:
@@ -805,7 +803,7 @@ class ApplicationSession(BaseSession):
                                 )
                                 enc_err = ApplicationError(
                                     ApplicationError.ENC_DECRYPT_ERROR,
-                                    u"failed to decrypt application payload 1: {}".format(e),
+                                    "failed to decrypt application payload 1: {}".format(e),
                                 )
                             else:
                                 if proc != decrypted_proc:
@@ -816,7 +814,7 @@ class ApplicationSession(BaseSession):
                                     )
                                     enc_err = ApplicationError(
                                         ApplicationError.ENC_TRUSTED_URI_MISMATCH,
-                                        u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc),
+                                        "URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc),
                                     )
 
                     if msg.progress:
@@ -908,7 +906,7 @@ class ApplicationSession(BaseSession):
 
                         if msg.enc_algo:
                             if not self._payload_codec:
-                                log_msg = u"received encrypted INVOCATION payload, but no keyring active"
+                                log_msg = "received encrypted INVOCATION payload, but no keyring active"
                                 self.log.warn(log_msg)
                                 enc_err = ApplicationError(ApplicationError.ENC_NO_PAYLOAD_CODEC, log_msg)
                             else:
@@ -934,7 +932,7 @@ class ApplicationSession(BaseSession):
                                         )
                                         enc_err = ApplicationError(
                                             ApplicationError.ENC_TRUSTED_URI_MISMATCH,
-                                            u"URI within encrypted INVOCATION payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc),
+                                            "URI within encrypted INVOCATION payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc),
                                         )
 
                         if enc_err:
@@ -966,7 +964,7 @@ class ApplicationSession(BaseSession):
                                         encoded_payload = None
                                         if msg.enc_algo:
                                             if not self._payload_codec:
-                                                raise Exception(u"trying to send encrypted payload, but no keyring active")
+                                                raise Exception("trying to send encrypted payload, but no keyring active")
                                             encoded_payload = self._payload_codec.encode(False, proc, args, kwargs)
 
                                         if encoded_payload:
@@ -1002,7 +1000,7 @@ class ApplicationSession(BaseSession):
                                 encoded_payload = None
                                 if msg.enc_algo:
                                     if not self._payload_codec:
-                                        log_msg = u"trying to send encrypted payload, but no keyring active"
+                                        log_msg = "trying to send encrypted payload, but no keyring active"
                                         self.log.warn(log_msg)
                                     else:
                                         try:
@@ -1055,13 +1053,13 @@ class ApplicationSession(BaseSession):
                                 except SerializationError as e:
                                     # the application-level payload returned from the invoked procedure can't be serialized
                                     reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
-                                                          args=[u'success return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
+                                                          args=['success return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
                                     self._transport.send(reply)
                                 except PayloadExceededError as e:
                                     # the application-level payload returned from the invoked procedure, when serialized and framed
                                     # for the transport, exceeds the transport message/frame size limit
                                     reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.PAYLOAD_SIZE_EXCEEDED,
-                                                          args=[u'success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
+                                                          args=['success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
                                     self._transport.send(reply)
 
                             def error(err):
@@ -1091,13 +1089,13 @@ class ApplicationSession(BaseSession):
                                 except SerializationError as e:
                                     # the application-level payload returned from the invoked procedure can't be serialized
                                     reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
-                                                          args=[u'error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
+                                                          args=['error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
                                     self._transport.send(reply)
                                 except PayloadExceededError as e:
                                     # the application-level payload returned from the invoked procedure, when serialized and framed
                                     # for the transport, exceeds the transport message/frame size limit
                                     reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.PAYLOAD_SIZE_EXCEEDED,
-                                                          args=[u'success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
+                                                          args=['success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
                                     self._transport.send(reply)
 
                                 # we have handled the error, so we eat it
@@ -1151,7 +1149,7 @@ class ApplicationSession(BaseSession):
                             " ID {0}".format(msg.registration)
                         )
                     self.log.info(
-                        u"Router unregistered procedure '{proc}' with ID {id}",
+                        "Router unregistered procedure '{proc}' with ID {id}",
                         proc=reg.procedure,
                         id=msg.registration,
                     )
@@ -1220,7 +1218,7 @@ class ApplicationSession(BaseSession):
             # fire callback and close the transport
             details = types.CloseDetails(
                 reason=types.CloseDetails.REASON_TRANSPORT_LOST,
-                message=u'WAMP transport was lost without closing the session {} before'.format(self._session_id),
+                message='WAMP transport was lost without closing the session {} before'.format(self._session_id),
             )
             d = txaio.as_future(self.onLeave, details)
 
@@ -1326,11 +1324,11 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession.leave`
         """
         if not self._session_id:
-            raise SessionNotReady(u"session hasn't joined a realm")
+            raise SessionNotReady("session hasn't joined a realm")
 
         if not self._goodbye_sent:
             if not reason:
-                reason = u"wamp.close.normal"
+                reason = "wamp.close.normal"
             msg = wamp.message.Goodbye(reason=reason, message=message)
             self._transport.send(msg)
             self._goodbye_sent = True
@@ -1502,9 +1500,9 @@ class ApplicationSession(BaseSession):
                             subopts = pat.options or options
                             if subopts is None:
                                 if pat.uri_type == uri.Pattern.URI_TYPE_WILDCARD:
-                                    subopts = types.SubscribeOptions(match=u"wildcard")
+                                    subopts = types.SubscribeOptions(match="wildcard")
                                 else:
-                                    subopts = types.SubscribeOptions(match=u"exact")
+                                    subopts = types.SubscribeOptions(match="exact")
                             on_replies.append(_subscribe(handler, proc, _uri, subopts))
 
             # XXX needs coverage
@@ -1666,7 +1664,7 @@ class ApplicationSession(BaseSession):
             on_reply = txaio.create_future()
             endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
             if prefix is not None:
-                procedure = u"{}{}".format(prefix, procedure)
+                procedure = "{}{}".format(prefix, procedure)
             self._register_reqs[request_id] = RegisterRequest(request_id, on_reply, procedure, endpoint_obj)
 
             if options:
@@ -1739,7 +1737,7 @@ class _SessionShim(ApplicationSession):
     **NOTE:** this is not public or intended for use; you should import
     either :class:`autobahn.asyncio.wamp.Session` or
     :class:`autobahn.twisted.wamp.Session` depending on which async
-    framework you're using.
+    framework yo're using.
     """
 
     #: name -> IAuthenticator
@@ -1762,8 +1760,8 @@ class _SessionShim(ApplicationSession):
             self.join(
                 self.config.realm,
                 authmethods=list(self._authenticators.keys()),
-                authid=authid or u'public',
-                authrole=authrole or u'default',
+                authid=authid or 'public',
+                authrole=authrole or 'default',
                 authextra=authextra,
             )
         else:
@@ -1920,7 +1918,7 @@ class ApplicationSessionFactory(object):
         :param config: The default component configuration.
         :type config: instance of :class:`autobahn.wamp.types.ComponentConfig`
         """
-        self.config = config or types.ComponentConfig(realm=u"realm1")
+        self.config = config or types.ComponentConfig(realm="realm1")
 
     def __call__(self):
         """

@@ -25,8 +25,6 @@
 ###############################################################################
 
 
-from __future__ import absolute_import, print_function
-
 from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN, SigningKey
 
 from twisted.internet.defer import inlineCallbacks, returnValue
@@ -109,7 +107,7 @@ if HAS_CRYPTOSIGN_SSHAGENT:
                 for blob, comment in keys:
                     raw = _unpack(blob)
                     algo = raw[0]
-                    if algo == u'ssh-ed25519':
+                    if algo == 'ssh-ed25519':
                         algo, _pubkey = raw
                         if _pubkey == pubkey:
                             key_data = _pubkey

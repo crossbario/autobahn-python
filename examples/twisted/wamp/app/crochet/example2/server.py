@@ -40,13 +40,13 @@ from autobahn.twisted.wamp import Application  # noqa
 wapp = Application()
 
 
-@wapp.register(u'com.example.square')
+@wapp.register('com.example.square')
 def square(x):
     print("square() called with {}".format(x))
     return x * x
 
 
-@wapp.register(u'com.example.slowsquare')
+@wapp.register('com.example.slowsquare')
 def slowsquare(x):
     print("slowsquare() called with {}".format(x))
     yield sleep(2)
@@ -57,12 +57,12 @@ def slowsquare(x):
 #
 @wait_for(timeout=1)
 def call_square(x):
-    return wapp.session.call(u'com.example.square', x)
+    return wapp.session.call('com.example.square', x)
 
 
 @wait_for(timeout=5)
 def call_slowsquare(x):
-    return wapp.session.call(u'com.example.slowsquare', x)
+    return wapp.session.call('com.example.slowsquare', x)
 
 
 # our Flask app
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     #
     @run_in_reactor
     def start_wamp():
-        wapp.run(u"ws://127.0.0.1:9000", u"realm1", standalone=True, start_reactor=False)
+        wapp.run("ws://127.0.0.1:9000", "realm1", standalone=True, start_reactor=False)
 
     start_wamp()
 

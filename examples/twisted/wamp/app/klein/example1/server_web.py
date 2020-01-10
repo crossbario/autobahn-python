@@ -36,7 +36,7 @@ wampapp = Application()
 @inlineCallbacks
 def square_submit(request):
     x = int(request.args.get('x', [0])[0])
-    res = yield wampapp.session.call(u'com.example.square', x)
+    res = yield wampapp.session.call('com.example.square', x)
     returnValue("{} squared is {}".format(x, res))
 
 
@@ -48,4 +48,4 @@ if __name__ == "__main__":
     log.startLogging(sys.stdout)
 
     reactor.listenTCP(8080, Site(app.resource()))
-    wampapp.run(u"ws://127.0.0.1:9000", u"realm1", standalone=False)
+    wampapp.run("ws://127.0.0.1:9000", "realm1", standalone=False)

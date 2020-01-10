@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import, print_function
-
 import unittest
 
 from autobahn.twisted.rawsocket import (WampRawSocketServerFactory,

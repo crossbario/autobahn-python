@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import os
 
 if os.environ.get('USE_TWISTED', False):
@@ -58,7 +56,7 @@ if os.environ.get('USE_TWISTED', False):
             else:
                 sargs = "-"
 
-            msg = u'= : {0:>3} : {1:<20} : {2}'.format(self._logline, self.__class__.__name__, sargs)
+            msg = '= : {0:>3} : {1:<20} : {2}'.format(self._logline, self.__class__.__name__, sargs)
             self._logline += 1
             print(msg)
 
@@ -118,21 +116,21 @@ if os.environ.get('USE_TWISTED', False):
 
             def stars(nick="somebody", stars=0):
                 self.log("stars() is invoked", nick, stars)
-                return u"{0} starred {1}x".format(nick, stars)
+                return "{0} starred {1}x".format(nick, stars)
 
             def orders(product, limit=5):
                 self.log("orders() is invoked", product, limit)
-                return [u"Product {0}".format(i) for i in range(50)][:limit]
+                return ["Product {0}".format(i) for i in range(50)][:limit]
 
             def arglen(*args, **kwargs):
                 self.log("arglen() is invoked", args, kwargs)
                 return [len(args), len(kwargs)]
 
-            yield self.register(ping, u'com.arguments.ping')
-            yield self.register(add2, u'com.arguments.add2')
-            yield self.register(stars, u'com.arguments.stars')
-            yield self.register(orders, u'com.arguments.orders')
-            yield self.register(arglen, u'com.arguments.arglen')
+            yield self.register(ping, 'com.arguments.ping')
+            yield self.register(add2, 'com.arguments.add2')
+            yield self.register(stars, 'com.arguments.stars')
+            yield self.register(orders, 'com.arguments.orders')
+            yield self.register(arglen, 'com.arguments.arglen')
 
             self.log("procedures registered")
 
@@ -145,40 +143,40 @@ if os.environ.get('USE_TWISTED', False):
 
             yield sleep(1)
 
-            yield self.call(u'com.arguments.ping')
+            yield self.call('com.arguments.ping')
             self.log("Pinged!")
 
-            res = yield self.call(u'com.arguments.add2', 2, 3)
+            res = yield self.call('com.arguments.add2', 2, 3)
             self.log("Add2: {0}".format(res))
 
-            starred = yield self.call(u'com.arguments.stars')
+            starred = yield self.call('com.arguments.stars')
             self.log("Starred 1: {0}".format(starred))
 
-            starred = yield self.call(u'com.arguments.stars', nick=u'Homer')
+            starred = yield self.call('com.arguments.stars', nick='Homer')
             self.log("Starred 2: {0}".format(starred))
 
-            starred = yield self.call(u'com.arguments.stars', stars=5)
+            starred = yield self.call('com.arguments.stars', stars=5)
             self.log("Starred 3: {0}".format(starred))
 
-            starred = yield self.call(u'com.arguments.stars', nick=u'Homer', stars=5)
+            starred = yield self.call('com.arguments.stars', nick='Homer', stars=5)
             self.log("Starred 4: {0}".format(starred))
 
-            orders = yield self.call(u'com.arguments.orders', u'coffee')
+            orders = yield self.call('com.arguments.orders', 'coffee')
             self.log("Orders 1: {0}".format(orders))
 
-            orders = yield self.call(u'com.arguments.orders', u'coffee', limit=10)
+            orders = yield self.call('com.arguments.orders', 'coffee', limit=10)
             self.log("Orders 2: {0}".format(orders))
 
-            arglengths = yield self.call(u'com.arguments.arglen')
+            arglengths = yield self.call('com.arguments.arglen')
             self.log("Arglen 1: {0}".format(arglengths))
 
-            arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3)
+            arglengths = yield self.call('com.arguments.arglen', 1, 2, 3)
             self.log("Arglen 1: {0}".format(arglengths))
 
-            arglengths = yield self.call(u'com.arguments.arglen', a=1, b=2, c=3)
+            arglengths = yield self.call('com.arguments.arglen', a=1, b=2, c=3)
             self.log("Arglen 2: {0}".format(arglengths))
 
-            arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a=1, b=2, c=3)
+            arglengths = yield self.call('com.arguments.arglen', 1, 2, 3, a=1, b=2, c=3)
             self.log("Arglen 3: {0}".format(arglengths))
 
             self.log("finishing")
@@ -193,7 +191,7 @@ if os.environ.get('USE_TWISTED', False):
 
         def setUp(self):
             self.url = os.environ.get("WAMP_ROUTER_URL")
-            self.realm = u"realm1"
+            self.realm = "realm1"
 
         @defer.inlineCallbacks
         def runOneTest(self, components):

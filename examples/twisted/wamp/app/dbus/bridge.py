@@ -49,7 +49,7 @@ class DbusNotifier(ApplicationSession):
         print("Dbus notifier subscribed")
 
     @inlineCallbacks
-    @wamp.subscribe(u'com.example.dbus.on_notify')
+    @wamp.subscribe('com.example.dbus.on_notify')
     def onNotify(self, title, body, duration=2):
 
         print("Notification received: title = '{}', body = '{}', duration = {}".format(title, body, duration))
@@ -108,9 +108,9 @@ if __name__ == '__main__':
 
     # run WAMP application component
     from autobahn.twisted.wamp import ApplicationRunner
-    router = args.router or u'ws://127.0.0.1:9000'
+    router = args.router or 'ws://127.0.0.1:9000'
 
-    runner = ApplicationRunner(router, u"realm1", standalone=not args.router)
+    runner = ApplicationRunner(router, "realm1", standalone=not args.router)
 
     # start the component and the Twisted reactor ..
     runner.run(DbusNotifier)

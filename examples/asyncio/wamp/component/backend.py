@@ -15,7 +15,7 @@ component = Component(
     transports=[
         {
             "type": "websocket",
-            "url": u"wss://localhost:8083/ws",
+            "url": "wss://localhost:8083/ws",
             "endpoint": {
                 "type": "tcp",
                 "host": "localhost",
@@ -27,7 +27,7 @@ component = Component(
             }
         },
     ],
-    realm=u"crossbardemo",
+    realm="crossbardemo",
 )
 
 
@@ -37,7 +37,7 @@ def join(session, details):
 
 
 @component.register(
-    u"example.foo",
+    "example.foo",
     options=RegisterOptions(details_arg='details'),
 )
 @asyncio.coroutine

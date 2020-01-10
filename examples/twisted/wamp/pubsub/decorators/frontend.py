@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import print_function
-
 from os import environ
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
@@ -55,11 +53,11 @@ class Component(ApplicationSession):
             if isinstance(sub, Failure):
                 print("subscribe failed:", sub.getErrorMessage())
 
-    @wamp.subscribe(u'com.myapp.topic1')
+    @wamp.subscribe('com.myapp.topic1')
     def onEvent1(self, i):
         print("Got event on topic1: {}".format(i))
 
-    @wamp.subscribe(u'com.myapp.topic2')
+    @wamp.subscribe('com.myapp.topic2')
     def onEvent2(self, msg):
         print("Got event on topic2: {}".format(msg))
 
@@ -69,7 +67,7 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)
     runner.run(Component)

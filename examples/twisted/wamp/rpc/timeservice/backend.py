@@ -46,7 +46,7 @@ class Component(ApplicationSession):
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         try:
-            yield self.register(utcnow, u'com.timeservice.now')
+            yield self.register(utcnow, 'com.timeservice.now')
         except Exception as e:
             print("failed to register procedure: {}".format(e))
         else:
@@ -54,7 +54,7 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)
     runner.run(Component)

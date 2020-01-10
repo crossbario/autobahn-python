@@ -8,15 +8,15 @@ def component1_setup(reactor, session):
         print('backend component: shutting down ..')
         session.leave()
 
-    yield session.subscribe(shutdown, u'com.example.shutdown')
-#    yield session.subscribe(u'com.example.shutdown', shutdown)
+    yield session.subscribe(shutdown, 'com.example.shutdown')
+#    yield session.subscribe('com.example.shutdown', shutdown)
 
     def add2(a, b):
         print('backend component: add2()')
         return a + b
 
-    yield session.register(add2, u'com.example.add2')
-#    yield session.register(u'com.example.add2', add2)
+    yield session.register(add2, 'com.example.add2')
+#    yield session.register('com.example.add2', add2)
 
     print('backend component: ready.')
 
@@ -29,10 +29,10 @@ def component2_main(reactor, session):
     yield sleep(.2)  # "enforce" order: backend must have started before we call it
     print('frontend component: ready')
 
-    result = yield session.call(u'com.example.add2', 2, 3)
+    result = yield session.call('com.example.add2', 2, 3)
     print('frontend component: result={}'.format(result))
 
-    session.publish(u'com.example.shutdown')
+    session.publish('com.example.shutdown')
 
     # as we exit, this signals we are done with the session! the session
     # can be recycled
@@ -68,12 +68,12 @@ if __name__ == '__main__':
     components = [
         Component(
             transports,
-            config=Config(realm=u'realm1'),
+            config=Config(realm='realm1'),
             setup=component1_setup
         ),
         Component(
             transports,
-            config=Config(realm=u'realm1', extra={'foo': 23}),
+            config=Config(realm='realm1', extra={'foo': 23}),
             main=component2_main
         )
     ]

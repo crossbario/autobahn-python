@@ -43,14 +43,14 @@ class Component(Session):
 
 if __name__ == '__main__':
     runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/auth_ws"),
-        u"crossbardemo",
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
+        "crossbardemo",
     )
 
     def make(config):
         session = Component(config)
         session.add_authenticator(
-            u"wampcra", authid=u'username', secret=u'p4ssw0rd'
+            "wampcra", authid='username', secret='p4ssw0rd'
         )
         return session
     runner.run(make)

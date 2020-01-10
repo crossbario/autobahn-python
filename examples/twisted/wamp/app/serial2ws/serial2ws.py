@@ -56,10 +56,10 @@ class McuProtocol(LineReceiver):
             print('Unable to parse value {0}'.format(line))
         else:
             # create payload for WAMP event
-            payload = {u'id': data[0], u'value': data[1]}
+            payload = {'id': data[0], 'value': data[1]}
 
             # publish WAMP event to all subscribers on topic
-            self.session.publish(u"com.myapp.mcu.on_analog_value", payload)
+            self.session.publish("com.myapp.mcu.on_analog_value", payload)
 
     def controlLed(self, turnOn):
         """
@@ -95,7 +95,7 @@ class McuComponent(ApplicationSession):
             print('Could not open serial port: {0}'.format(e))
             self.leave()
         else:
-            yield self.register(serialProtocol.controlLed, u"com.myapp.mcu.control_led")
+            yield self.register(serialProtocol.controlLed, "com.myapp.mcu.control_led")
 
 
 if __name__ == '__main__':
@@ -109,17 +109,17 @@ if __name__ == '__main__':
     parser.add_argument("--baudrate", type=int, default=9600, choices=[300, 1200, 2400, 4800, 9600, 19200, 57600, 115200],
                         help='Serial port baudrate.')
 
-    parser.add_argument("--port", type=str, default=u'/dev/ttyACM0',
+    parser.add_argument("--port", type=str, default='/dev/ttyACM0',
                         help='Serial port to use (e.g. 3 for a COM port on Windows, /dev/ttyATH0 for Arduino Yun, /dev/ttyACM0 for Serial-over-USB on RaspberryPi.')
 
     parser.add_argument("--web", type=int, default=8000,
                         help='Web port to use for embedded Web server. Use 0 to disable.')
 
-    router_default = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
+    router_default = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     parser.add_argument("--router", type=str, default=router_default,
                         help='WAMP router URL (a WAMP-over-WebSocket endpoint, default: "{}")'.format(router_default))
 
-    parser.add_argument("--realm", type=str, default=u'crossbardemo',
+    parser.add_argument("--realm", type=str, default='crossbardemo',
                         help='WAMP realm to join (default: "crossbardemo")')
 
     args = parser.parse_args()

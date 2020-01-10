@@ -46,21 +46,21 @@ class Component(Session):
             details = kw.pop('details')
             print("meta: '{}' args={}, kw={}".format(details.topic, args, kw))
         yield self.subscribe(
-            got_meta, u'',
-            options=SubscribeOptions(match=u'prefix', details_arg='details'),
+            got_meta, '',
+            options=SubscribeOptions(match='prefix', details_arg='details'),
         )
 
 
 if __name__ == '__main__':
     runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/auth_ws"),
-        u"crossbardemo",
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
+        "crossbardemo",
     )
 
     def make(config):
         session = Component(config)
         session.add_authenticator(
-            u"wampcra", authid=u'username', secret=u'p4ssw0rd'
+            "wampcra", authid='username', secret='p4ssw0rd'
         )
         return session
     runner.run(make)

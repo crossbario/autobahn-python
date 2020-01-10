@@ -142,15 +142,15 @@ source_suffix = '.rst'
 master_doc = 'contents'
 
 # General information about the project.
-project = u'autobahn'
-author = u'Crossbar.io Project'
-this_year = u'{0}'.format(time.strftime('%Y'))
-if this_year != u'2012':
-    copyright = u'2012-{0}, Crossbar.io Technologies GmbH'.format(this_year)
+project = 'autobahn'
+author = 'Crossbar.io Project'
+this_year = '{0}'.format(time.strftime('%Y'))
+if this_year != '2012':
+    copyright = '2012-{0}, Crossbar.io Technologies GmbH'.format(this_year)
 else:
-    copyright = u'2012, Crossbar.io Technologies GmbH'
+    copyright = '2012, Crossbar.io Technologies GmbH'
 
-# The version info for the project you're documenting, acts as replacement for
+# The version info for the project yo're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #

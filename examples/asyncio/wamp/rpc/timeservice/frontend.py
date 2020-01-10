@@ -38,7 +38,7 @@ class Component(ApplicationSession):
 
     async def onJoin(self, details):
         try:
-            now = await self.call(u'com.timeservice.now')
+            now = await self.call('com.timeservice.now')
         except Exception as e:
             print("Error: {}".format(e))
         else:
@@ -51,7 +51,7 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    url = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
-    realm = u"crossbardemo"
+    url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
+    realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)
     runner.run(Component)

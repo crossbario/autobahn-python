@@ -34,10 +34,10 @@ def onEvent(msg):
     print("got event: {}".format(msg))
 
 
-@app.register(u'com.example.triggersubscribe')
+@app.register('com.example.triggersubscribe')
 def triggerSubscribe():
     print("triggersubscribe() called")
-    yield app.session.subscribe(onEvent, u'com.example.topic1')
+    yield app.session.subscribe(onEvent, 'com.example.topic1')
 
 
 @app.signal('onjoined')
@@ -46,4 +46,4 @@ def onjoined():
 
 
 if __name__ == "__main__":
-    app.run(u"ws://127.0.0.1:8080/ws", u"realm1", standalone=True)
+    app.run("ws://127.0.0.1:8080/ws", "realm1", standalone=True)

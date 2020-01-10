@@ -11,42 +11,42 @@ def main(reactor, session):
     print("Client session={}".format(session))
 
     try:
-        res = yield from session.register(lambda: None, u"com.foo.private")
+        res = yield from session.register(lambda: None, "com.foo.private")
         print("\n\nregistering 'com.foo.private' should have failed\n\n")
     except ApplicationError as e:
         print("registering 'com.foo.private' failed as expected: {}".format(e.error))
 
     res = yield from session.register(
-        lambda: None, u"should.work",
-        options=RegisterOptions(match=u'exact'),
+        lambda: None, "should.work",
+        options=RegisterOptions(match='exact'),
     )
     print("registered 'should.work' with id {}".format(res.id))
 
     try:
         res = yield from session.register(
-            lambda: None, u"prefix.fail.",
-            options=RegisterOptions(match=u'prefix'),
+            lambda: None, "prefix.fail.",
+            options=RegisterOptions(match='prefix'),
         )
         print("\n\nshould have failed\n\n")
     except ApplicationError as e:
         print("prefix-match 'prefix.fail.' failed as expected: {}".format(e.error))
 
     print("calling 'example.foo'")
-    res = yield from session.call(u"example.foo")
+    res = yield from session.call("example.foo")
     print("example.foo() = {}".format(res))
 
     print("done")
 
 
 component = Component(
-    transports=u"ws://localhost:8080/auth_ws",
+    transports="ws://localhost:8080/auth_ws",
     main=main,
-    realm=u"crossbardemo",
+    realm="crossbardemo",
     authentication={
-        u"wampcra": {
-            u"authid": u"bob",
-            u"authrole": "dynamic_authed",
-            u"secret": u"p4ssw0rd",
+        "wampcra": {
+            "authid": "bob",
+            "authrole": "dynamic_authed",
+            "secret": "p4ssw0rd",
         }
     }
 )

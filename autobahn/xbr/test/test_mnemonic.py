@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 from autobahn.xbr import HAS_XBR
 
 if HAS_XBR:

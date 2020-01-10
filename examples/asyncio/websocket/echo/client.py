@@ -24,6 +24,8 @@
 #
 ###############################################################################
 
+import asyncio
+
 from autobahn.asyncio.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory
 
@@ -41,7 +43,7 @@ class MyClientProtocol(WebSocketClientProtocol):
         print("WebSocket connection open.")
 
         def hello():
-            self.sendMessage(u"Hello, world!".encode('utf8'))
+            self.sendMessage("Hello, world!".encode('utf8'))
             self.sendMessage(b"\x00\x01\x03\x04", isBinary=True)
             self.factory.loop.call_later(1, hello)
 
@@ -59,14 +61,7 @@ class MyClientProtocol(WebSocketClientProtocol):
 
 
 if __name__ == '__main__':
-
-    try:
-        import asyncio
-    except ImportError:
-        # Trollius >= 0.3 was renamed
-        import trollius as asyncio
-
-    factory = WebSocketClientFactory(u"ws://127.0.0.1:9000")
+    factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = MyClientProtocol
 
     loop = asyncio.get_event_loop()

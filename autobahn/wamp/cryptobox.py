@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 
 from autobahn.util import public
 from autobahn.wamp.interfaces import IPayloadCodec
@@ -168,7 +166,7 @@ if HAS_CRYPTOBOX:
             assert(key is None or isinstance(key, Key) or type(key) == str)
             if type(key) == str:
                 key = Key(originator_priv=key, responder_priv=key)
-            if uri == u'':
+            if uri == '':
                 self._default_key = key
             else:
                 if key is None:
@@ -221,9 +219,9 @@ if HAS_CRYPTOBOX:
                 return None
 
             payload = {
-                u'uri': uri,
-                u'args': args,
-                u'kwargs': kwargs
+                'uri': uri,
+                'args': args,
+                'kwargs': kwargs
             }
             nonce = random(Box.NONCE_SIZE)
             payload_ser = _json_dumps(payload).encode('utf8')
@@ -236,7 +234,7 @@ if HAS_CRYPTOBOX:
             payload_bytes = bytes(payload_encr)
             payload_key = None
 
-            return EncodedPayload(payload_bytes, u'cryptobox', u'json', enc_key=payload_key)
+            return EncodedPayload(payload_bytes, 'cryptobox', 'json', enc_key=payload_key)
 
         @public
         def decode(self, is_originating, uri, encoded_payload):
@@ -245,7 +243,7 @@ if HAS_CRYPTOBOX:
             """
             assert(type(uri) == str)
             assert(isinstance(encoded_payload, EncodedPayload))
-            assert(encoded_payload.enc_algo == u'cryptobox')
+            assert(encoded_payload.enc_algo == 'cryptobox')
 
             box = self._get_box(is_originating, uri)
 
@@ -254,14 +252,14 @@ if HAS_CRYPTOBOX:
 
             payload_ser = box.decrypt(encoded_payload.payload, encoder=RawEncoder)
 
-            if encoded_payload.enc_serializer != u'json':
+            if encoded_payload.enc_serializer != 'json':
                 raise Exception("received encrypted payload, but don't know how to process serializer '{}'".format(encoded_payload.enc_serializer))
 
             payload = _json_loads(payload_ser.decode('utf8'))
 
-            uri = payload.get(u'uri', None)
-            args = payload.get(u'args', None)
-            kwargs = payload.get(u'kwargs', None)
+            uri = payload.get('uri', None)
+            args = payload.get('args', None)
+            kwargs = payload.get('kwargs', None)
 
             return uri, args, kwargs
 

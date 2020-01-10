@@ -230,7 +230,7 @@ if __name__ == '__main__':
     print("Running Autobahn|Python {}".format(autobahn.version))
 
     # our WebSocket server factory
-    factory = PersonaServerFactory(u"ws://127.0.0.1:8080")
+    factory = PersonaServerFactory("ws://127.0.0.1:8080")
 
     # we serve static files under "/" ..
     root = File(".")

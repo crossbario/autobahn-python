@@ -24,8 +24,6 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
 import os
 import time
 import struct
@@ -197,7 +195,7 @@ def utcstr(ts=None):
     assert(ts is None or isinstance(ts, datetime))
     if ts is None:
         ts = datetime.utcnow()
-    return u"{0}Z".format(ts.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
+    return "{0}Z".format(ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3])
 
 
 @public
@@ -346,16 +344,16 @@ def newid(length=16):
 
 # we take out the following 9 chars (leaving 27), because there
 # is visual ambiguity: 0/O/D, 1/I, 8/B, 2/Z
-DEFAULT_TOKEN_CHARS = u'345679ACEFGHJKLMNPQRSTUVWXY'
+DEFAULT_TOKEN_CHARS = '345679ACEFGHJKLMNPQRSTUVWXY'
 """
 Default set of characters to create rtokens from.
 """
 
-DEFAULT_ZBASE32_CHARS = u'13456789abcdefghijkmnopqrstuwxyz'
+DEFAULT_ZBASE32_CHARS = '13456789abcdefghijkmnopqrstuwxyz'
 """
 Our choice of confusing characters to eliminate is: `0', `l', `v', and `2'.  Our
 reasoning is that `0' is potentially mistaken for `o', that `l' is potentially
-mistaken for `1' or `i', that `v' is potentially mistaken for `u' or `r'
+mistaken for `1' or `i', that `v' is potentially mistaken for `' or `r'
 (especially in handwriting) and that `2' is potentially mistaken for `z'
 (especially in handwriting).
 
@@ -423,11 +421,11 @@ def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_cas
     chars = chars or DEFAULT_TOKEN_CHARS
     if lower_case:
         chars = chars.lower()
-    sep = sep or u'-'
+    sep = sep or '-'
     rng = random.SystemRandom()
-    token_value = u''.join(rng.choice(chars) for _ in range(char_groups * chars_per_group))
+    token_value = ''.join(rng.choice(chars) for _ in range(char_groups * chars_per_group))
     if chars_per_group > 1:
-        return sep.join(map(u''.join, zip(*[iter(token_value)] * chars_per_group)))
+        return sep.join(map(''.join, zip(*[iter(token_value)] * chars_per_group)))
     else:
         return token_value
 
@@ -435,37 +433,37 @@ def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_cas
 @public
 def generate_activation_code():
     """
-    Generate a one-time activation code or token of the form ``u'W97F-96MJ-YGJL'``.
+    Generate a one-time activation code or token of the form ``'W97F-96MJ-YGJL'``.
     The generated value is cryptographically strong and has (at least) 57 bits of entropy.
 
     :returns: The generated activation code.
     :rtype: str
     """
-    return generate_token(char_groups=3, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
+    return generate_token(char_groups=3, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep='-', lower_case=False)
 
 
 @public
 def generate_user_password():
     """
-    Generate a secure, random user password of the form ``u'kgojzi61dn5dtb6d'``.
+    Generate a secure, random user password of the form ``'kgojzi61dn5dtb6d'``.
     The generated value is cryptographically strong and has (at least) 76 bits of entropy.
 
     :returns: The generated password.
     :rtype: str
     """
-    return generate_token(char_groups=16, chars_per_group=1, chars=DEFAULT_ZBASE32_CHARS, sep=u'-', lower_case=True)
+    return generate_token(char_groups=16, chars_per_group=1, chars=DEFAULT_ZBASE32_CHARS, sep='-', lower_case=True)
 
 
 @public
 def generate_serial_number():
     """
-    Generate a globally unique serial / product code of the form ``u'YRAC-EL4X-FQQE-AW4T-WNUV-VN6T'``.
+    Generate a globally unique serial / product code of the form ``'YRAC-EL4X-FQQE-AW4T-WNUV-VN6T'``.
     The generated value is cryptographically strong and has (at least) 114 bits of entropy.
 
     :returns: The generated serial number / product code.
     :rtype: str
     """
-    return generate_token(char_groups=6, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
+    return generate_token(char_groups=6, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep='-', lower_case=False)
 
 
 # Select the most precise walltime measurement function available
@@ -876,8 +874,8 @@ def _maybe_tls_reason(instance):
     """
     if _is_tls_error(instance):
         ssl_error = instance.args[0][0]
-        return u"SSL error: {msg} (in {func})".format(
+        return "SSL error: {msg} (in {func})".format(
             func=ssl_error[1],
             msg=ssl_error[2],
         )
-    return u""
+    return ""
