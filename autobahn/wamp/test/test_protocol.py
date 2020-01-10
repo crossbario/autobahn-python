@@ -25,7 +25,7 @@
 ###############################################################################
 
 import os
-import mock
+import unittest.mock as mock
 
 if os.environ.get('USE_TWISTED', False):
 
