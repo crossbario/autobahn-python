@@ -26,7 +26,7 @@
 
 import os
 import sys
-import mock
+import unittest.mock as mock
 import pytest
 import txaio
 

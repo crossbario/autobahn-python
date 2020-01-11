@@ -24,7 +24,7 @@
 #
 ###############################################################################
 
-from mock import Mock
+from unittest.mock import Mock
 
 from autobahn.util import wildcards2patterns
 from autobahn.twisted.websocket import WebSocketServerFactory

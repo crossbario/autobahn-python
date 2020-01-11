@@ -2,10 +2,7 @@ import pytest
 import os
 
 from unittest import TestCase, main
-try:
-    from unittest.mock import Mock, call
-except ImportError:
-    from mock import Mock, call
+from unittest.mock import Mock, call
 from autobahn.asyncio.rawsocket import PrefixProtocol, RawSocketClientProtocol, RawSocketServerProtocol, \
     WampRawSocketClientFactory, WampRawSocketServerFactory
 from autobahn.asyncio.util import get_serializers

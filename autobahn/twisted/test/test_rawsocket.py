@@ -25,13 +25,13 @@
 ###############################################################################
 
 import unittest
+from unittest.mock import Mock
 
 from autobahn.twisted.rawsocket import (WampRawSocketServerFactory,
                                         WampRawSocketServerProtocol,
                                         WampRawSocketClientFactory,
                                         WampRawSocketClientProtocol)
 from autobahn.test import FakeTransport
-from mock import Mock
 
 
 class RawSocketHandshakeTests(unittest.TestCase):

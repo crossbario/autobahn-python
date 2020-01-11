@@ -152,7 +152,6 @@ extras_require_dev = [
     "pep8-naming>=0.3.3",               # MIT license
     "flake8>=2.5.1",                    # MIT license
     "pyflakes>=1.0.0",                  # MIT license
-    "mock>=1.3.0",                      # BSD license
 
     # pytest 3.3.0 has dropped support for Python 3.3
     # https://docs.pytest.org/en/latest/changelog.html#pytest-3-3-0-2017-11-23
@@ -180,7 +179,6 @@ extras_require_dev.extend([
 # for testing by users with "python setup.py test" (not Tox, which we use)
 test_requirements = [
     "pytest>=2.8.6,<3.3.0",             # MIT license
-    "mock>=1.3.0",                      # BSD license
 ]
 
 

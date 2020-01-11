@@ -39,7 +39,7 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.websocket.compress_deflate import PerMessageDeflate
     from autobahn.test import FakeTransport
 
-    from mock import MagicMock, patch
+    from unittest.mock import MagicMock, patch
     from txaio.testutil import replace_loop
 
     from base64 import b64decode
