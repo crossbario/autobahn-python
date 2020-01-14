@@ -35,20 +35,61 @@ matrix:
   fast_finish: true
 
   include:
-    - python: "3.7"
+    #
+    # Flake8
+    #
+    - python: "3.5"
       env:
       - TOX_ENV=flake8
+
+    #
+    # CPython 3.5
+    #
+    - python: "3.5"
+      env:
+      - TOX_ENV=py35-tw189
+
+    - python: "3.5"
+      env:
+      - TOX_ENV=py35-tw1910
+
+    - python: "3.5"
+      env:
+      - TOX_ENV=py35-twtrunk
+
+    - python: "3.5"
+      env:
+      - TOX_ENV=py35-asyncio
+
+    #
+    # CPython 3.8
+    #
+    - python: "3.8"
+      env:
+      - TOX_ENV=py38-tw189
+
+    - python: "3.8"
+      env:
+      - TOX_ENV=py38-tw1910
+
+    - python: "3.8"
+      env:
+      - TOX_ENV=py38-twtrunk
+
+    - python: "3.8"
+      env:
+      - TOX_ENV=py38-asyncio
 
     #
     # PyPy3
     #
     - python: "pypy3.5"
       env:
-      - TOX_ENV=pypy3-tw154
+      - TOX_ENV=pypy3-tw189
 
     - python: "pypy3.5"
       env:
-      - TOX_ENV=pypy3-tw189
+      - TOX_ENV=pypy3-tw1910
 
     - python: "pypy3.5"
       env:
@@ -59,44 +100,9 @@ matrix:
       - TOX_ENV=pypy3-asyncio
 
     #
-    # CPython 3.7
-    #
-    - python: "3.7"
-      env:
-      - TOX_ENV=py37-tw154
-
-    - python: "3.7"
-      env:
-      - TOX_ENV=py37-tw189
-
-    - python: "3.7"
-      env:
-      - TOX_ENV=py37-twtrunk
-
-    - python: "3.7"
-      env:
-      - TOX_ENV=py37-asyncio
-
-    #
-    # CPython 3.5
+    # Coverage (run under CPython 3.5)
     #
     - python: "3.5"
-      env:
-      - TOX_ENV=py35-tw154
-
-    - python: "3.5"
-      env:
-      - TOX_ENV=py35-tw189
-
-    - python: "3.5"
-      env:
-      - TOX_ENV=py35-twtrunk
-
-    - python: "3.5"
-      env:
-      - TOX_ENV=py35-asyncio
-
-    - python: "3.7"
       skip_cleanup: true
       env: TOX_ENV=coverage
 
@@ -105,7 +111,7 @@ matrix:
     # https://docs.travis-ci.com/user/build-stages/matrix-expansion/
     #
     - stage: deploy
-      python: "3.7"
+      python: "3.8"
       if: repo = crossbario/autobahn-python AND branch = master AND type != pull_request
       #on:
       #  repo: crossbario/autobahn-python
