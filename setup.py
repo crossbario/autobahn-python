@@ -268,6 +268,8 @@ setup(
 
     zip_safe=False,
 
+    python_requires='>=3.5',
+
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=["License :: OSI Approved :: MIT License",
                  "Development Status :: 5 - Production/Stable",

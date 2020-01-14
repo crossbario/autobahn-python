@@ -5,6 +5,11 @@
 Changelog
 =========
 
+20.1.2
+------
+
+* fix: add `python_requires>=3.5` to prevent installation on python 2 (#1293)
+
 20.1.1
 ------
 
