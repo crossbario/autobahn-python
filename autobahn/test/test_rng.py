@@ -24,6 +24,7 @@
 #
 ###############################################################################
 
+import os
 import sys
 import unittest
 
@@ -34,6 +35,7 @@ from nacl import utils, public
 from autobahn import util
 
 
+@unittest.skipIf('AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS' not in os.environ, 'entropy depletion tests not enabled (env var AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS not set)')
 @unittest.skipIf(not sys.platform.startswith('linux'), 'entropy depletion tests only available on Linux')
 class TestEntropy(unittest.TestCase):
 
