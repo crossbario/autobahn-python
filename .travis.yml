@@ -35,28 +35,31 @@ matrix:
   fast_finish: true
 
   include:
+    #
+    # Flake8
+    #
     - python: "3.5"
       env:
       - TOX_ENV=flake8
 
     #
-    # PyPy3
+    # CPython 3.5
     #
-    - python: "pypy3.5"
+    - python: "3.5"
       env:
-      - TOX_ENV=pypy3-tw189
+      - TOX_ENV=py35-tw189
 
-    - python: "pypy3.5"
+    - python: "3.5"
       env:
-      - TOX_ENV=pypy3-tw1910
+      - TOX_ENV=py35-tw1910
 
-    - python: "pypy3.5"
+    - python: "3.5"
       env:
-      - TOX_ENV=pypy3-twtrunk
+      - TOX_ENV=py35-twtrunk
 
-    - python: "pypy3.5"
+    - python: "3.5"
       env:
-      - TOX_ENV=pypy3-asyncio
+      - TOX_ENV=py35-asyncio
 
     #
     # CPython 3.8
@@ -78,23 +81,23 @@ matrix:
       - TOX_ENV=py38-asyncio
 
     #
-    # CPython 3.5
+    # PyPy3
     #
-    - python: "3.5"
+    - python: "pypy3.5"
       env:
-      - TOX_ENV=py35-tw189
+      - TOX_ENV=pypy3-tw189
 
-    - python: "3.5"
+    - python: "pypy3.5"
       env:
-      - TOX_ENV=py35-tw1910
+      - TOX_ENV=pypy3-tw1910
 
-    - python: "3.5"
+    - python: "pypy3.5"
       env:
-      - TOX_ENV=py35-twtrunk
+      - TOX_ENV=pypy3-twtrunk
 
-    - python: "3.5"
+    - python: "pypy3.5"
       env:
-      - TOX_ENV=py35-asyncio
+      - TOX_ENV=pypy3-asyncio
 
     #
     # Coverage (run under CPython 3.5)
