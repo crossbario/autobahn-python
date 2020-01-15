@@ -136,7 +136,9 @@ extras_require_xbr = [
 
     # the following is needed (at least) for BIP32/39 mnemonic processing
     'mnemonic>=0.13',           # MIT license (https://github.com/trezor/python-mnemonic)
-    'base58>=0.2.2',            # MIT license (https://github.com/keis/base58)
+
+    # py-multihash 0.2.3 has requirement base58<2.0,>=1.0.2 (https://github.com/crossbario/crossbarfx/issues/469)
+    'base58<2.0,>=1.0.2',       # MIT license (https://github.com/keis/base58)
     'ecdsa>=0.13',              # MIT license (https://github.com/warner/python-ecdsa)
 ]
 
