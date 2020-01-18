@@ -1,4 +1,4 @@
-FROM pypy:3.5-7.0.0-stretch
+FROM amd64/pypy:3.6-slim-stretch
 
 MAINTAINER The Crossbar.io Project <support@crossbario.com>
 
@@ -42,9 +42,6 @@ ENV CBREALM realm1
 
 # make "pypy" available as "python"
 RUN ln -s /usr/local/bin/pypy3 /usr/local/bin/python
-
-# FIXME: once py-eth-sig-utils v0.4 is released, remove this:
-RUN pip install --force-reinstall git+https://github.com/rmeissner/py-eth-sig-utils@master#egg=py-eth-sig-utils
 
 # install Autobahn|Python
 RUN    pip install -U pip \
