@@ -1,4 +1,4 @@
-FROM aarch64/python:3.6
+FROM arm64v8/python:3.7-slim-stretch
 
 COPY .qemu/qemu-aarch64-static /usr/bin/qemu-aarch64-static
 
@@ -28,6 +28,19 @@ ENV NODE_PATH /usr/local/lib/node_modules/
 # Crossbar.io connection defaults
 ENV CBURL ws://crossbar:8080/ws
 ENV CBREALM realm1
+
+RUN    apt-get update \
+    && apt-get install -y --no-install-recommends \
+               ca-certificates \
+               git \
+               build-essential \
+               libssl-dev \
+               libffi-dev \
+               libunwind-dev \
+               libsnappy-dev \
+               libbz2-dev \
+    && rm -rf ~/.cache \
+    && rm -rf /var/lib/apt/lists/*
 
 # install Autobahn|Python
 RUN pip install -U pip && \
