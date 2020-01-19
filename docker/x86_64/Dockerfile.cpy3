@@ -1,4 +1,4 @@
-FROM python:3
+FROM amd64/python:3.7-slim-stretch
 
 MAINTAINER The Crossbar.io Project <support@crossbario.com>
 
@@ -40,12 +40,10 @@ RUN    apt-get update \
     && rm -rf ~/.cache \
     && rm -rf /var/lib/apt/lists/*
 
-# FIXME: once py-eth-sig-utils v0.4 is released, remove this:
-RUN pip install --force-reinstall git+https://github.com/rmeissner/py-eth-sig-utils@master#egg=py-eth-sig-utils
-
 # install Autobahn|Python
-RUN    pip install -U pip \
-    && pip install autobahn[twisted,asyncio,accelerate,serialization,encryption,xbr]==${AUTOBAHN_PYTHON_VERSION}
+RUN pip install -U pip && \
+    pip install -U setuptools && \
+    pip install autobahn[twisted,asyncio,accelerate,serialization,encryption,xbr]==${AUTOBAHN_PYTHON_VERSION}
 
 # add example service
 COPY ./app /app
