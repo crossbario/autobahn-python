@@ -28,8 +28,9 @@ ENV CBURL ws://crossbar:8080/ws
 ENV CBREALM realm1
 
 # install Autobahn|Python
-RUN    pip install -U pip \
-    && pip install autobahn[asyncio]==${AUTOBAHN_PYTHON_VERSION}
+RUN pip install -U pip && \
+    pip install -U setuptools && \
+    pip install autobahn[asyncio]==${AUTOBAHN_PYTHON_VERSION}
 
 # add example service
 COPY ./app /app

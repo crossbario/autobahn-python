@@ -18,14 +18,14 @@ build:
 		-t crossbario/autobahn-python-aarch64:pypy3-${AUTOBAHN_PYTHON_VERSION} \
 		-f Dockerfile.pypy3 .
 
-	docker build \
-		--build-arg BUILD_DATE=${BUILD_DATE} \
-		--build-arg AUTOBAHN_PYTHON_VCS_REF=${AUTOBAHN_PYTHON_VCS_REF} \
-		--build-arg AUTOBAHN_PYTHON_VERSION=${AUTOBAHN_PYTHON_VERSION} \
-		-t crossbario/autobahn-python-aarch64:latest \
-		-t crossbario/autobahn-python-aarch64:cpy3-alpine \
-		-t crossbario/autobahn-python-aarch64:cpy3-alpine-${AUTOBAHN_PYTHON_VERSION} \
-		-f Dockerfile.cpy3-alpine .
+	# docker build \
+	# 	--build-arg BUILD_DATE=${BUILD_DATE} \
+	# 	--build-arg AUTOBAHN_PYTHON_VCS_REF=${AUTOBAHN_PYTHON_VCS_REF} \
+	# 	--build-arg AUTOBAHN_PYTHON_VERSION=${AUTOBAHN_PYTHON_VERSION} \
+	# 	-t crossbario/autobahn-python-aarch64:latest \
+	# 	-t crossbario/autobahn-python-aarch64:cpy3-alpine \
+	# 	-t crossbario/autobahn-python-aarch64:cpy3-alpine-${AUTOBAHN_PYTHON_VERSION} \
+	# 	-f Dockerfile.cpy3-alpine .
 
 	# docker build \
 	# 	--build-arg BUILD_DATE=${BUILD_DATE} \

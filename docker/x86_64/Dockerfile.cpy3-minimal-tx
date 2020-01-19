@@ -32,8 +32,9 @@ RUN apk add --update build-base \
     && rm -rf /var/cache/apk/*
 
 # install Autobahn|Python
-RUN    pip install -U pip \
-    && pip install autobahn[twisted]==${AUTOBAHN_PYTHON_VERSION}
+RUN pip install -U pip && \
+    pip install -U setuptools && \
+    pip install autobahn[twisted]==${AUTOBAHN_PYTHON_VERSION}
 
 # add example service
 COPY ./app /app
