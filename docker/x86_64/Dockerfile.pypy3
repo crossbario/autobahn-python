@@ -18,30 +18,36 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.version=$AUTOBAHN_PYTHON_VERSION \
       org.label-schema.schema-version="1.0"
 
+# ensure local pypy is preferred over distribution pypy
+ENV PATH /usr/local/bin:$PATH
+
+# http://bugs.python.org/issue19846
+# > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
+ENV LANG C.UTF-8
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV PYTHONUNBUFFERED 1
+
 # Application home
 ENV HOME /app
-ENV DEBIAN_FRONTEND noninteractive
 ENV NODE_PATH /usr/local/lib/node_modules/
-
-RUN    apt-get update \
-    && apt-get install -y --no-install-recommends \
-               ca-certificates \
-               git \
-               build-essential \
-               libssl-dev \
-               libffi-dev \
-               libunwind-dev \
-               libsnappy-dev \
-               libbz2-dev \
-    && rm -rf ~/.cache \
-    && rm -rf /var/lib/apt/lists/*
 
 # Crossbar.io connection defaults
 ENV CBURL ws://crossbar:8080/ws
 ENV CBREALM realm1
 
-# make "pypy" available as "python"
-RUN ln -s /usr/local/bin/pypy3 /usr/local/bin/python
+RUN    apt-get update \
+    && apt-get install -y --no-install-recommends \
+               ca-certificates \
+               curl \
+               expat \
+               build-essential \
+               libssl-dev \
+               libffi-dev \
+               libsnappy-dev \
+    && pip install --no-cache-dir "pip==19.3.1" \
+    && rm -rf ~/.cache \
+    && rm -rf /var/lib/apt/lists/*
 
 # install Autobahn|Python
 RUN pip install -U pip && \
