@@ -33,7 +33,7 @@ from autobahn.wamp.types import RegisterOptions, CallDetails
 from autobahn.wamp.exception import ApplicationError, TransportLost
 from autobahn.wamp.protocol import ApplicationSession
 from ._util import unpack_uint256, pack_uint256
-from zlmdb import time_ns
+from txaio import time_ns
 
 import cbor2
 import eth_keys

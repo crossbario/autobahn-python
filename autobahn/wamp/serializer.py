@@ -29,7 +29,7 @@ import struct
 import platform
 import math
 
-from autobahn.util import time_ns
+from txaio import time_ns
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
