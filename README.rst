@@ -20,7 +20,7 @@ implementations of
 -  `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`__
 -  `The Web Application Messaging Protocol (WAMP) <http://wamp-proto.org/>`__
 
-for Python 2 and 3, and running on `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__.
+for Python 3.5+ and running on `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__.
 
 You can use **Autobahn\|Python** to create clients and servers in Python speaking just plain WebSocket or WAMP.
 
@@ -28,11 +28,14 @@ You can use **Autobahn\|Python** to create clients and servers in Python speakin
 
 **WAMP** provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe** for applications in *one* protocol running over `WebSocket <http://tools.ietf.org/html/rfc6455>`__. WAMP is a *routed* protocol, so you need a **WAMP Router** to connect your **Autobahn\|Python** based clients. We provide `Crossbar.io <http://crossbar.io>`__, but there are `other options <https://wamp-proto.org/implementations/index.html#routers>`__ as well.
 
+.. note::
+
+    **Autobahn\|Python** up to version v19.11.2 also supported Python 2 and 3.4+.
+
 Features
 --------
 
 -  framework for `WebSocket <http://tools.ietf.org/html/rfc6455>`__ and `WAMP <http://wamp-proto.org/>`__ clients and servers
--  compatible with Python 2.7 and 3.4 or later (including 3.7)
 -  runs on `CPython <http://python.org/>`__, `PyPy <http://pypy.org/>`__ and `Jython <http://jython.org/>`__
 -  runs under `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__ - implements WebSocket
    `RFC6455 <http://tools.ietf.org/html/rfc6455>`__ and Draft Hybi-10+
@@ -173,12 +176,6 @@ XBR
 Autobahn includes support for `XBR <https://xbr.network/>`__. To install use this flavor:
 
 * ``xbr``:
-
-**Only supported on Python 3.5+.**
-
-.. note::
-
-    Package 'web3' requires a different Python: 2.7.16 not in '>=3.5.3,<4'
 
 To install:
 

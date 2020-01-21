@@ -16,7 +16,7 @@ You will need at least one of those.
 .. note::
    Most of Autobahn's WebSocket and WAMP features are available on both Twisted and asyncio, so you are free to choose the underlying networking framework based on your own criteria.
 
-For Twisted installation, please see `here <http://twistedmatrix.com/>`__. Asyncio comes bundled with Python 3.4+. For Python 3.3, install it from `here <https://pypi.python.org/pypi/asyncio>`__. For Python 2, `trollius`_ will work.
+For Twisted installation, please see `here <http://twistedmatrix.com/>`__. Asyncio comes bundled with Python 3.5+.
 
 
 Supported Configurations
@@ -27,19 +27,11 @@ Here are the configurations supported by |ab|:
 +---------------+-----------+---------+---------------------------------+
 | Python        | Twisted   | asyncio | Notes                           |
 +---------------+-----------+---------+---------------------------------+
-| CPython 2.7   | yes       | yes     | asyncio support via `trollius`_ |
 +---------------+-----------+---------+---------------------------------+
-| CPython 3.3   | yes       | yes     | asyncio support via `tulip`_    |
+| CPython 3.5+  | yes       | yes     | asyncio in the standard library |
 +---------------+-----------+---------+---------------------------------+
-| CPython 3.4+  | yes       | yes     | asyncio in the standard library |
+| PyPy 3        | yes       | yes     | asyncio in the standard library |
 +---------------+-----------+---------+---------------------------------+
-| PyPy 2.2+     | yes       | yes     | asyncio support via `trollius`_ |
-+---------------+-----------+---------+---------------------------------+
-| Jython 2.7+   | yes       | ?       | Issues: `1`_, `2`_              |
-+---------------+-----------+---------+---------------------------------+
-
-.. _1: http://twistedmatrix.com/trac/ticket/3413
-.. _2: http://twistedmatrix.com/trac/ticket/6746
 
 
 Performance Note
@@ -63,13 +55,13 @@ Using Docker
 
 We offer `Docker Images <https://hub.docker.com/r/crossbario/autobahn-python/>`_ with |ab| pre-installed. To use this, if you have Docker already installed, just do
 
-   ``sudo docker run -it crossbario/autobahn-python:cpy2 python client.py --url ws://IP _of_WAMP_router:8080/ws --realm realm1``
+   ``sudo docker run -it crossbario/autobahn-python python client.py --url ws://IP _of_WAMP_router:8080/ws --realm realm1``
 
 This starts up a Docker container and `client.py`, which connects to a Crossbar.io router at the given URL and to the given realm.
 
-There are several docker images to choose from, depending on whether you are using Python 2, 3 or PyPy (Python 2 only for now).
+There are several docker images to choose from, depending on whether you are using CPython or PyPy.
 
-There are the flavors which are based on the official Python 2, 3 and PyPy images, plus Python 2 and 3 versions using Alpine Linux, which have a smaller footprint. (Note: Footprint only matters for the download once per machine, after that the cached image is used. Containers off the same image/layers only take up space corresponding to how different from the image they are, so image size is relatively less important when using multiple containers.)
+There are the flavors which are based on the official CPython and PyPy images, plus versions using Alpine Linux, which have a smaller footprint. (Note: Footprint only matters for the download once per machine, after that the cached image is used. Containers off the same image/layers only take up space corresponding to how different from the image they are, so image size is relatively less important when using multiple containers.)
 
 
 Install from PyPI
@@ -158,8 +150,8 @@ Windows Installation
 
 For convenience, here are minimal instructions to install both Python and Autobahn/Twisted on Windows:
 
-1. Go to the `Python web site <https://www.python.org/downloads/>`_ and install Python 2.7 32-Bit
-2. Add ``C:\Python27;C:\Python27\Scripts;`` to your ``PATH``
+1. Go to the `Python web site <https://www.python.org/downloads/>`_ and install Python 3.7 32-Bit
+2. Add ``C:\Python37;C:\Python37\Scripts;`` to your ``PATH``
 3. Download the `Pip install script <https://bootstrap.pypa.io/get-pip.py>`_ and double click it (or run ``python get-pip.py`` from a command shell)
 4. Open a command shell and run ``pip install autobahn[twisted]``
 
