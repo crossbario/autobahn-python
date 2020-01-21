@@ -5,9 +5,8 @@
 Changelog
 =========
 
-* change: WebSocket protocol instances now raise
-  `autobahn.exception.Disconnected` when sending on a closed
-  connection
+* fix: update project README and docs for supported python versions (#1296)
+* fix: WebSocket protocol instances now raise `autobahn.exception.Disconnected` when sending on a closed connection (#1002)
 
 20.1.2
 ------

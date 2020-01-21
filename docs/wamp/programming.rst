@@ -354,7 +354,6 @@ Using **asyncio**, the example looks identical except for the imports (note that
 
 .. code-block:: python
     :linenos:
-    :emphasize-lines: 11
 
     from autobahn.asyncio.component import Component, run
 
