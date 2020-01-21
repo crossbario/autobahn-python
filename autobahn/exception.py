@@ -37,3 +37,12 @@ class PayloadExceededError(RuntimeError):
     Exception raised when the serialized and framed (eg WebSocket/RawSocket) WAMP payload
     exceeds the transport message size limit.
     """
+
+
+@public
+class Disconnected(RuntimeError):
+    """
+    Exception raised when trying to perform an operation which
+    requires a connection when the WebSocket/RawSocket is not
+    currently connected
+    """

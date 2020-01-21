@@ -5,6 +5,10 @@
 Changelog
 =========
 
+* change: WebSocket protocol instances now raise
+  `autobahn.exception.Disconnected` when sending on a closed
+  connection
+
 20.1.2
 ------
 
