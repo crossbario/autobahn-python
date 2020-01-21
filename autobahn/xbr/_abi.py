@@ -42,8 +42,11 @@ XBR_CHANNEL_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRC
 
 if 'XBR_DEBUG_TOKEN_ADDR' in os.environ:
     _token_adr = os.environ['XBR_DEBUG_TOKEN_ADDR']
-    _token_adr = binascii.a2b_hex(_token_adr[2:])
-    _token_adr = web3.Web3.toChecksumAddress(_token_adr)
+    try:
+        _token_adr = binascii.a2b_hex(_token_adr[2:])
+        _token_adr = web3.Web3.toChecksumAddress(_token_adr)
+    except Exception as e:
+        raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_TOKEN_ADDR={} - {}'.format(_token_adr, e))
     XBR_DEBUG_TOKEN_ADDR = _token_adr
 else:
     XBR_DEBUG_TOKEN_ADDR = '0x0000000000000000000000000000000000000000'
@@ -51,8 +54,11 @@ else:
 
 if 'XBR_DEBUG_NETWORK_ADDR' in os.environ:
     _netw_adr = os.environ['XBR_DEBUG_NETWORK_ADDR']
-    _netw_adr = binascii.a2b_hex(_netw_adr[2:])
-    _netw_adr = web3.Web3.toChecksumAddress(_netw_adr)
+    try:
+        _netw_adr = binascii.a2b_hex(_netw_adr[2:])
+        _netw_adr = web3.Web3.toChecksumAddress(_netw_adr)
+    except Exception as e:
+        raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_NETWORK_ADDR={} - {}'.format(_netw_adr, e))
     XBR_DEBUG_NETWORK_ADDR = _netw_adr
 else:
     XBR_DEBUG_NETWORK_ADDR = '0x0000000000000000000000000000000000000000'

@@ -12,7 +12,11 @@
 * `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`__
 * `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`__
 
-in Python 2 and 3, running on `Twisted`_ **or** `asyncio`_.
+for Python 3.5+ running on `Twisted`_ **or** `asyncio`_.
+
+.. note::
+
+    **Autobahn\|Python** up to version v19.11.2 also supported Python 2 and 3.4+.
 
 -----
 
@@ -24,7 +28,6 @@ Autobahn Features
 |AbL| features:
 
 * framework for `WebSocket`_ and `WAMP`_ clients
-* compatible with Python 2.7 and 3.3+
 * runs on `CPython`_, `PyPy`_ and `Jython`_
 * runs under `Twisted`_ and `asyncio`_
 * implements WebSocket `RFC6455`_ (and draft versions Hybi-10+)
