@@ -54,7 +54,7 @@ from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, create_xor_masker
 from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 from autobahn.websocket.util import parse_url
-from autobahn.exception import PayloadExceededError
+from autobahn.exception import PayloadExceededError, Disconnected
 from autobahn.util import _maybe_tls_reason
 
 import txaio
@@ -2187,7 +2187,7 @@ class WebSocketProtocol(ObservableMixin):
         assert type(doNotCompress) == bool, '"doNotCompress" must have type bool, but was "{}"'.format(type(doNotCompress))
 
         if self.state != WebSocketProtocol.STATE_OPEN:
-            return
+            raise Disconnected("Attempt to send on a closed protocol")
 
         if self.trackedTimings:
             self.trackedTimings.track("sendMessage")
