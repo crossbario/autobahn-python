@@ -30,12 +30,6 @@ import platform
 from setuptools import setup
 from setuptools.command.test import test as test_command
 
-try:
-    import six
-    _HAD_SIX = True
-except ImportError:
-    _HAD_SIX = False
-
 CPY = platform.python_implementation() == 'CPython'
 
 # read version string
@@ -215,7 +209,6 @@ setup(
     url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
-        'six>=1.11.0',       # MIT license
         'txaio>=20.1.1',     # MIT license
         'cryptography>=2.7', # BSD *or* Apache license
     ],
@@ -313,15 +306,10 @@ else:
     # Make Twisted regenerate the dropin.cache, if possible. This is necessary
     # because in a site-wide install, dropin.cache cannot be rewritten by
     # normal users.
-    if _HAD_SIX:
-        # only proceed if we had had six already _before_ installing AutobahnPython,
-        # since it produces errs/warns otherwise
-        try:
-            from twisted.plugin import IPlugin, getPlugins
-            list(getPlugins(IPlugin))
-        except Exception as e:
-            print("Failed to update Twisted plugin cache: {0}".format(e))
-        else:
-            print("Twisted dropin.cache regenerated.")
+    try:
+        from twisted.plugin import IPlugin, getPlugins
+        list(getPlugins(IPlugin))
+    except Exception as e:
+        print("Failed to update Twisted plugin cache: {0}".format(e))
     else:
-        print("Warning: regenerate of Twisted dropin.cache skipped (can't run when six wasn't there before)")
+        print("Twisted dropin.cache regenerated.")
