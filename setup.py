@@ -47,10 +47,10 @@ with open('README.rst') as f:
     docstr = f.read()
 
 # Twisted dependencies (be careful bumping these minimal versions,
-# as we make claims to support older Twisted!)
+# as we make claim to support older Twisted!)
 extras_require_twisted = [
     "zope.interface>=3.6.0",        # Zope Public License
-    "Twisted >= 12.1.0"             # MIT license
+    "twisted>=15.4.0",              # MIT license (https://pypi.org/project/Twisted/15.4.0/)
 ]
 
 # C-based WebSocket acceleration (only use on CPython, not PyPy!)
@@ -82,7 +82,7 @@ else:
     ])
 
 extras_require_serialization.extend([
-    'cbor2>=4.1.2',             # MIT license
+    'cbor2>=5.0.1',             # MIT license
     'cbor>=1.0.0',              # Apache 2.0 license
     'py-ubjson>=0.8.4',         # Apache 2.0 license
     'flatbuffers>=1.10',        # Apache 2.0 license
@@ -251,12 +251,15 @@ setup(
         'autobahn.asyncio',
         'autobahn.twisted',
         'autobahn.twisted.testing',
-        'twisted.plugins',
         'autobahn.nvx',
         'autobahn.nvx.test',
         'autobahn.xbr',
+        'twisted.plugins',
     ],
-    package_data={'autobahn.asyncio': ['test/*'], 'xbr': ['./xbr/contracts/*.json']},
+    package_data={
+        'autobahn.asyncio': ['./test/*'],
+        'xbr': ['./xbr/contracts/*.json'],
+    },
     cffi_modules=cffi_modules,
 
     entry_points={
