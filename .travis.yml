@@ -27,9 +27,9 @@ install:
 script:
   - tox -c tox.ini -e $TOX_ENV
 
-cache:
-  directories:
-    - $HOME/.cache/pip
+#cache:
+#  directories:
+#    - $HOME/.cache/pip
 
 matrix:
   fast_finish: true

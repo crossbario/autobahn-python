@@ -30,12 +30,6 @@ import platform
 from setuptools import setup
 from setuptools.command.test import test as test_command
 
-try:
-    import six
-    _HAD_SIX = True
-except ImportError:
-    _HAD_SIX = False
-
 CPY = platform.python_implementation() == 'CPython'
 
 # read version string
@@ -47,10 +41,10 @@ with open('README.rst') as f:
     docstr = f.read()
 
 # Twisted dependencies (be careful bumping these minimal versions,
-# as we make claims to support older Twisted!)
+# as we make claim to support older Twisted!)
 extras_require_twisted = [
     "zope.interface>=3.6.0",        # Zope Public License
-    "Twisted >= 12.1.0"             # MIT license
+    "twisted>=15.4.0",              # MIT license (https://pypi.org/project/Twisted/15.4.0/)
 ]
 
 # C-based WebSocket acceleration (only use on CPython, not PyPy!)
@@ -82,7 +76,7 @@ else:
     ])
 
 extras_require_serialization.extend([
-    'cbor2>=4.1.2',             # MIT license
+    'cbor2>=5.0.1',             # MIT license
     'cbor>=1.0.0',              # Apache 2.0 license
     'py-ubjson>=0.8.4',         # Apache 2.0 license
     'flatbuffers>=1.10',        # Apache 2.0 license
@@ -215,7 +209,6 @@ setup(
     url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
-        'six>=1.11.0',       # MIT license
         'txaio>=20.1.1',     # MIT license
         'cryptography>=2.7', # BSD *or* Apache license
     ],
@@ -251,12 +244,15 @@ setup(
         'autobahn.asyncio',
         'autobahn.twisted',
         'autobahn.twisted.testing',
-        'twisted.plugins',
         'autobahn.nvx',
         'autobahn.nvx.test',
         'autobahn.xbr',
+        'twisted.plugins',
     ],
-    package_data={'autobahn.asyncio': ['test/*'], 'xbr': ['./xbr/contracts/*.json']},
+    package_data={
+        'autobahn.asyncio': ['./test/*'],
+        'xbr': ['./xbr/contracts/*.json'],
+    },
     cffi_modules=cffi_modules,
 
     entry_points={
@@ -310,15 +306,10 @@ else:
     # Make Twisted regenerate the dropin.cache, if possible. This is necessary
     # because in a site-wide install, dropin.cache cannot be rewritten by
     # normal users.
-    if _HAD_SIX:
-        # only proceed if we had had six already _before_ installing AutobahnPython,
-        # since it produces errs/warns otherwise
-        try:
-            from twisted.plugin import IPlugin, getPlugins
-            list(getPlugins(IPlugin))
-        except Exception as e:
-            print("Failed to update Twisted plugin cache: {0}".format(e))
-        else:
-            print("Twisted dropin.cache regenerated.")
+    try:
+        from twisted.plugin import IPlugin, getPlugins
+        list(getPlugins(IPlugin))
+    except Exception as e:
+        print("Failed to update Twisted plugin cache: {0}".format(e))
     else:
-        print("Warning: regenerate of Twisted dropin.cache skipped (can't run when six wasn't there before)")
+        print("Twisted dropin.cache regenerated.")
