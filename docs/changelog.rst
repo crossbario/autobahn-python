@@ -5,9 +5,16 @@
 Changelog
 =========
 
+20.1.3
+------
+
+* fix: CI building (caching?) issue "corrupt ZIP file"
+* fix: update docker image build scripts and add ARM64/PyPy
+* fix: update XBR ABI files
 * fix: use :func:`txaio.time_ns` and drop deprecated :func:`autobahn.util.time_ns`
 * fix: update project README and docs for supported python versions (#1296)
 * fix: WebSocket protocol instances now raise `autobahn.exception.Disconnected` when sending on a closed connection (#1002)
+* fix: version conflict in xbr downstream application dependency (crossbarfx) (#1295)
 
 20.1.2
 ------

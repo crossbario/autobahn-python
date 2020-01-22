@@ -84,7 +84,7 @@ class TestEntropy(unittest.TestCase):
         for k in skeys:
             print('{}: {}'.format(k, res[k]))
 
-        self.assertTrue(skeys[0] > 10)
+        self.assertTrue(skeys[0] > 0)
 
     def test_depleting(self):
         res = {}
