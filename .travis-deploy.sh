@@ -51,7 +51,6 @@ ls -la ./dist
 echo 'uploading package ..'
 aws s3 cp --recursive ./dist s3://${AWS_S3_BUCKET_NAME}/wheels
 
-pip install https://github.com/rmeissner/py-eth-sig-utils/archive/master.zip#egg=py-eth-sig-utils
 pip install https://github.com/crossbario/txaio/archive/master.zip#egg=txaio
 pip install https://github.com/crossbario/zlmdb/archive/master.zip#egg=zlmdb
 pip install https://github.com/crossbario/autobahn-python/archive/master.zip#egg=autobahn[twisted,serialization,encryption,xbr]
