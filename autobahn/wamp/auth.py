@@ -53,6 +53,7 @@ except ImportError:
 
 
 __all__ = (
+    'AuthAnonymous',
     'AuthScram',
     'AuthCryptoSign',
     'AuthWampCra',
