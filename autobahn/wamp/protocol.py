@@ -26,7 +26,6 @@
 
 import txaio
 import inspect
-import typing
 from functools import reduce
 
 from autobahn import wamp
@@ -63,7 +62,7 @@ def check_args_types(func, *args, **kwargs):
     # Converge both args and kwargs into a dictionary
     arguments = inspect.getcallargs(func, *args, **kwargs)
     response = []
-    for name, kind in typing.get_type_hints(func).items():
+    for name, kind in func.__annotations__.items():
         if name in arguments and type(arguments[name]) != kind:
             response.append("'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
     if response:
