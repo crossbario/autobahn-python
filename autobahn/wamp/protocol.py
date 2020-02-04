@@ -26,6 +26,7 @@
 
 import txaio
 import inspect
+import typing
 from functools import reduce
 
 from autobahn import wamp
@@ -36,7 +37,7 @@ from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
-from autobahn.wamp.interfaces import ISession, IPayloadCodec, IAuthenticator  # noqa
+from autobahn.wamp.interfaces import IPayloadCodec, IAuthenticator  # noqa
 from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
 from autobahn.exception import PayloadExceededError
 from autobahn.wamp.request import \
@@ -56,6 +57,17 @@ from autobahn.wamp.request import \
 
 def is_method_or_function(f):
     return inspect.ismethod(f) or inspect.isfunction(f)
+
+
+def check_args_types(func, *args, **kwargs):
+    # Converge both args and kwargs into a dictionary
+    arguments = inspect.getcallargs(func, *args, **kwargs)
+    response = []
+    for name, kind in typing.get_type_hints(func).items():
+        if name in arguments and type(arguments[name]) != kind:
+            response.append("'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
+    if response:
+        raise ApplicationError(ApplicationError.INVALID_ARGUMENT, ', '.join(response))
 
 
 class BaseSession(ObservableMixin):
@@ -992,7 +1004,11 @@ class ApplicationSession(BaseSession):
                                                                                         procedure=proc,
                                                                                         enc_algo=msg.enc_algo)
 
-                            on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
+                            def validate_and_call(*inner_args, **inner_kwargs):
+                                check_args_types(endpoint.fn, *inner_args, **inner_kwargs)
+                                txaio.as_future(endpoint.fn, *inner_args, **inner_kwargs)
+
+                            on_reply = txaio.as_future(validate_and_call, *invoke_args, **invoke_kwargs)
 
                             def success(res):
                                 del self._invocations[msg.request]
