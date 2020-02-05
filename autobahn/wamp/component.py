@@ -25,7 +25,6 @@
 ###############################################################################
 
 
-import inspect
 import itertools
 import random
 from functools import partial
