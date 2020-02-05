@@ -58,17 +58,6 @@ def is_method_or_function(f):
     return inspect.ismethod(f) or inspect.isfunction(f)
 
 
-def check_args_types(func, *args, **kwargs):
-    # Converge both args and kwargs into a dictionary
-    arguments = inspect.getcallargs(func, *args, **kwargs)
-    response = []
-    for name, kind in func.__annotations__.items():
-        if name in arguments and type(arguments[name]) != kind:
-            response.append("'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
-    if response:
-        raise ApplicationError(ApplicationError.INVALID_ARGUMENT, ', '.join(response))
-
-
 class BaseSession(ObservableMixin):
     """
     WAMP session base class.
@@ -1003,11 +992,7 @@ class ApplicationSession(BaseSession):
                                                                                         procedure=proc,
                                                                                         enc_algo=msg.enc_algo)
 
-                            def validate_and_call(*inner_args, **inner_kwargs):
-                                check_args_types(endpoint.fn, *inner_args, **inner_kwargs)
-                                txaio.as_future(endpoint.fn, *inner_args, **inner_kwargs)
-
-                            on_reply = txaio.as_future(validate_and_call, *invoke_args, **invoke_kwargs)
+                            on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
 
                             def success(res):
                                 del self._invocations[msg.request]

@@ -25,6 +25,7 @@
 ###############################################################################
 
 
+import inspect
 import itertools
 import random
 from functools import partial
@@ -343,6 +344,20 @@ class _Transport(object):
         return repr(self.endpoint)
 
 
+def type_check(func):
+    async def _type_check(*args, **kwargs):
+        # Converge both args and kwargs into a dictionary
+        arguments = inspect.getcallargs(func, *args, **kwargs)
+        response = []
+        for name, kind in func.__annotations__.items():
+            if name in arguments and type(arguments[name]) != kind:
+                response.append("'{}' required={} got={}".format(name, type(arguments[name]).__name__, kind.__name__))
+        if response:
+            raise ApplicationError(ApplicationError.INVALID_ARGUMENT, ', '.join(response))
+        return await func(*args, **kwargs)
+    return _type_check
+
+
 # this could probably implement twisted.application.service.IService
 # if we wanted; or via an adapter...which just adds a startService()
 # and stopService() [latter can be async]
@@ -381,7 +396,7 @@ class Component(ObservableMixin):
             return fn
         return decorator
 
-    def register(self, uri, options=None):
+    def register(self, uri, options=None, validate=False):
         """
         A decorator as a shortcut for registering during on-join
 
@@ -399,7 +414,10 @@ class Component(ObservableMixin):
         def decorator(fn):
 
             def do_registration(session, details):
-                return session.register(fn, procedure=uri, options=options)
+                if validate:
+                    return session.register(type_check(fn), procedure=uri, options=options)
+                else:
+                    return session.register(fn, procedure=uri, options=options)
             self.on('join', do_registration)
             return fn
         return decorator
