@@ -65,7 +65,7 @@ def type_check(func):
         response = []
         for name, kind in func.__annotations__.items():
             if name in arguments and not isinstance(arguments[name], kind):
-                response.append("'{}' required={} got={}".format(name, type(arguments[name]).__name__, kind.__name__))
+                response.append("'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
         if response:
             raise ApplicationError(ApplicationError.INVALID_ARGUMENT, ', '.join(response))
         return await func(*args, **kwargs)
