@@ -58,6 +58,20 @@ def is_method_or_function(f):
     return inspect.ismethod(f) or inspect.isfunction(f)
 
 
+def type_check(func):
+    async def _type_check(*args, **kwargs):
+        # Converge both args and kwargs into a dictionary
+        arguments = inspect.getcallargs(func, *args, **kwargs)
+        response = []
+        for name, kind in func.__annotations__.items():
+            if name in arguments and not isinstance(arguments[name], kind):
+                response.append("'{}' required={} got={}".format(name, type(arguments[name]).__name__, kind.__name__))
+        if response:
+            raise ApplicationError(ApplicationError.INVALID_ARGUMENT, ', '.join(response))
+        return await func(*args, **kwargs)
+    return _type_check
+
+
 class BaseSession(ObservableMixin):
     """
     WAMP session base class.
@@ -1641,7 +1655,7 @@ class ApplicationSession(BaseSession):
         return on_reply
 
     @public
-    def register(self, endpoint, procedure=None, options=None, prefix=None):
+    def register(self, endpoint, procedure=None, options=None, prefix=None, validate=False):
         """
         Implements :func:`autobahn.wamp.interfaces.ICallee.register`
         """
@@ -1649,6 +1663,9 @@ class ApplicationSession(BaseSession):
         assert(procedure is None or type(procedure) == str)
         assert(options is None or isinstance(options, types.RegisterOptions))
         assert prefix is None or isinstance(prefix, str)
+
+        if validate:
+            endpoint = type_check(endpoint)
 
         if not self._transport:
             raise exception.TransportLost()
