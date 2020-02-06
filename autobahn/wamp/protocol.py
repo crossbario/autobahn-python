@@ -35,7 +35,7 @@ from autobahn.wamp import message
 from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
-from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
+from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError, TypeCheckError
 from autobahn.wamp.interfaces import IPayloadCodec, IAuthenticator  # noqa
 from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
 from autobahn.exception import PayloadExceededError
@@ -67,7 +67,7 @@ def type_check(func):
             if name in arguments and not isinstance(arguments[name], kind):
                 response.append("'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
         if response:
-            raise ApplicationError("autobahn.wamp.error.TypeError", ', '.join(response))
+            raise TypeCheckError(', '.join(response))
         return await func(*args, **kwargs)
     return _type_check
 
