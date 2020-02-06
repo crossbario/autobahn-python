@@ -314,9 +314,10 @@ class InvalidPayload(Exception):
     """
 
 
-@error(ApplicationError.TYPE_CHECK_ERROR)
-class TypeCheckError(Exception):
+class TypeCheckError(ApplicationError):
     """
     The URI for a topic published with invalid argument types or a
     procedure called with invalid arguments types.
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(ApplicationError.TYPE_CHECK_ERROR, *args, **kwargs)
