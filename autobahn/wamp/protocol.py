@@ -67,7 +67,7 @@ def type_check(func):
             if name in arguments and not isinstance(arguments[name], kind):
                 response.append("'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
         if response:
-            raise ApplicationError(ApplicationError.INVALID_ARGUMENT, ', '.join(response))
+            raise ApplicationError("autobahn.wamp.error.TypeError", ', '.join(response))
         return await func(*args, **kwargs)
     return _type_check
 
@@ -1456,7 +1456,7 @@ class ApplicationSession(BaseSession):
         return on_reply
 
     @public
-    def subscribe(self, handler, topic=None, options=None):
+    def subscribe(self, handler, topic=None, options=None, check_types=False):
         """
         Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
         """
@@ -1467,7 +1467,7 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        def _subscribe(obj, fn, topic, options):
+        def _subscribe(obj, fn, topic, options, check_types):
             message.check_or_raise_uri(topic,
                                        message='{}.subscribe()'.format(self.__class__.__name__),
                                        strict=False,
@@ -1476,6 +1476,8 @@ class ApplicationSession(BaseSession):
 
             request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
+            if check_types:
+                fn = type_check(fn)
             handler_obj = Handler(fn, obj, options.details_arg if options else None)
             self._subscribe_reqs[request_id] = SubscribeRequest(request_id, topic, on_reply, handler_obj)
 
@@ -1499,7 +1501,7 @@ class ApplicationSession(BaseSession):
 
         if callable(handler):
             # subscribe a single handler
-            return _subscribe(None, handler, topic, options)
+            return _subscribe(None, handler, topic, options, check_types)
 
         else:
 
@@ -1517,7 +1519,7 @@ class ApplicationSession(BaseSession):
                                     subopts = types.SubscribeOptions(match="wildcard")
                                 else:
                                     subopts = types.SubscribeOptions(match="exact")
-                            on_replies.append(_subscribe(handler, proc, _uri, subopts))
+                            on_replies.append(_subscribe(handler, proc, _uri, subopts, check_types))
 
             # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)
@@ -1655,7 +1657,7 @@ class ApplicationSession(BaseSession):
         return on_reply
 
     @public
-    def register(self, endpoint, procedure=None, options=None, prefix=None, validate=False):
+    def register(self, endpoint, procedure=None, options=None, prefix=None, check_types=False):
         """
         Implements :func:`autobahn.wamp.interfaces.ICallee.register`
         """
@@ -1664,13 +1666,10 @@ class ApplicationSession(BaseSession):
         assert(options is None or isinstance(options, types.RegisterOptions))
         assert prefix is None or isinstance(prefix, str)
 
-        if validate:
-            endpoint = type_check(endpoint)
-
         if not self._transport:
             raise exception.TransportLost()
 
-        def _register(obj, fn, procedure, options):
+        def _register(obj, fn, procedure, options, check_types):
             message.check_or_raise_uri(procedure,
                                        message='{}.register()'.format(self.__class__.__name__),
                                        strict=False,
@@ -1679,6 +1678,8 @@ class ApplicationSession(BaseSession):
 
             request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
+            if check_types:
+                fn = type_check(fn)
             endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
             if prefix is not None:
                 procedure = "{}{}".format(prefix, procedure)
@@ -1705,7 +1706,7 @@ class ApplicationSession(BaseSession):
         if callable(endpoint):
 
             # register a single callable
-            return _register(None, endpoint, procedure, options)
+            return _register(None, endpoint, procedure, options, check_types)
 
         else:
 
@@ -1718,7 +1719,7 @@ class ApplicationSession(BaseSession):
                         if pat.is_endpoint():
                             _uri = pat.uri()
                             regopts = pat.options or options
-                            on_replies.append(_register(endpoint, proc, _uri, regopts))
+                            on_replies.append(_register(endpoint, proc, _uri, regopts, check_types))
 
             # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)

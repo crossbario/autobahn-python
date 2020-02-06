@@ -358,7 +358,7 @@ class Component(ObservableMixin):
     The factory of the session we will instantiate.
     """
 
-    def subscribe(self, topic, options=None):
+    def subscribe(self, topic, options=None, check_types=False):
         """
         A decorator as a shortcut for subscribing during on-join
 
@@ -376,12 +376,12 @@ class Component(ObservableMixin):
         def decorator(fn):
 
             def do_subscription(session, details):
-                return session.subscribe(fn, topic=topic, options=options)
+                return session.subscribe(fn, topic=topic, options=options, check_types=check_types)
             self.on('join', do_subscription)
             return fn
         return decorator
 
-    def register(self, uri, options=None, validate=False):
+    def register(self, uri, options=None, check_types=False):
         """
         A decorator as a shortcut for registering during on-join
 
@@ -399,7 +399,7 @@ class Component(ObservableMixin):
         def decorator(fn):
 
             def do_registration(session, details):
-                return session.register(fn, procedure=uri, options=options, validate=validate)
+                return session.register(fn, procedure=uri, options=options, check_types=check_types)
             self.on('join', do_registration)
             return fn
         return decorator

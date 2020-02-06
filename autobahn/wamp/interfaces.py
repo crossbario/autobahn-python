@@ -561,7 +561,7 @@ class ISession(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def register(self, endpoint, procedure=None, options=None, prefix=None):
+    def register(self, endpoint, procedure=None, options=None, prefix=None, check_types=None):
         """
         Register a procedure for remote calling.
 
@@ -598,6 +598,13 @@ class ISession(abc.ABC):
             prefix='com.something.' then a method
             'com.something.method_foo' would ultimately be registered.
         :type prefix: str
+
+        :param check_types: Enable automatic type checking against (Python 3.5+) type hints
+            specified on the ``endpoint`` callable. Types are checked at run-time on each
+            invocation of the ``endpoint`` callable. When a type mismatch occurs,
+            an :class:`autobahn.wamp.error.TypeError` is raised automatically and returned
+            to the callee (via the router).
+        :type check_types: bool
 
         :returns: A registration or a list of registrations (or errors)
         :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
@@ -642,7 +649,7 @@ class ISession(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def subscribe(self, handler, topic=None, options=None):
+    def subscribe(self, handler, topic=None, options=None, check_types=None):
         """
         Subscribe to a topic for receiving events.
 
@@ -671,6 +678,13 @@ class ISession(abc.ABC):
 
         :param options: Options for subscribing.
         :type options: An instance of :class:`autobahn.wamp.types.SubscribeOptions`.
+
+        :param check_types: Enable automatic type checking against (Python 3.5+) type hints
+            specified on the ``endpoint`` callable. Types are checked at run-time on each
+            invocation of the ``endpoint`` callable. When a type mismatch occurs,
+            an :class:`autobahn.wamp.error.TypeError` is raised automatically and returned
+            to the callee (via the router).
+        :type check_types: bool
 
         :returns: A single Deferred/Future or a list of such objects
         :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`

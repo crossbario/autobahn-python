@@ -130,7 +130,7 @@ class Pattern(object):
         This pattern is stricter than a general WAMP URI component since a valid Python identifier is required.
     """
 
-    def __init__(self, uri, target, options=None):
+    def __init__(self, uri, target, options=None, check_types=False):
         """
 
         :param uri: The URI or URI pattern, e.g. ``"com.myapp.product.<product:int>.update"``.
@@ -142,6 +142,10 @@ class Pattern(object):
 
         :param options: An optional options object
         :type options: None or RegisterOptions or SubscribeOptions
+
+        :param check_types:
+        :type check_types: bool
+
         """
         assert(type(uri) == str)
         assert(len(uri) > 0)
@@ -225,6 +229,7 @@ class Pattern(object):
         self._uri = uri
         self._target = target
         self._options = options
+        self._check_types = check_types
 
     @public
     @property
@@ -316,7 +321,7 @@ class Pattern(object):
 
 
 @public
-def register(uri, options=None):
+def register(uri, options=None, check_types=False):
     """
     Decorator for WAMP procedure endpoints.
 
@@ -325,6 +330,9 @@ def register(uri, options=None):
 
     :param options:
     :type options: None or RegisterOptions
+
+    :param check_types:
+    :type check_types: bool
     """
     def decorate(f):
         assert(callable(f))
@@ -334,13 +342,13 @@ def register(uri, options=None):
             real_uri = uri
         if not hasattr(f, '_wampuris'):
             f._wampuris = []
-        f._wampuris.append(Pattern(real_uri, Pattern.URI_TARGET_ENDPOINT, options))
+        f._wampuris.append(Pattern(real_uri, Pattern.URI_TARGET_ENDPOINT, options, check_types))
         return f
     return decorate
 
 
 @public
-def subscribe(uri, options=None):
+def subscribe(uri, options=None, check_types=False):
     """
     Decorator for WAMP event handlers.
 
@@ -349,6 +357,9 @@ def subscribe(uri, options=None):
 
     :param options:
     :type options: None or SubscribeOptions
+
+    :param check_types:
+    :type check_types: bool
     """
     def decorate(f):
         assert(callable(f))
