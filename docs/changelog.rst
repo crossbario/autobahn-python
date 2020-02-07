@@ -5,6 +5,12 @@
 Changelog
 =========
 
+20.2.1
+------
+
+* fix: update XBR ABI files to XBR release v20.2.1
+* fix: add AuthAnonymous to __all__ (#1303)
+
 20.1.3
 ------
 
