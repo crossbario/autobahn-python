@@ -829,7 +829,7 @@ class WebSocketProtocol(ObservableMixin):
 
         if self.state != WebSocketProtocol.STATE_CLOSED:
             self.wasClean = False
-            self.wasNotCleanReason = 'WebSocket closing handshake timeout (peer did not finish the opening handshake in time)'
+            self.wasNotCleanReason = 'WebSocket closing handshake timeout (peer did not finish the closing handshake in time)'
             self.wasCloseHandshakeTimeout = True
             self.dropConnection(abort=True)
         else:
