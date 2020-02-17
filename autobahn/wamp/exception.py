@@ -246,6 +246,12 @@ class ApplicationError(Error):
     WAMP-cryptobox application payload end-to-end encryption error.
     """
 
+    TYPE_CHECK_ERROR = "wamp.error.type_check_error"
+    """
+    WAMP procedure called with wrong argument types or subscription published
+    with wrong argument types.
+    """
+
     def __init__(self, error, *args, **kwargs):
         """
 
@@ -306,3 +312,12 @@ class InvalidPayload(Exception):
     """
     The URI for a topic, procedure or error is not a valid WAMP URI.
     """
+
+
+class TypeCheckError(ApplicationError):
+    """
+    The URI for a topic published with invalid argument types or a
+    procedure called with invalid arguments types.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(ApplicationError.TYPE_CHECK_ERROR, *args, **kwargs)
