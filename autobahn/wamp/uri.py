@@ -383,7 +383,7 @@ def subscribe(uri, options=None, check_types=False):
         assert(callable(f))
         if not hasattr(f, '_wampuris'):
             f._wampuris = []
-        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER, options))
+        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER, options, check_types))
         return f
     return decorate
 
