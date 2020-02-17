@@ -2,18 +2,10 @@
   "contractName": "Migrations",
   "abi": [
     {
-      "constant": true,
       "inputs": [],
-      "name": "owner",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
       "payable": false,
-      "stateMutability": "view",
-      "type": "function"
+      "stateMutability": "nonpayable",
+      "type": "constructor"
     },
     {
       "constant": true,
@@ -21,6 +13,7 @@
       "name": "lastCompletedMigration",
       "outputs": [
         {
+          "internalType": "uint256",
           "name": "",
           "type": "uint256"
         }
@@ -30,15 +23,25 @@
       "type": "function"
     },
     {
+      "constant": true,
       "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
       "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "constructor"
+      "stateMutability": "view",
+      "type": "function"
     },
     {
       "constant": false,
       "inputs": [
         {
+          "internalType": "uint256",
           "name": "completed",
           "type": "uint256"
         }
@@ -53,6 +56,7 @@
       "constant": false,
       "inputs": [
         {
+          "internalType": "address",
           "name": "newAddress",
           "type": "address"
         }
@@ -64,12 +68,12 @@
       "type": "function"
     }
   ],
-  "metadata": "{\"compiler\":{\"version\":\"0.5.2+commit.1df8f40c\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":false,\"inputs\":[{\"name\":\"newAddress\",\"type\":\"address\"}],\"name\":\"upgrade\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"lastCompletedMigration\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"completed\",\"type\":\"uint256\"}],\"name\":\"setCompleted\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/oberstet/scm/crossbario/xbr-protocol/contracts/Migrations.sol\":\"Migrations\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/oberstet/scm/crossbario/xbr-protocol/contracts/Migrations.sol\":{\"keccak256\":\"0xebc1f331d913d74c19481105f27bec952b5210b8bbbf5f1194714c7bf7bdb325\",\"urls\":[\"bzzr://25d82c6a3133f5ff8fcd3d54684115e35997b67cdb6ea8036c1c5be40f51f152\"]}},\"version\":1}",
-  "bytecode": "0x608060405234801561001057600080fd5b5060008054600160a060020a03191633179055610230806100326000396000f3fe608060405234801561001057600080fd5b5060043610610068577c010000000000000000000000000000000000000000000000000000000060003504630900f010811461006d5780638da5cb5b146100a2578063fbdbad3c146100d3578063fdacd576146100ed575b600080fd5b6100a06004803603602081101561008357600080fd5b503573ffffffffffffffffffffffffffffffffffffffff1661010a565b005b6100aa6101bd565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6100db6101d9565b60408051918252519081900360200190f35b6100a06004803603602081101561010357600080fd5b50356101df565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760008190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1580156101a057600080fd5b505af11580156101b4573d6000803e3d6000fd5b50505050505b50565b60005473ffffffffffffffffffffffffffffffffffffffff1681565b60015481565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760015556fea165627a7a72305820af5544ffa73046656cfdbfe33d09bf4071c8ce7d77db3e4691ea550d21e728fc0029",
-  "deployedBytecode": "0x608060405234801561001057600080fd5b5060043610610068577c010000000000000000000000000000000000000000000000000000000060003504630900f010811461006d5780638da5cb5b146100a2578063fbdbad3c146100d3578063fdacd576146100ed575b600080fd5b6100a06004803603602081101561008357600080fd5b503573ffffffffffffffffffffffffffffffffffffffff1661010a565b005b6100aa6101bd565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6100db6101d9565b60408051918252519081900360200190f35b6100a06004803603602081101561010357600080fd5b50356101df565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760008190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1580156101a057600080fd5b505af11580156101b4573d6000803e3d6000fd5b50505050505b50565b60005473ffffffffffffffffffffffffffffffffffffffff1681565b60015481565b60005473ffffffffffffffffffffffffffffffffffffffff163314156101ba5760015556fea165627a7a72305820af5544ffa73046656cfdbfe33d09bf4071c8ce7d77db3e4691ea550d21e728fc0029",
+  "metadata": "{\"compiler\":{\"version\":\"0.5.16+commit.9c3226ce\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"constant\":true,\"inputs\":[],\"name\":\"lastCompletedMigration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"completed\",\"type\":\"uint256\"}],\"name\":\"setCompleted\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAddress\",\"type\":\"address\"}],\"name\":\"upgrade\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/oberstet/scm/crossbario/xbr-protocol/contracts/Migrations.sol\":\"Migrations\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/oberstet/scm/crossbario/xbr-protocol/contracts/Migrations.sol\":{\"keccak256\":\"0x1c41b5059b7726d62b8d72c320ea3aaf928683d324b3b99de31da2a92077a89f\",\"urls\":[\"bzz-raw://90cf9c832337a93829c480030c2fe626a99b7285c4507596a6a0976376003513\",\"dweb:/ipfs/QmSDNDqYiWzpQwsSk6Wr8F5qRNjVUkvGxcyWrhZ31czx5N\"]}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50600080546001600160a01b031916331790556101b3806100326000396000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c80630900f010146100515780638da5cb5b14610079578063fbdbad3c1461009d578063fdacd576146100b7575b600080fd5b6100776004803603602081101561006757600080fd5b50356001600160a01b03166100d4565b005b610081610151565b604080516001600160a01b039092168252519081900360200190f35b6100a5610160565b60408051918252519081900360200190f35b610077600480360360208110156100cd57600080fd5b5035610166565b6000546001600160a01b031633141561014e576000819050806001600160a01b031663fdacd5766001546040518263ffffffff1660e01b815260040180828152602001915050600060405180830381600087803b15801561013457600080fd5b505af1158015610148573d6000803e3d6000fd5b50505050505b50565b6000546001600160a01b031681565b60015481565b6000546001600160a01b031633141561014e5760015556fea265627a7a723158202165b20e4af2ba6c3696d3989c0cad6863844278845c490334dba236d74b807464736f6c63430005100032",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061004c5760003560e01c80630900f010146100515780638da5cb5b14610079578063fbdbad3c1461009d578063fdacd576146100b7575b600080fd5b6100776004803603602081101561006757600080fd5b50356001600160a01b03166100d4565b005b610081610151565b604080516001600160a01b039092168252519081900360200190f35b6100a5610160565b60408051918252519081900360200190f35b610077600480360360208110156100cd57600080fd5b5035610166565b6000546001600160a01b031633141561014e576000819050806001600160a01b031663fdacd5766001546040518263ffffffff1660e01b815260040180828152602001915050600060405180830381600087803b15801561013457600080fd5b505af1158015610148573d6000803e3d6000fd5b50505050505b50565b6000546001600160a01b031681565b60015481565b6000546001600160a01b031633141561014e5760015556fea265627a7a723158202165b20e4af2ba6c3696d3989c0cad6863844278845c490334dba236d74b807464736f6c63430005100032",
   "sourceMap": "836:516:0:-;;;1001:57;8:9:-1;5:2;;;30:1;27;20:12;5:2;-1:-1;1033:5:0;:18;;-1:-1:-1;;;;;;1033:18:0;1041:10;1033:18;;;836:516;;;;;;",
-  "deployedSourceMap": "836:516:0:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;836:516:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;1178:172;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;1178:172:0;;;;:::i;:::-;;862:20;;;:::i;:::-;;;;;;;;;;;;;;;;;;;888:34;;;:::i;:::-;;;;;;;;;;;;;;;;1064:108;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;1064:108:0;;:::i;1178:172::-;980:5;;;;966:10;:19;962:26;;;1244:19;1277:10;1244:44;;1298:8;:21;;;1320:22;;1298:45;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;1298:45:0;;;;8:9:-1;5:2;;;45:16;42:1;39;24:38;77:16;74:1;67:27;5:2;1298:45:0;;;;987:1;962:26;1178:172;:::o;862:20::-;;;;;;:::o;888:34::-;;;;:::o;1064:108::-;980:5;;;;966:10;:19;962:26;;;1131:22;:34;1064:108::o",
-  "source": "///////////////////////////////////////////////////////////////////////////////\n//\n//  Copyright (C) 2018-2019 Crossbar.io Technologies GmbH and contributors.\n//\n//  Licensed under the Apache License, Version 2.0 (the \"License\");\n//  you may not use this file except in compliance with the License.\n//  You may obtain a copy of the License at\n//\n//      http://www.apache.org/licenses/LICENSE-2.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an \"AS IS\" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n//  See the License for the specific language governing permissions and\n//  limitations under the License.\n//\n///////////////////////////////////////////////////////////////////////////////\n\npragma solidity ^0.5.2;\n\n\ncontract Migrations {\n    address public owner;\n    uint public lastCompletedMigration;\n\n    modifier restricted () {\n        if (msg.sender == owner) _;\n    }\n\n    constructor () public {\n        owner = msg.sender;\n    }\n\n    function setCompleted (uint completed) public restricted {\n        lastCompletedMigration = completed;\n    }\n\n    function upgrade (address newAddress) public restricted {\n        Migrations upgraded = Migrations(newAddress);\n        upgraded.setCompleted(lastCompletedMigration);\n    }\n}\n",
+  "deployedSourceMap": "836:516:0:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;836:516:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;1178:172;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;1178:172:0;-1:-1:-1;;;;;1178:172:0;;:::i;:::-;;862:20;;;:::i;:::-;;;;-1:-1:-1;;;;;862:20:0;;;;;;;;;;;;;;888:34;;;:::i;:::-;;;;;;;;;;;;;;;;1064:108;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;1064:108:0;;:::i;1178:172::-;980:5;;-1:-1:-1;;;;;980:5:0;966:10;:19;962:26;;;1244:19;1277:10;1244:44;;1298:8;-1:-1:-1;;;;;1298:21:0;;1320:22;;1298:45;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;1298:45:0;;;;8:9:-1;5:2;;;45:16;42:1;39;24:38;77:16;74:1;67:27;5:2;1298:45:0;;;;987:1;962:26;1178:172;:::o;862:20::-;;;-1:-1:-1;;;;;862:20:0;;:::o;888:34::-;;;;:::o;1064:108::-;980:5;;-1:-1:-1;;;;;980:5:0;966:10;:19;962:26;;;1131:22;:34;1064:108::o",
+  "source": "///////////////////////////////////////////////////////////////////////////////\n//\n//  Copyright (C) 2018-2019 Crossbar.io Technologies GmbH and contributors.\n//\n//  Licensed under the Apache License, Version 2.0 (the \"License\");\n//  you may not use this file except in compliance with the License.\n//  You may obtain a copy of the License at\n//\n//      http://www.apache.org/licenses/LICENSE-2.0\n//\n//  Unless required by applicable law or agreed to in writing, software\n//  distributed under the License is distributed on an \"AS IS\" BASIS,\n//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n//  See the License for the specific language governing permissions and\n//  limitations under the License.\n//\n///////////////////////////////////////////////////////////////////////////////\n\npragma solidity ^0.5.0;\n\n\ncontract Migrations {\n    address public owner;\n    uint public lastCompletedMigration;\n\n    modifier restricted () {\n        if (msg.sender == owner) _;\n    }\n\n    constructor () public {\n        owner = msg.sender;\n    }\n\n    function setCompleted (uint completed) public restricted {\n        lastCompletedMigration = completed;\n    }\n\n    function upgrade (address newAddress) public restricted {\n        Migrations upgraded = Migrations(newAddress);\n        upgraded.setCompleted(lastCompletedMigration);\n    }\n}\n",
   "sourcePath": "/home/oberstet/scm/crossbario/xbr-protocol/contracts/Migrations.sol",
   "ast": {
     "absolutePath": "/home/oberstet/scm/crossbario/xbr-protocol/contracts/Migrations.sol",
@@ -87,7 +91,7 @@
           "solidity",
           "^",
           "0.5",
-          ".2"
+          ".0"
         ],
         "nodeType": "PragmaDirective",
         "src": "810:23:0"
@@ -184,7 +188,7 @@
                         "name": "msg",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3751,
+                        "referencedDeclaration": 4247,
                         "src": "966:3:0",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_message",
@@ -288,7 +292,7 @@
                         "name": "msg",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3751,
+                        "referencedDeclaration": 4247,
                         "src": "1041:3:0",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_message",
@@ -733,7 +737,7 @@
           "solidity",
           "^",
           "0.5",
-          ".2"
+          ".0"
         ],
         "nodeType": "PragmaDirective",
         "src": "810:23:0"
@@ -830,7 +834,7 @@
                         "name": "msg",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3751,
+                        "referencedDeclaration": 4247,
                         "src": "966:3:0",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_message",
@@ -934,7 +938,7 @@
                         "name": "msg",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3751,
+                        "referencedDeclaration": 4247,
                         "src": "1041:3:0",
                         "typeDescriptions": {
                           "typeIdentifier": "t_magic_message",
@@ -1365,11 +1369,11 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.5.2+commit.1df8f40c.Emscripten.clang"
+    "version": "0.5.16+commit.9c3226ce.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.20",
-  "updatedAt": "2020-01-21T16:27:18.531Z",
+  "schemaVersion": "3.0.23",
+  "updatedAt": "2020-02-07T11:11:10.926Z",
   "devdoc": {
     "methods": {}
   },

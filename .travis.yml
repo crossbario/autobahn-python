@@ -121,6 +121,10 @@ matrix:
       provider: script
       script: pwd && ls -la && sh .travis-deploy.sh
 
+  allow_failures:
+    - env: TOX_ENV=coverage
+    - os: osx
+
 # CI notifications
 notifications:
   # IRC: chat messages on #crossbar-ci @ freenode
