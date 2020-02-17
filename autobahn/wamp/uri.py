@@ -143,7 +143,13 @@ class Pattern(object):
         :param options: An optional options object
         :type options: None or RegisterOptions or SubscribeOptions
 
-        :param check_types:
+        :param check_types: Enable automatic type checking against (Python 3.5+) type hints
+            specified on the ``endpoint`` callable. Types are checked at run-time on each
+            invocation of the ``endpoint`` callable. When a type mismatch occurs, the error
+            is forwarded to the callee code in ``onUserError`` override method of
+            :class:`autobahn.wamp.protocol.ApplicationSession`. An error
+            of type :class:`autobahn.wamp.exception.TypeCheckError` is also raised and
+            returned to the caller (via the router).
         :type check_types: bool
 
         """
@@ -331,7 +337,13 @@ def register(uri, options=None, check_types=False):
     :param options:
     :type options: None or RegisterOptions
 
-    :param check_types:
+    :param check_types: Enable automatic type checking against (Python 3.5+) type hints
+        specified on the ``endpoint`` callable. Types are checked at run-time on each
+        invocation of the ``endpoint`` callable. When a type mismatch occurs, the error
+        is forwarded to the callee code in ``onUserError`` override method of
+        :class:`autobahn.wamp.protocol.ApplicationSession`. An error
+        of type :class:`autobahn.wamp.exception.TypeCheckError` is also raised and
+        returned to the caller (via the router).
     :type check_types: bool
     """
     def decorate(f):
@@ -358,7 +370,13 @@ def subscribe(uri, options=None, check_types=False):
     :param options:
     :type options: None or SubscribeOptions
 
-    :param check_types:
+    :param check_types: Enable automatic type checking against (Python 3.5+) type hints
+        specified on the ``endpoint`` callable. Types are checked at run-time on each
+        invocation of the ``endpoint`` callable. When a type mismatch occurs, the error
+        is forwarded to the callee code in ``onUserError`` override method of
+        :class:`autobahn.wamp.protocol.ApplicationSession`. An error
+        of type :class:`autobahn.wamp.exception.TypeCheckError` is also raised and
+        returned to the caller (via the router).
     :type check_types: bool
     """
     def decorate(f):
