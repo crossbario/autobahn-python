@@ -601,9 +601,11 @@ class ISession(abc.ABC):
 
         :param check_types: Enable automatic type checking against (Python 3.5+) type hints
             specified on the ``endpoint`` callable. Types are checked at run-time on each
-            invocation of the ``endpoint`` callable. When a type mismatch occurs,
-            an :class:`autobahn.wamp.error.TypeError` is raised automatically and returned
-            to the callee (via the router).
+            invocation of the ``endpoint`` callable. When a type mismatch occurs, the error
+            is forwarded to the callee code in ``onUserError`` override method of
+            :class:`autobahn.wamp.protocol.ApplicationSession`. An error
+            of type :class:`autobahn.wamp.exception.TypeCheckError` is also raised and
+            returned to the caller (via the router).
         :type check_types: bool
 
         :returns: A registration or a list of registrations (or errors)
@@ -681,9 +683,9 @@ class ISession(abc.ABC):
 
         :param check_types: Enable automatic type checking against (Python 3.5+) type hints
             specified on the ``endpoint`` callable. Types are checked at run-time on each
-            invocation of the ``endpoint`` callable. When a type mismatch occurs,
-            an :class:`autobahn.wamp.error.TypeError` is raised automatically and returned
-            to the callee (via the router).
+            invocation of the ``endpoint`` callable. When a type mismatch occurs, the error
+            is forwarded to the subscriber code in ``onUserError`` override method of
+            :class:`autobahn.wamp.protocol.ApplicationSession`.
         :type check_types: bool
 
         :returns: A single Deferred/Future or a list of such objects

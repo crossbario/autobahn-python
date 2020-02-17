@@ -35,7 +35,7 @@ from autobahn.wamp import message
 from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
-from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
+from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError, TypeCheckError
 from autobahn.wamp.interfaces import IPayloadCodec, IAuthenticator  # noqa
 from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
 from autobahn.exception import PayloadExceededError
@@ -56,20 +56,6 @@ from autobahn.wamp.request import \
 
 def is_method_or_function(f):
     return inspect.ismethod(f) or inspect.isfunction(f)
-
-
-def type_check(func):
-    async def _type_check(*args, **kwargs):
-        # Converge both args and kwargs into a dictionary
-        arguments = inspect.getcallargs(func, *args, **kwargs)
-        response = []
-        for name, kind in func.__annotations__.items():
-            if name in arguments and not isinstance(arguments[name], kind):
-                response.append("'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
-        if response:
-            raise ApplicationError("autobahn.wamp.error.TypeError", ', '.join(response))
-        return await func(*args, **kwargs)
-    return _type_check
 
 
 class BaseSession(ObservableMixin):
@@ -471,7 +457,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onUserError`
         """
-        if isinstance(fail.value, exception.ApplicationError):
+        if hasattr(fail, 'value') and isinstance(fail.value, exception.ApplicationError):
             self.log.warn('{klass}.onUserError(): "{msg}"',
                           klass=self.__class__.__name__,
                           msg=fail.value.error_message())
@@ -503,6 +489,32 @@ class ApplicationSession(BaseSession):
                 tb=txaio.failure_format_traceback(txaio.create_failure()),
             )
         return None
+
+    def type_check(self, func, return_error=False):
+        """
+        Does parameter type checking and validation against type hints
+        and appropriately tells the user code and the caller (through router).
+
+        :return_error: Whether the error should be returned to the caller in
+                       addition to being notified to the user code.
+        :type: bool
+        """
+        async def _type_check(*args, **kwargs):
+            # Converge both args and kwargs into a dictionary
+            arguments = inspect.getcallargs(func, *args, **kwargs)
+            response = []
+            for name, kind in func.__annotations__.items():
+                if name in arguments and not isinstance(arguments[name], kind):
+                    response.append(
+                        "'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
+            if response:
+                error = TypeCheckError(', '.join(response))
+                self.onUserError(txaio.create_future_error(error))
+                if return_error:
+                    raise error
+            return await func(*args, **kwargs)
+
+        return _type_check
 
     def onMessage(self, msg):
         """
@@ -1477,7 +1489,7 @@ class ApplicationSession(BaseSession):
             request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
             if check_types:
-                fn = type_check(fn)
+                fn = self.type_check(fn)
             handler_obj = Handler(fn, obj, options.details_arg if options else None)
             self._subscribe_reqs[request_id] = SubscribeRequest(request_id, topic, on_reply, handler_obj)
 
@@ -1679,7 +1691,7 @@ class ApplicationSession(BaseSession):
             request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
             if check_types:
-                fn = type_check(fn)
+                fn = self.type_check(fn, return_error=True)
             endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
             if prefix is not None:
                 procedure = "{}{}".format(prefix, procedure)
