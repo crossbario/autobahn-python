@@ -1475,7 +1475,8 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
         """
-        assert((callable(handler) and topic is not None) or hasattr(handler, '__class__'))
+        assert((callable(handler) and topic is not None) or hasattr(handler, '__class__')
+               and not check_types)
         assert(topic is None or type(topic) == str)
         assert(options is None or isinstance(options, types.SubscribeOptions))
 
@@ -1534,7 +1535,8 @@ class ApplicationSession(BaseSession):
                                     subopts = types.SubscribeOptions(match="wildcard")
                                 else:
                                     subopts = types.SubscribeOptions(match="exact")
-                            on_replies.append(_subscribe(handler, proc, _uri, subopts, check_types))
+                            on_replies.append(_subscribe(handler, proc, _uri, subopts,
+                                                         pat._check_types))
 
             # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)
