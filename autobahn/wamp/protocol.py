@@ -1475,8 +1475,8 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
         """
-        assert((callable(handler) and topic is not None) or hasattr(handler, '__class__')
-               and not check_types)
+        assert((callable(handler) and topic is not None) or (hasattr(handler, '__class__')
+               and not check_types))
         assert(topic is None or type(topic) == str)
         assert(options is None or isinstance(options, types.SubscribeOptions))
 
@@ -1678,8 +1678,8 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ICallee.register`
         """
-        assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__')
-               and not check_types)
+        assert((callable(endpoint) and procedure is not None) or (hasattr(endpoint, '__class__')
+               and not check_types))
         assert(procedure is None or type(procedure) == str)
         assert(options is None or isinstance(options, types.RegisterOptions))
         assert prefix is None or isinstance(prefix, str)
