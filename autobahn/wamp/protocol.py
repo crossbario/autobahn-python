@@ -1676,7 +1676,8 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ICallee.register`
         """
-        assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__'))
+        assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__')
+               and not check_types)
         assert(procedure is None or type(procedure) == str)
         assert(options is None or isinstance(options, types.RegisterOptions))
         assert prefix is None or isinstance(prefix, str)
@@ -1734,7 +1735,8 @@ class ApplicationSession(BaseSession):
                         if pat.is_endpoint():
                             _uri = pat.uri()
                             regopts = pat.options or options
-                            on_replies.append(_register(endpoint, proc, _uri, regopts, check_types))
+                            on_replies.append(_register(endpoint, proc, _uri, regopts,
+                                                        pat._check_types))
 
             # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)
