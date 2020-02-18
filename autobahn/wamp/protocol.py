@@ -23,6 +23,7 @@
 # THE SOFTWARE.
 #
 ###############################################################################
+from typing import Union
 
 import txaio
 import inspect
@@ -490,7 +491,7 @@ class ApplicationSession(BaseSession):
             )
         return None
 
-    def type_check(self, func, return_error=False):
+    def type_check(self, func):
         """
         Does parameter type checking and validation against type hints
         and appropriately tells the user code and the caller (through router).
@@ -504,14 +505,16 @@ class ApplicationSession(BaseSession):
             arguments = inspect.getcallargs(func, *args, **kwargs)
             response = []
             for name, kind in func.__annotations__.items():
-                if name in arguments and not isinstance(arguments[name], kind):
-                    response.append(
-                        "'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
+                if name in arguments:
+                    if getattr(kind, "__origin__", None) == Union:
+                        if not isinstance(arguments[name], kind.__args__):
+                            response.append(
+                                "'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
+                    elif not isinstance(arguments[name], kind):
+                        response.append(
+                            "'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
             if response:
-                error = TypeCheckError(', '.join(response))
-                self.onUserError(txaio.create_future_error(error))
-                if return_error:
-                    raise error
+                raise TypeCheckError(', '.join(response))
             return await func(*args, **kwargs)
 
         return _type_check
@@ -1691,7 +1694,7 @@ class ApplicationSession(BaseSession):
             request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
             if check_types:
-                fn = self.type_check(fn, return_error=True)
+                fn = self.type_check(fn)
             endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
             if prefix is not None:
                 procedure = "{}{}".format(prefix, procedure)
