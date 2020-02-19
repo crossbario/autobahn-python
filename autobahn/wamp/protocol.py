@@ -495,10 +495,6 @@ class ApplicationSession(BaseSession):
         """
         Does parameter type checking and validation against type hints
         and appropriately tells the user code and the caller (through router).
-
-        :return_error: Whether the error should be returned to the caller in
-                       addition to being notified to the user code.
-        :type: bool
         """
         async def _type_check(*args, **kwargs):
             # Converge both args and kwargs into a dictionary
@@ -515,7 +511,7 @@ class ApplicationSession(BaseSession):
                             "'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
             if response:
                 raise TypeCheckError(', '.join(response))
-            return await func(*args, **kwargs)
+            return await txaio.as_future(func, *args, **kwargs)
 
         return _type_check
 
