@@ -2,6 +2,10 @@ language: python
 dist: xenial
 sudo: true
 
+# https://docs.travis-ci.com/user/customizing-the-build/#git-submodules
+git:
+  submodules: true
+
 addons:
   apt:
     update: true
