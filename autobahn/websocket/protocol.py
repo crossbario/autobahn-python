@@ -1673,6 +1673,8 @@ class WebSocketProtocol(ObservableMixin):
                 self.logRxFrame(self.current_frame, self.control_frame_data)
             self.processControlFrame()
         else:
+            self._cancelAutoPingTimeoutCall()
+            
             if self.state == WebSocketProtocol.STATE_OPEN:
                 self.trafficStats.incomingWebSocketFrames += 1
             if self.logFrames:
@@ -1895,6 +1897,30 @@ class WebSocketProtocol(ObservableMixin):
                 self.autoPingTimeout,
                 self.onAutoPingTimeout,
             )
+
+    def _cancelAutoPingTimeoutCall(self):
+        """
+        When data is received from client, use it in leu of timely PONG response - cancel pending timeout call
+        that will drop connection
+        """
+        if self.autoPingTimeoutCall:
+            self.log.debug("Cancelling autoPingTimeoutCall due to incoming data")
+            self.autoPingTimeoutCall.cancel()
+            self.autoPingTimeoutCall = None
+            #clear pending auto ping data, as current ping must be discarded
+            self.autoPingPending = None
+
+            if self.autoPingPendingCall:
+                self.autoPingPendingCall.cancel()
+                self.autoPingPendingCall = None
+
+            #schedule new autoping, without waiting for PONG, this will setup new autoPingPending
+            if self.autoPingInterval:
+                self.log.debug("Scheduling auto-ping/pong")
+                self.autoPingPendingCall = self.factory._batched_timer.call_later(
+                    self.autoPingInterval,
+                    self._sendAutoPing,
+                )
 
     def sendPong(self, payload=None):
         """
