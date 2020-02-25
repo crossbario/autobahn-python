@@ -1,0 +1,3 @@
+[submodule "xbr"]
+	path = xbr
+	url = https://github.com/crossbario/xbr-protocol.git
