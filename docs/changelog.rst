@@ -5,6 +5,12 @@
 Changelog
 =========
 
+20.2.2
+------
+
+* new: update XBR ABI files to XBR release v20.2.2
+* new: remove hard-copied XBR ABI files and add XBR protocol git submodule instead
+
 20.2.1
 ------
 
