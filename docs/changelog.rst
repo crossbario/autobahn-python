@@ -5,6 +5,11 @@
 Changelog
 =========
 
+master
+------
+
+* new: helper function to create a configured Web3 blockchain connection (#1329)
+
 20.2.2
 ------
 
