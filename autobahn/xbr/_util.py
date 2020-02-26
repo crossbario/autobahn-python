@@ -33,6 +33,44 @@ from py_eth_sig_utils import signing
 _EIP712_SIG_LEN = 32 + 32 + 1
 
 
+def make_w3(gateway_config):
+    """
+    Create a Web3 instance configured and ready-to-use gateway to the blockchain.
+
+    :param gateway_config: Blockchain gateway configuration.
+    :type gateway_config: dict
+
+    :return: Configured Web3 instance.
+    :rtype: :class:`web3.Web3`
+    """
+    request_kwargs = gateway_config.get('http_options', {})
+
+    if gateway_config['type'] == 'auto':
+        w3 = web3.Web3()
+
+    elif gateway_config['type'] == 'user':
+        w3 = web3.Web3(web3.Web3.HTTPProvider(gateway_config['http'], request_kwargs=request_kwargs))
+
+    elif gateway_config['type'] == 'infura':
+        project_id = gateway_config['key']
+        # project_secret = gateway_config['secret']
+
+        http_url = 'https://{}.infura.io/v3/{}'.format(gateway_config['network'], project_id)
+        w3 = web3.Web3(web3.Web3.HTTPProvider(http_url, request_kwargs=request_kwargs))
+
+        # https://web3py.readthedocs.io/en/stable/middleware.html#geth-style-proof-of-authority
+        if gateway_config.get('network', None) == 'rinkeby':
+            # This middleware is required to connect to geth --dev or the Rinkeby public network.
+            from web3.middleware import geth_poa_middleware
+
+            # inject the poa compatibility middleware to the innermost layer
+            w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    else:
+        raise RuntimeError('invalid blockchain gateway type "{}"'.format(gateway_config['type']))
+
+    return w3
+
+
 def unpack_uint128(data):
     assert data is None or type(data) == bytes, 'data must by bytes, was {}'.format(type(data))
     if data and type(data) == bytes:
