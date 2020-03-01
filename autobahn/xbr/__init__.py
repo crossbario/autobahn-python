@@ -124,7 +124,6 @@ try:
         # print('Provider set - xbrmarket={}'.format(XBR_DEBUG_MARKET_ADDR))
         xbrmarket = _w3.eth.contract(address=XBR_DEBUG_MARKET_ADDR, abi=XBR_MARKET_ABI)
 
-
     class MemberLevel(object):
         """
         XBR Network member levels.
