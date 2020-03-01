@@ -132,7 +132,7 @@ def main1(reactor, client, details):
 
 
 if __name__ == '__main__':
-    # hookinh into on_create is a low-level API - the user callback
+    # hooking into on_create is a low-level API - the user callback
     # will fire with a created client, and the user code can
     # control the whole transport and session creation, connection and
     # reconnection process.
@@ -151,7 +151,7 @@ def main1(reactor, client, config):
 
 
 if __name__ == '__main__':
-    # hookinh into on_create is a low-level API - the user callback
+    # hooking into on_create is a low-level API - the user callback
     # will fire with a created client, and the user code can
     # control the whole transport and session creation, connection and
     # reconnection process.
@@ -181,7 +181,7 @@ def main1(reactor, client, config):
 
 
 if __name__ == '__main__':
-    # hookinh into on_create is a low-level API - the user callback
+    # hooking into on_create is a low-level API - the user callback
     # will fire with a created client, and the user code can
     # control the whole transport and session creation, connection and
     # reconnection process.
