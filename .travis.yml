@@ -124,6 +124,7 @@ matrix:
   allow_failures:
     - env: TOX_ENV=coverage
     - os: osx
+    - python: "pypy3.5"
 
 # CI notifications
 notifications:

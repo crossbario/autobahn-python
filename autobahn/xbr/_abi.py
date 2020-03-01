@@ -37,6 +37,7 @@ import web3
 
 XBR_TOKEN_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRToken.json')
 XBR_NETWORK_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRNetwork.json')
+XBR_MARKET_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRMarket.json')
 XBR_CHANNEL_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRChannel.json')
 
 
@@ -64,6 +65,18 @@ else:
     XBR_DEBUG_NETWORK_ADDR = '0x0000000000000000000000000000000000000000'
     print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_NETWORK_ADDR manually.')
 
+if 'XBR_DEBUG_MARKET_ADDR' in os.environ:
+    _mrkt_adr = os.environ['XBR_DEBUG_MARKET_ADDR']
+    try:
+        _mrkt_adr = binascii.a2b_hex(_mrkt_adr[2:])
+        _mrkt_adr = web3.Web3.toChecksumAddress(_mrkt_adr)
+    except Exception as e:
+        raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_NETWORK_ADDR={} - {}'.format(_mrkt_adr, e))
+    XBR_DEBUG_MARKET_ADDR = _mrkt_adr
+else:
+    XBR_DEBUG_MARKET_ADDR = '0x0000000000000000000000000000000000000000'
+    print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_MARKET_ADDR manually.')
+
 
 def _load_json(contract_name):
     fn = pkg_resources.resource_filename('autobahn', 'xbr/contracts/{}.json'.format(contract_name))
@@ -75,4 +88,5 @@ def _load_json(contract_name):
 
 XBR_TOKEN_ABI = _load_json('XBRToken')['abi']
 XBR_NETWORK_ABI = _load_json('XBRNetwork')['abi']
+XBR_MARKET_ABI = _load_json('XBRMarket')['abi']
 XBR_CHANNEL_ABI = _load_json('XBRChannel')['abi']

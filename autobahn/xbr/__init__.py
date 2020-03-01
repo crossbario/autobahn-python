@@ -33,8 +33,8 @@ try:
     # https://github.com/ethereum/eth-abi/pull/88
     from eth_abi import abi
 
-    from autobahn.xbr._abi import XBR_TOKEN_ABI, XBR_NETWORK_ABI, XBR_CHANNEL_ABI  # noqa
-    from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR  # noqa
+    from autobahn.xbr._abi import XBR_TOKEN_ABI, XBR_NETWORK_ABI, XBR_MARKET_ABI, XBR_CHANNEL_ABI  # noqa
+    from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_MARKET_ADDR  # noqa
     from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer  # noqa
     from autobahn.xbr._util import make_w3, sign_eip712_data, recover_eip712_signer, pack_uint256, unpack_uint256  # noqa
     from autobahn.xbr._blockchain import SimpleBlockchain  # noqa
@@ -93,12 +93,17 @@ try:
 
     xbrtoken = None
     """
-    Contract instance of the token used in the XBR Network.
+    Contract instance of XBRToken.
     """
 
     xbrnetwork = None
     """
-    Contract instance of the XBR Network.
+    Contract instance of XBRNetwork.
+    """
+
+    xbrmarket = None
+    """
+    Contract instance of XBRMarket.
     """
 
     def setProvider(_w3):
@@ -108,12 +113,16 @@ try:
         """
         global xbrtoken
         global xbrnetwork
+        global xbrmarket
 
         # print('Provider set - xbrtoken={}'.format(XBR_DEBUG_TOKEN_ADDR))
         xbrtoken = _w3.eth.contract(address=XBR_DEBUG_TOKEN_ADDR, abi=XBR_TOKEN_ABI)
 
         # print('Provider set - xbrnetwork={}'.format(XBR_DEBUG_NETWORK_ADDR))
         xbrnetwork = _w3.eth.contract(address=XBR_DEBUG_NETWORK_ADDR, abi=XBR_NETWORK_ABI)
+
+        # print('Provider set - xbrmarket={}'.format(XBR_DEBUG_MARKET_ADDR))
+        xbrmarket = _w3.eth.contract(address=XBR_DEBUG_MARKET_ADDR, abi=XBR_MARKET_ABI)
 
     class MemberLevel(object):
         """
@@ -186,6 +195,7 @@ try:
 
         'xbrtoken',
         'xbrnetwork',
+        'xbrmarket',
         'make_w3',
         'sign_eip712_data',
         'recover_eip712_signer',
@@ -207,6 +217,7 @@ try:
 
         'XBR_TOKEN_ABI',
         'XBR_NETWORK_ABI',
+        'XBR_MARKET_ABI',
         'XBR_CHANNEL_ABI',
         'ASCII_BOMB',
 
