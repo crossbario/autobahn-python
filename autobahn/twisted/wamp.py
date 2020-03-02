@@ -409,10 +409,16 @@ class ApplicationRunner(object):
             # now enter the Twisted reactor loop
             reactor.run()
 
-            # if we exited due to a connection error, raise that to the
-            # caller
+            # if the ApplicationSession sets an "error" key on the self.config.extra dictionary, which
+            # has been set to the self.extra dictionary, extract the Exception from that and re-raise
+            # it as the very last one (see below) exciting back to the caller of self.run()
+            app_error = self.extra.get('error', None)
+
+            # if we exited due to a connection error, raise that to the caller
             if connect_error.exception:
                 raise connect_error.exception
+            elif app_error:
+                raise app_error
 
         else:
             # let the caller handle any errors
