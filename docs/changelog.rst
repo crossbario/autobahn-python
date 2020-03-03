@@ -8,6 +8,14 @@ Changelog
 master
 ------
 
+20.3.1
+------
+
+* fix: confusion between paying and payment channel (#1337)
+* new: forward explicitly set app level errors from ApplicationRunner.run() (#1336)
+* fix: simple typo: hookinh -> hooking (#1333)
+* new: update for xbr v20.3.1
+* fix: for #1327 - cancel Auto Ping Timeout  (#1328)
 * new: helper function to create a configured Web3 blockchain connection (#1329)
 
 20.2.2
