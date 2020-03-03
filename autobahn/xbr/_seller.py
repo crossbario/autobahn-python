@@ -448,7 +448,7 @@ class SimpleSeller(object):
         if not self._session or not self._session.is_attached():
             raise RuntimeError('market-maker session not attached')
 
-        paying_balance = await self._session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
+        paying_balance = await self._session.call('xbr.marketmaker.get_paying_channel_balance', self._channel['channel'])
 
         return paying_balance
 
