@@ -145,6 +145,9 @@ class WebSocketResource(object):
         if isinstance(transport, ProtocolWrapper):
             # i.e. TLS is a wrapping protocol
             transport.wrappedProtocol = protocol
+        elif isinstance(transport.protocol, ProtocolWrapper):
+            # this happens in new-TLS
+            transport.protocol.wrappedProtocol = protocol
         else:
             transport.protocol = protocol
         protocol.makeConnection(transport)
