@@ -723,7 +723,7 @@ class Component(ObservableMixin):
 
     def _connect_once(self, reactor, transport):
 
-        self.log.info(
+        self.log.debug(
             'connecting once using transport type "{transport_type}" '
             'over endpoint "{endpoint_desc}"',
             transport_type=transport.type,

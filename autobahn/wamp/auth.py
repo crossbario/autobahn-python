@@ -152,7 +152,7 @@ class AuthCryptoSign(object):
                 raise ValueError(
                     "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
                 )
-        for key in ['privkey', 'authid']:
+        for key in ['privkey']:
             if key not in kw:
                 raise ValueError(
                     "Must provide '{}' for cryptosign".format(key)
