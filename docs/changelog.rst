@@ -8,6 +8,8 @@ Changelog
 master
 ------
 
+* new: update ABI files for XBR v20.4.1-dev
+
 20.3.1
 ------
 
