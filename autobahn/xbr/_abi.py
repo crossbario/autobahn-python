@@ -38,6 +38,7 @@ import web3
 XBR_TOKEN_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRToken.json')
 XBR_NETWORK_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRNetwork.json')
 XBR_MARKET_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRMarket.json')
+XBR_CATALOG_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRCatalog.json')
 XBR_CHANNEL_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRChannel.json')
 
 
@@ -71,11 +72,35 @@ if 'XBR_DEBUG_MARKET_ADDR' in os.environ:
         _mrkt_adr = binascii.a2b_hex(_mrkt_adr[2:])
         _mrkt_adr = web3.Web3.toChecksumAddress(_mrkt_adr)
     except Exception as e:
-        raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_NETWORK_ADDR={} - {}'.format(_mrkt_adr, e))
+        raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_MARKET_ADDR={} - {}'.format(_mrkt_adr, e))
     XBR_DEBUG_MARKET_ADDR = _mrkt_adr
 else:
     XBR_DEBUG_MARKET_ADDR = '0x0000000000000000000000000000000000000000'
     print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_MARKET_ADDR manually.')
+
+if 'XBR_DEBUG_CATALOG_ADDR' in os.environ:
+    _ctlg_adr = os.environ['XBR_DEBUG_CATALOG_ADDR']
+    try:
+        _ctlg_adr = binascii.a2b_hex(_ctlg_adr[2:])
+        _ctlg_adr = web3.Web3.toChecksumAddress(_ctlg_adr)
+    except Exception as e:
+        raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_CATALOG_ADDR={} - {}'.format(_ctlg_adr, e))
+    XBR_DEBUG_CATALOG_ADDR = _ctlg_adr
+else:
+    XBR_DEBUG_CATALOG_ADDR = '0x0000000000000000000000000000000000000000'
+    print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_CATALOG_ADDR manually.')
+
+if 'XBR_DEBUG_CHANNEL_ADDR' in os.environ:
+    _chnl_adr = os.environ['XBR_DEBUG_CHANNEL_ADDR']
+    try:
+        _chnl_adr = binascii.a2b_hex(_chnl_adr[2:])
+        _chnl_adr = web3.Web3.toChecksumAddress(_chnl_adr)
+    except Exception as e:
+        raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_CHANNEL_ADDR={} - {}'.format(_chnl_adr, e))
+    XBR_DEBUG_CHANNEL_ADDR = _chnl_adr
+else:
+    XBR_DEBUG_CHANNEL_ADDR = '0x0000000000000000000000000000000000000000'
+    print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_CHANNEL_ADDR manually.')
 
 
 def _load_json(contract_name):
@@ -89,4 +114,5 @@ def _load_json(contract_name):
 XBR_TOKEN_ABI = _load_json('XBRToken')['abi']
 XBR_NETWORK_ABI = _load_json('XBRNetwork')['abi']
 XBR_MARKET_ABI = _load_json('XBRMarket')['abi']
+XBR_CATALOG_ABI = _load_json('XBRCatalog')['abi']
 XBR_CHANNEL_ABI = _load_json('XBRChannel')['abi']

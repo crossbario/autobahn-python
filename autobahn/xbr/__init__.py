@@ -33,8 +33,8 @@ try:
     # https://github.com/ethereum/eth-abi/pull/88
     from eth_abi import abi
 
-    from autobahn.xbr._abi import XBR_TOKEN_ABI, XBR_NETWORK_ABI, XBR_MARKET_ABI, XBR_CHANNEL_ABI  # noqa
-    from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_MARKET_ADDR  # noqa
+    from autobahn.xbr._abi import XBR_TOKEN_ABI, XBR_NETWORK_ABI, XBR_MARKET_ABI, XBR_CATALOG_ABI, XBR_CHANNEL_ABI  # noqa
+    from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_MARKET_ADDR, XBR_DEBUG_CATALOG_ADDR, XBR_DEBUG_CHANNEL_ADDR  # noqa
     from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer  # noqa
     from autobahn.xbr._util import make_w3, sign_eip712_data, recover_eip712_signer, pack_uint256, unpack_uint256  # noqa
     from autobahn.xbr._blockchain import SimpleBlockchain  # noqa
@@ -106,6 +106,16 @@ try:
     Contract instance of XBRMarket.
     """
 
+    xbrcatalog = None
+    """
+    Contract instance of XBRMarket.
+    """
+
+    xbrchannel = None
+    """
+    Contract instance of XBRMarket.
+    """
+
     def setProvider(_w3):
         """
         The XBR library must be initialized (once) first by setting the Web3 provider
@@ -114,6 +124,8 @@ try:
         global xbrtoken
         global xbrnetwork
         global xbrmarket
+        global xbrcatalog
+        global xbrchannel
 
         # print('Provider set - xbrtoken={}'.format(XBR_DEBUG_TOKEN_ADDR))
         xbrtoken = _w3.eth.contract(address=XBR_DEBUG_TOKEN_ADDR, abi=XBR_TOKEN_ABI)
@@ -123,6 +135,12 @@ try:
 
         # print('Provider set - xbrmarket={}'.format(XBR_DEBUG_MARKET_ADDR))
         xbrmarket = _w3.eth.contract(address=XBR_DEBUG_MARKET_ADDR, abi=XBR_MARKET_ABI)
+
+        # print('Provider set - xbrcatalog={}'.format(XBR_DEBUG_CATALOG_ADDR))
+        xbrcatalog = _w3.eth.contract(address=XBR_DEBUG_MARKET_ADDR, abi=XBR_CATALOG_ABI)
+
+        # print('Provider set - xbrchannel={}'.format(XBR_DEBUG_CHANNEL_ADDR))
+        xbrchannel = _w3.eth.contract(address=XBR_DEBUG_MARKET_ADDR, abi=XBR_CHANNEL_ABI)
 
     class MemberLevel(object):
         """
@@ -191,35 +209,36 @@ try:
 
     __all__ = (
         'HAS_XBR',
-        'setProvider',
-
+        'XBR_TOKEN_ABI',
+        'XBR_NETWORK_ABI',
+        'XBR_MARKET_ABI',
+        'XBR_CATALOG_ABI',
+        'XBR_CHANNEL_ABI',
         'xbrtoken',
         'xbrnetwork',
         'xbrmarket',
+        'xbrcatalog',
+        'xbrchannel',
+
+        'setProvider',
         'make_w3',
         'sign_eip712_data',
         'recover_eip712_signer',
         'pack_uint256',
         'unpack_uint256',
-
-        'KeySeries',
-        'SimpleBlockchain',
-        'SimpleSeller',
-        'SimpleBuyer',
-
         'generate_seedphrase',
         'check_seedphrase',
         'account_from_seedphrase',
+        'ASCII_BOMB',
 
         'MemberLevel',
         'ActorType',
         'NodeType',
 
-        'XBR_TOKEN_ABI',
-        'XBR_NETWORK_ABI',
-        'XBR_MARKET_ABI',
-        'XBR_CHANNEL_ABI',
-        'ASCII_BOMB',
+        'KeySeries',
+        'SimpleBlockchain',
+        'SimpleSeller',
+        'SimpleBuyer',
 
         'IMarketMaker',
         'IProvider',
