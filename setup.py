@@ -45,6 +45,7 @@ with open('README.rst') as f:
 extras_require_twisted = [
     "zope.interface>=3.6.0",        # Zope Public License
     "twisted>=16.6.0",              # MIT license (https://pypi.org/project/Twisted/16.6.0/)
+    "attrs>=20.3.0"                 # MIT license
 ]
 
 # C-based WebSocket acceleration (only use on CPython, not PyPy!)
