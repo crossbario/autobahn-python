@@ -44,7 +44,8 @@ with open('README.rst') as f:
 # as we make claim to support older Twisted!)
 extras_require_twisted = [
     "zope.interface>=3.6.0",        # Zope Public License
-    "twisted>=15.4.0",              # MIT license (https://pypi.org/project/Twisted/15.4.0/)
+    "twisted>=16.6.0",              # MIT license (https://pypi.org/project/Twisted/16.6.0/)
+    "attrs>=19.2.0"                 # MIT license (https://pypi.org/project/attrs/19.2.0/)
 ]
 
 # C-based WebSocket acceleration (only use on CPython, not PyPy!)
@@ -88,7 +89,7 @@ extras_require_serialization.extend([
 os.environ['SODIUM_INSTALL'] = 'bundled'  # enforce use of bundled libsodium
 extras_require_encryption = [
     'pyopenssl>=16.2.0',            # Apache 2.0 license
-    'service_identity>=16.0.0',     # MIT license
+    'service_identity>=18.1.0',     # MIT license
     'pynacl>=1.0.1',                # Apache license
     'pytrie>=0.2',                  # BSD license
     'pyqrcode>=1.1'                 # BSD license
