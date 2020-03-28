@@ -10,8 +10,14 @@ all:
 	@echo "   flake8           Run flake8 code checking"
 	@echo ""
 
+abi_files:
+	curl -s https://xbr.network/lib/abi/xbr-protocol-20.4.1-dev.zip -o /tmp/xbr-protocol-20.4.1-dev.zip
+	unzip -t /tmp/xbr-protocol-20.4.1-dev.zip
+	rm -rf ${PWD}/autobahn/xbr/contracts
+	unzip /tmp/xbr-protocol-20.4.1-dev.zip -d ${PWD}/autobahn/xbr/contracts
+
 # install locally
-install:
+install: abi_files
 	-pip uninstall -y pytest_asyncio # remove the broken shit
 	-pip uninstall -y pytest_cov # remove the broken shit
 	# enforce use of bundled libsodium

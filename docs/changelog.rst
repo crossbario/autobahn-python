@@ -5,10 +5,14 @@
 Changelog
 =========
 
-master
+20.4.1
 ------
 
-* new: update ABI files for XBR v20.4.1-dev
+* new: XBR ABI files are downloaded from upstream and extracted into package (fixes #1349)
+* new: expose new XBR top-level contracts
+* fix: bump dependencies versions for attrs and identity (#1346)
+* fix: FrontendProxyProtocol object has no attribute 'write' (#1339)
+* fix: WAMP-cryptosign authid is not mandatory; reduce log noise (#1340)
 
 20.3.1
 ------
