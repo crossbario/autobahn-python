@@ -42,6 +42,13 @@ which aws
 aws --version
 aws s3 ls ${AWS_S3_BUCKET_NAME}/wheels/
 
+# ABI JSON files are extracted directly into the package source directory, so they are bundled in the package
+echo 'downloading and extracting XBR ABI files ..'
+curl -s https://xbr.network/lib/abi/xbr-protocol-20.4.1-dev.zip -o /tmp/xbr-protocol-20.4.1-dev.zip
+unzip -t /tmp/xbr-protocol-20.4.1-dev.zip
+rm -rf ./autobahn/xbr/contracts
+unzip /tmp/xbr-protocol-20.4.1-dev.zip -d ./autobahn/xbr/contracts
+
 # build python source dist and wheels
 echo 'building package ..'
 python setup.py sdist bdist_wheel --universal
