@@ -42,3 +42,4 @@ node.key
 *.so
 coverage.xml
 .coverage.*
+autobahn/xbr/contracts
