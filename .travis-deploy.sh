@@ -1,12 +1,13 @@
 #!/bin/bash
 
+set +o verbose -o errexit
+
+# AUTOBAHN_VERSION             : must be set in travis.yml!
 export AWS_DEFAULT_REGION=eu-central-1
 export AWS_S3_BUCKET_NAME=crossbarbuilder
-# AWS_ACCESS_KEY_ID         : must be set in Travis CI build context
-# AWS_SECRET_ACCESS_KEY     : must be set in Travis CI build context
-# WAMP_PRIVATE_KEY          : must be set in Travis CI build context
-
-set -ev
+# AWS_ACCESS_KEY_ID         : must be set in Travis CI build context!
+# AWS_SECRET_ACCESS_KEY     : must be set in Travis CI build context!
+# WAMP_PRIVATE_KEY          : must be set in Travis CI build context!
 
 # TRAVIS_BRANCH, TRAVIS_PULL_REQUEST, TRAVIS_TAG
 
@@ -40,14 +41,13 @@ echo 'installing aws tools ..'
 pip install awscli
 which aws
 aws --version
-aws s3 ls ${AWS_S3_BUCKET_NAME}/wheels/
 
 # ABI JSON files are extracted directly into the package source directory, so they are bundled in the package
 echo 'downloading and extracting XBR ABI files ..'
-curl -s https://xbr.network/lib/abi/xbr-protocol-20.4.1-dev.zip -o /tmp/xbr-protocol-20.4.1-dev.zip
-unzip -t /tmp/xbr-protocol-20.4.1-dev.zip
+curl -s https://xbr.network/lib/abi/xbr-protocol-latest.zip -o /tmp/xbr-protocol-latest.zip
+unzip -t /tmp/xbr-protocol-latest.zip
 rm -rf ./autobahn/xbr/contracts
-unzip /tmp/xbr-protocol-20.4.1-dev.zip -d ./autobahn/xbr/contracts
+unzip /tmp/xbr-protocol-latest.zip -d ./autobahn/xbr/contracts
 
 # build python source dist and wheels
 echo 'building package ..'
@@ -56,17 +56,37 @@ ls -la ./dist
 
 # upload to S3: https://s3.eu-central-1.amazonaws.com/crossbarbuilder/wheels/
 echo 'uploading package ..'
-aws s3 cp --recursive ./dist s3://${AWS_S3_BUCKET_NAME}/wheels
+# "aws s3 ls" will return -1 when no files are found! but we don't want our script to exit
+aws s3 ls ${AWS_S3_BUCKET_NAME}/wheels/autobahn- || true
 
-pip install https://github.com/crossbario/txaio/archive/master.zip#egg=txaio
-pip install https://github.com/crossbario/zlmdb/archive/master.zip#egg=zlmdb
-pip install https://github.com/crossbario/autobahn-python/archive/master.zip#egg=autobahn[twisted,serialization,encryption,xbr]
+# aws s3 cp --recursive ./dist s3://${AWS_S3_BUCKET_NAME}/wheels
+aws s3 rm s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl
+aws s3 rm s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-latest-py2.py3-none-any.whl
+
+aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl
+aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-latest-py2.py3-none-any.whl
+
+#aws s3api copy-object --acl public-read \
+#    --copy-source wheels/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl --bucket ${AWS_S3_BUCKET_NAME} \
+#    --key wheels/autobahn-latest-py2.py3-none-any.whl
+
+aws s3 ls ${AWS_S3_BUCKET_NAME}/wheels/autobahn-
 
 # tell crossbar-builder about this new wheel push
 # get 'wamp' command, always with latest autobahn master
-wamp --max-failures 3 --authid wheel_pusher --url ws://office2dmz.crossbario.com:8008/ --realm webhook call builder.wheel_pushed --keyword name autobahn-python --keyword publish true
+pip install -q -I https://github.com/crossbario/autobahn-python/archive/master.zip#egg=autobahn[twisted,serialization,encryption]
 
-# build and deploy latest docs
-#echo 'building and uploading docs ..'
-#tox -c tox.ini -e sphinx
-#aws s3 cp --recursive --acl public-read ${HOME}/crossbar-docs s3://${AWS_S3_BUCKET_NAME}/docs-latest
+# use 'wamp' to notify crossbar-builder
+wamp --max-failures 3 \
+     --authid wheel_pusher \
+     --url ws://office2dmz.crossbario.com:8008/ \
+     --realm webhook call builder.wheel_pushed \
+     --keyword name autobahn \
+     --keyword publish true
+
+echo ''
+echo 'package uploaded to:'
+echo ''
+echo '      https://crossbarbuilder.s3.eu-central-1.amazonaws.com/wheels/autobahn-'${AUTOBAHN_VERSION}'-py2.py3-none-any.whl'
+echo '      https://crossbarbuilder.s3.eu-central-1.amazonaws.com/wheels/autobahn-latest-py2.py3-none-any.whl'
+echo ''
