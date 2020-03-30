@@ -266,10 +266,10 @@ implementation, set the environment variable:
    :target: https://pypi.python.org/pypi/autobahn
 
 .. |Master Branch| image:: https://img.shields.io/badge/branch-master-orange.svg
-   :target: https://travis-ci.org/crossbario/autobahn-python.svg?branch=master
+   :target: https://travis-ci.com/crossbario/autobahn-python.svg?branch=master
 
-.. |Build Status| image:: https://travis-ci.org/crossbario/autobahn-python.svg?branch=master
-   :target: https://travis-ci.org/crossbario/autobahn-python
+.. |Build Status| image:: https://travis-ci.com/crossbario/autobahn-python.svg?branch=master
+   :target: https://travis-ci.com/crossbario/autobahn-python
 
 .. |Coverage| image:: https://img.shields.io/codecov/c/github/crossbario/autobahn-python/master.svg
    :target: https://codecov.io/github/crossbario/autobahn-python
