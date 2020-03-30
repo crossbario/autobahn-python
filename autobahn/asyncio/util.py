@@ -50,14 +50,17 @@ def transport_channel_id(transport, is_server, channel_id_type):
     received on one TLS channel cannot be forwarded on another.
 
     """
-    if channel_id_type not in ['tls-unique']:
+    if channel_id_type not in ['tls-unique', None]:
         raise Exception("invalid channel ID type {}".format(channel_id_type))
 
     ssl_obj = transport.get_extra_info('ssl_object')
     if ssl_obj is None:
         return None
 
-    if hasattr(ssl_obj, 'get_channel_binding'):
+    # check if we do not want TLS channel binding
+    if channel_id_type is None:
+        return None
+    elif hasattr(ssl_obj, 'get_channel_binding'):
         return ssl_obj.get_channel_binding(cb_type='tls-unique')
     return None
 

@@ -476,9 +476,13 @@ if HAS_CRYPTOSIGN:
             # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
             challenge_raw = binascii.a2b_hex(challenge_hex)
 
+            # check if the user has selected to disable TLS channel binding
+            channel_id_type = session._authenticators['cryptosign'].authextra.get('channel_binding', 'tls-unique')
+
             # if the transport has a channel ID, the message to be signed by the client actually
             # is the XOR of the challenge and the channel ID
-            channel_id_raw = session._transport.get_channel_id()
+
+            channel_id_raw = session._transport.get_channel_id(channel_id_type=channel_id_type)
             if channel_id_raw:
                 assert len(channel_id_raw) == 32, 'unexpected TLS transport channel ID length: was {}, but expected 32'.format(len(channel_id_raw))
                 data = util.xor(challenge_raw, channel_id_raw)
