@@ -53,6 +53,9 @@ class WampRawSocketProtocol(Int32StringReceiver):
     """
     log = txaio.make_logger()
 
+    peer = None
+    peer_transport = None
+
     def __init__(self):
         # set the RawSocket maximum message size by default
         self._max_message_size = 2**24
@@ -69,12 +72,11 @@ class WampRawSocketProtocol(Int32StringReceiver):
         # the peer we are connected to
         #
         try:
-            peer = self.transport.getPeer()
+            self.peer = peer2str(self.transport.getPeer())
         except AttributeError:
             # ProcessProtocols lack getPeer()
-            self.peer = "?"
-        else:
-            self.peer = peer2str(peer)
+            self.peer = 'process:{}'.format(self.transport.pid)
+        self.peer_transport = 'rawsocket'
 
         # a Future/Deferred that fires when we hit STATE_CLOSED
         self.is_closed = txaio.create_future()

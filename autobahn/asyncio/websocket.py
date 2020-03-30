@@ -64,16 +64,20 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
     Adapter class for asyncio-based WebSocket client and server protocols.
     """
 
+    peer = None
+    peer_transport = None
+
     def connection_made(self, transport):
         self.transport = transport
-
         self.receive_queue = deque()
         self._consume()
 
+        # the peer we are connected to
         try:
             self.peer = peer2str(transport.get_extra_info('peername'))
         except:
-            self.peer = "?"
+            self.peer = 'process:{}'.format(self.transport.pid)
+        self.peer_transport = 'websocket'
 
         self._connectionMade()
 
