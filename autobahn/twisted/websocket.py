@@ -233,9 +233,10 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     Adapter class for Twisted WebSocket client and server protocols.
     """
 
-    peer = '<never connected>'
-
     log = txaio.make_logger()
+
+    peer = None
+    peer_transport = None
 
     def connectionMade(self):
         # the peer we are connected to
@@ -244,6 +245,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         except AttributeError:
             # ProcessProtocols lack getPeer()
             self.peer = 'process:{}'.format(self.transport.pid)
+        self.peer_transport = 'websocket'
 
         self._connectionMade()
         self.log.debug('Connection made to {peer}', peer=self.peer)

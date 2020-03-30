@@ -149,6 +149,9 @@ class PrefixProtocol(asyncio.Protocol):
 
 class RawSocketProtocol(PrefixProtocol):
 
+    peer = None
+    peer_transport = None
+
     def __init__(self):
         max_size = None
         if max_size:
@@ -162,6 +165,13 @@ class RawSocketProtocol(PrefixProtocol):
             self.max_length = 2**24
 
     def connection_made(self, transport):
+        # the peer we are connected to
+        try:
+            self.peer = peer2str(transport.get_extra_info('peername'))
+        except:
+            self.peer = 'process:{}'.format(self.transport.pid)
+        self.peer_transport = 'rawsocket'
+
         PrefixProtocol.connection_made(self, transport)
         self._handshake_done = False
 

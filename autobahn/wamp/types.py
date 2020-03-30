@@ -334,13 +334,14 @@ class SessionDetails(object):
         'authprovider',
         'authextra',
         'serializer',
+        'transport',
         'resumed',
         'resumable',
         'resume_token',
     )
 
     def __init__(self, realm, session, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None,
-                 serializer=None, resumed=None, resumable=None, resume_token=None):
+                 serializer=None, transport=None, resumed=None, resumable=None, resume_token=None):
         """
 
         :param realm: The realm this WAMP session is attached to.
@@ -366,6 +367,7 @@ class SessionDetails(object):
         assert(authprovider is None or type(authprovider) == str)
         assert(authextra is None or type(authextra) == dict)
         assert(serializer is None or type(serializer) == str)
+        assert(transport is None or type(transport) == str)
         assert(resumed is None or type(resumed) == bool)
         assert(resumable is None or type(resumable) == bool)
         assert(resume_token is None or type(resume_token) == str)
@@ -378,6 +380,7 @@ class SessionDetails(object):
         self.authprovider = authprovider
         self.authextra = authextra
         self.serializer = serializer
+        self.transport = transport
         self.resumed = resumed
         self.resumable = resumable
         self.resume_token = resume_token
@@ -392,6 +395,7 @@ class SessionDetails(object):
             'authprovider': self.authprovider,
             'authextra': self.authextra,
             'serializer': self.serializer,
+            'transport': self.transport,
             'resumed': self.resumed,
             'resumable': self.resumable,
             'resume_token': self.resume_token
@@ -400,17 +404,29 @@ class SessionDetails(object):
 
     def __str__(self):
         return """
-SessionDetails(realm=<{}>,
+SessionDetails(realm={},
                session={},
-               authid=<{}>,
-               authrole=<{}>,
+               authid={},
+               authrole={},
                authmethod={},
                authprovider={},
                authextra={},
-               serializer=<{}>,
+               serializer={},
+               transport={},
                resumed={},
                resumable={},
-               resume_token={})""".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.serializer, self.resumed, self.resumable, self.resume_token)
+               resume_token={})""".format('"' + self.realm + '"' if self.realm is not None else 'None',
+                                          self.session,
+                                          '"' + self.authid + '"' if self.authid is not None else 'None',
+                                          '"' + self.authrole + '"' if self.authrole is not None else 'None',
+                                          '"' + self.authmethod + '"' if self.authmethod is not None else 'None',
+                                          '"' + self.authprovider + '"' if self.authprovider is not None else 'None',
+                                          self.authextra,
+                                          '"' + self.serializer + '"' if self.serializer is not None else 'None',
+                                          '"' + self.transport + '"' if self.transport is not None else 'None',
+                                          self.resumed,
+                                          self.resumable,
+                                          self.resume_token)
 
 
 @public

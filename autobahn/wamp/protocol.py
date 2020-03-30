@@ -560,6 +560,7 @@ class ApplicationSession(BaseSession):
                         authprovider=self._authprovider,
                         authextra=msg.authextra,
                         serializer=self._transport._serializer.SERIALIZER_ID,
+                        transport=self._transport.peer_transport,
                         resumed=msg.resumed,
                         resumable=msg.resumable,
                         resume_token=msg.resume_token,
