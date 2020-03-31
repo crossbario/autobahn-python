@@ -44,7 +44,7 @@ with open('README.rst') as f:
 # as we make claim to support older Twisted!)
 extras_require_twisted = [
     "zope.interface>=3.6.0",        # Zope Public License
-    "twisted>=16.6.0",              # MIT license (https://pypi.org/project/Twisted/16.6.0/)
+    "twisted>=20.3.0",              # MIT license (https://pypi.org/project/Twisted/20.3.0/)
     "attrs>=19.2.0"                 # MIT license (https://pypi.org/project/attrs/19.2.0/)
 ]
 
@@ -118,9 +118,9 @@ if 'AUTOBAHN_USE_NVX' in os.environ:
     cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
 
 extras_require_xbr = [
-    'cbor2>=4.1.1',             # MIT license
-    'zlmdb>=19.7.1',            # MIT license
-    'twisted>=18.9.0',          # MIT license
+    'cbor2>=5.1.0',             # MIT license
+    'zlmdb>=20.4.1',            # MIT license
+    'twisted>=20.3.0',          # MIT license
     'autobahn>=18.11.2',        # MIT license
     'web3>=4.8.1',              # MIT license
 
@@ -210,7 +210,7 @@ setup(
     url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
-        'txaio>=20.1.1',     # MIT license
+        'txaio>=20.3.1',     # MIT license
         'cryptography>=2.7', # BSD *or* Apache license
     ],
     extras_require={
