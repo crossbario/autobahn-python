@@ -247,6 +247,6 @@ try:
         'IBuyer',
     )
 
-except ImportError:
+except (ImportError, FileNotFoundError):
     HAS_XBR = False
     __all__ = ('HAS_XBR',)
