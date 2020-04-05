@@ -25,6 +25,7 @@
 ###############################################################################
 
 import hashlib
+from typing import Optional
 
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address, UNIXAddress
@@ -89,43 +90,63 @@ def peer2str(addr):
     return res
 
 
-def transport_channel_id(transport, is_server, channel_id_type):
-    """
-    Application-layer user authentication protocols are vulnerable to generic
-    credential forwarding attacks, where an authentication credential sent by
-    a client C to a server M may then be used by M to impersonate C at another
-    server S. To prevent such credential forwarding attacks, modern authentication
-    protocols rely on channel bindings. For example, WAMP-cryptosign can use
-    the tls-unique channel identifier provided by the TLS layer to strongly bind
-    authentication credentials to the underlying channel, so that a credential
-    received on one TLS channel cannot be forwarded on another.
+try:
+    from twisted.protocols.tls import TLSMemoryBIOProtocol
+except ImportError:
+    def transport_channel_id(transport: object, is_server: bool, channel_id_type: Optional[str] = None) -> bytes:
+        if channel_id_type is None:
+            return b'\x00' * 32
+else:
+    def transport_channel_id(transport: TLSMemoryBIOProtocol, is_server: bool, channel_id_type: Optional[str] = None) -> bytes:
+        """
+        Application-layer user authentication protocols are vulnerable to generic
+        credential forwarding attacks, where an authentication credential sent by
+        a client C to a server M may then be used by M to impersonate C at another
+        server S. To prevent such credential forwarding attacks, modern authentication
+        protocols rely on channel bindings. For example, WAMP-cryptosign can use
+        the tls-unique channel identifier provided by the TLS layer to strongly bind
+        authentication credentials to the underlying channel, so that a credential
+        received on one TLS channel cannot be forwarded on another.
 
-    """
-    if channel_id_type not in ['tls-unique']:
-        raise Exception("invalid channel ID type {}".format(channel_id_type))
+        :param transport: The Twisted TLS transport to extract the TLS channel ID from.
+        :param is_server: Flag indicating the transport is for a server.
+        :param channel_id_type: TLS channel ID type, currently only "tls-unique" is supported.
+        :returns: The TLS channel id (32 bytes).
+        """
+        if channel_id_type is None:
+            return b'\x00' * 32
 
-    if hasattr(transport, '_tlsConnection'):
+        if channel_id_type not in ['tls-unique']:
+            raise Exception("invalid channel ID type {}".format(channel_id_type))
+
+        # transport:                instance of :class:`twisted.protocols.tls.TLSMemoryBIOProtocol`
+        # transport._tlsConnection: instance of :class:`OpenSSL.SSL.Connection`
+        if not hasattr(transport, '_tlsConnection'):
+            raise Exception("TLS transport channel_id for tls-unique requested, but _tlsConnection not found on transport")
+
         # Obtain latest TLS Finished message that we expected from peer, or None if handshake is not completed.
         # http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_peer_finished
+        is_not_resumed = True
 
-        if is_server:
-            # for routers (=servers), the channel ID is based on the TLS Finished message we
-            # expected to receive from the client
-            tls_finished_msg = transport._tlsConnection.get_peer_finished()
+        if channel_id_type == 'tls-unique':
+            # see also: https://bugs.python.org/file22646/tls_channel_binding.patch
+            if is_server != is_not_resumed:
+                # for routers (=servers) XOR new sessions, the channel ID is based on the TLS Finished message we
+                # expected to receive from the client
+                tls_finished_msg = transport._tlsConnection.get_peer_finished()
+            else:
+                # for clients XOR resumed sessions, the channel ID is based on the TLS Finished message we sent
+                # to the router (=server)
+                tls_finished_msg = transport._tlsConnection.get_finished()
+
+            if tls_finished_msg is None:
+                # this can occur if we made a successful connection (in a
+                # TCP sense) but something failed with the TLS handshake
+                # (e.g. invalid certificate)
+                return b'\x00' * 32
+            else:
+                m = hashlib.sha256()
+                m.update(tls_finished_msg)
+                return m.digest()
         else:
-            # for clients, the channel ID is based on the TLS Finished message we sent
-            # to the router (=server)
-            tls_finished_msg = transport._tlsConnection.get_finished()
-
-        if tls_finished_msg is None:
-            # this can occur if we made a successful connection (in a
-            # TCP sense) but something failed with the TLS handshake
-            # (e.g. invalid certificate)
-            return None
-
-        m = hashlib.sha256()
-        m.update(tls_finished_msg)
-        return m.digest()
-
-    else:
-        return None
+            assert False, 'should not arrive here'

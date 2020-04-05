@@ -24,6 +24,9 @@
 #
 ###############################################################################
 
+import hashlib
+from typing import Optional
+
 try:
     from asyncio import sleep  # noqa
 except ImportError:
@@ -38,7 +41,7 @@ __all = (
 )
 
 
-def transport_channel_id(transport, is_server, channel_id_type):
+def transport_channel_id(transport, is_server: bool, channel_id_type: Optional[str] = None) -> bytes:
     """
     Application-layer user authentication protocols are vulnerable to generic
     credential forwarding attacks, where an authentication credential sent by
@@ -49,17 +52,33 @@ def transport_channel_id(transport, is_server, channel_id_type):
     authentication credentials to the underlying channel, so that a credential
     received on one TLS channel cannot be forwarded on another.
 
+    :param transport: The asyncio TLS transport to extract the TLS channel ID from.
+    :param is_server: Flag indicating the transport is for a server.
+    :param channel_id_type: TLS channel ID type, currently only "tls-unique" is supported.
+    :returns: The TLS channel id (32 bytes).
     """
+    if channel_id_type is None:
+        return b'\x00' * 32
+
     if channel_id_type not in ['tls-unique']:
         raise Exception("invalid channel ID type {}".format(channel_id_type))
 
     ssl_obj = transport.get_extra_info('ssl_object')
     if ssl_obj is None:
-        return None
+        raise Exception("TLS transport channel_id for tls-unique requested, but ssl_obj not found on transport")
 
-    if hasattr(ssl_obj, 'get_channel_binding'):
-        return ssl_obj.get_channel_binding(cb_type='tls-unique')
-    return None
+    if not hasattr(ssl_obj, 'get_channel_binding'):
+        raise Exception("TLS transport channel_id for tls-unique requested, but get_channel_binding not found on ssl_obj")
+
+    # https://python.readthedocs.io/en/latest/library/ssl.html#ssl.SSLSocket.get_channel_binding
+    # https://tools.ietf.org/html/rfc5929.html
+    tls_finished_msg = ssl_obj.get_channel_binding(cb_type='tls-unique')
+
+    m = hashlib.sha256()
+    m.update(tls_finished_msg)
+    channel_id = m.digest()
+
+    return channel_id
 
 
 def peer2str(peer):
