@@ -122,7 +122,8 @@ else:
         # transport:                instance of :class:`twisted.protocols.tls.TLSMemoryBIOProtocol`
         # transport._tlsConnection: instance of :class:`OpenSSL.SSL.Connection`
         if not hasattr(transport, '_tlsConnection'):
-            raise Exception("TLS transport channel_id for tls-unique requested, but _tlsConnection not found on transport")
+            print("TLS transport channel_id for tls-unique requested, but _tlsConnection not found on transport {}".format(dir(transport)))
+            return b'\x00' * 32
 
         # Obtain latest TLS Finished message that we expected from peer, or None if handshake is not completed.
         # http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_peer_finished
