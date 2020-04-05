@@ -445,7 +445,7 @@ if HAS_CRYPTOSIGN:
             return txaio.create_future_success(sig.signature)
 
         @util.public
-        def sign_challenge(self, session, challenge):
+        def sign_challenge(self, session, challenge, channel_id_type='tls-unique'):
             """
             Sign WAMP-cryptosign challenge.
 
@@ -476,14 +476,19 @@ if HAS_CRYPTOSIGN:
             # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
             challenge_raw = binascii.a2b_hex(challenge_hex)
 
-            # if the transport has a channel ID, the message to be signed by the client actually
-            # is the XOR of the challenge and the channel ID
-            channel_id_raw = session._transport.get_channel_id()
-            if channel_id_raw:
-                assert len(channel_id_raw) == 32, 'unexpected TLS transport channel ID length: was {}, but expected 32'.format(len(channel_id_raw))
+            if channel_id_type == 'tls-unique':
+                # get the TLS channel ID of the underlying TLS connection
+                channel_id_raw = session._transport.get_channel_id()
+                assert len(channel_id_raw) == 32, 'unexpected TLS transport channel ID length (was {}, but expected 32)'.format(len(channel_id_raw))
+
+                # with TLS channel binding of type "tls-unique", the message to be signed by the client actually
+                # is the XOR of the challenge and the TLS channel ID
                 data = util.xor(challenge_raw, channel_id_raw)
-            else:
+            elif channel_id_type is None:
+                # when no channel binding was requested, the message to be signed by the client is the challenge only
                 data = challenge_raw
+            else:
+                assert False, 'invalid channel_id_type "{}"'.format(channel_id_type)
 
             # a raw byte string is signed, and the signature is also a raw byte string
             d1 = self.sign(data)

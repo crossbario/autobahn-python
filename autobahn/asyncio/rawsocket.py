@@ -31,7 +31,8 @@ import copy
 
 from autobahn.util import public, _LazyHexFormatter
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
-from autobahn.asyncio.util import peer2str, get_serializers
+from autobahn.asyncio.util import peer2str, get_serializers, transport_channel_id
+
 import txaio
 
 __all__ = (
@@ -392,12 +393,11 @@ class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
             self.abort()
             return False
 
-    def get_channel_id(self, channel_id_type='tls-unique'):
+    def get_channel_id(self, channel_id_type=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
-        return None
-        # return transport_channel_id(self.transport, is_server=True, channel_id_type=channel_id_type)
+        return transport_channel_id(self.transport, is_server=True, channel_id_type=channel_id_type)
 
 
 @public
@@ -416,12 +416,11 @@ class WampRawSocketClientProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
             self._serializer = copy.copy(self.factory._serializer)
         return self._serializer.RAWSOCKET_SERIALIZER_ID
 
-    def get_channel_id(self, channel_id_type='tls-unique'):
+    def get_channel_id(self, channel_id_type=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
-        return None
-        # return transport_channel_id(self.transport, is_server=False, channel_id_type=channel_id_type)
+        return transport_channel_id(self.transport, is_server=False, channel_id_type=channel_id_type)
 
 
 class WampRawSocketFactory(object):

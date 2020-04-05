@@ -316,7 +316,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
             if data:
                 self.dataReceived(data)
 
-    def get_channel_id(self, channel_id_type='tls-unique'):
+    def get_channel_id(self, channel_id_type=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
@@ -408,7 +408,7 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
             if data:
                 self.dataReceived(data)
 
-    def get_channel_id(self, channel_id_type='tls-unique'):
+    def get_channel_id(self, channel_id_type=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
