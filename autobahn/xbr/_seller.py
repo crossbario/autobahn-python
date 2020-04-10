@@ -167,8 +167,8 @@ class KeySeries(object):
 
 class PayingChannel(object):
     def __init__(self, adr, seq, balance):
-        assert type(adr) == bytes and len(adr) == 20
-        assert type(seq) == int and seq > 0
+        assert type(adr) == bytes and len(adr) == 16
+        assert type(seq) == int and seq >= 0
         assert type(balance) == int and balance >= 0
         self._adr = adr
         self._seq = seq
@@ -378,7 +378,7 @@ class SimpleSeller(object):
             await key_series.start()
 
         # get the currently active (if any) paying channel for the delegate
-        channel = await session.call('xbr.marketmaker.get_active_paying_channel', self._addr)
+        self._channel = await session.call('xbr.marketmaker.get_active_paying_channel', self._addr)
 
         channel_oid = self._channel['channel_oid']
         assert type(channel_oid) == bytes and len(channel_oid) == 16
@@ -390,11 +390,10 @@ class SimpleSeller(object):
         if type(paying_balance['remaining']) == bytes:
             paying_balance['remaining'] = unpack_uint256(paying_balance['remaining'])
 
-        self._channels[channel['channel']] = PayingChannel(channel['channel'], paying_balance['seq'], paying_balance['remaining'])
+        self._channels[channel_oid] = PayingChannel(channel_oid, paying_balance['seq'], paying_balance['remaining'])
         self._state = SimpleSeller.STATE_STARTED
 
         # FIXME
-        self._channel = channel
         self._balance = paying_balance['remaining']
         if type(self._balance) == bytes:
             self._balance = unpack_uint256(self._balance)
