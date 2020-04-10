@@ -289,7 +289,7 @@ class SimpleBuyer(object):
         assert type(serializer) == str and serializer in ['cbor']
         assert type(ciphertext) == bytes
 
-        channel_adr = self._channel['channel_oid']
+        channel_oid = self._channel['channel_oid']
 
         # if we don't have the key, buy it!
         if key_id in self._keys:
@@ -332,7 +332,7 @@ class SimpleBuyer(object):
                         # close_balance = tx1.balance
                         # close_is_final = True
 
-                        close_adr = channel_adr
+                        close_adr = channel_oid
                         close_seq = self._seq
                         close_balance = self._balance
                         close_is_final = True
@@ -366,10 +366,10 @@ class SimpleBuyer(object):
             is_final = False
 
             # XBRSIG[1/8]: compute EIP712 typed data signature
-            signature = sign_eip712_data(self._pkey_raw, channel_adr, channel_seq, balance, is_final=is_final)
+            signature = sign_eip712_data(self._pkey_raw, channel_oid, channel_seq, balance, is_final=is_final)
 
             # persist 1st phase of the transaction locally
-            self._save_transaction_phase1(channel_adr, self._addr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
+            self._save_transaction_phase1(channel_oid, self._addr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
 
             # call the market maker to buy the key
             try:
@@ -377,7 +377,7 @@ class SimpleBuyer(object):
                                                    self._addr,
                                                    buyer_pubkey,
                                                    key_id,
-                                                   channel_adr,
+                                                   channel_oid,
                                                    channel_seq,
                                                    pack_uint256(amount),
                                                    pack_uint256(balance),
@@ -399,7 +399,7 @@ class SimpleBuyer(object):
             marketmaker_remaining = unpack_uint256(receipt['remaining'])
             marketmaker_inflight = unpack_uint256(receipt['inflight'])
 
-            signer_address = recover_eip712_signer(channel_adr, marketmaker_channel_seq, marketmaker_remaining, False, marketmaker_signature)
+            signer_address = recover_eip712_signer(channel_oid, marketmaker_channel_seq, marketmaker_remaining, False, marketmaker_signature)
             if signer_address != self._market_maker_adr:
                 self.log.warn('{klass}.unwrap()::XBRSIG[8/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                               klass=self.__class__.__name__,
@@ -420,7 +420,7 @@ class SimpleBuyer(object):
             self._balance = marketmaker_remaining
 
             # persist 2nd phase of the transaction locally
-            self._save_transaction_phase2(channel_adr, self._market_maker_adr, buyer_pubkey, key_id, marketmaker_channel_seq,
+            self._save_transaction_phase2(channel_oid, self._market_maker_adr, buyer_pubkey, key_id, marketmaker_channel_seq,
                                           marketmaker_amount_paid, marketmaker_remaining, marketmaker_signature)
 
             # unseal the data encryption key
@@ -480,10 +480,10 @@ class SimpleBuyer(object):
 
         return payload
 
-    def _save_transaction_phase1(self, channel_adr, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature):
+    def _save_transaction_phase1(self, channel_oid, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature):
         """
 
-        :param channel_adr:
+        :param channel_oid:
         :param delegate_adr:
         :param buyer_pubkey:
         :param key_id:
@@ -496,16 +496,16 @@ class SimpleBuyer(object):
         if key_id in self._transaction_idx:
             raise RuntimeError('save_transaction_phase1: duplicate transaction for key 0x{}'.format(binascii.b2a_hex(key_id)))
 
-        tx1 = Transaction(channel_adr, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
+        tx1 = Transaction(channel_oid, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
 
         key_idx = len(self._transactions)
         self._transactions.append([tx1, None])
         self._transaction_idx[key_id] = key_idx
 
-    def _save_transaction_phase2(self, channel_adr, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature):
+    def _save_transaction_phase2(self, channel_oid, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature):
         """
 
-        :param channel_adr:
+        :param channel_oid:
         :param delegate_adr:
         :param buyer_pubkey:
         :param key_id:
@@ -525,7 +525,7 @@ class SimpleBuyer(object):
                 'save_transaction_phase2: duplicate transaction for key 0x{}'.format(binascii.b2a_hex(key_id)))
 
         tx1 = self._transactions[key_idx][0]
-        tx2 = Transaction(channel_adr, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
+        tx2 = Transaction(channel_oid, delegate_adr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
 
         assert tx1.channel == tx2.channel
         # assert tx1.delegate == tx2.delegate
