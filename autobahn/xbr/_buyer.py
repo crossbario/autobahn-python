@@ -44,7 +44,7 @@ import eth_keys
 # import web3
 # from eth_account import Account
 
-from ._util import hl, sign_eip712_data, recover_eip712_signer
+from ._util import hl, hlval, sign_eip712_data, recover_eip712_signer
 
 
 class Transaction(object):
@@ -180,8 +180,12 @@ class SimpleBuyer(object):
             assert type(self._addr) == bytes and len(self._addr) == 20
             self._channel = await session.call('xbr.marketmaker.get_active_payment_channel', self._addr)
 
+            channel_oid = self._channel['channel_oid']
+            assert type(channel_oid) == bytes and len(channel_oid) == 16
+            self._channel_oid = uuid.UUID(bytes=channel_oid)
+
             # get the current (off-chain) balance of the payment channel
-            payment_balance = await session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
+            payment_balance = await session.call('xbr.marketmaker.get_payment_channel_balance', self._channel_oid.bytes)
         except:
             session.leave()
             raise
@@ -193,9 +197,8 @@ class SimpleBuyer(object):
 
         self._seq = payment_balance['seq']
 
-        self.log.info('Delegate has current payment channel address {payment_channel_adr} (remaining balance {remaining} at sequence {seq})',
-                      payment_channel_adr=hl('0x' + binascii.b2a_hex(self._channel['channel']).decode()),
-                      remaining=self._balance, seq=self._seq)
+        self.log.info('Buyer delegate has active payment channel {channel_oid} (remaining balance {remaining} at sequence {seq})',
+                      channel_oid=hl(self._channel_oid), remaining=hlval(self._balance), seq=hlval(self._seq))
 
         return self._balance
 
@@ -220,7 +223,7 @@ class SimpleBuyer(object):
         """
         assert self._session and self._session.is_attached()
 
-        payment_balance = await self._session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel'])
+        payment_balance = await self._session.call('xbr.marketmaker.get_payment_channel_balance', self._channel['channel_oid'])
 
         return payment_balance
 
@@ -286,7 +289,7 @@ class SimpleBuyer(object):
         assert type(serializer) == str and serializer in ['cbor']
         assert type(ciphertext) == bytes
 
-        channel_adr = bytes(self._channel['channel'])
+        channel_adr = self._channel['channel_oid']
 
         # if we don't have the key, buy it!
         if key_id in self._keys:

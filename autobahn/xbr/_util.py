@@ -24,6 +24,7 @@
 #
 ###############################################################################
 
+import inspect
 from binascii import a2b_hex
 
 import click
@@ -115,10 +116,44 @@ def pack_uint256(value):
         return b'\x00' * 32
 
 
-def hl(text, bold=True, color='yellow'):
+def hl(text, bold=False, color='yellow'):
     if not isinstance(text, str):
         text = '{}'.format(text)
     return click.style(text, fg=color, bold=bold)
+
+
+def _qn(obj):
+    if inspect.isclass(obj) or inspect.isfunction(obj) or inspect.ismethod(obj):
+        qn = '{}.{}'.format(obj.__module__, obj.__qualname__)
+    else:
+        qn = 'unknown'
+    return qn
+
+
+def hltype(obj):
+    qn = _qn(obj).split('.')
+    text = hl(qn[0], color='yellow', bold=True) + hl('.' + '.'.join(qn[1:]), color='white', bold=True)
+    return '<' + text + '>'
+
+
+def hlid(oid):
+    return hl('{}'.format(oid), color='blue', bold=True)
+
+
+def hluserid(oid):
+    if not isinstance(oid, str):
+        oid = '{}'.format(oid)
+    return hl('"{}"'.format(oid), color='yellow', bold=True)
+
+
+def hlval(val, color='green'):
+    return hl('{}'.format(val), color=color, bold=True)
+
+
+def hlcontract(oid):
+    if not isinstance(oid, str):
+        oid = '{}'.format(oid)
+    return hl('<{}>'.format(oid), color='magenta', bold=True)
 
 
 def _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final):
