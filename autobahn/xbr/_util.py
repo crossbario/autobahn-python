@@ -24,6 +24,7 @@
 #
 ###############################################################################
 
+import inspect
 from binascii import a2b_hex
 
 import click
@@ -115,15 +116,49 @@ def pack_uint256(value):
         return b'\x00' * 32
 
 
-def hl(text, bold=True, color='yellow'):
+def hl(text, bold=False, color='yellow'):
     if not isinstance(text, str):
         text = '{}'.format(text)
     return click.style(text, fg=color, bold=bold)
 
 
-def _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final):
+def _qn(obj):
+    if inspect.isclass(obj) or inspect.isfunction(obj) or inspect.ismethod(obj):
+        qn = '{}.{}'.format(obj.__module__, obj.__qualname__)
+    else:
+        qn = 'unknown'
+    return qn
+
+
+def hltype(obj):
+    qn = _qn(obj).split('.')
+    text = hl(qn[0], color='yellow', bold=True) + hl('.' + '.'.join(qn[1:]), color='white', bold=True)
+    return '<' + text + '>'
+
+
+def hlid(oid):
+    return hl('{}'.format(oid), color='blue', bold=True)
+
+
+def hluserid(oid):
+    if not isinstance(oid, str):
+        oid = '{}'.format(oid)
+    return hl('"{}"'.format(oid), color='yellow', bold=True)
+
+
+def hlval(val, color='green'):
+    return hl('{}'.format(val), color=color, bold=True)
+
+
+def hlcontract(oid):
+    if not isinstance(oid, str):
+        oid = '{}'.format(oid)
+    return hl('<{}>'.format(oid), color='magenta', bold=True)
+
+
+def _create_eip712_data(verifying_adr, channel_oid, channel_seq, balance, is_final):
     assert type(verifying_adr) == bytes and len(verifying_adr) == 20
-    assert type(channel_adr) == bytes and len(channel_adr) == 20
+    assert type(channel_oid) == bytes and len(channel_oid) == 16
     assert type(channel_seq) == int
     assert type(balance) == int
     assert type(is_final) == bool
@@ -137,8 +172,8 @@ def _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_fin
                 {'name': 'verifyingContract', 'type': 'address'},
             ],
             'ChannelClose': [
-                # The channel contract address.
-                {'name': 'channel_adr', 'type': 'address'},
+                # The channel OID.
+                {'name': 'channel_oid', 'type': 'bytes16'},
 
                 # Channel off-chain transaction sequence number.
                 {'name': 'channel_seq', 'type': 'uint32'},
@@ -158,7 +193,7 @@ def _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_fin
             'verifyingContract': verifying_adr,
         },
         'message': {
-            'channel_adr': channel_adr,
+            'channel_oid': channel_oid,
             'channel_seq': channel_seq,
             'balance': balance,
             'is_final': is_final
@@ -168,14 +203,14 @@ def _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_fin
     return data
 
 
-def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance, is_final=False):
+def sign_eip712_data(eth_privkey, channel_oid, channel_seq, balance, is_final=False):
     """
 
     :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
     :type eth_privkey: bytes
 
-    :param channel_adr: Channel contract address.
-    :type channel_adr: bytes
+    :param channel_oid: Channel OID.
+    :type channel_oid: bytes
 
     :param channel_seq: Payment channel off-chain transaction sequence number.
     :type channel_seq: int
@@ -190,8 +225,8 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance, is_final=Fa
     :rtype: bytes
     """
     assert type(eth_privkey) == bytes and len(eth_privkey) == 32
-    assert type(channel_adr) == bytes and len(channel_adr) == 20
-    assert type(channel_seq) == int and channel_seq > 0
+    assert type(channel_oid) == bytes and len(channel_oid) == 16
+    assert type(channel_seq) == int and channel_seq >= 0
     assert type(balance) == int and balance >= 0
     assert type(is_final) == bool
 
@@ -205,7 +240,7 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance, is_final=Fa
     # eth_adr = pkey.public_key.to_canonical_address()
 
     # create EIP712 typed data object
-    data = _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final)
+    data = _create_eip712_data(verifying_adr, channel_oid, channel_seq, balance, is_final)
 
     # FIXME: this fails on PyPy (but ot on CPy!) with
     #  Unknown format b'%M\xff\xcd2w\xc0\xb1f\x0fmB\xef\xbbuN\xda\xba\xbc+', attempted to normalize to 0x254dffcd3277c0b1660f6d42efbb754edababc2b
@@ -217,12 +252,12 @@ def sign_eip712_data(eth_privkey, channel_adr, channel_seq, balance, is_final=Fa
     return signature
 
 
-def recover_eip712_signer(channel_adr, channel_seq, balance, is_final, signature):
+def recover_eip712_signer(channel_oid, channel_seq, balance, is_final, signature):
     """
     Recover the signer address the given EIP712 signature was signed with.
 
-    :param channel_adr: Channel contract address.
-    :type channel_adr: bytes
+    :param channel_oid: Channel OID..
+    :type channel_oid: bytes
 
     :param channel_seq: Payment channel off-chain transaction sequence number.
     :type channel_seq: int
@@ -239,7 +274,7 @@ def recover_eip712_signer(channel_adr, channel_seq, balance, is_final, signature
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    assert type(channel_adr) == bytes and len(channel_adr) == 20
+    assert type(channel_oid) == bytes and len(channel_oid) == 16
     assert type(channel_seq) == int
     assert type(balance) == int
     assert type(is_final) == bool
@@ -248,7 +283,7 @@ def recover_eip712_signer(channel_adr, channel_seq, balance, is_final, signature
     verifying_adr = a2b_hex('0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B'[2:])
 
     # recreate EIP712 typed data object
-    data = _create_eip712_data(verifying_adr, channel_adr, channel_seq, balance, is_final)
+    data = _create_eip712_data(verifying_adr, channel_oid, channel_seq, balance, is_final)
 
     # this returns the signer (checksummed) address as a string, eg "0xE11BA2b4D45Eaed5996Cd0823791E0C93114882d"
     signer_address = signing.recover_typed_data(data, *signing.signature_to_v_r_s(signature))
