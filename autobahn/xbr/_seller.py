@@ -364,6 +364,15 @@ class SimpleSeller(object):
                        address=hl(self._caddr),
                        public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
+        # get the currently active (if any) paying channel for the delegate
+        self._channel = await session.call('xbr.marketmaker.get_active_paying_channel', self._addr)
+        if not self._channel:
+            raise Exception('no active paying channel found')
+
+        channel_oid = self._channel['channel_oid']
+        assert type(channel_oid) == bytes and len(channel_oid) == 16
+        self._channel_oid = uuid.UUID(bytes=channel_oid)
+
         procedure = 'xbr.provider.{}.sell'.format(self._provider_id)
         reg = await session.register(self.sell, procedure, options=RegisterOptions(details_arg='details'))
         self._session_regs.append(reg)
@@ -377,18 +386,14 @@ class SimpleSeller(object):
         for key_series in self._keys.values():
             await key_series.start()
 
-        # get the currently active (if any) paying channel for the delegate
-        self._channel = await session.call('xbr.marketmaker.get_active_paying_channel', self._addr)
-
-        channel_oid = self._channel['channel_oid']
-        assert type(channel_oid) == bytes and len(channel_oid) == 16
-        self._channel_oid = uuid.UUID(bytes=channel_oid)
-
         # get the current (off-chain) balance of the paying channel
         paying_balance = await session.call('xbr.marketmaker.get_paying_channel_balance', self._channel_oid.bytes)
         # FIXME
         if type(paying_balance['remaining']) == bytes:
             paying_balance['remaining'] = unpack_uint256(paying_balance['remaining'])
+
+        if not paying_balance['remaining'] > 0:
+            raise Exception('no off-chain balance remaining on paying channel')
 
         self._channels[channel_oid] = PayingChannel(channel_oid, paying_balance['seq'], paying_balance['remaining'])
         self._state = SimpleSeller.STATE_STARTED

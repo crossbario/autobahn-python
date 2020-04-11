@@ -179,6 +179,8 @@ class SimpleBuyer(object):
             # get the currently active (if any) payment channel for the delegate
             assert type(self._addr) == bytes and len(self._addr) == 20
             self._channel = await session.call('xbr.marketmaker.get_active_payment_channel', self._addr)
+            if not self._channel:
+                raise Exception('no active payment channel found')
 
             channel_oid = self._channel['channel_oid']
             assert type(channel_oid) == bytes and len(channel_oid) == 16
@@ -191,10 +193,13 @@ class SimpleBuyer(object):
             raise
 
         # FIXME
-        self._balance = payment_balance['remaining']
-        if type(self._balance) == bytes:
-            self._balance = unpack_uint256(self._balance)
+        if type(payment_balance['remaining']) == bytes:
+            payment_balance['remaining'] = unpack_uint256(payment_balance['remaining'])
 
+        if not payment_balance['remaining'] > 0:
+            raise Exception('no off-chain balance remaining on payment channel')
+
+        self._balance = payment_balance['remaining']
         self._seq = payment_balance['seq']
 
         self.log.info('Ok, buyer delegate started [active payment channel {channel_oid} with remaining balance {remaining} at sequence {seq}]',
