@@ -171,9 +171,9 @@ class SimpleBuyer(object):
         self._session = session
         self._running = True
 
-        self.log.info('Start buying from consumer delegate address {address} (public key 0x{public_key}..)',
-                      address=hl(self._caddr),
-                      public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
+        self.log.debug('Start buying from consumer delegate address {address} (public key 0x{public_key}..)',
+                       address=hl(self._caddr),
+                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
         try:
             # get the currently active (if any) payment channel for the delegate
@@ -197,7 +197,7 @@ class SimpleBuyer(object):
 
         self._seq = payment_balance['seq']
 
-        self.log.info('Buyer delegate has active payment channel {channel_oid} (remaining balance {remaining} at sequence {seq})',
+        self.log.info('Ok, buyer delegate started [active payment channel {channel_oid} with remaining balance {remaining} at sequence {seq}]',
                       channel_oid=hl(self._channel_oid), remaining=hlval(self._balance), seq=hlval(self._seq))
 
         return self._balance
@@ -209,6 +209,8 @@ class SimpleBuyer(object):
         assert self._running
 
         self._running = False
+
+        self.log.info('Ok, buyer delegate stopped.')
 
     async def balance(self):
         """
@@ -293,10 +295,10 @@ class SimpleBuyer(object):
 
         # if we don't have the key, buy it!
         if key_id in self._keys:
-            self.log.info('Key {key_id} already in key store (or currently being bought).',
-                          key_id=hl(uuid.UUID(bytes=key_id)))
+            self.log.debug('Key {key_id} already in key store (or currently being bought).',
+                           key_id=hl(uuid.UUID(bytes=key_id)))
         else:
-            self.log.info('Key {key_id} not yet in key store - buying key ..', key_id=hl(uuid.UUID(bytes=key_id)))
+            self.log.debug('Key {key_id} not yet in key store - buying key ..', key_id=hl(uuid.UUID(bytes=key_id)))
 
             # mark the key as currently being bought already (the location of code here is multi-entrant)
             self._keys[key_id] = False
@@ -307,8 +309,8 @@ class SimpleBuyer(object):
             # set price we pay set to the (current) quoted price
             amount = unpack_uint256(quote['price'])
 
-            self.log.info('Key {key_id} has current price quote {amount}',
-                          key_id=hl(uuid.UUID(bytes=key_id)), amount=hl(int(amount / 10**18)))
+            self.log.debug('Key {key_id} has current price quote {amount}',
+                           key_id=hl(uuid.UUID(bytes=key_id)), amount=hl(int(amount / 10**18)))
 
             if amount > self._max_price:
                 raise ApplicationError('xbr.error.max_price_exceeded',
@@ -332,29 +334,39 @@ class SimpleBuyer(object):
                         # close_balance = tx1.balance
                         # close_is_final = True
 
-                        close_adr = channel_oid
                         close_seq = self._seq
                         close_balance = self._balance
                         close_is_final = True
 
-                        signature = sign_eip712_data(self._pkey_raw, close_adr, close_seq, close_balance, close_is_final)
+                        signature = sign_eip712_data(self._pkey_raw, channel_oid, close_seq, close_balance, close_is_final)
 
-                        self.log.info('auto-closing payment channel {close_adr} [close_seq={close_seq}, close_balance={close_balance}, close_is_final={close_is_final}]',
-                                      close_adr=binascii.b2a_hex(close_adr).decode(),
-                                      close_seq=close_seq,
-                                      close_balance=int(close_balance / 10**18),
-                                      close_is_final=close_is_final)
+                        self.log.debug('auto-closing payment channel {channel_oid} [close_seq={close_seq}, close_balance={close_balance}, close_is_final={close_is_final}]',
+                                       channel_oid=uuid.UUID(bytes=channel_oid),
+                                       close_seq=close_seq,
+                                       close_balance=int(close_balance / 10**18),
+                                       close_is_final=close_is_final)
+
+                        # FIXME
+                        verifying_chain_id = None
+                        current_block_number = None
 
                         # call market maker to initiate closing of payment channel
-                        await self._session.call('xbr.marketmaker.close_channel', close_adr, close_seq, pack_uint256(close_balance), close_is_final, signature)
+                        await self._session.call('xbr.marketmaker.close_channel',
+                                                 channel_oid,
+                                                 verifying_chain_id,
+                                                 current_block_number,
+                                                 pack_uint256(close_balance),
+                                                 close_seq,
+                                                 close_is_final,
+                                                 signature)
 
                         # FIXME: wait for and acquire new payment channel instead of bailing out ..
 
                         raise ApplicationError('xbr.error.channel_closed',
-                                               '{}.unwrap() - key {} cannot be bought: payment channel 0x{} ran empty and we initiated close at remaining balance of {}'.format(self.__class__.__name__,
-                                                                                                                                                                                uuid.UUID(bytes=key_id),
-                                                                                                                                                                                binascii.b2a_hex(close_adr).decode(),
-                                                                                                                                                                                int(close_balance / 10 ** 18)))
+                                               '{}.unwrap() - key {} cannot be bought: payment channel {} ran empty and we initiated close at remaining balance of {}'.format(self.__class__.__name__,
+                                                                                                                                                                              uuid.UUID(bytes=key_id),
+                                                                                                                                                                              channel_oid,
+                                                                                                                                                                              int(close_balance / 10 ** 18)))
                 raise ApplicationError('xbr.error.insufficient_balance',
                                        '{}.unwrap() - key {} cannot be bought: insufficient balance {} in payment channel for amount {}'.format(self.__class__.__name__,
                                                                                                                                                 uuid.UUID(bytes=key_id),
@@ -452,8 +464,8 @@ class SimpleBuyer(object):
         log_counter = 0
         while self._keys[key_id] is False:
             if log_counter % 100:
-                self.log.info('{klass}.unwrap() - waiting for key "{key_id}" currently being bought ..',
-                              klass=self.__class__.__name__, key_id=hl(uuid.UUID(bytes=key_id)))
+                self.log.debug('{klass}.unwrap() - waiting for key "{key_id}" currently being bought ..',
+                               klass=self.__class__.__name__, key_id=hl(uuid.UUID(bytes=key_id)))
                 log_counter += 1
             await txaio.sleep(.2)
 

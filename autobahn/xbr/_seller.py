@@ -154,7 +154,7 @@ class KeySeries(object):
         # add key to archive
         self._archive[self._id] = (self._key, self._box)
 
-        self.log.info(
+        self.log.debug(
             '{tx_type} key "{key_id}" rotated [api_id="{api_id}"]',
             tx_type=hl('XBR ROTATE', color='magenta'),
             key_id=hl(uuid.UUID(bytes=self._id)),
@@ -311,7 +311,7 @@ class SimpleSeller(object):
                                                      copies=None,
                                                      provider_id=provider_id)
 
-                    self.log.info(
+                    self.log.debug(
                         '{tx_type} key "{key_id}" offered for {price} [api_id={api_id}, prefix="{prefix}", delegate="{delegate}"]',
                         tx_type=hl('XBR OFFER ', color='magenta'),
                         key_id=hl(uuid.UUID(bytes=key_id)),
@@ -342,7 +342,7 @@ class SimpleSeller(object):
 
         key_series = self.KeySeries(api_id, price, interval, on_rotate)
         self._keys[api_id] = key_series
-        self.log.info('Created new key series {key_series}', key_series=key_series)
+        self.log.debug('Created new key series {key_series}', key_series=key_series)
 
         return key_series
 
@@ -360,9 +360,9 @@ class SimpleSeller(object):
         self._session = session
         self._session_regs = []
 
-        self.log.info('Start selling from seller delegate address {address} (public key 0x{public_key}..)',
-                      address=hl(self._caddr),
-                      public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
+        self.log.debug('Start selling from seller delegate address {address} (public key 0x{public_key}..)',
+                       address=hl(self._caddr),
+                       public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
         procedure = 'xbr.provider.{}.sell'.format(self._provider_id)
         reg = await session.register(self.sell, procedure, options=RegisterOptions(details_arg='details'))
@@ -399,7 +399,7 @@ class SimpleSeller(object):
             self._balance = unpack_uint256(self._balance)
         self._seq = paying_balance['seq']
 
-        self.log.info('Seller delegate has active paying channel {channel_oid} (remaining balance {remaining} at sequence {seq})',
+        self.log.info('Ok, seller delegate started [active paying channel {channel_oid} with remaining balance {remaining} at sequence {seq}]',
                       channel_oid=hl(self._channel_oid), remaining=hlval(self._balance), seq=hlval(self._seq))
 
         return paying_balance['remaining']
@@ -434,6 +434,8 @@ class SimpleSeller(object):
         finally:
             self._state = SimpleSeller.STATE_STOPPED
             self._session = None
+
+        self.log.info('Ok, seller delegate stopped.')
 
     async def balance(self):
         """
@@ -536,14 +538,14 @@ class SimpleSeller(object):
             'signature': seller_signature,
         }
 
-        self.log.info('{klass}.close_channel() - {tx_type} closing channel {channel_oid}, closing balance {channel_balance}, closing sequence {channel_seq} [caller={caller}, caller_authid="{caller_authid}"]',
-                      klass=self.__class__.__name__,
-                      tx_type=hl('XBR CLOSE  ', color='magenta'),
-                      channel_balance=hl(str(int(channel_balance / 10 ** 18)) + ' XBR', color='magenta'),
-                      channel_seq=hl(channel_seq),
-                      channel_oid=hl(binascii.b2a_hex(channel_oid).decode()),
-                      caller=hl(details.caller),
-                      caller_authid=hl(details.caller_authid))
+        self.log.debug('{klass}.close_channel() - {tx_type} closing channel {channel_oid}, closing balance {channel_balance}, closing sequence {channel_seq} [caller={caller}, caller_authid="{caller_authid}"]',
+                       klass=self.__class__.__name__,
+                       tx_type=hl('XBR CLOSE  ', color='magenta'),
+                       channel_balance=hl(str(int(channel_balance / 10 ** 18)) + ' XBR', color='magenta'),
+                       channel_seq=hl(channel_seq),
+                       channel_oid=hl(binascii.b2a_hex(channel_oid).decode()),
+                       caller=hl(details.caller),
+                       caller_authid=hl(details.caller_authid))
 
         return receipt
 
