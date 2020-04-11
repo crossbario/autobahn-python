@@ -347,14 +347,16 @@ class SimpleBuyer(object):
                                        close_is_final=close_is_final)
 
                         # FIXME
-                        verifying_chain_id = None
-                        current_block_number = None
+                        verifying_chain_id = 1
+                        verifying_contract_adr = os.urandom(20)
+                        current_block_number = 1
 
                         # call market maker to initiate closing of payment channel
                         await self._session.call('xbr.marketmaker.close_channel',
                                                  channel_oid,
                                                  verifying_chain_id,
                                                  current_block_number,
+                                                 verifying_contract_adr,
                                                  pack_uint256(close_balance),
                                                  close_seq,
                                                  close_is_final,

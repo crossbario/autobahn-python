@@ -226,7 +226,7 @@ def sign_eip712_data(eth_privkey, channel_oid, channel_seq, balance, is_final=Fa
     """
     assert type(eth_privkey) == bytes and len(eth_privkey) == 32
     assert type(channel_oid) == bytes and len(channel_oid) == 16
-    assert type(channel_seq) == int and channel_seq > 0
+    assert type(channel_seq) == int and channel_seq >= 0
     assert type(balance) == int and balance >= 0
     assert type(is_final) == bool
 
