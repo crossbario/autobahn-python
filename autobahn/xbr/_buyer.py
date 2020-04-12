@@ -41,10 +41,9 @@ from autobahn.wamp.protocol import ApplicationSession
 from ._util import unpack_uint256, pack_uint256
 
 import eth_keys
-# import web3
-# from eth_account import Account
 
-from ._util import hl, hlval, sign_eip712_data, recover_eip712_signer
+from ._util import hl, hlval
+from ._eip712_channel_close import sign_eip712_channel_close, recover_eip712_channel_close
 
 
 class Transaction(object):
@@ -343,7 +342,7 @@ class SimpleBuyer(object):
                         close_balance = self._balance
                         close_is_final = True
 
-                        signature = sign_eip712_data(self._pkey_raw, channel_oid, close_seq, close_balance, close_is_final)
+                        signature = sign_eip712_channel_close(self._pkey_raw, channel_oid, close_seq, close_balance, close_is_final)
 
                         self.log.debug('auto-closing payment channel {channel_oid} [close_seq={close_seq}, close_balance={close_balance}, close_is_final={close_is_final}]',
                                        channel_oid=uuid.UUID(bytes=channel_oid),
@@ -385,7 +384,7 @@ class SimpleBuyer(object):
             is_final = False
 
             # XBRSIG[1/8]: compute EIP712 typed data signature
-            signature = sign_eip712_data(self._pkey_raw, channel_oid, channel_seq, balance, is_final=is_final)
+            signature = sign_eip712_channel_close(self._pkey_raw, channel_oid, channel_seq, balance, is_final=is_final)
 
             # persist 1st phase of the transaction locally
             self._save_transaction_phase1(channel_oid, self._addr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
@@ -418,7 +417,7 @@ class SimpleBuyer(object):
             marketmaker_remaining = unpack_uint256(receipt['remaining'])
             marketmaker_inflight = unpack_uint256(receipt['inflight'])
 
-            signer_address = recover_eip712_signer(channel_oid, marketmaker_channel_seq, marketmaker_remaining, False, marketmaker_signature)
+            signer_address = recover_eip712_channel_close(channel_oid, marketmaker_channel_seq, marketmaker_remaining, False, marketmaker_signature)
             if signer_address != self._market_maker_adr:
                 self.log.warn('{klass}.unwrap()::XBRSIG[8/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                               klass=self.__class__.__name__,
