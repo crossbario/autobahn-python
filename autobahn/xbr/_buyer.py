@@ -102,6 +102,7 @@ class SimpleBuyer(object):
 
         # market maker address
         self._market_maker_adr = market_maker_adr
+        self._xbrmm_config = None
 
         # buyer delegate raw ethereum private key (32 bytes)
         self._pkey_raw = buyer_key
@@ -175,6 +176,8 @@ class SimpleBuyer(object):
                        public_key=binascii.b2a_hex(self._pkey.public_key[:10]).decode())
 
         try:
+            self._xbrmm_config = await session.call('xbr.marketmaker.get_config')
+
             # get the currently active (if any) payment channel for the delegate
             assert type(self._addr) == bytes and len(self._addr) == 20
             self._channel = await session.call('xbr.marketmaker.get_active_payment_channel', self._addr)
@@ -299,9 +302,9 @@ class SimpleBuyer(object):
         channel_oid = self._channel['channel_oid']
 
         # FIXME
-        verifying_chain_id = 1
-        verifying_contract_adr = os.urandom(20)
         current_block_number = 1
+        verifying_chain_id = self._xbrmm_config['verifying_chain_id']
+        verifying_contract_adr = binascii.a2b_hex(self._xbrmm_config['verifying_contract_adr'][2:])
 
         # if we don't have the key, buy it!
         if key_id in self._keys:
@@ -348,7 +351,15 @@ class SimpleBuyer(object):
                         close_balance = self._balance
                         close_is_final = True
 
-                        signature = sign_eip712_channel_close(self._pkey_raw, channel_oid, close_seq, close_balance, close_is_final)
+                        signature = sign_eip712_channel_close(self._pkey_raw,
+                                                              verifying_chain_id,
+                                                              verifying_contract_adr,
+                                                              current_block_number,
+                                                              market_oid,
+                                                              channel_oid,
+                                                              close_seq,
+                                                              close_balance,
+                                                              close_is_final)
 
                         self.log.debug('auto-closing payment channel {channel_oid} [close_seq={close_seq}, close_balance={close_balance}, close_is_final={close_is_final}]',
                                        channel_oid=uuid.UUID(bytes=channel_oid),
@@ -420,7 +431,10 @@ class SimpleBuyer(object):
             marketmaker_remaining = unpack_uint256(receipt['remaining'])
             marketmaker_inflight = unpack_uint256(receipt['inflight'])
 
-            signer_address = recover_eip712_channel_close(channel_oid, marketmaker_channel_seq, marketmaker_remaining, False, marketmaker_signature)
+            signer_address = recover_eip712_channel_close(verifying_chain_id, verifying_contract_adr,
+                                                          current_block_number, market_oid, channel_oid,
+                                                          marketmaker_channel_seq, marketmaker_remaining,
+                                                          False, marketmaker_signature)
             if signer_address != self._market_maker_adr:
                 self.log.warn('{klass}.unwrap()::XBRSIG[8/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                               klass=self.__class__.__name__,
