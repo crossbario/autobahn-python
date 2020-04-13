@@ -30,7 +30,7 @@ from py_eth_sig_utils import signing
 _EIP712_SIG_LEN = 32 + 32 + 1
 
 
-def _create_eip712_channel_close(chainId: int, verifyingContract: bytes, marketId: bytes, channelId: bytes,
+def _create_eip712_channel_close(chainId: int, verifyingContract: bytes, closeAt: int, marketId: bytes, channelId: bytes,
                                  channelSeq: int, balance: int, isFinal: bool) -> dict:
     """
 
@@ -45,8 +45,9 @@ def _create_eip712_channel_close(chainId: int, verifyingContract: bytes, marketI
     """
     assert type(chainId) == int
     assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(marketId) == bytes and len(marketId) == 20
-    assert type(channelId) == bytes and len(channelId) == 20
+    assert type(closeAt) == int
+    assert type(marketId) == bytes and len(marketId) == 16
+    assert type(channelId) == bytes and len(channelId) == 16
     assert type(channelSeq) == int
     assert type(balance) == int
     assert type(isFinal) == bool
@@ -69,6 +70,9 @@ def _create_eip712_channel_close(chainId: int, verifyingContract: bytes, marketI
             }, {
                 'name': 'verifyingContract',
                 'type': 'address'
+            }, {
+                'name': 'closeAt',
+                'type': 'uint256'
             }, {
                 'name': 'marketId',
                 'type': 'bytes16'
@@ -94,6 +98,7 @@ def _create_eip712_channel_close(chainId: int, verifyingContract: bytes, marketI
         'message': {
             'chainId': chainId,
             'verifyingContract': verifyingContract,
+            'closeAt': closeAt,
             'marketId': marketId,
             'channelId': channelId,
             'channelSeq': channelSeq,
@@ -105,7 +110,7 @@ def _create_eip712_channel_close(chainId: int, verifyingContract: bytes, marketI
     return data
 
 
-def sign_eip712_channel_close(eth_privkey: bytes, chainId: int, verifyingContract: bytes, marketId: bytes,
+def sign_eip712_channel_close(eth_privkey: bytes, chainId: int, verifyingContract: bytes, closeAt: int, marketId: bytes,
                               channelId: bytes, channelSeq: int, balance: int, isFinal: bool) -> bytes:
     """
 
@@ -116,7 +121,7 @@ def sign_eip712_channel_close(eth_privkey: bytes, chainId: int, verifyingContrac
     :rtype: bytes
     """
     # create EIP712 typed data object
-    data = _create_eip712_channel_close(chainId, verifyingContract, marketId, channelId, channelSeq, balance,
+    data = _create_eip712_channel_close(chainId, verifyingContract, closeAt, marketId, channelId, channelSeq, balance,
                                         isFinal)
 
     # FIXME: this fails on PyPy (but ot on CPy!) with
@@ -129,7 +134,7 @@ def sign_eip712_channel_close(eth_privkey: bytes, chainId: int, verifyingContrac
     return signature
 
 
-def recover_eip712_channel_close(chainId: int, verifyingContract: bytes, marketId: bytes, channelId: bytes,
+def recover_eip712_channel_close(chainId: int, verifyingContract: bytes, closeAt: int, marketId: bytes, channelId: bytes,
                                  channelSeq: int, balance: int, isFinal: bool, signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
@@ -138,7 +143,7 @@ def recover_eip712_channel_close(chainId: int, verifyingContract: bytes, marketI
     :rtype: bytes
     """
     # create EIP712 typed data object
-    data = _create_eip712_channel_close(chainId, verifyingContract, marketId, channelId, channelSeq, balance,
+    data = _create_eip712_channel_close(chainId, verifyingContract, closeAt, marketId, channelId, channelSeq, balance,
                                         isFinal)
 
     assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN

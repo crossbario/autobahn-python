@@ -295,7 +295,13 @@ class SimpleBuyer(object):
         assert type(serializer) == str and serializer in ['cbor']
         assert type(ciphertext) == bytes
 
+        market_oid = self._channel['market_oid']
         channel_oid = self._channel['channel_oid']
+
+        # FIXME
+        verifying_chain_id = 1
+        verifying_contract_adr = os.urandom(20)
+        current_block_number = 1
 
         # if we don't have the key, buy it!
         if key_id in self._keys:
@@ -350,11 +356,6 @@ class SimpleBuyer(object):
                                        close_balance=int(close_balance / 10**18),
                                        close_is_final=close_is_final)
 
-                        # FIXME
-                        verifying_chain_id = 1
-                        verifying_contract_adr = os.urandom(20)
-                        current_block_number = 1
-
                         # call market maker to initiate closing of payment channel
                         await self._session.call('xbr.marketmaker.close_channel',
                                                  channel_oid,
@@ -384,7 +385,9 @@ class SimpleBuyer(object):
             is_final = False
 
             # XBRSIG[1/8]: compute EIP712 typed data signature
-            signature = sign_eip712_channel_close(self._pkey_raw, channel_oid, channel_seq, balance, is_final=is_final)
+            signature = sign_eip712_channel_close(self._pkey_raw, verifying_chain_id, verifying_contract_adr,
+                                                  current_block_number, market_oid, channel_oid, channel_seq,
+                                                  balance, is_final)
 
             # persist 1st phase of the transaction locally
             self._save_transaction_phase1(channel_oid, self._addr, buyer_pubkey, key_id, channel_seq, amount, balance, signature)
