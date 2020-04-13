@@ -37,14 +37,13 @@ from txaio import time_ns
 
 import cbor2
 import eth_keys
-# from eth_account import Account
 import nacl.secret
 import nacl.utils
 import nacl.public
 import txaio
-# import web3
 
-from ._util import hl, hlval, recover_eip712_signer, sign_eip712_data
+from ._util import hl, hlval
+from ._eip712_channel_close import sign_eip712_channel_close, recover_eip712_channel_close
 
 
 class KeySeries(object):
@@ -524,7 +523,7 @@ class SimpleSeller(object):
                                    '{}.sell() - unexpected channel (after tx) balance: expected {}, but got {}'.format(self.__class__.__name__, self._balance, channel_balance))
 
         # XBRSIG: check the signature (over all input data for the buying of the key)
-        signer_address = recover_eip712_signer(channel_oid, channel_seq, channel_balance, channel_is_final, marketmaker_signature)
+        signer_address = recover_eip712_channel_close(channel_oid, channel_seq, channel_balance, channel_is_final, marketmaker_signature)
         if signer_address != market_maker_adr:
             self.log.warn('{klass}.sell()::XBRSIG[4/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                           klass=self.__class__.__name__,
@@ -533,7 +532,7 @@ class SimpleSeller(object):
             raise ApplicationError('xbr.error.invalid_signature', '{}.sell()::XBRSIG[4/8] - EIP712 signature invalid or not signed by market maker'.format(self.__class__.__name__))
 
         # XBRSIG: compute EIP712 typed data signature
-        seller_signature = sign_eip712_data(self._pkey_raw, channel_oid, channel_seq, channel_balance, channel_is_final)
+        seller_signature = sign_eip712_channel_close(self._pkey_raw, channel_oid, channel_seq, channel_balance, channel_is_final)
 
         receipt = {
             'delegate': self._addr,
@@ -632,7 +631,7 @@ class SimpleSeller(object):
                                    '{}.sell() - unexpected channel (after tx) balance: expected {}, but got {}'.format(self.__class__.__name__, self._balance - amount, balance))
 
         # XBRSIG[4/8]: check the signature (over all input data for the buying of the key)
-        signer_address = recover_eip712_signer(channel_oid, channel_seq, balance, False, signature)
+        signer_address = recover_eip712_channel_close(channel_oid, channel_seq, balance, False, signature)
         if signer_address != market_maker_adr:
             self.log.warn('{klass}.sell()::XBRSIG[4/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                           klass=self.__class__.__name__,
@@ -651,7 +650,7 @@ class SimpleSeller(object):
         assert type(sealed_key) == bytes and len(sealed_key) == 80, '{}.sell() - unexpected sealed key computed (expected bytes[80]): {}'.format(self.__class__.__name__, sealed_key)
 
         # XBRSIG[5/8]: compute EIP712 typed data signature
-        seller_signature = sign_eip712_data(self._pkey_raw, self._channel['channel_oid'], self._seq, self._balance)
+        seller_signature = sign_eip712_channel_close(self._pkey_raw, self._channel['channel_oid'], self._seq, self._balance)
 
         receipt = {
             # key ID that has been bought

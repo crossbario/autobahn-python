@@ -36,7 +36,9 @@ try:
     from autobahn.xbr._abi import XBR_TOKEN_ABI, XBR_NETWORK_ABI, XBR_MARKET_ABI, XBR_CATALOG_ABI, XBR_CHANNEL_ABI  # noqa
     from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_MARKET_ADDR, XBR_DEBUG_CATALOG_ADDR, XBR_DEBUG_CHANNEL_ADDR  # noqa
     from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer  # noqa
-    from autobahn.xbr._util import make_w3, sign_eip712_data, recover_eip712_signer, pack_uint256, unpack_uint256  # noqa
+    from autobahn.xbr._util import make_w3, pack_uint256, unpack_uint256  # noqa
+    from autobahn.xbr._eip712_channel_open import sign_eip712_channel_open, recover_eip712_channel_open  # noqa
+    from autobahn.xbr._eip712_channel_close import sign_eip712_channel_close, recover_eip712_channel_close  # noqa
     from autobahn.xbr._blockchain import SimpleBlockchain  # noqa
     from autobahn.xbr._seller import SimpleSeller, KeySeries  # noqa
     from autobahn.xbr._buyer import SimpleBuyer  # noqa
@@ -222,14 +224,17 @@ try:
 
         'setProvider',
         'make_w3',
-        'sign_eip712_data',
-        'recover_eip712_signer',
         'pack_uint256',
         'unpack_uint256',
         'generate_seedphrase',
         'check_seedphrase',
         'account_from_seedphrase',
         'ASCII_BOMB',
+
+        'sign_eip712_channel_open',
+        'recover_eip712_channel_open',
+        'sign_eip712_channel_close',
+        'recover_eip712_channel_close',
 
         'MemberLevel',
         'ActorType',
@@ -247,6 +252,9 @@ try:
         'IBuyer',
     )
 
-except (ImportError, FileNotFoundError):
+except (ImportError, FileNotFoundError) as e:
+    import sys
+    sys.stderr.write(str(e))
+    sys.stderr.flush()
     HAS_XBR = False
     __all__ = ('HAS_XBR',)
