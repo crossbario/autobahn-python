@@ -11,10 +11,10 @@ all:
 	@echo ""
 
 abi_files:
-	curl -s https://xbr.network/lib/abi/xbr-protocol-20.4.1-dev.zip -o /tmp/xbr-protocol-20.4.1-dev.zip
-	unzip -t /tmp/xbr-protocol-20.4.1-dev.zip
+	curl -s https://xbr.network/lib/abi/xbr-protocol-latest.zip -o /tmp/xbr-protocol-latest.zip
+	unzip -t /tmp/xbr-protocol-latest.zip
 	rm -rf ${PWD}/autobahn/xbr/contracts
-	unzip /tmp/xbr-protocol-20.4.1-dev.zip -d ${PWD}/autobahn/xbr/contracts
+	unzip /tmp/xbr-protocol-latest.zip -d ${PWD}/autobahn/xbr/contracts
 
 # install locally
 install: abi_files

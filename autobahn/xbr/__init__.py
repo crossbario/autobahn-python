@@ -139,7 +139,7 @@ try:
         xbrmarket = _w3.eth.contract(address=XBR_DEBUG_MARKET_ADDR, abi=XBR_MARKET_ABI)
 
         # print('Provider set - xbrcatalog={}'.format(XBR_DEBUG_CATALOG_ADDR))
-        xbrcatalog = _w3.eth.contract(address=XBR_DEBUG_MARKET_ADDR, abi=XBR_CATALOG_ABI)
+        xbrcatalog = _w3.eth.contract(address=XBR_DEBUG_CATALOG_ADDR, abi=XBR_CATALOG_ABI)
 
         # print('Provider set - xbrchannel={}'.format(XBR_DEBUG_CHANNEL_ADDR))
         xbrchannel = _w3.eth.contract(address=XBR_DEBUG_CHANNEL_ADDR, abi=XBR_CHANNEL_ABI)

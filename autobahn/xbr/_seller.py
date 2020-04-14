@@ -209,6 +209,7 @@ class SimpleSeller(object):
 
         # market maker address
         self._market_maker_adr = market_maker_adr
+        self._xbrmm_config = None
 
         # seller raw ethereum private key (32 bytes)
         self._pkey_raw = seller_key
@@ -384,6 +385,8 @@ class SimpleSeller(object):
 
         for key_series in self._keys.values():
             await key_series.start()
+
+        self._xbrmm_config = await session.call('xbr.marketmaker.get_config')
 
         # get the current (off-chain) balance of the paying channel
         paying_balance = await session.call('xbr.marketmaker.get_paying_channel_balance', self._channel_oid.bytes)
@@ -630,8 +633,16 @@ class SimpleSeller(object):
             raise ApplicationError('xbr.error.unexpected_channel_balance',
                                    '{}.sell() - unexpected channel (after tx) balance: expected {}, but got {}'.format(self.__class__.__name__, self._balance - amount, balance))
 
+        # FIXME
+        current_block_number = 1
+        verifying_chain_id = self._xbrmm_config['verifying_chain_id']
+        verifying_contract_adr = binascii.a2b_hex(self._xbrmm_config['verifying_contract_adr'][2:])
+
+        market_oid = self._channel['market_oid']
+
         # XBRSIG[4/8]: check the signature (over all input data for the buying of the key)
-        signer_address = recover_eip712_channel_close(channel_oid, channel_seq, balance, False, signature)
+        signer_address = recover_eip712_channel_close(verifying_chain_id, verifying_contract_adr, current_block_number,
+                                                      market_oid, channel_oid, channel_seq, balance, False, signature)
         if signer_address != market_maker_adr:
             self.log.warn('{klass}.sell()::XBRSIG[4/8] - EIP712 signature invalid: signer_address={signer_address}, delegate_adr={delegate_adr}',
                           klass=self.__class__.__name__,
@@ -650,7 +661,9 @@ class SimpleSeller(object):
         assert type(sealed_key) == bytes and len(sealed_key) == 80, '{}.sell() - unexpected sealed key computed (expected bytes[80]): {}'.format(self.__class__.__name__, sealed_key)
 
         # XBRSIG[5/8]: compute EIP712 typed data signature
-        seller_signature = sign_eip712_channel_close(self._pkey_raw, self._channel['channel_oid'], self._seq, self._balance)
+        seller_signature = sign_eip712_channel_close(self._pkey_raw, verifying_chain_id, verifying_contract_adr,
+                                                     current_block_number, market_oid, channel_oid, self._seq,
+                                                     self._balance, False)
 
         receipt = {
             # key ID that has been bought
