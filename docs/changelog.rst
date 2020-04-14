@@ -5,6 +5,15 @@
 Changelog
 =========
 
+20.4.2
+------
+
+* new: XBR - package XBR v20.4.2 ABI files
+* new: XBR - adjust eip712 signature for channel close
+* new: XBR - adjustments after xbr refactoring (#1357)
+* new: XBR - add channel open/close eip712 types to AB (#1358)
+* new: WAMP-cryptosign - make channel_id_type optional in transport_channel_id()
+
 20.4.1
 ------
 
