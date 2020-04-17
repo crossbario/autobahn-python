@@ -167,6 +167,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
             self.abort()
 
         except Exception as e:
+            self.log.failure()
             self.log.warn("{klass}.stringReceived: WAMP Exception - aborting connection!\n{err}",
                           klass=self.__class__.__name__,
                           err=e)
