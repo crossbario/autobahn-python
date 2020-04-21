@@ -25,10 +25,10 @@
 ###############################################################################
 
 import sys
-import os
 import uuid
 import binascii
 import argparse
+import random
 from pprint import pformat
 
 import eth_keys
@@ -48,12 +48,12 @@ from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn.wamp.serializer import CBORSerializer
 from autobahn.wamp import cryptosign
 from autobahn.wamp.exception import ApplicationError
+from autobahn.xbr import pack_uint256
 
-from xbrnetwork import sign_eip712_member_register
+from xbrnetwork import sign_eip712_member_register, sign_eip712_market_create
 
-_CFX_VERIFICATIONS_DIR = '../../../xbr-www/cloud/planet_xbr_crossbarfx/.crossbar/.verifications'
 
-_COMMANDS = ['onboard', 'onboard-verify']
+_COMMANDS = ['onboard', 'onboard-verify', 'create-market', 'create-market-verify']
 
 
 class Client(ApplicationSession):
@@ -107,6 +107,7 @@ class Client(ApplicationSession):
             command = self.config.extra['command']
             if details.authrole == 'anonymous':
                 self.log.info('not yet a member in the XBR network')
+
                 assert command in ['onboard', 'onboard-verify']
                 if command == 'onboard':
                     username = self.config.extra['username']
@@ -124,12 +125,44 @@ class Client(ApplicationSession):
                 member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
                 self.log.info('already a member in the XBR network:\n\n{member_data}\n', member_data=pformat(member_data))
 
-                assert command in [], 'should not arrive here'
+                assert command in ['create-market', 'create-market-verify']
+                if command == 'create-market':
+                    market_oid = self.config.extra['market']
+                    marketmaker = self.config.extra['marketmaker']
+                    await self._do_create_market(member_oid, market_oid, marketmaker)
+                elif command == 'create-market-verify':
+                    vaction_oid = self.config.extra['vaction']
+                    vaction_code = self.config.extra['vcode']
+                    await self._do_create_market_verify(member_oid, vaction_oid, vaction_code)
+                else:
+                    assert False, 'should not arrive here'
         except Exception as e:
             self.log.failure()
             self.config.extra['error'] = e
         finally:
             self.leave()
+
+    def onLeave(self, details):
+        self.log.info('{klass}.onLeave(details={details})', klass=self.__class__.__name__, details=details)
+
+        self._running = False
+
+        if details.reason == 'wamp.close.normal':
+            self.log.info('Shutting down ..')
+            # user initiated leave => end the program
+            self.config.runner.stop()
+            self.disconnect()
+        else:
+            # continue running the program (let ApplicationRunner perform auto-reconnect attempts ..)
+            self.log.info('Will continue to run (reconnect)!')
+
+    def onDisconnect(self):
+        self.log.info('{klass}.onDisconnect()', klass=self.__class__.__name__)
+
+        try:
+            reactor.stop()
+        except ReactorNotRunning:
+            pass
 
     async def _do_onboard_member(self, member_username, member_email):
         client_pubkey = binascii.a2b_hex(self._key.public_key())
@@ -211,27 +244,141 @@ class Client(ApplicationSession):
         self.log.info('SUCCESS! New XBR Member onboarded: member_oid={member_oid}, result=\n{result}',
                       member_oid=uuid.UUID(bytes=member_oid), result=pformat(result))
 
-    def onLeave(self, details):
-        self.log.info('{klass}.onLeave(details={details})', klass=self.__class__.__name__, details=details)
+    async def _do_create_market(self, member_oid, market_oid, marketmaker, provider_security=0, consumer_security=0, market_fee=0):
+        member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+        member_adr = member_data['address']
 
-        self._running = False
+        config = await self.call('network.xbr.console.get_config')
 
-        if details.reason == 'wamp.close.normal':
-            self.log.info('Shutting down ..')
-            # user initiated leave => end the program
-            self.config.runner.stop()
-            self.disconnect()
-        else:
-            # continue running the program (let ApplicationRunner perform auto-reconnect attempts ..)
-            self.log.info('Will continue to run (reconnect)!')
+        verifyingChain = config['verifying_chain_id']
+        verifyingContract = binascii.a2b_hex(config['verifying_contract_adr'][2:])
 
-    def onDisconnect(self):
-        self.log.info('{klass}.onDisconnect()', klass=self.__class__.__name__)
+        coin_adr = binascii.a2b_hex(config['contracts']['xbrtoken'][2:])
 
-        try:
-            reactor.stop()
-        except ReactorNotRunning:
-            pass
+        status = await self.call('network.xbr.console.get_status')
+        block_number = status['block']['number']
+
+        # count all markets before we create a new one:
+        res = await self.call('network.xbr.console.find_markets')
+        cnt_market_before = len(res)
+        self.log.info('Total markets before: {cnt_market_before}', cnt_market_before=cnt_market_before)
+
+        res = await self.call('network.xbr.console.get_markets_by_owner', member_oid.bytes)
+        cnt_market_by_owner_before = len(res)
+        self.log.info('Market for owner: {cnt_market_by_owner_before}',
+                      cnt_market_by_owner_before=cnt_market_by_owner_before)
+
+        # collect information for market creation that is stored on-chain
+
+        # terms text: encode in utf8 and compute BIP58 multihash string
+        terms_data = 'these are my market terms (randint={})'.format(random.randint(0, 1000)).encode('utf8')
+        h = hashlib.sha256()
+        h.update(terms_data)
+        terms_hash = str(multihash.to_b58_string(multihash.encode(h.digest(), 'sha2-256')))
+
+        # market meta data that doesn't change. the hash of this is part of the data that is signed and also
+        # stored on-chain (only the hash, not the meta data!)
+        meta_obj = {
+            'chain_id': verifyingChain,
+            'block_number': block_number,
+            'contract_adr': verifyingContract,
+            'member_adr': member_adr,
+            'member_oid': member_oid.bytes,
+            'market_oid': market_oid.bytes,
+        }
+        meta_data = cbor2.dumps(meta_obj)
+        h = hashlib.sha256()
+        h.update(meta_data)
+        meta_hash = multihash.to_b58_string(multihash.encode(h.digest(), 'sha2-256'))
+
+        # create signature for pre-signed transaction
+        signature = sign_eip712_market_create(self._ethkey_raw, verifyingChain, verifyingContract, member_adr,
+                                              block_number, market_oid.bytes, coin_adr, terms_hash, meta_hash,
+                                              marketmaker, provider_security, consumer_security, market_fee)
+
+        # for wire transfer, convert to bytes
+        provider_security = pack_uint256(provider_security)
+        consumer_security = pack_uint256(consumer_security)
+        market_fee = pack_uint256(market_fee)
+
+        # market settings that can change. even though changing might require signing, neither the data nor
+        # and signatures are stored on-chain. however, even when only signed off-chain, this establishes
+        # a chain of signature anchored in the on-chain record for this market!
+        attributes = {
+            'title': 'International Data Monetization Award',
+            'label': 'IDMA',
+            'homepage': 'https://markets.international-data-monetization-award.com/',
+        }
+
+        # now provide everything of above:
+        #   - market operator (owning member) and market oid
+        #   - signed market data and signature
+        #   - settings
+        createmarket_request_submitted = await self.call('network.xbr.console.create_market', member_oid.bytes,
+                                                         market_oid.bytes, verifyingChain, block_number,
+                                                         verifyingContract, coin_adr, terms_hash, meta_hash, meta_data,
+                                                         marketmaker, provider_security, consumer_security, market_fee,
+                                                         signature, attributes)
+
+        self.log.info('SUCCESS: Create market request submitted: \n{createmarket_request_submitted}\n',
+                      createmarket_request_submitted=pformat(createmarket_request_submitted))
+
+        assert type(createmarket_request_submitted) == dict
+        assert 'timestamp' in createmarket_request_submitted and type(
+            createmarket_request_submitted['timestamp']) == int and createmarket_request_submitted['timestamp'] > 0
+        assert 'action' in createmarket_request_submitted and createmarket_request_submitted[
+            'action'] == 'create_market'
+        assert 'vaction_oid' in createmarket_request_submitted and type(
+            createmarket_request_submitted['vaction_oid']) == bytes and len(
+            createmarket_request_submitted['vaction_oid']) == 16
+
+        vaction_oid = uuid.UUID(bytes=createmarket_request_submitted['vaction_oid'])
+        self.log.info('SUCCESS: New Market verification "{vaction_oid}" created', vaction_oid=vaction_oid)
+
+    async def _do_create_market_verify(self, member_oid, vaction_oid, vaction_code):
+        self.log.info('Verifying create market using vaction_oid={vaction_oid}, vaction_code={vaction_code} ..',
+                      vaction_oid=vaction_oid, vaction_code=vaction_code)
+
+        create_market_request_verified = await self.call('network.xbr.console.verify_create_market', vaction_oid.bytes,
+                                                         vaction_code)
+
+        self.log.info('Create market request verified: \n{create_market_request_verified}\n',
+                      create_market_request_verified=pformat(create_market_request_verified))
+
+        assert type(create_market_request_verified) == dict
+        assert 'market_oid' in create_market_request_verified and type(
+            create_market_request_verified['market_oid']) == bytes and len(
+            create_market_request_verified['market_oid']) == 16
+        assert 'created' in create_market_request_verified and type(
+            create_market_request_verified['created']) == int and create_market_request_verified['created'] > 0
+
+        market_oid = create_market_request_verified['market_oid']
+        self.log.info('SUCCESS! New XBR market created: market_oid={market_oid}, result=\n{result}',
+                      market_oid=uuid.UUID(bytes=market_oid), result=pformat(create_market_request_verified))
+
+        market_oids = await self.call('network.xbr.console.find_markets')
+        self.log.info('SUCCESS - find_markets: found {cnt_markets} markets', cnt_markets=len(market_oids))
+
+        # count all markets after we created a new market:
+        cnt_market_after = len(market_oids)
+        self.log.info('Total markets after: {cnt_market_after}', cnt_market_after=cnt_market_after)
+        assert market_oid in market_oids, 'expected to find market ID {}, but not found in {} returned market IDs'.format(
+            uuid.UUID(bytes=market_oid), len(market_oids))
+
+        market_oids = await self.call('network.xbr.console.get_markets_by_owner', member_oid.bytes)
+        self.log.info('SUCCESS - get_markets_by_owner: found {cnt_markets} markets', cnt_markets=len(market_oids))
+
+        # count all markets after we created a new market:
+        cnt_market_by_owner_after = len(market_oids)
+        self.log.info('Market for owner: {cnt_market_by_owner_after}',
+                      cnt_market_by_owner_before=cnt_market_by_owner_after)
+        assert market_oid in market_oids, 'expected to find market ID {}, but not found in {} returned market IDs'.format(
+            uuid.UUID(bytes=market_oid), len(market_oids))
+
+        for market_oid in market_oids:
+            self.log.info('network.xbr.console.get_market(market_oid={market_oid}) ..', market_oid=market_oid)
+            market = await self.call('network.xbr.console.get_market', market_oid, include_attributes=True)
+            self.log.info('SUCCESS: got market information\n\n{market}\n', market=pformat(market))
 
 
 def _main():
@@ -279,6 +426,18 @@ def _main():
                         default=None,
                         help='For on-boarding, the new member email address.')
 
+    parser.add_argument('--market',
+                        dest='market',
+                        type=str,
+                        default=None,
+                        help='For creating new markets, the market UUID.')
+
+    parser.add_argument('--marketmaker',
+                        dest='marketmaker',
+                        type=str,
+                        default=None,
+                        help='For creating new markets, the market maker address.')
+
     parser.add_argument('--vcode',
                         dest='vcode',
                         type=str,
@@ -304,6 +463,8 @@ def _main():
         'cskey': binascii.a2b_hex(args.cskey[2:]),
         'username': args.username,
         'email': args.email,
+        'market': uuid.UUID(args.market) if args.market else None,
+        'marketmaker': binascii.a2b_hex(args.marketmaker[2:]) if args.marketmaker else None,
         'vcode': args.vcode,
         'vaction': uuid.UUID(args.vaction) if args.vaction else None,
     }
