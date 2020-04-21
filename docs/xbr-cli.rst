@@ -1,6 +1,36 @@
 XBR Command line interface
 ==========================
 
+Autobahn includes a command-line interface for the `XBR network <https://xbr.network>`__:
+
+.. code-block:: console
+
+    $ xbrnetwork --help
+
+    usage: xbrnetwork [-h] [-d] [--url URL] [--realm REALM] [--ethkey ETHKEY] [--cskey CSKEY] [--username USERNAME] [--email EMAIL] [--market MARKET] [--marketmaker MARKETMAKER] [--actor_type {2,1,3}] [--vcode VCODE] [--vaction VACTION]
+                    {onboard,onboard-verify,create-market,create-market-verify,join-market,join-market-verify}
+
+    positional arguments:
+    {onboard,onboard-verify,create-market,create-market-verify,join-market,join-market-verify}
+                            Command to run
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    -d, --debug           Enable debug output.
+    --url URL             The router URL (default: "wss://planet.xbr.network/ws").
+    --realm REALM         The realm to join (default: "xbrnetwork").
+    --ethkey ETHKEY       Private Ethereum key (32 bytes as HEX encoded string)
+    --cskey CSKEY         Private WAMP-cryptosign authentication key (32 bytes as HEX encoded string)
+    --username USERNAME   For on-boarding, the new member username.
+    --email EMAIL         For on-boarding, the new member email address.
+    --market MARKET       For creating new markets, the market UUID.
+    --marketmaker MARKETMAKER
+                            For creating new markets, the market maker address.
+    --actor_type {1,2,3}  Actor type: PROVIDER = 1, CONSUMER = 2, PROVIDER_CONSUMER (both) = 3
+    --vcode VCODE         For verifications of actions, the verification UUID.
+    --vaction VACTION     For verifications of actions (on-board, create-market, ..), the verification code.
+
+
 On-board member
 ---------------
 
@@ -8,7 +38,8 @@ Submit request to on-board new member in the XBR network:
 
 .. code-block:: console
 
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$ xbrnetwork --cskey=0x6cba0... --ethkey=0x7584... --username=oberstet1 --email=tobias.oberstein@gmail.com onboard
+    $ xbrnetwork --cskey=0x6cba0... --ethkey=0x7584... --username=oberstet1 --email=tobias.oberstein@gmail.com onboard
+
     2020-04-21T12:00:33+0200 Client.__init__(config=ComponentConfig(realm=<xbrnetwork>, extra={'command': 'onboard', 'ethkey': b'u\x84\x8d\xdb\x11U\xcd\x1c\xdfmt\xa6\xe7\xfb\xed\x06\xae\xaa!\xef-\x8a\x05\xdfz\xf2\xd9\\\xdc\x12vr', 'cskey': b'l\xba\x0f\x9c\xec\x8b<G\xbd\x04T\x15\x16\xa9y\xe6?\x13\x1f\xa9;\xf4P\xe2N\x1f\x15\x85h\xbc\xfa\x1a', 'username': 'oberstet1', 'email': 'tobias.oberstein@gmail.com', 'vcode': None, 'vaction': None}, keyring=None, controller=None, shared=None, runner=<autobahn.twisted.wamp.ApplicationRunner object at 0x7f8ea56ec040>))
     2020-04-21T12:00:33+0200 Client (delegate) Ethereum key loaded (adr=0x0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047)
     2020-04-21T12:00:33+0200 Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0xe545a23b971a624d735f75ecf88676aa5170c14c4bc03bf31e88faaa7b28187f)
@@ -38,7 +69,8 @@ Verify the on-boarding request:
 
 .. code-block:: console
 
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$ xbrnetwork --cskey=0x6cba0... --ethkey=0x7584... --vaction=276450ce-cf17-4053-a83e-1a9ec053b4f8 --vcode=TFMC-KPRR-NNVE onboard-verify
+    $ xbrnetwork --cskey=0x6cba0... --ethkey=0x7584... --vaction=276450ce-cf17-4053-a83e-1a9ec053b4f8 --vcode=TFMC-KPRR-NNVE onboard-verify
+
     2020-04-21T12:02:24+0200 Client.__init__(config=ComponentConfig(realm=<xbrnetwork>, extra={'command': 'onboard-verify', 'ethkey': b'u\x84\x8d\xdb\x11U\xcd\x1c\xdfmt\xa6\xe7\xfb\xed\x06\xae\xaa!\xef-\x8a\x05\xdfz\xf2\xd9\\\xdc\x12vr', 'cskey': b'l\xba\x0f\x9c\xec\x8b<G\xbd\x04T\x15\x16\xa9y\xe6?\x13\x1f\xa9;\xf4P\xe2N\x1f\x15\x85h\xbc\xfa\x1a', 'username': None, 'email': None, 'vcode': 'TFMC-KPRR-NNVE', 'vaction': UUID('276450ce-cf17-4053-a83e-1a9ec053b4f8')}, keyring=None, controller=None, shared=None, runner=<autobahn.twisted.wamp.ApplicationRunner object at 0x7f9b544e81f0>))
     2020-04-21T12:02:24+0200 Client (delegate) Ethereum key loaded (adr=0x0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047)
     2020-04-21T12:02:24+0200 Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0xe545a23b971a624d735f75ecf88676aa5170c14c4bc03bf31e88faaa7b28187f)
@@ -68,7 +100,60 @@ Verify the on-boarding request:
     2020-04-21T12:02:25+0200 Shutting down ..
     2020-04-21T12:02:25+0200 Client.onDisconnect()
     2020-04-21T12:02:25+0200 Main loop terminated.
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$
+
+
+Get member
+----------
+
+To get member information (about oneself):
+
+.. code-block:: console
+
+    $ xbrnetwork --cskey=0xfbb... --ethkey=0x5be59... get-member
+
+    2020-04-21T14:51:26+0200 Client.__init__(config=ComponentConfig(realm=<xbrnetwork>, extra={'command': 'get-member', 'ethkey': b'[\xe5\x99\xa3I\'\xa1\x11\t"\xd7pK\xa3\x16\x14K1i\x9d\x8e\x7f"\x9e&\x84\xd5WZ\x84!N', 'cskey': b"\xfb\xb1\xd2\x08\x0c.\x1d\xaa\x8e)'+~\xc7\xe7K.#=\x1b\xda\xa4\xa3h>\xa7\x9d#<\xd6u\x89", 'username': None, 'email': None, 'market': None, 'marketmaker': None, 'actor_type': None, 'vcode': None, 'vaction': None}, keyring=None, controller=None, shared=None, runner=<autobahn.twisted.wamp.ApplicationRunner object at 0x7f3bae0ebb20>))
+    2020-04-21T14:51:26+0200 Client (delegate) Ethereum key loaded (adr=0x0x2F070c2f49a59159A0346396f1139203355ACA43)
+    2020-04-21T14:51:26+0200 Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0x7e8956c3242a687470992175f950857679956e2ff49bf994bfeece491fd8a21d)
+    2020-04-21T14:51:26+0200 Client.onConnect()
+    2020-04-21T14:51:27+0200 Client.onChallenge(challenge=Challenge(method=cryptosign, extra={'challenge': '19fc396940262ec3bb12f5836bee0e71a0ba96e388ff107567b4c58ff87396b4', 'channel_binding': 'tls-unique'}))
+    2020-04-21T14:51:27+0200 Client.onJoin(details=
+    SessionDetails(realm="xbrnetwork",
+                session=1273988983194228,
+                authid="member-eddcf37f-79cd-464f-b629-bf3c71f0ecce",
+                authrole="member",
+                authmethod="cryptosign",
+                authprovider="dynamic",
+                authextra={'x_cb_node': '5f1fcfbd-64d6-4929-949d-ad6cada0ea0b', 'x_cb_worker': 'rtr1', 'x_cb_peer': 'tcp4:213.170.219.39:10272', 'x_cb_pid': 2027},
+                serializer="cbor",
+                transport="websocket",
+                resumed=None,
+                resumable=None,
+                resume_token=None))
+    2020-04-21T14:51:27+0200 already a member in the XBR network:
+
+    {'address': b'/\x07\x0c/I\xa5\x91Y\xa04c\x96\xf1\x13\x92\x035Z\xcaC',
+    'balance': {'eth': b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                        b'\x02\xc5K\xba\x10u\xa2\x00',
+                'xbr': b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                        b'\x00\x00\x00\x00\x00\x00\x00\x00'},
+    'catalogs': 0,
+    'created': 1587469642821232764,
+    'domains': 0,
+    'email': 'tobias.oberstein@gmail.com',
+    'eula': 'QmRRvwEyT7oAM4rhGZFZXWQWNz1rEyiahgNuYy1Lxo4P6Z',
+    'level': 1,
+    'markets': 0,
+    'oid': b'\xed\xdc\xf3\x7fy\xcdFO\xb6)\xbf<q\xf0\xec\xce',
+    'profile': 'QmV1eeDextSdUrRUQp9tUXF8SdvVeykaiwYLgrXHHVyULY',
+    'username': 'oberstet2'}
+
+    2020-04-21T14:51:28+0200 Found member with address 0x2F070c2f49a59159A0346396f1139203355ACA43, member level 1: 0 ETH, 0 XBR
+    2020-04-21T14:51:28+0200 Client.onLeave(details=CloseDetails(reason=<wamp.close.normal>, message='None'))
+    2020-04-21T14:51:28+0200 Shutting down ..
+    2020-04-21T14:51:28+0200 Client.onDisconnect()
+    2020-04-21T14:51:28+0200 Main loop terminated.
 
 
 Create market
@@ -78,7 +163,8 @@ Submit request to create a new data market in the network:
 
 .. code-block:: console
 
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$ xbrnetwork --cskey=0x6cba0... --ethkey=0x7584... --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3 --marketmaker=0x31C2891b219575F119ad4a9083C089153382F0A5 create-market
+    $ xbrnetwork --cskey=0x6cba0... --ethkey=0x7584... --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3 --marketmaker=0x31C2891b219575F119ad4a9083C089153382F0A5 create-market
+
     2020-04-21T12:54:38+0200 Client.__init__(config=ComponentConfig(realm=<xbrnetwork>, extra={'command': 'create-market', 'ethkey': b'u\x84\x8d\xdb\x11U\xcd\x1c\xdfmt\xa6\xe7\xfb\xed\x06\xae\xaa!\xef-\x8a\x05\xdfz\xf2\xd9\\\xdc\x12vr', 'cskey': b'l\xba\x0f\x9c\xec\x8b<G\xbd\x04T\x15\x16\xa9y\xe6?\x13\x1f\xa9;\xf4P\xe2N\x1f\x15\x85h\xbc\xfa\x1a', 'username': None, 'email': None, 'market': UUID('1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3'), 'marketmaker': b'1\xc2\x89\x1b!\x95u\xf1\x19\xadJ\x90\x83\xc0\x89\x153\x82\xf0\xa5', 'vcode': None, 'vaction': None}, keyring=None, controller=None, shared=None, runner=<autobahn.twisted.wamp.ApplicationRunner object at 0x7f26aba8d400>))
     2020-04-21T12:54:39+0200 Client (delegate) Ethereum key loaded (adr=0x0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047)
     2020-04-21T12:54:39+0200 Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0xe545a23b971a624d735f75ecf88676aa5170c14c4bc03bf31e88faaa7b28187f)
@@ -132,7 +218,8 @@ Verify the market creation request:
 
 .. code-block:: console
 
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$ xbrnetwork --cskey=0x6cba0... --ethkey=0x7584... --vaction=5d6d68ac-efa1-4cf7-975c-799af5fd784e --vcode=VCKP-SJCP-MAJN create-market-verify
+    $ xbrnetwork --cskey=0x6cba0... --ethkey=0x7584... --vaction=5d6d68ac-efa1-4cf7-975c-799af5fd784e --vcode=VCKP-SJCP-MAJN create-market-verify
+
     2020-04-21T12:55:56+0200 Client.__init__(config=ComponentConfig(realm=<xbrnetwork>, extra={'command': 'create-market-verify', 'ethkey': b'u\x84\x8d\xdb\x11U\xcd\x1c\xdfmt\xa6\xe7\xfb\xed\x06\xae\xaa!\xef-\x8a\x05\xdfz\xf2\xd9\\\xdc\x12vr', 'cskey': b'l\xba\x0f\x9c\xec\x8b<G\xbd\x04T\x15\x16\xa9y\xe6?\x13\x1f\xa9;\xf4P\xe2N\x1f\x15\x85h\xbc\xfa\x1a', 'username': None, 'email': None, 'market': None, 'marketmaker': None, 'vcode': 'VCKP-SJCP-MAJN', 'vaction': UUID('5d6d68ac-efa1-4cf7-975c-799af5fd784e')}, keyring=None, controller=None, shared=None, runner=<autobahn.twisted.wamp.ApplicationRunner object at 0x7f3a6a1fd8b0>))
     2020-04-21T12:55:56+0200 Client (delegate) Ethereum key loaded (adr=0x0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047)
     2020-04-21T12:55:56+0200 Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0xe545a23b971a624d735f75ecf88676aa5170c14c4bc03bf31e88faaa7b28187f)
@@ -210,7 +297,6 @@ Verify the market creation request:
     2020-04-21T12:55:57+0200 Shutting down ..
     2020-04-21T12:55:57+0200 Client.onDisconnect()
     2020-04-21T12:55:57+0200 Main loop terminated.
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$
 
 
 Join market
@@ -220,7 +306,8 @@ Submit new member on-boarding request:
 
 .. code-block:: console
 
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$ xbrnetwork --cskey=0xfbb1d... --ethkey=0x5be5... --username=oberstet2 --email=tobias.oberstein@gmail.com onboard
+    $ xbrnetwork --cskey=0xfbb1d... --ethkey=0x5be5... --username=oberstet2 --email=tobias.oberstein@gmail.com onboard
+
     2020-04-21T13:46:13+0200 Client.__init__(config=ComponentConfig(realm=<xbrnetwork>, extra={'command': 'onboard', 'ethkey': b'[\xe5\x99\xa3I\'\xa1\x11\t"\xd7pK\xa3\x16\x14K1i\x9d\x8e\x7f"\x9e&\x84\xd5WZ\x84!N', 'cskey': b"\xfb\xb1\xd2\x08\x0c.\x1d\xaa\x8e)'+~\xc7\xe7K.#=\x1b\xda\xa4\xa3h>\xa7\x9d#<\xd6u\x89", 'username': 'oberstet2', 'email': 'tobias.oberstein@gmail.com', 'market': None, 'marketmaker': None, 'actor_type': None, 'vcode': None, 'vaction': None}, keyring=None, controller=None, shared=None, runner=<autobahn.twisted.wamp.ApplicationRunner object at 0x7fd89fc0a6d0>))
     2020-04-21T13:46:13+0200 Client (delegate) Ethereum key loaded (adr=0x0x2F070c2f49a59159A0346396f1139203355ACA43)
     2020-04-21T13:46:13+0200 Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0x7e8956c3242a687470992175f950857679956e2ff49bf994bfeece491fd8a21d)
@@ -250,7 +337,8 @@ Verify member on-boarding request:
 
 .. code-block:: console
 
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$ xbrnetwork --cskey=0xfbb1d... --ethkey=0x5be5... --vcode=5QJF-MK6F-QRVQ --vaction=8657b188-6936-4053-a970-42e4d9a866ee onboard-verify
+    $ xbrnetwork --cskey=0xfbb1d... --ethkey=0x5be5... --vcode=5QJF-MK6F-QRVQ --vaction=8657b188-6936-4053-a970-42e4d9a866ee onboard-verify
+
     2020-04-21T13:47:22+0200 Client.__init__(config=ComponentConfig(realm=<xbrnetwork>, extra={'command': 'onboard-verify', 'ethkey': b'[\xe5\x99\xa3I\'\xa1\x11\t"\xd7pK\xa3\x16\x14K1i\x9d\x8e\x7f"\x9e&\x84\xd5WZ\x84!N', 'cskey': b"\xfb\xb1\xd2\x08\x0c.\x1d\xaa\x8e)'+~\xc7\xe7K.#=\x1b\xda\xa4\xa3h>\xa7\x9d#<\xd6u\x89", 'username': None, 'email': None, 'market': None, 'marketmaker': None, 'actor_type': None, 'vcode': '5QJF-MK6F-QRVQ', 'vaction': UUID('8657b188-6936-4053-a970-42e4d9a866ee')}, keyring=None, controller=None, shared=None, runner=<autobahn.twisted.wamp.ApplicationRunner object at 0x7f5bb7ddcbb0>))
     2020-04-21T13:47:22+0200 Client (delegate) Ethereum key loaded (adr=0x0x2F070c2f49a59159A0346396f1139203355ACA43)
     2020-04-21T13:47:22+0200 Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0x7e8956c3242a687470992175f950857679956e2ff49bf994bfeece491fd8a21d)
@@ -285,7 +373,8 @@ Submit market join request for new member:
 
 .. code-block:: console
 
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$ xbrnetwork --cskey=0xfbb1d... --ethkey=0x5be5... --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3 --actor_type=3 join-market
+    $ xbrnetwork --cskey=0xfbb1d... --ethkey=0x5be5... --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3 --actor_type=3 join-market
+
     2020-04-21T13:47:33+0200 Client.__init__(config=ComponentConfig(realm=<xbrnetwork>, extra={'command': 'join-market', 'ethkey': b'[\xe5\x99\xa3I\'\xa1\x11\t"\xd7pK\xa3\x16\x14K1i\x9d\x8e\x7f"\x9e&\x84\xd5WZ\x84!N', 'cskey': b"\xfb\xb1\xd2\x08\x0c.\x1d\xaa\x8e)'+~\xc7\xe7K.#=\x1b\xda\xa4\xa3h>\xa7\x9d#<\xd6u\x89", 'username': None, 'email': None, 'market': UUID('1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3'), 'marketmaker': None, 'actor_type': 3, 'vcode': None, 'vaction': None}, keyring=None, controller=None, shared=None, runner=<autobahn.twisted.wamp.ApplicationRunner object at 0x7fd4d2cb38e0>))
     2020-04-21T13:47:33+0200 Client (delegate) Ethereum key loaded (adr=0x0x2F070c2f49a59159A0346396f1139203355ACA43)
     2020-04-21T13:47:33+0200 Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0x7e8956c3242a687470992175f950857679956e2ff49bf994bfeece491fd8a21d)
@@ -334,7 +423,8 @@ Verify market join request for member:
 
 .. code-block:: console
 
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$ xbrnetwork --cskey=0xfbb1d... --ethkey=0x5be5... --vaction=44630f46-0ded-4eaf-90aa-9fbd2925788d --vcode=G3XA-PEX9-F4JV join-market-verify
+    $ xbrnetwork --cskey=0xfbb1d... --ethkey=0x5be5... --vaction=44630f46-0ded-4eaf-90aa-9fbd2925788d --vcode=G3XA-PEX9-F4JV join-market-verify
+
     2020-04-21T13:48:39+0200 Client.__init__(config=ComponentConfig(realm=<xbrnetwork>, extra={'command': 'join-market-verify', 'ethkey': b'[\xe5\x99\xa3I\'\xa1\x11\t"\xd7pK\xa3\x16\x14K1i\x9d\x8e\x7f"\x9e&\x84\xd5WZ\x84!N', 'cskey': b"\xfb\xb1\xd2\x08\x0c.\x1d\xaa\x8e)'+~\xc7\xe7K.#=\x1b\xda\xa4\xa3h>\xa7\x9d#<\xd6u\x89", 'username': None, 'email': None, 'market': None, 'marketmaker': None, 'actor_type': None, 'vcode': 'G3XA-PEX9-F4JV', 'vaction': UUID('44630f46-0ded-4eaf-90aa-9fbd2925788d')}, keyring=None, controller=None, shared=None, runner=<autobahn.twisted.wamp.ApplicationRunner object at 0x7f6ce97b56a0>))
     2020-04-21T13:48:39+0200 Client (delegate) Ethereum key loaded (adr=0x0x2F070c2f49a59159A0346396f1139203355ACA43)
     2020-04-21T13:48:39+0200 Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0x7e8956c3242a687470992175f950857679956e2ff49bf994bfeece491fd8a21d)
@@ -378,4 +468,3 @@ Verify market join request for member:
     2020-04-21T13:48:39+0200 Shutting down ..
     2020-04-21T13:48:39+0200 Client.onDisconnect()
     2020-04-21T13:48:39+0200 Main loop terminated.
-    (cpy381_3) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$

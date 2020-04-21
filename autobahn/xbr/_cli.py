@@ -48,13 +48,13 @@ from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 from autobahn.wamp.serializer import CBORSerializer
 from autobahn.wamp import cryptosign
 from autobahn.wamp.exception import ApplicationError
-from autobahn.xbr import pack_uint256
 
+from autobahn.xbr import pack_uint256, unpack_uint256, sign_eip712_channel_open
 from cfxdb.xbr import ActorType
 from xbrnetwork import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
 
 
-_COMMANDS = ['onboard', 'onboard-verify', 'create-market', 'create-market-verify', 'join-market', 'join-market-verify']
+_COMMANDS = ['get-member', 'onboard', 'onboard-verify', 'create-market', 'create-market-verify', 'join-market', 'join-market-verify']
 
 
 class Client(ApplicationSession):
@@ -103,48 +103,11 @@ class Client(ApplicationSession):
 
     async def onJoin(self, details):
         self.log.info('{klass}.onJoin(details={details})', klass=self.__class__.__name__, details=details)
-
         try:
-            command = self.config.extra['command']
-            if details.authrole == 'anonymous':
-                self.log.info('not yet a member in the XBR network')
-
-                assert command in ['onboard', 'onboard-verify']
-                if command == 'onboard':
-                    username = self.config.extra['username']
-                    email = self.config.extra['email']
-                    await self._do_onboard_member(username, email)
-                elif command == 'onboard-verify':
-                    vaction_oid = self.config.extra['vaction']
-                    vaction_code = self.config.extra['vcode']
-                    await self._do_onboard_member_verify(vaction_oid, vaction_code)
-                else:
-                    assert False, 'should not arrive here'
+            if details.realm == 'xbrnetwork':
+                await self._do_xbrnetwork_realm(details)
             else:
-                # WAMP authid on xbrnetwork follows this format: "member-"
-                member_oid = uuid.UUID(details.authid[7:])
-                member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
-                self.log.info('already a member in the XBR network:\n\n{member_data}\n', member_data=pformat(member_data))
-
-                assert command in ['create-market', 'create-market-verify', 'join-market', 'join-market-verify']
-                if command == 'create-market':
-                    market_oid = self.config.extra['market']
-                    marketmaker = self.config.extra['marketmaker']
-                    await self._do_create_market(member_oid, market_oid, marketmaker)
-                elif command == 'create-market-verify':
-                    vaction_oid = self.config.extra['vaction']
-                    vaction_code = self.config.extra['vcode']
-                    await self._do_create_market_verify(member_oid, vaction_oid, vaction_code)
-                elif command == 'join-market':
-                    market_oid = self.config.extra['market']
-                    actor_type = self.config.extra['actor_type']
-                    await self._do_join_market(member_oid, market_oid, actor_type)
-                elif command == 'join-market-verify':
-                    vaction_oid = self.config.extra['vaction']
-                    vaction_code = self.config.extra['vcode']
-                    await self._do_join_market_verify(member_oid, vaction_oid, vaction_code)
-                else:
-                    assert False, 'should not arrive here'
+                await self._do_market_realm(details)
         except Exception as e:
             self.log.failure()
             self.config.extra['error'] = e
@@ -172,6 +135,67 @@ class Client(ApplicationSession):
             reactor.stop()
         except ReactorNotRunning:
             pass
+
+    async def _do_xbrnetwork_realm(self, details):
+        command = self.config.extra['command']
+        if details.authrole == 'anonymous':
+            self.log.info('not yet a member in the XBR network')
+
+            assert command in ['onboard', 'onboard-verify']
+            if command == 'onboard':
+                username = self.config.extra['username']
+                email = self.config.extra['email']
+                await self._do_onboard_member(username, email)
+            elif command == 'onboard-verify':
+                vaction_oid = self.config.extra['vaction']
+                vaction_code = self.config.extra['vcode']
+                await self._do_onboard_member_verify(vaction_oid, vaction_code)
+            else:
+                assert False, 'should not arrive here'
+        else:
+            # WAMP authid on xbrnetwork follows this format: "member-"
+            member_oid = uuid.UUID(details.authid[7:])
+            member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+            self.log.info('already a member in the XBR network:\n\n{member_data}\n', member_data=pformat(member_data))
+
+            assert command in ['get-member', 'create-market', 'create-market-verify', 'join-market', 'join-market-verify']
+            if command == 'get-member':
+                await self._do_get_member(member_oid)
+            elif command == 'create-market':
+                market_oid = self.config.extra['market']
+                marketmaker = self.config.extra['marketmaker']
+                await self._do_create_market(member_oid, market_oid, marketmaker)
+            elif command == 'create-market-verify':
+                vaction_oid = self.config.extra['vaction']
+                vaction_code = self.config.extra['vcode']
+                await self._do_create_market_verify(member_oid, vaction_oid, vaction_code)
+            elif command == 'join-market':
+                market_oid = self.config.extra['market']
+                actor_type = self.config.extra['actor_type']
+                await self._do_join_market(member_oid, market_oid, actor_type)
+            elif command == 'join-market-verify':
+                vaction_oid = self.config.extra['vaction']
+                vaction_code = self.config.extra['vcode']
+                await self._do_join_market_verify(member_oid, vaction_oid, vaction_code)
+            else:
+                assert False, 'should not arrive here'
+
+    async def _do_market_realm(self, details):
+        pass
+        # member_oid, market_oid, channel_oid, channel_type, delegate, amount
+
+    async def _do_get_member(self, member_oid):
+        member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+        if member_data:
+            member_adr = web3.Web3.toChecksumAddress(member_data['address'])
+            member_level = member_data['level']
+            member_balance_eth = int(unpack_uint256(member_data['balance']['eth']) / 10 ** 18)
+            member_balance_xbr = int(unpack_uint256(member_data['balance']['xbr']) / 10 ** 18)
+            self.log.info('Found member with address {member_adr}, member level {member_level}: {member_balance_eth} ETH, {member_balance_xbr} XBR',
+                          member_adr=member_adr, member_level=member_level, member_balance_eth=member_balance_eth,
+                          member_balance_xbr=member_balance_xbr)
+        else:
+            self.log.warn('No member {member_oid}', member_oid=member_oid)
 
     async def _do_onboard_member(self, member_username, member_email):
         client_pubkey = binascii.a2b_hex(self._key.public_key())
@@ -427,6 +451,36 @@ class Client(ApplicationSession):
         self.log.info('SUCCESS! XBR market joined: member_oid={member_oid}, market_oid={market_oid}, actor_type={actor_type}',
                       member_oid=member_oid, market_oid=market_oid, actor_type=actor_type)
 
+    async def _do_open_channel(self, member_oid, market_oid, channel_oid, channel_type, delegate, amount):
+        # member_key, member_adr, market_oid, channel_oid, verifying_chain_id,
+        #                                current_block_number, verifying_contract_adr, channel_type, delegate,
+        #                                marketmaker, recipient, amount
+        member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+        member_adr = member_data['address']
+
+        market_data = await self.call('network.xbr.console.get_market', market_oid.bytes)
+        recipient = market_data['owner']
+        marketmaker = market_data['maker']
+
+        config = await self.call('network.xbr.console.get_config')
+        verifying_chain_id = config['verifying_chain_id']
+        verifying_contract_adr = binascii.a2b_hex(config['verifying_contract_adr'][2:])
+
+        status = await self.call('network.xbr.console.get_status')
+        block_number = status['block']['number']
+
+        # compute EIP712 signature, and sign using member private key
+        signature = sign_eip712_channel_open(self._ethkey_raw, verifying_chain_id, verifying_contract_adr, channel_type,
+                                             block_number, market_oid.bytes, channel_oid.bytes,
+                                             member_adr, delegate, marketmaker, recipient, amount)
+        attributes = None
+        channel_request = await self.call('xbr.marketmaker.open_channel', member_adr, market_oid.bytes,
+                                          channel_oid.bytes, verifying_chain_id, block_number,
+                                          verifying_contract_adr, channel_type, delegate, marketmaker, recipient,
+                                          pack_uint256(amount), signature, attributes)
+        self.log.info('Channel open request submitted:\n\n{channel_request}\n',
+                      channel_request=pformat(channel_request))
+
 
 def _main():
     parser = argparse.ArgumentParser()
@@ -488,7 +542,7 @@ def _main():
     parser.add_argument('--actor_type',
                         dest='actor_type',
                         type=int,
-                        choices=[ActorType.CONSUMER, ActorType.PROVIDER, ActorType.PROVIDER_CONSUMER],
+                        choices=sorted([ActorType.CONSUMER, ActorType.PROVIDER, ActorType.PROVIDER_CONSUMER]),
                         default=None,
                         help='Actor type: PROVIDER = 1, CONSUMER = 2, PROVIDER_CONSUMER (both) = 3')
 
