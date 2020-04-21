@@ -16,6 +16,7 @@ Site Contents
    wamp/programming
    wamp/aio-repl
    xbr
+   xbr-cli
    websocket/examples
    wamp/examples
    reference/autobahn

@@ -5,6 +5,11 @@
 Changelog
 =========
 
+master
+------
+
+* new: XBR CLI
+
 20.4.2
 ------
 
