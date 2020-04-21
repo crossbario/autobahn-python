@@ -369,6 +369,7 @@ Verify member on-boarding request:
     2020-04-21T13:47:23+0200 Client.onDisconnect()
     2020-04-21T13:47:23+0200 Main loop terminated.
 
+
 Submit market join request for new member:
 
 .. code-block:: console
