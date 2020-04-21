@@ -66,7 +66,7 @@ top = argparse.ArgumentParser(prog="wamp")
 top.add_argument(
     '--url',
     action='store',
-    help='A WAMP URL to connect to, like ws://127.0.0.1:8080/ws or rs://localhost:1234/',
+    help='A WAMP URL to connect to, like ws://127.0.0.1:8080/ws or rs://localhost:1234',
     required=True,
 )
 top.add_argument(
