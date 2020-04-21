@@ -54,7 +54,8 @@ from cfxdb.xbr import ActorType
 from xbrnetwork import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
 
 
-_COMMANDS = ['get-member', 'onboard', 'onboard-verify', 'create-market', 'create-market-verify', 'join-market', 'join-market-verify']
+_COMMANDS = ['get-member', 'onboard', 'onboard-verify', 'create-market', 'create-market-verify', 'join-market',
+             'join-market-verify', 'open-channel']
 
 
 class Client(ApplicationSession):
@@ -84,13 +85,16 @@ class Client(ApplicationSession):
     def onConnect(self):
         self.log.info('{klass}.onConnect()', klass=self.__class__.__name__)
 
-        authextra = {
-            'pubkey': self._key.public_key(),
-            'trustroot': None,
-            'challenge': None,
-            'channel_binding': 'tls-unique'
-        }
-        self.join(self.config.realm, authmethods=['cryptosign'], authextra=authextra)
+        if self.config.realm == 'xbrnetwork':
+            authextra = {
+                'pubkey': self._key.public_key(),
+                'trustroot': None,
+                'challenge': None,
+                'channel_binding': 'tls-unique'
+            }
+            self.join(self.config.realm, authmethods=['cryptosign'], authextra=authextra)
+        else:
+            self.join(self.config.realm)
 
     def onChallenge(self, challenge):
         self.log.info('{klass}.onChallenge(challenge={challenge})', klass=self.__class__.__name__, challenge=challenge)
@@ -181,8 +185,12 @@ class Client(ApplicationSession):
                 assert False, 'should not arrive here'
 
     async def _do_market_realm(self, details):
-        pass
-        # member_oid, market_oid, channel_oid, channel_type, delegate, amount
+        command = self.config.extra['command']
+        if details.authrole == 'anonymous':
+            self.log.info('not yet a member in the network or actor in the market')
+        else:
+            assert command in ['open-channel']
+            # member_oid, market_oid, channel_oid, channel_type, delegate, amount
 
     async def _do_get_member(self, member_oid):
         member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
