@@ -50,10 +50,11 @@ from autobahn.wamp import cryptosign
 from autobahn.wamp.exception import ApplicationError
 from autobahn.xbr import pack_uint256
 
-from xbrnetwork import sign_eip712_member_register, sign_eip712_market_create
+from cfxdb.xbr import ActorType
+from xbrnetwork import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
 
 
-_COMMANDS = ['onboard', 'onboard-verify', 'create-market', 'create-market-verify']
+_COMMANDS = ['onboard', 'onboard-verify', 'create-market', 'create-market-verify', 'join-market', 'join-market-verify']
 
 
 class Client(ApplicationSession):
@@ -125,7 +126,7 @@ class Client(ApplicationSession):
                 member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
                 self.log.info('already a member in the XBR network:\n\n{member_data}\n', member_data=pformat(member_data))
 
-                assert command in ['create-market', 'create-market-verify']
+                assert command in ['create-market', 'create-market-verify', 'join-market', 'join-market-verify']
                 if command == 'create-market':
                     market_oid = self.config.extra['market']
                     marketmaker = self.config.extra['marketmaker']
@@ -134,6 +135,14 @@ class Client(ApplicationSession):
                     vaction_oid = self.config.extra['vaction']
                     vaction_code = self.config.extra['vcode']
                     await self._do_create_market_verify(member_oid, vaction_oid, vaction_code)
+                elif command == 'join-market':
+                    market_oid = self.config.extra['market']
+                    actor_type = self.config.extra['actor_type']
+                    await self._do_join_market(member_oid, market_oid, actor_type)
+                elif command == 'join-market-verify':
+                    vaction_oid = self.config.extra['vaction']
+                    vaction_code = self.config.extra['vcode']
+                    await self._do_join_market_verify(member_oid, vaction_oid, vaction_code)
                 else:
                     assert False, 'should not arrive here'
         except Exception as e:
@@ -380,6 +389,44 @@ class Client(ApplicationSession):
             market = await self.call('network.xbr.console.get_market', market_oid, include_attributes=True)
             self.log.info('SUCCESS: got market information\n\n{market}\n', market=pformat(market))
 
+    async def _do_join_market(self, member_oid, market_oid, actor_type):
+
+        assert actor_type in [ActorType.CONSUMER, ActorType.PROVIDER, ActorType.PROVIDER_CONSUMER]
+
+        member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+        member_adr = member_data['address']
+
+        config = await self.call('network.xbr.console.get_config')
+        verifyingChain = config['verifying_chain_id']
+        verifyingContract = binascii.a2b_hex(config['verifying_contract_adr'][2:])
+
+        status = await self.call('network.xbr.console.get_status')
+        block_number = status['block']['number']
+
+        meta_obj = {
+        }
+        meta_data = cbor2.dumps(meta_obj)
+        h = hashlib.sha256()
+        h.update(meta_data)
+        meta_hash = multihash.to_b58_string(multihash.encode(h.digest(), 'sha2-256'))
+
+        signature = sign_eip712_market_join(self._ethkey_raw, verifyingChain, verifyingContract, member_adr,
+                                            block_number, market_oid.bytes, actor_type, meta_hash)
+
+        request_submitted = await self.call('network.xbr.console.join_market', member_oid.bytes, market_oid.bytes,
+                                            verifyingChain, block_number, verifyingContract,
+                                            actor_type, meta_hash, meta_data, signature)
+
+        vaction_oid = uuid.UUID(bytes=request_submitted['vaction_oid'])
+        self.log.info('SUCCESS! XBR market join request submitted: vaction_oid={vaction_oid}', vaction_oid=vaction_oid)
+
+    async def _do_join_market_verify(self, member_oid, vaction_oid, vaction_code):
+        request_verified = await self.call('network.xbr.console.verify_join_market', vaction_oid.bytes, vaction_code)
+        market_oid = request_verified['market_oid']
+        actor_type = request_verified['actor_type']
+        self.log.info('SUCCESS! XBR market joined: member_oid={member_oid}, market_oid={market_oid}, actor_type={actor_type}',
+                      member_oid=member_oid, market_oid=market_oid, actor_type=actor_type)
+
 
 def _main():
     parser = argparse.ArgumentParser()
@@ -438,6 +485,13 @@ def _main():
                         default=None,
                         help='For creating new markets, the market maker address.')
 
+    parser.add_argument('--actor_type',
+                        dest='actor_type',
+                        type=int,
+                        choices=[ActorType.CONSUMER, ActorType.PROVIDER, ActorType.PROVIDER_CONSUMER],
+                        default=None,
+                        help='Actor type: PROVIDER = 1, CONSUMER = 2, PROVIDER_CONSUMER (both) = 3')
+
     parser.add_argument('--vcode',
                         dest='vcode',
                         type=str,
@@ -465,6 +519,7 @@ def _main():
         'email': args.email,
         'market': uuid.UUID(args.market) if args.market else None,
         'marketmaker': binascii.a2b_hex(args.marketmaker[2:]) if args.marketmaker else None,
+        'actor_type': args.actor_type,
         'vcode': args.vcode,
         'vaction': uuid.UUID(args.vaction) if args.vaction else None,
     }
