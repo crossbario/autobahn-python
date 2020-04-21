@@ -259,6 +259,7 @@ setup(
     entry_points={
         "console_scripts": [
             "wamp = autobahn.__main__:_main",
+            "xbrnetwork = autobahn.xbr._cli:_main",
         ]
     },
 
