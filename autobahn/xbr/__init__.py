@@ -37,8 +37,17 @@ try:
     from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_MARKET_ADDR, XBR_DEBUG_CATALOG_ADDR, XBR_DEBUG_CHANNEL_ADDR  # noqa
     from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer  # noqa
     from autobahn.xbr._util import make_w3, pack_uint256, unpack_uint256  # noqa
+
+    from autobahn.xbr._eip712_member_register import sign_eip712_member_register, recover_eip712_member_register  # noqa
+    from autobahn.xbr._eip712_member_login import sign_eip712_member_login, recover_eip712_member_login  # noqa
+    from autobahn.xbr._eip712_market_create import sign_eip712_market_create, recover_eip712_market_create  # noqa
+    from autobahn.xbr._eip712_market_join import sign_eip712_market_join, recover_eip712_market_join  # noqa
+    from autobahn.xbr._eip712_catalog_create import sign_eip712_catalog_create, recover_eip712_catalog_create  # noqa
+    from autobahn.xbr._eip712_api_publish import sign_eip712_api_publish, recover_eip712_api_publish  # noqa
+    from autobahn.xbr._eip712_consent import sign_eip712_consent, recover_eip712_consent  # noqa
     from autobahn.xbr._eip712_channel_open import sign_eip712_channel_open, recover_eip712_channel_open  # noqa
     from autobahn.xbr._eip712_channel_close import sign_eip712_channel_close, recover_eip712_channel_close  # noqa
+
     from autobahn.xbr._blockchain import SimpleBlockchain  # noqa
     from autobahn.xbr._seller import SimpleSeller, KeySeries  # noqa
     from autobahn.xbr._buyer import SimpleBuyer  # noqa
@@ -231,6 +240,20 @@ try:
         'account_from_seedphrase',
         'ASCII_BOMB',
 
+        'sign_eip712_member_register',
+        'recover_eip712_member_register',
+        'sign_eip712_member_login',
+        'recover_eip712_member_login',
+        'sign_eip712_market_create',
+        'recover_eip712_market_create',
+        'sign_eip712_market_join',
+        'recover_eip712_market_join',
+        'sign_eip712_catalog_create',
+        'recover_eip712_catalog_create',
+        'sign_eip712_api_publish',
+        'recover_eip712_api_publish',
+        'sign_eip712_consent',
+        'recover_eip712_consent',
         'sign_eip712_channel_open',
         'recover_eip712_channel_open',
         'sign_eip712_channel_close',
