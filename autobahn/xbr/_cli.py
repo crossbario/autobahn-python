@@ -51,16 +51,16 @@ from autobahn.wamp.exception import ApplicationError
 
 from autobahn import xbr
 from autobahn.xbr import pack_uint256, unpack_uint256, sign_eip712_channel_open, make_w3
+from autobahn.xbr import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
 from cfxdb.xbr import ActorType
 from cfxdb.xbrmm import ChannelType
-from xbrnetwork import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
 
 
 _INFURA_CONFIG = {
     "type": "infura",
     "network": "rinkeby",
-    "key": "40c6959767364c2cb961bd389c738d98",
-    "secret": "551191d7dc0546ed981573cd505b3115"
+    "key": "40************************",
+    "secret": "55*************************"
 }
 
 _COMMANDS = ['get-member', 'onboard', 'onboard-verify', 'create-market', 'create-market-verify', 'join-market',
