@@ -52,8 +52,7 @@ from autobahn.wamp.exception import ApplicationError
 from autobahn import xbr
 from autobahn.xbr import pack_uint256, unpack_uint256, sign_eip712_channel_open, make_w3
 from autobahn.xbr import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
-from cfxdb.xbr import ActorType
-from cfxdb.xbrmm import ChannelType
+from autobahn.xbr import ActorType, ChannelType
 
 
 _INFURA_CONFIG = {

@@ -173,15 +173,50 @@ try:
         CORE = 2
         EDGE = 3
 
+    class ChannelType(object):
+        """
+        Type of a XBR off-chain channel: paying channel (for provider delegates selling data services) or payment channel (for consumer delegates buying data services).
+        """
+
+        NONE = 0
+        """
+        Unset
+        """
+
+        PAYMENT = 1
+        """
+        Payment channel: from buyer/consumer delegate to maker maker.
+        """
+
+        PAYING = 2
+        """
+        Paying channel: from market maker to seller/provider delegate.
+        """
+
     class ActorType(object):
         """
-        XBR Market actor types.
+        XBR Market Actor type.
         """
+
         NONE = 0
-        NETWORK = 1
-        MARKET = 2
-        PROVIDER = 3
-        CONSUMER = 4
+        """
+        Unset
+        """
+
+        PROVIDER = 1
+        """
+        Actor is a XBR Provider.
+        """
+
+        CONSUMER = 2
+        """
+        Actor is a XBR Consumer.
+        """
+
+        PROVIDER_CONSUMER = 3
+        """
+        Actor is both a XBR Provider and XBR Consumer.
+        """
 
     def generate_seedphrase(strength=128, language='english'):
         """
@@ -261,6 +296,7 @@ try:
 
         'MemberLevel',
         'ActorType',
+        'ChannelType',
         'NodeType',
 
         'KeySeries',
