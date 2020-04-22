@@ -30,7 +30,7 @@ import click
 import web3
 
 
-def make_w3(gateway_config):
+def make_w3(gateway_config=None):
     """
     Create a Web3 instance configured and ready-to-use gateway to the blockchain.
 
@@ -40,15 +40,15 @@ def make_w3(gateway_config):
     :return: Configured Web3 instance.
     :rtype: :class:`web3.Web3`
     """
-    request_kwargs = gateway_config.get('http_options', {})
-
-    if gateway_config['type'] == 'auto':
+    if gateway_config is None or gateway_config['type'] == 'auto':
         w3 = web3.Web3()
 
     elif gateway_config['type'] == 'user':
+        request_kwargs = gateway_config.get('http_options', {})
         w3 = web3.Web3(web3.Web3.HTTPProvider(gateway_config['http'], request_kwargs=request_kwargs))
 
     elif gateway_config['type'] == 'infura':
+        request_kwargs = gateway_config.get('http_options', {})
         project_id = gateway_config['key']
         # project_secret = gateway_config['secret']
 

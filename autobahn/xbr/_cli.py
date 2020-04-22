@@ -49,13 +49,23 @@ from autobahn.wamp.serializer import CBORSerializer
 from autobahn.wamp import cryptosign
 from autobahn.wamp.exception import ApplicationError
 
-from autobahn.xbr import pack_uint256, unpack_uint256, sign_eip712_channel_open
-from cfxdb.xbr import ActorType
-from xbrnetwork import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
+from autobahn import xbr
+from autobahn.xbr import pack_uint256, unpack_uint256, sign_eip712_channel_open, make_w3
+from autobahn.xbr import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
+from autobahn.xbr import ActorType, ChannelType
 
 
-_COMMANDS = ['get-member', 'onboard', 'onboard-verify', 'create-market', 'create-market-verify', 'join-market',
-             'join-market-verify', 'open-channel']
+_INFURA_CONFIG = {
+    "type": "infura",
+    "network": "rinkeby",
+    "key": "40************************",
+    "secret": "55*************************"
+}
+
+_COMMANDS = ['get-member', 'register-member', 'register-member-verify',
+             'get-market', 'create-market', 'create-market-verify',
+             'get-actor', 'join-market', 'join-market-verify',
+             'get-channel', 'open-channel', 'close-channel']
 
 
 class Client(ApplicationSession):
@@ -65,9 +75,13 @@ class Client(ApplicationSession):
 
         ApplicationSession.__init__(self, config)
 
+        # FIXME
+        self._default_gas = 100000
+
         self._ethkey_raw = config.extra['ethkey']
         self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
         self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
+        self._ethadr_raw = binascii.a2b_hex(self._ethadr[2:])
 
         self.log.info("Client (delegate) Ethereum key loaded (adr=0x{adr})",
                       adr=self._ethadr)
@@ -145,12 +159,14 @@ class Client(ApplicationSession):
         if details.authrole == 'anonymous':
             self.log.info('not yet a member in the XBR network')
 
-            assert command in ['onboard', 'onboard-verify']
-            if command == 'onboard':
+            assert command in ['get-member', 'register-member', 'register-member-verify']
+            if command == 'get-member':
+                await self._do_get_member(self._ethadr_raw)
+            elif command == 'register-member':
                 username = self.config.extra['username']
                 email = self.config.extra['email']
                 await self._do_onboard_member(username, email)
-            elif command == 'onboard-verify':
+            elif command == 'register-member-verify':
                 vaction_oid = self.config.extra['vaction']
                 vaction_code = self.config.extra['vcode']
                 await self._do_onboard_member_verify(vaction_oid, vaction_code)
@@ -162,13 +178,36 @@ class Client(ApplicationSession):
             member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
             self.log.info('already a member in the XBR network:\n\n{member_data}\n', member_data=pformat(member_data))
 
-            assert command in ['get-member', 'create-market', 'create-market-verify', 'join-market', 'join-market-verify']
+            assert command in ['get-member', 'get-market', 'create-market', 'create-market-verify',
+                               'get-actor', 'join-market', 'join-market-verify']
             if command == 'get-member':
-                await self._do_get_member(member_oid)
+                await self._do_get_member(self._ethadr_raw)
+            elif command == 'get-market':
+                market_oid = self.config.extra['market']
+                await self._do_get_market(member_oid, market_oid)
+            elif command == 'get-actor':
+                if 'market' in self.config.extra and self.config.extra['market']:
+                    market_oid = self.config.extra['market']
+                else:
+                    market_oid = None
+                if 'actor' in self.config.extra and self.config.extra['actor']:
+                    actor = self.config.extra['actor']
+                else:
+                    actor = self._ethadr_raw
+                await self._do_get_actor(market_oid, actor)
             elif command == 'create-market':
                 market_oid = self.config.extra['market']
                 marketmaker = self.config.extra['marketmaker']
-                await self._do_create_market(member_oid, market_oid, marketmaker)
+                market_title = self.config.extra['market_title']
+                market_label = self.config.extra['market_label']
+                market_homepage = self.config.extra['market_homepage']
+                provider_security = self.config.extra['market_provider_security']
+                consumer_security = self.config.extra['market_consumer_security']
+                market_fee = self.config.extra['market_fee']
+                await self._do_create_market(member_oid, market_oid, marketmaker, title=market_title,
+                                             label=market_label, homepage=market_homepage,
+                                             provider_security=provider_security, consumer_security=consumer_security,
+                                             market_fee=market_fee)
             elif command == 'create-market-verify':
                 vaction_oid = self.config.extra['vaction']
                 vaction_code = self.config.extra['vcode']
@@ -185,16 +224,35 @@ class Client(ApplicationSession):
                 assert False, 'should not arrive here'
 
     async def _do_market_realm(self, details):
-        command = self.config.extra['command']
-        if details.authrole == 'anonymous':
-            self.log.info('not yet a member in the network or actor in the market')
-        else:
-            assert command in ['open-channel']
-            # member_oid, market_oid, channel_oid, channel_type, delegate, amount
+        self._w3 = make_w3(_INFURA_CONFIG)
+        xbr.setProvider(self._w3)
 
-    async def _do_get_member(self, member_oid):
-        member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
-        if member_data:
+        command = self.config.extra['command']
+        assert command in ['open-channel', 'get-channel']
+        if command == 'get-channel':
+            market_oid = self.config.extra['market']
+            delegate = self.config.extra['delegate']
+            channel_type = self.config.extra['channel_type']
+            if channel_type == ChannelType.PAYMENT:
+                await self._do_get_active_payment_channel(market_oid, delegate)
+            elif channel_type == ChannelType.PAYING:
+                await self._do_get_active_paying_channel(market_oid, delegate)
+            else:
+                assert False, 'should not arrive here'
+        elif command == 'open-channel':
+            market_oid = self.config.extra['market']
+            channel_oid = self.config.extra['channel']
+            channel_type = self.config.extra['channel_type']
+            delegate = self.config.extra['delegate']
+            amount = self.config.extra['amount']
+            await self._do_open_channel(market_oid, channel_oid, channel_type, delegate, amount)
+        else:
+            assert False, 'should not arrive here'
+
+    async def _do_get_member(self, member_adr):
+        is_member = await self.call('network.xbr.console.is_member', member_adr)
+        if is_member:
+            member_data = await self.call('network.xbr.console.get_member_by_wallet', member_adr)
             member_adr = web3.Web3.toChecksumAddress(member_data['address'])
             member_level = member_data['level']
             member_balance_eth = int(unpack_uint256(member_data['balance']['eth']) / 10 ** 18)
@@ -203,7 +261,39 @@ class Client(ApplicationSession):
                           member_adr=member_adr, member_level=member_level, member_balance_eth=member_balance_eth,
                           member_balance_xbr=member_balance_xbr)
         else:
-            self.log.warn('No member {member_oid}', member_oid=member_oid)
+            self.log.warn('Address 0x{member_adr} is not a member in the XBR network',
+                          member_adr=binascii.b2a_hex(member_adr).decode())
+
+    async def _do_get_actor(self, market_oid, actor_adr):
+        is_member = await self.call('network.xbr.console.is_member', actor_adr)
+        if is_member:
+            actor = await self.call('network.xbr.console.get_member_by_wallet', actor_adr)
+            actor_oid = actor['oid']
+            actor_adr = web3.Web3.toChecksumAddress(actor['address'])
+            actor_level = actor['level']
+            actor_balance_eth = int(unpack_uint256(actor['balance']['eth']) / 10 ** 18)
+            actor_balance_xbr = int(unpack_uint256(actor['balance']['xbr']) / 10 ** 18)
+            self.log.info('Found member with address {member_adr}, member level {member_level}: {member_balance_eth} ETH, {member_balance_xbr} XBR',
+                          member_adr=actor_adr, member_level=actor_level, member_balance_eth=actor_balance_eth,
+                          member_balance_xbr=actor_balance_xbr)
+
+            if market_oid:
+                # FIXME
+                raise NotImplementedError()
+            else:
+                market_oids = await self.call('network.xbr.console.get_markets_by_actor', actor_oid)
+                if market_oids:
+                    self.log.info('Member is actor in {cnt_markets} markets!', cnt_markets=len(market_oids))
+                    for market_oid in market_oids:
+                        market = await self.call('network.xbr.console.get_market', market_oid)
+                        self.log.info('Actor is joined to market {market_oid} (market owner 0x{owner_oid})',
+                                      market_oid=uuid.UUID(bytes=market_oid),
+                                      owner_oid=binascii.b2a_hex(market['owner']).decode())
+                else:
+                    self.log.info('Member is not yet actor in any market!')
+        else:
+            self.log.warn('Address 0x{member_adr} is not a member in the XBR network',
+                          member_adr=binascii.b2a_hex(actor_adr).decode())
 
     async def _do_onboard_member(self, member_username, member_email):
         client_pubkey = binascii.a2b_hex(self._key.public_key())
@@ -285,7 +375,8 @@ class Client(ApplicationSession):
         self.log.info('SUCCESS! New XBR Member onboarded: member_oid={member_oid}, result=\n{result}',
                       member_oid=uuid.UUID(bytes=member_oid), result=pformat(result))
 
-    async def _do_create_market(self, member_oid, market_oid, marketmaker, provider_security=0, consumer_security=0, market_fee=0):
+    async def _do_create_market(self, member_oid, market_oid, marketmaker, title=None, label=None, homepage=None,
+                                provider_security=0, consumer_security=0, market_fee=0):
         member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
         member_adr = member_data['address']
 
@@ -346,9 +437,9 @@ class Client(ApplicationSession):
         # and signatures are stored on-chain. however, even when only signed off-chain, this establishes
         # a chain of signature anchored in the on-chain record for this market!
         attributes = {
-            'title': 'International Data Monetization Award',
-            'label': 'IDMA',
-            'homepage': 'https://markets.international-data-monetization-award.com/',
+            'title': title,
+            'label': label,
+            'homepage': homepage,
         }
 
         # now provide everything of above:
@@ -421,6 +512,20 @@ class Client(ApplicationSession):
             market = await self.call('network.xbr.console.get_market', market_oid, include_attributes=True)
             self.log.info('SUCCESS: got market information\n\n{market}\n', market=pformat(market))
 
+    async def _do_get_market(self, member_oid, market_oid):
+        member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+        member_adr = member_data['address']
+        market = await self.call('network.xbr.console.get_market', market_oid.bytes)
+        if market:
+            if market['owner'] == member_adr:
+                self.log.info('You are market owner (operator)!')
+            else:
+                self.log.info('Marked is owned by {owner}', owner=market['owner'])
+
+            self.log.info('Market information:\n{market}', market=pformat(market))
+        else:
+            self.log.warn('No market {market_oid} found', market_oid)
+
     async def _do_join_market(self, member_oid, market_oid, actor_type):
 
         assert actor_type in [ActorType.CONSUMER, ActorType.PROVIDER, ActorType.PROVIDER_CONSUMER]
@@ -459,33 +564,70 @@ class Client(ApplicationSession):
         self.log.info('SUCCESS! XBR market joined: member_oid={member_oid}, market_oid={market_oid}, actor_type={actor_type}',
                       member_oid=member_oid, market_oid=market_oid, actor_type=actor_type)
 
-    async def _do_open_channel(self, member_oid, market_oid, channel_oid, channel_type, delegate, amount):
-        # member_key, member_adr, market_oid, channel_oid, verifying_chain_id,
-        #                                current_block_number, verifying_contract_adr, channel_type, delegate,
-        #                                marketmaker, recipient, amount
-        member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
-        member_adr = member_data['address']
+    async def _do_get_active_payment_channel(self, market_oid, delegate_adr):
+        channel = await self.call('xbr.marketmaker.get_active_payment_channel', delegate_adr)
+        self.log.debug('{channel}', channel=pformat(channel))
+        if channel:
+            self.log.info('Active buyer (payment) channel found: {amount} amount',
+                          amount=int(unpack_uint256(channel['amount']) / 10 ** 18))
+            balance = await self.call('xbr.marketmaker.get_payment_channel_balance', channel['channel_oid'])
+            self.log.debug('{balance}', channel=pformat(balance))
+            self.log.info('Current off-chain amount remaining: {remaining} [sequence {sequence}]',
+                          remaining=int(unpack_uint256(balance['remaining']) / 10 ** 18), sequence=balance['seq'])
+        else:
+            self.log.info('No active buyer (payment) channel found!')
 
-        market_data = await self.call('network.xbr.console.get_market', market_oid.bytes)
-        recipient = market_data['owner']
-        marketmaker = market_data['maker']
+    async def _do_get_active_paying_channel(self, market_oid, delegate_adr):
+        channel = await self.call('xbr.marketmaker.get_active_paying_channel', delegate_adr)
+        self.log.debug('{channel}', channel=pformat(channel))
+        if channel:
+            self.log.info('Active seller (paying) channel found: {amount} amount',
+                          amount=int(unpack_uint256(channel['amount']) / 10 ** 18))
+            balance = await self.call('xbr.marketmaker.get_paying_channel_balance', channel['channel_oid'])
+            self.log.debug('{balance}', channel=pformat(balance))
+            self.log.info('Current off-chain amount remaining: {remaining} [sequence {sequence}]',
+                          remaining=int(unpack_uint256(balance['remaining']) / 10 ** 18), sequence=balance['seq'])
+        else:
+            self.log.info('No active seller (paying) channel found!')
 
-        config = await self.call('network.xbr.console.get_config')
+    async def _do_open_channel(self, market_oid, channel_oid, channel_type, delegate, amount):
+        member_key = self._ethkey_raw
+        member_adr = self._ethkey.public_key.to_canonical_address()
+
+        config = await self.call('xbr.marketmaker.get_config')
+        marketmaker = config['marketmaker']
+        recipient = config['owner']
         verifying_chain_id = config['verifying_chain_id']
         verifying_contract_adr = binascii.a2b_hex(config['verifying_contract_adr'][2:])
 
-        status = await self.call('network.xbr.console.get_status')
-        block_number = status['block']['number']
+        status = await self.call('xbr.marketmaker.get_status')
+        current_block_number = status['block']['number']
+
+        if amount > 0:
+            if channel_type == ChannelType.PAYMENT:
+                allowance1 = xbr.xbrtoken.functions.allowance(member_adr, xbr.xbrchannel.address).call()
+                xbr.xbrtoken.functions.approve(xbr.xbrchannel.address, amount).transact({'from': member_adr, 'gas': self._default_gas})
+                allowance2 = xbr.xbrtoken.functions.allowance(member_adr, xbr.xbrchannel.address).call()
+                assert allowance2 - allowance1 == amount
+            elif channel_type == ChannelType.PAYING:
+                allowance1 = xbr.xbrtoken.functions.allowance(marketmaker, xbr.xbrchannel.address).call()
+                xbr.xbrtoken.functions.approve(xbr.xbrchannel.address, amount).transact(
+                    {'from': marketmaker, 'gas': self._default_gas})
+                allowance2 = xbr.xbrtoken.functions.allowance(marketmaker, xbr.xbrchannel.address).call()
+                assert allowance2 - allowance1 == amount
+            else:
+                assert False, 'should not arrive here'
 
         # compute EIP712 signature, and sign using member private key
-        signature = sign_eip712_channel_open(self._ethkey_raw, verifying_chain_id, verifying_contract_adr, channel_type,
-                                             block_number, market_oid.bytes, channel_oid.bytes,
+        signature = sign_eip712_channel_open(member_key, verifying_chain_id, verifying_contract_adr, channel_type,
+                                             current_block_number, market_oid.bytes, channel_oid.bytes,
                                              member_adr, delegate, marketmaker, recipient, amount)
         attributes = None
         channel_request = await self.call('xbr.marketmaker.open_channel', member_adr, market_oid.bytes,
-                                          channel_oid.bytes, verifying_chain_id, block_number,
+                                          channel_oid.bytes, verifying_chain_id, current_block_number,
                                           verifying_contract_adr, channel_type, delegate, marketmaker, recipient,
                                           pack_uint256(amount), signature, attributes)
+
         self.log.info('Channel open request submitted:\n\n{channel_request}\n',
                       channel_request=pformat(channel_request))
 
@@ -541,6 +683,42 @@ def _main():
                         default=None,
                         help='For creating new markets, the market UUID.')
 
+    parser.add_argument('--market_title',
+                        dest='market_title',
+                        type=str,
+                        default=None,
+                        help='For creating new markets, the market title.')
+
+    parser.add_argument('--market_label',
+                        dest='market_label',
+                        type=str,
+                        default=None,
+                        help='For creating new markets, the market label.')
+
+    parser.add_argument('--market_homepage',
+                        dest='market_homepage',
+                        type=str,
+                        default=None,
+                        help='For creating new markets, the market homepage.')
+
+    parser.add_argument('--provider_security',
+                        dest='provider_security',
+                        type=int,
+                        default=None,
+                        help='')
+
+    parser.add_argument('--consumer_security',
+                        dest='consumer_security',
+                        type=int,
+                        default=None,
+                        help='')
+
+    parser.add_argument('--market_fee',
+                        dest='market_fee',
+                        type=int,
+                        default=None,
+                        help='')
+
     parser.add_argument('--marketmaker',
                         dest='marketmaker',
                         type=str,
@@ -566,6 +744,31 @@ def _main():
                         default=None,
                         help='For verifications of actions (on-board, create-market, ..), the verification code.')
 
+    parser.add_argument('--channel',
+                        dest='channel',
+                        type=str,
+                        default=None,
+                        help='For creating new channel, the channel UUID.')
+
+    parser.add_argument('--channel_type',
+                        dest='channel_type',
+                        type=int,
+                        choices=sorted([ChannelType.PAYING, ChannelType.PAYMENT]),
+                        default=None,
+                        help='Channel type: Seller (PAYING) = 1, Buyer (PAYMENT) = 2')
+
+    parser.add_argument('--delegate',
+                        dest='delegate',
+                        type=str,
+                        default=None,
+                        help='For creating new channel, the delegate address.')
+
+    parser.add_argument('--amount',
+                        dest='amount',
+                        type=int,
+                        default=None,
+                        help='Amount to open the channel with. In tokens of the market coin type, used as means of payment in the market of the channel.')
+
     args = parser.parse_args()
 
     if args.debug:
@@ -580,10 +783,20 @@ def _main():
         'username': args.username,
         'email': args.email,
         'market': uuid.UUID(args.market) if args.market else None,
+        'market_title': args.market_title,
+        'market_label': args.market_label,
+        'market_homepage': args.market_homepage,
+        'market_provider_security': args.provider_security or 0,
+        'market_consumer_security': args.consumer_security or 0,
+        'market_fee': args.market_fee or 0,
         'marketmaker': binascii.a2b_hex(args.marketmaker[2:]) if args.marketmaker else None,
         'actor_type': args.actor_type,
         'vcode': args.vcode,
         'vaction': uuid.UUID(args.vaction) if args.vaction else None,
+        'channel': uuid.UUID(args.channel) if args.channel else None,
+        'channel_type': args.channel_type,
+        'delegate': binascii.a2b_hex(args.delegate[2:]) if args.delegate else None,
+        'amount': args.amount or 0,
     }
     runner = ApplicationRunner(url=args.url, realm=args.realm, extra=extra, serializers=[CBORSerializer()])
 

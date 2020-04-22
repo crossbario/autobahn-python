@@ -37,8 +37,17 @@ try:
     from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_MARKET_ADDR, XBR_DEBUG_CATALOG_ADDR, XBR_DEBUG_CHANNEL_ADDR  # noqa
     from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer  # noqa
     from autobahn.xbr._util import make_w3, pack_uint256, unpack_uint256  # noqa
+
+    from autobahn.xbr._eip712_member_register import sign_eip712_member_register, recover_eip712_member_register  # noqa
+    from autobahn.xbr._eip712_member_login import sign_eip712_member_login, recover_eip712_member_login  # noqa
+    from autobahn.xbr._eip712_market_create import sign_eip712_market_create, recover_eip712_market_create  # noqa
+    from autobahn.xbr._eip712_market_join import sign_eip712_market_join, recover_eip712_market_join  # noqa
+    from autobahn.xbr._eip712_catalog_create import sign_eip712_catalog_create, recover_eip712_catalog_create  # noqa
+    from autobahn.xbr._eip712_api_publish import sign_eip712_api_publish, recover_eip712_api_publish  # noqa
+    from autobahn.xbr._eip712_consent import sign_eip712_consent, recover_eip712_consent  # noqa
     from autobahn.xbr._eip712_channel_open import sign_eip712_channel_open, recover_eip712_channel_open  # noqa
     from autobahn.xbr._eip712_channel_close import sign_eip712_channel_close, recover_eip712_channel_close  # noqa
+
     from autobahn.xbr._blockchain import SimpleBlockchain  # noqa
     from autobahn.xbr._seller import SimpleSeller, KeySeries  # noqa
     from autobahn.xbr._buyer import SimpleBuyer  # noqa
@@ -164,15 +173,50 @@ try:
         CORE = 2
         EDGE = 3
 
+    class ChannelType(object):
+        """
+        Type of a XBR off-chain channel: paying channel (for provider delegates selling data services) or payment channel (for consumer delegates buying data services).
+        """
+
+        NONE = 0
+        """
+        Unset
+        """
+
+        PAYMENT = 1
+        """
+        Payment channel: from buyer/consumer delegate to maker maker.
+        """
+
+        PAYING = 2
+        """
+        Paying channel: from market maker to seller/provider delegate.
+        """
+
     class ActorType(object):
         """
-        XBR Market actor types.
+        XBR Market Actor type.
         """
+
         NONE = 0
-        NETWORK = 1
-        MARKET = 2
-        PROVIDER = 3
-        CONSUMER = 4
+        """
+        Unset
+        """
+
+        PROVIDER = 1
+        """
+        Actor is a XBR Provider.
+        """
+
+        CONSUMER = 2
+        """
+        Actor is a XBR Consumer.
+        """
+
+        PROVIDER_CONSUMER = 3
+        """
+        Actor is both a XBR Provider and XBR Consumer.
+        """
 
     def generate_seedphrase(strength=128, language='english'):
         """
@@ -231,6 +275,20 @@ try:
         'account_from_seedphrase',
         'ASCII_BOMB',
 
+        'sign_eip712_member_register',
+        'recover_eip712_member_register',
+        'sign_eip712_member_login',
+        'recover_eip712_member_login',
+        'sign_eip712_market_create',
+        'recover_eip712_market_create',
+        'sign_eip712_market_join',
+        'recover_eip712_market_join',
+        'sign_eip712_catalog_create',
+        'recover_eip712_catalog_create',
+        'sign_eip712_api_publish',
+        'recover_eip712_api_publish',
+        'sign_eip712_consent',
+        'recover_eip712_consent',
         'sign_eip712_channel_open',
         'recover_eip712_channel_open',
         'sign_eip712_channel_close',
@@ -238,6 +296,7 @@ try:
 
         'MemberLevel',
         'ActorType',
+        'ChannelType',
         'NodeType',
 
         'KeySeries',

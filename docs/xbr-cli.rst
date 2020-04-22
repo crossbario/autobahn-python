@@ -7,11 +7,15 @@ Autobahn includes a command-line interface for the `XBR network <https://xbr.net
 
     $ xbrnetwork --help
 
-    usage: xbrnetwork [-h] [-d] [--url URL] [--realm REALM] [--ethkey ETHKEY] [--cskey CSKEY] [--username USERNAME] [--email EMAIL] [--market MARKET] [--marketmaker MARKETMAKER] [--actor_type {2,1,3}] [--vcode VCODE] [--vaction VACTION]
-                    {onboard,onboard-verify,create-market,create-market-verify,join-market,join-market-verify}
+    usage: xbrnetwork [-h] [-d] [--url URL] [--realm REALM] [--ethkey ETHKEY] [--cskey CSKEY] [--username USERNAME] [--email EMAIL]
+                    [--market MARKET] [--market_title MARKET_TITLE] [--market_label MARKET_LABEL] [--market_homepage MARKET_HOMEPAGE]
+                    [--provider_security PROVIDER_SECURITY] [--consumer_security CONSUMER_SECURITY] [--market_fee MARKET_FEE]
+                    [--marketmaker MARKETMAKER] [--actor_type {1,2,3}] [--vcode VCODE] [--vaction VACTION] [--channel CHANNEL]
+                    [--channel_type {1,2}] [--delegate DELEGATE] [--amount AMOUNT]
+                    {get-member,register-member,register-member-verify,get-market,create-market,create-market-verify,get-actor,join-market,join-market-verify,get-channel,open-channel,close-channel}
 
     positional arguments:
-    {onboard,onboard-verify,create-market,create-market-verify,join-market,join-market-verify}
+    {get-member,register-member,register-member-verify,get-market,create-market,create-market-verify,get-actor,join-market,join-market-verify,get-channel,open-channel,close-channel}
                             Command to run
 
     optional arguments:
@@ -24,12 +28,25 @@ Autobahn includes a command-line interface for the `XBR network <https://xbr.net
     --username USERNAME   For on-boarding, the new member username.
     --email EMAIL         For on-boarding, the new member email address.
     --market MARKET       For creating new markets, the market UUID.
+    --market_title MARKET_TITLE
+                            For creating new markets, the market title.
+    --market_label MARKET_LABEL
+                            For creating new markets, the market label.
+    --market_homepage MARKET_HOMEPAGE
+                            For creating new markets, the market homepage.
+    --provider_security PROVIDER_SECURITY
+    --consumer_security CONSUMER_SECURITY
+    --market_fee MARKET_FEE
     --marketmaker MARKETMAKER
                             For creating new markets, the market maker address.
     --actor_type {1,2,3}  Actor type: PROVIDER = 1, CONSUMER = 2, PROVIDER_CONSUMER (both) = 3
     --vcode VCODE         For verifications of actions, the verification UUID.
     --vaction VACTION     For verifications of actions (on-board, create-market, ..), the verification code.
-
+    --channel CHANNEL     For creating new channel, the channel UUID.
+    --channel_type {1,2}  Channel type: Seller (PAYING) = 1, Buyer (PAYMENT) = 2
+    --delegate DELEGATE   For creating new channel, the delegate address.
+    --amount AMOUNT       Amount to open the channel with. In tokens of the market coin type, used as means of payment in the market of
+                            the channel.
 
 On-board member
 ---------------
@@ -369,6 +386,7 @@ Verify member on-boarding request:
     2020-04-21T13:47:23+0200 Client.onDisconnect()
     2020-04-21T13:47:23+0200 Main loop terminated.
 
+
 Submit market join request for new member:
 
 .. code-block:: console
@@ -468,3 +486,59 @@ Verify market join request for member:
     2020-04-21T13:48:39+0200 Shutting down ..
     2020-04-21T13:48:39+0200 Client.onDisconnect()
     2020-04-21T13:48:39+0200 Main loop terminated.
+
+
+Get actor
+---------
+
+To query for all markets a member as joined as an actor:
+
+.. code-block:: console
+
+    $ xbrnetwork --ethkey=0xbd7f0... --cskey=0x9e1dadb... get-actor
+
+    2020-04-22T17:26:38+0200 Client.__init__(config=ComponentConfig(realm=<xbrnetwork>, extra={'command': 'get-actor', 'ethkey': b'\xbd\x7f\x02\xa1\xca\x01I+\xfecG*\xdf\x18ZX"\xa6\xbc\xd9hh\x18\xb9\x8eM\xa9\xde\xc8rC\xcc', 'cskey': b'\x9e\x1d\xad\xb7\xd23\xb3QG \x06\xb4\x04\x9e\xc0\xd2T\x82m\x04X\x1b\xc8\xda)\xc4\xfc\xbc\xe4\x08\x97\x9a', 'username': None, 'email': None, 'market': None, 'market_title': None, 'market_label': None, 'market_homepage': None, 'market_provider_security': 0, 'market_consumer_security': 0, 'market_fee': 0, 'marketmaker': None, 'actor_type': None, 'vcode': None, 'vaction': None, 'channel': None, 'channel_type': None, 'delegate': None, 'amount': 0}, keyring=None, controller=None, shared=None, runner=<autobahn.twisted.wamp.ApplicationRunner object at 0x7fbd3cfc2520>))
+    2020-04-22T17:26:38+0200 Client (delegate) Ethereum key loaded (adr=0x0xAA8Cc377db31a354137d8Bb86D0E38495dbD5266)
+    2020-04-22T17:26:38+0200 Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0xcffc2bfde59bd0441c166bacc3591c9e00ae88a8a6c828e6e698d7f58162c919)
+    2020-04-22T17:26:38+0200 Client.onConnect()
+    2020-04-22T17:26:38+0200 Client.onChallenge(challenge=Challenge(method=cryptosign, extra={'challenge': '57111fcf82404684888e60091ac2a74e459c17031d30c1e0d854741e2d70d251', 'channel_binding': 'tls-unique'}))
+    2020-04-22T17:26:38+0200 Client.onJoin(details=
+    SessionDetails(realm="xbrnetwork",
+                   session=3066427635559969,
+                   authid="member-04d6ea0d-64fc-4e39-8555-46a8a57afa19",
+                   authrole="member",
+                   authmethod="cryptosign",
+                   authprovider="dynamic",
+                   authextra={'x_cb_node': '5f1fcfbd-64d6-4929-949d-ad6cada0ea0b', 'x_cb_worker': 'rtr1', 'x_cb_peer': 'tcp4:213.170.219.39:51114', 'x_cb_pid': 2027},
+                   serializer="cbor",
+                   transport="websocket",
+                   resumed=None,
+                   resumable=None,
+                   resume_token=None))
+    2020-04-22T17:26:38+0200 already a member in the XBR network:
+
+    {'address': b'\xaa\x8c\xc3w\xdb1\xa3T\x13}\x8b\xb8m\x0e8I]\xbdRf',
+     'balance': {'eth': b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                        b'\x00\x00\x00\x00\x00\x00\x00\x00',
+                 'xbr': b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                        b'\x00\x00\x00\x00\x00\x00\x00\x00'},
+     'catalogs': 0,
+     'created': 1587566067769146003,
+     'domains': 0,
+     'email': 'tobias.oberstein@gmail.com',
+     'eula': 'QmTMVPRGGTsJrsEkh6t4LDGYz5AZUv2dDMF9rrPXkKbAC5',
+     'level': 1,
+     'markets': 0,
+     'oid': b'\x04\xd6\xea\rd\xfcN9\x85UF\xa8\xa5z\xfa\x19',
+     'profile': 'QmV1eeDextSdUrRUQp9tUXF8SdvVeykaiwYLgrXHHVyULY',
+     'username': 'oberstet3'}
+
+    2020-04-22T17:26:39+0200 Found member with address 0xAA8Cc377db31a354137d8Bb86D0E38495dbD5266, member level 1: 0 ETH, 0 XBR
+    2020-04-22T17:26:39+0200 Member is actor in 1 markets!
+    2020-04-22T17:26:39+0200 Actor is joined to market 6006f903-f993-4893-8b67-2e8534784ab7 (market owner 0x163d58ce482560b7826b4612f40aa2a7d53310c4)
+    2020-04-22T17:26:39+0200 Client.onLeave(details=CloseDetails(reason=<wamp.close.normal>, message='None'))
+    2020-04-22T17:26:39+0200 Shutting down ..
+    2020-04-22T17:26:39+0200 Client.onDisconnect()
+    2020-04-22T17:26:39+0200 Main loop terminated.
