@@ -5,10 +5,11 @@
 Changelog
 =========
 
-master
+20.4.3
 ------
 
-* new: XBR CLI
+* new: XBR CLI (#1367)
+* fix: add missing XBR dependency `py-multihash`
 
 20.4.2
 ------

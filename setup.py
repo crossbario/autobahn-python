@@ -135,6 +135,7 @@ extras_require_xbr = [
     # py-multihash 0.2.3 has requirement base58<2.0,>=1.0.2 (https://github.com/crossbario/crossbarfx/issues/469)
     'base58<2.0,>=1.0.2',       # MIT license (https://github.com/keis/base58)
     'ecdsa>=0.13',              # MIT license (https://github.com/warner/python-ecdsa)
+    'py-multihash>=0.2.3',      # MIT license (https://github.com/multiformats/py-multihash / https://pypi.org/project/py-multihash/)
 ]
 
 # everything
