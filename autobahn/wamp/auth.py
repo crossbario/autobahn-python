@@ -158,7 +158,7 @@ class AuthCryptoSign(object):
                     "Must provide '{}' for cryptosign".format(key)
                 )
         for key in kw.get('authextra', dict()):
-            if key not in ['pubkey']:
+            if key not in ['pubkey', 'channel_binding']:
                 raise ValueError(
                     "Unexpected key '{}' in 'authextra'".format(key)
                 )
