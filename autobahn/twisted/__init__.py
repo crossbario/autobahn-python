@@ -79,7 +79,7 @@ __all__ = (
     'ApplicationSession',
 )
 
-__ident__ = 'Autobahn/{}-Twisted/{}-{}/{}'.format(autobahn.__version__, twisted.__version__, platform.python_implementation(), platform.python_version())
+__ident__ = 'Autobahn/{}-Twisted/{}-{}/{}'.format(autobahn.version.__version__, twisted.__version__, platform.python_implementation(), platform.python_version())
 """
 AutobahnPython library implementation (eg. "Autobahn/0.13.0-Twisted/15.5.0-CPython/3.5.1")
 """

@@ -24,4 +24,6 @@
 #
 ###############################################################################
 
-__path__ = __import__('pkgutil').extend_path(__path__, __name__)
+from autobahn._version import __version__
+
+version = __version__

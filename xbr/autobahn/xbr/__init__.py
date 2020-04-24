@@ -24,6 +24,10 @@
 #
 ###############################################################################
 
+from autobahn.xbr._version import __version__
+
+version = __version__
+
 try:
     from mnemonic import Mnemonic
     from autobahn.xbr._mnemonic import mnemonic_to_private_key

@@ -38,7 +38,7 @@ from pprint import pformat
 from collections import deque
 from urllib import parse
 
-from autobahn import __version__
+from autobahn.version import __version__
 
 from autobahn.websocket.interfaces import IWebSocketChannel, \
     IWebSocketChannelFrameApi, \

@@ -118,24 +118,7 @@ if 'AUTOBAHN_USE_NVX' in os.environ:
     cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
 
 extras_require_xbr = [
-    'cbor2>=5.1.0',             # MIT license
-    'zlmdb>=20.4.1',            # MIT license
-    'twisted>=20.3.0',          # MIT license
-    'autobahn>=18.11.2',        # MIT license
-    'web3>=4.8.1',              # MIT license
-
-    # the following is needed for EIP712 ("signed typed data"):
-    'py-eth-sig-utils>=0.4.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
-    'py-ecc>=1.7.1',            # MIT license (https://github.com/ethereum/py_ecc)
-    'eth-abi>=1.3.0',           # MIT license (https://github.com/ethereum/eth-abi)
-
-    # the following is needed (at least) for BIP32/39 mnemonic processing
-    'mnemonic>=0.13',           # MIT license (https://github.com/trezor/python-mnemonic)
-
-    # py-multihash 0.2.3 has requirement base58<2.0,>=1.0.2 (https://github.com/crossbario/crossbarfx/issues/469)
-    'base58<2.0,>=1.0.2',       # MIT license (https://github.com/keis/base58)
-    'ecdsa>=0.13',              # MIT license (https://github.com/warner/python-ecdsa)
-    'py-multihash>=0.2.3',      # MIT license (https://github.com/multiformats/py-multihash / https://pypi.org/project/py-multihash/)
+    'xbr>=20.4.3',
 ]
 
 # everything
@@ -248,19 +231,16 @@ setup(
         'autobahn.twisted.testing',
         'autobahn.nvx',
         'autobahn.nvx.test',
-        'autobahn.xbr',
         'twisted.plugins',
     ],
     package_data={
         'autobahn.asyncio': ['./test/*'],
-        'xbr': ['./xbr/contracts/*.json'],
     },
     cffi_modules=cffi_modules,
 
     entry_points={
         "console_scripts": [
             "wamp = autobahn.__main__:_main",
-            "xbrnetwork = autobahn.xbr._cli:_main",
         ]
     },
 

@@ -47,7 +47,7 @@ __all__ = (
     'ApplicationSession',
 )
 
-__ident__ = 'Autobahn/{}-asyncio-{}/{}'.format(autobahn.__version__, platform.python_implementation(), platform.python_version())
+__ident__ = 'Autobahn/{}-asyncio-{}/{}'.format(autobahn.version.__version__, platform.python_implementation(), platform.python_version())
 """
 AutobahnPython library implementation (eg. "Autobahn/0.13.0-asyncio-CPython/3.5.1")
 """
