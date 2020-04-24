@@ -25,6 +25,13 @@
 ###############################################################################
 
 import sys
+from autobahn import xbr
+
+if not xbr.HAS_XBR:
+    print("\nYou must install the [xbr] extra to use xbrnetwork")
+    print("For example, \"pip install autobahn[xbr]\".")
+    sys.exit(1)
+
 import uuid
 import binascii
 import argparse
@@ -49,7 +56,6 @@ from autobahn.wamp.serializer import CBORSerializer
 from autobahn.wamp import cryptosign
 from autobahn.wamp.exception import ApplicationError
 
-from autobahn import xbr
 from autobahn.xbr import pack_uint256, unpack_uint256, sign_eip712_channel_open, make_w3
 from autobahn.xbr import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
 from autobahn.xbr import ActorType, ChannelType
