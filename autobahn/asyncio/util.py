@@ -26,13 +26,8 @@
 
 import hashlib
 from typing import Optional
+from asyncio import sleep  # noqa
 
-try:
-    from asyncio import sleep  # noqa
-except ImportError:
-    # Trollius >= 0.3 was renamed to asyncio
-    # noinspection PyUnresolvedReferences
-    from trollius import sleep  # noqa
 
 __all = (
     'sleep',
