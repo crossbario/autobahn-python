@@ -26,6 +26,7 @@
 
 import os
 import sys
+import shutil
 import platform
 from setuptools import setup
 from setuptools.command.test import test as test_command
@@ -141,7 +142,44 @@ extras_require_xbr = [
 # everything
 extras_require_all = extras_require_twisted + extras_require_accelerate + extras_require_compress + \
                      extras_require_serialization + extras_require_encryption + extras_require_scram + \
-                     extras_require_nvx + extras_require_xbr
+                     extras_require_nvx
+
+packages = [
+    'autobahn',
+    'autobahn.test',
+    'autobahn.wamp',
+    'autobahn.wamp.gen',
+    'autobahn.wamp.gen.wamp',
+    'autobahn.wamp.gen.wamp.proto',
+    'autobahn.wamp.test',
+    'autobahn.websocket',
+    'autobahn.websocket.test',
+    'autobahn.rawsocket',
+    'autobahn.rawsocket.test',
+    'autobahn.asyncio',
+    'autobahn.twisted',
+    'autobahn.twisted.testing',
+    'autobahn.nvx',
+    'autobahn.nvx.test',
+    'twisted.plugins',
+]
+
+package_data = {'autobahn.asyncio': ['./test/*']}
+
+entry_points = {
+    "console_scripts": [
+        "wamp = autobahn.__main__:_main",
+    ]
+}
+
+if 'AUTOBAHN_STRIP_XBR' in os.environ:
+    # force regeneration of egg-info manifest for stripped install
+    shutil.rmtree('autobahn.egg-info', ignore_errors=True)
+else:
+    extras_require_all += extras_require_xbr
+    packages += ['autobahn.xbr', 'autobahn.asyncio.xbr', 'autobahn.twisted.xbr']
+    package_data['xbr'] = ['./xbr/contracts/*.json']
+    entry_points['console_scripts'] += ["xbrnetwork = autobahn.xbr._cli:_main"]
 
 # development dependencies
 extras_require_dev = [
@@ -231,38 +269,11 @@ setup(
     cmdclass={
         'test': PyTest
     },
-    packages=[
-        'autobahn',
-        'autobahn.test',
-        'autobahn.wamp',
-        'autobahn.wamp.gen',
-        'autobahn.wamp.gen.wamp',
-        'autobahn.wamp.gen.wamp.proto',
-        'autobahn.wamp.test',
-        'autobahn.websocket',
-        'autobahn.websocket.test',
-        'autobahn.rawsocket',
-        'autobahn.rawsocket.test',
-        'autobahn.asyncio',
-        'autobahn.twisted',
-        'autobahn.twisted.testing',
-        'autobahn.nvx',
-        'autobahn.nvx.test',
-        'autobahn.xbr',
-        'twisted.plugins',
-    ],
-    package_data={
-        'autobahn.asyncio': ['./test/*'],
-        'xbr': ['./xbr/contracts/*.json'],
-    },
+    packages=packages,
+    package_data=package_data,
     cffi_modules=cffi_modules,
 
-    entry_points={
-        "console_scripts": [
-            "wamp = autobahn.__main__:_main",
-            "xbrnetwork = autobahn.xbr._cli:_main",
-        ]
-    },
+    entry_points=entry_points,
 
     # this flag will make files from MANIFEST.in go into _source_ distributions only
     include_package_data=True,
