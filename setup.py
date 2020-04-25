@@ -146,25 +146,19 @@ extras_require_all = extras_require_twisted + extras_require_accelerate + extras
 
 packages = [
     'autobahn',
-    'autobahn.test',
     'autobahn.wamp',
     'autobahn.wamp.gen',
     'autobahn.wamp.gen.wamp',
     'autobahn.wamp.gen.wamp.proto',
-    'autobahn.wamp.test',
     'autobahn.websocket',
-    'autobahn.websocket.test',
     'autobahn.rawsocket',
-    'autobahn.rawsocket.test',
     'autobahn.asyncio',
     'autobahn.twisted',
-    'autobahn.twisted.testing',
     'autobahn.nvx',
-    'autobahn.nvx.test',
     'twisted.plugins',
 ]
 
-package_data = {'autobahn.asyncio': ['./test/*']}
+package_data = {}
 
 entry_points = {
     "console_scripts": [
@@ -172,9 +166,11 @@ entry_points = {
     ]
 }
 
+remove_egg_info = False
+
 if 'AUTOBAHN_STRIP_XBR' in os.environ:
     # force regeneration of egg-info manifest for stripped install
-    shutil.rmtree('autobahn.egg-info', ignore_errors=True)
+    remove_egg_info = True
 else:
     extras_require_all += extras_require_xbr
     packages += ['autobahn.xbr', 'autobahn.asyncio.xbr', 'autobahn.twisted.xbr']
@@ -212,12 +208,6 @@ extras_require_dev.extend([
     'pytest-aiohttp',  # Apache 2.0
 ])
 
-# for testing by users with "python setup.py test" (not Tox, which we use)
-test_requirements = [
-    "pytest>=2.8.6,<3.3.0",             # MIT license
-]
-
-
 class PyTest(test_command):
     """
     pytest integration for setuptools.
@@ -238,6 +228,30 @@ class PyTest(test_command):
         errno = pytest.main(self.test_args)
         sys.exit(errno)
 
+
+if 'AUTOBAHN_STRIP_TESTS' in os.environ:
+    # force regeneration of egg-info manifest for stripped install
+    remove_egg_info = True
+    test_requirements = []
+    cmdclass = {}
+else:
+    package_data['autobahn.asyncio'] = ['./test/*']
+    # for testing by users with "python setup.py test" (not Tox, which we use)
+    test_requirements = [
+        "pytest>=2.8.6,<3.3.0",             # MIT license
+    ]
+    packages += [
+        'autobahn.test',
+        'autobahn.wamp.test',
+        'autobahn.websocket.test',
+        'autobahn.rawsocket.test',
+        'autobahn.twisted.testing',
+        'autobahn.nvx.test',
+    ]
+    cmdclass = {'test': PyTest}
+
+if remove_egg_info:
+    shutil.rmtree('autobahn.egg-info', ignore_errors=True)
 
 setup(
     name='autobahn',
@@ -266,9 +280,7 @@ setup(
         'xbr': extras_require_xbr,
     },
     tests_require=test_requirements,
-    cmdclass={
-        'test': PyTest
-    },
+    cmdclass=cmdclass,
     packages=packages,
     package_data=package_data,
     cffi_modules=cffi_modules,
