@@ -106,14 +106,17 @@ class WampRawSocketProtocol(Int32StringReceiver):
     def _on_handshake_complete(self):
         try:
             self._session = self.factory._factory()
-            self._session.onOpen(self)
+            self.log.debug('{klass}._on_handshake_complete(): calling {method}', session=self._session,
+                           klass=self.__class__.__name__, method=self._session.onOpen)
+            res = self._session.onOpen(self)
         except Exception as e:
             # Exceptions raised in onOpen are fatal ..
             self.log.warn("{klass}._on_handshake_complete(): ApplicationSession constructor / onOpen raised ({err})",
                           klass=self.__class__.__name__, err=e)
             self.abort()
         else:
-            self.log.debug("ApplicationSession started.")
+            self.log.debug('{klass}._on_handshake_complete(): {session} started (res={res}).', klass=self.__class__.__name__,
+                           session=self._session, res=res)
 
     def connectionLost(self, reason):
         self.log.debug('{klass}.connectionLost(reason="{reason}"', klass=self.__class__.__name__, reason=reason)
@@ -249,17 +252,22 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
             if len(self._handshake_bytes) == 4:
 
                 self.log.debug(
-                    "WampRawSocketServerProtocol: opening handshake received - {octets}",
+                    "WampRawSocketServerProtocol: opening handshake received - 0x{octets}",
                     octets=_LazyHexFormatter(self._handshake_bytes),
                 )
 
-                if ord(self._handshake_bytes[0:1]) != 0x7f:
+                # first octet must be magic octet 0x7f
+                #
+                _magic = ord(self._handshake_bytes[0:1])
+                if _magic != 127:
                     self.log.warn(
                         "WampRawSocketServerProtocol: invalid magic byte (octet 1) in"
-                        " opening handshake: was 0x{magic}, but expected 0x7f",
-                        magic=_LazyHexFormatter(self._handshake_bytes[0]),
+                        " opening handshake: was {magic}, but expected 127",
+                        magic=_magic,
                     )
                     self.abort()
+                else:
+                    self.log.debug('WampRawSocketServerProtocol: correct magic byte received')
 
                 # peer requests us to send messages of maximum length 2**max_len_exp
                 #
