@@ -730,6 +730,7 @@ class ObservableMixin(object):
     _parent = None
     _valid_events = None
     _listeners = None
+    _results = None
 
     def set_valid_events(self, valid_events=None):
         """
@@ -737,6 +738,7 @@ class ObservableMixin(object):
             not listed in valid_events raises an exception.
         """
         self._valid_events = list(valid_events)
+        self._results = {k: None for k in self._valid_events}
 
     def _check_event(self, event):
         """
@@ -818,7 +820,9 @@ class ObservableMixin(object):
             res.append(future)
         if self._parent is not None:
             res.append(self._parent.fire(event, *args, **kwargs))
-        return txaio.gather(res, consume_exceptions=False)
+        d_res = txaio.gather(res, consume_exceptions=False)
+        self._results[event] = d_res
+        return d_res
 
 
 class _LazyHexFormatter(object):
