@@ -126,7 +126,7 @@ def _qn(obj):
 
 def hltype(obj):
     qn = _qn(obj).split('.')
-    text = hl(qn[0], color='yellow', bold=True) + hl('.' + '.'.join(qn[1:]), color='white', bold=True)
+    text = hl(qn[0], color='yellow', bold=True) + hl('.' + '.'.join(qn[1:]), color='yellow', bold=False)
     return '<' + text + '>'
 
 
