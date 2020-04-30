@@ -3197,8 +3197,6 @@ class WebSocketServerFactory(WebSocketFactory):
 
         if externalPort:
             self.externalPort = externalPort
-        elif url:
-            self.externalPort = self.port
         else:
             self.externalPort = None
 
