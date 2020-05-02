@@ -579,7 +579,7 @@ def generate_wcs(length=14):
     :rtype: bytes
     """
     assert(type(length) == int)
-    return "".join([random.choice(WCS_SECRET_CHARSET) for _ in range(length)]).encode('ascii')
+    return "".join(random.choice(WCS_SECRET_CHARSET) for _ in range(length)).encode('ascii')
 
 
 @public

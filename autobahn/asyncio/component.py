@@ -55,7 +55,7 @@ def _unique_list(seq):
 
 def _camel_case_from_snake_case(snake):
     parts = snake.split('_')
-    return parts[0] + ''.join([s.capitalize() for s in parts[1:]])
+    return parts[0] + ''.join(s.capitalize() for s in parts[1:])
 
 
 def _create_transport_factory(loop, transport, session_factory):
