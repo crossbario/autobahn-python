@@ -615,15 +615,15 @@ class Client(ApplicationSession):
         member_adr = self._ethkey.public_key.to_canonical_address()
 
         config = await self.call('xbr.marketmaker.get_config')
-        marketmaker = config['marketmaker']
-        recipient = config['owner']
+        marketmaker = binascii.a2b_hex(config['marketmaker'][2:])
+        recipient = binascii.a2b_hex(config['owner'][2:])
         verifying_chain_id = config['verifying_chain_id']
         verifying_contract_adr = binascii.a2b_hex(config['verifying_contract_adr'][2:])
 
         status = await self.call('xbr.marketmaker.get_status')
         current_block_number = status['block']['number']
 
-        if False and amount > 0:
+        if amount > 0:
             if channel_type == ChannelType.PAYMENT:
                 allowance1 = xbr.xbrtoken.functions.allowance(member_adr, xbr.xbrchannel.address).call()
                 xbr.xbrtoken.functions.approve(xbr.xbrchannel.address, amount).transact({'from': member_adr, 'gas': self._default_gas})
