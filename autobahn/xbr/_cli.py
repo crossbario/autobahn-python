@@ -48,7 +48,6 @@ import multihash
 import cbor2
 
 import txaio
-
 txaio.use_twisted()
 
 from twisted.internet import reactor
@@ -63,13 +62,8 @@ from autobahn.xbr import pack_uint256, unpack_uint256, sign_eip712_channel_open,
 from autobahn.xbr import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
 from autobahn.xbr import ActorType, ChannelType
 
+from autobahn.xbr._config import load_or_create_profile
 
-_INFURA_CONFIG = {
-    "type": "infura",
-    "network": "rinkeby",
-    "key": "40************************",
-    "secret": "55*************************"
-}
 
 _COMMANDS = ['version', 'get-member', 'register-member', 'register-member-verify',
              'get-market', 'create-market', 'create-market-verify',
@@ -87,7 +81,13 @@ class Client(ApplicationSession):
         # FIXME
         self._default_gas = 100000
 
-        self._ethkey_raw = config.extra['ethkey']
+        profile = config.extra['profile']
+
+        if 'ethkey' in config.extra and config.extra['ethkey']:
+            self._ethkey_raw = config.extra['ethkey']
+        else:
+            self._ethkey_raw = profile.ethkey
+
         self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
         self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
         self._ethadr_raw = binascii.a2b_hex(self._ethadr[2:])
@@ -95,7 +95,11 @@ class Client(ApplicationSession):
         self.log.info("Client (delegate) Ethereum key loaded (adr=0x{adr})",
                       adr=self._ethadr)
 
-        self._key = cryptosign.SigningKey.from_key_bytes(config.extra['cskey'])
+        if 'cskey' in config.extra and config.extra['cskey']:
+            cskey = config.extra['cskey']
+        else:
+            cskey = profile.cskey
+        self._key = cryptosign.SigningKey.from_key_bytes(cskey)
         self.log.info("Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0x{pubkey})",
                       pubkey=self._key.public_key())
 
@@ -233,7 +237,16 @@ class Client(ApplicationSession):
                 assert False, 'should not arrive here'
 
     async def _do_market_realm(self, details):
-        self._w3 = make_w3(_INFURA_CONFIG)
+        profile = self.config.extra['profile']
+
+        blockchain_gateway = {
+            "type": "infura",
+            "network": profile.infura_network,
+            "key": profile.infura_key,
+            "secret": profile.infura_secret
+        }
+
+        self._w3 = make_w3(blockchain_gateway)
         xbr.setProvider(self._w3)
 
         command = self.config.extra['command']
@@ -802,15 +815,23 @@ def _main():
         print('   XBRChannel contract address: {}'.format(XBR_DEBUG_CHANNEL_ADDR))
         print('')
     else:
+        # read or create a user profile
+        profile = load_or_create_profile()
+
+        # only start txaio logging after above, which runs click (interactively)
         if args.debug:
             txaio.start_logging(level='debug')
         else:
             txaio.start_logging(level='info')
 
         extra = {
+            # user profile and defaults
+            'profile': profile,
+
+            # allow to override, and add more arguments from the command line
             'command': args.command,
-            'ethkey': binascii.a2b_hex(args.ethkey[2:]),
-            'cskey': binascii.a2b_hex(args.cskey[2:]),
+            'ethkey': binascii.a2b_hex(args.ethkey[2:]) if args.ethkey else None,
+            'cskey': binascii.a2b_hex(args.cskey[2:]) if args.cskey else None,
             'username': args.username,
             'email': args.email,
             'market': uuid.UUID(args.market) if args.market else None,
