@@ -32,6 +32,9 @@ if not xbr.HAS_XBR:
     print("For example, \"pip install autobahn[xbr]\".")
     sys.exit(1)
 
+from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_MARKET_ADDR, \
+    XBR_DEBUG_CATALOG_ADDR, XBR_DEBUG_CHANNEL_ADDR
+
 import uuid
 import binascii
 import argparse
@@ -68,7 +71,7 @@ _INFURA_CONFIG = {
     "secret": "55*************************"
 }
 
-_COMMANDS = ['get-member', 'register-member', 'register-member-verify',
+_COMMANDS = ['version', 'get-member', 'register-member', 'register-member-verify',
              'get-market', 'create-market', 'create-market-verify',
              'get-actor', 'join-market', 'join-market-verify',
              'get-channel', 'open-channel', 'close-channel']
@@ -777,42 +780,53 @@ def _main():
 
     args = parser.parse_args()
 
-    if args.debug:
-        txaio.start_logging(level='debug')
+    if args.command == 'version':
+        from autobahn import __version__
+        print('')
+        print(' XBR CLI v{}\n'.format(__version__))
+        print('   XBRToken   contract address: {}'.format(XBR_DEBUG_TOKEN_ADDR))
+        print('   XBRNetwork contract address: {}'.format(XBR_DEBUG_NETWORK_ADDR))
+        print('   XBRMarket  contract address: {}'.format(XBR_DEBUG_MARKET_ADDR))
+        print('   XBRCatalog contract address: {}'.format(XBR_DEBUG_CATALOG_ADDR))
+        print('   XBRChannel contract address: {}'.format(XBR_DEBUG_CHANNEL_ADDR))
+        print('')
     else:
-        txaio.start_logging(level='info')
+        if args.debug:
+            txaio.start_logging(level='debug')
+        else:
+            txaio.start_logging(level='info')
 
-    extra = {
-        'command': args.command,
-        'ethkey': binascii.a2b_hex(args.ethkey[2:]),
-        'cskey': binascii.a2b_hex(args.cskey[2:]),
-        'username': args.username,
-        'email': args.email,
-        'market': uuid.UUID(args.market) if args.market else None,
-        'market_title': args.market_title,
-        'market_label': args.market_label,
-        'market_homepage': args.market_homepage,
-        'market_provider_security': args.provider_security or 0,
-        'market_consumer_security': args.consumer_security or 0,
-        'market_fee': args.market_fee or 0,
-        'marketmaker': binascii.a2b_hex(args.marketmaker[2:]) if args.marketmaker else None,
-        'actor_type': args.actor_type,
-        'vcode': args.vcode,
-        'vaction': uuid.UUID(args.vaction) if args.vaction else None,
-        'channel': uuid.UUID(args.channel) if args.channel else None,
-        'channel_type': args.channel_type,
-        'delegate': binascii.a2b_hex(args.delegate[2:]) if args.delegate else None,
-        'amount': args.amount or 0,
-    }
-    runner = ApplicationRunner(url=args.url, realm=args.realm, extra=extra, serializers=[CBORSerializer()])
+        extra = {
+            'command': args.command,
+            'ethkey': binascii.a2b_hex(args.ethkey[2:]),
+            'cskey': binascii.a2b_hex(args.cskey[2:]),
+            'username': args.username,
+            'email': args.email,
+            'market': uuid.UUID(args.market) if args.market else None,
+            'market_title': args.market_title,
+            'market_label': args.market_label,
+            'market_homepage': args.market_homepage,
+            'market_provider_security': args.provider_security or 0,
+            'market_consumer_security': args.consumer_security or 0,
+            'market_fee': args.market_fee or 0,
+            'marketmaker': binascii.a2b_hex(args.marketmaker[2:]) if args.marketmaker else None,
+            'actor_type': args.actor_type,
+            'vcode': args.vcode,
+            'vaction': uuid.UUID(args.vaction) if args.vaction else None,
+            'channel': uuid.UUID(args.channel) if args.channel else None,
+            'channel_type': args.channel_type,
+            'delegate': binascii.a2b_hex(args.delegate[2:]) if args.delegate else None,
+            'amount': args.amount or 0,
+        }
+        runner = ApplicationRunner(url=args.url, realm=args.realm, extra=extra, serializers=[CBORSerializer()])
 
-    try:
-        runner.run(Client, auto_reconnect=False)
-    except Exception as e:
-        print(e)
-        sys.exit(1)
-    else:
-        sys.exit(0)
+        try:
+            runner.run(Client, auto_reconnect=False)
+        except Exception as e:
+            print(e)
+            sys.exit(1)
+        else:
+            sys.exit(0)
 
 
 if __name__ == '__main__':

@@ -73,6 +73,9 @@ docs:
 spelling:
 	cd docs && sphinx-build -b spelling . _spelling
 
+run_docs:
+	twistd --nodaemon web --port=tcp:8090 --path=./docs/build/html/
+
 
 test_mnemonic:
 	# python -m pytest -rsx autobahn/xbr/test/test_mnemonic.py

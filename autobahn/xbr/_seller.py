@@ -52,7 +52,7 @@ class KeySeries(object):
     and key offering (to the XBR market maker).
     """
 
-    def __init__(self, api_id, price, interval, on_rotate=None):
+    def __init__(self, api_id, price, interval=None, count=None, on_rotate=None):
         """
 
         :param api_id: ID of the API for which to generate keys.
@@ -61,20 +61,27 @@ class KeySeries(object):
         :param price: Price per key in key series.
         :type price: int
 
-        :param interval: Key rotation interval in seconds.
+        :param interval: Interval in seconds after which to auto-rotate key.
         :type interval: int
+
+        :param count: Number of encryption operations after which to auto-rotate key.
+        :type count: int
 
         :param on_rotate: Optional user callback fired after key was rotated.
         :type on_rotate: callable
         """
         assert type(api_id) == bytes and len(api_id) == 16
         assert type(price) == int and price > 0
-        assert type(interval) == int and interval > 0
+        assert interval is None or (type(interval) == int and interval > 0)
+        assert count is None or (type(count) == int and count > 0)
+        assert (interval is None and count is not None) or (interval is not None and count is None)
         assert on_rotate is None or callable(on_rotate)
 
         self._api_id = api_id
         self._price = price
         self._interval = interval
+        self._count = count
+        self._count_current = 0
         self._on_rotate = on_rotate
 
         self._id = None
@@ -93,7 +100,7 @@ class KeySeries(object):
         """
         return self._id
 
-    def encrypt(self, payload):
+    async def encrypt(self, payload):
         """
         Encrypt data with the current XBR data encryption key.
 
@@ -104,6 +111,13 @@ class KeySeries(object):
         :rtype: bytes
         """
         data = cbor2.dumps(payload)
+
+        if self._count is not None:
+            self._count_current += 1
+            if self._count_current >= self._count:
+                await self._rotate()
+                self._count_current = 0
+
         ciphertext = self._box.encrypt(data)
 
         return self._id, 'cbor', ciphertext
@@ -261,7 +275,7 @@ class SimpleSeller(object):
         """
         return self._pkey.public_key
 
-    def add(self, api_id, prefix, price, interval, categories=None):
+    def add(self, api_id, prefix, price, interval=None, count=None, categories=None):
         """
         Add a new (rotating) private encryption key for encrypting data on the given API.
 
@@ -271,12 +285,17 @@ class SimpleSeller(object):
         :param price: Price in XBR token per key.
         :type price: int
 
-        :param interval: Interval (in seconds) in which to auto-rotate the encryption key.
+        :param interval: Interval (in seconds) after which to auto-rotate the encryption key.
         :type interval: int
+
+        :param count: Number of encryption operations after which to auto-rotate the encryption key.
+        :type count: int
         """
         assert type(api_id) == bytes and len(api_id) == 16 and api_id not in self._keys
         assert type(price) == int and price > 0
-        assert type(interval) == int and interval > 0
+        assert interval is None or (type(interval) == int and interval > 0)
+        assert count is None or (type(count) == int and count > 0)
+        assert (interval is None and count is not None) or (interval is not None and count is None)
         assert categories is None or (type(categories) == dict and (type(k) == str for k in categories.keys()) and (type(v) == str for v in categories.values())), 'invalid categories type (must be dict) or category key or value type (must both be string)'
 
         async def on_rotate(key_series):
@@ -340,7 +359,7 @@ class SimpleSeller(object):
                 self.log.warn('Failed to place offer for key! Retrying {retries}/5 ..', retries=retries)
                 await asyncio.sleep(1)
 
-        key_series = self.KeySeries(api_id, price, interval, on_rotate)
+        key_series = self.KeySeries(api_id, price, interval=interval, count=count, on_rotate=on_rotate)
         self._keys[api_id] = key_series
         self.log.debug('Created new key series {key_series}', key_series=key_series)
 
@@ -486,7 +505,7 @@ class SimpleSeller(object):
 
         keyseries = self._keys[api_id]
 
-        key_id, serializer, ciphertext = keyseries.encrypt(payload)
+        key_id, serializer, ciphertext = await keyseries.encrypt(payload)
 
         return key_id, serializer, ciphertext
 
