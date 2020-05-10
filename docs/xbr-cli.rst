@@ -156,6 +156,25 @@ with your key:
     --cskey=0xecdc5e97...
 
 
+Profile
+-------
+
+To create a new user profile:
+
+.. code-block:: console
+
+    $ xbrnetwork
+    created new local user directory /home/oberstet/.xbrnetwork
+    creating new user profile "default"
+    enter a XBR data market URL: wss://markets.international-data-monetization-award.com/ws
+    enter the WAMP realm of the XBR data market: idma
+    your private Etherum key: 0x4C1F7...
+    your private WAMP client key: 0x7e8f...
+    your Infura gateway key: 40c69...
+    your Infura gateway secret: 55119...
+    created new local user configuration /home/oberstet/.xbrnetwork/config.ini
+    user profile "default" loaded
+
 
 On-boarding
 -----------

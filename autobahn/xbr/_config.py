@@ -194,9 +194,9 @@ class EthereumAddress(click.ParamType):
     def convert(self, value, param, ctx):
         try:
             value = web3.Web3.toChecksumAddress(value)
-            value = binascii.a2b_hex(value[2:])
+            adr = binascii.a2b_hex(value[2:])
             if len(value) != 20:
-                raise ValueError('Ethereum addres must be 20 bytes (160 bit), but was {} bytes'.format(len(value)))
+                raise ValueError('Ethereum addres must be 20 bytes (160 bit), but was {} bytes'.format(len(adr)))
         except Exception as e:
             self.fail(style_error(str(e)))
         else:
@@ -225,9 +225,9 @@ class PrivateKey(click.ParamType):
     def convert(self, value, param, ctx):
         try:
             value = hexstr_if_str(to_hex, value)
-            value = binascii.a2b_hex(value[2:])
-            if len(value) != self._key_len:
-                raise ValueError('key length must be {} bytes, but was {} bytes'.format(self._key_len, len(value)))
+            key = binascii.a2b_hex(value[2:])
+            if len(key) != self._key_len:
+                raise ValueError('key length must be {} bytes, but was {} bytes'.format(self._key_len, len(key)))
         except Exception as e:
             self.fail(style_error(str(e)))
         else:
@@ -274,13 +274,15 @@ def load_or_create_profile(dotdir=None, profile=None):
     if not os.path.isfile(config_path):
         click.echo('creating new user profile "{}"'.format(style_ok(profile)))
         with open(config_path, 'w') as f:
-            market_url = prompt_for_wamp_url('a XBR data market URL:')
+            market_url = prompt_for_wamp_url('enter a XBR data market URL')
+            market_realm = click.prompt('enter the WAMP realm of the XBR data market', type=str)
             ethkey = prompt_for_key('your private Etherum key', 32)
             cskey = prompt_for_key('your private WAMP client key', 32)
             infura_key = prompt_for_key('your Infura gateway key', 16)
             infura_secret = prompt_for_key('your Infura gateway secret', 16)
-            f.write(_DEFAULT_CONFIG.format(market_url=market_url, ethkey=ethkey, cskey=cskey, infura_network='rinkeby',
-                                           infura_key=infura_key, infura_secret=infura_secret))
+            f.write(_DEFAULT_CONFIG.format(market_url=market_url, market_realm=market_realm, ethkey=ethkey,
+                                           cskey=cskey, infura_network='rinkeby', infura_key=infura_key,
+                                           infura_secret=infura_secret))
             click.echo('created new local user configuration {}'.format(style_ok(config_path)))
 
     config_obj = UserConfig(config_path)

@@ -668,7 +668,11 @@ class Client(ApplicationSession):
 def _main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('command', type=str, choices=_COMMANDS,
+    parser.add_argument('command',
+                        type=str,
+                        choices=_COMMANDS,
+                        const='noop',
+                        nargs='?',
                         help='Command to run')
 
     parser.add_argument('-d',
@@ -817,6 +821,9 @@ def _main():
     else:
         # read or create a user profile
         profile = load_or_create_profile()
+
+        if args.command is None or args.command == 'noop':
+            sys.exit(0)
 
         # only start txaio logging after above, which runs click (interactively)
         if args.debug:
