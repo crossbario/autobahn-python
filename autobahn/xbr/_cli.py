@@ -249,11 +249,22 @@ class Client(ApplicationSession):
             else:
                 assert False, 'should not arrive here'
         elif command == 'open-channel':
+            # market in which to open the new buyer/seller (payment/paying) channel
             market_oid = self.config.extra['market']
-            channel_oid = self.config.extra['channel']
+
+            # read UUID of the new channel to be created from command line OR auto-generate a new one
+            channel_oid = self.config.extra['channel'] or uuid.uuid4()
+
+            # buyer/seller (payment/paying) channel
             channel_type = self.config.extra['channel_type']
+
+            # the delgate allowed to use the channel
             delegate = self.config.extra['delegate']
+
+            # amount of market coins for initial channel balance
             amount = self.config.extra['amount']
+
+            # now open the channel ..
             await self._do_open_channel(market_oid, channel_oid, channel_type, delegate, amount)
         else:
             assert False, 'should not arrive here'
@@ -612,7 +623,7 @@ class Client(ApplicationSession):
         status = await self.call('xbr.marketmaker.get_status')
         current_block_number = status['block']['number']
 
-        if amount > 0:
+        if False and amount > 0:
             if channel_type == ChannelType.PAYMENT:
                 allowance1 = xbr.xbrtoken.functions.allowance(member_adr, xbr.xbrchannel.address).call()
                 xbr.xbrtoken.functions.approve(xbr.xbrchannel.address, amount).transact({'from': member_adr, 'gas': self._default_gas})
