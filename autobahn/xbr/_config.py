@@ -66,6 +66,7 @@ class Profile(object):
                  cskey=None,
                  market_url=None,
                  market_realm=None,
+                 infura_url=None,
                  infura_network=None,
                  infura_key=None,
                  infura_secret=None):
@@ -74,6 +75,7 @@ class Profile(object):
         self.cskey = cskey
         self.market_url = market_url
         self.market_realm = market_realm
+        self.infura_url = infura_url
         self.infura_network = infura_network
         self.infura_key = infura_key
         self.infura_secret = infura_secret
@@ -87,6 +89,7 @@ class Profile(object):
         infura_network = None
         infura_key = None
         infura_secret = None
+        infura_url = None
         for k, v in items:
             if k == 'market_url':
                 market_url = str(v)
@@ -102,11 +105,13 @@ class Profile(object):
                 infura_key = str(v)
             elif k == 'infura_secret':
                 infura_secret = str(v)
+            elif k == 'infura_url':
+                infura_url = str(v)
             else:
                 # skip unknown attribute
                 Profile.log.warn('unprocessed config attribute "{}"'.format(k))
 
-        return Profile(name, ethkey, cskey, market_url, market_realm, infura_network, infura_key, infura_secret)
+        return Profile(name, ethkey, cskey, market_url, market_realm, infura_url, infura_network, infura_key, infura_secret)
 
 
 class UserConfig(object):
@@ -255,6 +260,7 @@ cskey={cskey}
 market_url={market_url}
 
 # Infura blockchain gateway configuration
+infura_url={infura_url}
 infura_network={infura_network}
 infura_key={infura_key}
 infura_secret={infura_secret}
@@ -278,11 +284,13 @@ def load_or_create_profile(dotdir=None, profile=None):
             market_realm = click.prompt('enter the WAMP realm of the XBR data market', type=str)
             ethkey = prompt_for_key('your private Etherum key', 32)
             cskey = prompt_for_key('your private WAMP client key', 32)
-            infura_key = prompt_for_key('your Infura gateway key', 16)
-            infura_secret = prompt_for_key('your Infura gateway secret', 16)
+            infura_network = click.prompt('enter your Infura gateway URL', type=str, default='rinkeby')
+            infura_url = click.prompt('enter your Infura gateway URL', type=str)
+            infura_key = click.prompt('your Infura gateway key', type=str)
+            infura_secret = click.prompt('your Infura gateway secret', type=str)
             f.write(_DEFAULT_CONFIG.format(market_url=market_url, market_realm=market_realm, ethkey=ethkey,
-                                           cskey=cskey, infura_network='rinkeby', infura_key=infura_key,
-                                           infura_secret=infura_secret))
+                                           cskey=cskey, infura_url=infura_url, infura_network=infura_network,
+                                           infura_key=infura_key, infura_secret=infura_secret))
             click.echo('created new local user configuration {}'.format(style_ok(config_path)))
 
     config_obj = UserConfig(config_path)

@@ -51,6 +51,7 @@ import txaio
 txaio.use_twisted()
 
 from twisted.internet import reactor
+from twisted.internet.threads import deferToThread
 from twisted.internet.error import ReactorNotRunning
 
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
@@ -63,6 +64,7 @@ from autobahn.xbr import sign_eip712_member_register, sign_eip712_market_create,
 from autobahn.xbr import ActorType, ChannelType
 
 from autobahn.xbr._config import load_or_create_profile
+from autobahn.xbr._util import hlval, hltype
 
 
 _COMMANDS = ['version', 'get-member', 'register-member', 'register-member-verify',
@@ -80,6 +82,7 @@ class Client(ApplicationSession):
 
         # FIXME
         self._default_gas = 100000
+        self._chain_id = 4
 
         profile = config.extra['profile']
 
@@ -638,18 +641,26 @@ class Client(ApplicationSession):
 
         if amount > 0:
             if channel_type == ChannelType.PAYMENT:
-                allowance1 = xbr.xbrtoken.functions.allowance(member_adr, xbr.xbrchannel.address).call()
-                xbr.xbrtoken.functions.approve(xbr.xbrchannel.address, amount).transact({'from': member_adr, 'gas': self._default_gas})
-                allowance2 = xbr.xbrtoken.functions.allowance(member_adr, xbr.xbrchannel.address).call()
-                assert allowance2 - allowance1 == amount
+                from_adr = member_adr
+                to_adr = xbr.xbrchannel.address
             elif channel_type == ChannelType.PAYING:
-                allowance1 = xbr.xbrtoken.functions.allowance(marketmaker, xbr.xbrchannel.address).call()
-                xbr.xbrtoken.functions.approve(xbr.xbrchannel.address, amount).transact(
-                    {'from': marketmaker, 'gas': self._default_gas})
-                allowance2 = xbr.xbrtoken.functions.allowance(marketmaker, xbr.xbrchannel.address).call()
-                assert allowance2 - allowance1 == amount
+                from_adr = marketmaker
+                to_adr = xbr.xbrchannel.address
             else:
                 assert False, 'should not arrive here'
+
+            # allowance1 = xbr.xbrtoken.functions.allowance(transact_from, xbr.xbrchannel.address).call()
+            # xbr.xbrtoken.functions.approve(to_adr, amount).transact(
+            #     {'from': transact_from, 'gas': transact_gas})
+            # allowance2 = xbr.xbrtoken.functions.allowance(transact_from, xbr.xbrchannel.address).call()
+            # assert allowance2 - allowance1 == amount
+
+            try:
+                txn_hash = await deferToThread(self._send_Allowance, from_adr, to_adr, amount)
+                self.log.info('transaction submitted, txn_hash={txn_hash}', txn_hash=txn_hash)
+            except Exception as e:
+                self.log.failure()
+                raise e
 
         # compute EIP712 signature, and sign using member private key
         signature = sign_eip712_channel_open(member_key, verifying_chain_id, verifying_contract_adr, channel_type,
@@ -663,6 +674,51 @@ class Client(ApplicationSession):
 
         self.log.info('Channel open request submitted:\n\n{channel_request}\n',
                       channel_request=pformat(channel_request))
+
+    def _send_Allowance(self, from_adr, to_adr, amount):
+        # FIXME: estimate gas required for call
+        gas = self._default_gas
+        gasPrice = self._w3.toWei('10', 'gwei')
+
+        from_adr = self._ethadr
+
+        # each submitted transaction must contain a nonce, which is obtained by the on-chain transaction number
+        # for this account, including pending transactions (I think ..;) ..
+        nonce = self._w3.eth.getTransactionCount(from_adr, block_identifier='pending')
+        self.log.info('{func}::[1/4] - Ethereum transaction nonce: nonce={nonce}',
+                      func=hltype(self._send_Allowance),
+                      nonce=nonce)
+
+        # serialize transaction raw data from contract call and transaction settings
+        raw_transaction = xbr.xbrtoken.functions.approve(to_adr, amount).buildTransaction({
+            'from': from_adr,
+            'gas': gas,
+            'gasPrice': gasPrice,
+            'chainId': self._chain_id,  # https://stackoverflow.com/a/57901206/884770
+            'nonce': nonce,
+        })
+        self.log.info(
+            '{func}::[2/4] - Ethereum transaction created: raw_transaction=\n{raw_transaction}\n',
+            func=hltype(self._send_Allowance),
+            raw_transaction=raw_transaction)
+
+        # compute signed transaction from above serialized raw transaction
+        signed_txn = self._w3.eth.account.sign_transaction(raw_transaction, private_key=self._ethkey_raw)
+        self.log.info(
+            '{func}::[3/4] - Ethereum transaction signed: signed_txn=\n{signed_txn}\n',
+            func=hltype(self._send_Allowance),
+            signed_txn=hlval(binascii.b2a_hex(signed_txn.rawTransaction).decode()))
+
+        # now send the pre-signed transaction to the blockchain via the gateway ..
+        # https://web3py.readthedocs.io/en/stable/web3.eth.html  # web3.eth.Eth.sendRawTransaction
+        txn_hash = self._w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+        txn_hash = bytes(txn_hash)
+        self.log.info(
+            '{func}::[4/4] - Ethereum transaction submitted: txn_hash=0x{txn_hash}',
+            func=hltype(self._send_Allowance),
+            txn_hash=hlval(binascii.b2a_hex(txn_hash).decode()))
+
+        return txn_hash
 
 
 def _main():
@@ -823,6 +879,7 @@ def _main():
         profile = load_or_create_profile()
 
         if args.command is None or args.command == 'noop':
+            print('no command given. select from: {}'.format(', '.join(_COMMANDS)))
             sys.exit(0)
 
         # only start txaio logging after above, which runs click (interactively)

@@ -50,7 +50,6 @@ if 'XBR_DEBUG_TOKEN_ADDR' in os.environ:
     XBR_DEBUG_TOKEN_ADDR = _token_adr
 else:
     XBR_DEBUG_TOKEN_ADDR = '0x8d41eF64D49eA1550B4b41a8959D856601441503'
-    print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_TOKEN_ADDR manually.')
 
 if 'XBR_DEBUG_NETWORK_ADDR' in os.environ:
     _netw_adr = os.environ['XBR_DEBUG_NETWORK_ADDR']
@@ -62,7 +61,6 @@ if 'XBR_DEBUG_NETWORK_ADDR' in os.environ:
     XBR_DEBUG_NETWORK_ADDR = _netw_adr
 else:
     XBR_DEBUG_NETWORK_ADDR = '0xBfB616f885D581328FC6c3ad53481231Cc9b1bcf'
-    print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_NETWORK_ADDR manually.')
 
 if 'XBR_DEBUG_MARKET_ADDR' in os.environ:
     _mrkt_adr = os.environ['XBR_DEBUG_MARKET_ADDR']
@@ -74,7 +72,6 @@ if 'XBR_DEBUG_MARKET_ADDR' in os.environ:
     XBR_DEBUG_MARKET_ADDR = _mrkt_adr
 else:
     XBR_DEBUG_MARKET_ADDR = '0x27d4E6534134d9B1b5E2190cf8Ea170C8D05fb66'
-    print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_MARKET_ADDR manually.')
 
 if 'XBR_DEBUG_CATALOG_ADDR' in os.environ:
     _ctlg_adr = os.environ['XBR_DEBUG_CATALOG_ADDR']
@@ -86,7 +83,6 @@ if 'XBR_DEBUG_CATALOG_ADDR' in os.environ:
     XBR_DEBUG_CATALOG_ADDR = _ctlg_adr
 else:
     XBR_DEBUG_CATALOG_ADDR = '0x96284C34bD2A805589F9673F2534ED691672cAa0'
-    print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_CATALOG_ADDR manually.')
 
 if 'XBR_DEBUG_CHANNEL_ADDR' in os.environ:
     _chnl_adr = os.environ['XBR_DEBUG_CHANNEL_ADDR']
@@ -98,7 +94,6 @@ if 'XBR_DEBUG_CHANNEL_ADDR' in os.environ:
     XBR_DEBUG_CHANNEL_ADDR = _chnl_adr
 else:
     XBR_DEBUG_CHANNEL_ADDR = '0xA20C8bA0e86606cCBEE14A50acA0604Ce667F508'
-    print('WARNING: The XBR smart contracts are not yet deployed to public networks. Please set XBR_DEBUG_CHANNEL_ADDR manually.')
 
 
 def _load_json(contract_name):
