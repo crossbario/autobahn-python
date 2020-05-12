@@ -311,7 +311,7 @@ class Serializer(object):
         self._unserialized_rated_messages += int(math.ceil(float(len(payload)) / self.RATED_MESSAGE_SIZE))
 
         # maybe auto-reset and trigger user callback ..
-        if self._autoreset_callback and ((self._autoreset_duration and (time_ns() - self._stats_reset) >= self._autoreset_duration) or(self._autoreset_rated_messages and self.stats_rated_messages() >= self._autoreset_rated_messages)):
+        if self._autoreset_callback and ((self._autoreset_duration and (time_ns() - self._stats_reset) >= self._autoreset_duration) or (self._autoreset_rated_messages and self.stats_rated_messages() >= self._autoreset_rated_messages)):
             stats = self.stats(reset=True)
             self._autoreset_callback(stats)
 
