@@ -2615,7 +2615,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 except ValueError:
                     return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (str(p.strip()), str(self.http_request_host)))
 
-                # do port checking only if externalPort or URL was set
+                # do port checking only if externalPort was set
                 if self.factory.externalPort:
                     if port != self.factory.externalPort:
                         return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
@@ -2623,14 +2623,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     self.log.debug("skipping opening handshake port checking - neither WS URL nor external port set")
 
                 self.http_request_host = h
-
-            else:
-                # do port checking only if externalPort or URL was set
-                if self.factory.externalPort:
-                    if not ((self.factory.isSecure and self.factory.externalPort == 443) or (not self.factory.isSecure and self.factory.externalPort == 80)):
-                        return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
-                else:
-                    self.log.debug("skipping opening handshake port checking - neither WS URL nor external port set")
 
             # Upgrade
             #
@@ -3195,10 +3187,7 @@ class WebSocketServerFactory(WebSocketFactory):
         self.server = server
         self.headers = headers or {}
 
-        if externalPort:
-            self.externalPort = externalPort
-        else:
-            self.externalPort = None
+        self.externalPort = externalPort
 
     def resetProtocolOptions(self):
         """
