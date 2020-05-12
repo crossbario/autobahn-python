@@ -26,11 +26,18 @@
 
 import sys
 from autobahn import xbr
+from autobahn import __version__
 
 if not xbr.HAS_XBR:
     print("\nYou must install the [xbr] extra to use xbrnetwork")
     print("For example, \"pip install autobahn[xbr]\".")
     sys.exit(1)
+
+from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_MARKET_ADDR, \
+    XBR_DEBUG_CATALOG_ADDR, XBR_DEBUG_CHANNEL_ADDR
+
+from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, \
+    XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC
 
 import uuid
 import binascii
@@ -44,11 +51,13 @@ import hashlib
 import multihash
 import cbor2
 
-import txaio
+import numpy as np
 
+import txaio
 txaio.use_twisted()
 
 from twisted.internet import reactor
+from twisted.internet.threads import deferToThread
 from twisted.internet.error import ReactorNotRunning
 
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
@@ -60,15 +69,11 @@ from autobahn.xbr import pack_uint256, unpack_uint256, sign_eip712_channel_open,
 from autobahn.xbr import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
 from autobahn.xbr import ActorType, ChannelType
 
+from autobahn.xbr._config import load_or_create_profile
+from autobahn.xbr._util import hlval, hlid, hltype
 
-_INFURA_CONFIG = {
-    "type": "infura",
-    "network": "rinkeby",
-    "key": "40************************",
-    "secret": "55*************************"
-}
 
-_COMMANDS = ['get-member', 'register-member', 'register-member-verify',
+_COMMANDS = ['version', 'get-member', 'register-member', 'register-member-verify',
              'get-market', 'create-market', 'create-market-verify',
              'get-actor', 'join-market', 'join-market-verify',
              'get-channel', 'open-channel', 'close-channel']
@@ -77,24 +82,33 @@ _COMMANDS = ['get-member', 'register-member', 'register-member-verify',
 class Client(ApplicationSession):
 
     def __init__(self, config=None):
-        self.log.info('{klass}.__init__(config={config})', klass=self.__class__.__name__, config=config)
-
         ApplicationSession.__init__(self, config)
 
         # FIXME
         self._default_gas = 100000
+        self._chain_id = 4
 
-        self._ethkey_raw = config.extra['ethkey']
+        profile = config.extra['profile']
+
+        if 'ethkey' in config.extra and config.extra['ethkey']:
+            self._ethkey_raw = config.extra['ethkey']
+        else:
+            self._ethkey_raw = profile.ethkey
+
         self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
         self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
         self._ethadr_raw = binascii.a2b_hex(self._ethadr[2:])
 
-        self.log.info("Client (delegate) Ethereum key loaded (adr=0x{adr})",
-                      adr=self._ethadr)
+        self.log.info('Client Ethereum key loaded, public address is {adr}',
+                      func=hltype(self.__init__), adr=hlid(self._ethadr))
 
-        self._key = cryptosign.SigningKey.from_key_bytes(config.extra['cskey'])
-        self.log.info("Client (delegate) WAMP-cryptosign authentication key loaded (pubkey=0x{pubkey})",
-                      pubkey=self._key.public_key())
+        if 'cskey' in config.extra and config.extra['cskey']:
+            cskey = config.extra['cskey']
+        else:
+            cskey = profile.cskey
+        self._key = cryptosign.SigningKey.from_key_bytes(cskey)
+        self.log.info('Client WAMP authentication key loaded, public key is {pubkey}',
+                      func=hltype(self.__init__), pubkey=hlid('0x' + self._key.public_key()))
 
         self._running = True
 
@@ -103,8 +117,6 @@ class Client(ApplicationSession):
         self.leave('wamp.error', msg)
 
     def onConnect(self):
-        self.log.info('{klass}.onConnect()', klass=self.__class__.__name__)
-
         if self.config.realm == 'xbrnetwork':
             authextra = {
                 'pubkey': self._key.public_key(),
@@ -112,13 +124,15 @@ class Client(ApplicationSession):
                 'challenge': None,
                 'channel_binding': 'tls-unique'
             }
+            self.log.info('Client connected, now joining realm "{realm}" with WAMP-cryptosign authentication ..',
+                          realm=hlid(self.config.realm))
             self.join(self.config.realm, authmethods=['cryptosign'], authextra=authextra)
         else:
+            self.log.info('Client connected, now joining realm "{realm}" (no authentication) ..',
+                          realm=hlid(self.config.realm))
             self.join(self.config.realm)
 
     def onChallenge(self, challenge):
-        self.log.info('{klass}.onChallenge(challenge={challenge})', klass=self.__class__.__name__, challenge=challenge)
-
         if challenge.method == 'cryptosign':
             signed_challenge = self._key.sign_challenge(self, challenge)
             return signed_challenge
@@ -126,7 +140,12 @@ class Client(ApplicationSession):
             raise RuntimeError('unable to process authentication method {}'.format(challenge.method))
 
     async def onJoin(self, details):
-        self.log.info('{klass}.onJoin(details={details})', klass=self.__class__.__name__, details=details)
+        self.log.info('Ok, client joined on realm "{realm}" [session={session}, authid="{authid}", authrole="{authrole}"]',
+                      realm=hlid(details.realm),
+                      session=hlid(details.session),
+                      authid=hlid(details.authid),
+                      authrole=hlid(details.authrole),
+                      details=details)
         try:
             if details.realm == 'xbrnetwork':
                 await self._do_xbrnetwork_realm(details)
@@ -139,22 +158,16 @@ class Client(ApplicationSession):
             self.leave()
 
     def onLeave(self, details):
-        self.log.info('{klass}.onLeave(details={details})', klass=self.__class__.__name__, details=details)
-
+        self.log.info('Client left realm (reason="{reason}")', reason=hlval(details.reason))
         self._running = False
 
         if details.reason == 'wamp.close.normal':
-            self.log.info('Shutting down ..')
             # user initiated leave => end the program
             self.config.runner.stop()
             self.disconnect()
-        else:
-            # continue running the program (let ApplicationRunner perform auto-reconnect attempts ..)
-            self.log.info('Will continue to run (reconnect)!')
 
     def onDisconnect(self):
-        self.log.info('{klass}.onDisconnect()', klass=self.__class__.__name__)
-
+        self.log.info('Client disconnected')
         try:
             reactor.stop()
         except ReactorNotRunning:
@@ -181,8 +194,8 @@ class Client(ApplicationSession):
         else:
             # WAMP authid on xbrnetwork follows this format: "member-"
             member_oid = uuid.UUID(details.authid[7:])
-            member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
-            self.log.info('already a member in the XBR network:\n\n{member_data}\n', member_data=pformat(member_data))
+            # member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+            # self.log.info('Address is already a member in the XBR network:\n\n{member_data}', member_data=pformat(member_data))
 
             assert command in ['get-member', 'get-market', 'create-market', 'create-market-verify',
                                'get-actor', 'join-market', 'join-market-verify']
@@ -230,7 +243,16 @@ class Client(ApplicationSession):
                 assert False, 'should not arrive here'
 
     async def _do_market_realm(self, details):
-        self._w3 = make_w3(_INFURA_CONFIG)
+        profile = self.config.extra['profile']
+
+        blockchain_gateway = {
+            "type": "infura",
+            "network": profile.infura_network,
+            "key": profile.infura_key,
+            "secret": profile.infura_secret
+        }
+
+        self._w3 = make_w3(blockchain_gateway)
         xbr.setProvider(self._w3)
 
         command = self.config.extra['command']
@@ -246,11 +268,22 @@ class Client(ApplicationSession):
             else:
                 assert False, 'should not arrive here'
         elif command == 'open-channel':
+            # market in which to open the new buyer/seller (payment/paying) channel
             market_oid = self.config.extra['market']
-            channel_oid = self.config.extra['channel']
+
+            # read UUID of the new channel to be created from command line OR auto-generate a new one
+            channel_oid = self.config.extra['channel'] or uuid.uuid4()
+
+            # buyer/seller (payment/paying) channel
             channel_type = self.config.extra['channel_type']
+
+            # the delgate allowed to use the channel
             delegate = self.config.extra['delegate']
+
+            # amount of market coins for initial channel balance
             amount = self.config.extra['amount']
+
+            # now open the channel ..
             await self._do_open_channel(market_oid, channel_oid, channel_type, delegate, amount)
         else:
             assert False, 'should not arrive here'
@@ -259,13 +292,29 @@ class Client(ApplicationSession):
         is_member = await self.call('network.xbr.console.is_member', member_adr)
         if is_member:
             member_data = await self.call('network.xbr.console.get_member_by_wallet', member_adr)
-            member_adr = web3.Web3.toChecksumAddress(member_data['address'])
+
+            member_data['address'] = web3.Web3.toChecksumAddress(member_data['address'])
+            member_data['oid'] = uuid.UUID(bytes=member_data['oid'])
+            member_data['balance']['eth'] = web3.Web3.fromWei(unpack_uint256(member_data['balance']['eth']), 'ether')
+            member_data['balance']['xbr'] = web3.Web3.fromWei(unpack_uint256(member_data['balance']['xbr']), 'ether')
+            member_data['created'] = np.datetime64(member_data['created'], 'ns')
+
             member_level = member_data['level']
-            member_balance_eth = int(unpack_uint256(member_data['balance']['eth']) / 10 ** 18)
-            member_balance_xbr = int(unpack_uint256(member_data['balance']['xbr']) / 10 ** 18)
-            self.log.info('Found member with address {member_adr}, member level {member_level}: {member_balance_eth} ETH, {member_balance_xbr} XBR',
-                          member_adr=member_adr, member_level=member_level, member_balance_eth=member_balance_eth,
-                          member_balance_xbr=member_balance_xbr)
+            MEMBER_LEVEL_TO_STR = {
+                # Member is active.
+                1: 'ACTIVE',
+                # Member is active and verified.
+                2: 'VERIFIED',
+                # Member is retired.
+                3: 'RETIRED',
+                # Member is subject to a temporary penalty.
+                4: 'PENALTY',
+                # Member is currently blocked and cannot current actively participate in the market.
+                5: 'BLOCKED',
+            }
+            member_data['level'] = MEMBER_LEVEL_TO_STR.get(member_level, None)
+
+            self.log.info('Member found:\n\n{member_data}\n', member_data=pformat(member_data))
         else:
             self.log.warn('Address 0x{member_adr} is not a member in the XBR network',
                           member_adr=binascii.b2a_hex(member_adr).decode())
@@ -274,29 +323,50 @@ class Client(ApplicationSession):
         is_member = await self.call('network.xbr.console.is_member', actor_adr)
         if is_member:
             actor = await self.call('network.xbr.console.get_member_by_wallet', actor_adr)
-            actor_oid = actor['oid']
+            actor_oid = uuid.UUID(bytes=actor['oid'])
             actor_adr = web3.Web3.toChecksumAddress(actor['address'])
             actor_level = actor['level']
-            actor_balance_eth = int(unpack_uint256(actor['balance']['eth']) / 10 ** 18)
-            actor_balance_xbr = int(unpack_uint256(actor['balance']['xbr']) / 10 ** 18)
-            self.log.info('Found member with address {member_adr}, member level {member_level}: {member_balance_eth} ETH, {member_balance_xbr} XBR',
-                          member_adr=actor_adr, member_level=actor_level, member_balance_eth=actor_balance_eth,
-                          member_balance_xbr=actor_balance_xbr)
+            actor_balance_eth = web3.Web3.fromWei(unpack_uint256(actor['balance']['eth']), 'ether')
+            actor_balance_xbr = web3.Web3.fromWei(unpack_uint256(actor['balance']['xbr']), 'ether')
+            self.log.info('Found member with address {member_adr} (member level {member_level}, balances: {member_balance_eth} ETH, {member_balance_xbr} XBR)',
+                          member_adr=hlid(actor_adr),
+                          member_level=hlval(actor_level),
+                          member_balance_eth=hlval(actor_balance_eth),
+                          member_balance_xbr=hlval(actor_balance_xbr))
 
             if market_oid:
-                # FIXME
-                raise NotImplementedError()
+                market_oids = [market_oid.bytes]
             else:
-                market_oids = await self.call('network.xbr.console.get_markets_by_actor', actor_oid)
-                if market_oids:
-                    self.log.info('Member is actor in {cnt_markets} markets!', cnt_markets=len(market_oids))
-                    for market_oid in market_oids:
-                        market = await self.call('network.xbr.console.get_market', market_oid)
-                        self.log.info('Actor is joined to market {market_oid} (market owner 0x{owner_oid})',
-                                      market_oid=uuid.UUID(bytes=market_oid),
-                                      owner_oid=binascii.b2a_hex(market['owner']).decode())
-                else:
-                    self.log.info('Member is not yet actor in any market!')
+                market_oids = await self.call('network.xbr.console.get_markets_by_actor', actor_oid.bytes)
+
+            if market_oids:
+                for market_oid in market_oids:
+                    # market = await self.call('network.xbr.console.get_market', market_oid)
+                    result = await self.call('network.xbr.console.get_actor_in_market', market_oid, actor['address'])
+                    for actor in result:
+                        actor['actor'] = web3.Web3.toChecksumAddress(actor['actor'])
+                        actor['timestamp'] = np.datetime64(actor['timestamp'], 'ns')
+                        actor['joined'] = unpack_uint256(actor['joined']) if actor['joined'] else None
+                        actor['market'] = uuid.UUID(bytes=actor['market'])
+                        actor['security'] = web3.Web3.fromWei(unpack_uint256(actor['security']), 'ether') if actor['security'] else None
+                        actor['signature'] = '0x' + binascii.b2a_hex(actor['signature']).decode() if actor['signature'] else None
+                        actor['tid'] = '0x' + binascii.b2a_hex(actor['tid']).decode() if actor['tid'] else None
+
+                        actor_type = actor['actor_type']
+                        ACTOR_TYPE_TO_STR = {
+                            # Actor is a XBR Provider.
+                            1: 'PROVIDER',
+                            # Actor is a XBR Consumer.
+                            2: 'CONSUMER',
+                            # Actor is both a XBR Provider and XBR Consumer.
+                            3: 'PROVIDER_CONSUMER',
+                        }
+                        actor['actor_type'] = ACTOR_TYPE_TO_STR.get(actor_type, None)
+
+                        self.log.info('Actor is joined to market {market_oid}:\n\n{actor}\n',
+                                      market_oid=hlid(uuid.UUID(bytes=market_oid)), actor=pformat(actor))
+            else:
+                self.log.info('Member is not yet actor in any market!')
         else:
             self.log.warn('Address 0x{member_adr} is not a member in the XBR network',
                           member_adr=binascii.b2a_hex(actor_adr).decode())
@@ -526,11 +596,18 @@ class Client(ApplicationSession):
             if market['owner'] == member_adr:
                 self.log.info('You are market owner (operator)!')
             else:
-                self.log.info('Marked is owned by {owner}', owner=market['owner'])
+                self.log.info('Marked is owned by {owner}', owner=hlid(web3.Web3.toChecksumAddress(market['owner'])))
 
-            self.log.info('Market information:\n{market}', market=pformat(market))
+            market['market'] = uuid.UUID(bytes=market['market'])
+            market['owner'] = web3.Web3.toChecksumAddress(market['owner'])
+            market['maker'] = web3.Web3.toChecksumAddress(market['maker'])
+            market['coin'] = web3.Web3.toChecksumAddress(market['coin'])
+            market['timestamp'] = np.datetime64(market['timestamp'], 'ns')
+
+            self.log.info('Market {market_oid} information:\n\n{market}\n',
+                          market_oid=hlid(market_oid), market=pformat(market))
         else:
-            self.log.warn('No market {market_oid} found', market_oid)
+            self.log.warn('No market {market_oid} found!', market_oid=hlid(market_oid))
 
     async def _do_join_market(self, member_oid, market_oid, actor_type):
 
@@ -601,8 +678,8 @@ class Client(ApplicationSession):
         member_adr = self._ethkey.public_key.to_canonical_address()
 
         config = await self.call('xbr.marketmaker.get_config')
-        marketmaker = config['marketmaker']
-        recipient = config['owner']
+        marketmaker = binascii.a2b_hex(config['marketmaker'][2:])
+        recipient = binascii.a2b_hex(config['owner'][2:])
         verifying_chain_id = config['verifying_chain_id']
         verifying_contract_adr = binascii.a2b_hex(config['verifying_contract_adr'][2:])
 
@@ -611,18 +688,26 @@ class Client(ApplicationSession):
 
         if amount > 0:
             if channel_type == ChannelType.PAYMENT:
-                allowance1 = xbr.xbrtoken.functions.allowance(member_adr, xbr.xbrchannel.address).call()
-                xbr.xbrtoken.functions.approve(xbr.xbrchannel.address, amount).transact({'from': member_adr, 'gas': self._default_gas})
-                allowance2 = xbr.xbrtoken.functions.allowance(member_adr, xbr.xbrchannel.address).call()
-                assert allowance2 - allowance1 == amount
+                from_adr = member_adr
+                to_adr = xbr.xbrchannel.address
             elif channel_type == ChannelType.PAYING:
-                allowance1 = xbr.xbrtoken.functions.allowance(marketmaker, xbr.xbrchannel.address).call()
-                xbr.xbrtoken.functions.approve(xbr.xbrchannel.address, amount).transact(
-                    {'from': marketmaker, 'gas': self._default_gas})
-                allowance2 = xbr.xbrtoken.functions.allowance(marketmaker, xbr.xbrchannel.address).call()
-                assert allowance2 - allowance1 == amount
+                from_adr = marketmaker
+                to_adr = xbr.xbrchannel.address
             else:
                 assert False, 'should not arrive here'
+
+            # allowance1 = xbr.xbrtoken.functions.allowance(transact_from, xbr.xbrchannel.address).call()
+            # xbr.xbrtoken.functions.approve(to_adr, amount).transact(
+            #     {'from': transact_from, 'gas': transact_gas})
+            # allowance2 = xbr.xbrtoken.functions.allowance(transact_from, xbr.xbrchannel.address).call()
+            # assert allowance2 - allowance1 == amount
+
+            try:
+                txn_hash = await deferToThread(self._send_Allowance, from_adr, to_adr, amount)
+                self.log.info('transaction submitted, txn_hash={txn_hash}', txn_hash=txn_hash)
+            except Exception as e:
+                self.log.failure()
+                raise e
 
         # compute EIP712 signature, and sign using member private key
         signature = sign_eip712_channel_open(member_key, verifying_chain_id, verifying_contract_adr, channel_type,
@@ -637,11 +722,60 @@ class Client(ApplicationSession):
         self.log.info('Channel open request submitted:\n\n{channel_request}\n',
                       channel_request=pformat(channel_request))
 
+    def _send_Allowance(self, from_adr, to_adr, amount):
+        # FIXME: estimate gas required for call
+        gas = self._default_gas
+        gasPrice = self._w3.toWei('10', 'gwei')
+
+        from_adr = self._ethadr
+
+        # each submitted transaction must contain a nonce, which is obtained by the on-chain transaction number
+        # for this account, including pending transactions (I think ..;) ..
+        nonce = self._w3.eth.getTransactionCount(from_adr, block_identifier='pending')
+        self.log.info('{func}::[1/4] - Ethereum transaction nonce: nonce={nonce}',
+                      func=hltype(self._send_Allowance),
+                      nonce=nonce)
+
+        # serialize transaction raw data from contract call and transaction settings
+        raw_transaction = xbr.xbrtoken.functions.approve(to_adr, amount).buildTransaction({
+            'from': from_adr,
+            'gas': gas,
+            'gasPrice': gasPrice,
+            'chainId': self._chain_id,  # https://stackoverflow.com/a/57901206/884770
+            'nonce': nonce,
+        })
+        self.log.info(
+            '{func}::[2/4] - Ethereum transaction created: raw_transaction=\n{raw_transaction}\n',
+            func=hltype(self._send_Allowance),
+            raw_transaction=raw_transaction)
+
+        # compute signed transaction from above serialized raw transaction
+        signed_txn = self._w3.eth.account.sign_transaction(raw_transaction, private_key=self._ethkey_raw)
+        self.log.info(
+            '{func}::[3/4] - Ethereum transaction signed: signed_txn=\n{signed_txn}\n',
+            func=hltype(self._send_Allowance),
+            signed_txn=hlval(binascii.b2a_hex(signed_txn.rawTransaction).decode()))
+
+        # now send the pre-signed transaction to the blockchain via the gateway ..
+        # https://web3py.readthedocs.io/en/stable/web3.eth.html  # web3.eth.Eth.sendRawTransaction
+        txn_hash = self._w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+        txn_hash = bytes(txn_hash)
+        self.log.info(
+            '{func}::[4/4] - Ethereum transaction submitted: txn_hash=0x{txn_hash}',
+            func=hltype(self._send_Allowance),
+            txn_hash=hlval(binascii.b2a_hex(txn_hash).decode()))
+
+        return txn_hash
+
 
 def _main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('command', type=str, choices=_COMMANDS,
+    parser.add_argument('command',
+                        type=str,
+                        choices=_COMMANDS,
+                        const='noop',
+                        nargs='?',
                         help='Command to run')
 
     parser.add_argument('-d',
@@ -777,42 +911,71 @@ def _main():
 
     args = parser.parse_args()
 
-    if args.debug:
-        txaio.start_logging(level='debug')
+    if args.command == 'version':
+        print('')
+        print(' XBR CLI v{}\n'.format(__version__))
+        print('   XBRToken   contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_TOKEN_ADDR), XBR_DEBUG_TOKEN_ADDR_SRC))
+        print('   XBRNetwork contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_NETWORK_ADDR), XBR_DEBUG_NETWORK_ADDR_SRC))
+        print('   XBRMarket  contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_MARKET_ADDR), XBR_DEBUG_MARKET_ADDR_SRC))
+        print('   XBRCatalog contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_CATALOG_ADDR), XBR_DEBUG_CATALOG_ADDR_SRC))
+        print('   XBRChannel contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_CHANNEL_ADDR), XBR_DEBUG_CHANNEL_ADDR_SRC))
+        print('')
     else:
-        txaio.start_logging(level='info')
+        if args.command is None or args.command == 'noop':
+            print('no command given. select from: {}'.format(', '.join(_COMMANDS)))
+            sys.exit(0)
 
-    extra = {
-        'command': args.command,
-        'ethkey': binascii.a2b_hex(args.ethkey[2:]),
-        'cskey': binascii.a2b_hex(args.cskey[2:]),
-        'username': args.username,
-        'email': args.email,
-        'market': uuid.UUID(args.market) if args.market else None,
-        'market_title': args.market_title,
-        'market_label': args.market_label,
-        'market_homepage': args.market_homepage,
-        'market_provider_security': args.provider_security or 0,
-        'market_consumer_security': args.consumer_security or 0,
-        'market_fee': args.market_fee or 0,
-        'marketmaker': binascii.a2b_hex(args.marketmaker[2:]) if args.marketmaker else None,
-        'actor_type': args.actor_type,
-        'vcode': args.vcode,
-        'vaction': uuid.UUID(args.vaction) if args.vaction else None,
-        'channel': uuid.UUID(args.channel) if args.channel else None,
-        'channel_type': args.channel_type,
-        'delegate': binascii.a2b_hex(args.delegate[2:]) if args.delegate else None,
-        'amount': args.amount or 0,
-    }
-    runner = ApplicationRunner(url=args.url, realm=args.realm, extra=extra, serializers=[CBORSerializer()])
+        # read or create a user profile
+        profile = load_or_create_profile()
 
-    try:
-        runner.run(Client, auto_reconnect=False)
-    except Exception as e:
-        print(e)
-        sys.exit(1)
-    else:
-        sys.exit(0)
+        # only start txaio logging after above, which runs click (interactively)
+        if args.debug:
+            txaio.start_logging(level='debug')
+        else:
+            txaio.start_logging(level='info')
+
+        log = txaio.make_logger()
+
+        log.info('XBR CLI {version}', version=hlid('v' + __version__))
+        log.info('Profile {profile} loaded from {path}', profile=hlval(profile.name), path=hlval(profile.path))
+
+        extra = {
+            # user profile and defaults
+            'profile': profile,
+
+            # allow to override, and add more arguments from the command line
+            'command': args.command,
+            'ethkey': binascii.a2b_hex(args.ethkey[2:]) if args.ethkey else None,
+            'cskey': binascii.a2b_hex(args.cskey[2:]) if args.cskey else None,
+            'username': args.username,
+            'email': args.email,
+            'market': uuid.UUID(args.market) if args.market else None,
+            'market_title': args.market_title,
+            'market_label': args.market_label,
+            'market_homepage': args.market_homepage,
+            'market_provider_security': args.provider_security or 0,
+            'market_consumer_security': args.consumer_security or 0,
+            'market_fee': args.market_fee or 0,
+            'marketmaker': binascii.a2b_hex(args.marketmaker[2:]) if args.marketmaker else None,
+            'actor_type': args.actor_type,
+            'vcode': args.vcode,
+            'vaction': uuid.UUID(args.vaction) if args.vaction else None,
+            'channel': uuid.UUID(args.channel) if args.channel else None,
+            'channel_type': args.channel_type,
+            'delegate': binascii.a2b_hex(args.delegate[2:]) if args.delegate else None,
+            'amount': args.amount or 0,
+        }
+        runner = ApplicationRunner(url=args.url, realm=args.realm, extra=extra, serializers=[CBORSerializer()])
+
+        try:
+            log.info('Connecting to "{url}" {realm} ..',
+                     url=hlval(args.url), realm=('at realm "' + hlval(args.realm) + '"' if args.realm else ''))
+            runner.run(Client, auto_reconnect=False)
+        except Exception as e:
+            print(e)
+            sys.exit(1)
+        else:
+            sys.exit(0)
 
 
 if __name__ == '__main__':
