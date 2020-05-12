@@ -35,6 +35,7 @@ from eth_utils.conversions import hexstr_if_str, to_hex
 
 from txaio import make_logger
 from autobahn.websocket.util import parse_url
+from autobahn.xbr._util import hlval, hltype
 
 
 _HAS_COLOR_TERM = False
@@ -61,6 +62,7 @@ class Profile(object):
     log = make_logger()
 
     def __init__(self,
+                 path=None,
                  name=None,
                  ethkey=None,
                  cskey=None,
@@ -70,6 +72,7 @@ class Profile(object):
                  infura_network=None,
                  infura_key=None,
                  infura_secret=None):
+        self.path = path
         self.name = name
         self.ethkey = ethkey
         self.cskey = cskey
@@ -81,7 +84,7 @@ class Profile(object):
         self.infura_secret = infura_secret
 
     @staticmethod
-    def parse(name, items):
+    def parse(path, name, items):
         ethkey = None
         cskey = None
         market_url = None
@@ -111,7 +114,7 @@ class Profile(object):
                 # skip unknown attribute
                 Profile.log.warn('unprocessed config attribute "{}"'.format(k))
 
-        return Profile(name, ethkey, cskey, market_url, market_realm, infura_url, infura_network, infura_key, infura_secret)
+        return Profile(path, name, ethkey, cskey, market_url, market_realm, infura_url, infura_network, infura_key, infura_secret)
 
 
 class UserConfig(object):
@@ -128,15 +131,14 @@ class UserConfig(object):
 
         profiles = {}
         for profile_name in config.sections():
-            profile = Profile.parse(profile_name, config.items(profile_name))
+            profile = Profile.parse(config_path, profile_name, config.items(profile_name))
             profiles[profile_name] = profile
-            self.log.info('Profile "{profile_name}" parsed: {profile}',
-                          profile_name=profile_name,
-                          profile=profile)
 
         self.profiles = profiles
 
-        self.log.info('Profiles loaded for: {profiles}', profiles=sorted(self.profiles.keys()))
+        self.log.debug('profiles loaded: {profiles}',
+                       func=hltype(self.__init__),
+                       profiles=', '.join(hlval(x) for x in sorted(self.profiles.keys())))
 
 
 if 'CROSSBAR_FABRIC_URL' in os.environ:
@@ -271,12 +273,12 @@ def load_or_create_profile(dotdir=None, profile=None):
     dotdir = dotdir or '~/.xbrnetwork'
     profile = profile or 'default'
 
-    cbf_dir = os.path.expanduser(dotdir)
-    if not os.path.isdir(cbf_dir):
-        os.mkdir(cbf_dir)
-        click.echo('created new local user directory {}'.format(style_ok(cbf_dir)))
+    config_dir = os.path.expanduser(dotdir)
+    if not os.path.isdir(config_dir):
+        os.mkdir(config_dir)
+        click.echo('created new local user directory {}'.format(style_ok(config_dir)))
 
-    config_path = os.path.join(cbf_dir, 'config.ini')
+    config_path = os.path.join(config_dir, 'config.ini')
     if not os.path.isfile(config_path):
         click.echo('creating new user profile "{}"'.format(style_ok(profile)))
         with open(config_path, 'w') as f:
@@ -298,7 +300,5 @@ def load_or_create_profile(dotdir=None, profile=None):
 
     if not profile_obj:
         raise click.ClickException('no such profile: "{}"'.format(profile))
-    else:
-        click.echo('user profile "{}" loaded'.format(style_ok(profile)))
 
     return profile_obj

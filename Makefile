@@ -76,6 +76,11 @@ spelling:
 run_docs:
 	twistd --nodaemon web --port=tcp:8090 --path=./docs/build/html/
 
+test_xbr_cli:
+	xbrnetwork
+	xbrnetwork version
+	xbrnetwork get-member
+	xbrnetwork get-market --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3
 
 test_mnemonic:
 	# python -m pytest -rsx autobahn/xbr/test/test_mnemonic.py
