@@ -323,29 +323,50 @@ class Client(ApplicationSession):
         is_member = await self.call('network.xbr.console.is_member', actor_adr)
         if is_member:
             actor = await self.call('network.xbr.console.get_member_by_wallet', actor_adr)
-            actor_oid = actor['oid']
+            actor_oid = uuid.UUID(bytes=actor['oid'])
             actor_adr = web3.Web3.toChecksumAddress(actor['address'])
             actor_level = actor['level']
-            actor_balance_eth = int(unpack_uint256(actor['balance']['eth']) / 10 ** 18)
-            actor_balance_xbr = int(unpack_uint256(actor['balance']['xbr']) / 10 ** 18)
-            self.log.info('Found member with address {member_adr}, member level {member_level}: {member_balance_eth} ETH, {member_balance_xbr} XBR',
-                          member_adr=actor_adr, member_level=actor_level, member_balance_eth=actor_balance_eth,
-                          member_balance_xbr=actor_balance_xbr)
+            actor_balance_eth = web3.Web3.fromWei(unpack_uint256(actor['balance']['eth']), 'ether')
+            actor_balance_xbr = web3.Web3.fromWei(unpack_uint256(actor['balance']['xbr']), 'ether')
+            self.log.info('Found member with address {member_adr} (member level {member_level}, balances: {member_balance_eth} ETH, {member_balance_xbr} XBR)',
+                          member_adr=hlid(actor_adr),
+                          member_level=hlval(actor_level),
+                          member_balance_eth=hlval(actor_balance_eth),
+                          member_balance_xbr=hlval(actor_balance_xbr))
 
             if market_oid:
-                # FIXME
-                raise NotImplementedError()
+                market_oids = [market_oid.bytes]
             else:
-                market_oids = await self.call('network.xbr.console.get_markets_by_actor', actor_oid)
-                if market_oids:
-                    self.log.info('Member is actor in {cnt_markets} markets!', cnt_markets=len(market_oids))
-                    for market_oid in market_oids:
-                        market = await self.call('network.xbr.console.get_market', market_oid)
-                        self.log.info('Actor is joined to market {market_oid} (market owner 0x{owner_oid})',
-                                      market_oid=uuid.UUID(bytes=market_oid),
-                                      owner_oid=binascii.b2a_hex(market['owner']).decode())
-                else:
-                    self.log.info('Member is not yet actor in any market!')
+                market_oids = await self.call('network.xbr.console.get_markets_by_actor', actor_oid.bytes)
+
+            if market_oids:
+                for market_oid in market_oids:
+                    # market = await self.call('network.xbr.console.get_market', market_oid)
+                    result = await self.call('network.xbr.console.get_actor_in_market', market_oid, actor['address'])
+                    for actor in result:
+                        actor['actor'] = web3.Web3.toChecksumAddress(actor['actor'])
+                        actor['timestamp'] = np.datetime64(actor['timestamp'], 'ns')
+                        actor['joined'] = unpack_uint256(actor['joined']) if actor['joined'] else None
+                        actor['market'] = uuid.UUID(bytes=actor['market'])
+                        actor['security'] = web3.Web3.fromWei(unpack_uint256(actor['security']), 'ether') if actor['security'] else None
+                        actor['signature'] = '0x' + binascii.b2a_hex(actor['signature']).decode() if actor['signature'] else None
+                        actor['tid'] = '0x' + binascii.b2a_hex(actor['tid']).decode() if actor['tid'] else None
+
+                        actor_type = actor['actor_type']
+                        ACTOR_TYPE_TO_STR = {
+                            # Actor is a XBR Provider.
+                            1: 'PROVIDER',
+                            # Actor is a XBR Consumer.
+                            2: 'CONSUMER',
+                            # Actor is both a XBR Provider and XBR Consumer.
+                            3: 'PROVIDER_CONSUMER',
+                        }
+                        actor['actor_type'] = ACTOR_TYPE_TO_STR.get(actor_type, None)
+
+                        self.log.info('Actor is joined to market {market_oid}:\n\n{actor}\n',
+                                      market_oid=hlid(uuid.UUID(bytes=market_oid)), actor=pformat(actor))
+            else:
+                self.log.info('Member is not yet actor in any market!')
         else:
             self.log.warn('Address 0x{member_adr} is not a member in the XBR network',
                           member_adr=binascii.b2a_hex(actor_adr).decode())
