@@ -183,7 +183,7 @@ def _read_ssh_ed25519_privkey(keydata):
 
     ssh_end = keydata.find(SSH_END)
     keydata = keydata[len(SSH_BEGIN):ssh_end]
-    keydata = ''.join([x.strip() for x in keydata.split()])
+    keydata = ''.join(x.strip() for x in keydata.split())
     blob = binascii.a2b_base64(keydata)
 
     blob = blob[len(OPENSSH_KEY_V1):]

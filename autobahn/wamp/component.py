@@ -268,9 +268,11 @@ class _Transport(object):
                  retry_delay_growth=1.5,
                  retry_delay_jitter=0.1,
                  proxy=None,
-                 options=dict()):
+                 options=None):
         """
         """
+        if options is None:
+            options = dict()
         self.idx = idx
 
         self.type = kind
