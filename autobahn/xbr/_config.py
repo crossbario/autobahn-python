@@ -286,8 +286,8 @@ def load_or_create_profile(dotdir=None, profile=None):
             market_realm = click.prompt('enter the WAMP realm of the XBR data market', type=str)
             ethkey = prompt_for_key('your private Etherum key', 32)
             cskey = prompt_for_key('your private WAMP client key', 32)
-            infura_network = click.prompt('enter your Infura gateway URL', type=str, default='rinkeby')
-            infura_url = click.prompt('enter your Infura gateway URL', type=str)
+            infura_network = click.prompt('enter Ethereum network to use', type=str, default='rinkeby')
+            infura_url = click.prompt('enter Infura gateway URL', type=str)
             infura_key = click.prompt('your Infura gateway key', type=str)
             infura_secret = click.prompt('your Infura gateway secret', type=str)
             f.write(_DEFAULT_CONFIG.format(market_url=market_url, market_realm=market_realm, ethkey=ethkey,

@@ -6,15 +6,18 @@ Autobahn includes a command-line interface for the `XBR network <https://xbr.net
 Status
 ------
 
+* ``version``
+* ``get-member``
+* ``get-market``
+* ``get-actor``
+
+
 * ``register-member``
 * ``register-member-verify``
-* ``get-member``
 * ``join-market``
 * ``join-market-verify``
-* ``get-actor``
 * ``create-market``
 * ``create-market-verify``
-* ``get-market``
 * ``open-channel``
 * ``get-channel``
 
