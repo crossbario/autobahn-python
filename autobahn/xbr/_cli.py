@@ -33,11 +33,11 @@ if not xbr.HAS_XBR:
     print("For example, \"pip install autobahn[xbr]\".")
     sys.exit(1)
 
-from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_MARKET_ADDR, \
-    XBR_DEBUG_CATALOG_ADDR, XBR_DEBUG_CHANNEL_ADDR
+from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_DOMAIN_ADDR, \
+    XBR_DEBUG_CATALOG_ADDR, XBR_DEBUG_MARKET_ADDR, XBR_DEBUG_CHANNEL_ADDR
 
-from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, \
-    XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC
+from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_DOMAIN_ADDR_SRC, \
+    XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC
 
 import uuid
 import binascii
@@ -916,8 +916,9 @@ def _main():
         print(' XBR CLI v{}\n'.format(__version__))
         print('   XBRToken   contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_TOKEN_ADDR), XBR_DEBUG_TOKEN_ADDR_SRC))
         print('   XBRNetwork contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_NETWORK_ADDR), XBR_DEBUG_NETWORK_ADDR_SRC))
-        print('   XBRMarket  contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_MARKET_ADDR), XBR_DEBUG_MARKET_ADDR_SRC))
+        print('   XBRDomain  contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_DOMAIN_ADDR), XBR_DEBUG_DOMAIN_ADDR_SRC))
         print('   XBRCatalog contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_CATALOG_ADDR), XBR_DEBUG_CATALOG_ADDR_SRC))
+        print('   XBRMarket  contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_MARKET_ADDR), XBR_DEBUG_MARKET_ADDR_SRC))
         print('   XBRChannel contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_CHANNEL_ADDR), XBR_DEBUG_CHANNEL_ADDR_SRC))
         print('')
     else:
