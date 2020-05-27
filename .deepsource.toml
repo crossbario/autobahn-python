@@ -7,7 +7,9 @@ test_patterns = [
 
 exclude_patterns = [
     "twisted/plugins/**",
-    "examples/**"
+    "examples/**",
+	  "*/test/**",
+	  "*/test/**/*.py"
 ]
 
 [[analyzers]]
@@ -16,4 +18,3 @@ enabled = true
 
   [analyzers.meta]
   runtime_version = "3.x.x"
-  
