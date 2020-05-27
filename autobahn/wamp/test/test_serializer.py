@@ -26,6 +26,12 @@
 
 import os
 import unittest
+import txaio
+
+if os.environ.get('USE_TWISTED', False):
+    txaio.use_twisted()
+elif os.environ.get('USE_ASYNCIO', False):
+    txaio.use_asyncio()
 
 from autobahn.wamp import message
 from autobahn.wamp import role
@@ -39,48 +45,99 @@ def generate_test_messages():
 
     This list of WAMP message does not contain any binary app payloads!
     """
+    some_bytes = os.urandom(32)
+    some_unicode = '\u3053\u3093\u306b\u3061\u306f\u4e16\u754c'
+
+    some_uri = 'com.myapp.foobar'
+    some_unicode_uri = 'com.myapp.\u4f60\u597d\u4e16\u754c.baz'
+
+    some_args = [1, 2, 3, 'hello', some_bytes, some_unicode, {'foo': 23, 'bar': 'hello', 'baz': some_bytes, 'moo': some_unicode}]
+    some_kwargs = {'foo': 23, 'bar': 'hello', 'baz': some_bytes, 'moo': some_unicode, 'arr': some_args}
+
     msgs = [
         message.Hello("realm1", {'subscriber': role.RoleSubscriberFeatures()}),
+        message.Hello("realm1", {'publisher': role.RolePublisherFeatures()}),
+        message.Hello("realm1", {'caller': role.RoleCallerFeatures()}),
+        message.Hello("realm1", {'callee': role.RoleCalleeFeatures()}),
+        message.Hello("realm1", {
+            'subscriber': role.RoleSubscriberFeatures(),
+            'publisher': role.RolePublisherFeatures(),
+            'caller': role.RoleCallerFeatures(),
+            'callee': role.RoleCalleeFeatures(),
+        }),
         message.Goodbye(),
         message.Yield(123456),
-        message.Yield(123456, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
-        message.Yield(123456, args=['hello']),
+        message.Yield(123456, args=some_args),
+        message.Yield(123456, args=[], kwargs=some_kwargs),
+        message.Yield(123456, args=some_args, kwargs=some_kwargs),
         message.Yield(123456, progress=True),
         message.Interrupt(123456),
         message.Interrupt(123456, mode=message.Interrupt.KILL),
         message.Invocation(123456, 789123),
-        message.Invocation(123456, 789123, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
+        message.Invocation(123456, 789123, args=some_args),
+        message.Invocation(123456, 789123, args=[], kwargs=some_kwargs),
+        message.Invocation(123456, 789123, args=some_args, kwargs=some_kwargs),
         message.Invocation(123456, 789123, timeout=10000),
         message.Result(123456),
-        message.Result(123456, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
+        message.Result(123456, args=some_args),
+        message.Result(123456, args=[], kwargs=some_kwargs),
+        message.Result(123456, args=some_args, kwargs=some_kwargs),
         message.Result(123456, progress=True),
         message.Cancel(123456),
         message.Cancel(123456, mode=message.Cancel.KILL),
-        message.Call(123456, 'com.myapp.procedure1'),
-        message.Call(123456, 'com.myapp.procedure1', args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
-        message.Call(123456, 'com.myapp.procedure1', timeout=10000),
+        message.Call(123456, some_uri),
+        message.Call(123456, some_uri, args=some_args),
+        message.Call(123456, some_uri, args=[], kwargs=some_kwargs),
+        message.Call(123456, some_uri, args=some_args, kwargs=some_kwargs),
+        message.Call(123456, some_uri, timeout=10000),
+        message.Call(123456, some_unicode_uri),
+        message.Call(123456, some_unicode_uri, args=some_args),
+        message.Call(123456, some_unicode_uri, args=[], kwargs=some_kwargs),
+        message.Call(123456, some_unicode_uri, args=some_args, kwargs=some_kwargs),
+        message.Call(123456, some_unicode_uri, timeout=10000),
         message.Unregistered(123456),
         message.Unregister(123456, 789123),
         message.Registered(123456, 789123),
-        message.Register(123456, 'com.myapp.procedure1'),
-        message.Register(123456, 'com.myapp.procedure1', match='prefix'),
-        message.Register(123456, 'com.myapp.procedure1', invoke='roundrobin'),
+        message.Register(123456, some_uri),
+        message.Register(123456, some_uri, match='prefix'),
+        message.Register(123456, some_uri, invoke='roundrobin'),
+        message.Register(123456, some_unicode_uri),
+        message.Register(123456, some_unicode_uri, match='prefix'),
+        message.Register(123456, some_unicode_uri, invoke='roundrobin'),
         message.Event(123456, 789123),
-        message.Event(123456, 789123, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
+        message.Event(123456, 789123, args=some_args),
+        message.Event(123456, 789123, args=[], kwargs=some_kwargs),
+        message.Event(123456, 789123, args=some_args, kwargs=some_kwargs),
         message.Event(123456, 789123, publisher=300),
         message.Published(123456, 789123),
-        message.Publish(123456, 'com.myapp.topic1'),
-        message.Publish(123456, 'com.myapp.topic1', args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
-        message.Publish(123456, 'com.myapp.topic1', exclude_me=False, exclude=[300], eligible=[100, 200, 300]),
+        message.Publish(123456, some_uri),
+        message.Publish(123456, some_uri, args=some_args),
+        message.Publish(123456, some_uri, args=[], kwargs=some_kwargs),
+        message.Publish(123456, some_uri, args=some_args, kwargs=some_kwargs),
+        message.Publish(123456, some_uri, exclude_me=False, exclude=[300], eligible=[100, 200, 300]),
+        message.Publish(123456, some_unicode_uri),
+        message.Publish(123456, some_unicode_uri, args=some_args),
+        message.Publish(123456, some_unicode_uri, args=[], kwargs=some_kwargs),
+        message.Publish(123456, some_unicode_uri, args=some_args, kwargs=some_kwargs),
+        message.Publish(123456, some_unicode_uri, exclude_me=False, exclude=[300], eligible=[100, 200, 300]),
         message.Unsubscribed(123456),
         message.Unsubscribe(123456, 789123),
         message.Subscribed(123456, 789123),
-        message.Subscribe(123456, 'com.myapp.topic1'),
-        message.Subscribe(123456, 'com.myapp.topic1', match=message.Subscribe.MATCH_PREFIX),
-        message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1'),
-        message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1', args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'}),
-        message.Call(123456, 'com.myapp.\u4f60\u597d\u4e16\u754c', args=[1, 2, 3]),
-        message.Result(123456, args=[1, 2, 3], kwargs={'en': 'Hello World', 'jp': '\u3053\u3093\u306b\u3061\u306f\u4e16\u754c'})
+        message.Subscribe(123456, some_uri),
+        message.Subscribe(123456, some_uri, match=message.Subscribe.MATCH_PREFIX),
+        message.Subscribe(123456, some_unicode_uri),
+        message.Subscribe(123456, some_unicode_uri, match=message.Subscribe.MATCH_PREFIX),
+        message.Error(message.Call.MESSAGE_TYPE, 123456, some_uri),
+        message.Error(message.Call.MESSAGE_TYPE, 123456, some_uri, args=some_args),
+        message.Error(message.Call.MESSAGE_TYPE, 123456, some_uri, args=[], kwargs=some_kwargs),
+        message.Error(message.Call.MESSAGE_TYPE, 123456, some_uri, args=some_args, kwargs=some_kwargs),
+        message.Error(message.Call.MESSAGE_TYPE, 123456, some_unicode_uri),
+        message.Error(message.Call.MESSAGE_TYPE, 123456, some_unicode_uri, args=some_args),
+        message.Error(message.Call.MESSAGE_TYPE, 123456, some_unicode_uri, args=[], kwargs=some_kwargs),
+        message.Error(message.Call.MESSAGE_TYPE, 123456, some_unicode_uri, args=some_args, kwargs=some_kwargs),
+        message.Result(123456),
+        message.Result(123456, args=some_args),
+        message.Result(123456, args=some_args, kwargs=some_kwargs),
     ]
     return [(False, msg) for msg in msgs]
 
