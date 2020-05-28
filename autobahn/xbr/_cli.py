@@ -911,23 +911,25 @@ def _main():
 
     args = parser.parse_args()
 
+    # read or create a user profile
+    profile = load_or_create_profile()
+
     if args.command == 'version':
         print('')
-        print(' XBR CLI v{}\n'.format(__version__))
-        print('   XBRToken   contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_TOKEN_ADDR), XBR_DEBUG_TOKEN_ADDR_SRC))
-        print('   XBRNetwork contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_NETWORK_ADDR), XBR_DEBUG_NETWORK_ADDR_SRC))
-        print('   XBRDomain  contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_DOMAIN_ADDR), XBR_DEBUG_DOMAIN_ADDR_SRC))
-        print('   XBRCatalog contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_CATALOG_ADDR), XBR_DEBUG_CATALOG_ADDR_SRC))
-        print('   XBRMarket  contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_MARKET_ADDR), XBR_DEBUG_MARKET_ADDR_SRC))
-        print('   XBRChannel contract address: {} [source: {}]'.format(hlid(XBR_DEBUG_CHANNEL_ADDR), XBR_DEBUG_CHANNEL_ADDR_SRC))
+        print(' XBR CLI {}\n'.format(hlval('v' + __version__)))
+        print('   Profile {profile} loaded from {path}\n'.format(profile=hlval(profile.name), path=hlval(profile.path)))
+        print('   Contract addresses:\n')
+        print('      XBRToken   : {} [source: {}]'.format(hlid(XBR_DEBUG_TOKEN_ADDR), XBR_DEBUG_TOKEN_ADDR_SRC))
+        print('      XBRNetwork : {} [source: {}]'.format(hlid(XBR_DEBUG_NETWORK_ADDR), XBR_DEBUG_NETWORK_ADDR_SRC))
+        print('      XBRDomain  : {} [source: {}]'.format(hlid(XBR_DEBUG_DOMAIN_ADDR), XBR_DEBUG_DOMAIN_ADDR_SRC))
+        print('      XBRCatalog : {} [source: {}]'.format(hlid(XBR_DEBUG_CATALOG_ADDR), XBR_DEBUG_CATALOG_ADDR_SRC))
+        print('      XBRMarket  : {} [source: {}]'.format(hlid(XBR_DEBUG_MARKET_ADDR), XBR_DEBUG_MARKET_ADDR_SRC))
+        print('      XBRChannel : {} [source: {}]'.format(hlid(XBR_DEBUG_CHANNEL_ADDR), XBR_DEBUG_CHANNEL_ADDR_SRC))
         print('')
     else:
         if args.command is None or args.command == 'noop':
             print('no command given. select from: {}'.format(', '.join(_COMMANDS)))
             sys.exit(0)
-
-        # read or create a user profile
-        profile = load_or_create_profile()
 
         # only start txaio logging after above, which runs click (interactively)
         if args.debug:

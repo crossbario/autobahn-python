@@ -48,7 +48,7 @@ if 'XBR_DEBUG_TOKEN_ADDR' in os.environ:
     except Exception as e:
         raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_TOKEN_ADDR={} - {}'.format(_token_adr, e))
     XBR_DEBUG_TOKEN_ADDR = _token_adr
-    XBR_DEBUG_TOKEN_ADDR_SRC = 'env'
+    XBR_DEBUG_TOKEN_ADDR_SRC = 'envvar $XBR_DEBUG_TOKEN_ADDR'
 else:
     XBR_DEBUG_TOKEN_ADDR = '0xaCef957D54c639575f4DB68b1992B36504f33FEA'
     XBR_DEBUG_TOKEN_ADDR_SRC = 'builtin'
@@ -61,7 +61,7 @@ if 'XBR_DEBUG_NETWORK_ADDR' in os.environ:
     except Exception as e:
         raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_NETWORK_ADDR={} - {}'.format(_netw_adr, e))
     XBR_DEBUG_NETWORK_ADDR = _netw_adr
-    XBR_DEBUG_NETWORK_ADDR_SRC = 'env'
+    XBR_DEBUG_NETWORK_ADDR_SRC = 'envvar $XBR_DEBUG_NETWORK_ADDR'
 else:
     XBR_DEBUG_NETWORK_ADDR = '0x7A3d22c59e8F8f1b88ba7205f3f5a65Bc86D04Bc'
     XBR_DEBUG_NETWORK_ADDR_SRC = 'builtin'
@@ -74,7 +74,7 @@ if 'XBR_DEBUG_DOMAIN_ADDR' in os.environ:
     except Exception as e:
         raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_DOMAIN_ADDR={} - {}'.format(_domain_adr, e))
     XBR_DEBUG_DOMAIN_ADDR = _domain_adr
-    XBR_DEBUG_DOMAIN_ADDR_SRC = 'env'
+    XBR_DEBUG_DOMAIN_ADDR_SRC = 'envvar $XBR_DEBUG_DOMAIN_ADDR'
 else:
     XBR_DEBUG_DOMAIN_ADDR = '0xf5fb56886f033855C1a36F651E927551749361bC'
     XBR_DEBUG_DOMAIN_ADDR_SRC = 'builtin'
@@ -87,7 +87,7 @@ if 'XBR_DEBUG_CATALOG_ADDR' in os.environ:
     except Exception as e:
         raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_CATALOG_ADDR={} - {}'.format(_ctlg_adr, e))
     XBR_DEBUG_CATALOG_ADDR = _ctlg_adr
-    XBR_DEBUG_CATALOG_ADDR_SRC = 'env'
+    XBR_DEBUG_CATALOG_ADDR_SRC = 'envvar $XBR_DEBUG_CATALOG_ADDR'
 else:
     XBR_DEBUG_CATALOG_ADDR = '0x2C77E46Ea9502B363343e8c826c41c7fdb25Db66'
     XBR_DEBUG_CATALOG_ADDR_SRC = 'builtin'
@@ -100,7 +100,7 @@ if 'XBR_DEBUG_MARKET_ADDR' in os.environ:
     except Exception as e:
         raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_MARKET_ADDR={} - {}'.format(_mrkt_adr, e))
     XBR_DEBUG_MARKET_ADDR = _mrkt_adr
-    XBR_DEBUG_MARKET_ADDR_SRC = 'env'
+    XBR_DEBUG_MARKET_ADDR_SRC = 'envvar $XBR_DEBUG_MARKET_ADDR'
 else:
     XBR_DEBUG_MARKET_ADDR = '0x0DcF924ab0846101d31514E9fb3adf5070d4B83d'
     XBR_DEBUG_MARKET_ADDR_SRC = 'builtin'
@@ -113,7 +113,7 @@ if 'XBR_DEBUG_CHANNEL_ADDR' in os.environ:
     except Exception as e:
         raise RuntimeError('could not parse Ethereum address for XBR_DEBUG_CHANNEL_ADDR={} - {}'.format(_chnl_adr, e))
     XBR_DEBUG_CHANNEL_ADDR = _chnl_adr
-    XBR_DEBUG_CHANNEL_ADDR_SRC = 'env'
+    XBR_DEBUG_CHANNEL_ADDR_SRC = 'envvar $XBR_DEBUG_CHANNEL_ADDR'
 else:
     XBR_DEBUG_CHANNEL_ADDR = '0x670497A012322B99a5C18B8463940996141Cb952'
     XBR_DEBUG_CHANNEL_ADDR_SRC = 'builtin'
