@@ -24,27 +24,28 @@
 #
 ###############################################################################
 
-from typing import Optional
-from ._eip712_base import sign, recover, is_address, is_signature, is_eth_privkey, is_bytes16
+from ._eip712_base import sign, recover, _EIP712_SIG_LEN
 
 
-def _create_eip712_catalog_create(chainId: int, verifyingContract: bytes, member: bytes, created: int,
-                                  catalogId: bytes, terms: str, meta: Optional[str]) -> dict:
+def _create_eip712_market_leave(chainId: int, verifyingContract: bytes, member: bytes, left: int,
+                                marketId: bytes, actorType: int) -> dict:
     """
 
     :param chainId:
     :param verifyingContract:
     :param member:
-    :param created:
-    :param catalogId:
-    :param terms:
+    :param joined:
+    :param marketId:
+    :param actorType:
     :param meta:
     :return:
     """
     assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert is_bytes16(catalogId)
+    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
+    assert type(member) == bytes and len(member) == 20
+    assert type(left) == int
+    assert type(marketId) == bytes and len(marketId) == 16
+    assert type(actorType) == int
 
     data = {
         'types': {
@@ -58,7 +59,7 @@ def _create_eip712_catalog_create(chainId: int, verifyingContract: bytes, member
                     'type': 'string'
                 },
             ],
-            'EIP712CatalogCreate': [
+            'EIP712MarketLeave': [
                 {
                     'name': 'chainId',
                     'type': 'uint256'
@@ -72,24 +73,20 @@ def _create_eip712_catalog_create(chainId: int, verifyingContract: bytes, member
                     'type': 'address'
                 },
                 {
-                    'name': 'created',
+                    'name': 'left',
                     'type': 'uint256'
                 },
                 {
-                    'name': 'catalogId',
+                    'name': 'marketId',
                     'type': 'bytes16'
                 },
                 {
-                    'name': 'terms',
-                    'type': 'string'
-                },
-                {
-                    'name': 'meta',
-                    'type': 'string'
+                    'name': 'actorType',
+                    'type': 'uint8'
                 },
             ]
         },
-        'primaryType': 'EIP712CatalogCreate',
+        'primaryType': 'EIP712MarketLeave',
         'domain': {
             'name': 'XBR',
             'version': '1',
@@ -98,18 +95,17 @@ def _create_eip712_catalog_create(chainId: int, verifyingContract: bytes, member
             'chainId': chainId,
             'verifyingContract': verifyingContract,
             'member': member,
-            'created': created,
-            'catalogId': catalogId,
-            'terms': terms,
-            'meta': meta or '',
+            'left': left,
+            'marketId': marketId,
+            'actorType': actorType,
         }
     }
 
     return data
 
 
-def sign_eip712_catalog_create(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes,
-                               created: int, catalogId: bytes, terms: str, meta: str) -> bytes:
+def sign_eip712_market_leave(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes, left: int,
+                             marketId: bytes, actorType: int) -> bytes:
     """
 
     :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
@@ -118,18 +114,20 @@ def sign_eip712_catalog_create(eth_privkey: bytes, chainId: int, verifyingContra
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
-    assert is_eth_privkey(eth_privkey)
+    assert type(eth_privkey) == bytes and len(eth_privkey) == 32
     assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert is_bytes16(catalogId)
+    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
+    assert type(member) == bytes and len(member) == 20
+    assert type(left) == int
+    assert type(marketId) == bytes and len(marketId) == 16
+    assert type(actorType) == int
 
-    data = _create_eip712_catalog_create(chainId, verifyingContract, member, created, catalogId, terms, meta)
+    data = _create_eip712_market_leave(chainId, verifyingContract, member, left, marketId, actorType)
     return sign(eth_privkey, data)
 
 
-def recover_eip712_catalog_create(chainId: int, verifyingContract: bytes, member: bytes, created: int,
-                                  catalogId: bytes, terms: str, meta: str, signature: bytes) -> bytes:
+def recover_eip712_market_leave(chainId: int, verifyingContract: bytes, member: bytes, left: int,
+                                marketId: bytes, actorType: int, signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
 
@@ -137,10 +135,12 @@ def recover_eip712_catalog_create(chainId: int, verifyingContract: bytes, member
     :rtype: bytes
     """
     assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert is_bytes16(catalogId)
-    assert is_signature(signature)
+    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
+    assert type(member) == bytes and len(member) == 20
+    assert type(left) == int
+    assert type(marketId) == bytes and len(marketId) == 16
+    assert type(actorType) == int
+    assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
 
-    data = _create_eip712_catalog_create(chainId, verifyingContract, member, created, catalogId, terms, meta)
+    data = _create_eip712_market_leave(chainId, verifyingContract, member, left, marketId, actorType)
     return recover(data, signature)

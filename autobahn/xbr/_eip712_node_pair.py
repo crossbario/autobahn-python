@@ -24,36 +24,33 @@
 #
 ###############################################################################
 
-from ._eip712_base import sign, recover, is_address, is_bytes16, is_eth_privkey, is_signature
+from typing import Optional
+from ._eip712_base import sign, recover, _EIP712_SIG_LEN
 
 
-def _create_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes, updated: int,
-                           marketId: bytes, delegate: bytes, delegateType: int, apiCatalog: bytes,
-                           consent: bool, servicePrefix: str) -> dict:
+def _create_eip712_node_pair(chainId: int, verifyingContract: bytes, member: bytes, paired: int,
+                             nodeId: bytes, domainId: bytes, nodeType: int, nodeKey: bytes,
+                             config: Optional[str]) -> dict:
     """
 
     :param chainId:
     :param verifyingContract:
     :param member:
-    :param updated:
+    :param joined:
     :param marketId:
-    :param delegate:
-    :param delegateType:
-    :param apiCatalog:
-    :param consent:
-    :param servicePrefix:
+    :param actorType:
+    :param meta:
     :return:
     """
     assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert type(updated) == int
-    assert is_bytes16(marketId)
-    assert is_address(delegate)
-    assert type(delegateType) == int
-    assert is_bytes16(apiCatalog)
-    assert type(consent) == bool
-    assert servicePrefix is None or type(servicePrefix) == str
+    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
+    assert type(member) == bytes and len(member) == 20
+    assert type(paired) == int
+    assert type(nodeId) == bytes and len(nodeId) == 16
+    assert type(domainId) == bytes and len(domainId) == 16
+    assert type(nodeType) == int
+    assert type(nodeKey) == bytes and len(nodeKey) == 32
+    assert config is None or type(config) == str
 
     data = {
         'types': {
@@ -67,7 +64,7 @@ def _create_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes
                     'type': 'string'
                 },
             ],
-            'EIP712Consent': [
+            'EIP712NodePair': [
                 {
                     'name': 'chainId',
                     'type': 'uint256'
@@ -81,36 +78,32 @@ def _create_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes
                     'type': 'address'
                 },
                 {
-                    'name': 'updated',
+                    'name': 'paired',
                     'type': 'uint256'
                 },
                 {
-                    'name': 'marketId',
+                    'name': 'nodeId',
                     'type': 'bytes16'
                 },
                 {
-                    'name': 'delegate',
-                    'type': 'address'
+                    'name': 'domainId',
+                    'type': 'bytes16'
                 },
                 {
-                    'name': 'delegateType',
+                    'name': 'nodeType',
                     'type': 'uint8'
                 },
                 {
-                    'name': 'apiCatalog',
+                    'name': 'nodeKey',
                     'type': 'bytes16'
                 },
                 {
-                    'name': 'consent',
-                    'type': 'bool'
-                },
-                {
-                    'name': 'servicePrefix',
-                    'type': 'string'
+                    'name': 'config',
+                    'type': 'string',
                 },
             ]
         },
-        'primaryType': 'EIP712Consent',
+        'primaryType': 'EIP712NodePair',
         'domain': {
             'name': 'XBR',
             'version': '1',
@@ -119,22 +112,21 @@ def _create_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes
             'chainId': chainId,
             'verifyingContract': verifyingContract,
             'member': member,
-            'updated': updated,
-            'marketId': marketId,
-            'delegate': delegate,
-            'delegateType': delegateType,
-            'apiCatalog': apiCatalog,
-            'consent': consent,
-            'servicePrefix': servicePrefix or ''
+            'paired': paired,
+            'nodeId': nodeId,
+            'domainId': domainId,
+            'nodeType': nodeType,
+            'nodeKey': nodeKey,
+            'config': config,
         }
     }
 
     return data
 
 
-def sign_eip712_consent(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes,
-                        updated: int, marketId: bytes, delegate: bytes, delegateType: int, apiCatalog: bytes,
-                        consent: bool, servicePrefix: str) -> bytes:
+def sign_eip712_node_pair(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes, paired: int,
+                          nodeId: bytes, domainId: bytes, nodeType: int, nodeKey: bytes,
+                          config: Optional[str]) -> bytes:
     """
 
     :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
@@ -143,26 +135,25 @@ def sign_eip712_consent(eth_privkey: bytes, chainId: int, verifyingContract: byt
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
-    assert is_eth_privkey(eth_privkey)
+    assert type(eth_privkey) == bytes and len(eth_privkey) == 32
     assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert type(updated) == int
-    assert is_bytes16(marketId)
-    assert is_address(delegate)
-    assert type(delegateType) == int
-    assert is_bytes16(apiCatalog)
-    assert type(consent) == bool
-    assert servicePrefix is None or type(servicePrefix) == str
+    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
+    assert type(member) == bytes and len(member) == 20
+    assert type(paired) == int
+    assert type(nodeId) == bytes and len(nodeId) == 16
+    assert type(domainId) == bytes and len(domainId) == 16
+    assert type(nodeType) == int
+    assert type(nodeKey) == bytes and len(nodeKey) == 32
+    assert config is None or type(config) == str
 
-    data = _create_eip712_consent(chainId, verifyingContract, member, updated, marketId, delegate,
-                                  delegateType, apiCatalog, consent, servicePrefix)
+    data = _create_eip712_node_pair(chainId, verifyingContract, member, paired, nodeId, domainId, nodeType,
+                                    nodeKey, config)
     return sign(eth_privkey, data)
 
 
-def recover_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes, updated: int,
-                           marketId: bytes, delegate: bytes, delegateType: int, apiCatalog: bytes,
-                           consent: bool, servicePrefix: str, signature: bytes) -> bytes:
+def recover_eip712_node_pair(chainId: int, verifyingContract: bytes, member: bytes, paired: int,
+                             nodeId: bytes, domainId: bytes, nodeType: int, nodeKey: bytes,
+                             config: str, signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
 
@@ -170,17 +161,15 @@ def recover_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes
     :rtype: bytes
     """
     assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert type(updated) == int
-    assert is_bytes16(marketId)
-    assert is_address(delegate)
-    assert type(delegateType) == int
-    assert is_bytes16(apiCatalog)
-    assert type(consent) == bool
-    assert servicePrefix is None or type(servicePrefix) == str
-    assert is_signature(signature)
+    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
+    assert type(member) == bytes and len(member) == 20
+    assert type(paired) == int
+    assert type(nodeId) == bytes and len(nodeId) == 16
+    assert type(domainId) == bytes and len(domainId) == 16
+    assert type(nodeType) == int
+    assert type(nodeKey) == bytes and len(nodeKey) == 32
+    assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
 
-    data = _create_eip712_consent(chainId, verifyingContract, member, updated, marketId, delegate,
-                                  delegateType, apiCatalog, consent, servicePrefix)
+    data = _create_eip712_node_pair(chainId, verifyingContract, member, paired, nodeId, domainId, nodeType,
+                                    nodeKey, config)
     return recover(data, signature)

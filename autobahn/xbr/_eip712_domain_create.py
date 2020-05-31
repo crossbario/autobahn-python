@@ -24,36 +24,33 @@
 #
 ###############################################################################
 
-from ._eip712_base import sign, recover, is_address, is_bytes16, is_eth_privkey, is_signature
+from typing import Optional
+from ._eip712_base import sign, recover, is_chain_id, is_address, is_bytes16, is_cs_pubkey, \
+    is_block_number, is_signature, is_eth_privkey
 
 
-def _create_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes, updated: int,
-                           marketId: bytes, delegate: bytes, delegateType: int, apiCatalog: bytes,
-                           consent: bool, servicePrefix: str) -> dict:
+def _create_eip712_domain_create(chainId: int, verifyingContract: bytes, member: bytes, created: int,
+                                 domainId: bytes, domainKey: bytes, license: str, terms: str,
+                                 meta: Optional[str]) -> dict:
     """
 
     :param chainId:
     :param verifyingContract:
     :param member:
-    :param updated:
-    :param marketId:
-    :param delegate:
-    :param delegateType:
-    :param apiCatalog:
-    :param consent:
-    :param servicePrefix:
+    :param created:
+    :param domainId:
+    :param domainKey:
+    :param license:
+    :param terms:
+    :param meta:
     :return:
     """
-    assert type(chainId) == int
+    assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_address(member)
-    assert type(updated) == int
-    assert is_bytes16(marketId)
-    assert is_address(delegate)
-    assert type(delegateType) == int
-    assert is_bytes16(apiCatalog)
-    assert type(consent) == bool
-    assert servicePrefix is None or type(servicePrefix) == str
+    assert is_block_number(created)
+    assert is_bytes16(domainId)
+    assert is_cs_pubkey(domainKey)
 
     data = {
         'types': {
@@ -67,7 +64,7 @@ def _create_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes
                     'type': 'string'
                 },
             ],
-            'EIP712Consent': [
+            'EIP712DomainCreate': [
                 {
                     'name': 'chainId',
                     'type': 'uint256'
@@ -81,36 +78,32 @@ def _create_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes
                     'type': 'address'
                 },
                 {
-                    'name': 'updated',
+                    'name': 'created',
                     'type': 'uint256'
                 },
                 {
-                    'name': 'marketId',
+                    'name': 'domainId',
                     'type': 'bytes16'
                 },
                 {
-                    'name': 'delegate',
-                    'type': 'address'
+                    'name': 'domainKey',
+                    'type': 'bytes32'
                 },
                 {
-                    'name': 'delegateType',
-                    'type': 'uint8'
+                    'name': 'license',
+                    'type': 'string'
                 },
                 {
-                    'name': 'apiCatalog',
-                    'type': 'bytes16'
+                    'name': 'terms',
+                    'type': 'string'
                 },
                 {
-                    'name': 'consent',
-                    'type': 'bool'
-                },
-                {
-                    'name': 'servicePrefix',
+                    'name': 'meta',
                     'type': 'string'
                 },
             ]
         },
-        'primaryType': 'EIP712Consent',
+        'primaryType': 'EIP712DomainCreate',
         'domain': {
             'name': 'XBR',
             'version': '1',
@@ -119,68 +112,58 @@ def _create_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes
             'chainId': chainId,
             'verifyingContract': verifyingContract,
             'member': member,
-            'updated': updated,
-            'marketId': marketId,
-            'delegate': delegate,
-            'delegateType': delegateType,
-            'apiCatalog': apiCatalog,
-            'consent': consent,
-            'servicePrefix': servicePrefix or ''
+            'created': created,
+            'domainId': domainId,
+            'domainKey': domainKey,
+            'license': license,
+            'terms': terms,
+            'meta': meta or '',
         }
     }
 
     return data
 
 
-def sign_eip712_consent(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes,
-                        updated: int, marketId: bytes, delegate: bytes, delegateType: int, apiCatalog: bytes,
-                        consent: bool, servicePrefix: str) -> bytes:
+def sign_eip712_domain_create(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes, created: int,
+                              domainId: bytes, domainKey: bytes, license: str, terms: str,
+                              meta: str) -> bytes:
     """
 
-    :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
+    :param eth_privkey: Ethereum address of member (a raw 20 bytes Ethereum address).
     :type eth_privkey: bytes
 
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
     assert is_eth_privkey(eth_privkey)
-    assert type(chainId) == int
+    assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_address(member)
-    assert type(updated) == int
-    assert is_bytes16(marketId)
-    assert is_address(delegate)
-    assert type(delegateType) == int
-    assert is_bytes16(apiCatalog)
-    assert type(consent) == bool
-    assert servicePrefix is None or type(servicePrefix) == str
+    assert is_block_number(created)
+    assert is_bytes16(domainId)
+    assert is_cs_pubkey(domainKey)
 
-    data = _create_eip712_consent(chainId, verifyingContract, member, updated, marketId, delegate,
-                                  delegateType, apiCatalog, consent, servicePrefix)
+    data = _create_eip712_domain_create(chainId, verifyingContract, member, created, domainId, domainKey, license,
+                                        terms, meta)
     return sign(eth_privkey, data)
 
 
-def recover_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes, updated: int,
-                           marketId: bytes, delegate: bytes, delegateType: int, apiCatalog: bytes,
-                           consent: bool, servicePrefix: str, signature: bytes) -> bytes:
+def recover_eip712_domain_create(chainId: int, verifyingContract: bytes, member: bytes, created: int, domainId: bytes,
+                                 domainKey: bytes, license: str, terms: str, meta: str, signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
 
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    assert type(chainId) == int
+    assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_address(member)
-    assert type(updated) == int
-    assert is_bytes16(marketId)
-    assert is_address(delegate)
-    assert type(delegateType) == int
-    assert is_bytes16(apiCatalog)
-    assert type(consent) == bool
-    assert servicePrefix is None or type(servicePrefix) == str
+    assert is_block_number(created)
+    assert is_bytes16(domainId)
+    assert is_cs_pubkey(domainKey)
     assert is_signature(signature)
 
-    data = _create_eip712_consent(chainId, verifyingContract, member, updated, marketId, delegate,
-                                  delegateType, apiCatalog, consent, servicePrefix)
+    data = _create_eip712_domain_create(chainId, verifyingContract, member, created, domainId, domainKey, license,
+                                        terms, meta)
     return recover(data, signature)
