@@ -24,7 +24,8 @@
 #
 ###############################################################################
 
-from ._eip712_base import sign, recover, _EIP712_SIG_LEN
+from ._eip712_base import sign, recover, is_address, is_bytes16, is_block_number, \
+    is_chain_id, is_eth_privkey, is_signature
 
 
 def _create_eip712_market_leave(chainId: int, verifyingContract: bytes, member: bytes, left: int,
@@ -40,11 +41,11 @@ def _create_eip712_market_leave(chainId: int, verifyingContract: bytes, member: 
     :param meta:
     :return:
     """
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(member) == bytes and len(member) == 20
-    assert type(left) == int
-    assert type(marketId) == bytes and len(marketId) == 16
+    assert is_chain_id(chainId)
+    assert is_address(verifyingContract)
+    assert is_address(member)
+    assert is_block_number(left)
+    assert is_bytes16(marketId)
     assert type(actorType) == int
 
     data = {
@@ -114,15 +115,10 @@ def sign_eip712_market_leave(eth_privkey: bytes, chainId: int, verifyingContract
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
-    assert type(eth_privkey) == bytes and len(eth_privkey) == 32
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(member) == bytes and len(member) == 20
-    assert type(left) == int
-    assert type(marketId) == bytes and len(marketId) == 16
-    assert type(actorType) == int
+    assert is_eth_privkey(eth_privkey)
 
     data = _create_eip712_market_leave(chainId, verifyingContract, member, left, marketId, actorType)
+
     return sign(eth_privkey, data)
 
 
@@ -134,13 +130,8 @@ def recover_eip712_market_leave(chainId: int, verifyingContract: bytes, member: 
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(member) == bytes and len(member) == 20
-    assert type(left) == int
-    assert type(marketId) == bytes and len(marketId) == 16
-    assert type(actorType) == int
-    assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
+    assert is_signature(signature)
 
     data = _create_eip712_market_leave(chainId, verifyingContract, member, left, marketId, actorType)
+
     return recover(data, signature)

@@ -25,7 +25,8 @@
 ###############################################################################
 
 from typing import Optional
-from ._eip712_base import sign, recover, _EIP712_SIG_LEN
+from ._eip712_base import sign, recover, is_chain_id, is_address, is_bytes16, is_cs_pubkey, \
+    is_block_number, is_signature, is_eth_privkey
 
 
 def _create_eip712_node_pair(chainId: int, verifyingContract: bytes, member: bytes, paired: int,
@@ -42,14 +43,14 @@ def _create_eip712_node_pair(chainId: int, verifyingContract: bytes, member: byt
     :param meta:
     :return:
     """
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(member) == bytes and len(member) == 20
-    assert type(paired) == int
-    assert type(nodeId) == bytes and len(nodeId) == 16
-    assert type(domainId) == bytes and len(domainId) == 16
+    assert is_chain_id(chainId)
+    assert is_address(verifyingContract)
+    assert is_address(member)
+    assert is_block_number(paired)
+    assert is_bytes16(nodeId)
+    assert is_bytes16(domainId)
     assert type(nodeType) == int
-    assert type(nodeKey) == bytes and len(nodeKey) == 32
+    assert is_cs_pubkey(nodeKey)
     assert config is None or type(config) == str
 
     data = {
@@ -117,7 +118,7 @@ def _create_eip712_node_pair(chainId: int, verifyingContract: bytes, member: byt
             'domainId': domainId,
             'nodeType': nodeType,
             'nodeKey': nodeKey,
-            'config': config,
+            'config': config or '',
         }
     }
 
@@ -135,16 +136,7 @@ def sign_eip712_node_pair(eth_privkey: bytes, chainId: int, verifyingContract: b
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
-    assert type(eth_privkey) == bytes and len(eth_privkey) == 32
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(member) == bytes and len(member) == 20
-    assert type(paired) == int
-    assert type(nodeId) == bytes and len(nodeId) == 16
-    assert type(domainId) == bytes and len(domainId) == 16
-    assert type(nodeType) == int
-    assert type(nodeKey) == bytes and len(nodeKey) == 32
-    assert config is None or type(config) == str
+    assert is_eth_privkey(eth_privkey)
 
     data = _create_eip712_node_pair(chainId, verifyingContract, member, paired, nodeId, domainId, nodeType,
                                     nodeKey, config)
@@ -160,15 +152,7 @@ def recover_eip712_node_pair(chainId: int, verifyingContract: bytes, member: byt
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(member) == bytes and len(member) == 20
-    assert type(paired) == int
-    assert type(nodeId) == bytes and len(nodeId) == 16
-    assert type(domainId) == bytes and len(domainId) == 16
-    assert type(nodeType) == int
-    assert type(nodeKey) == bytes and len(nodeKey) == 32
-    assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
+    assert is_signature(signature)
 
     data = _create_eip712_node_pair(chainId, verifyingContract, member, paired, nodeId, domainId, nodeType,
                                     nodeKey, config)

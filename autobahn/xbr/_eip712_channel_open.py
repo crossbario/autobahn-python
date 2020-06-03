@@ -24,7 +24,8 @@
 #
 ###############################################################################
 
-from ._eip712_base import sign, recover, is_address, is_signature, is_eth_privkey, is_bytes16
+from ._eip712_base import sign, recover, is_address, is_signature, is_eth_privkey, is_bytes16, \
+    is_block_number, is_chain_id
 
 
 def _create_eip712_channel_open(chainId: int, verifyingContract: bytes, ctype: int, openedAt: int,
@@ -45,10 +46,10 @@ def _create_eip712_channel_open(chainId: int, verifyingContract: bytes, ctype: i
     :param amount:
     :return:
     """
-    assert type(chainId) == int
+    assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert type(ctype) == int
-    assert type(openedAt) == int
+    assert is_block_number(openedAt)
     assert is_bytes16(marketId)
     assert is_bytes16(channelId)
     assert is_address(actor)
@@ -139,17 +140,6 @@ def sign_eip712_channel_open(eth_privkey: bytes, chainId: int, verifyingContract
     :rtype: bytes
     """
     assert is_eth_privkey(eth_privkey)
-    assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert type(ctype) == int
-    assert type(openedAt) == int
-    assert is_bytes16(marketId)
-    assert is_bytes16(channelId)
-    assert is_address(actor)
-    assert is_address(delegate)
-    assert is_address(marketmaker)
-    assert is_address(recipient)
-    assert type(amount) == int
 
     data = _create_eip712_channel_open(chainId, verifyingContract, ctype, openedAt, marketId, channelId,
                                        actor, delegate, marketmaker, recipient, amount)
@@ -165,17 +155,6 @@ def recover_eip712_channel_open(chainId: int, verifyingContract: bytes, ctype: i
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert type(ctype) == int
-    assert type(openedAt) == int
-    assert is_bytes16(marketId)
-    assert is_bytes16(channelId)
-    assert is_address(actor)
-    assert is_address(delegate)
-    assert is_address(marketmaker)
-    assert is_address(recipient)
-    assert type(amount) == int
     assert is_signature(signature)
 
     data = _create_eip712_channel_open(chainId, verifyingContract, ctype, openedAt, marketId, channelId,

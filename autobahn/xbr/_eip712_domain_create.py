@@ -136,12 +136,6 @@ def sign_eip712_domain_create(eth_privkey: bytes, chainId: int, verifyingContrac
     :rtype: bytes
     """
     assert is_eth_privkey(eth_privkey)
-    assert is_chain_id(chainId)
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert is_block_number(created)
-    assert is_bytes16(domainId)
-    assert is_cs_pubkey(domainKey)
 
     data = _create_eip712_domain_create(chainId, verifyingContract, member, created, domainId, domainKey, license,
                                         terms, meta)
@@ -156,12 +150,6 @@ def recover_eip712_domain_create(chainId: int, verifyingContract: bytes, member:
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    assert is_chain_id(chainId)
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert is_block_number(created)
-    assert is_bytes16(domainId)
-    assert is_cs_pubkey(domainKey)
     assert is_signature(signature)
 
     data = _create_eip712_domain_create(chainId, verifyingContract, member, created, domainId, domainKey, license,

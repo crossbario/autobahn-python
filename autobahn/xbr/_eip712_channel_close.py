@@ -24,7 +24,8 @@
 #
 ###############################################################################
 
-from ._eip712_base import sign, recover, is_address, is_signature, is_eth_privkey, is_bytes16
+from ._eip712_base import sign, recover, is_address, is_signature, is_eth_privkey, is_bytes16, \
+    is_block_number, is_chain_id
 
 
 def _create_eip712_channel_close(chainId: int, verifyingContract: bytes, closeAt: int, marketId: bytes, channelId: bytes,
@@ -40,9 +41,9 @@ def _create_eip712_channel_close(chainId: int, verifyingContract: bytes, closeAt
     :param isFinal:
     :return:
     """
-    assert type(chainId) == int
+    assert is_chain_id(chainId)
     assert is_address(verifyingContract)
-    assert type(closeAt) == int
+    assert is_block_number(closeAt)
     assert is_bytes16(marketId)
     assert is_bytes16(channelId)
     assert type(channelSeq) == int
@@ -118,14 +119,6 @@ def sign_eip712_channel_close(eth_privkey: bytes, chainId: int, verifyingContrac
     :rtype: bytes
     """
     assert is_eth_privkey(eth_privkey)
-    assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert type(closeAt) == int
-    assert is_bytes16(marketId)
-    assert is_bytes16(channelId)
-    assert type(channelSeq) == int
-    assert type(balance) == int
-    assert type(isFinal) == bool
 
     data = _create_eip712_channel_close(chainId, verifyingContract, closeAt, marketId, channelId, channelSeq, balance,
                                         isFinal)
@@ -140,14 +133,6 @@ def recover_eip712_channel_close(chainId: int, verifyingContract: bytes, closeAt
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert type(closeAt) == int
-    assert is_bytes16(marketId)
-    assert is_bytes16(channelId)
-    assert type(channelSeq) == int
-    assert type(balance) == int
-    assert type(isFinal) == bool
     assert is_signature(signature)
 
     data = _create_eip712_channel_close(chainId, verifyingContract, closeAt, marketId, channelId, channelSeq, balance,

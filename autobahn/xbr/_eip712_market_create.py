@@ -24,11 +24,13 @@
 #
 ###############################################################################
 
-from ._eip712_base import sign, recover
+from typing import Optional
+from ._eip712_base import sign, recover, is_address, is_bytes16, is_block_number, \
+    is_chain_id, is_eth_privkey, is_signature
 
 
 def _create_eip712_market_create(chainId: int, verifyingContract: bytes, member: bytes, created: int,
-                                 marketId: bytes, coin: bytes, terms: str, meta: str, maker: bytes,
+                                 marketId: bytes, coin: bytes, terms: str, meta: Optional[str], maker: bytes,
                                  providerSecurity: int, consumerSecurity: int, marketFee: int) -> dict:
     """
 
@@ -46,15 +48,15 @@ def _create_eip712_market_create(chainId: int, verifyingContract: bytes, member:
     :param marketFee:
     :return:
     """
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(member) == bytes and len(member) == 20
-    assert type(created) == int
-    assert type(marketId) == bytes and len(marketId) == 16
-    assert type(coin) == bytes and len(coin) == 20
+    assert is_chain_id(chainId)
+    assert is_address(verifyingContract)
+    assert is_address(member)
+    assert is_block_number(created)
+    assert is_bytes16(marketId)
+    assert is_address(coin)
     assert type(terms) == str
-    assert type(meta) == str
-    assert type(maker) == bytes and len(maker) == 20
+    assert meta is None or type(meta) == str
+    assert is_address(maker)
     assert type(providerSecurity) == int
     assert type(consumerSecurity) == int
     assert type(marketFee) == int
@@ -117,7 +119,7 @@ def _create_eip712_market_create(chainId: int, verifyingContract: bytes, member:
             'created': created,
             'marketId': marketId,
             'coin': coin,
-            'terms': terms or '',
+            'terms': terms,
             'meta': meta or '',
             'maker': maker,
             'marketFee': marketFee,
@@ -138,7 +140,8 @@ def sign_eip712_market_create(eth_privkey: bytes, chainId: int, verifyingContrac
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
-    # create EIP712 typed data object
+    assert is_eth_privkey(eth_privkey)
+
     data = _create_eip712_market_create(chainId, verifyingContract, member, created, marketId, coin, terms,
                                         meta, maker, providerSecurity, consumerSecurity, marketFee)
     return sign(eth_privkey, data)
@@ -154,7 +157,8 @@ def recover_eip712_market_create(chainId: int, verifyingContract: bytes, member:
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    # create EIP712 typed data object
+    assert is_signature(signature)
+
     data = _create_eip712_market_create(chainId, verifyingContract, member, created, marketId, coin, terms,
                                         meta, maker, providerSecurity, consumerSecurity, marketFee)
 

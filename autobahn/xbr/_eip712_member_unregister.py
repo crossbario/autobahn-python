@@ -24,10 +24,12 @@
 #
 ###############################################################################
 
-from ._eip712_base import sign, recover, is_address, is_signature, is_eth_privkey
+from ._eip712_base import sign, recover, is_chain_id, is_address, \
+    is_block_number, is_signature, is_eth_privkey
 
 
-def _create_eip712_member_unregister(chainId: int, verifyingContract: bytes, member: bytes, retired: int) -> dict:
+def _create_eip712_member_unregister(chainId: int, verifyingContract: bytes, member: bytes,
+                                     retired: int) -> dict:
     """
 
     :param chainId:
@@ -36,10 +38,10 @@ def _create_eip712_member_unregister(chainId: int, verifyingContract: bytes, mem
     :param retired:
     :return:
     """
-    assert type(chainId) == int
+    assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_address(member)
-    assert type(retired) == int
+    assert is_block_number(retired)
 
     data = {
         'types': {
@@ -99,12 +101,9 @@ def sign_eip712_member_unregister(eth_privkey: bytes, chainId: int, verifyingCon
     :rtype: bytes
     """
     assert is_eth_privkey(eth_privkey)
-    assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert type(retired) == int
 
     data = _create_eip712_member_unregister(chainId, verifyingContract, member, retired)
+
     return sign(eth_privkey, data)
 
 
@@ -116,11 +115,8 @@ def recover_eip712_member_unregister(chainId: int, verifyingContract: bytes, mem
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert type(retired) == int
     assert is_signature(signature)
 
     data = _create_eip712_member_unregister(chainId, verifyingContract, member, retired)
+
     return recover(data, signature)

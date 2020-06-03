@@ -25,7 +25,8 @@
 ###############################################################################
 
 from typing import Optional
-from ._eip712_base import sign, recover, is_address, is_signature, is_eth_privkey, is_bytes16
+from ._eip712_base import sign, recover, is_address, is_signature, is_eth_privkey, \
+    is_bytes16, is_chain_id
 
 
 def _create_eip712_catalog_create(chainId: int, verifyingContract: bytes, member: bytes, created: int,
@@ -41,7 +42,7 @@ def _create_eip712_catalog_create(chainId: int, verifyingContract: bytes, member
     :param meta:
     :return:
     """
-    assert type(chainId) == int
+    assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_address(member)
     assert is_bytes16(catalogId)
@@ -109,7 +110,7 @@ def _create_eip712_catalog_create(chainId: int, verifyingContract: bytes, member
 
 
 def sign_eip712_catalog_create(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes,
-                               created: int, catalogId: bytes, terms: str, meta: str) -> bytes:
+                               created: int, catalogId: bytes, terms: str, meta: Optional[str]) -> bytes:
     """
 
     :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
@@ -119,28 +120,22 @@ def sign_eip712_catalog_create(eth_privkey: bytes, chainId: int, verifyingContra
     :rtype: bytes
     """
     assert is_eth_privkey(eth_privkey)
-    assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert is_bytes16(catalogId)
 
     data = _create_eip712_catalog_create(chainId, verifyingContract, member, created, catalogId, terms, meta)
+
     return sign(eth_privkey, data)
 
 
 def recover_eip712_catalog_create(chainId: int, verifyingContract: bytes, member: bytes, created: int,
-                                  catalogId: bytes, terms: str, meta: str, signature: bytes) -> bytes:
+                                  catalogId: bytes, terms: str, meta: Optional[str], signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
 
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    assert type(chainId) == int
-    assert is_address(verifyingContract)
-    assert is_address(member)
-    assert is_bytes16(catalogId)
     assert is_signature(signature)
 
     data = _create_eip712_catalog_create(chainId, verifyingContract, member, created, catalogId, terms, meta)
+
     return recover(data, signature)

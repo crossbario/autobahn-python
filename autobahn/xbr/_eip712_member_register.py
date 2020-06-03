@@ -24,14 +24,13 @@
 #
 ###############################################################################
 
-from binascii import a2b_hex
-from py_eth_sig_utils import signing
-
-_EIP712_SIG_LEN = 32 + 32 + 1
+from typing import Optional
+from ._eip712_base import sign, recover, is_address, is_block_number, \
+    is_chain_id, is_eth_privkey, is_signature
 
 
 def _create_eip712_member_register(chainId: int, verifyingContract: bytes, member: bytes, registered: int,
-                                   eula: str, profile: str) -> dict:
+                                   eula: str, profile: Optional[str]) -> dict:
     """
 
     :param chainId:
@@ -42,10 +41,10 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
     :param profile:
     :return:
     """
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(member) == bytes and len(member) == 20
-    assert type(registered) == int
+    assert is_chain_id(chainId)
+    assert is_address(verifyingContract)
+    assert is_address(member)
+    assert is_block_number(registered)
     assert type(eula) == str
     assert profile is None or type(profile) == str
 
@@ -107,7 +106,7 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
 
 
 def sign_eip712_member_register(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes,
-                                registered: int, eula: str, profile: str) -> bytes:
+                                registered: int, eula: Optional[str], profile: str) -> bytes:
     """
 
     :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
@@ -116,54 +115,23 @@ def sign_eip712_member_register(eth_privkey: bytes, chainId: int, verifyingContr
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
-    assert type(eth_privkey) == bytes and len(eth_privkey) == 32
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(member) == bytes and len(member) == 20
-    assert type(registered) == int
-    assert type(eula) == str
-    assert profile is None or type(profile) == str
+    assert is_eth_privkey(eth_privkey)
 
-    # make a private key object from the raw private key bytes
-    # pkey = eth_keys.keys.PrivateKey(eth_privkey)
-
-    # get the canonical address of the account
-    # eth_adr = web3.Web3.toChecksumAddress(pkey.public_key.to_canonical_address())
-    # eth_adr = pkey.public_key.to_canonical_address()
-
-    # create EIP712 typed data object
     data = _create_eip712_member_register(chainId, verifyingContract, member, registered, eula, profile)
 
-    # FIXME: this fails on PyPy (but ot on CPy!) with
-    #  Unknown format b'%M\xff\xcd2w\xc0\xb1f\x0fmB\xef\xbbuN\xda\xba\xbc+', attempted to normalize to 0x254dffcd3277c0b1660f6d42efbb754edababc2b
-    _args = signing.sign_typed_data(data, eth_privkey)
-
-    signature = signing.v_r_s_to_signature(*_args)
-    assert len(signature) == _EIP712_SIG_LEN
-
-    return signature
+    return sign(eth_privkey, data)
 
 
 def recover_eip712_member_register(chainId: int, verifyingContract: bytes, member: bytes, registered: int,
-                                   eula: str, profile: str, signature: bytes) -> bytes:
+                                   eula: str, profile: Optional[str], signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
 
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(member) == bytes and len(member) == 20
-    assert type(registered) == int
-    assert type(eula) == str
-    assert profile is None or type(profile) == str
-    assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
+    assert is_signature(signature)
 
-    # recreate EIP712 typed data object
     data = _create_eip712_member_register(chainId, verifyingContract, member, registered, eula, profile)
 
-    # this returns the signer (checksummed) address as a string, eg "0xE11BA2b4D45Eaed5996Cd0823791E0C93114882d"
-    signer_address = signing.recover_typed_data(data, *signing.signature_to_v_r_s(signature))
-
-    return a2b_hex(signer_address[2:])
+    return recover(data, signature)
