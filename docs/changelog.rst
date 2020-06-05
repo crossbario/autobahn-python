@@ -5,6 +5,20 @@
 Changelog
 =========
 
+20.6.1
+------
+
+* new: massive expansion of XBR CLI and EIP712 helpers
+* new: more (exhaustive) serializer cross-tripping tests
+* fix: some code quality and bug-risk issues (#1379)
+* fix: removed externalPort assignment when not set (#1378)
+* fix: docs link in README (#1381)
+* fix: docs typo frameword -> framework (#1380)
+* fix: improve logging; track results on observable mixin
+* new: add environmental variable that strips xbr. (#1374)
+* fix: trollius is gone (#1373)
+* new: added ability to disable TLS channel binding (#1368)
+
 20.4.3
 ------
 
