@@ -195,6 +195,7 @@ extras_require_dev = [
 
     "twine>=1.6.5",                     # Apache 2.0
     'sphinx>=1.2.3',                    # BSD
+    'sphinxcontrib-images>=0.9.2',      # Apache 2.0
     'pyenchant>=1.6.6',                 # LGPL
     'sphinxcontrib-spelling>=2.1.2',    # BSD
     'sphinx_rtd_theme>=0.1.9',          # BSD

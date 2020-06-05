@@ -110,15 +110,20 @@ RTD_BUILD = os.environ.get('READTHEDOCS', None) == 'True'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-   'sphinx.ext.autodoc',
-   'sphinx.ext.viewcode',
-   'sphinx.ext.intersphinx',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.intersphinx',
 
-   'sphinx.ext.ifconfig',
-   'sphinx.ext.todo',
-   'sphinx.ext.doctest',
-   #'sphinxcontrib.spelling',
-   'txsphinx'
+    # Usage:            .. thumbnail:: picture.png
+    # Installation:     pip install sphinxcontrib-images
+    # Source:           https://github.com/sphinx-contrib/images
+    'sphinxcontrib.images',
+
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.todo',
+    'sphinx.ext.doctest',
+    #'sphinxcontrib.spelling',
+    'txsphinx'
 ]
 
 # extensions not available on RTD
