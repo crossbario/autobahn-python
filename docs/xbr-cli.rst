@@ -132,14 +132,30 @@ Then, to use your Ethereum private key with the XBR CLI, export the private key:
 
 .. thumbnail:: _static/screenshots/xbr-metamask-3.png
 
+When using the XBR CLI, you can provide your Ethereum private key using the command line argument ``--ethkey=0x``
+appended with your key:
+
 .. code-block:: console
 
     --ethkey=0x4C1F...
 
+You can also persistently store your Ethereum private key in the CLI configuration file for one of the user
+profiles you have there:
+
+.. code-block:: console
+
+    $ cat ${HOME}/.xbrnetwork/config.ini
+    [default]
+
+    # user private Ethereum key
+    ethkey=0x4C1F...
+
 .. note::
 
     Obviously, you must protect your *private key*! The *public address* of your wallet is not security
-    sensitive. Even the public address however should always be treated carefully regarding privacy.
+    sensitive. Even the public address however should always be treated carefully regarding privacy. When you
+    store your private key in the CLI configuration file, make sure to protect this file using
+    ``chmod 600 ${HOME}/.xbrnetwork/config.ini``.
 
 Finally, for testing on Rinkeby, get yourself some Ether from the `Rinkeby faucet <https://faucet.rinkeby.io/>`__:
 
@@ -172,12 +188,30 @@ A new key can be created by generating 32 random bytes:
     $ openssl rand -hex 32
     ecdc5e97...
 
-When using the XBR CLI, provide your WAMP client key using the command line argument ``--cskey=0x`` appended
+When using the XBR CLI, provide your WAMP client private key using the command line argument ``--cskey=0x`` appended
 with your key:
 
 .. code-block:: console
 
     --cskey=0xecdc5e97...
+
+You can also persistently store your WAMP client private key in the CLI configuration file for one of the user
+profiles you have there:
+
+.. code-block:: console
+
+    $ cat ${HOME}/.xbrnetwork/config.ini
+    [default]
+
+    # user private WAMP client key
+    cskey=0xecdc5e97...
+
+.. note::
+
+    Obviously, you must protect your *private key*! The *public key* of WAMP client key pair is not security
+    sensitive. Even the public key however should always be treated carefully regarding privacy. When you
+    store your private key in the CLI configuration file, make sure to protect this file using
+    ``chmod 600 ${HOME}/.xbrnetwork/config.ini``.
 
 
 CLI User Profile
@@ -335,9 +369,79 @@ configured to use XBR as a means of payment).
 
 Transfering XBR tokens looks like this
 
-.. thumbnail:: xbr-token-transfer.png
+.. thumbnail:: _static/screenshots/xbr-token-transfer.png
 
 This transfer of 1000 XBR to some target address did cost 0.001541 ETH (or 0.33 EUR) on Rinkeby testnet.
+
+After the transfer (to that member), the member information returned will look like this:
+
+.. thumbnail:: _static/screenshots/xbr-token-transfer-after.png
+
+
+Getting market information
+--------------------------
+
+To get information about an existing XBR data market:
+
+.. code-block:: console
+
+    $ xbrnetwork get-market \
+    --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3
+
+
+Creating a market
+-----------------
+
+To create a new XBR data market, generate a new market UUID:
+
+.. code-block:: console
+
+    $ /usr/bin/uuidgen
+    394205e5-5d3d-4eab-a7e8-6c4de21bc76d
+
+.. code-block:: console
+
+    xbrnetwork create-market \
+    --market 394205e5-5d3d-4eab-a7e8-6c4de21bc76d \
+    --market_title "IDMA test market 1" \
+    --market_label "idma-market1" \
+    --market_homepage https://markets.international-data-monetization-award.com/market1 \
+    --provider_security 0 \
+    --consumer_security 0 \
+    --market_fee 0 \
+    --marketmaker 0x163D58cE482560B7826b4612f40aa2A7d53310C4
+
+.. code-block:: console
+
+    $ xbrnetwork create-market \
+    > --market 394205e5-5d3d-4eab-a7e8-6c4de21bc76d \
+    > --market_title "IDMA test market 1" \
+    > --market_label "idma-market1" \
+    > --market_homepage https://markets.international-data-monetization-award.com/market1 \
+    > --provider_security 0 \
+    > --consumer_security 0 \
+    > --market_fee 0 \
+    > --marketmaker 0x163D58cE482560B7826b4612f40aa2A7d53310C4
+    2020-06-05T20:54:47+0200 XBR CLI v20.6.1
+    2020-06-05T20:54:47+0200 Profile default loaded from /home/oberstet/.xbrnetwork/config.ini
+    2020-06-05T20:54:47+0200 Connecting to "wss://planet.xbr.network/ws" at realm "xbrnetwork" ..
+    2020-06-05T20:54:48+0200 Client Ethereum key loaded, public address is 0x66290fA8ADcD901Fd994e4f64Cfb53F4c359a326
+    2020-06-05T20:54:48+0200 Client WAMP authentication key loaded, public key is 0x7172c38631864153e16f4db7a4a7ff0e2fbe7a180591d28d60e909d77d644964
+    2020-06-05T20:54:48+0200 Client connected, now joining realm "xbrnetwork" with WAMP-cryptosign authentication ..
+    2020-06-05T20:54:48+0200 Ok, client joined on realm "xbrnetwork" [session=6290962938304946, authid="member-ab4dd6fd-6250-4cda-81ba-97f7d52ceac9", authrole="member"]
+    2020-06-05T20:54:49+0200 Total markets before: 3
+    2020-06-05T20:54:49+0200 Market for owner: 0
+    2020-06-05T20:54:55+0200 SUCCESS: Create market request submitted:
+    {'action': 'create_market',
+     'timestamp': 1591383295497514499,
+     'vaction_oid': b'\x14\xd5\xe8\xf8\x0f\x9aM\\\x97{\xbd4\x159\xf1\xba'}
+
+    2020-06-05T20:54:55+0200 SUCCESS: New Market verification "14d5e8f8-0f9a-4d5c-977b-bd341539f1ba" created
+    2020-06-05T20:54:55+0200 Client left realm (reason="wamp.close.normal")
+    2020-06-05T20:54:55+0200 Client disconnected
+    2020-06-05T20:54:55+0200 Main loop terminated.
+
+
 
 
 Joining a market
@@ -351,8 +455,6 @@ Here is how to join as an actor in that market as both a buyer and seller:
 .. code-block:: console
 
     $ xbrnetwork join-market \
-    --cskey=0x7e8f... \
-    --ethkey=0x4C1F7... \
     --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3 \
     --actor_type=3
 
@@ -362,8 +464,6 @@ to complete joining the market:
 .. code-block:: console
 
     xbrnetwork join-market-verify \
-    --cskey=0x7e8f... \
-    --ethkey=0x4C1F7... \
     --vaction=ddcd5452-28cc-4ecb-a0f3-8fc8b596f9a5 \
     --vcode=AGGA-PK6G-57NY
 
@@ -372,8 +472,6 @@ To access your actor status in a market, run:
 .. code-block:: console
 
     $ xbrnetwork get-actor \
-    --cskey=0x7e8f... \
-    --ethkey=0x4C1F7... \
     --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3
 
 
