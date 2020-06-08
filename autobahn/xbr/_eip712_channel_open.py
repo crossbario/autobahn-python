@@ -24,10 +24,8 @@
 #
 ###############################################################################
 
-from binascii import a2b_hex
-from py_eth_sig_utils import signing
-
-_EIP712_SIG_LEN = 32 + 32 + 1
+from ._eip712_base import sign, recover, is_address, is_signature, is_eth_privkey, is_bytes16, \
+    is_block_number, is_chain_id
 
 
 def _create_eip712_channel_open(chainId: int, verifyingContract: bytes, ctype: int, openedAt: int,
@@ -48,16 +46,16 @@ def _create_eip712_channel_open(chainId: int, verifyingContract: bytes, ctype: i
     :param amount:
     :return:
     """
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
+    assert is_chain_id(chainId)
+    assert is_address(verifyingContract)
     assert type(ctype) == int
-    assert type(openedAt) == int
-    assert type(marketId) == bytes and len(marketId) == 16
-    assert type(channelId) == bytes and len(channelId) == 16
-    assert type(actor) == bytes and len(actor) == 20
-    assert type(delegate) == bytes and len(delegate) == 20
-    assert type(marketmaker) == bytes and len(marketmaker) == 20
-    assert type(recipient) == bytes and len(recipient) == 20
+    assert is_block_number(openedAt)
+    assert is_bytes16(marketId)
+    assert is_bytes16(channelId)
+    assert is_address(actor)
+    assert is_address(delegate)
+    assert is_address(marketmaker)
+    assert is_address(recipient)
     assert type(amount) == int
 
     data = {
@@ -141,18 +139,11 @@ def sign_eip712_channel_open(eth_privkey: bytes, chainId: int, verifyingContract
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
-    # create EIP712 typed data object
+    assert is_eth_privkey(eth_privkey)
+
     data = _create_eip712_channel_open(chainId, verifyingContract, ctype, openedAt, marketId, channelId,
                                        actor, delegate, marketmaker, recipient, amount)
-
-    # FIXME: this fails on PyPy (but ot on CPy!) with
-    #  Unknown format b'%M\xff\xcd2w\xc0\xb1f\x0fmB\xef\xbbuN\xda\xba\xbc+', attempted to normalize to 0x254dffcd3277c0b1660f6d42efbb754edababc2b
-    _args = signing.sign_typed_data(data, eth_privkey)
-
-    signature = signing.v_r_s_to_signature(*_args)
-    assert len(signature) == _EIP712_SIG_LEN
-
-    return signature
+    return sign(eth_privkey, data)
 
 
 def recover_eip712_channel_open(chainId: int, verifyingContract: bytes, ctype: int, openedAt: int,
@@ -164,11 +155,8 @@ def recover_eip712_channel_open(chainId: int, verifyingContract: bytes, ctype: i
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    # create EIP712 typed data object
+    assert is_signature(signature)
+
     data = _create_eip712_channel_open(chainId, verifyingContract, ctype, openedAt, marketId, channelId,
                                        actor, delegate, marketmaker, recipient, amount)
-
-    assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
-    signer_address = signing.recover_typed_data(data, *signing.signature_to_v_r_s(signature))
-
-    return a2b_hex(signer_address[2:])
+    return recover(data, signature)

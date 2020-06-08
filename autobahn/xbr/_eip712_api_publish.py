@@ -24,11 +24,13 @@
 #
 ###############################################################################
 
-from ._eip712_base import sign, recover, is_address, is_bytes16
+from typing import Optional
+from ._eip712_base import sign, recover, is_address, is_bytes16, is_block_number, \
+    is_chain_id, is_eth_privkey, is_signature
 
 
 def _create_eip712_api_publish(chainId: int, verifyingContract: bytes, member: bytes, published: int,
-                               catalogId: bytes, apiId: bytes, schema: str, meta: str) -> dict:
+                               catalogId: bytes, apiId: bytes, schema: str, meta: Optional[str]) -> dict:
     """
 
     :param chainId:
@@ -41,10 +43,10 @@ def _create_eip712_api_publish(chainId: int, verifyingContract: bytes, member: b
     :param meta:
     :return:
     """
-    assert type(chainId) == int
+    assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_address(member)
-    assert type(published) == int
+    assert is_block_number(published)
     assert is_bytes16(catalogId)
     assert is_bytes16(apiId)
     assert type(schema) == str
@@ -118,7 +120,7 @@ def _create_eip712_api_publish(chainId: int, verifyingContract: bytes, member: b
 
 
 def sign_eip712_api_publish(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes,
-                            published: int, catalogId: bytes, apiId: bytes, schema: str, meta: str) -> bytes:
+                            published: int, catalogId: bytes, apiId: bytes, schema: str, meta: Optional[str]) -> bytes:
     """
 
     :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
@@ -127,14 +129,15 @@ def sign_eip712_api_publish(eth_privkey: bytes, chainId: int, verifyingContract:
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
-    # create EIP712 typed data object
+    assert is_eth_privkey(eth_privkey)
+
     data = _create_eip712_api_publish(chainId, verifyingContract, member, published, catalogId, apiId, schema,
                                       meta)
     return sign(eth_privkey, data)
 
 
 def recover_eip712_api_publish(chainId: int, verifyingContract: bytes, member: bytes, published: int,
-                               catalogId: bytes, apiId: bytes, schema: str, meta: str,
+                               catalogId: bytes, apiId: bytes, schema: str, meta: Optional[str],
                                signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
@@ -142,7 +145,8 @@ def recover_eip712_api_publish(chainId: int, verifyingContract: bytes, member: b
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    # recreate EIP712 typed data object
+    assert is_signature(signature)
+
     data = _create_eip712_api_publish(chainId, verifyingContract, member, published, catalogId, apiId, schema,
                                       meta)
     return recover(data, signature)

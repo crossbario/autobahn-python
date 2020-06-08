@@ -24,29 +24,29 @@
 #
 ###############################################################################
 
-from typing import Optional
-from ._eip712_base import sign, recover, is_address, is_block_number, \
+from ._eip712_base import sign, recover, is_address, is_bytes16, is_block_number, \
     is_chain_id, is_eth_privkey, is_signature
 
 
-def _create_eip712_member_register(chainId: int, verifyingContract: bytes, member: bytes, registered: int,
-                                   eula: str, profile: Optional[str]) -> dict:
+def _create_eip712_market_leave(chainId: int, verifyingContract: bytes, member: bytes, left: int,
+                                marketId: bytes, actorType: int) -> dict:
     """
 
     :param chainId:
     :param verifyingContract:
     :param member:
-    :param registered:
-    :param eula:
-    :param profile:
+    :param joined:
+    :param marketId:
+    :param actorType:
+    :param meta:
     :return:
     """
     assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_address(member)
-    assert is_block_number(registered)
-    assert type(eula) == str
-    assert profile is None or type(profile) == str
+    assert is_block_number(left)
+    assert is_bytes16(marketId)
+    assert type(actorType) == int
 
     data = {
         'types': {
@@ -60,7 +60,7 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
                     'type': 'string'
                 },
             ],
-            'EIP712MemberRegister': [
+            'EIP712MarketLeave': [
                 {
                     'name': 'chainId',
                     'type': 'uint256'
@@ -74,20 +74,20 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
                     'type': 'address'
                 },
                 {
-                    'name': 'registered',
+                    'name': 'left',
                     'type': 'uint256'
                 },
                 {
-                    'name': 'eula',
-                    'type': 'string'
+                    'name': 'marketId',
+                    'type': 'bytes16'
                 },
                 {
-                    'name': 'profile',
-                    'type': 'string'
+                    'name': 'actorType',
+                    'type': 'uint8'
                 },
             ]
         },
-        'primaryType': 'EIP712MemberRegister',
+        'primaryType': 'EIP712MarketLeave',
         'domain': {
             'name': 'XBR',
             'version': '1',
@@ -96,17 +96,17 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
             'chainId': chainId,
             'verifyingContract': verifyingContract,
             'member': member,
-            'registered': registered,
-            'eula': eula,
-            'profile': profile or '',
+            'left': left,
+            'marketId': marketId,
+            'actorType': actorType,
         }
     }
 
     return data
 
 
-def sign_eip712_member_register(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes,
-                                registered: int, eula: Optional[str], profile: str) -> bytes:
+def sign_eip712_market_leave(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes, left: int,
+                             marketId: bytes, actorType: int) -> bytes:
     """
 
     :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
@@ -117,13 +117,13 @@ def sign_eip712_member_register(eth_privkey: bytes, chainId: int, verifyingContr
     """
     assert is_eth_privkey(eth_privkey)
 
-    data = _create_eip712_member_register(chainId, verifyingContract, member, registered, eula, profile)
+    data = _create_eip712_market_leave(chainId, verifyingContract, member, left, marketId, actorType)
 
     return sign(eth_privkey, data)
 
 
-def recover_eip712_member_register(chainId: int, verifyingContract: bytes, member: bytes, registered: int,
-                                   eula: str, profile: Optional[str], signature: bytes) -> bytes:
+def recover_eip712_market_leave(chainId: int, verifyingContract: bytes, member: bytes, left: int,
+                                marketId: bytes, actorType: int, signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
 
@@ -132,6 +132,6 @@ def recover_eip712_member_register(chainId: int, verifyingContract: bytes, membe
     """
     assert is_signature(signature)
 
-    data = _create_eip712_member_register(chainId, verifyingContract, member, registered, eula, profile)
+    data = _create_eip712_market_leave(chainId, verifyingContract, member, left, marketId, actorType)
 
     return recover(data, signature)

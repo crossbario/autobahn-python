@@ -24,29 +24,24 @@
 #
 ###############################################################################
 
-from typing import Optional
-from ._eip712_base import sign, recover, is_address, is_block_number, \
-    is_chain_id, is_eth_privkey, is_signature
+from ._eip712_base import sign, recover, is_chain_id, is_address, \
+    is_block_number, is_signature, is_eth_privkey
 
 
-def _create_eip712_member_register(chainId: int, verifyingContract: bytes, member: bytes, registered: int,
-                                   eula: str, profile: Optional[str]) -> dict:
+def _create_eip712_member_unregister(chainId: int, verifyingContract: bytes, member: bytes,
+                                     retired: int) -> dict:
     """
 
     :param chainId:
     :param verifyingContract:
     :param member:
-    :param registered:
-    :param eula:
-    :param profile:
+    :param retired:
     :return:
     """
     assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_address(member)
-    assert is_block_number(registered)
-    assert type(eula) == str
-    assert profile is None or type(profile) == str
+    assert is_block_number(retired)
 
     data = {
         'types': {
@@ -60,7 +55,7 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
                     'type': 'string'
                 },
             ],
-            'EIP712MemberRegister': [
+            'EIP712MemberUnregister': [
                 {
                     'name': 'chainId',
                     'type': 'uint256'
@@ -74,20 +69,12 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
                     'type': 'address'
                 },
                 {
-                    'name': 'registered',
+                    'name': 'retired',
                     'type': 'uint256'
-                },
-                {
-                    'name': 'eula',
-                    'type': 'string'
-                },
-                {
-                    'name': 'profile',
-                    'type': 'string'
                 },
             ]
         },
-        'primaryType': 'EIP712MemberRegister',
+        'primaryType': 'EIP712MemberUnregister',
         'domain': {
             'name': 'XBR',
             'version': '1',
@@ -96,17 +83,15 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
             'chainId': chainId,
             'verifyingContract': verifyingContract,
             'member': member,
-            'registered': registered,
-            'eula': eula,
-            'profile': profile or '',
+            'paired': retired,
         }
     }
 
     return data
 
 
-def sign_eip712_member_register(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes,
-                                registered: int, eula: Optional[str], profile: str) -> bytes:
+def sign_eip712_member_unregister(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes,
+                                  retired: int) -> bytes:
     """
 
     :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
@@ -117,13 +102,13 @@ def sign_eip712_member_register(eth_privkey: bytes, chainId: int, verifyingContr
     """
     assert is_eth_privkey(eth_privkey)
 
-    data = _create_eip712_member_register(chainId, verifyingContract, member, registered, eula, profile)
+    data = _create_eip712_member_unregister(chainId, verifyingContract, member, retired)
 
     return sign(eth_privkey, data)
 
 
-def recover_eip712_member_register(chainId: int, verifyingContract: bytes, member: bytes, registered: int,
-                                   eula: str, profile: Optional[str], signature: bytes) -> bytes:
+def recover_eip712_member_unregister(chainId: int, verifyingContract: bytes, member: bytes, retired: int,
+                                     signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
 
@@ -132,6 +117,6 @@ def recover_eip712_member_register(chainId: int, verifyingContract: bytes, membe
     """
     assert is_signature(signature)
 
-    data = _create_eip712_member_register(chainId, verifyingContract, member, registered, eula, profile)
+    data = _create_eip712_member_unregister(chainId, verifyingContract, member, retired)
 
     return recover(data, signature)

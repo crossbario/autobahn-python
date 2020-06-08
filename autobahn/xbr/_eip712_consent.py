@@ -24,12 +24,14 @@
 #
 ###############################################################################
 
-from ._eip712_base import sign, recover, is_address, is_bytes16
+from typing import Optional
+from ._eip712_base import sign, recover, is_address, is_bytes16, is_eth_privkey, \
+    is_signature, is_chain_id, is_block_number
 
 
 def _create_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes, updated: int,
                            marketId: bytes, delegate: bytes, delegateType: int, apiCatalog: bytes,
-                           consent: bool, servicePrefix: str) -> dict:
+                           consent: bool, servicePrefix: Optional[str]) -> dict:
     """
 
     :param chainId:
@@ -44,10 +46,10 @@ def _create_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes
     :param servicePrefix:
     :return:
     """
-    assert type(chainId) == int
+    assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_address(member)
-    assert type(updated) == int
+    assert is_block_number(updated)
     assert is_bytes16(marketId)
     assert is_address(delegate)
     assert type(delegateType) == int
@@ -143,7 +145,8 @@ def sign_eip712_consent(eth_privkey: bytes, chainId: int, verifyingContract: byt
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
-    # create EIP712 typed data object
+    assert is_eth_privkey(eth_privkey)
+
     data = _create_eip712_consent(chainId, verifyingContract, member, updated, marketId, delegate,
                                   delegateType, apiCatalog, consent, servicePrefix)
     return sign(eth_privkey, data)
@@ -158,7 +161,8 @@ def recover_eip712_consent(chainId: int, verifyingContract: bytes, member: bytes
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    # create EIP712 typed data object
+    assert is_signature(signature)
+
     data = _create_eip712_consent(chainId, verifyingContract, member, updated, marketId, delegate,
                                   delegateType, apiCatalog, consent, servicePrefix)
     return recover(data, signature)

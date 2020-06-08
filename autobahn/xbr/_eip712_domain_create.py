@@ -25,28 +25,32 @@
 ###############################################################################
 
 from typing import Optional
-from ._eip712_base import sign, recover, is_address, is_block_number, \
-    is_chain_id, is_eth_privkey, is_signature
+from ._eip712_base import sign, recover, is_chain_id, is_address, is_bytes16, is_cs_pubkey, \
+    is_block_number, is_signature, is_eth_privkey
 
 
-def _create_eip712_member_register(chainId: int, verifyingContract: bytes, member: bytes, registered: int,
-                                   eula: str, profile: Optional[str]) -> dict:
+def _create_eip712_domain_create(chainId: int, verifyingContract: bytes, member: bytes, created: int,
+                                 domainId: bytes, domainKey: bytes, license: str, terms: str,
+                                 meta: Optional[str]) -> dict:
     """
 
     :param chainId:
     :param verifyingContract:
     :param member:
-    :param registered:
-    :param eula:
-    :param profile:
+    :param created:
+    :param domainId:
+    :param domainKey:
+    :param license:
+    :param terms:
+    :param meta:
     :return:
     """
     assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_address(member)
-    assert is_block_number(registered)
-    assert type(eula) == str
-    assert profile is None or type(profile) == str
+    assert is_block_number(created)
+    assert is_bytes16(domainId)
+    assert is_cs_pubkey(domainKey)
 
     data = {
         'types': {
@@ -60,7 +64,7 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
                     'type': 'string'
                 },
             ],
-            'EIP712MemberRegister': [
+            'EIP712DomainCreate': [
                 {
                     'name': 'chainId',
                     'type': 'uint256'
@@ -74,20 +78,32 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
                     'type': 'address'
                 },
                 {
-                    'name': 'registered',
+                    'name': 'created',
                     'type': 'uint256'
                 },
                 {
-                    'name': 'eula',
+                    'name': 'domainId',
+                    'type': 'bytes16'
+                },
+                {
+                    'name': 'domainKey',
+                    'type': 'bytes32'
+                },
+                {
+                    'name': 'license',
                     'type': 'string'
                 },
                 {
-                    'name': 'profile',
+                    'name': 'terms',
+                    'type': 'string'
+                },
+                {
+                    'name': 'meta',
                     'type': 'string'
                 },
             ]
         },
-        'primaryType': 'EIP712MemberRegister',
+        'primaryType': 'EIP712DomainCreate',
         'domain': {
             'name': 'XBR',
             'version': '1',
@@ -96,20 +112,24 @@ def _create_eip712_member_register(chainId: int, verifyingContract: bytes, membe
             'chainId': chainId,
             'verifyingContract': verifyingContract,
             'member': member,
-            'registered': registered,
-            'eula': eula,
-            'profile': profile or '',
+            'created': created,
+            'domainId': domainId,
+            'domainKey': domainKey,
+            'license': license,
+            'terms': terms,
+            'meta': meta or '',
         }
     }
 
     return data
 
 
-def sign_eip712_member_register(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes,
-                                registered: int, eula: Optional[str], profile: str) -> bytes:
+def sign_eip712_domain_create(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes, created: int,
+                              domainId: bytes, domainKey: bytes, license: str, terms: str,
+                              meta: str) -> bytes:
     """
 
-    :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
+    :param eth_privkey: Ethereum address of member (a raw 20 bytes Ethereum address).
     :type eth_privkey: bytes
 
     :return: The signature according to EIP712 (32+32+1 raw bytes).
@@ -117,13 +137,13 @@ def sign_eip712_member_register(eth_privkey: bytes, chainId: int, verifyingContr
     """
     assert is_eth_privkey(eth_privkey)
 
-    data = _create_eip712_member_register(chainId, verifyingContract, member, registered, eula, profile)
-
+    data = _create_eip712_domain_create(chainId, verifyingContract, member, created, domainId, domainKey, license,
+                                        terms, meta)
     return sign(eth_privkey, data)
 
 
-def recover_eip712_member_register(chainId: int, verifyingContract: bytes, member: bytes, registered: int,
-                                   eula: str, profile: Optional[str], signature: bytes) -> bytes:
+def recover_eip712_domain_create(chainId: int, verifyingContract: bytes, member: bytes, created: int, domainId: bytes,
+                                 domainKey: bytes, license: str, terms: str, meta: str, signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
 
@@ -132,6 +152,6 @@ def recover_eip712_member_register(chainId: int, verifyingContract: bytes, membe
     """
     assert is_signature(signature)
 
-    data = _create_eip712_member_register(chainId, verifyingContract, member, registered, eula, profile)
-
+    data = _create_eip712_domain_create(chainId, verifyingContract, member, created, domainId, domainKey, license,
+                                        terms, meta)
     return recover(data, signature)

@@ -24,10 +24,8 @@
 #
 ###############################################################################
 
-from binascii import a2b_hex
-from py_eth_sig_utils import signing
-
-_EIP712_SIG_LEN = 32 + 32 + 1
+from ._eip712_base import sign, recover, is_address, is_signature, is_eth_privkey, is_bytes16, \
+    is_block_number, is_chain_id
 
 
 def _create_eip712_channel_close(chainId: int, verifyingContract: bytes, closeAt: int, marketId: bytes, channelId: bytes,
@@ -43,11 +41,11 @@ def _create_eip712_channel_close(chainId: int, verifyingContract: bytes, closeAt
     :param isFinal:
     :return:
     """
-    assert type(chainId) == int
-    assert type(verifyingContract) == bytes and len(verifyingContract) == 20
-    assert type(closeAt) == int
-    assert type(marketId) == bytes and len(marketId) == 16
-    assert type(channelId) == bytes and len(channelId) == 16
+    assert is_chain_id(chainId)
+    assert is_address(verifyingContract)
+    assert is_block_number(closeAt)
+    assert is_bytes16(marketId)
+    assert is_bytes16(channelId)
     assert type(channelSeq) == int
     assert type(balance) == int
     assert type(isFinal) == bool
@@ -120,18 +118,11 @@ def sign_eip712_channel_close(eth_privkey: bytes, chainId: int, verifyingContrac
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     :rtype: bytes
     """
-    # create EIP712 typed data object
+    assert is_eth_privkey(eth_privkey)
+
     data = _create_eip712_channel_close(chainId, verifyingContract, closeAt, marketId, channelId, channelSeq, balance,
                                         isFinal)
-
-    # FIXME: this fails on PyPy (but ot on CPy!) with
-    #  Unknown format b'%M\xff\xcd2w\xc0\xb1f\x0fmB\xef\xbbuN\xda\xba\xbc+', attempted to normalize to 0x254dffcd3277c0b1660f6d42efbb754edababc2b
-    _args = signing.sign_typed_data(data, eth_privkey)
-
-    signature = signing.v_r_s_to_signature(*_args)
-    assert len(signature) == _EIP712_SIG_LEN
-
-    return signature
+    return sign(eth_privkey, data)
 
 
 def recover_eip712_channel_close(chainId: int, verifyingContract: bytes, closeAt: int, marketId: bytes, channelId: bytes,
@@ -142,11 +133,8 @@ def recover_eip712_channel_close(chainId: int, verifyingContract: bytes, closeAt
     :return: The (computed) signer address the signature was signed with.
     :rtype: bytes
     """
-    # create EIP712 typed data object
+    assert is_signature(signature)
+
     data = _create_eip712_channel_close(chainId, verifyingContract, closeAt, marketId, channelId, channelSeq, balance,
                                         isFinal)
-
-    assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
-    signer_address = signing.recover_typed_data(data, *signing.signature_to_v_r_s(signature))
-
-    return a2b_hex(signer_address[2:])
+    return recover(data, signature)
