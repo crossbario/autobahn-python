@@ -379,12 +379,7 @@ class Message(object):
         '_correlation_is_anchor',
         '_correlation_is_last',
 
-        '_internal_publisher',
-        '_internal_publisher_authid',
-        '_internal_publisher_authrole',
-        '_internal_caller',
-        '_internal_caller_authid',
-        '_internal_caller_authrole',
+        '_router_internal',
     )
 
     def __init__(self, from_fbs=None):
@@ -401,12 +396,7 @@ class Message(object):
         self._correlation_is_last = None
 
         # non-serialized 'internal' attributes (used by Crossbar router)
-        self._internal_publisher = None
-        self._internal_publisher_authid = None
-        self._internal_publisher_authrole = None
-        self._internal_caller = None
-        self._internal_caller_authid = None
-        self._internal_caller_authrole = None
+        self._router_internal = None
 
     @property
     def correlation_id(self):
