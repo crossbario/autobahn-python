@@ -39,7 +39,7 @@ matrix:
     #
     # Flake8
     #
-    - python: "3.5"
+    - python: "3.8"
       env:
       - TOX_ENV=flake8
 

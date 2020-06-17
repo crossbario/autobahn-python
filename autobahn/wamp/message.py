@@ -378,6 +378,8 @@ class Message(object):
         '_correlation_uri',
         '_correlation_is_anchor',
         '_correlation_is_last',
+
+        '_router_internal',
     )
 
     def __init__(self, from_fbs=None):
@@ -392,6 +394,9 @@ class Message(object):
         self._correlation_uri = None
         self._correlation_is_anchor = None
         self._correlation_is_last = None
+
+        # non-serialized 'internal' attributes (used by Crossbar router)
+        self._router_internal = None
 
     @property
     def correlation_id(self):
