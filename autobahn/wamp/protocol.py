@@ -1078,15 +1078,21 @@ class ApplicationSession(BaseSession):
                                     self._transport.send(reply)
                                 except SerializationError as e:
                                     # the application-level payload returned from the invoked procedure can't be serialized
-                                    reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
-                                                          args=['success return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
-                                    self._transport.send(reply)
+                                    error_reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
+                                                                args=['success return value (args={}, kwargs={}) from invoked procedure "{}" could not be serialized: {}'.format(reply.args,
+                                                                                                                                                                                 reply.kwargs,
+                                                                                                                                                                                 registration.procedure,
+                                                                                                                                                                                 e)])
+                                    self._transport.send(error_reply)
                                 except PayloadExceededError as e:
                                     # the application-level payload returned from the invoked procedure, when serialized and framed
                                     # for the transport, exceeds the transport message/frame size limit
-                                    reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.PAYLOAD_SIZE_EXCEEDED,
-                                                          args=['success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(registration.procedure, e)])
-                                    self._transport.send(reply)
+                                    error_reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.PAYLOAD_SIZE_EXCEEDED,
+                                                                args=['success return value (args={}, kwargs={}) from invoked procedure "{}" exceeds transport size limit: {}'.format(reply.args,
+                                                                                                                                                                                      reply.kwargs,
+                                                                                                                                                                                      registration.procedure,
+                                                                                                                                                                                      e)])
+                                    self._transport.send(error_reply)
 
                             def error(err):
                                 del self._invocations[msg.request]
