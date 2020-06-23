@@ -260,6 +260,7 @@ cskey={cskey}
 
 # default XBR market URL to connect to
 market_url={market_url}
+market_realm={market_realm}
 
 # Infura blockchain gateway configuration
 infura_url={infura_url}
@@ -284,12 +285,23 @@ def load_or_create_profile(dotdir=None, profile=None):
         with open(config_path, 'w') as f:
             market_url = prompt_for_wamp_url('enter a XBR data market URL')
             market_realm = click.prompt('enter the WAMP realm of the XBR data market', type=str)
-            ethkey = prompt_for_key('your private Etherum key', 32)
-            cskey = prompt_for_key('your private WAMP client key', 32)
-            infura_network = click.prompt('enter Ethereum network to use', type=str, default='rinkeby')
-            infura_url = click.prompt('enter Infura gateway URL', type=str)
-            infura_key = click.prompt('your Infura gateway key', type=str)
-            infura_secret = click.prompt('your Infura gateway secret', type=str)
+            ethkey = prompt_for_key('your private Etherum key', os.urandom(32))
+            cskey = prompt_for_key('your private WAMP client key', os.urandom(32))
+
+            # infura_url=https://rinkeby.infura.io/v3/40c6...
+            # infura_network=rinkeby
+            # infura_key=40c6...
+            # infura_secret=5511...
+            infura_network = click.prompt('enter Ethereum network to use', type=str, default='')
+            if infura_network:
+                infura_url = click.prompt('enter Infura gateway URL', type=str)
+                infura_key = click.prompt('your Infura gateway key', type=str)
+                infura_secret = click.prompt('your Infura gateway secret', type=str)
+            else:
+                infura_url = ''
+                infura_key = ''
+                infura_secret = ''
+
             f.write(_DEFAULT_CONFIG.format(market_url=market_url, market_realm=market_realm, ethkey=ethkey,
                                            cskey=cskey, infura_url=infura_url, infura_network=infura_network,
                                            infura_key=infura_key, infura_secret=infura_secret))

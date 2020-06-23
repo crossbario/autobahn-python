@@ -54,8 +54,8 @@ if HAS_XBR:
     class KeySeries(_seller.KeySeries):
         log = txaio.make_logger()
 
-        def __init__(self, api_id, price, interval, on_rotate=None):
-            super().__init__(api_id, price, interval, on_rotate)
+        def __init__(self, api_id, price, interval=None, count=None, on_rotate=None):
+            super().__init__(api_id, price, interval, count, on_rotate)
             self.running = False
             self._run_loop = None
             self._started = None

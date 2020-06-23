@@ -53,6 +53,8 @@ try:
     from autobahn.xbr._seller import SimpleSeller, KeySeries  # noqa
     from autobahn.xbr._buyer import SimpleBuyer  # noqa
 
+    from autobahn.xbr._config import load_or_create_profile, UserConfig, Profile  # noqa
+
     HAS_XBR = True
 
     if not hasattr(abi, 'collapse_type'):
@@ -294,6 +296,10 @@ try:
         'recover_eip712_channel_open',
         'sign_eip712_channel_close',
         'recover_eip712_channel_close',
+
+        'load_or_create_profile',
+        'UserConfig',
+        'Profile',
 
         'MemberLevel',
         'ActorType',
