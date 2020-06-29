@@ -5,6 +5,14 @@
 Changelog
 =========
 
+20.6.2
+------
+
+* fix: xbr fixes (#1396)
+* fix: use cpy 3.8 for running flake in CI
+* new: Ticket1392 internal attrs (#1394)
+* new: internal-only router attributes and hook for router to add custom information
+
 20.6.1
 ------
 
