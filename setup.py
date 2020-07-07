@@ -164,7 +164,12 @@ packages = [
     'twisted.plugins',
 ]
 
-package_data = {'autobahn.asyncio': ['./test/*']}
+package_data = {
+    '': ['LICENSE'],
+    'autobahn.asyncio': ['./test/*'],
+    'autobahn.nvx': ['_utf8validator.c'],
+    'autobahn.wamp.gen.schema': ['*.bfbs']
+}
 
 entry_points = {
     "console_scripts": [
@@ -178,7 +183,7 @@ if 'AUTOBAHN_STRIP_XBR' in os.environ:
 else:
     extras_require_all += extras_require_xbr
     packages += ['autobahn.xbr', 'autobahn.asyncio.xbr', 'autobahn.twisted.xbr']
-    package_data['xbr'] = ['./xbr/contracts/*.json']
+    package_data['autobahn.xbr'] = ['contracts/*.json']
     entry_points['console_scripts'] += ["xbrnetwork = autobahn.xbr._cli:_main"]
 
 # development dependencies
@@ -275,9 +280,6 @@ setup(
     cffi_modules=cffi_modules,
 
     entry_points=entry_points,
-
-    # this flag will make files from MANIFEST.in go into _source_ distributions only
-    include_package_data=True,
 
     zip_safe=False,
 
