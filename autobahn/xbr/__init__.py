@@ -48,6 +48,10 @@ try:
     from autobahn.xbr._eip712_consent import sign_eip712_consent, recover_eip712_consent  # noqa
     from autobahn.xbr._eip712_channel_open import sign_eip712_channel_open, recover_eip712_channel_open  # noqa
     from autobahn.xbr._eip712_channel_close import sign_eip712_channel_close, recover_eip712_channel_close  # noqa
+    from autobahn.xbr._eip712_market_member_login import sign_eip712_market_member_login, \
+        recover_eip712_market_member_login  # noqa
+    from autobahn.xbr._eip712_base import is_address, is_chain_id, is_block_number, is_signature, \
+        is_cs_pubkey, is_bytes16, is_eth_privkey  # noqa
 
     from autobahn.xbr._blockchain import SimpleBlockchain  # noqa
     from autobahn.xbr._seller import SimpleSeller, KeySeries  # noqa
@@ -296,6 +300,16 @@ try:
         'recover_eip712_channel_open',
         'sign_eip712_channel_close',
         'recover_eip712_channel_close',
+        'sign_eip712_market_member_login',
+        'recover_eip712_market_member_login',
+
+        'is_bytes16',
+        'is_cs_pubkey',
+        'is_signature',
+        'is_chain_id',
+        'is_eth_privkey',
+        'is_block_number',
+        'is_address',
 
         'load_or_create_profile',
         'UserConfig',
