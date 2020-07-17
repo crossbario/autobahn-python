@@ -5,6 +5,11 @@
 Changelog
 =========
 
+20.7.1
+------
+
+* new: add market login eip. expose helpers (#1402)
+
 20.6.2
 ------
 
