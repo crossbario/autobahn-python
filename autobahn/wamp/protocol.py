@@ -502,10 +502,14 @@ class ApplicationSession(BaseSession):
             response = []
             for name, kind in func.__annotations__.items():
                 if name in arguments:
+                    # if a "type" has __origin__ attribute it is a
+                    # parameterized generic
                     if getattr(kind, "__origin__", None) == Union:
+                        acceptable_types = [arg.__name__ for arg in kind.__args__]
                         if not isinstance(arguments[name], kind.__args__):
                             response.append(
-                                "'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
+                                "'{}' acceptable types={} got={}".format(name, acceptable_types,
+                                                                         type(arguments[name]).__name__))
                     elif not isinstance(arguments[name], kind):
                         response.append(
                             "'{}' required={} got={}".format(name, kind.__name__, type(arguments[name]).__name__))
