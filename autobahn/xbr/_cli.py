@@ -194,7 +194,7 @@ class Client(ApplicationSession):
         else:
             # WAMP authid on xbrnetwork follows this format: "member-"
             member_oid = uuid.UUID(details.authid[7:])
-            # member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+            # member_data = await self.call('xbr.network.get_member', member_oid.bytes)
             # self.log.info('Address is already a member in the XBR network:\n\n{member_data}', member_data=pformat(member_data))
 
             assert command in ['get-member', 'get-market', 'create-market', 'create-market-verify',
@@ -289,9 +289,9 @@ class Client(ApplicationSession):
             assert False, 'should not arrive here'
 
     async def _do_get_member(self, member_adr):
-        is_member = await self.call('network.xbr.console.is_member', member_adr)
+        is_member = await self.call('xbr.network.is_member', member_adr)
         if is_member:
-            member_data = await self.call('network.xbr.console.get_member_by_wallet', member_adr)
+            member_data = await self.call('xbr.network.get_member_by_wallet', member_adr)
 
             member_data['address'] = web3.Web3.toChecksumAddress(member_data['address'])
             member_data['oid'] = uuid.UUID(bytes=member_data['oid'])
@@ -320,9 +320,9 @@ class Client(ApplicationSession):
                           member_adr=binascii.b2a_hex(member_adr).decode())
 
     async def _do_get_actor(self, market_oid, actor_adr):
-        is_member = await self.call('network.xbr.console.is_member', actor_adr)
+        is_member = await self.call('xbr.network.is_member', actor_adr)
         if is_member:
-            actor = await self.call('network.xbr.console.get_member_by_wallet', actor_adr)
+            actor = await self.call('xbr.network.get_member_by_wallet', actor_adr)
             actor_oid = uuid.UUID(bytes=actor['oid'])
             actor_adr = web3.Web3.toChecksumAddress(actor['address'])
             actor_level = actor['level']
@@ -337,12 +337,12 @@ class Client(ApplicationSession):
             if market_oid:
                 market_oids = [market_oid.bytes]
             else:
-                market_oids = await self.call('network.xbr.console.get_markets_by_actor', actor_oid.bytes)
+                market_oids = await self.call('xbr.network.get_markets_by_actor', actor_oid.bytes)
 
             if market_oids:
                 for market_oid in market_oids:
-                    # market = await self.call('network.xbr.console.get_market', market_oid)
-                    result = await self.call('network.xbr.console.get_actor_in_market', market_oid, actor['address'])
+                    # market = await self.call('xbr.network.get_market', market_oid)
+                    result = await self.call('xbr.network.get_actor_in_market', market_oid, actor['address'])
                     for actor in result:
                         actor['actor'] = web3.Web3.toChecksumAddress(actor['actor'])
                         actor['timestamp'] = np.datetime64(actor['timestamp'], 'ns')
@@ -384,8 +384,8 @@ class Client(ApplicationSession):
         # delegate ethereum account canonical address
         wallet_adr = wallet_key.public_key.to_canonical_address()
 
-        config = await self.call('network.xbr.console.get_config')
-        status = await self.call('network.xbr.console.get_status')
+        config = await self.call('xbr.network.get_config')
+        status = await self.call('xbr.network.get_status')
 
         verifyingChain = config['verifying_chain_id']
         verifyingContract = binascii.a2b_hex(config['verifying_contract_adr'][2:])
@@ -414,7 +414,7 @@ class Client(ApplicationSession):
 
         # https://xbr.network/docs/network/api.html#xbrnetwork.XbrNetworkApi.onboard_member
         try:
-            result = await self.call('network.xbr.console.onboard_member',
+            result = await self.call('xbr.network.onboard_member',
                                      member_username, member_email, client_pubkey, wallet_type, wallet_adr,
                                      verifyingChain, registered, verifyingContract, eula, profile, profile_data,
                                      signature)
@@ -438,7 +438,7 @@ class Client(ApplicationSession):
         self.log.info('Verifying member using vaction_oid={vaction_oid}, vaction_code={vaction_code} ..',
                       vaction_oid=vaction_oid, vaction_code=vaction_code)
         try:
-            result = await self.call('network.xbr.console.verify_onboard_member', vaction_oid.bytes, vaction_code)
+            result = await self.call('xbr.network.verify_onboard_member', vaction_oid.bytes, vaction_code)
         except ApplicationError as e:
             self.log.error('ApplicationError: {error}', error=e)
             raise e
@@ -453,25 +453,25 @@ class Client(ApplicationSession):
 
     async def _do_create_market(self, member_oid, market_oid, marketmaker, title=None, label=None, homepage=None,
                                 provider_security=0, consumer_security=0, market_fee=0):
-        member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+        member_data = await self.call('xbr.network.get_member', member_oid.bytes)
         member_adr = member_data['address']
 
-        config = await self.call('network.xbr.console.get_config')
+        config = await self.call('xbr.network.get_config')
 
         verifyingChain = config['verifying_chain_id']
         verifyingContract = binascii.a2b_hex(config['verifying_contract_adr'][2:])
 
         coin_adr = binascii.a2b_hex(config['contracts']['xbrtoken'][2:])
 
-        status = await self.call('network.xbr.console.get_status')
+        status = await self.call('xbr.network.get_status')
         block_number = status['block']['number']
 
         # count all markets before we create a new one:
-        res = await self.call('network.xbr.console.find_markets')
+        res = await self.call('xbr.network.find_markets')
         cnt_market_before = len(res)
         self.log.info('Total markets before: {cnt_market_before}', cnt_market_before=cnt_market_before)
 
-        res = await self.call('network.xbr.console.get_markets_by_owner', member_oid.bytes)
+        res = await self.call('xbr.network.get_markets_by_owner', member_oid.bytes)
         cnt_market_by_owner_before = len(res)
         self.log.info('Market for owner: {cnt_market_by_owner_before}',
                       cnt_market_by_owner_before=cnt_market_by_owner_before)
@@ -522,7 +522,7 @@ class Client(ApplicationSession):
         #   - market operator (owning member) and market oid
         #   - signed market data and signature
         #   - settings
-        createmarket_request_submitted = await self.call('network.xbr.console.create_market', member_oid.bytes,
+        createmarket_request_submitted = await self.call('xbr.network.create_market', member_oid.bytes,
                                                          market_oid.bytes, verifyingChain, block_number,
                                                          verifyingContract, coin_adr, terms_hash, meta_hash, meta_data,
                                                          marketmaker, provider_security, consumer_security, market_fee,
@@ -547,7 +547,7 @@ class Client(ApplicationSession):
         self.log.info('Verifying create market using vaction_oid={vaction_oid}, vaction_code={vaction_code} ..',
                       vaction_oid=vaction_oid, vaction_code=vaction_code)
 
-        create_market_request_verified = await self.call('network.xbr.console.verify_create_market', vaction_oid.bytes,
+        create_market_request_verified = await self.call('xbr.network.verify_create_market', vaction_oid.bytes,
                                                          vaction_code)
 
         self.log.info('Create market request verified: \n{create_market_request_verified}\n',
@@ -564,7 +564,7 @@ class Client(ApplicationSession):
         self.log.info('SUCCESS! New XBR market created: market_oid={market_oid}, result=\n{result}',
                       market_oid=uuid.UUID(bytes=market_oid), result=pformat(create_market_request_verified))
 
-        market_oids = await self.call('network.xbr.console.find_markets')
+        market_oids = await self.call('xbr.network.find_markets')
         self.log.info('SUCCESS - find_markets: found {cnt_markets} markets', cnt_markets=len(market_oids))
 
         # count all markets after we created a new market:
@@ -573,7 +573,7 @@ class Client(ApplicationSession):
         assert market_oid in market_oids, 'expected to find market ID {}, but not found in {} returned market IDs'.format(
             uuid.UUID(bytes=market_oid), len(market_oids))
 
-        market_oids = await self.call('network.xbr.console.get_markets_by_owner', member_oid.bytes)
+        market_oids = await self.call('xbr.network.get_markets_by_owner', member_oid.bytes)
         self.log.info('SUCCESS - get_markets_by_owner: found {cnt_markets} markets', cnt_markets=len(market_oids))
 
         # count all markets after we created a new market:
@@ -584,14 +584,14 @@ class Client(ApplicationSession):
             uuid.UUID(bytes=market_oid), len(market_oids))
 
         for market_oid in market_oids:
-            self.log.info('network.xbr.console.get_market(market_oid={market_oid}) ..', market_oid=market_oid)
-            market = await self.call('network.xbr.console.get_market', market_oid, include_attributes=True)
+            self.log.info('xbr.network.get_market(market_oid={market_oid}) ..', market_oid=market_oid)
+            market = await self.call('xbr.network.get_market', market_oid, include_attributes=True)
             self.log.info('SUCCESS: got market information\n\n{market}\n', market=pformat(market))
 
     async def _do_get_market(self, member_oid, market_oid):
-        member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+        member_data = await self.call('xbr.network.get_member', member_oid.bytes)
         member_adr = member_data['address']
-        market = await self.call('network.xbr.console.get_market', market_oid.bytes)
+        market = await self.call('xbr.network.get_market', market_oid.bytes)
         if market:
             if market['owner'] == member_adr:
                 self.log.info('You are market owner (operator)!')
@@ -613,14 +613,14 @@ class Client(ApplicationSession):
 
         assert actor_type in [ActorType.CONSUMER, ActorType.PROVIDER, ActorType.PROVIDER_CONSUMER]
 
-        member_data = await self.call('network.xbr.console.get_member', member_oid.bytes)
+        member_data = await self.call('xbr.network.get_member', member_oid.bytes)
         member_adr = member_data['address']
 
-        config = await self.call('network.xbr.console.get_config')
+        config = await self.call('xbr.network.get_config')
         verifyingChain = config['verifying_chain_id']
         verifyingContract = binascii.a2b_hex(config['verifying_contract_adr'][2:])
 
-        status = await self.call('network.xbr.console.get_status')
+        status = await self.call('xbr.network.get_status')
         block_number = status['block']['number']
 
         meta_obj = {
@@ -633,7 +633,7 @@ class Client(ApplicationSession):
         signature = sign_eip712_market_join(self._ethkey_raw, verifyingChain, verifyingContract, member_adr,
                                             block_number, market_oid.bytes, actor_type, meta_hash)
 
-        request_submitted = await self.call('network.xbr.console.join_market', member_oid.bytes, market_oid.bytes,
+        request_submitted = await self.call('xbr.network.join_market', member_oid.bytes, market_oid.bytes,
                                             verifyingChain, block_number, verifyingContract,
                                             actor_type, meta_hash, meta_data, signature)
 
@@ -641,7 +641,7 @@ class Client(ApplicationSession):
         self.log.info('SUCCESS! XBR market join request submitted: vaction_oid={vaction_oid}', vaction_oid=vaction_oid)
 
     async def _do_join_market_verify(self, member_oid, vaction_oid, vaction_code):
-        request_verified = await self.call('network.xbr.console.verify_join_market', vaction_oid.bytes, vaction_code)
+        request_verified = await self.call('xbr.network.verify_join_market', vaction_oid.bytes, vaction_code)
         market_oid = request_verified['market_oid']
         actor_type = request_verified['actor_type']
         self.log.info('SUCCESS! XBR market joined: member_oid={member_oid}, market_oid={market_oid}, actor_type={actor_type}',
