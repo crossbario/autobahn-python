@@ -148,3 +148,15 @@ def hlcontract(oid):
     if not isinstance(oid, str):
         oid = '{}'.format(oid)
     return hl('<{}>'.format(oid), color='magenta', bold=True)
+
+
+def with_0x(address):
+    if address and not address.startswith('0x'):
+        return '0x{address}'.format(address=address)
+    return address
+
+
+def without_0x(address):
+    if address and address.startswith('0x'):
+        return address[2:]
+    return address
