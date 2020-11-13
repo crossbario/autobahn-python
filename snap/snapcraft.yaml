@@ -1,0 +1,62 @@
+name: autobahn-python
+adopt-info: autobahn
+base: core20
+summary: WebSocket & WAMP for Python on Twisted and asyncio
+description: |
+  Autobahn|Python is a subproject of Autobahn and provides open-source
+  implementations of The WebSocket Protocol and The Web Application Messaging Protocol (WAMP)
+  for Python 3.5+ and running on Twisted and asyncio.
+
+grade: stable
+confinement: strict
+
+apps:
+  autobahn:
+    command: bin/wamp
+    environment:
+      PYTHONPATH: $PYTHONPATH:$SNAP/lib/python3.8/site-packages
+    plugs:
+      - network
+      - network-bind
+
+parts:
+  autobahn:
+    plugin: nil
+    source: .
+    override-build: |
+      snapcraftctl build
+      export MAKEFLAGS="-j$(nproc)"
+      pip3 install --ignore-installed -U --no-compile --prefix $SNAPCRAFT_PART_INSTALL .[all]
+      python3 -m compileall -b $SNAPCRAFT_PART_INSTALL
+      find $SNAPCRAFT_PART_INSTALL -type f -name "*.py" -exec rm {} \;
+      find $SNAPCRAFT_PART_INSTALL -type f -name "*.so" -exec strip -s {} \;
+
+      # Install virtualenv and don't precompile it, since it doesn't like that.
+      pip3 install --ignore-installed -U --no-compile --prefix $SNAPCRAFT_PART_INSTALL virtualenv
+      # Set package version
+      snapcraftctl set-version $(git describe --always --dirty | sed -e 's/-/+git/;y/-/./' | tail -c +2)
+    stage-packages:
+      - python3
+      - python3-venv
+      - libsnappy1v5
+    build-packages:
+      - build-essential
+      - gcc
+      - libffi-dev
+      - libssl-dev
+      - make
+      - python3-pip
+      - python3-dev
+      - libsnappy-dev
+      # required by package versioning
+      - git
+
+# Expose the whole snap content for sharing
+# so that other snaps don't have to ship a copy
+# of autobahn-python
+slots:
+  autobahn-python-runtime-dir:
+    interface: content
+    content: runtime
+    read:
+      - $SNAP
