@@ -26,18 +26,17 @@ parts:
     override-build: |
       snapcraftctl build
       export MAKEFLAGS="-j$(nproc)"
-      pip3 install --ignore-installed -U --no-compile --prefix $SNAPCRAFT_PART_INSTALL .[all]
+      pip3 install --ignore-installed -U --no-compile --prefix $SNAPCRAFT_PART_INSTALL .[twisted,encryption,serialization]
       python3 -m compileall -b $SNAPCRAFT_PART_INSTALL
       find $SNAPCRAFT_PART_INSTALL -type f -name "*.py" -exec rm {} \;
       find $SNAPCRAFT_PART_INSTALL -type f -name "*.so" -exec strip -s {} \;
 
       # Install virtualenv and don't precompile it, since it doesn't like that.
-      pip3 install --ignore-installed -U --no-compile --prefix $SNAPCRAFT_PART_INSTALL virtualenv
+      pip3 install --prefix $SNAPCRAFT_PART_INSTALL virtualenv
       # Set package version
       snapcraftctl set-version $(git describe --always --dirty | sed -e 's/-/+git/;y/-/./' | tail -c +2)
     stage-packages:
       - python3
-      - python3-venv
       - libsnappy1v5
     build-packages:
       - build-essential
