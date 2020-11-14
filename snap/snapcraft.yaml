@@ -10,6 +10,16 @@ description: |
 grade: stable
 confinement: strict
 
+architectures:
+  - build-on: amd64
+    run-on: amd64
+
+  - build-on: armhf
+    run-on: armhf
+
+  - build-on: arm64
+    run-on: arm64
+
 apps:
   autobahn:
     command: bin/wamp
