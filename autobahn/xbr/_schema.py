@@ -34,6 +34,32 @@ from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
 
 
+def parse_attr(obj):
+    attrs = {}
+    for j in range(obj.AttributesLength()):
+        fbs_attr = obj.Attributes(j)
+        attr_key = fbs_attr.Key()
+        if attr_key:
+            attr_key = attr_key.decode('utf8')
+        attr_value = fbs_attr.Value()
+        if attr_value:
+            attr_value = attr_value.decode('utf8')
+        assert attr_key not in attrs
+        attrs[attr_key] = attr_value
+    return attrs
+
+
+def parse_docs(obj):
+    docs = []
+    for j in range(obj.DocumentationLength()):
+        doc_line = obj.Documentation(j)
+        if doc_line:
+            doc_line = doc_line.decode('utf8')
+            docs.append(doc_line)
+    docs = '\n'.join(docs).strip()
+    return docs
+
+
 class FbsType(object):
     None_ = _BaseType.None_
     UType = _BaseType.UType
@@ -114,21 +140,8 @@ class FbsType(object):
     }
 
 
-class FbsObject(object):
-    def __init__(self, name: str, docs: str):
-        self._name = name
-        self._docs = docs
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def docs(self):
-        return self._docs
-
-    def __str__(self):
-        return ''.format()
+class FbsField(object):
+    pass
 
 
 class FbsAttribute(object):
@@ -139,9 +152,63 @@ class FbsAttribute(object):
         return ''.format()
 
 
-class FbsRPCCall(object):
-    def __init__(self, name: str, docs: str, attrs: Dict[str, FbsAttribute]):
+class FbsObject(object):
+    def __init__(self,
+                 name: str,
+                 fields: Dict[str, FbsField],
+                 is_struct: bool,
+                 min_align: int,
+                 bytesize: int,
+                 attrs: Dict[str, FbsAttribute],
+                 docs: str):
         self._name = name
+        self._fields = fields
+        self._is_struct = is_struct
+        self._min_align = min_align
+        self._bytesize = bytesize
+        self._attrs = attrs
+        self._docs = docs
+
+    def __str__(self):
+        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+
+    def marshal(self):
+        obj = {
+            'name': self._name,
+            'fields': {},
+            'is_struct': self._is_struct,
+            'min_align': self._min_align,
+            'bytesize': self._bytesize,
+            'attrs': {},
+            'docs': self._docs,
+        }
+        if self._fields:
+            for k, v in self._fields.items():
+                obj['fields'][k] = v
+        if self._attrs:
+            for k, v in self._attrs.items():
+                obj['attrs'][k] = v
+        return obj
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def docs(self):
+        return self._docs
+
+
+class FbsRPCCall(object):
+    def __init__(self,
+                 name: str,
+                 request: FbsObject,
+                 response: FbsObject,
+                 docs: str,
+                 attrs: Dict[str, FbsAttribute]):
+        self._name = name
+        self._request = request
+        self._response = response
         self._docs = docs
         self._attrs = attrs
 
@@ -151,6 +218,8 @@ class FbsRPCCall(object):
     def marshal(self):
         obj = {
             'name': self._name,
+            'request': self._request.marshal() if self._request else None,
+            'response': self._response.marshal() if self._response else None,
             'attrs': {},
             'docs': self._docs,
         }
@@ -194,10 +263,22 @@ class FbsEnumValue(object):
     def __init__(self, name, value, docs):
         self._name = name
         self._value = value
+        self._attrs = None
         self._docs = docs
 
     def __str__(self):
-        return ''.format()
+        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+
+    def marshal(self):
+        obj = {
+            'name': self._name,
+            'attrs': {},
+            'docs': self._docs,
+        }
+        if self._attrs:
+            for k, v in self._attrs.items():
+                obj['attrs'][k] = v
+        return obj
 
 
 class FbsEnum(object):
@@ -210,7 +291,18 @@ class FbsEnum(object):
         self._docs = docs
 
     def __str__(self):
-        return ''.format()
+        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+
+    def marshal(self):
+        obj = {
+            'name': self._name,
+            'attrs': {},
+            'docs': self._docs,
+        }
+        if self._attrs:
+            for k, v in self._attrs.items():
+                obj['attrs'][k] = v
+        return obj
 
 
 class FbsSchema(object):
@@ -245,8 +337,16 @@ class FbsSchema(object):
                 'enums': len(self._enums),
                 'services': len(self._services),
             },
+            'enums': {},
+            'objects': {},
             'services': {},
         }
+        if self._enums:
+            for k, v in self._enums.items():
+                obj['enums'][k] = v.marshal()
+        if self._objs:
+            for k, v in self._objs.items():
+                obj['objects'][k] = v.marshal()
         if self._services:
             for k, v in self._services.items():
                 obj['services'][k] = v.marshal()
@@ -276,21 +376,11 @@ class FbsSchema(object):
             enum_values = {}
             for j in range(fbs_enum.ValuesLength()):
                 fbs_enum_value = fbs_enum.Values(j)
-
                 enum_value_name = fbs_enum_value.Name()
                 if enum_value_name:
                     enum_value_name = enum_value_name.decode('utf8')
-
                 enum_value_value = fbs_enum_value.Value()
-
-                enum_value_docs = []
-                for j in range(fbs_enum_value.DocumentationLength()):
-                    enum_value_doc_line = fbs_enum_value.Documentation(j)
-                    if enum_value_doc_line:
-                        enum_value_doc_line = enum_value_doc_line.decode('utf8')
-                        enum_value_docs.append(enum_value_doc_line)
-                enum_value_docs = '\n'.join(enum_value_docs).strip()
-
+                enum_value_docs = parse_docs(fbs_enum_value)
                 enum_value = FbsEnumValue(name=enum_value_name, value=enum_value_value, docs=enum_value_docs)
                 assert enum_value_name not in enum_values
                 enum_values[enum_value_name] = enum_value
@@ -301,19 +391,20 @@ class FbsSchema(object):
 
         for i in range(root.ObjectsLength()):
             fbs_obj = root.Objects(i)
-            name = fbs_obj.Name()
-            if name:
-                name = name.decode('utf8')
-            docs = []
-            for j in range(fbs_obj.DocumentationLength()):
-                doc_line = fbs_obj.Documentation(j)
-                if doc_line:
-                    doc_line = doc_line.decode('utf8')
-                    docs.append(doc_line)
-            docs = '\n'.join(docs).strip()
-            obj = FbsObject(name=name, docs=docs)
-            assert name not in objs
-            objs[name] = obj
+            obj_name = fbs_obj.Name()
+            if obj_name:
+                obj_name = obj_name.decode('utf8')
+            obj_docs = parse_docs(fbs_obj)
+            obj_attrs = parse_attr(fbs_obj)
+            obj = FbsObject(name=obj_name,
+                            fields=None,
+                            is_struct=fbs_obj.IsStruct(),
+                            min_align=fbs_obj.Minalign(),
+                            bytesize=fbs_obj.Bytesize(),
+                            attrs=obj_attrs,
+                            docs=obj_docs)
+            assert obj_name not in objs
+            objs[obj_name] = obj
 
         for i in range(root.ServicesLength()):
             svc_obj = root.Services(i)
@@ -330,53 +421,52 @@ class FbsSchema(object):
                 if call_name:
                     call_name = call_name.decode('utf8')
 
-                call_req = fbs_call.Request()
-                call_resp = fbs_call.Response()
+                fbs_call_req = fbs_call.Request()
+                call_req_name = fbs_call_req.Name()
+                if call_req_name:
+                    call_req_name = call_req_name.decode('utf8')
+                call_req_is_struct = fbs_call_req.IsStruct()
+                call_req_min_align = fbs_call_req.Minalign()
+                call_req_bytesize = fbs_call_req.Bytesize()
+                call_req_docs = parse_docs(fbs_call_req)
+                call_req_attrs = parse_attr(fbs_call_req)
+                call_req = FbsObject(name=call_req_name,
+                                     fields=None,
+                                     is_struct=call_req_is_struct,
+                                     min_align=call_req_min_align,
+                                     bytesize=call_req_bytesize,
+                                     attrs=call_req_attrs,
+                                     docs=call_req_docs)
 
-                call_docs = []
-                for j in range(fbs_call.DocumentationLength()):
-                    doc_line = fbs_call.Documentation(j)
-                    if doc_line:
-                        doc_line = doc_line.decode('utf8')
-                        call_docs.append(doc_line)
-                call_docs = '\n'.join(call_docs).strip()
+                fbs_call_resp = fbs_call.Response()
+                call_resp_name = fbs_call_resp.Name()
+                if call_resp_name:
+                    call_resp_name = call_resp_name.decode('utf8')
+                call_resp_is_struct = fbs_call_resp.IsStruct()
+                call_resp_min_align = fbs_call_resp.Minalign()
+                call_resp_bytesize = fbs_call_resp.Bytesize()
+                call_resp_docs = parse_docs(fbs_call_resp)
+                call_req_attrs = parse_attr(fbs_call_resp)
+                call_resp = FbsObject(name=call_resp_name,
+                                      fields=None,
+                                      is_struct=call_resp_is_struct,
+                                      min_align=call_resp_min_align,
+                                      bytesize=call_resp_bytesize,
+                                      attrs=call_req_attrs,
+                                      docs=call_resp_docs)
 
-                call_attrs = {}
-                for j in range(fbs_call.AttributesLength()):
-                    fbs_attr = fbs_call.Attributes(j)
-                    attr_key = fbs_attr.Key()
-                    if attr_key:
-                        attr_key = attr_key.decode('utf8')
-                    attr_value = fbs_attr.Value()
-                    if attr_value:
-                        attr_value = attr_value.decode('utf8')
-                    assert attr_key not in call_attrs
-                    call_attrs[attr_key] = attr_value
-
-                call = FbsRPCCall(name=call_name, docs=call_docs, attrs=call_attrs)
+                call_docs = parse_docs(fbs_call)
+                call_attrs = parse_attr(fbs_call)
+                call = FbsRPCCall(name=call_name,
+                                  request=call_req,
+                                  response=call_resp,
+                                  docs=call_docs,
+                                  attrs=call_attrs)
                 assert call_name not in calls
                 calls[call_name] = call
 
-            docs = []
-            for j in range(svc_obj.DocumentationLength()):
-                doc_line = svc_obj.Documentation(j)
-                if doc_line:
-                    doc_line = doc_line.decode('utf8')
-                    docs.append(doc_line)
-            docs = '\n'.join(docs).strip()
-
-            attrs = {}
-            for j in range(svc_obj.AttributesLength()):
-                fbs_attr = svc_obj.Attributes(j)
-                attr_key = fbs_attr.Key()
-                if attr_key:
-                    attr_key = attr_key.decode('utf8')
-                attr_value = fbs_attr.Value()
-                if attr_value:
-                    attr_value = attr_value.decode('utf8')
-                assert attr_key not in attrs
-                attrs[attr_key] = attr_value
-
+            docs = parse_docs(svc_obj)
+            attrs = parse_attr(svc_obj)
             service = FbsService(name=svc_name, calls=calls, attrs=attrs, docs=docs)
             assert svc_name not in services
             services[svc_name] = service
