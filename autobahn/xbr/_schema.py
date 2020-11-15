@@ -26,6 +26,8 @@
 ###############################################################################
 
 import os
+import pprint
+import hashlib
 from typing import List, Dict
 
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
@@ -125,15 +127,67 @@ class FbsObject(object):
     def docs(self):
         return self._docs
 
+    def __str__(self):
+        return ''.format()
 
-class FbsService(object):
+
+class FbsAttribute(object):
     def __init__(self):
         pass
+
+    def __str__(self):
+        return ''.format()
 
 
 class FbsRPCCall(object):
-    def __init__(self):
-        pass
+    def __init__(self, name: str, docs: str, attrs: Dict[str, FbsAttribute]):
+        self._name = name
+        self._docs = docs
+        self._attrs = attrs
+
+    def __str__(self):
+        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+
+    def marshal(self):
+        obj = {
+            'name': self._name,
+            'attrs': {},
+            'docs': self._docs,
+        }
+        if self._attrs:
+            for k, v in self._attrs.items():
+                obj['attrs'][k] = v
+        return obj
+
+
+class FbsService(object):
+    def __init__(self,
+                 name: str,
+                 calls: Dict[str, FbsRPCCall],
+                 attrs: Dict[str, FbsAttribute],
+                 docs: str):
+        self._name = name
+        self._calls = calls
+        self._attrs = attrs
+        self._docs = docs
+
+    def __str__(self):
+        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+
+    def marshal(self):
+        obj = {
+            'name': self._name,
+            'calls': {},
+            'attrs': {},
+            'docs': self._docs,
+        }
+        if self._calls:
+            for k, v in self._calls.items():
+                obj['calls'][k] = v.marshal()
+        if self._attrs:
+            for k, v in self._attrs.items():
+                obj['attrs'][k] = v
+        return obj
 
 
 class FbsEnumValue(object):
@@ -141,6 +195,9 @@ class FbsEnumValue(object):
         self._name = name
         self._value = value
         self._docs = docs
+
+    def __str__(self):
+        return ''.format()
 
 
 class FbsEnum(object):
@@ -152,22 +209,48 @@ class FbsEnum(object):
         self._attrs = attrs
         self._docs = docs
 
+    def __str__(self):
+        return ''.format()
+
 
 class FbsSchema(object):
     """
     """
     def __init__(self,
-                 filename: str,
+                 file_name: str,
+                 file_sha256: str,
+                 file_size: int,
                  root: _Schema,
                  objs: Dict[str, FbsObject],
-                 enums: Dict[str, FbsEnum]):
-        self._fn = os.path.abspath(filename)
+                 enums: Dict[str, FbsEnum],
+                 services: Dict[str, FbsService]):
+        self._file_name = file_name
+        self._file_sha256 = file_sha256
+        self._file_size = file_size
         self._root = root
         self._objs = objs
         self._enums = enums
+        self._services = services
 
     def __str__(self):
-        return 'Schema(filename="{}", root={}, objs={}, enums={})'.format(self._fn, self._root, self._objs, self._enums)
+        return '\n{}\n'.format(pprint.pformat(self.marshal(), width=140))
+
+    def marshal(self):
+        obj = {
+            'schema': {
+                'filename': os.path.basename(self._file_name),
+                'sha256': self._file_sha256,
+                'size': self._file_size,
+                'objects': len(self._objs),
+                'enums': len(self._enums),
+                'services': len(self._services),
+            },
+            'services': {},
+        }
+        if self._services:
+            for k, v in self._services.items():
+                obj['services'][k] = v.marshal()
+        return obj
 
     @staticmethod
     def load(filename):
@@ -180,6 +263,7 @@ class FbsSchema(object):
         root = _Schema.GetRootAsSchema(data, 0)
 
         objs = {}
+        services = {}
         enums = {}
 
         for i in range(root.EnumsLength()):
@@ -205,7 +289,7 @@ class FbsSchema(object):
                     if enum_value_doc_line:
                         enum_value_doc_line = enum_value_doc_line.decode('utf8')
                         enum_value_docs.append(enum_value_doc_line)
-                enum_value_docs = '\n'.join(enum_value_docs)
+                enum_value_docs = '\n'.join(enum_value_docs).strip()
 
                 enum_value = FbsEnumValue(name=enum_value_name, value=enum_value_value, docs=enum_value_docs)
                 assert enum_value_name not in enum_values
@@ -226,10 +310,85 @@ class FbsSchema(object):
                 if doc_line:
                     doc_line = doc_line.decode('utf8')
                     docs.append(doc_line)
-            docs = '\n'.join(docs)
+            docs = '\n'.join(docs).strip()
             obj = FbsObject(name=name, docs=docs)
             assert name not in objs
             objs[name] = obj
 
-        schema = FbsSchema(filename, root, objs, enums)
+        for i in range(root.ServicesLength()):
+            svc_obj = root.Services(i)
+
+            svc_name = svc_obj.Name()
+            if svc_name:
+                svc_name = svc_name.decode('utf8')
+
+            calls = {}
+            for j in range(svc_obj.CallsLength()):
+                fbs_call = svc_obj.Calls(j)
+
+                call_name = fbs_call.Name()
+                if call_name:
+                    call_name = call_name.decode('utf8')
+
+                call_req = fbs_call.Request()
+                call_resp = fbs_call.Response()
+
+                call_docs = []
+                for j in range(fbs_call.DocumentationLength()):
+                    doc_line = fbs_call.Documentation(j)
+                    if doc_line:
+                        doc_line = doc_line.decode('utf8')
+                        call_docs.append(doc_line)
+                call_docs = '\n'.join(call_docs).strip()
+
+                call_attrs = {}
+                for j in range(fbs_call.AttributesLength()):
+                    fbs_attr = fbs_call.Attributes(j)
+                    attr_key = fbs_attr.Key()
+                    if attr_key:
+                        attr_key = attr_key.decode('utf8')
+                    attr_value = fbs_attr.Value()
+                    if attr_value:
+                        attr_value = attr_value.decode('utf8')
+                    assert attr_key not in call_attrs
+                    call_attrs[attr_key] = attr_value
+
+                call = FbsRPCCall(name=call_name, docs=call_docs, attrs=call_attrs)
+                assert call_name not in calls
+                calls[call_name] = call
+
+            docs = []
+            for j in range(svc_obj.DocumentationLength()):
+                doc_line = svc_obj.Documentation(j)
+                if doc_line:
+                    doc_line = doc_line.decode('utf8')
+                    docs.append(doc_line)
+            docs = '\n'.join(docs).strip()
+
+            attrs = {}
+            for j in range(svc_obj.AttributesLength()):
+                fbs_attr = svc_obj.Attributes(j)
+                attr_key = fbs_attr.Key()
+                if attr_key:
+                    attr_key = attr_key.decode('utf8')
+                attr_value = fbs_attr.Value()
+                if attr_value:
+                    attr_value = attr_value.decode('utf8')
+                assert attr_key not in attrs
+                attrs[attr_key] = attr_value
+
+            service = FbsService(name=svc_name, calls=calls, attrs=attrs, docs=docs)
+            assert svc_name not in services
+            services[svc_name] = service
+
+        m = hashlib.sha256()
+        m.update(data)
+
+        schema = FbsSchema(file_name=filename,
+                           file_size=len(data),
+                           file_sha256=m.hexdigest(),
+                           root=root,
+                           objs=objs,
+                           enums=enums,
+                           services=services)
         return schema
