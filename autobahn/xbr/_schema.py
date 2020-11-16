@@ -35,6 +35,9 @@ from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
 
 
 class FbsType(object):
+    """
+    """
+
     None_ = _BaseType.None_
     UType = _BaseType.UType
     Bool = _BaseType.Bool
@@ -118,6 +121,18 @@ class FbsType(object):
         self._element = element
         self._index = index
 
+    @property
+    def basetype(self):
+        return self._basetype
+
+    @property
+    def element(self):
+        return self._element
+
+    @property
+    def index(self):
+        return self._index
+
     def __str__(self):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
@@ -160,6 +175,46 @@ class FbsField(object):
         self._required = required
         self._attrs = attrs
         self._docs = docs
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def offset(self):
+        return self._offset
+
+    @property
+    def default_int(self):
+        return self._default_int
+
+    @property
+    def default_real(self):
+        return self._default_real
+
+    @property
+    def deprecated(self):
+        return self._deprecated
+
+    @property
+    def required(self):
+        return self._required
+
+    @property
+    def attrs(self):
+        return self._attrs
+
+    @property
+    def docs(self):
+        return self._docs
 
     def __str__(self):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
@@ -252,6 +307,34 @@ class FbsObject(object):
         self._attrs = attrs
         self._docs = docs
 
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def fields(self):
+        return self._fields
+
+    @property
+    def is_struct(self):
+        return self._is_struct
+
+    @property
+    def min_align(self):
+        return self._min_align
+
+    @property
+    def bytesize(self):
+        return self._bytesize
+
+    @property
+    def attrs(self):
+        return self._attrs
+
+    @property
+    def docs(self):
+        return self._docs
+
     def __str__(self):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
@@ -290,14 +373,6 @@ class FbsObject(object):
                         docs=obj_docs)
         return obj
 
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def docs(self):
-        return self._docs
-
 
 class FbsRPCCall(object):
     def __init__(self,
@@ -311,6 +386,26 @@ class FbsRPCCall(object):
         self._response = response
         self._docs = docs
         self._attrs = attrs
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def request(self):
+        return self._request
+
+    @property
+    def response(self):
+        return self._response
+
+    @property
+    def docs(self):
+        return self._docs
+
+    @property
+    def attrs(self):
+        return self._attrs
 
     def __str__(self):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
@@ -340,6 +435,22 @@ class FbsService(object):
         self._attrs = attrs
         self._docs = docs
 
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def calls(self):
+        return self._calls
+
+    @property
+    def attrs(self):
+        return self._attrs
+
+    @property
+    def docs(self):
+        return self._docs
+
     def __str__(self):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
@@ -366,6 +477,22 @@ class FbsEnumValue(object):
         self._attrs = None
         self._docs = docs
 
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def attrs(self):
+        return self._attrs
+
+    @property
+    def docs(self):
+        return self._docs
+
     def __str__(self):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
@@ -382,7 +509,16 @@ class FbsEnumValue(object):
 
 
 class FbsEnum(object):
-    def __init__(self, name, values, is_union, underlying_type, attrs, docs):
+    """
+    FlatBuffers enum type.
+    """
+    def __init__(self,
+                 name: str,
+                 values: Dict[str, FbsEnumValue],
+                 is_union: bool,
+                 underlying_type: int,
+                 attrs: Dict[str, FbsAttribute],
+                 docs: str):
         self._name = name
         self._values = values
         self._is_union = is_union
@@ -390,15 +526,45 @@ class FbsEnum(object):
         self._attrs = attrs
         self._docs = docs
 
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def values(self):
+        return self._values
+
+    @property
+    def is_union(self):
+        return self._is_union
+
+    @property
+    def underlying_type(self):
+        return self._underlying_type
+
+    @property
+    def attrs(self):
+        return self._attrs
+
+    @property
+    def docs(self):
+        return self._docs
+
     def __str__(self):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
     def marshal(self):
         obj = {
             'name': self._name,
+            'values': {},
+            'is_union': self._is_union,
+            'underlying_type': FbsType.FBS2STR.get(self._underlying_type, None),
             'attrs': {},
             'docs': self._docs,
         }
+        if self._values:
+            for k, v in self._values.items():
+                obj['values'][k] = v.marshal()
         if self._attrs:
             for k, v in self._attrs.items():
                 obj['attrs'][k] = v
@@ -442,6 +608,46 @@ class FbsSchema(object):
         self._objs = objs
         self._enums = enums
         self._services = services
+
+    @property
+    def file_name(self):
+        return self._file_name
+
+    @property
+    def file_sha256(self):
+        return self._file_sha256
+
+    @property
+    def file_size(self):
+        return self._file_size
+
+    @property
+    def file_ident(self):
+        return self._file_ident
+
+    @property
+    def file_ext(self):
+        return self._file_ext
+
+    @property
+    def root_table(self):
+        return self._root_table
+
+    @property
+    def root(self):
+        return self._root
+
+    @property
+    def objs(self):
+        return self._objs
+
+    @property
+    def enums(self):
+        return self._enums
+
+    @property
+    def services(self):
+        return self._services
 
     def __str__(self):
         return '\n{}\n'.format(pprint.pformat(self.marshal(), width=255))
@@ -494,13 +700,15 @@ class FbsSchema(object):
         root = _Schema.GetRootAsSchema(data, 0)
 
         file_ident = root.FileIdent()
-        if file_ident:
+        if file_ident is not None:
             file_ident = file_ident.decode('utf8')
+
         file_ext = root.FileExt()
-        if file_ext:
+        if file_ext is not None:
             file_ext = file_ext.decode('utf8')
+
         root_table = root.RootTable()
-        if root_table:
+        if root_table is not None:
             root_table = FbsObject.parse(root_table)
 
         objs = {}
@@ -526,7 +734,12 @@ class FbsSchema(object):
                 assert enum_value_name not in enum_values
                 enum_values[enum_value_name] = enum_value
 
-            enum = FbsEnum(name=enum_name, values=enum_values)
+            enum = FbsEnum(name=enum_name,
+                           values=enum_values,
+                           is_union=fbs_enum.IsUnion(),
+                           underlying_type=None,
+                           attrs=parse_attr(fbs_enum),
+                           docs=parse_docs(fbs_enum))
             assert enum_name not in enums
             enums[enum_name] = enum
 
