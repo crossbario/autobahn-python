@@ -988,9 +988,6 @@ class ApplicationSession(BaseSession):
                                 if msg.receive_progress:
 
                                     def progress(*args, **kwargs):
-                                        assert(args is None or type(args) in (list, tuple))
-                                        assert(kwargs is None or type(kwargs) == dict)
-
                                         encoded_payload = None
                                         if msg.enc_algo:
                                             if not self._payload_codec:
@@ -1392,9 +1389,7 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
         """
         assert(type(topic) == str)
-        assert(args is None or type(args) in (list, tuple))
-        assert(kwargs is None or type(kwargs) == dict)
-
+        
         message.check_or_raise_uri(topic,
                                    message='{}.publish()'.format(self.__class__.__name__),
                                    strict=False,
@@ -1586,8 +1581,6 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ICaller.call`
         """
         assert(type(procedure) == str)
-        assert(args is None or type(args) in (list, tuple))
-        assert(kwargs is None or type(kwargs) == dict)
 
         message.check_or_raise_uri(procedure,
                                    message='{}.call()'.format(self.__class__.__name__),
