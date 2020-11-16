@@ -59,6 +59,9 @@ try:
 
     from autobahn.xbr._config import load_or_create_profile, UserConfig, Profile  # noqa
 
+    from autobahn.xbr._schema import FbsSchema, FbsObject, FbsType, FbsRPCCall, FbsEnum, FbsService, FbsEnumValue, \
+        FbsAttribute, FbsField  # noqa
+
     HAS_XBR = True
 
     if not hasattr(abi, 'collapse_type'):
@@ -332,6 +335,16 @@ try:
         'IConsumer',
         'ISeller',
         'IBuyer',
+
+        'FbsSchema',
+        'FbsService',
+        'FbsType',
+        'FbsObject',
+        'FbsEnum',
+        'FbsEnumValue',
+        'FbsRPCCall',
+        'FbsAttribute',
+        'FbsField',
     )
 
 except (ImportError, FileNotFoundError) as e:

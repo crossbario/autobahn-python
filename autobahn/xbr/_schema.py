@@ -273,6 +273,23 @@ class FbsObject(object):
                 obj['attrs'][k] = v
         return obj
 
+    @staticmethod
+    def parse(fbs_obj):
+        obj_name = fbs_obj.Name()
+        if obj_name:
+            obj_name = obj_name.decode('utf8')
+        obj_docs = parse_docs(fbs_obj)
+        obj_attrs = parse_attr(fbs_obj)
+        obj_fields = parse_fields(fbs_obj)
+        obj = FbsObject(name=obj_name,
+                        fields=obj_fields,
+                        is_struct=fbs_obj.IsStruct(),
+                        min_align=fbs_obj.Minalign(),
+                        bytesize=fbs_obj.Bytesize(),
+                        attrs=obj_attrs,
+                        docs=obj_docs)
+        return obj
+
     @property
     def name(self):
         return self._name
@@ -395,31 +412,57 @@ class FbsSchema(object):
                  file_name: str,
                  file_sha256: str,
                  file_size: int,
+                 file_ident: str,
+                 file_ext: str,
+                 root_table: FbsObject,
                  root: _Schema,
                  objs: Dict[str, FbsObject],
                  enums: Dict[str, FbsEnum],
                  services: Dict[str, FbsService]):
+        """
+
+        :param file_name:
+        :param file_sha256:
+        :param file_size:
+        :param file_ident:
+        :param file_ext:
+        :param root_table:
+        :param root:
+        :param objs:
+        :param enums:
+        :param services:
+        """
         self._file_name = file_name
         self._file_sha256 = file_sha256
         self._file_size = file_size
+        self._file_ident = file_ident
+        self._file_ext = file_ext
+        self._root_table = root_table
         self._root = root
         self._objs = objs
         self._enums = enums
         self._services = services
 
     def __str__(self):
-        return '\n{}\n'.format(pprint.pformat(self.marshal(), width=140))
+        return '\n{}\n'.format(pprint.pformat(self.marshal(), width=255))
 
-    def marshal(self):
+    def marshal(self) -> Dict[str, object]:
+        """
+
+        :return:
+        """
         obj = {
             'schema': {
-                'filename': os.path.basename(self._file_name),
+                'ident': self._file_ident,
+                'ext': self._file_ext,
+                'name': os.path.basename(self._file_name) if self._file_name else None,
                 'sha256': self._file_sha256,
                 'size': self._file_size,
                 'objects': len(self._objs),
                 'enums': len(self._enums),
                 'services': len(self._services),
             },
+            'root_table': self._root_table.marshal() if self._root_table else None,
             'enums': {},
             'objects': {},
             'services': {},
@@ -436,7 +479,12 @@ class FbsSchema(object):
         return obj
 
     @staticmethod
-    def load(filename):
+    def load(filename) -> object:
+        """
+
+        :param filename:
+        :return:
+        """
         if not os.path.isfile(filename):
             raise RuntimeError('cannot open schema file {}'.format(filename))
         with open(filename, 'rb') as fd:
@@ -444,6 +492,16 @@ class FbsSchema(object):
 
         print('processing schema {} ({} bytes) ..'.format(filename, len(data)))
         root = _Schema.GetRootAsSchema(data, 0)
+
+        file_ident = root.FileIdent()
+        if file_ident:
+            file_ident = file_ident.decode('utf8')
+        file_ext = root.FileExt()
+        if file_ext:
+            file_ext = file_ext.decode('utf8')
+        root_table = root.RootTable()
+        if root_table:
+            root_table = FbsObject.parse(root_table)
 
         objs = {}
         services = {}
@@ -474,21 +532,9 @@ class FbsSchema(object):
 
         for i in range(root.ObjectsLength()):
             fbs_obj = root.Objects(i)
-            obj_name = fbs_obj.Name()
-            if obj_name:
-                obj_name = obj_name.decode('utf8')
-            obj_docs = parse_docs(fbs_obj)
-            obj_attrs = parse_attr(fbs_obj)
-            obj_fields = parse_fields(fbs_obj)
-            obj = FbsObject(name=obj_name,
-                            fields=obj_fields,
-                            is_struct=fbs_obj.IsStruct(),
-                            min_align=fbs_obj.Minalign(),
-                            bytesize=fbs_obj.Bytesize(),
-                            attrs=obj_attrs,
-                            docs=obj_docs)
-            assert obj_name not in objs
-            objs[obj_name] = obj
+            obj = FbsObject.parse(fbs_obj)
+            assert obj.name not in objs
+            objs[obj.name] = obj
 
         for i in range(root.ServicesLength()):
             svc_obj = root.Services(i)
@@ -514,8 +560,9 @@ class FbsSchema(object):
                 call_req_bytesize = fbs_call_req.Bytesize()
                 call_req_docs = parse_docs(fbs_call_req)
                 call_req_attrs = parse_attr(fbs_call_req)
+                call_req_fields = parse_fields(fbs_call_req)
                 call_req = FbsObject(name=call_req_name,
-                                     fields=None,
+                                     fields=call_req_fields,
                                      is_struct=call_req_is_struct,
                                      min_align=call_req_min_align,
                                      bytesize=call_req_bytesize,
@@ -530,13 +577,14 @@ class FbsSchema(object):
                 call_resp_min_align = fbs_call_resp.Minalign()
                 call_resp_bytesize = fbs_call_resp.Bytesize()
                 call_resp_docs = parse_docs(fbs_call_resp)
-                call_req_attrs = parse_attr(fbs_call_resp)
+                call_resp_attrs = parse_attr(fbs_call_resp)
+                call_resp_fields = parse_fields(fbs_call_resp)
                 call_resp = FbsObject(name=call_resp_name,
-                                      fields=None,
+                                      fields=call_resp_fields,
                                       is_struct=call_resp_is_struct,
                                       min_align=call_resp_min_align,
                                       bytesize=call_resp_bytesize,
-                                      attrs=call_req_attrs,
+                                      attrs=call_resp_attrs,
                                       docs=call_resp_docs)
 
                 call_docs = parse_docs(fbs_call)
@@ -561,6 +609,9 @@ class FbsSchema(object):
         schema = FbsSchema(file_name=filename,
                            file_size=len(data),
                            file_sha256=m.hexdigest(),
+                           file_ident=file_ident,
+                           file_ext=file_ext,
+                           root_table=root_table,
                            root=root,
                            objs=objs,
                            enums=enums,
