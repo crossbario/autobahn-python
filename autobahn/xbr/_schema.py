@@ -34,32 +34,6 @@ from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
 
 
-def parse_attr(obj):
-    attrs = {}
-    for j in range(obj.AttributesLength()):
-        fbs_attr = obj.Attributes(j)
-        attr_key = fbs_attr.Key()
-        if attr_key:
-            attr_key = attr_key.decode('utf8')
-        attr_value = fbs_attr.Value()
-        if attr_value:
-            attr_value = attr_value.decode('utf8')
-        assert attr_key not in attrs
-        attrs[attr_key] = attr_value
-    return attrs
-
-
-def parse_docs(obj):
-    docs = []
-    for j in range(obj.DocumentationLength()):
-        doc_line = obj.Documentation(j)
-        if doc_line:
-            doc_line = doc_line.decode('utf8')
-            docs.append(doc_line)
-    docs = '\n'.join(docs).strip()
-    return docs
-
-
 class FbsType(object):
     None_ = _BaseType.None_
     UType = _BaseType.UType
@@ -139,9 +113,21 @@ class FbsType(object):
         'Union': _BaseType.Union,
     }
 
+    def __init__(self, basetype: int, element: int, index: int):
+        self._basetype = basetype
+        self._element = element
+        self._index = index
 
-class FbsField(object):
-    pass
+    def __str__(self):
+        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+
+    def marshal(self):
+        obj = {
+            'basetype': self.FBS2STR.get(self._basetype, None),
+            'element': self.FBS2STR.get(self._element, None),
+            'index': self._index,
+        }
+        return obj
 
 
 class FbsAttribute(object):
@@ -150,6 +136,103 @@ class FbsAttribute(object):
 
     def __str__(self):
         return ''.format()
+
+
+class FbsField(object):
+    def __init__(self,
+                 name: str,
+                 type: FbsType,
+                 id: int,
+                 offset: int,
+                 default_int: int,
+                 default_real: float,
+                 deprecated: bool,
+                 required: bool,
+                 attrs: Dict[str, FbsAttribute],
+                 docs: str):
+        self._name = name
+        self._type = type
+        self._id = id
+        self._offset = offset
+        self._default_int = default_int
+        self._default_real = default_real
+        self._deprecated = deprecated
+        self._required = required
+        self._attrs = attrs
+        self._docs = docs
+
+    def __str__(self):
+        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+
+    def marshal(self):
+        obj = {
+            'name': self._name,
+            'type': self._type.marshal() if self._type else None,
+            'id': self._id,
+            'offset': self._offset,
+            'default_int': self._default_int,
+            'default_real': self._default_real,
+            'deprecated': self._deprecated,
+            'required': self._required,
+            'attrs': {},
+            'docs': self._docs,
+        }
+        if self._attrs:
+            for k, v in self._attrs.items():
+                obj['attrs'][k] = v
+        return obj
+
+
+def parse_attr(obj):
+    attrs = {}
+    for j in range(obj.AttributesLength()):
+        fbs_attr = obj.Attributes(j)
+        attr_key = fbs_attr.Key()
+        if attr_key:
+            attr_key = attr_key.decode('utf8')
+        attr_value = fbs_attr.Value()
+        if attr_value:
+            attr_value = attr_value.decode('utf8')
+        assert attr_key not in attrs
+        attrs[attr_key] = attr_value
+    return attrs
+
+
+def parse_docs(obj):
+    docs = []
+    for j in range(obj.DocumentationLength()):
+        doc_line = obj.Documentation(j)
+        if doc_line:
+            doc_line = doc_line.decode('utf8')
+            docs.append(doc_line)
+    docs = '\n'.join(docs).strip()
+    return docs
+
+
+def parse_fields(obj):
+    fields = {}
+    for j in range(obj.FieldsLength()):
+        fbs_field = obj.Fields(j)
+        field_name = fbs_field.Name()
+        if field_name:
+            field_name = field_name.decode('utf8')
+        fbs_field_type = fbs_field.Type()
+        field_type = FbsType(basetype=fbs_field_type.BaseType(),
+                             element=fbs_field_type.Element(),
+                             index=fbs_field_type.Index())
+        field = FbsField(name=field_name,
+                         type=field_type,
+                         id=fbs_field.Id(),
+                         offset=fbs_field.Offset(),
+                         default_int=fbs_field.DefaultInteger(),
+                         default_real=fbs_field.DefaultReal(),
+                         deprecated=fbs_field.Deprecated(),
+                         required=fbs_field.Required(),
+                         attrs=parse_attr(fbs_field),
+                         docs=parse_docs(fbs_field))
+        assert field_name not in fields, 'field "{}" already in fields {}'.format(field_name, sorted(fields.keys()))
+        fields[field_name] = field
+    return fields
 
 
 class FbsObject(object):
@@ -184,7 +267,7 @@ class FbsObject(object):
         }
         if self._fields:
             for k, v in self._fields.items():
-                obj['fields'][k] = v
+                obj['fields'][k] = v.marshal() if v else None
         if self._attrs:
             for k, v in self._attrs.items():
                 obj['attrs'][k] = v
@@ -396,8 +479,9 @@ class FbsSchema(object):
                 obj_name = obj_name.decode('utf8')
             obj_docs = parse_docs(fbs_obj)
             obj_attrs = parse_attr(fbs_obj)
+            obj_fields = parse_fields(fbs_obj)
             obj = FbsObject(name=obj_name,
-                            fields=None,
+                            fields=obj_fields,
                             is_struct=fbs_obj.IsStruct(),
                             min_align=fbs_obj.Minalign(),
                             bytesize=fbs_obj.Bytesize(),
