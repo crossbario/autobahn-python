@@ -146,7 +146,7 @@ class ApplicationRunner(object):
         raise NotImplementedError()
 
     @public
-    def run(self, make, start_loop=True, log_level='info'):
+    def run(self, make, start_loop=True, log_level='info', **kwargs):
         """
         Run the application component. Under the hood, this runs the event
         loop (unless `start_loop=False` is passed) so won't return
@@ -223,6 +223,9 @@ class ApplicationRunner(object):
                                                  autoPingSize=4,
                                                  perMessageCompressionOffers=offers,
                                                  perMessageCompressionAccept=accept)
+            # update defaults 
+            transport_factory.setProtocolOptions(**kwargs)
+
         # SSL context for client connection
         if self.ssl is None:
             ssl = isSecure

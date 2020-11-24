@@ -196,7 +196,7 @@ class ApplicationRunner(object):
             return succeed(None)
 
     @public
-    def run(self, make, start_reactor=True, auto_reconnect=False, log_level='info', endpoint=None, reactor=None):
+    def run(self, make, start_reactor=True, auto_reconnect=False, log_level='info', endpoint=None, reactor=None, **kwargs):
         """
         Run the application component.
 
@@ -285,7 +285,8 @@ class ApplicationRunner(object):
                                                  autoPingSize=4,
                                                  perMessageCompressionOffers=offers,
                                                  perMessageCompressionAccept=accept)
-
+            # update defaults 
+            transport_factory.setProtocolOptions(**kwargs)
         # supress pointless log noise
         transport_factory.noisy = False
 
