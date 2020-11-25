@@ -223,7 +223,7 @@ class ApplicationRunner(object):
                                                  autoPingSize=4,
                                                  perMessageCompressionOffers=offers,
                                                  perMessageCompressionAccept=accept)
-            # update defaults 
+            # update defaults
             transport_factory.setProtocolOptions(**kwargs)
 
         # SSL context for client connection

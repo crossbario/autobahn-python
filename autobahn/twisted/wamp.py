@@ -285,7 +285,7 @@ class ApplicationRunner(object):
                                                  autoPingSize=4,
                                                  perMessageCompressionOffers=offers,
                                                  perMessageCompressionAccept=accept)
-            # update defaults 
+            # update defaults
             transport_factory.setProtocolOptions(**kwargs)
         # supress pointless log noise
         transport_factory.noisy = False
