@@ -25,6 +25,8 @@
 ###############################################################################
 
 import sys
+import json
+
 from autobahn import xbr
 from autobahn import __version__
 
@@ -38,6 +40,8 @@ from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_
 
 from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_DOMAIN_ADDR_SRC, \
     XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC
+
+from autobahn.xbr import FbsSchema
 
 import uuid
 import binascii
@@ -76,7 +80,8 @@ from autobahn.xbr._util import hlval, hlid, hltype
 _COMMANDS = ['version', 'get-member', 'register-member', 'register-member-verify',
              'get-market', 'create-market', 'create-market-verify',
              'get-actor', 'join-market', 'join-market-verify',
-             'get-channel', 'open-channel', 'close-channel']
+             'get-channel', 'open-channel', 'close-channel',
+             'describe-schema', 'codegen-schema']
 
 
 class Client(ApplicationSession):
@@ -783,6 +788,17 @@ def _main():
                         action='store_true',
                         help='Enable debug output.')
 
+    parser.add_argument('-t',
+                        '--templates',
+                        type=str,
+                        help='Templates folder')
+
+    parser.add_argument('-s',
+                        '--schema',
+                        dest='schema',
+                        type=str,
+                        help='FlatBuffers binary schema file to read (.bfbs)')
+
     parser.add_argument('--url',
                         dest='url',
                         type=str,
@@ -926,6 +942,25 @@ def _main():
         print('      XBRMarket  : {} [source: {}]'.format(hlid(XBR_DEBUG_MARKET_ADDR), XBR_DEBUG_MARKET_ADDR_SRC))
         print('      XBRChannel : {} [source: {}]'.format(hlid(XBR_DEBUG_CHANNEL_ADDR), XBR_DEBUG_CHANNEL_ADDR_SRC))
         print('')
+
+    elif args.command == 'describe-schema':
+        schema = FbsSchema.load(args.schema)
+        obj = schema.marshal()
+        data = json.dumps(obj,
+                          separators=(',', ':'),
+                          ensure_ascii=False,
+                          sort_keys=False, )
+        print('json data generated ({} bytes)'.format(len(data)))
+        for svc_key, svc in schema.services.items():
+            print('API "{}"'.format(svc_key))
+            for uri in sorted(svc.calls.keys()):
+                ep = svc.calls[uri]
+                ep_type = ep.attrs['type']
+                print('   {:<10} {:<26}: {}'.format(ep_type, ep.name, ep.docs))
+
+    elif args.command == 'codegen-schema':
+        raise NotImplementedError()
+
     else:
         if args.command is None or args.command == 'noop':
             print('no command given. select from: {}'.format(', '.join(_COMMANDS)))

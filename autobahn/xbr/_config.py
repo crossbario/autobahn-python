@@ -33,7 +33,6 @@ import click
 import web3
 from eth_utils.conversions import hexstr_if_str, to_hex
 
-from txaio import make_logger
 from autobahn.websocket.util import parse_url
 from autobahn.xbr._util import hlval, hltype
 
@@ -59,8 +58,6 @@ except ImportError:
 
 class Profile(object):
 
-    log = make_logger()
-
     def __init__(self,
                  path=None,
                  name=None,
@@ -72,6 +69,8 @@ class Profile(object):
                  infura_network=None,
                  infura_key=None,
                  infura_secret=None):
+        from txaio import make_logger
+        self.log = make_logger()
         self.path = path
         self.name = name
         self.ethkey = ethkey
@@ -119,9 +118,10 @@ class Profile(object):
 
 class UserConfig(object):
 
-    log = make_logger()
-
     def __init__(self, config_path):
+        from txaio import make_logger
+        self.log = make_logger()
+
         self._config_path = os.path.abspath(config_path)
 
         config = configparser.ConfigParser()
