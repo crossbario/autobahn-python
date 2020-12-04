@@ -2,10 +2,50 @@ class {{ classname }}(object):
     """
     {{ docs }}
     """
-    def __init__(self):
+    def __init__(self, from_fbs=None):
+        self._from_fbs = from_fbs
         {% for field_name in fields %}
+        # {{ fields[field_name]['docs'] }}
         self._{{ fields[field_name]['name'] }} = None
+        {% endfor %}
+
+    def marshal(self):
+        obj = {
+            {% for field_name in fields %}'{{ fields[field_name]['name'] }}': self.{{ fields[field_name]['name'] }},
+            {% endfor %}
+        }
+        return obj
+
+    def __str__(self):
+        import pprint
+        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+
+
+    {% for field_name in fields %}
+    @property
+    def {{ fields[field_name]['name'] }}(self):
         """
         {{ fields[field_name]['docs'] }}
         """
-        {% endfor %}
+        if self._{{ fields[field_name]['name'] }} is None and self._from_fbs:
+            # FIXME: load from fbs
+        return self._{{ fields[field_name]['name'] }}
+
+    @property.setter
+    def {{ fields[field_name]['name'] }}(self, value):
+        # FIXME: assert type of value
+        self._{{ fields[field_name]['name'] }} = value
+    {% endfor %}
+
+    @staticmethod
+    def cast(buf: bytes) -> {{ classname }}:
+        """
+        Cast a FlatBuffers raw input buffer as a typed object of this class.
+        """
+        raise NotImplementedError()
+
+    def build(self, builder):
+        """
+        Build a FlatBuffers raw output buffer from this typed object.
+        """
+        raise NotImplementedError()

@@ -24,12 +24,12 @@
 #
 ###############################################################################
 
+import os
 import sys
 import json
 import pkg_resources
 from pprint import pprint
 
-import jinja2
 from jinja2 import Environment, FileSystemLoader
 
 from autobahn import xbr
@@ -793,10 +793,10 @@ def _main():
                         action='store_true',
                         help='Enable debug output.')
 
-    parser.add_argument('-t',
-                        '--templates',
+    parser.add_argument('-o',
+                        '--output',
                         type=str,
-                        help='Templates folder')
+                        help='Code output folder')
 
     parser.add_argument('-s',
                         '--schema',
@@ -969,29 +969,61 @@ def _main():
         repo = FbsRepository()
         repo.load(args.schema)
         pprint(repo.summary(keys=True))
+
+        templates = pkg_resources.resource_filename('autobahn', 'xbr/templates')
+        loader = FileSystemLoader(templates, encoding='utf-8', followlinks=False)
+        env = Environment(loader=loader)
+
+        if not os.path.isdir(args.output):
+            os.mkdir(args.output)
+
+        code_files = {}
+
         for obj in repo.objs.values():
             metadata = obj.marshal()
 
             # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
+            modulename = '.'.join(metadata['name'].split('.')[0:-1])
+            metadata['modulename'] = modulename
             metadata['classname'] = metadata['name'].split('.')[-1].strip()
 
-            templates = pkg_resources.resource_filename('autobahn', 'xbr/templates')
-            loader = FileSystemLoader(templates, encoding='utf-8', followlinks=False)
-            env = Environment(loader=loader)
             tmpl = env.get_template('obj.py.jinja2')
             code = tmpl.render(**metadata)
 
-            print(code)
+            if modulename not in code_files:
+                code_files[modulename] = []
 
-            # pprint(enum.marshal())
-            # print(enum.underlying_type)
-            # print(dir(enum.underlying_type))
-            # # 'BaseType', 'Element', 'GetRootAsType', 'Index', 'Init'
-            # print(enum.underlying_type.BaseType())
-            # print(enum.underlying_type.Element())
-            # # print(enum.underlying_type.GetRootAsType())
-            # print(enum.underlying_type.Index())
-            # # print(enum.underlying_type.Init())
+            code_files[modulename].append(code)
+
+        for code_file, code_sections in code_files.items():
+            code = '\n\n\n'.join(code_sections)
+            if code_file:
+                code_file_dir = [''] + code_file.split('.')[0:-1]
+            else:
+                code_file_dir = ['']
+
+            for i in range(len(code_file_dir)):
+                d = os.path.join(args.output, *(code_file_dir[:i + 1]))
+                if not os.path.isdir(d):
+                    os.mkdir(d)
+                    fn = os.path.join(d, '__init__.py')
+                    _modulename = '.'.join(code_file_dir[:i + 1])[1:]
+                    with open(fn, 'wb') as f:
+                        tmpl = env.get_template('module.py.jinja2')
+                        code = tmpl.render(modulename=_modulename)
+                        f.write(code.encode('utf8'))
+            if code_file:
+                code_file_name = '{}.py'.format(code_file.split('.')[-1])
+            else:
+                code_file_name = '__init__.py'
+            fn = os.path.join(*(code_file_dir + [code_file_name]))
+            fn = os.path.join(args.output, fn)
+
+            data = code.encode('utf8')
+            with open(fn, 'wb') as fd:
+                fd.write(data)
+
+            print('Ok, written {} bytes to {}'.format(len(data), fn))
 
     else:
         if args.command is None or args.command == 'noop':
