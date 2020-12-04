@@ -1010,19 +1010,24 @@ def _main():
             # generate and collect code for all FlatBuffers items in the given category
             # and defined in schemata previously loaded int
             for item in values:
-                metadata = item.marshal()
+                # metadata = item.marshal()
+                metadata = item
 
                 # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
-                modulename = '.'.join(metadata['name'].split('.')[0:-1])
-                metadata['modulename'] = modulename
-                metadata['classname'] = metadata['name'].split('.')[-1].strip()
+                modulename = '.'.join(metadata.name.split('.')[0:-1])
+                metadata.modulename = modulename
+                metadata.classname = metadata.name.split('.')[-1].strip()
 
                 # render object type template into python code section
                 if args.language == 'python':
                     tmpl = env.get_template('{}.py.jinja2'.format(category))
-                    code = tmpl.render(**metadata)
+                    code = tmpl.render(metadata=metadata)
                 elif args.language == 'json':
-                    code = json.dumps(metadata, separators=(', ', ': '), ensure_ascii=False, indent=4, sort_keys=True)
+                    code = json.dumps(metadata.marshal(),
+                                      separators=(', ', ': '),
+                                      ensure_ascii=False,
+                                      indent=4,
+                                      sort_keys=True)
                 else:
                     raise RuntimeError('invalid language "{}" for code generation'.format(args.languages))
 

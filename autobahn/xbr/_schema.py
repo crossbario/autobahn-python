@@ -28,7 +28,7 @@
 import os
 import pprint
 import hashlib
-from typing import List, Dict
+from typing import Dict
 from pathlib import Path
 
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
@@ -58,23 +58,23 @@ class FbsType(object):
     Union = _BaseType.Union
 
     FBS2PY = {
-        _BaseType.None_: type(None),
-        _BaseType.UType: int,
-        _BaseType.Bool: bool,
-        _BaseType.Byte: bytes,
-        _BaseType.UByte: int,
-        _BaseType.Short: int,
-        _BaseType.UShort: int,
-        _BaseType.Int: int,
-        _BaseType.UInt: int,
-        _BaseType.Long: int,
-        _BaseType.ULong: int,
-        _BaseType.Float: float,
-        _BaseType.Double: float,
-        _BaseType.String: str,
-        _BaseType.Vector: List,
-        _BaseType.Obj: object,
-        _BaseType.Union: Union,
+        _BaseType.None_: 'type(None)',
+        _BaseType.UType: 'int',
+        _BaseType.Bool: 'bool',
+        _BaseType.Byte: 'bytes',
+        _BaseType.UByte: 'int',
+        _BaseType.Short: 'int',
+        _BaseType.UShort: 'int',
+        _BaseType.Int: 'int',
+        _BaseType.UInt: 'int',
+        _BaseType.Long: 'int',
+        _BaseType.ULong: 'int',
+        _BaseType.Float: 'float',
+        _BaseType.Double: 'float',
+        _BaseType.String: 'str',
+        _BaseType.Vector: 'List',
+        _BaseType.Obj: 'object',
+        _BaseType.Union: 'Union',
     }
 
     FBS2STR = {
@@ -133,6 +133,14 @@ class FbsType(object):
     @property
     def index(self):
         return self._index
+
+    def map(self, language):
+        assert language in ['python']
+        if language == 'python':
+            py_type = self.FBS2PY.get(self._basetype, None)
+            return py_type
+        else:
+            raise RuntimeError('invalid language "{}" for type mapping target language'.format(language))
 
     def __str__(self):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))

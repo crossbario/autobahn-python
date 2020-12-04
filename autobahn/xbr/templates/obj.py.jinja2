@@ -1,51 +1,77 @@
-class {{ classname }}(object):
+from typing import Dict, List
+
+
+class {{ metadata.classname }}(object):
     """
     {{ docs }}
     """
     def __init__(self, from_fbs=None):
+        """
+
+        :param from_fbs: FlatBuffers raw buffer to load. A new object of this class
+            is created that wraps the data contained in the FlatBuffers raw buffer.
+        """
         self._from_fbs = from_fbs
-        {% for field_name in fields %}
-        # {{ fields[field_name]['docs'] }}
-        self._{{ fields[field_name]['name'] }} = None
+        {% for field_name in metadata.fields %}
+        # {{ metadata.fields[field_name]['docs'] }}
+        self._{{ metadata.fields[field_name].name }} = None
         {% endfor %}
 
-    def marshal(self):
+    def marshal(self) -> Dict:
+        """
+        Marshal all data contained in this typed native object into a generic object.
+
+        :returns: Generic object that can be serialized to bytes using eg ``json.dumps``.
+        """
         obj = {
-            {% for field_name in fields %}'{{ fields[field_name]['name'] }}': self.{{ fields[field_name]['name'] }},
+            {% for field_name in metadata.fields %}'{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }},
             {% endfor %}
         }
         return obj
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Return string representation of this object, suitable for eg logging.
+
+        :returns: String representation of this object.
+        """
         import pprint
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
 
-    {% for field_name in fields %}
+    {% for field_name in metadata.fields %}
     @property
-    def {{ fields[field_name]['name'] }}(self):
+    def {{ metadata.fields[field_name].name }}(self) -> {{ metadata.fields[field_name].type.map('python') }}:
         """
-        {{ fields[field_name]['docs'] }}
+        {{ metadata.fields[field_name]['docs'] }}
         """
-        if self._{{ fields[field_name]['name'] }} is None and self._from_fbs:
+        if self._{{ metadata.fields[field_name].name }} is None and self._from_fbs:
             # FIXME: load from fbs
-        return self._{{ fields[field_name]['name'] }}
+            pass
+        return self._{{ metadata.fields[field_name].name }}
 
-    @property.setter
-    def {{ fields[field_name]['name'] }}(self, value):
+    @{{ metadata.fields[field_name].name }}.setter
+    def {{ metadata.fields[field_name].name }}(self, value: {{ metadata.fields[field_name].type.map('python') }}):
         # FIXME: assert type of value
-        self._{{ fields[field_name]['name'] }} = value
+        self._{{ metadata.fields[field_name].name }} = value
     {% endfor %}
 
     @staticmethod
-    def cast(buf: bytes) -> {{ classname }}:
+    def cast(buf: bytes) -> object:
         """
         Cast a FlatBuffers raw input buffer as a typed object of this class.
+
+        :param buf: The raw input buffer to cast.
+
+        :returns: New native object that wraps the FlatBuffers raw buffer.
         """
         raise NotImplementedError()
 
     def build(self, builder):
         """
         Build a FlatBuffers raw output buffer from this typed object.
+
+        :returns: Constructs the FlatBuffers using the builder and
+            returns ``builder.EndObject()``.
         """
         raise NotImplementedError()
