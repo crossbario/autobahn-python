@@ -1,10 +1,16 @@
 from typing import Dict, List
 
+import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
+
 
 class {{ metadata.classname }}(object):
     """
     {{ docs }}
     """
+    __slots__ = ['_tab']
+
     def __init__(self, from_fbs=None):
         """
 
@@ -16,6 +22,17 @@ class {{ metadata.classname }}(object):
         # {{ metadata.fields[field_name]['docs'] }}
         self._{{ metadata.fields[field_name].name }} = None
         {% endfor %}
+
+    @classmethod
+    def GetRootAs{{ metadata.classname }}(cls, buf, offset):
+        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
+        x = {{ metadata.classname }}()
+        x.Init(buf, n + offset)
+        return x
+
+    # HomeDevice
+    def Init(self, buf, pos):
+        self._tab = flatbuffers.table.Table(buf, pos)
 
     def marshal(self) -> Dict:
         """
@@ -46,8 +63,13 @@ class {{ metadata.classname }}(object):
         {{ metadata.fields[field_name]['docs'] }}
         """
         if self._{{ metadata.fields[field_name].name }} is None and self._from_fbs:
-            # FIXME: load from fbs
+            {% if metadata.fields[field_name].type.map('python') == 'str' %}
+            value = self._from_fbs.{{ metadata.fields[field_name].name }}()
+            if value:
+                self._{{ metadata.fields[field_name].name }} = value.decode('utf8')
+            {% else %}# FIXME: load value from _from_fbs
             pass
+            {% endif %}
         return self._{{ metadata.fields[field_name].name }}
 
     @{{ metadata.fields[field_name].name }}.setter
