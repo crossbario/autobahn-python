@@ -1,0 +1,11 @@
+class {{ classname }}(object):
+    """
+    {{ docs }}
+    """
+    def __init__(self):
+        {% for field_name in fields %}
+        self._{{ fields[field_name]['name'] }} = None
+        """
+        {{ fields[field_name]['docs'] }}
+        """
+        {% endfor %}

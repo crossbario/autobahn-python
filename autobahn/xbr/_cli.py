@@ -26,7 +26,11 @@
 
 import sys
 import json
+import pkg_resources
 from pprint import pprint
+
+import jinja2
+from jinja2 import Environment, FileSystemLoader
 
 from autobahn import xbr
 from autobahn import __version__
@@ -965,6 +969,29 @@ def _main():
         repo = FbsRepository()
         repo.load(args.schema)
         pprint(repo.summary(keys=True))
+        for obj in repo.objs.values():
+            metadata = obj.marshal()
+
+            # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
+            metadata['classname'] = metadata['name'].split('.')[-1].strip()
+
+            templates = pkg_resources.resource_filename('autobahn', 'xbr/templates')
+            loader = FileSystemLoader(templates, encoding='utf-8', followlinks=False)
+            env = Environment(loader=loader)
+            tmpl = env.get_template('obj.py.jinja2')
+            code = tmpl.render(**metadata)
+
+            print(code)
+
+            # pprint(enum.marshal())
+            # print(enum.underlying_type)
+            # print(dir(enum.underlying_type))
+            # # 'BaseType', 'Element', 'GetRootAsType', 'Index', 'Init'
+            # print(enum.underlying_type.BaseType())
+            # print(enum.underlying_type.Element())
+            # # print(enum.underlying_type.GetRootAsType())
+            # print(enum.underlying_type.Index())
+            # # print(enum.underlying_type.Init())
 
     else:
         if args.command is None or args.command == 'noop':

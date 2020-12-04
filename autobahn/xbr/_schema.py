@@ -475,7 +475,7 @@ class FbsEnumValue(object):
     def __init__(self, name, value, docs):
         self._name = name
         self._value = value
-        self._attrs = None
+        self._attrs = {}
         self._docs = docs
 
     @property
@@ -500,8 +500,9 @@ class FbsEnumValue(object):
     def marshal(self):
         obj = {
             'name': self._name,
-            'attrs': {},
+            'attrs': self._attrs,
             'docs': self._docs,
+            'value': self._value,
         }
         if self._attrs:
             for k, v in self._attrs.items():
@@ -523,6 +524,8 @@ class FbsEnum(object):
         self._name = name
         self._values = values
         self._is_union = is_union
+
+        # zlmdb.flatbuffers.reflection.Type.Type
         self._underlying_type = underlying_type
         self._attrs = attrs
         self._docs = docs
@@ -723,6 +726,8 @@ class FbsSchema(object):
             if enum_name:
                 enum_name = enum_name.decode('utf8')
 
+            enum_underlying_type = fbs_enum.UnderlyingType()
+
             enum_values = {}
             for j in range(fbs_enum.ValuesLength()):
                 fbs_enum_value = fbs_enum.Values(j)
@@ -738,7 +743,7 @@ class FbsSchema(object):
             enum = FbsEnum(name=enum_name,
                            values=enum_values,
                            is_union=fbs_enum.IsUnion(),
-                           underlying_type=None,
+                           underlying_type=enum_underlying_type,
                            attrs=parse_attr(fbs_enum),
                            docs=parse_docs(fbs_enum))
             assert enum_name not in enums
@@ -864,6 +869,18 @@ class FbsRepository(object):
                 'enums': len(self._enums),
                 'services': len(self._services),
             }
+
+    @property
+    def objs(self):
+        return self._objs
+
+    @property
+    def enums(self):
+        return self._enums
+
+    @property
+    def services(self):
+        return self._services
 
     def load(self, dirname) -> object:
         if not os.path.isdir(dirname):
