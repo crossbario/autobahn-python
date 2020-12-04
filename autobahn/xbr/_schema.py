@@ -29,6 +29,7 @@ import os
 import pprint
 import hashlib
 from typing import List, Dict
+from pathlib import Path
 
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
@@ -830,3 +831,74 @@ class FbsSchema(object):
                            enums=enums,
                            services=services)
         return schema
+
+
+class FbsRepository(object):
+    """
+    """
+
+    def __init__(self):
+        self._schemata = {}
+
+        # Dict[str, FbsObject]
+        self._objs = {}
+
+        # Dict[str, FbsEnum]
+        self._enums = {}
+
+        # Dict[str, FbsService]
+        self._services = {}
+
+    def summary(self, keys=False):
+        if keys:
+            return {
+                'schemata': sorted(self._schemata.keys()),
+                'objs': sorted(self._objs.keys()),
+                'enums': sorted(self._enums.keys()),
+                'services': sorted(self._services.keys()),
+            }
+        else:
+            return {
+                'schemata': len(self._schemata),
+                'objs': len(self._objs),
+                'enums': len(self._enums),
+                'services': len(self._services),
+            }
+
+    def load(self, dirname) -> object:
+        if not os.path.isdir(dirname):
+            raise RuntimeError('cannot open schema directory {}'.format(dirname))
+
+        found = []
+        for path in Path(dirname).rglob('*.bfbs'):
+            fn = os.path.abspath(os.path.join(dirname, path.name))
+            if fn not in self._schemata:
+                found.append(fn)
+            else:
+                print('duplicate schema: {} already loaded'.format(fn))
+
+        for fn in found:
+            schema = FbsSchema.load(fn)
+
+            # load enum types
+            for enum in schema.enums.values():
+                if enum.name in self._enums:
+                    print('duplicate enum for name "{}"'.format(enum.name))
+                else:
+                    self._enums[enum.name] = enum
+
+            # load object types
+            for obj in schema.objs.values():
+                if obj.name in self._objs:
+                    print('duplicate object for name "{}"'.format(obj.name))
+                else:
+                    self._objs[obj.name] = obj
+
+            # load service definitions ("APIs")
+            for svc in schema.services.values():
+                if svc.name in self._services:
+                    print('duplicate service for name "{}"'.format(svc.name))
+                else:
+                    self._services[svc.name] = svc
+
+            self._schemata[fn] = schema

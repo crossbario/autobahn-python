@@ -60,7 +60,7 @@ try:
     from autobahn.xbr._config import load_or_create_profile, UserConfig, Profile  # noqa
 
     from autobahn.xbr._schema import FbsSchema, FbsObject, FbsType, FbsRPCCall, FbsEnum, FbsService, FbsEnumValue, \
-        FbsAttribute, FbsField  # noqa
+        FbsAttribute, FbsField, FbsRepository  # noqa
 
     HAS_XBR = True
 
@@ -345,6 +345,7 @@ try:
         'FbsRPCCall',
         'FbsAttribute',
         'FbsField',
+        'FbsRepository',
     )
 
 except (ImportError, FileNotFoundError) as e:

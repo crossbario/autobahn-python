@@ -26,6 +26,7 @@
 
 import sys
 import json
+from pprint import pprint
 
 from autobahn import xbr
 from autobahn import __version__
@@ -41,7 +42,7 @@ from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_
 from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_DOMAIN_ADDR_SRC, \
     XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC
 
-from autobahn.xbr import FbsSchema
+from autobahn.xbr import FbsSchema, FbsRepository
 
 import uuid
 import binascii
@@ -957,9 +958,13 @@ def _main():
                 ep = svc.calls[uri]
                 ep_type = ep.attrs['type']
                 print('   {:<10} {:<26}: {}'.format(ep_type, ep.name, ep.docs))
+        for obj_name, obj in schema.objs.items():
+            print(obj_name)
 
     elif args.command == 'codegen-schema':
-        raise NotImplementedError()
+        repo = FbsRepository()
+        repo.load(args.schema)
+        pprint(repo.summary(keys=True))
 
     else:
         if args.command is None or args.command == 'noop':
