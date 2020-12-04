@@ -965,37 +965,60 @@ def _main():
         for obj_name, obj in schema.objs.items():
             print(obj_name)
 
+    # generate code from WAMP IDL FlatBuffers schema files
+    #
     elif args.command == 'codegen-schema':
+
+        # load repository from flatbuffers schema files
         repo = FbsRepository()
         repo.load(args.schema)
+
+        # print repository summary
         pprint(repo.summary(keys=True))
 
+        # folder with jinja2 templates for python code sections
         templates = pkg_resources.resource_filename('autobahn', 'xbr/templates')
+
+        # jinja2 template engine loader and environment
         loader = FileSystemLoader(templates, encoding='utf-8', followlinks=False)
         env = Environment(loader=loader)
 
+        # output directory for generated code
         if not os.path.isdir(args.output):
             os.mkdir(args.output)
 
-        code_files = {}
+        # collect code sections by module
+        #
+        code_modules = {}
 
-        for obj in repo.objs.values():
-            metadata = obj.marshal()
+        work = {
+            'obj': repo.objs.values(),
+            'enum': repo.enums.values(),
+            'service': repo.services.values(),
+        }
+        for category, values in work.items():
+            # generate and collect code for all FlatBuffers items in the given category
+            # and defined in schemata previously loaded
+            for item in values:
+                metadata = item.marshal()
 
-            # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
-            modulename = '.'.join(metadata['name'].split('.')[0:-1])
-            metadata['modulename'] = modulename
-            metadata['classname'] = metadata['name'].split('.')[-1].strip()
+                # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
+                modulename = '.'.join(metadata['name'].split('.')[0:-1])
+                metadata['modulename'] = modulename
+                metadata['classname'] = metadata['name'].split('.')[-1].strip()
 
-            tmpl = env.get_template('obj.py.jinja2')
-            code = tmpl.render(**metadata)
+                # render object type template into python code section
+                tmpl = env.get_template('{}.py.jinja2'.format(category))
+                code = tmpl.render(**metadata)
 
-            if modulename not in code_files:
-                code_files[modulename] = []
+                # collect code sections per-module
+                if modulename not in code_modules:
+                    code_modules[modulename] = []
+                code_modules[modulename].append(code)
 
-            code_files[modulename].append(code)
-
-        for code_file, code_sections in code_files.items():
+        # write out python modules
+        #
+        for code_file, code_sections in code_modules.items():
             code = '\n\n\n'.join(code_sections)
             if code_file:
                 code_file_dir = [''] + code_file.split('.')[0:-1]
