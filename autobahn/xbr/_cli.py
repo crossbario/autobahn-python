@@ -804,6 +804,13 @@ def _main():
                         type=str,
                         help='FlatBuffers binary schema file to read (.bfbs)')
 
+    _LANGUAGES = ['python', 'json']
+    parser.add_argument('-l',
+                        '--language',
+                        dest='language',
+                        type=str,
+                        help='Generated code language, one of {}'.format(_LANGUAGES))
+
     parser.add_argument('--url',
                         dest='url',
                         type=str,
@@ -987,18 +994,21 @@ def _main():
         if not os.path.isdir(args.output):
             os.mkdir(args.output)
 
-        # collect code sections by module
+        # type categories in schemata in the repository
         #
-        code_modules = {}
-
         work = {
             'obj': repo.objs.values(),
             'enum': repo.enums.values(),
             'service': repo.services.values(),
         }
+
+        # collect code sections by module
+        #
+        code_modules = {}
+
         for category, values in work.items():
             # generate and collect code for all FlatBuffers items in the given category
-            # and defined in schemata previously loaded
+            # and defined in schemata previously loaded int
             for item in values:
                 metadata = item.marshal()
 
@@ -1008,15 +1018,20 @@ def _main():
                 metadata['classname'] = metadata['name'].split('.')[-1].strip()
 
                 # render object type template into python code section
-                tmpl = env.get_template('{}.py.jinja2'.format(category))
-                code = tmpl.render(**metadata)
+                if args.language == 'python':
+                    tmpl = env.get_template('{}.py.jinja2'.format(category))
+                    code = tmpl.render(**metadata)
+                elif args.language == 'json':
+                    code = json.dumps(metadata, separators=(', ', ': '), ensure_ascii=False, indent=4, sort_keys=True)
+                else:
+                    raise RuntimeError('invalid language "{}" for code generation'.format(args.languages))
 
                 # collect code sections per-module
                 if modulename not in code_modules:
                     code_modules[modulename] = []
                 code_modules[modulename].append(code)
 
-        # write out python modules
+        # write out modules
         #
         for code_file, code_sections in code_modules.items():
             code = '\n\n\n'.join(code_sections)
@@ -1029,21 +1044,31 @@ def _main():
                 d = os.path.join(args.output, *(code_file_dir[:i + 1]))
                 if not os.path.isdir(d):
                     os.mkdir(d)
-                    fn = os.path.join(d, '__init__.py')
-                    _modulename = '.'.join(code_file_dir[:i + 1])[1:]
-                    with open(fn, 'wb') as f:
-                        tmpl = env.get_template('module.py.jinja2')
-                        code = tmpl.render(modulename=_modulename)
-                        f.write(code.encode('utf8'))
-            if code_file:
-                code_file_name = '{}.py'.format(code_file.split('.')[-1])
-            else:
-                code_file_name = '__init__.py'
+                    if False:
+                        if args.language == 'python':
+                            fn = os.path.join(d, '__init__.py')
+                            _modulename = '.'.join(code_file_dir[:i + 1])[1:]
+                            with open(fn, 'wb') as f:
+                                tmpl = env.get_template('module.py.jinja2')
+                                code = tmpl.render(modulename=_modulename)
+                                f.write(code.encode('utf8'))
+
+            if args.language == 'python':
+                if code_file:
+                    code_file_name = '{}.py'.format(code_file.split('.')[-1])
+                else:
+                    code_file_name = '__init__.py'
+            elif args.language == 'json':
+                if code_file:
+                    code_file_name = '{}.json'.format(code_file.split('.')[-1])
+                else:
+                    code_file_name = 'init.json'
+
             fn = os.path.join(*(code_file_dir + [code_file_name]))
             fn = os.path.join(args.output, fn)
 
             data = code.encode('utf8')
-            with open(fn, 'wb') as fd:
+            with open(fn, 'ab') as fd:
                 fd.write(data)
 
             print('Ok, written {} bytes to {}'.format(len(data), fn))
