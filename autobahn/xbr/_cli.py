@@ -1011,11 +1011,12 @@ def _main():
             # and defined in schemata previously loaded int
             for item in values:
                 # metadata = item.marshal()
-                pprint(item.marshal())
+                # pprint(item.marshal())
                 metadata = item
 
                 # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
                 modulename = '.'.join(metadata.name.split('.')[0:-1])
+                is_first = modulename not in code_modules
                 metadata.modulename = modulename
                 metadata.classname = metadata.name.split('.')[-1].strip()
 
@@ -1024,7 +1025,7 @@ def _main():
                     tmpl = env.get_template('{}.py.jinja2'.format(category))
 
                     from autobahn.xbr import FbsType
-                    code = tmpl.render(metadata=metadata, FbsType=FbsType)
+                    code = tmpl.render(metadata=metadata, FbsType=FbsType, render_imports=is_first)
                 elif args.language == 'json':
                     code = json.dumps(metadata.marshal(),
                                       separators=(', ', ': '),

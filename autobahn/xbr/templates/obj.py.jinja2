@@ -1,13 +1,13 @@
+{% if render_imports %}
 import uuid
+import pprint
 from typing import Dict, List, Optional
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
 np = import_numpy()
 
-from autobahn.xbr import FbsType
-
-
+{% endif %}
 class {{ metadata.classname }}(object):
     """
     {{ docs }}
@@ -54,7 +54,6 @@ class {{ metadata.classname }}(object):
 
         :returns: String representation of this object.
         """
-        import pprint
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
 
@@ -81,6 +80,12 @@ class {{ metadata.classname }}(object):
             # access type "int|float|double" attribute:
             if o != 0:
                 value = self._tab.Get(flatbuffers.number_types.{{ FbsType.FBS2FLAGS[metadata.fields[field_name].type.basetype] }}, o + self._tab.Pos)
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
+            # access type "bool" attribute:
+            if o != 0:
+                value = self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+                if value is not None:
+                    value = bool(value)
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
             # access type "uuid.UUID" attribute:
             if o != 0:
@@ -100,7 +105,7 @@ class {{ metadata.classname }}(object):
                 else:
                     value = np.datetime64(0, 'ns')
             {% else %}# FIXME: load value for type "{{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}"
-            raise NotImplementedError('implement processing of FlatBuffers type "{}"'.format(metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True)))
+            raise NotImplementedError('implement processing of FlatBuffers type {}'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
             {% endif %}
             if value is not None:
                 self._{{ metadata.fields[field_name].name }} = value
