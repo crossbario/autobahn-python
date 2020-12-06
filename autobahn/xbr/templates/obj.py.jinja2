@@ -14,19 +14,13 @@ class {{ metadata.classname }}(object):
     """
     __slots__ = [
         '_tab',
-        '_from_fbs',
-        {% for field_name in metadata.fields %}'_{{ metadata.fields[field_name].name }}',
+        {% for field_name in metadata.fields_by_id %}'_{{ metadata.fields[field_name].name }}',
         {% endfor %}
     ]
 
-    def __init__(self, from_fbs=None):
-        """
-
-        :param from_fbs: FlatBuffers raw buffer to load. A new object of this class
-            is created that wraps the data contained in the FlatBuffers raw buffer.
-        """
-        self._from_fbs = from_fbs
-        {% for field_name in metadata.fields %}
+    def __init__(self):
+        self._tab = None
+        {% for field_name in metadata.fields_by_id %}
         # {{ metadata.fields[field_name]['docs'] }}
         self._{{ metadata.fields[field_name].name }} = None
         {% endfor %}
@@ -49,7 +43,7 @@ class {{ metadata.classname }}(object):
         :returns: Generic object that can be serialized to bytes using eg ``json.dumps``.
         """
         obj = {
-            {% for field_name in metadata.fields %}'{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }},
+            {% for field_name in metadata.fields_by_id %}'{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }},
             {% endfor %}
         }
         return obj
@@ -64,7 +58,7 @@ class {{ metadata.classname }}(object):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
 
-    {% for field_name in metadata.fields %}
+    {% for field_name in metadata.fields_by_id %}
     @property
     def {{ metadata.fields[field_name].name }}(self) -> {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}:
         """
@@ -94,7 +88,7 @@ class {{ metadata.classname }}(object):
                 _len = self._tab.VectorLen(o)
                 value = memoryview(self._tab.Bytes)[_off:_off + _len]
                 if value is not None:
-                    value = uuid.UUID(bytes=value)
+                    value = uuid.UUID(bytes=bytes(value))
                 else:
                     value = uuid.UUID(bytes=b'\x00' * 20)
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
@@ -114,7 +108,6 @@ class {{ metadata.classname }}(object):
 
     @{{ metadata.fields[field_name].name }}.setter
     def {{ metadata.fields[field_name].name }}(self, value: {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}):
-        # FIXME: assert type of value
         self._{{ metadata.fields[field_name].name }} = value
     {% endfor %}
 

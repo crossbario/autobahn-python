@@ -337,18 +337,20 @@ def parse_docs(obj):
 
 def parse_fields(obj):
     fields = {}
+    fields_by_id = {}
     for j in range(obj.FieldsLength()):
         fbs_field = obj.Fields(j)
         field_name = fbs_field.Name()
         if field_name:
             field_name = field_name.decode('utf8')
+        field_id = int(fbs_field.Id())
         fbs_field_type = fbs_field.Type()
         field_type = FbsType(basetype=fbs_field_type.BaseType(),
                              element=fbs_field_type.Element(),
                              index=fbs_field_type.Index())
         field = FbsField(name=field_name,
                          type=field_type,
-                         id=fbs_field.Id(),
+                         id=field_id,
                          offset=fbs_field.Offset(),
                          default_int=fbs_field.DefaultInteger(),
                          default_real=fbs_field.DefaultReal(),
@@ -356,15 +358,22 @@ def parse_fields(obj):
                          required=fbs_field.Required(),
                          attrs=parse_attr(fbs_field),
                          docs=parse_docs(fbs_field))
-        assert field_name not in fields, 'field "{}" already in fields {}'.format(field_name, sorted(fields.keys()))
+        assert field_name not in fields, 'field "{}" with id "{}" already in fields {}'.format(field_name, field_id, sorted(fields.keys()))
         fields[field_name] = field
-    return fields
+        assert field_id not in fields_by_id, 'field "{}" with id " {}" already in fields {}'.format(field_name, field_id, sorted(fields.keys()))
+        fields_by_id[field_id] = field_name
+    res = []
+    for _, value in sorted(fields_by_id.items()):
+        res.append(value)
+    fields_by_id = res
+    return fields, fields_by_id
 
 
 class FbsObject(object):
     def __init__(self,
                  name: str,
                  fields: Dict[str, FbsField],
+                 fields_by_id: Dict[int, str],
                  is_struct: bool,
                  min_align: int,
                  bytesize: int,
@@ -372,6 +381,7 @@ class FbsObject(object):
                  docs: str):
         self._name = name
         self._fields = fields
+        self._fields_by_id = fields_by_id
         self._is_struct = is_struct
         self._min_align = min_align
         self._bytesize = bytesize
@@ -385,6 +395,10 @@ class FbsObject(object):
     @property
     def fields(self):
         return self._fields
+
+    @property
+    def fields_by_id(self):
+        return self._fields_by_id
 
     @property
     def is_struct(self):
@@ -434,9 +448,10 @@ class FbsObject(object):
             obj_name = obj_name.decode('utf8')
         obj_docs = parse_docs(fbs_obj)
         obj_attrs = parse_attr(fbs_obj)
-        obj_fields = parse_fields(fbs_obj)
+        obj_fields, obj_fields_by_id = parse_fields(fbs_obj)
         obj = FbsObject(name=obj_name,
                         fields=obj_fields,
+                        fields_by_id=obj_fields_by_id,
                         is_struct=fbs_obj.IsStruct(),
                         min_align=fbs_obj.Minalign(),
                         bytesize=fbs_obj.Bytesize(),
@@ -849,9 +864,10 @@ class FbsSchema(object):
                 call_req_bytesize = fbs_call_req.Bytesize()
                 call_req_docs = parse_docs(fbs_call_req)
                 call_req_attrs = parse_attr(fbs_call_req)
-                call_req_fields = parse_fields(fbs_call_req)
+                call_req_fields, call_fields_by_id = parse_fields(fbs_call_req)
                 call_req = FbsObject(name=call_req_name,
                                      fields=call_req_fields,
+                                     fields_by_id=call_fields_by_id,
                                      is_struct=call_req_is_struct,
                                      min_align=call_req_min_align,
                                      bytesize=call_req_bytesize,
@@ -867,9 +883,10 @@ class FbsSchema(object):
                 call_resp_bytesize = fbs_call_resp.Bytesize()
                 call_resp_docs = parse_docs(fbs_call_resp)
                 call_resp_attrs = parse_attr(fbs_call_resp)
-                call_resp_fields = parse_fields(fbs_call_resp)
+                call_resp_fields, call_resp_fields_by_id = parse_fields(fbs_call_resp)
                 call_resp = FbsObject(name=call_resp_name,
                                       fields=call_resp_fields,
+                                      fields_by_id=call_resp_fields_by_id,
                                       is_struct=call_resp_is_struct,
                                       min_align=call_resp_min_align,
                                       bytesize=call_resp_bytesize,
