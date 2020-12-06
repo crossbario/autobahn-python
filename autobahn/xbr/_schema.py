@@ -28,7 +28,7 @@
 import os
 import pprint
 import hashlib
-from typing import Dict
+from typing import Dict, Optional
 from pathlib import Path
 
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
@@ -39,8 +39,13 @@ class FbsType(object):
     """
     """
 
+    # no type
     None_ = _BaseType.None_
+
+    # ???
     UType = _BaseType.UType
+
+    # scalar types
     Bool = _BaseType.Bool
     Byte = _BaseType.Byte
     UByte = _BaseType.UByte
@@ -53,9 +58,28 @@ class FbsType(object):
     Float = _BaseType.Float
     Double = _BaseType.Double
     String = _BaseType.String
+
+    SCALAR_TYPES = [_BaseType.Bool,
+                    _BaseType.Byte,
+                    _BaseType.UByte,
+                    _BaseType.Short,
+                    _BaseType.UShort,
+                    _BaseType.Int,
+                    _BaseType.UInt,
+                    _BaseType.Long,
+                    _BaseType.ULong,
+                    _BaseType.Float,
+                    _BaseType.Double,
+                    _BaseType.String]
+
+    # structured types
     Vector = _BaseType.Vector
     Obj = _BaseType.Obj
     Union = _BaseType.Union
+
+    STRUCTURED_TYPES = [_BaseType.Vector,
+                        _BaseType.Obj,
+                        _BaseType.Union]
 
     FBS2PY = {
         _BaseType.None_: 'type(None)',
@@ -75,6 +99,20 @@ class FbsType(object):
         _BaseType.Vector: 'List',
         _BaseType.Obj: 'object',
         _BaseType.Union: 'Union',
+    }
+
+    FBS2FLAGS = {
+        _BaseType.Bool: 'BoolFlags',
+        _BaseType.Byte: 'Int8Flags',
+        _BaseType.UByte: 'Uint8Flags',
+        _BaseType.Short: 'Int16Flags',
+        _BaseType.UShort: 'Uint16Flags',
+        _BaseType.Int: 'Int32Flags',
+        _BaseType.UInt: 'Uint32Flags',
+        _BaseType.Long: 'Int64Flags',
+        _BaseType.ULong: 'Uint64Flags',
+        _BaseType.Float: 'Float32Flags',
+        _BaseType.Double: 'Float64Flags',
     }
 
     FBS2STR = {
@@ -134,13 +172,37 @@ class FbsType(object):
     def index(self):
         return self._index
 
-    def map(self, language):
-        assert language in ['python']
+    def map(self, language: str, attrs: Optional[Dict] = None, required: Optional[bool] = True) -> str:
+        """
+
+        :param language:
+        :return:
+        """
         if language == 'python':
-            py_type = self.FBS2PY.get(self._basetype, None)
-            return py_type
+            _mapped_type = None
+            if self.basetype == FbsType.Vector:
+                # vectors of uint8 are mapped to byte strings ..
+                if self.element == FbsType.UByte:
+                    if attrs and 'uuid' in attrs:
+                        _mapped_type = 'uuid.UUID'
+                    else:
+                        _mapped_type = 'bytes'
+                # .. whereas all other vectors are mapped to lists of the same element type
+                else:
+                    _mapped_type = 'List[{}]'.format(FbsType.FBS2PY[self.element])
+            elif self.basetype in FbsType.SCALAR_TYPES:
+                if self.basetype == FbsType.ULong and attrs and 'timestamp' in attrs:
+                    _mapped_type = 'np.datetime64'
+                else:
+                    _mapped_type = FbsType.FBS2PY[self.basetype]
+            else:
+                raise NotImplementedError('FIXME: implement mapping of FlatBuffers type "{}" to Python in {}'.format(self.basetype, self.map))
+            if required:
+                return _mapped_type
+            else:
+                return 'Optional[{}]'.format(_mapped_type)
         else:
-            raise RuntimeError('invalid language "{}" for type mapping target language'.format(language))
+            raise RuntimeError('cannot map FlatBuffers type to target language "{}" in {}'.format(language, self.map))
 
     def __str__(self):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))

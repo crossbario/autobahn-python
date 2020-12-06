@@ -1,8 +1,11 @@
-from typing import Dict, List
+import uuid
+from typing import Dict, List, Optional
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
 np = import_numpy()
+
+from autobahn.xbr import FbsType
 
 
 class {{ metadata.classname }}(object):
@@ -63,22 +66,54 @@ class {{ metadata.classname }}(object):
 
     {% for field_name in metadata.fields %}
     @property
-    def {{ metadata.fields[field_name].name }}(self) -> {{ metadata.fields[field_name].type.map('python') }}:
+    def {{ metadata.fields[field_name].name }}(self) -> {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}:
         """
         {{ metadata.fields[field_name]['docs'] }}
         """
-        if self._{{ metadata.fields[field_name].name }} is None and self._from_fbs:
-            {% if metadata.fields[field_name].type.map('python') == 'str' %}
-            value = self._from_fbs.{{ metadata.fields[field_name].name }}()
-            if value:
-                self._{{ metadata.fields[field_name].name }} = value.decode('utf8')
-            {% else %}# FIXME: load value from _from_fbs
-            pass
+        if self._{{ metadata.fields[field_name].name }} is None and self._tab:
+            o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset({{ metadata.fields[field_name].offset }}))
+            value = None
+            {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
+            # access type "string" attribute:
+            if o != 0:
+                value = self._tab.String(o + self._tab.Pos).decode('utf8')
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
+            # access type "bytes" attribute:
+            if o != 0:
+                _off = self._tab.Vector(o)
+                _len = self._tab.VectorLen(o)
+                value = memoryview(self._tab.Bytes)[_off:_off + _len]
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'float', 'double'] %}
+            # access type "int|float|double" attribute:
+            if o != 0:
+                value = self._tab.Get(flatbuffers.number_types.{{ FbsType.FBS2FLAGS[metadata.fields[field_name].type.basetype] }}, o + self._tab.Pos)
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+            # access type "uuid.UUID" attribute:
+            if o != 0:
+                _off = self._tab.Vector(o)
+                _len = self._tab.VectorLen(o)
+                value = memoryview(self._tab.Bytes)[_off:_off + _len]
+                if value is not None:
+                    value = uuid.UUID(bytes=value)
+                else:
+                    value = uuid.UUID(bytes=b'\x00' * 20)
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+            # access type "np.datetime64" attribute:
+            if o != 0:
+                value = self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+                if value is not None:
+                    value = np.datetime64(value, 'ns')
+                else:
+                    value = np.datetime64(0, 'ns')
+            {% else %}# FIXME: load value for type "{{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}"
+            raise NotImplementedError('implement processing of FlatBuffers type "{}"'.format(metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True)))
             {% endif %}
+            if value is not None:
+                self._{{ metadata.fields[field_name].name }} = value
         return self._{{ metadata.fields[field_name].name }}
 
     @{{ metadata.fields[field_name].name }}.setter
-    def {{ metadata.fields[field_name].name }}(self, value: {{ metadata.fields[field_name].type.map('python') }}):
+    def {{ metadata.fields[field_name].name }}(self, value: {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}):
         # FIXME: assert type of value
         self._{{ metadata.fields[field_name].name }} = value
     {% endfor %}
