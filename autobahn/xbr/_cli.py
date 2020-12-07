@@ -988,7 +988,7 @@ def _main():
 
         # jinja2 template engine loader and environment
         loader = FileSystemLoader(templates, encoding='utf-8', followlinks=False)
-        env = Environment(loader=loader)
+        env = Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
 
         # output directory for generated code
         if not os.path.isdir(args.output):

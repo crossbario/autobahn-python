@@ -12,11 +12,7 @@ class {{ metadata.classname }}(object):
     """
     {{ docs }}
     """
-    __slots__ = [
-        '_tab',
-        {% for field_name in metadata.fields_by_id %}'_{{ metadata.fields[field_name].name }}',
-        {% endfor %}
-    ]
+    __slots__ = ['_tab', {% for field_name in metadata.fields_by_id %}'_{{ metadata.fields[field_name].name }}', {% endfor %}]
 
     def __init__(self):
         self._tab = None
@@ -42,10 +38,7 @@ class {{ metadata.classname }}(object):
 
         :returns: Generic object that can be serialized to bytes using eg ``json.dumps``.
         """
-        obj = {
-            {% for field_name in metadata.fields_by_id %}'{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }},
-            {% endfor %}
-        }
+        obj = { {% for field_name in metadata.fields_by_id %}'{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }}, {% endfor %} }
         return obj
 
     def __str__(self) -> str:
@@ -55,7 +48,6 @@ class {{ metadata.classname }}(object):
         :returns: String representation of this object.
         """
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
-
 
     {% for field_name in metadata.fields_by_id %}
     @property
@@ -114,6 +106,7 @@ class {{ metadata.classname }}(object):
     @{{ metadata.fields[field_name].name }}.setter
     def {{ metadata.fields[field_name].name }}(self, value: {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}):
         self._{{ metadata.fields[field_name].name }} = value
+
     {% endfor %}
 
     @staticmethod
@@ -136,22 +129,33 @@ class {{ metadata.classname }}(object):
         """
         # first, write all string|bytes|etc typed attribute values (in order) to the buffer
         {% for field_name in metadata.fields_by_id %}
-        {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes'] %}_{{ field_name }} = self.{{ field_name }}
+        {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes'] %}
+        _{{ field_name }} = self.{{ field_name }}
         if _{{ field_name }}:
             _{{ field_name }} = builder.CreateString(_{{ field_name }})
-        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}_{{ field_name }} = self._{{ field_name }}.bytes if self._{{ field_name }} else None
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+        _{{ field_name }} = self._{{ field_name }}.bytes if self._{{ field_name }} else None
         if _{{ field_name }}:
             _{{ field_name }} = builder.CreateString(_{{ field_name }})
         {% else %}
-        # FIXME
+        # FIXME 1
         {% endif %}{% endfor %}
         # now write the actual object attributes (in field order) to the buffer
         {% for field_name in metadata.fields_by_id %}
         {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes', 'uuid.UUID'] %}
         if _{{ field_name }}:
-            _{{ field_name }} = builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+            builder.PrependUOffsetTRelativeSlot({{ metadata.fields[field_name].id }}, flatbuffers.number_types.UOffsetTFlags.py_type(_{{ field_name }}), 0)
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+        if self._{{ field_name }}:
+            builder.PrependUint64Slot({{ metadata.fields[field_name].id }}, int(self._{{ field_name }}), 0)
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'float' %}
+        if self._{{ field_name }}:
+            builder.PrependFloat64Slot({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0.0)
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
+        if self._{{ field_name }}:
+            builder.PrependBoolSlot({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0)
         {% else %}
-        # FIXME
+        # FIXME 2
         {% endif %}{% endfor %}
 
         raise NotImplementedError()
