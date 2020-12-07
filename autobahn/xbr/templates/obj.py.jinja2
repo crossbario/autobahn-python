@@ -134,4 +134,24 @@ class {{ metadata.classname }}(object):
         :returns: Constructs the FlatBuffers using the builder and
             returns ``builder.EndObject()``.
         """
+        # first, write all string|bytes|etc typed attribute values (in order) to the buffer
+        {% for field_name in metadata.fields_by_id %}
+        {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes'] %}_{{ field_name }} = self.{{ field_name }}
+        if _{{ field_name }}:
+            _{{ field_name }} = builder.CreateString(_{{ field_name }})
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}_{{ field_name }} = self._{{ field_name }}.bytes if self._{{ field_name }} else None
+        if _{{ field_name }}:
+            _{{ field_name }} = builder.CreateString(_{{ field_name }})
+        {% else %}
+        # FIXME
+        {% endif %}{% endfor %}
+        # now write the actual object attributes (in field order) to the buffer
+        {% for field_name in metadata.fields_by_id %}
+        {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes', 'uuid.UUID'] %}
+        if _{{ field_name }}:
+            _{{ field_name }} = builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
+        {% else %}
+        # FIXME
+        {% endif %}{% endfor %}
+
         raise NotImplementedError()

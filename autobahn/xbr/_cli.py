@@ -1011,7 +1011,7 @@ def _main():
             # and defined in schemata previously loaded int
             for item in values:
                 # metadata = item.marshal()
-                # pprint(item.marshal())
+                pprint(item.marshal())
                 metadata = item
 
                 # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
