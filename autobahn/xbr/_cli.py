@@ -34,6 +34,8 @@ from jinja2 import Environment, FileSystemLoader
 
 from autobahn import xbr
 from autobahn import __version__
+from autobahn.xbr import FbsType
+
 
 if not xbr.HAS_XBR:
     print("\nYou must install the [xbr] extra to use xbrnetwork")
@@ -1005,13 +1007,14 @@ def _main():
         # collect code sections by module
         #
         code_modules = {}
+        test_code_modules = {}
 
         for category, values in work.items():
             # generate and collect code for all FlatBuffers items in the given category
             # and defined in schemata previously loaded int
             for item in values:
                 # metadata = item.marshal()
-                pprint(item.marshal())
+                # pprint(item.marshal())
                 metadata = item
 
                 # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
@@ -1022,10 +1025,13 @@ def _main():
 
                 # render object type template into python code section
                 if args.language == 'python':
+                    # render obj|enum|service.py.jinja2 template
                     tmpl = env.get_template('{}.py.jinja2'.format(category))
-
-                    from autobahn.xbr import FbsType
                     code = tmpl.render(metadata=metadata, FbsType=FbsType, render_imports=is_first)
+
+                    # render test_obj|enum|service.py.jinja2 template
+                    test_tmpl = env.get_template('test_{}.py.jinja2'.format(category))
+                    test_code = test_tmpl.render(metadata=metadata, FbsType=FbsType, render_imports=is_first)
                 elif args.language == 'json':
                     code = json.dumps(metadata.marshal(),
                                       separators=(', ', ': '),
@@ -1038,10 +1044,13 @@ def _main():
                 # collect code sections per-module
                 if modulename not in code_modules:
                     code_modules[modulename] = []
+                    test_code_modules[modulename] = []
                 code_modules[modulename].append(code)
+                test_code_modules[modulename].append(test_code)
 
-        # write out modules
+        # write out code modules
         #
+        i = 0
         for code_file, code_sections in code_modules.items():
             code = '\n\n\n'.join(code_sections)
             if code_file:
@@ -1053,6 +1062,8 @@ def _main():
                 d = os.path.join(args.output, *(code_file_dir[:i + 1]))
                 if not os.path.isdir(d):
                     os.mkdir(d)
+
+                    # FIXME
                     if False:
                         if args.language == 'python':
                             fn = os.path.join(d, '__init__.py')
@@ -1065,8 +1076,10 @@ def _main():
             if args.language == 'python':
                 if code_file:
                     code_file_name = '{}.py'.format(code_file.split('.')[-1])
+                    test_code_file_name = 'test_{}.py'.format(code_file.split('.')[-1])
                 else:
                     code_file_name = '__init__.py'
+                    test_code_file_name = None
             elif args.language == 'json':
                 if code_file:
                     code_file_name = '{}.json'.format(code_file.split('.')[-1])
@@ -1081,6 +1094,21 @@ def _main():
                 fd.write(data)
 
             print('Ok, written {} bytes to {}'.format(len(data), fn))
+
+            # write out unit test code modules
+            #
+            if test_code_file_name:
+                test_code_sections = test_code_modules[code_file]
+                test_code = '\n\n\n'.join(test_code_sections)
+                data = test_code.encode('utf8')
+
+                fn = os.path.join(*(code_file_dir + [test_code_file_name]))
+                fn = os.path.join(args.output, fn)
+
+                with open(fn, 'ab') as fd:
+                    fd.write(data)
+
+                print('Ok, written {} bytes to {}'.format(len(data), fn))
 
     else:
         if args.command is None or args.command == 'noop':

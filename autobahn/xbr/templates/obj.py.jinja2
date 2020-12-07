@@ -7,6 +7,7 @@ import flatbuffers
 from flatbuffers.compat import import_numpy
 np = import_numpy()
 
+
 {% endif %}
 class {{ metadata.classname }}(object):
     """
@@ -15,10 +16,13 @@ class {{ metadata.classname }}(object):
     __slots__ = ['_tab', {% for field_name in metadata.fields_by_id %}'_{{ metadata.fields[field_name].name }}', {% endfor %}]
 
     def __init__(self):
+        # the underlying FlatBuffers vtable
         self._tab = None
+
         {% for field_name in metadata.fields_by_id %}
         # {{ metadata.fields[field_name]['docs'] }}
         self._{{ metadata.fields[field_name].name }} = None
+
         {% endfor %}
 
     @classmethod
