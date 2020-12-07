@@ -1038,6 +1038,7 @@ def _main():
                                       ensure_ascii=False,
                                       indent=4,
                                       sort_keys=True)
+                    test_code = None
                 else:
                     raise RuntimeError('invalid language "{}" for code generation'.format(args.languages))
 
@@ -1046,7 +1047,10 @@ def _main():
                     code_modules[modulename] = []
                     test_code_modules[modulename] = []
                 code_modules[modulename].append(code)
-                test_code_modules[modulename].append(test_code)
+                if test_code:
+                    test_code_modules[modulename].append(test_code)
+                else:
+                    test_code_modules[modulename].append(None)
 
         # write out code modules
         #
@@ -1085,6 +1089,7 @@ def _main():
                     code_file_name = '{}.json'.format(code_file.split('.')[-1])
                 else:
                     code_file_name = 'init.json'
+                test_code_file_name = None
 
             fn = os.path.join(*(code_file_dir + [code_file_name]))
             fn = os.path.join(args.output, fn)
