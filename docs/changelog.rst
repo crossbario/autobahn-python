@@ -5,6 +5,11 @@
 Changelog
 =========
 
+20.12.1
+-------
+
+* new: CLI commands for WAMP IDL (`xbrnetwork describe-schema / codegen-schema`)
+
 20.7.1
 ------
 

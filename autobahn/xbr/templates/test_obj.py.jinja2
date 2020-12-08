@@ -1,0 +1,141 @@
+{% if render_imports %}
+import os
+import random
+import timeit
+import uuid
+
+import txaio
+txaio.use_twisted()  # noqa
+
+from autobahn import util
+import flatbuffers
+import pytest
+import numpy as np
+from txaio import time_ns
+
+{% endif %}
+from .device import {{ metadata.classname }}
+
+
+def fill_{{ metadata.classname }}(obj: {{ metadata.classname }}):
+    {% for field_name in metadata.fields_by_id %}
+    {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
+    obj.{{ metadata.fields[field_name].name }} = util.generate_activation_code()
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
+    obj.{{ metadata.fields[field_name].name }} = os.urandom(32)
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'long'] %}
+    obj.{{ metadata.fields[field_name].name }} = random.randint(0, 9007199254740992)
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['float', 'double'] %}
+    obj.{{ metadata.fields[field_name].name }} = random.random()
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
+    obj.{{ metadata.fields[field_name].name }} = random.random() > 0.5
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+    obj.{{ metadata.fields[field_name].name }} = uuid.uuid4()
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+    obj.{{ metadata.fields[field_name].name }} = np.datetime64(time_ns(), 'ns')
+    {% else %}
+    obj.{{ metadata.fields[field_name].name }} = None
+    {% endif %}
+    {% endfor %}
+
+
+def fill_{{ metadata.classname }}_empty(obj: {{ metadata.classname }}):
+    {% for field_name in metadata.fields_by_id %}
+    obj.{{ metadata.fields[field_name].name }} = None
+    {% endfor %}
+
+
+@pytest.fixture(scope='function')
+def {{ metadata.classname }}_obj():
+    _obj = {{ metadata.classname }}()
+    fill_{{ metadata.classname }}(_obj)
+    return _obj
+
+
+@pytest.fixture(scope='function')
+def builder():
+    _builder = flatbuffers.Builder(0)
+    return _builder
+
+
+def test_{{ metadata.classname }}_roundtrip({{ metadata.classname }}_obj, builder):
+    # serialize to bytes (flatbuffers) from python object
+    obj = {{ metadata.classname }}_obj.build(builder)
+    builder.Finish(obj)
+    data = builder.Output()
+
+    # check length of serialized object data
+    # assert len(data) == 480
+
+    # create python object from bytes (flatbuffes)
+    _obj = {{ metadata.classname }}_obj.cast(data)
+
+    {% for field_name in metadata.fields_by_id %}
+    assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
+    {% endfor %}
+
+
+def test_{{ metadata.classname }}_empty(builder):
+    empty_obj = {{ metadata.classname }}()
+    fill_{{ metadata.classname }}_empty(empty_obj)
+
+    # serialize to bytes (flatbuffers) from python object
+    obj = empty_obj.build(builder)
+    builder.Finish(obj)
+    data = builder.Output()
+
+    # check length of serialized object data
+    # assert len(data) == 12
+
+    # create python object from bytes (flatbuffes)
+    _obj = {{ metadata.classname }}.cast(data)
+
+    unix_zero = np.datetime64(0, 'ns')
+
+    {# assert _offer.timestamp == unix_zero
+    assert _offer.offer is None
+    assert _offer.seller is None
+    assert _offer.seller_session_id == 0
+    assert _offer.seller_authid is None
+    assert _offer.key is None
+    assert _offer.api is None
+    assert _offer.uri is None
+    assert _offer.valid_from == unix_zero
+    assert _offer.signature is None
+    assert _offer.price == 0
+    assert _offer.categories is None
+    assert _offer.expires == unix_zero
+    assert _offer.copies == 0
+    assert _offer.remaining == 0 #}
+
+
+def test_{{ metadata.classname }}_roundtrip_perf({{ metadata.classname }}_obj, builder):
+    obj = {{ metadata.classname }}_obj.build(builder)
+    builder.Finish(obj)
+    data = builder.Output()
+    scratch = {'value': 0}
+
+    def loop():
+        _obj = {{ metadata.classname }}.cast(data)
+        if True:
+            {% for field_name in metadata.fields_by_id %}
+            assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
+            {% endfor %}
+        scratch['value'] += 1
+
+    N = 7
+    M = 20000
+    samples = []
+    print('measuring:')
+    for i in range(N):
+        secs = timeit.timeit(loop, number=M)
+        ops = round(float(M) / secs, 1)
+        samples.append(ops)
+        print('{} objects/sec performance'.format(ops))
+
+    samples = sorted(samples)
+    ops50 = samples[int(len(samples) / 2)]
+    print('RESULT: {} objects/sec median performance'.format(ops50))
+
+    assert ops50 > 1000
+    print(scratch['value'])

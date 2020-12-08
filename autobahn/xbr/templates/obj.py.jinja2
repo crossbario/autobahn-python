@@ -1,0 +1,165 @@
+{% if render_imports %}
+import uuid
+import pprint
+from typing import Dict, List, Optional
+
+import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
+
+
+{% endif %}
+class {{ metadata.classname }}(object):
+    """
+    {{ docs }}
+    """
+    __slots__ = ['_tab', {% for field_name in metadata.fields_by_id %}'_{{ metadata.fields[field_name].name }}', {% endfor %}]
+
+    def __init__(self):
+        # the underlying FlatBuffers vtable
+        self._tab = None
+
+        {% for field_name in metadata.fields_by_id %}
+        # {{ metadata.fields[field_name]['docs'] }}
+        self._{{ metadata.fields[field_name].name }} = None
+
+        {% endfor %}
+
+    @classmethod
+    def GetRootAs{{ metadata.classname }}(cls, buf, offset):
+        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
+        x = {{ metadata.classname }}()
+        x.Init(buf, n + offset)
+        return x
+
+    # HomeDevice
+    def Init(self, buf, pos):
+        self._tab = flatbuffers.table.Table(buf, pos)
+
+    def marshal(self) -> Dict:
+        """
+        Marshal all data contained in this typed native object into a generic object.
+
+        :returns: Generic object that can be serialized to bytes using eg ``json.dumps``.
+        """
+        obj = { {% for field_name in metadata.fields_by_id %}'{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }}, {% endfor %} }
+        return obj
+
+    def __str__(self) -> str:
+        """
+        Return string representation of this object, suitable for eg logging.
+
+        :returns: String representation of this object.
+        """
+        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+
+    {% for field_name in metadata.fields_by_id %}
+    @property
+    def {{ metadata.fields[field_name].name }}(self) -> {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}:
+        """
+        {{ metadata.fields[field_name]['docs'] }}
+        """
+        if self._{{ metadata.fields[field_name].name }} is None and self._tab:
+            o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset({{ metadata.fields[field_name].offset }}))
+            value = None
+            {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
+            # access type "string" attribute:
+            if o != 0:
+                value = self._tab.String(o + self._tab.Pos).decode('utf8')
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
+            # access type "bytes" attribute:
+            if o != 0:
+                _off = self._tab.Vector(o)
+                _len = self._tab.VectorLen(o)
+                value = memoryview(self._tab.Bytes)[_off:_off + _len]
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'float', 'double'] %}
+            # access type "int|float|double" attribute:
+            if o != 0:
+                value = self._tab.Get(flatbuffers.number_types.{{ FbsType.FBS2FLAGS[metadata.fields[field_name].type.basetype] }}, o + self._tab.Pos)
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
+            # access type "bool" attribute:
+            if o != 0:
+                value = self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+                if value is not None:
+                    value = bool(value)
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+            # access type "uuid.UUID" attribute:
+            if o != 0:
+                _off = self._tab.Vector(o)
+                _len = self._tab.VectorLen(o)
+                value = memoryview(self._tab.Bytes)[_off:_off + _len]
+                if value is not None:
+                    value = uuid.UUID(bytes=bytes(value))
+                else:
+                    value = uuid.UUID(bytes=b'\x00' * 20)
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+            # access type "np.datetime64" attribute:
+            if o != 0:
+                value = self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+                if value is not None:
+                    value = np.datetime64(value, 'ns')
+                else:
+                    value = np.datetime64(0, 'ns')
+            {% else %}# FIXME: load value for type "{{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}"
+            raise NotImplementedError('implement processing of FlatBuffers type {}'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            {% endif %}
+            if value is not None:
+                self._{{ metadata.fields[field_name].name }} = value
+        return self._{{ metadata.fields[field_name].name }}
+
+    @{{ metadata.fields[field_name].name }}.setter
+    def {{ metadata.fields[field_name].name }}(self, value: {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}):
+        self._{{ metadata.fields[field_name].name }} = value
+
+    {% endfor %}
+
+    @staticmethod
+    def cast(buf: bytes) -> object:
+        """
+        Cast a FlatBuffers raw input buffer as a typed object of this class.
+
+        :param buf: The raw input buffer to cast.
+
+        :returns: New native object that wraps the FlatBuffers raw buffer.
+        """
+        raise NotImplementedError()
+
+    def build(self, builder):
+        """
+        Build a FlatBuffers raw output buffer from this typed object.
+
+        :returns: Constructs the FlatBuffers using the builder and
+            returns ``builder.EndObject()``.
+        """
+        # first, write all string|bytes|etc typed attribute values (in order) to the buffer
+        {% for field_name in metadata.fields_by_id %}
+        {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes'] %}
+        _{{ field_name }} = self.{{ field_name }}
+        if _{{ field_name }}:
+            _{{ field_name }} = builder.CreateString(_{{ field_name }})
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+        _{{ field_name }} = self._{{ field_name }}.bytes if self._{{ field_name }} else None
+        if _{{ field_name }}:
+            _{{ field_name }} = builder.CreateString(_{{ field_name }})
+        {% else %}
+        # FIXME 1
+        {% endif %}{% endfor %}
+        # now write the actual object attributes (in field order) to the buffer
+        {% for field_name in metadata.fields_by_id %}
+        {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes', 'uuid.UUID'] %}
+        if _{{ field_name }}:
+            builder.PrependUOffsetTRelativeSlot({{ metadata.fields[field_name].id }}, flatbuffers.number_types.UOffsetTFlags.py_type(_{{ field_name }}), 0)
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+        if self._{{ field_name }}:
+            builder.PrependUint64Slot({{ metadata.fields[field_name].id }}, int(self._{{ field_name }}), 0)
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'float' %}
+        if self._{{ field_name }}:
+            builder.PrependFloat64Slot({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0.0)
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
+        if self._{{ field_name }}:
+            builder.PrependBoolSlot({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0)
+        {% else %}
+        # FIXME 2
+        {% endif %}{% endfor %}
+
+        raise NotImplementedError()
