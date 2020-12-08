@@ -360,10 +360,21 @@ def run(components, start_loop=True, log_level='info'):
     def nicely_exit(signal):
         log.info("Shutting down due to {signal}", signal=signal)
 
-        tasks = asyncio.Task.all_tasks()
+        try:
+            tasks = asyncio.Task.all_tasks()
+        except AttributeError:
+            # this changed with python >= 3.7
+            tasks = asyncio.all_tasks()
+
         for task in tasks:
             # Do not cancel the current task.
-            if task is not asyncio.Task.current_task():
+
+            try:
+                current_task = asyncio.Task.current_task()
+            except AttributeError:
+                current_task = asyncio.current_task()
+
+            if task is not current_task:
                 task.cancel()
 
         def cancel_all_callback(fut):
