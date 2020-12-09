@@ -14,7 +14,7 @@ import numpy as np
 from txaio import time_ns
 
 @pytest.fixture(scope='function')
-def builder_():
+def builder():
     _builder = flatbuffers.Builder(0)
     return _builder
 

@@ -144,7 +144,9 @@ class {{ metadata.classname }}(object):
         {% else %}
         # FIXME 1
         {% endif %}{% endfor %}
-        # now write the actual object attributes (in field order) to the buffer
+        # now start a new object in the buffer and write the actual object attributes (in field
+        # order) to the buffer
+        builder.StartObject({{ metadata.fields_by_id|length }})
         {% for field_name in metadata.fields_by_id %}
         {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes', 'uuid.UUID'] %}
         if _{{ field_name }}:
