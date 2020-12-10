@@ -30,7 +30,7 @@ def fill_{{ metadata.classname }}(obj: {{ metadata.classname }}):
     {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
     obj.{{ metadata.fields[field_name].name }} = os.urandom(32)
     {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'long'] %}
-    obj.{{ metadata.fields[field_name].name }} = random.randint(0, 9007199254740992)
+    obj.{{ metadata.fields[field_name].name }} = random.randint(0, 2**31 - 1)
     {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['float', 'double'] %}
     obj.{{ metadata.fields[field_name].name }} = random.random()
     {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
@@ -65,7 +65,7 @@ def test_{{ metadata.classname }}_roundtrip({{ metadata.classname }}_obj, builde
     data = builder.Output()
 
     # check length of serialized object data
-    # assert len(data) == 480
+    print('{} serialized object length = {} bytes'.format('{{ metadata.classname }}', len(data)))
 
     # create python object from bytes (flatbuffes)
     _obj = {{ metadata.classname }}_obj.cast(data)
@@ -85,7 +85,7 @@ def test_{{ metadata.classname }}_empty(builder):
     data = builder.Output()
 
     # check length of serialized object data
-    # assert len(data) == 12
+    print('{} serialized object length = {} bytes'.format('{{ metadata.classname }}', len(data)))
 
     # create python object from bytes (flatbuffes)
     _obj = {{ metadata.classname }}.cast(data)

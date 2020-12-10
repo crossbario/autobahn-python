@@ -122,7 +122,7 @@ class {{ metadata.classname }}(object):
 
         :returns: New native object that wraps the FlatBuffers raw buffer.
         """
-        raise NotImplementedError()
+        return {{ metadata.classname }}.GetRootAs{{ metadata.classname }}(buf, 0)
 
     def build(self, builder):
         """
@@ -142,11 +142,12 @@ class {{ metadata.classname }}(object):
         if _{{ field_name }}:
             _{{ field_name }} = builder.CreateString(_{{ field_name }})
         {% else %}
-        # FIXME 1
-        {% endif %}{% endfor %}
+        {% endif %}
+        {% endfor %}
         # now start a new object in the buffer and write the actual object attributes (in field
         # order) to the buffer
         builder.StartObject({{ metadata.fields_by_id|length }})
+
         {% for field_name in metadata.fields_by_id %}
         {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes', 'uuid.UUID'] %}
         if _{{ field_name }}:
@@ -154,6 +155,9 @@ class {{ metadata.classname }}(object):
         {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
         if self._{{ field_name }}:
             builder.PrependUint64Slot({{ metadata.fields[field_name].id }}, int(self._{{ field_name }}), 0)
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'int' %}
+        if self._{{ field_name }}:
+            builder.PrependFloat64Slot({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0)
         {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'float' %}
         if self._{{ field_name }}:
             builder.PrependFloat64Slot({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0.0)
@@ -164,4 +168,4 @@ class {{ metadata.classname }}(object):
         # FIXME 2
         {% endif %}{% endfor %}
 
-        raise NotImplementedError()
+        return builder.EndObject()
