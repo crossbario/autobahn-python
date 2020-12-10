@@ -115,6 +115,20 @@ class FbsType(object):
         _BaseType.Double: 'Float64Flags',
     }
 
+    FBS2PREPEND = {
+        _BaseType.Bool: 'PrependBoolSlot',
+        _BaseType.Byte: 'PrependInt8Slot',
+        _BaseType.UByte: 'PrependUint8Slot',
+        _BaseType.Short: 'PrependInt16Slot',
+        _BaseType.UShort: 'PrependUint16Slot',
+        _BaseType.Int: 'PrependInt32Slot',
+        _BaseType.UInt: 'PrependUint32Slot',
+        _BaseType.Long: 'PrependInt64Slot',
+        _BaseType.ULong: 'PrependUint64Slot',
+        _BaseType.Float: 'PrependFloat32Slot',
+        _BaseType.Double: 'PrependFloat64Slot',
+    }
+
     FBS2STR = {
         _BaseType.None_: 'None',
         _BaseType.UType: 'UType',

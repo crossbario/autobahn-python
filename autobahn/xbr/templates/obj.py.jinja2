@@ -76,6 +76,8 @@ class {{ metadata.classname }}(object):
             # access type "int|float|double" attribute:
             if o != 0:
                 value = self._tab.Get(flatbuffers.number_types.{{ FbsType.FBS2FLAGS[metadata.fields[field_name].type.basetype] }}, o + self._tab.Pos)
+            else:
+                value = 0
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
             # access type "bool" attribute:
             if o != 0:
@@ -91,7 +93,7 @@ class {{ metadata.classname }}(object):
                 if value is not None:
                     value = uuid.UUID(bytes=bytes(value))
                 else:
-                    value = uuid.UUID(bytes=b'\x00' * 20)
+                    value = uuid.UUID(bytes=b'\x00' * 16)
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
             # access type "np.datetime64" attribute:
             if o != 0:
@@ -155,15 +157,9 @@ class {{ metadata.classname }}(object):
         {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
         if self._{{ field_name }}:
             builder.PrependUint64Slot({{ metadata.fields[field_name].id }}, int(self._{{ field_name }}), 0)
-        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'int' %}
+        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['bool', 'int', 'float'] %}
         if self._{{ field_name }}:
-            builder.PrependFloat64Slot({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0)
-        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'float' %}
-        if self._{{ field_name }}:
-            builder.PrependFloat64Slot({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0.0)
-        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
-        if self._{{ field_name }}:
-            builder.PrependBoolSlot({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0)
+            builder.{{ FbsType.FBS2PREPEND[metadata.fields[field_name].type.basetype] }}({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0)
         {% else %}
         # FIXME 2
         {% endif %}{% endfor %}
