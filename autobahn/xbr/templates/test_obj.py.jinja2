@@ -55,7 +55,7 @@ def fill_{{ metadata.classname }}_empty(obj: {{ metadata.classname }}):
 
 @pytest.fixture(scope='function')
 def {{ metadata.classname }}_obj():
-    _obj = {{ metadata.classname }}()
+    _obj: {{ metadata.classname }} = {{ metadata.classname }}()
     fill_{{ metadata.classname }}(_obj)
     return _obj
 
@@ -70,7 +70,7 @@ def test_{{ metadata.classname }}_roundtrip({{ metadata.classname }}_obj, builde
     print('{} serialized object length = {} bytes'.format('{{ metadata.classname }}', len(data)))
 
     # create python object from bytes (flatbuffes)
-    _obj = {{ metadata.classname }}_obj.cast(data)
+    _obj: {{ metadata.classname }} = {{ metadata.classname }}_obj.cast(data)
 
     {% for field_name in metadata.fields_by_id %}
     assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
@@ -90,7 +90,7 @@ def test_{{ metadata.classname }}_empty(builder):
     print('{} serialized object length = {} bytes'.format('{{ metadata.classname }}', len(data)))
 
     # create python object from bytes (flatbuffes)
-    _obj = {{ metadata.classname }}.cast(data)
+    _obj: {{ metadata.classname }} = {{ metadata.classname }}.cast(data)
 
     {% for field_name in metadata.fields_by_id %}
     {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
@@ -120,7 +120,7 @@ def test_{{ metadata.classname }}_roundtrip_perf({{ metadata.classname }}_obj, b
     scratch = {'value': 0}
 
     def loop():
-        _obj = {{ metadata.classname }}.cast(data)
+        _obj: {{ metadata.classname }} = {{ metadata.classname }}.cast(data)
         if True:
             {% for field_name in metadata.fields_by_id %}
             assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
