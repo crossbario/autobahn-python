@@ -797,7 +797,10 @@ class ObservableMixin(object):
                 if handler is None:
                     del self._listeners[event]
                 else:
-                    self._listeners[event].discard(handler)
+                    try:
+                        self._listeners[event].remove(handler)
+                    except ValueError:
+                        pass
 
     def fire(self, event, *args, **kwargs):
         """
