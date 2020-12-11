@@ -81,6 +81,27 @@ def test_{{ metadata.classname }}_empty(builder):
     empty_obj = {{ metadata.classname }}()
     fill_{{ metadata.classname }}_empty(empty_obj)
 
+    # check the object was initialized correctly
+    {% for field_name in metadata.fields_by_id %}
+    {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
+    assert empty_obj.{{ metadata.fields[field_name].name }} == ''
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
+    assert empty_obj.{{ metadata.fields[field_name].name }} == b''
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'long'] %}
+    assert empty_obj.{{ metadata.fields[field_name].name }} == 0
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['float', 'double'] %}
+    assert empty_obj.{{ metadata.fields[field_name].name }} == 0.0
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
+    assert empty_obj.{{ metadata.fields[field_name].name }} is False
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+    assert empty_obj.{{ metadata.fields[field_name].name }} == uuid.UUID(bytes=b'\0'*16)
+    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+    assert empty_obj.{{ metadata.fields[field_name].name }} == np.datetime64(0, 'ns')
+    {% else %}
+    assert empty_obj.{{ metadata.fields[field_name].name }} is None
+    {% endif %}
+    {% endfor %}
+
     # serialize to bytes (flatbuffers) from python object
     obj = empty_obj.build(builder)
     builder.Finish(obj)
@@ -121,10 +142,9 @@ def test_{{ metadata.classname }}_roundtrip_perf({{ metadata.classname }}_obj, b
 
     def loop():
         _obj: {{ metadata.classname }} = {{ metadata.classname }}.cast(data)
-        if True:
-            {% for field_name in metadata.fields_by_id %}
-            assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
-            {% endfor %}
+        {% for field_name in metadata.fields_by_id %}
+        assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
+        {% endfor %}
         scratch['value'] += 1
 
     N = 7

@@ -115,8 +115,31 @@ class {{ metadata.classname }}(object):
         return self._{{ metadata.fields[field_name].name }}
 
     @{{ metadata.fields[field_name].name }}.setter
-    def {{ metadata.fields[field_name].name }}(self, value: {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}):
-        self._{{ metadata.fields[field_name].name }} = value
+    def {{ metadata.fields[field_name].name }}(self, value: Optional[{{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}]):
+        if value is not None:
+            self._{{ metadata.fields[field_name].name }} = value
+        else:
+            {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
+            # set default value on type "string" attribute:
+            self._{{ metadata.fields[field_name].name }} = ''
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
+            # set default value on type "bytes" attribute:
+            self._{{ metadata.fields[field_name].name }} = b''
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'float', 'double'] %}
+            # set default value on type "int|float|double" attribute:
+            self._{{ metadata.fields[field_name].name }} = 0
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
+            # set default value on type "bool" attribute:
+            self._{{ metadata.fields[field_name].name }} = False
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+            # set default value on type "uuid.UUID" attribute:
+            self._{{ metadata.fields[field_name].name }} = uuid.UUID(bytes=b'\x00' * 16)
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+            # set default value on type "np.datetime64" attribute:
+            self._{{ metadata.fields[field_name].name }} = np.datetime64(0, 'ns')
+            {% else %}
+            raise NotImplementedError('implement processing of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            {% endif %}
 
     {% endfor %}
 
@@ -145,7 +168,7 @@ class {{ metadata.classname }}(object):
         if _{{ field_name }}:
             _{{ field_name }} = builder.CreateString(_{{ field_name }})
         {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
-        _{{ field_name }} = self._{{ field_name }}.bytes if self._{{ field_name }} else None
+        _{{ field_name }} = self.{{ field_name }}.bytes if self.{{ field_name }} else None
         if _{{ field_name }}:
             _{{ field_name }} = builder.CreateString(_{{ field_name }})
         {% else %}
@@ -160,11 +183,11 @@ class {{ metadata.classname }}(object):
         if _{{ field_name }}:
             builder.PrependUOffsetTRelativeSlot({{ metadata.fields[field_name].id }}, flatbuffers.number_types.UOffsetTFlags.py_type(_{{ field_name }}), 0)
         {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
-        if self._{{ field_name }}:
-            builder.PrependUint64Slot({{ metadata.fields[field_name].id }}, int(self._{{ field_name }}), 0)
+        if self.{{ field_name }}:
+            builder.PrependUint64Slot({{ metadata.fields[field_name].id }}, int(self.{{ field_name }}), 0)
         {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['bool', 'int', 'float'] %}
-        if self._{{ field_name }}:
-            builder.{{ FbsType.FBS2PREPEND[metadata.fields[field_name].type.basetype] }}({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0)
+        if self.{{ field_name }}:
+            builder.{{ FbsType.FBS2PREPEND[metadata.fields[field_name].type.basetype] }}({{ metadata.fields[field_name].id }}, self.{{ field_name }}, 0)
         {% else %}
         raise NotImplementedError('implement builder for type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
         {% endif %}{% endfor %}
