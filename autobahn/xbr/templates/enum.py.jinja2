@@ -1,3 +1,9 @@
+{% if is_first_by_category %}
+##
+## enum types
+##
+
+{% endif%}
 class {{ metadata.classname }}(object):
     """
     {{ metadata.docs }}
