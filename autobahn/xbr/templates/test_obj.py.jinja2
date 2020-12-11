@@ -30,7 +30,9 @@ def fill_{{ metadata.classname }}(obj: {{ metadata.classname }}):
     {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
     obj.{{ metadata.fields[field_name].name }} = os.urandom(32)
     {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'long'] %}
-    obj.{{ metadata.fields[field_name].name }} = random.randint(0, 2**31 - 1)
+    # FIXME: enum vs int
+    # obj.{{ metadata.fields[field_name].name }} = random.randint(0, 2**31 - 1)
+    obj.{{ metadata.fields[field_name].name }} = random.randint(0, 3)
     {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['float', 'double'] %}
     obj.{{ metadata.fields[field_name].name }} = random.random()
     {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}

@@ -1,1 +1,10 @@
-# Enum
+class {{ metadata.classname }}(object):
+    """
+    {{ metadata.docs }}
+    """
+    {% for value_name in metadata.values %}
+    {{ value_name }}: int = {{ metadata.values[value_name].value }}
+    """
+    {{ metadata.values[value_name].docs }}
+    """
+    {% endfor %}

@@ -11,7 +11,7 @@ np = import_numpy()
 {% endif %}
 class {{ metadata.classname }}(object):
     """
-    {{ docs }}
+    {{ metadata.docs }}
     """
     __slots__ = ['_tab', {% for field_name in metadata.fields_by_id %}'_{{ metadata.fields[field_name].name }}', {% endfor %}]
 
