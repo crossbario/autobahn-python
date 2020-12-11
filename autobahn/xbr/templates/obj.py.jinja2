@@ -61,52 +61,57 @@ class {{ metadata.classname }}(object):
         """
         if self._{{ metadata.fields[field_name].name }} is None and self._tab:
             o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset({{ metadata.fields[field_name].offset }}))
-            value = None
             {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
             # access type "string" attribute:
+            value = ''
             if o != 0:
-                value = self._tab.String(o + self._tab.Pos).decode('utf8')
+                _value = self._tab.String(o + self._tab.Pos)
+                if _value is not None:
+                    value = _value.decode('utf8')
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
             # access type "bytes" attribute:
+            value = b''
             if o != 0:
                 _off = self._tab.Vector(o)
                 _len = self._tab.VectorLen(o)
-                value = memoryview(self._tab.Bytes)[_off:_off + _len]
+                _value = memoryview(self._tab.Bytes)[_off:_off + _len]
+                if _value is not None:
+                    value = _value
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'float', 'double'] %}
             # access type "int|float|double" attribute:
+            value = 0
             if o != 0:
-                value = self._tab.Get(flatbuffers.number_types.{{ FbsType.FBS2FLAGS[metadata.fields[field_name].type.basetype] }}, o + self._tab.Pos)
-            else:
-                value = 0
+                _value = self._tab.Get(flatbuffers.number_types.{{ FbsType.FBS2FLAGS[metadata.fields[field_name].type.basetype] }}, o + self._tab.Pos)
+                if _value is not None:
+                    value = _value
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
             # access type "bool" attribute:
+            value = False
             if o != 0:
-                value = self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-                if value is not None:
-                    value = bool(value)
+                _value = self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+                if _value is not None:
+                    value = _value
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
             # access type "uuid.UUID" attribute:
+            value = uuid.UUID(bytes=b'\x00' * 16)
             if o != 0:
                 _off = self._tab.Vector(o)
                 _len = self._tab.VectorLen(o)
-                value = memoryview(self._tab.Bytes)[_off:_off + _len]
-                if value is not None:
-                    value = uuid.UUID(bytes=bytes(value))
-                else:
-                    value = uuid.UUID(bytes=b'\x00' * 16)
+                _value = memoryview(self._tab.Bytes)[_off:_off + _len]
+                if _value is not None:
+                    value = uuid.UUID(bytes=bytes(_value))
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
             # access type "np.datetime64" attribute:
+            value = np.datetime64(0, 'ns')
             if o != 0:
-                value = self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+                _value = self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
                 if value is not None:
-                    value = np.datetime64(value, 'ns')
-                else:
-                    value = np.datetime64(0, 'ns')
-            {% else %}# FIXME: load value for type "{{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}"
-            raise NotImplementedError('implement processing of FlatBuffers type {}'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+                    value = np.datetime64(_value, 'ns')
+            {% else %}
+            raise NotImplementedError('implement processing of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
             {% endif %}
-            if value is not None:
-                self._{{ metadata.fields[field_name].name }} = value
+            assert value is not None
+            self._{{ metadata.fields[field_name].name }} = value
         return self._{{ metadata.fields[field_name].name }}
 
     @{{ metadata.fields[field_name].name }}.setter
@@ -161,7 +166,7 @@ class {{ metadata.classname }}(object):
         if self._{{ field_name }}:
             builder.{{ FbsType.FBS2PREPEND[metadata.fields[field_name].type.basetype] }}({{ metadata.fields[field_name].id }}, self._{{ field_name }}, 0)
         {% else %}
-        # FIXME 2
+        raise NotImplementedError('implement builder for type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
         {% endif %}{% endfor %}
 
         return builder.EndObject()

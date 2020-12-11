@@ -1066,16 +1066,14 @@ def _main():
                 d = os.path.join(args.output, *(code_file_dir[:i + 1]))
                 if not os.path.isdir(d):
                     os.mkdir(d)
-
-                    # FIXME
-                    if False:
-                        if args.language == 'python':
-                            fn = os.path.join(d, '__init__.py')
+                    if args.language == 'python':
+                        fn = os.path.join(d, '__init__.py')
+                        if not os.path.exists(fn):
                             _modulename = '.'.join(code_file_dir[:i + 1])[1:]
                             with open(fn, 'wb') as f:
                                 tmpl = env.get_template('module.py.jinja2')
-                                code = tmpl.render(modulename=_modulename)
-                                f.write(code.encode('utf8'))
+                                init_code = tmpl.render(modulename=_modulename)
+                                f.write(init_code.encode('utf8'))
 
             if args.language == 'python':
                 if code_file:
