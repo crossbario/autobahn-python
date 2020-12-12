@@ -1008,30 +1008,36 @@ def _main():
         #
         code_modules = {}
         test_code_modules = {}
+        is_first_by_category_modules = {}
 
         for category, values in work.items():
             # generate and collect code for all FlatBuffers items in the given category
             # and defined in schemata previously loaded int
+
             for item in values:
                 # metadata = item.marshal()
                 # pprint(item.marshal())
                 metadata = item
 
-                # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
+                # com.things.home.device.HomeDeviceVendor => com.things.home.device
                 modulename = '.'.join(metadata.name.split('.')[0:-1])
                 is_first = modulename not in code_modules
+                is_first_by_category = (modulename, category) not in is_first_by_category_modules
                 metadata.modulename = modulename
                 metadata.classname = metadata.name.split('.')[-1].strip()
+
+                if is_first_by_category:
+                    is_first_by_category_modules[(modulename, category)] = True
 
                 # render object type template into python code section
                 if args.language == 'python':
                     # render obj|enum|service.py.jinja2 template
                     tmpl = env.get_template('{}.py.jinja2'.format(category))
-                    code = tmpl.render(metadata=metadata, FbsType=FbsType, render_imports=is_first)
+                    code = tmpl.render(metadata=metadata, FbsType=FbsType, render_imports=is_first, is_first_by_category=is_first_by_category)
 
                     # render test_obj|enum|service.py.jinja2 template
                     test_tmpl = env.get_template('test_{}.py.jinja2'.format(category))
-                    test_code = test_tmpl.render(metadata=metadata, FbsType=FbsType, render_imports=is_first)
+                    test_code = test_tmpl.render(metadata=metadata, FbsType=FbsType, render_imports=is_first, is_first_by_category=is_first_by_category)
                 elif args.language == 'json':
                     code = json.dumps(metadata.marshal(),
                                       separators=(', ', ': '),
@@ -1066,16 +1072,14 @@ def _main():
                 d = os.path.join(args.output, *(code_file_dir[:i + 1]))
                 if not os.path.isdir(d):
                     os.mkdir(d)
-
-                    # FIXME
-                    if False:
-                        if args.language == 'python':
-                            fn = os.path.join(d, '__init__.py')
+                    if args.language == 'python':
+                        fn = os.path.join(d, '__init__.py')
+                        if not os.path.exists(fn):
                             _modulename = '.'.join(code_file_dir[:i + 1])[1:]
                             with open(fn, 'wb') as f:
                                 tmpl = env.get_template('module.py.jinja2')
-                                code = tmpl.render(modulename=_modulename)
-                                f.write(code.encode('utf8'))
+                                init_code = tmpl.render(modulename=_modulename)
+                                f.write(init_code.encode('utf8'))
 
             if args.language == 'python':
                 if code_file:
