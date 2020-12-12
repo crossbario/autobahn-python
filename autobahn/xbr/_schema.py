@@ -354,10 +354,13 @@ def parse_fields(obj):
     fields_by_id = {}
     for j in range(obj.FieldsLength()):
         fbs_field = obj.Fields(j)
+
         field_name = fbs_field.Name()
         if field_name:
             field_name = field_name.decode('utf8')
+
         field_id = int(fbs_field.Id())
+
         fbs_field_type = fbs_field.Type()
         field_type = FbsType(basetype=fbs_field_type.BaseType(),
                              element=fbs_field_type.Element(),
@@ -381,6 +384,79 @@ def parse_fields(obj):
         res.append(value)
     fields_by_id = res
     return fields, fields_by_id
+
+
+def parse_calls(svc_obj):
+    calls = {}
+    calls_by_id = {}
+    for j in range(svc_obj.CallsLength()):
+        fbs_call = svc_obj.Calls(j)
+
+        call_name = fbs_call.Name()
+        if call_name:
+            call_name = call_name.decode('utf8')
+
+        # FIXME: schema reflection.RPCCall lacks "Id" (!)
+        # call_id = int(fbs_call.Id())
+        call_id = j
+
+        fbs_call_req = fbs_call.Request()
+        call_req_name = fbs_call_req.Name()
+        if call_req_name:
+            call_req_name = call_req_name.decode('utf8')
+        call_req_is_struct = fbs_call_req.IsStruct()
+        call_req_min_align = fbs_call_req.Minalign()
+        call_req_bytesize = fbs_call_req.Bytesize()
+        call_req_docs = parse_docs(fbs_call_req)
+        call_req_attrs = parse_attr(fbs_call_req)
+        call_req_fields, call_fields_by_id = parse_fields(fbs_call_req)
+        call_req = FbsObject(name=call_req_name,
+                             fields=call_req_fields,
+                             fields_by_id=call_fields_by_id,
+                             is_struct=call_req_is_struct,
+                             min_align=call_req_min_align,
+                             bytesize=call_req_bytesize,
+                             attrs=call_req_attrs,
+                             docs=call_req_docs)
+
+        fbs_call_resp = fbs_call.Response()
+        call_resp_name = fbs_call_resp.Name()
+        if call_resp_name:
+            call_resp_name = call_resp_name.decode('utf8')
+        call_resp_is_struct = fbs_call_resp.IsStruct()
+        call_resp_min_align = fbs_call_resp.Minalign()
+        call_resp_bytesize = fbs_call_resp.Bytesize()
+        call_resp_docs = parse_docs(fbs_call_resp)
+        call_resp_attrs = parse_attr(fbs_call_resp)
+        call_resp_fields, call_resp_fields_by_id = parse_fields(fbs_call_resp)
+        call_resp = FbsObject(name=call_resp_name,
+                              fields=call_resp_fields,
+                              fields_by_id=call_resp_fields_by_id,
+                              is_struct=call_resp_is_struct,
+                              min_align=call_resp_min_align,
+                              bytesize=call_resp_bytesize,
+                              attrs=call_resp_attrs,
+                              docs=call_resp_docs)
+
+        call_docs = parse_docs(fbs_call)
+        call_attrs = parse_attr(fbs_call)
+        call = FbsRPCCall(name=call_name,
+                          id=call_id,
+                          request=call_req,
+                          response=call_resp,
+                          docs=call_docs,
+                          attrs=call_attrs)
+
+        assert call_name not in calls, 'call "{}" with id "{}" already in calls {}'.format(call_name, call_id, sorted(calls.keys()))
+        calls[call_name] = call
+        assert call_id not in calls_by_id, 'call "{}" with id " {}" already in calls {}'.format(call_name, call_id, sorted(calls.keys()))
+        calls_by_id[call_id] = call_name
+
+    res = []
+    for _, value in sorted(calls_by_id.items()):
+        res.append(value)
+    calls_by_id = res
+    return calls, calls_by_id
 
 
 class FbsObject(object):
@@ -477,11 +553,13 @@ class FbsObject(object):
 class FbsRPCCall(object):
     def __init__(self,
                  name: str,
+                 id: int,
                  request: FbsObject,
                  response: FbsObject,
                  docs: str,
                  attrs: Dict[str, FbsAttribute]):
         self._name = name
+        self._id = id
         self._request = request
         self._response = response
         self._docs = docs
@@ -490,6 +568,10 @@ class FbsRPCCall(object):
     @property
     def name(self):
         return self._name
+
+    @property
+    def id(self):
+        return self._id
 
     @property
     def request(self):
@@ -528,10 +610,12 @@ class FbsService(object):
     def __init__(self,
                  name: str,
                  calls: Dict[str, FbsRPCCall],
+                 calls_by_id: Dict[int, str],
                  attrs: Dict[str, FbsAttribute],
                  docs: str):
         self._name = name
         self._calls = calls
+        self._calls_by_id = calls_by_id
         self._attrs = attrs
         self._docs = docs
 
@@ -542,6 +626,10 @@ class FbsService(object):
     @property
     def calls(self):
         return self._calls
+
+    @property
+    def calls_by_id(self):
+        return self._calls_by_id
 
     @property
     def attrs(self):
@@ -861,65 +949,11 @@ class FbsSchema(object):
             if svc_name:
                 svc_name = svc_name.decode('utf8')
 
-            calls = {}
-            for j in range(svc_obj.CallsLength()):
-                fbs_call = svc_obj.Calls(j)
-
-                call_name = fbs_call.Name()
-                if call_name:
-                    call_name = call_name.decode('utf8')
-
-                fbs_call_req = fbs_call.Request()
-                call_req_name = fbs_call_req.Name()
-                if call_req_name:
-                    call_req_name = call_req_name.decode('utf8')
-                call_req_is_struct = fbs_call_req.IsStruct()
-                call_req_min_align = fbs_call_req.Minalign()
-                call_req_bytesize = fbs_call_req.Bytesize()
-                call_req_docs = parse_docs(fbs_call_req)
-                call_req_attrs = parse_attr(fbs_call_req)
-                call_req_fields, call_fields_by_id = parse_fields(fbs_call_req)
-                call_req = FbsObject(name=call_req_name,
-                                     fields=call_req_fields,
-                                     fields_by_id=call_fields_by_id,
-                                     is_struct=call_req_is_struct,
-                                     min_align=call_req_min_align,
-                                     bytesize=call_req_bytesize,
-                                     attrs=call_req_attrs,
-                                     docs=call_req_docs)
-
-                fbs_call_resp = fbs_call.Response()
-                call_resp_name = fbs_call_resp.Name()
-                if call_resp_name:
-                    call_resp_name = call_resp_name.decode('utf8')
-                call_resp_is_struct = fbs_call_resp.IsStruct()
-                call_resp_min_align = fbs_call_resp.Minalign()
-                call_resp_bytesize = fbs_call_resp.Bytesize()
-                call_resp_docs = parse_docs(fbs_call_resp)
-                call_resp_attrs = parse_attr(fbs_call_resp)
-                call_resp_fields, call_resp_fields_by_id = parse_fields(fbs_call_resp)
-                call_resp = FbsObject(name=call_resp_name,
-                                      fields=call_resp_fields,
-                                      fields_by_id=call_resp_fields_by_id,
-                                      is_struct=call_resp_is_struct,
-                                      min_align=call_resp_min_align,
-                                      bytesize=call_resp_bytesize,
-                                      attrs=call_resp_attrs,
-                                      docs=call_resp_docs)
-
-                call_docs = parse_docs(fbs_call)
-                call_attrs = parse_attr(fbs_call)
-                call = FbsRPCCall(name=call_name,
-                                  request=call_req,
-                                  response=call_resp,
-                                  docs=call_docs,
-                                  attrs=call_attrs)
-                assert call_name not in calls
-                calls[call_name] = call
-
             docs = parse_docs(svc_obj)
             attrs = parse_attr(svc_obj)
-            service = FbsService(name=svc_name, calls=calls, attrs=attrs, docs=docs)
+            calls, calls_by_id = parse_calls(svc_obj)
+
+            service = FbsService(name=svc_name, calls=calls, calls_by_id=calls_by_id, attrs=attrs, docs=docs)
             assert svc_name not in services
             services[svc_name] = service
 

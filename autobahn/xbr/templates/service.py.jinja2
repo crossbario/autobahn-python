@@ -1,6 +1,32 @@
 {% if is_first_by_category %}
 ##
-## serivices types (aka "APIs")
+## service types (aka "APIs")
 ##
+import abc
+from autobahn.wamp.interfaces import ISession
 
 {% endif %}
+class {{ metadata.classname }}(abc.ABC):
+    """
+    {{ metadata.docs }}
+
+    @interface: "{{ metadata.attrs.uuid }}"
+    """
+    __slots__ = [{% for call_name in metadata.calls_by_id %}'{{ metadata.calls[call_name].name }}', {% endfor %}]
+
+    {% for call_name in metadata.calls_by_id %}
+    {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
+    @abc.abstractmethod
+    def publish_{{ call_name }}(self, session: ISession, device: HomeDevice):
+        """
+        Publish: {{ metadata.calls[call_name].docs }}
+        """
+
+    @abc.abstractmethod
+    def receive_{{ call_name }}(self, session: ISession, device: HomeDevice):
+        """
+        Receive: {{ metadata.calls[call_name].docs }}
+        """
+
+    {% endif %}
+    {% endfor %}

@@ -1019,14 +1019,14 @@ def _main():
                 # pprint(item.marshal())
                 metadata = item
 
-                # com.things.home.device.HomeDeviceVendor => com.things.home.device
+                # com.example.device.HomeDeviceVendor => com.example.device
                 modulename = '.'.join(metadata.name.split('.')[0:-1])
                 metadata.modulename = modulename
 
-                # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
+                # com.example.device.HomeDeviceVendor => HomeDeviceVendor
                 metadata.classname = metadata.name.split('.')[-1].strip()
 
-                # com.things.home.device => device
+                # com.example.device => device
                 metadata.module_relimport = modulename.split('.')[-1]
 
                 is_first = modulename not in code_modules
