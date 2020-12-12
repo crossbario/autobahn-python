@@ -3,6 +3,7 @@ import os
 import random
 import timeit
 import uuid
+import cbor2
 
 import txaio
 txaio.use_twisted()  # noqa
@@ -163,3 +164,22 @@ def test_{{ metadata.classname }}_roundtrip_perf({{ metadata.classname }}_obj, b
 
     assert ops50 > 1000
     print(scratch['value'])
+
+
+def test_{{ metadata.classname }}_marshal_parse({{ metadata.classname }}_obj, builder):
+    obj = {{ metadata.classname }}_obj.marshal()
+    _obj = {{ metadata.classname }}_obj.parse(obj)
+    {% for field_name in metadata.fields_by_id %}
+    assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
+    {% endfor %}
+
+
+def test_{{ metadata.classname }}_marshal_cbor_parse({{ metadata.classname }}_obj, builder):
+    obj = {{ metadata.classname }}_obj.marshal()
+    data = cbor2.dumps(obj)
+    print('Serialized {} to {} bytes'.format({{ metadata.classname }}, len(data)))
+    _obj_raw = cbor2.loads(data)
+    _obj = {{ metadata.classname }}_obj.parse(_obj_raw)
+    {% for field_name in metadata.fields_by_id %}
+    assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
+    {% endfor %}
