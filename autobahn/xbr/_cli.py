@@ -1021,10 +1021,16 @@ def _main():
 
                 # com.things.home.device.HomeDeviceVendor => com.things.home.device
                 modulename = '.'.join(metadata.name.split('.')[0:-1])
+                metadata.modulename = modulename
+
+                # com.things.home.device.HomeDeviceVendor => HomeDeviceVendor
+                metadata.classname = metadata.name.split('.')[-1].strip()
+
+                # com.things.home.device => device
+                metadata.module_relimport = modulename.split('.')[-1]
+
                 is_first = modulename not in code_modules
                 is_first_by_category = (modulename, category) not in is_first_by_category_modules
-                metadata.modulename = modulename
-                metadata.classname = metadata.name.split('.')[-1].strip()
 
                 if is_first_by_category:
                     is_first_by_category_modules[(modulename, category)] = True
