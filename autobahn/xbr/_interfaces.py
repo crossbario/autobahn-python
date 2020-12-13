@@ -180,3 +180,9 @@ class IBuyer(abc.ABC):
         :returns: The unwrapped application payload.
         :rtype: object
         """
+
+
+class IDelegate(ISeller, IBuyer):
+    """
+    XBR Delegate interface.
+    """

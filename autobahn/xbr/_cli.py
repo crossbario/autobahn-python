@@ -1019,12 +1019,18 @@ def _main():
                 # pprint(item.marshal())
                 metadata = item
 
-                # com.things.home.device.HomeDeviceVendor => com.things.home.device
+                # com.example.device.HomeDeviceVendor => com.example.device
                 modulename = '.'.join(metadata.name.split('.')[0:-1])
+                metadata.modulename = modulename
+
+                # com.example.device.HomeDeviceVendor => HomeDeviceVendor
+                metadata.classname = metadata.name.split('.')[-1].strip()
+
+                # com.example.device => device
+                metadata.module_relimport = modulename.split('.')[-1]
+
                 is_first = modulename not in code_modules
                 is_first_by_category = (modulename, category) not in is_first_by_category_modules
-                metadata.modulename = modulename
-                metadata.classname = metadata.name.split('.')[-1].strip()
 
                 if is_first_by_category:
                     is_first_by_category_modules[(modulename, category)] = True

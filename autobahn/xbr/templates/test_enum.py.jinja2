@@ -1,1 +1,6 @@
-# FIXME: add enum (type) level unit tests
+from .{{ metadata.module_relimport }} import {{ metadata.classname }}
+
+def test_{{ metadata.classname }}():
+    {% for value_name in metadata.values %}
+    assert {{ metadata.classname }}.{{ value_name }} == {{ metadata.values[value_name].value }}
+    {% endfor %}

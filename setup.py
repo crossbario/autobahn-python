@@ -254,8 +254,8 @@ setup(
     url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
-        'txaio>=20.3.1',     # MIT license
-        'cryptography>=2.7', # BSD *or* Apache license
+        'txaio>=20.4.1',        # MIT license
+        'cryptography>=2.9.2',  # BSD *or* Apache license
     ],
     extras_require={
         'all': extras_require_all,
@@ -285,7 +285,7 @@ setup(
 
     zip_safe=False,
 
-    python_requires='>=3.5',
+    python_requires='>=3.6',
 
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=["License :: OSI Approved :: MIT License",
@@ -296,10 +296,10 @@ setup(
                  "Operating System :: OS Independent",
                  "Programming Language :: Python",
                  "Programming Language :: Python :: 3",
-                 "Programming Language :: Python :: 3.5",
                  "Programming Language :: Python :: 3.6",
                  "Programming Language :: Python :: 3.7",
                  "Programming Language :: Python :: 3.8",
+                 "Programming Language :: Python :: 3.9",
                  "Programming Language :: Python :: Implementation :: CPython",
                  "Programming Language :: Python :: Implementation :: PyPy",
                  "Programming Language :: Python :: Implementation :: Jython",

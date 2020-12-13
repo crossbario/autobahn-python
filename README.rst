@@ -20,7 +20,7 @@ implementations of
 -  `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`__
 -  `The Web Application Messaging Protocol (WAMP) <http://wamp-proto.org/>`__
 
-for Python 3.5+ and running on `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__.
+for Python 3.6+ and running on `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__.
 
 You can use **Autobahn\|Python** to create clients and servers in Python speaking just plain WebSocket or WAMP.
 

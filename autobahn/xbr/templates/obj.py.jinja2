@@ -31,34 +31,6 @@ class {{ metadata.classname }}(object):
 
         {% endfor %}
 
-    @classmethod
-    def GetRootAs{{ metadata.classname }}(cls, buf, offset):
-        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
-        x = {{ metadata.classname }}()
-        x.Init(buf, n + offset)
-        return x
-
-    # HomeDevice
-    def Init(self, buf, pos):
-        self._tab = flatbuffers.table.Table(buf, pos)
-
-    def marshal(self) -> Dict:
-        """
-        Marshal all data contained in this typed native object into a generic object.
-
-        :returns: Generic object that can be serialized to bytes using eg ``json.dumps``.
-        """
-        obj = { {% for field_name in metadata.fields_by_id %}'{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }}, {% endfor %} }
-        return obj
-
-    def __str__(self) -> str:
-        """
-        Return string representation of this object, suitable for eg logging.
-
-        :returns: String representation of this object.
-        """
-        return '\n{}\n'.format(pprint.pformat(self.marshal()))
-
     {% for field_name in metadata.fields_by_id %}
     @property
     def {{ metadata.fields[field_name].name }}(self) -> {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}:
@@ -150,15 +122,95 @@ class {{ metadata.classname }}(object):
     {% endfor %}
 
     @staticmethod
-    def cast(buf: bytes) -> object:
+    def parse(data: Dict) -> object:
+        """
+        Parse generic, native language object into a typed, native language object.
+
+        :param data: Generic native language object to parse, eg output of ``cbor2.loads``.
+
+        :returns: Typed object of this class.
+        """
+        for key in data.keys():
+            assert key in {{ metadata.fields_by_id }}
+        obj = {{ metadata.classname }}()
+        {% for field_name in metadata.fields_by_id %}
+        if '{{ field_name }}' in data:
+            {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
+            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == str), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            obj.{{ metadata.fields[field_name].name }} = data['{{ field_name }}']
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
+            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == bytes), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            obj.{{ metadata.fields[field_name].name }} = data['{{ field_name }}']
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'int' %}
+            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == int), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            obj.{{ metadata.fields[field_name].name }} = data['{{ field_name }}']
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'float' %}
+            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == float), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            obj.{{ metadata.fields[field_name].name }} = data['{{ field_name }}']
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
+            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == bool), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            obj.{{ metadata.fields[field_name].name }} = data['{{ field_name }}']
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+            assert (data['{{ field_name }}'] is None or (type(data['{{ field_name }}']) == bytes and len(data['{{ field_name }}']) == 16)), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            if data['{{ field_name }}'] is not None:
+                obj.{{ metadata.fields[field_name].name }} = uuid.UUID(bytes=data['{{ field_name }}'])
+            else:
+                obj.{{ metadata.fields[field_name].name }} = None
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == int), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            if data['{{ field_name }}'] is not None:
+                obj.{{ metadata.fields[field_name].name }} = np.datetime64(data['{{ field_name }}'], 'ns')
+            else:
+                obj.{{ metadata.fields[field_name].name }} = np.datetime64(0, 'ns')
+            {% else %}
+            raise NotImplementedError('implement processing of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            {% endif %}
+        {% endfor %}
+        return obj
+
+    def marshal(self) -> Dict:
+        """
+        Marshal all data contained in this typed native object into a generic object.
+
+        :returns: Generic object that can be serialized to bytes using eg ``cbor2.dumps``.
+        """
+        obj = {
+            {% for field_name in metadata.fields_by_id %}
+            {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes', 'int', 'long', 'float', 'double', 'bool'] %}
+            '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }},
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+            '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }}.bytes if self.{{ metadata.fields[field_name].name }} is not None else None,
+            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+            '{{ metadata.fields[field_name].name }}': int(self.{{ metadata.fields[field_name].name }}) if self.{{ metadata.fields[field_name].name }} is not None else None,
+            {% else %}
+            raise NotImplementedError('implement processing of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            {% endif %}
+            {% endfor %}
+        }
+        return obj
+
+    def __str__(self) -> str:
+        """
+        Return string representation of this object, suitable for eg logging.
+
+        :returns: String representation of this object.
+        """
+        return '\n{}\n'.format(pprint.pformat(self.marshal()))
+
+    @staticmethod
+    def cast(buf: bytes, offset: int=0) -> object:
         """
         Cast a FlatBuffers raw input buffer as a typed object of this class.
 
         :param buf: The raw input buffer to cast.
+        :param offset: Offset into raw buffer from which to cast flatbuffers from.
 
         :returns: New native object that wraps the FlatBuffers raw buffer.
         """
-        return {{ metadata.classname }}.GetRootAs{{ metadata.classname }}(buf, 0)
+        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
+        x = {{ metadata.classname }}()
+        x._tab = flatbuffers.table.Table(buf, n + offset)
+        return x
 
     def build(self, builder):
         """
