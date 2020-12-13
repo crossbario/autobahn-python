@@ -1,5 +1,5 @@
 language: python
-dist: xenial
+dist: bionic
 sudo: true
 
 addons:
@@ -84,19 +84,19 @@ matrix:
     #
     # PyPy3
     #
-    - python: "pypy3.7"
+    - python: "pypy3.6-7.3.1"
       env:
       - TOX_ENV=pypy3-tw189
 
-    - python: "pypy3.7"
+    - python: "pypy3.6-7.3.1"
       env:
       - TOX_ENV=pypy3-tw1910
 
-    - python: "pypy3.7"
+    - python: "pypy3.6-7.3.1"
       env:
       - TOX_ENV=pypy3-twtrunk
 
-    - python: "pypy3.7"
+    - python: "pypy3.6-7.3.1"
       env:
       - TOX_ENV=pypy3-asyncio
 
@@ -125,7 +125,7 @@ matrix:
   allow_failures:
     - env: TOX_ENV=coverage
     - os: osx
-    - python: "pypy3.7"
+    - python: "pypy3.6"
 
 # CI notifications
 notifications:
