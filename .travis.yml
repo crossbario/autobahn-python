@@ -44,66 +44,66 @@ matrix:
       - TOX_ENV=flake8
 
     #
-    # CPython 3.5
+    # CPython 3.6
     #
-    - python: "3.5"
+    - python: "3.6"
       env:
-      - TOX_ENV=py35-tw189
+      - TOX_ENV=py36-tw189
 
-    - python: "3.5"
+    - python: "3.6"
       env:
-      - TOX_ENV=py35-tw1910
+      - TOX_ENV=py36-tw1910
 
-    - python: "3.5"
+    - python: "3.6"
       env:
-      - TOX_ENV=py35-twtrunk
+      - TOX_ENV=py36-twtrunk
 
-    - python: "3.5"
+    - python: "3.6"
       env:
-      - TOX_ENV=py35-asyncio
+      - TOX_ENV=py36-asyncio
 
     #
-    # CPython 3.8
+    # CPython 3.9
     #
-    - python: "3.8"
+    - python: "3.9"
       env:
-      - TOX_ENV=py38-tw189
+      - TOX_ENV=py39-tw189
 
-    - python: "3.8"
+    - python: "3.9"
       env:
-      - TOX_ENV=py38-tw1910
+      - TOX_ENV=py39-tw1910
 
-    - python: "3.8"
+    - python: "3.9"
       env:
-      - TOX_ENV=py38-twtrunk
+      - TOX_ENV=py39-twtrunk
 
-    - python: "3.8"
+    - python: "3.9"
       env:
-      - TOX_ENV=py38-asyncio
+      - TOX_ENV=py39-asyncio
 
     #
     # PyPy3
     #
-    - python: "pypy3.5"
+    - python: "pypy3.7"
       env:
       - TOX_ENV=pypy3-tw189
 
-    - python: "pypy3.5"
+    - python: "pypy3.7"
       env:
       - TOX_ENV=pypy3-tw1910
 
-    - python: "pypy3.5"
+    - python: "pypy3.7"
       env:
       - TOX_ENV=pypy3-twtrunk
 
-    - python: "pypy3.5"
+    - python: "pypy3.7"
       env:
       - TOX_ENV=pypy3-asyncio
 
     #
-    # Coverage (run under CPython 3.5)
+    # Coverage (run under CPython 3.8)
     #
-    - python: "3.5"
+    - python: "3.8"
       skip_cleanup: true
       env: TOX_ENV=coverage
 
@@ -125,7 +125,7 @@ matrix:
   allow_failures:
     - env: TOX_ENV=coverage
     - os: osx
-    - python: "pypy3.5"
+    - python: "pypy3.7"
 
 # CI notifications
 notifications:
