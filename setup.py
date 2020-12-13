@@ -119,10 +119,6 @@ if 'AUTOBAHN_USE_NVX' in os.environ:
     cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
 
 extras_require_xbr = [
-    # https://github.com/ethereum/pyrlp/issues/128
-    # https://github.com/ethereum/pyrlp/pull/129
-    'rlp @ git+https://github.com/crossbario/pyrlp@remove-log-noise',  # MIT license
-
     'cbor2>=5.1.0',             # MIT license
     'zlmdb>=20.4.1',            # MIT license
     'twisted>=20.3.0',          # MIT license
@@ -130,6 +126,7 @@ extras_require_xbr = [
     'web3>=4.8.1',              # MIT license
 
     # the following is needed for EIP712 ("signed typed data"):
+    'rlp>=2.0.1',               # MIT license
     'py-eth-sig-utils>=0.4.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
     'py-ecc>=1.7.1',            # MIT license (https://github.com/ethereum/py_ecc)
     'eth-abi>=1.3.0',           # MIT license (https://github.com/ethereum/eth-abi)
