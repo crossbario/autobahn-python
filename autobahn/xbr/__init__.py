@@ -36,7 +36,7 @@ try:
     from autobahn.xbr._abi import XBR_TOKEN_ABI, XBR_NETWORK_ABI, XBR_MARKET_ABI, XBR_CATALOG_ABI, XBR_CHANNEL_ABI  # noqa
     from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_DEBUG_MARKET_ADDR, XBR_DEBUG_CATALOG_ADDR, XBR_DEBUG_CHANNEL_ADDR  # noqa
     from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC  # noqa
-    from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer  # noqa
+    from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer, IDelegate  # noqa
     from autobahn.xbr._util import make_w3, pack_uint256, unpack_uint256, with_0x, without_0x  # noqa
 
     from autobahn.xbr._eip712_member_register import sign_eip712_member_register, recover_eip712_member_register  # noqa

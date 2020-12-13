@@ -3,27 +3,70 @@
 ## service types (aka "APIs")
 ##
 import abc
+from autobahn.wamp.types import PublishOptions
+from autobahn.wamp.request import Publication
 from autobahn.wamp.interfaces import ISession
+from autobahn.xbr import IDelegate
+
 
 {% endif %}
-class {{ metadata.classname }}(abc.ABC):
+class {{ metadata.classname }}(object):
     """
     {{ metadata.docs }}
 
     @interface: "{{ metadata.attrs.uuid }}"
     """
-    __slots__ = [{% for call_name in metadata.calls_by_id %}'{{ metadata.calls[call_name].name }}', {% endfor %}]
+    __slots__ = ['_x_api_id', '_x_session', '_x_delegate', {% for call_name in metadata.calls_by_id %}'{{ metadata.calls[call_name].name }}', {% endfor %}]
+
+    def __init__(self):
+        self._x_api_id = uuid.UUID('{{ metadata.attrs.uuid }}').bytes
+        self._x_session = None
+        self._x_delegate = None
+
+    def session(self) -> Optional[ISession]:
+        return self._x_session
+
+    def delegate(self) -> Optional[IDelegate]:
+        return self._x_delegate
+
+    def prefix(self) -> Optional[str]:
+        return self._x_prefix
+
+    async def attach(self, session: ISession, delegate: IDelegate, prefix: str):
+        assert self._x_session is None
+        assert self._x_seller is None
+        assert self._x_prefix is None
+        self._x_session = session
+        self._x_delegate = delegate
+        self._x_prefix = prefix
+
+    async def detach(self):
+        assert self._x_session is not None
+        assert self._x_delegate is not None
+        assert self._x_prefix is not None
+        if self._x_session.is_attached():
+            await self._x_session.leave()
+        self._x_session = None
+        self._x_delegate = None
+        self._x_prefix = None
 
     {% for call_name in metadata.calls_by_id %}
     {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
-    @abc.abstractmethod
-    def publish_{{ call_name }}(self, session: ISession, device: HomeDevice):
+    async def publish_{{ call_name }}(self, device: HomeDevice) -> Publication:
         """
         Publish: {{ metadata.calls[call_name].docs }}
         """
+        assert self._x_session is not None and self._x_session.is_attached()
+        assert self._x_seller is not None
 
-    @abc.abstractmethod
-    def receive_{{ call_name }}(self, session: ISession, device: HomeDevice):
+        topic = '{}.{{ call_name }}'.format(self._x_prefix)
+        payload = device.marshal()
+        key_id, enc_ser, ciphertext = await self._x_delegate.wrap(self._x_api_id, topic, payload)
+        pub = await self._x_session.publish(topic, key_id, enc_ser, ciphertext,
+                                            options=PublishOptions(acknowledge=True))
+        return pub
+
+    def receive_{{ call_name }}(self, device: HomeDevice):
         """
         Receive: {{ metadata.calls[call_name].docs }}
         """
