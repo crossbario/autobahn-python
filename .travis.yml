@@ -123,7 +123,7 @@ matrix:
       script: pwd && ls -la && sh .travis-deploy.sh
 
   allow_failures:
-    - env: TOX_ENV=py39-asyncio TOX_ENV=coverage
+    - env: TOX_ENV=py39-asyncio
 
 
 # CI notifications
