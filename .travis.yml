@@ -44,23 +44,23 @@ matrix:
       - TOX_ENV=flake8
 
     #
-    # CPython 3.6
+    # CPython 3.7
     #
-    - python: "3.6"
+    - python: "3.7"
       env:
-      - TOX_ENV=py36-tw189
+      - TOX_ENV=py37-tw189
 
-    - python: "3.6"
+    - python: "3.7"
       env:
-      - TOX_ENV=py36-tw1910
+      - TOX_ENV=py37-tw1910
 
-    - python: "3.6"
+    - python: "3.7"
       env:
-      - TOX_ENV=py36-twtrunk
+      - TOX_ENV=py37-twtrunk
 
-    - python: "3.6"
+    - python: "3.7"
       env:
-      - TOX_ENV=py36-asyncio
+      - TOX_ENV=py37-asyncio
 
     #
     # CPython 3.9
