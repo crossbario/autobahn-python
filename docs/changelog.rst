@@ -9,6 +9,10 @@ Changelog
 -------
 
 * new: CLI commands for WAMP IDL (`xbrnetwork describe-schema / codegen-schema`)
+* new: add eth address helpers (#1413)
+* new: cryptosign authextra allow arbitrary keys (#1411)
+* fix: adapt to planet api prefix change (#1408)
+* fix: Type check improve (#1405)
 
 20.7.1
 ------

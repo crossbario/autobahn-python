@@ -3,7 +3,7 @@
 ## service types (aka "APIs")
 ##
 import abc
-from autobahn.wamp.types import PublishOptions
+from autobahn.wamp.types import PublishOptions, SubscribeOptions
 from autobahn.wamp.request import Publication
 from autobahn.wamp.interfaces import ISession
 from autobahn.xbr import IDelegate
@@ -16,31 +16,94 @@ class {{ metadata.classname }}(object):
 
     @interface: "{{ metadata.attrs.uuid }}"
     """
-    __slots__ = ['_x_api_id', '_x_session', '_x_delegate', {% for call_name in metadata.calls_by_id %}'{{ metadata.calls[call_name].name }}', {% endfor %}]
+    __slots__ = [
+        'log',
+        '_x_api_id',
+        '_x_session',
+        '_x_delegate',
+    ]
 
-    def __init__(self):
+    def __init__(self, log=None):
+        """
+
+        :param log: If provided, log to this logger, else create a new one internally.
+        """
+        if log:
+            self.log = log
+        else:
+            import txaio
+            self.log = txaio.make_logger()
         self._x_api_id = uuid.UUID('{{ metadata.attrs.uuid }}').bytes
         self._x_session = None
         self._x_delegate = None
 
     def session(self) -> Optional[ISession]:
+        """
+        WAMP session this API is attached to.
+        """
         return self._x_session
 
     def delegate(self) -> Optional[IDelegate]:
+        """
+        XBR (buyer/seller) delegate this API is attached to.
+        """
         return self._x_delegate
 
     def prefix(self) -> Optional[str]:
+        """
+        WAMP URI prefix under which this API is instantiated.
+        """
         return self._x_prefix
 
+    def is_attched(self) -> bool:
+        """
+        Flag indicating whether this API instance is currently attached to a session/delegate.
+        """
+        if self._x_session is None and self._x_seller is None and self._x_prefix is None:
+            return False
+        elif self._x_session is not None and self._x_seller is not None and self._x_prefix is not None:
+            return True
+        else:
+            assert False, 'logic error - should not arrive here'
+
     async def attach(self, session: ISession, delegate: IDelegate, prefix: str):
+        """
+        Attach this API instance with the given session and delegate, and under the given WAMP URI prefix.
+
+        :param session: WAMP session this API instance is attached to.
+        :param delegate: XBR (buyer/seller) delegate used by this API instance.
+        :param prefix: WAMP URI prefix under which this API instance is attached to.
+        """
         assert self._x_session is None
         assert self._x_seller is None
         assert self._x_prefix is None
+
         self._x_session = session
         self._x_delegate = delegate
         self._x_prefix = prefix
+        {% for call_name in metadata.calls_by_id %}
+        {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
+
+        async def do_receive_{{ call_name }}(key_id, enc_ser, ciphertext, details=None):
+            print('Received event {}, encrypted with key_id={}'.format(details.publication, uuid.UUID(bytes=key_id)))
+            try:
+                payload = await self._x_delegate.unwrap(key_id, enc_ser, ciphertext)
+                obj = HomeDevice.parse(payload)
+            except:
+                self.log.failure()
+            else:
+                print('Unencrypted event payload: {}'.format(pformat(obj)))
+                self.receive_{{ call_name }}(obj)
+
+        topic = '{}.{{ call_name }}'.format(self._x_prefix)
+        await self.subscribe(do_receive_{{ call_name }}, topic, options=SubscribeOptions(details=True))
+        {% endif %}
+        {% endfor %}
 
     async def detach(self):
+        """
+        Detach this API instance from the session and delegate.
+        """
         assert self._x_session is not None
         assert self._x_delegate is not None
         assert self._x_prefix is not None
@@ -54,7 +117,7 @@ class {{ metadata.classname }}(object):
     {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
     async def publish_{{ call_name }}(self, device: HomeDevice) -> Publication:
         """
-        Publish: {{ metadata.calls[call_name].docs }}
+        Publish - {{ metadata.calls[call_name].docs }}
         """
         assert self._x_session is not None and self._x_session.is_attached()
         assert self._x_seller is not None
@@ -68,8 +131,9 @@ class {{ metadata.classname }}(object):
 
     def receive_{{ call_name }}(self, device: HomeDevice):
         """
-        Receive: {{ metadata.calls[call_name].docs }}
+        Receive - {{ metadata.calls[call_name].docs }}
         """
+        raise NotImplementedError('event handler for "{{ call_name }}" not implemented')
 
     {% endif %}
     {% endfor %}
