@@ -123,9 +123,8 @@ matrix:
       script: pwd && ls -la && sh .travis-deploy.sh
 
   allow_failures:
-    - env: TOX_ENV=coverage
-    - os: osx
-    - python: "pypy3.6"
+    - env: TOX_ENV=py39-asyncio TOX_ENV=coverage
+
 
 # CI notifications
 notifications:
