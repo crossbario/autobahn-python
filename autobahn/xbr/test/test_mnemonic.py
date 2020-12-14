@@ -32,6 +32,7 @@ if HAS_XBR:
     from autobahn.xbr import generate_seedphrase, check_seedphrase, account_from_seedphrase
 
     _SEEDPHRASE = "myth like bonus scare over problem client lizard pioneer submit female collect"
+    _INVALID_SEEDPHRASE = "9 nn \0 kk$"
 
     _EXPECTED = [
         ('0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1', '0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'),
@@ -58,15 +59,19 @@ if HAS_XBR:
 
     class TestEthereumMnemonic(unittest.TestCase):
 
-        def test_check_seedphrase(self):
+        def test_check_valid_seedphrase(self):
             self.assertTrue(check_seedphrase(_SEEDPHRASE))
+
+        def test_check_invalid_seedphrase(self):
+            self.assertFalse(check_seedphrase(_INVALID_SEEDPHRASE))
 
         def test_generate_seedphrase(self):
             for strength in [128, 160, 192, 224, 256]:
                 seedphrase = generate_seedphrase(strength)
 
                 self.assertEqual(type(seedphrase), str)
-                self.assertTrue(type(word) == bool for word in seedphrase.split())
+                for word in seedphrase.split():
+                    self.assertTrue(type(word) == str)
                 self.assertTrue(check_seedphrase(seedphrase))
 
         def test_derive_wallet(self):

@@ -5,6 +5,12 @@
 Changelog
 =========
 
+20.12.2
+-------
+
+* fix: derive_bip32childkey traceback (#1436)
+* fix: update and adjust docker files to upstream changes
+
 20.12.1
 -------
 

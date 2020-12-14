@@ -1,4 +1,6 @@
-FROM arm32v7/pypy:3.6-slim-stretch
+FROM arm32v7/pypy:3.6-slim
+# FROM arm32v7/pypy:3.7-7.3.3-slim
+# arm32v7/pypy:3.7-slim
 
 COPY .qemu/qemu-arm-static /usr/bin/qemu-arm-static
 
