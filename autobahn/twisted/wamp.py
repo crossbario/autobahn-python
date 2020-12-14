@@ -210,6 +210,12 @@ class ApplicationRunner(object):
            connect()-ing, we stop the reactor and raise the exception
            back to the caller.
 
+        :param kwargs: Key value list of arguments to override default
+            websocket transport factory options. Allowed parameters are
+            defined in :func:`autobanh.websocket.interfaces.IWebSocketClientChannelFactory.setProtocolOptions`
+            See the docs: https://autobahn.readthedocs.io/en/latest/websocket/programming.html#websocket-options
+
+
         :returns: None is returned, unless you specify
             ``start_reactor=False`` in which case the Deferred that
             connect() returns is returned; this will callback() with
