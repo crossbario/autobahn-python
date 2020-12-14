@@ -5,6 +5,11 @@
 Changelog
 =========
 
+20.12.2
+-------
+
+* fix: derive_bip32childkey traceback (#1436)
+
 20.12.1
 -------
 
