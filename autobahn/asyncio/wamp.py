@@ -160,6 +160,11 @@ class ApplicationRunner(object):
             start a new asyncio loop.
         :type start_loop: bool
 
+        :param kwargs: Key value list of arguments to override default 
+            websocket transport factory options. Allowed parameters are 
+            defined in :func:`autobanh.websocket.interfaces.IWebSocketClientChannelFactory.setProtocolOptions`
+            See the docs: https://autobahn.readthedocs.io/en/latest/websocket/programming.html#websocket-options
+
         :returns: None is returned, unless you specify
             `start_loop=False` in which case the coroutine from calling
             `loop.create_connection()` is returned. This will yield the
