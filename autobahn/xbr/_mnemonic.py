@@ -63,9 +63,9 @@ def derive_public_key(private_key):
         Logic adapted from https://github.com/satoshilabs/slips/blob/master/slip-0010/testvectors.py. """
 
     Q = int.from_bytes(private_key, byteorder='big') * BIP32_CURVE.generator
-    xstr = Q.x().to_bytes(32, byteorder='big')
+    xstr = int(Q.x()).to_bytes(32, byteorder='big')
     parity = Q.y() & 1
-    return (2 + parity).to_bytes(1, byteorder='big') + xstr
+    return int(2 + parity).to_bytes(1, byteorder='big') + xstr
 
 
 def derive_bip32childkey(parent_key, parent_chain_code, i):
@@ -87,7 +87,7 @@ def derive_bip32childkey(parent_key, parent_chain_code, i):
         b = int.from_bytes(parent_key, byteorder='big')
         key = (a + b) % BIP32_CURVE.order
         if a < BIP32_CURVE.order and key != 0:
-            key = key.to_bytes(32, byteorder='big')
+            key = int(key).to_bytes(32, byteorder='big')
             break
         d = b'\x01' + h[32:] + struct.pack('>L', i)
 
@@ -103,7 +103,7 @@ def fingerprint(public_key):
 def b58xprv(parent_fingerprint, private_key, chain, depth, childnr):
     """ Private key b58 serialization format. """
 
-    raw = (b'\x04\x88\xad\xe4' + bytes(chr(depth), 'utf-8') + parent_fingerprint + childnr.to_bytes(
+    raw = (b'\x04\x88\xad\xe4' + bytes(chr(depth), 'utf-8') + parent_fingerprint + int(childnr).to_bytes(
         4, byteorder='big') + chain + b'\x00' + private_key)
 
     return b58encode_check(raw)
@@ -112,7 +112,7 @@ def b58xprv(parent_fingerprint, private_key, chain, depth, childnr):
 def b58xpub(parent_fingerprint, public_key, chain, depth, childnr):
     """ Public key b58 serialization format. """
 
-    raw = (b'\x04\x88\xb2\x1e' + bytes(chr(depth), 'utf-8') + parent_fingerprint + childnr.to_bytes(
+    raw = (b'\x04\x88\xb2\x1e' + bytes(chr(depth), 'utf-8') + parent_fingerprint + int(childnr).to_bytes(
         4, byteorder='big') + chain + public_key)
 
     return b58encode_check(raw)
