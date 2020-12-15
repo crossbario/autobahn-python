@@ -215,7 +215,6 @@ class ApplicationRunner(object):
             defined in :func:`autobanh.websocket.interfaces.IWebSocketClientChannelFactory.setProtocolOptions`
             See the docs: https://autobahn.readthedocs.io/en/latest/websocket/programming.html#websocket-options
 
-
         :returns: None is returned, unless you specify
             ``start_reactor=False`` in which case the Deferred that
             connect() returns is returned; this will callback() with
