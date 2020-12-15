@@ -54,14 +54,14 @@ os_version:
 
 python_version:
 	docker run -it --rm crossbario/autobahn-python-aarch64:cpy3 python -V
-	docker run -it --rm crossbario/autobahn-python-aarch64:pypy3 python -V
+	docker run -it --rm crossbario/autobahn-python-aarch64:pypy3 pypy3 -V
 	#docker run -it --rm crossbario/autobahn-python-aarch64:cpy3-alpine python -V
 	#docker run -it --rm crossbario/autobahn-python-aarch64:cpy3-minimal-aio python -V
 	#docker run -it --rm crossbario/autobahn-python-aarch64:cpy3-minimal-tx python -V
 
 autobahn_version:
 	docker run -it --rm crossbario/autobahn-python-aarch64:cpy3 python -c "import autobahn; print('running autobahn-{}'.format(autobahn.__version__))"
-	docker run -it --rm crossbario/autobahn-python-aarch64:pypy3 python -c "import autobahn; print('running autobahn-{}'.format(autobahn.__version__))"
+	docker run -it --rm crossbario/autobahn-python-aarch64:pypy3 pypy3 -c "import autobahn; print('running autobahn-{}'.format(autobahn.__version__))"
 	#docker run -it --rm crossbario/autobahn-python-aarch64:cpy3-alpine python -c "import autobahn; print('running autobahn-{}'.format(autobahn.__version__))"
 	#docker run -it --rm crossbario/autobahn-python-aarch64:cpy3-minimal-aio python -c "import autobahn; print('running autobahn-{}'.format(autobahn.__version__))"
 	#docker run -it --rm crossbario/autobahn-python-aarch64:cpy3-minimal-tx python -c "import autobahn; print('running autobahn-{}'.format(autobahn.__version__))"
