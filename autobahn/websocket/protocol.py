@@ -58,6 +58,7 @@ from autobahn.exception import PayloadExceededError, Disconnected
 from autobahn.util import _maybe_tls_reason
 
 import txaio
+import hyperlink
 
 
 __all__ = ("WebSocketProtocol",
@@ -2646,7 +2647,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
                         #
                         # https://localhost:9000/?redirect=https%3A%2F%2Ftwitter.com%2F&after=3
                         #
-                        url = self.http_request_params['redirect'][0]
+                        url = hyperlink.URL.from_text(self.http_request_params['redirect'][0])
+                        url = url.to_uri().normalize().to_text()
                         if 'after' in self.http_request_params and len(self.http_request_params['after']) > 0:
                             after = int(self.http_request_params['after'][0])
                             self.log.debug(
