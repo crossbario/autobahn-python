@@ -44,9 +44,10 @@ jobs:
     # since we use --parallel-mode to coverage inside Tox we use
     # "coverage combine" so the filename is always ".coverage"
     - name: Run Coverage
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: |
         tox -c tox.ini -e coverage
-        coverage combine && codecov
 
   test:
     env:
