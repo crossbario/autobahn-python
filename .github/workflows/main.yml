@@ -148,7 +148,6 @@ jobs:
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#adding-a-system-path
     - name: Set environment
       run: |
-        echo "${HOME}/.local/bin" >> $GITHUB_PATH
         echo BUILD_DATE=`date -u +"%Y-%m-%d"` >> $GITHUB_ENV
         echo AUTOBAHN_VCS_REF=`git rev-parse --short ${GITHUB_SHA}` >> $GITHUB_ENV
         echo AUTOBAHN_BUILD_ID=$(date --utc +%Y%m%d)-$(git rev-parse --short ${GITHUB_SHA}) >> $GITHUB_ENV
