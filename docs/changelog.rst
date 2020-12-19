@@ -5,6 +5,13 @@
 Changelog
 =========
 
+20.12.3
+-------
+
+* fix: URL must be re-encoded when doing redirect (#1439)
+* fix: update and migrate CI/CD pipeline to GitHub Actions
+* new: minimum supported Python (language) version is now 3.6 (on CPython and PyPy)
+
 20.12.2
 -------
 
@@ -98,7 +105,7 @@ Changelog
 * fix: CI building (caching?) issue "corrupt ZIP file"
 * fix: update docker image build scripts and add ARM64/PyPy
 * fix: update XBR ABI files
-* fix: use :func:`txaio.time_ns` and drop deprecated :func:`autobahn.util.time_ns`
+* fix: use txaio.time_ns and drop deprecated autobahn.util.time_ns
 * fix: update project README and docs for supported python versions (#1296)
 * fix: WebSocket protocol instances now raise `autobahn.exception.Disconnected` when sending on a closed connection (#1002)
 * fix: version conflict in xbr downstream application dependency (crossbarfx) (#1295)
@@ -120,7 +127,7 @@ Changelog
 * IMPORTANT: release v19.11.2 will be the last release supporting Python 2. We will support Python 3.5 and later beginning with Autobahn v20.1.1.
 * fix: add docs for parameters to component.py (#1276)
 * new: statistics tracking on WAMP serializers :class:`autobahn.wamp.serializer.Serializer`
-* new: helper :func:`autobahn.util.time_ns`
+* new: helper autobahn.util.time_ns
 
 19.11.1
 -------

@@ -36,7 +36,7 @@ from autobahn.websocket.protocol import WebSocketClientProtocol
 from autobahn.websocket.protocol import WebSocketClientFactory
 from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.websocket.types import ConnectingRequest
-from autobahn.test import FakeTransport
+from autobahn.testutil import FakeTransport
 
 import txaio
 

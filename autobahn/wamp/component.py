@@ -417,7 +417,7 @@ class Component(ObservableMixin):
             pass a main() procedure, the session will not be closed
             (unless you arrange for .leave() to be called).
 
-        :type main: callable taking 2 args: reactor, ISession
+        :type main: callable taking two args ``reactor`` and ``ISession``
 
         :param transports: Transport configurations for creating
             transports. Each transport can be a WAMP URL, or a dict
@@ -445,25 +445,23 @@ class Component(ObservableMixin):
                 - ``options``: tbd
                 - ``proxy``: tbd
 
-        :type transports: None or unicode or list of dicts
+        :type transports: None or str or list
 
         :param realm: the realm to join
-        :type realm: unicode
+        :type realm: str
 
         :param authentication: configuration of authenticators
-        :type authentication: dict mapping auth_type to dict
+        :type authentication: dict
 
         :param session_factory: if None, ``ApplicationSession`` is
             used, otherwise a callable taking a single ``config`` argument
             that is used to create a new `ApplicationSession` instance.
-        :type session_factory: callable
 
         :param is_fatal: a callable taking a single argument, an
             ``Exception`` instance. The callable should return ``True`` if
             this error is "fatal", meaning we should not try connecting to
             the current transport again. The default behavior (on None) is
             to always return ``False``
-        :type is_fatal: callable taking one arg, or None
         """
         self.set_valid_events(
             [

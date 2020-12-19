@@ -251,8 +251,9 @@ setup(
     url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
-        'txaio>=20.4.1',        # MIT license
-        'cryptography>=2.9.2',  # BSD *or* Apache license
+        'txaio>=20.4.1',        # MIT license (https://github.com/crossbario/txaio)
+        'cryptography>=2.9.2',  # BSD *or* Apache license (https://github.com/pyca/cryptography)
+        'hyperlink>=20.0.1',    # MIT license (https://github.com/python-hyper/hyperlink)
     ],
     extras_require={
         'all': extras_require_all,
@@ -299,7 +300,6 @@ setup(
                  "Programming Language :: Python :: 3.9",
                  "Programming Language :: Python :: Implementation :: CPython",
                  "Programming Language :: Python :: Implementation :: PyPy",
-                 "Programming Language :: Python :: Implementation :: Jython",
                  "Topic :: Internet",
                  "Topic :: Internet :: WWW/HTTP",
                  "Topic :: Communications",

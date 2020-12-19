@@ -1775,8 +1775,8 @@ class _SessionShim(ApplicationSession):
     ApplicationSession "directly".
 
     **NOTE:** this is not public or intended for use; you should import
-    either :class:`autobahn.asyncio.wamp.Session` or
-    :class:`autobahn.twisted.wamp.Session` depending on which async
+    either autobahn.asyncio.wamp.Session or
+    autobahn.twisted.wamp.Session depending on which async
     framework yo're using.
     """
 

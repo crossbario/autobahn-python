@@ -31,7 +31,7 @@ from autobahn.twisted.rawsocket import (WampRawSocketServerFactory,
                                         WampRawSocketServerProtocol,
                                         WampRawSocketClientFactory,
                                         WampRawSocketClientProtocol)
-from autobahn.test import FakeTransport
+from autobahn.testutil import FakeTransport
 
 
 class RawSocketHandshakeTests(unittest.TestCase):

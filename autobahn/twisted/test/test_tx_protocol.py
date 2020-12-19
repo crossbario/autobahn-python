@@ -40,7 +40,7 @@ try:
     from twisted.internet.testing import StringTransport
 except ImportError:
     from twisted.test.proto_helpers import StringTransport
-from autobahn.test import FakeTransport
+from autobahn.testutil import FakeTransport
 
 
 class ExceptionHandlingTests(unittest.TestCase):
@@ -386,7 +386,7 @@ class OnConnectingTests(unittest.TestCase):
             def onConnecting(self, transport_details):
                 raise RuntimeError("bad stuff")
 
-        from autobahn.test import FakeTransport
+        from autobahn.testutil import FakeTransport
         proto = TestProto()
         proto.transport = FakeTransport()
         d = proto.startHandshake()

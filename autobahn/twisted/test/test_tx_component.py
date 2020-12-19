@@ -32,7 +32,7 @@ if os.environ.get('USE_TWISTED', False):
     from zope.interface import directlyProvides
     from autobahn.wamp.message import Welcome, Goodbye, Hello, Abort
     from autobahn.wamp.serializer import JsonSerializer
-    from autobahn.test import FakeTransport
+    from autobahn.testutil import FakeTransport
     from twisted.internet.interfaces import IStreamClientEndpoint
     from twisted.internet.defer import inlineCallbacks, succeed, Deferred
     from twisted.internet.task import Clock

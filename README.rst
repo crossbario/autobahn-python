@@ -8,25 +8,25 @@ WebSocket & WAMP for Python on Twisted and asyncio.
 --------------
 
 | **Quick Links**: `Source Code <https://github.com/crossbario/autobahn-python>`__ - `Documentation <https://autobahn.readthedocs.io/en/latest/>`__ - `WebSocket Examples <https://autobahn.readthedocs.io/en/latest/websocket/examples.html>`__ - `WAMP Examples <https://autobahn.readthedocs.io/en/latest/wamp/examples.html>`__
-| **Community**: `Mailing list <http://groups.google.com/group/autobahnws>`__ - `StackOverflow <http://stackoverflow.com/questions/tagged/autobahn>`__ - `Twitter <https://twitter.com/autobahnws>`__ - `IRC #autobahn/chat.freenode.net <https://webchat.freenode.net/>`__
-| **Companion Projects**: `Autobahn|JS <https://github.com/crossbario/autobahn-js/>`__ - `Autobahn|Cpp <https://github.com/crossbario/autobahn-cpp>`__ - `Autobahn|Testsuite <https://github.com/crossbario/autobahn-testsuite>`__ - `Crossbar.io <http://crossbar.io>`__ - `WAMP <http://wamp-proto.org>`__
+| **Community**: `Forum <https://gitter.im/crossbario/public>`__ - `StackOverflow <https://stackoverflow.com/questions/tagged/autobahn>`__ - `Twitter <https://twitter.com/autobahnws>`__ - `IRC #autobahn/chat.freenode.net <https://webchat.freenode.net/>`__
+| **Companion Projects**: `Autobahn|JS <https://github.com/crossbario/autobahn-js/>`__ - `Autobahn|Cpp <https://github.com/crossbario/autobahn-cpp>`__ - `Autobahn|Testsuite <https://github.com/crossbario/autobahn-testsuite>`__ - `Crossbar.io <https://crossbar.io>`__ - `WAMP <https://wamp-proto.org>`__
 
 Introduction
 ------------
 
-**Autobahn\|Python** is a subproject of `Autobahn <http://crossbar.io/autobahn>`__ and provides open-source
+**Autobahn\|Python** is a subproject of `Autobahn <https://crossbar.io/autobahn>`__ and provides open-source
 implementations of
 
--  `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`__
--  `The Web Application Messaging Protocol (WAMP) <http://wamp-proto.org/>`__
+-  `The WebSocket Protocol <https://tools.ietf.org/html/rfc6455>`__
+-  `The Web Application Messaging Protocol (WAMP) <https://wamp-proto.org/>`__
 
-for Python 3.6+ and running on `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__.
+for Python 3.6+ and running on `Twisted <https://twistedmatrix.com/>`__ and `asyncio <https://docs.python.org/3/library/asyncio.html>`__.
 
 You can use **Autobahn\|Python** to create clients and servers in Python speaking just plain WebSocket or WAMP.
 
-**WebSocket** allows `bidirectional real-time messaging on the Web <http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`__ and beyond, while `WAMP <http://wamp-proto.org/>`__ adds real-time application communication on top of WebSocket.
+**WebSocket** allows `bidirectional real-time messaging on the Web <https://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`__ and beyond, while `WAMP <https://wamp-proto.org/>`__ adds real-time application communication on top of WebSocket.
 
-**WAMP** provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe** for applications in *one* protocol running over `WebSocket <http://tools.ietf.org/html/rfc6455>`__. WAMP is a *routed* protocol, so you need a **WAMP Router** to connect your **Autobahn\|Python** based clients. We provide `Crossbar.io <http://crossbar.io>`__, but there are `other options <https://wamp-proto.org/implementations.html#routers>`__ as well.
+**WAMP** provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe** for applications in *one* protocol running over `WebSocket <https://tools.ietf.org/html/rfc6455>`__. WAMP is a *routed* protocol, so you need a **WAMP Router** to connect your **Autobahn\|Python** based clients. We provide `Crossbar.io <https://crossbar.io>`__, but there are `other options <https://wamp-proto.org/implementations.html#routers>`__ as well.
 
 .. note::
 
@@ -35,14 +35,14 @@ You can use **Autobahn\|Python** to create clients and servers in Python speakin
 Features
 --------
 
--  framework for `WebSocket <http://tools.ietf.org/html/rfc6455>`__ and `WAMP <http://wamp-proto.org/>`__ clients and servers
--  runs on `CPython <http://python.org/>`__, `PyPy <http://pypy.org/>`__ and `Jython <http://jython.org/>`__
--  runs under `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__ - implements WebSocket
-   `RFC6455 <http://tools.ietf.org/html/rfc6455>`__ and Draft Hybi-10+
--  implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`__
--  implements `WAMP <http://wamp-proto.org/>`__, the Web Application Messaging Protocol
+-  framework for `WebSocket <https://tools.ietf.org/html/rfc6455>`__ and `WAMP <https://wamp-proto.org/>`__ clients and servers
+-  runs on `CPython <https://python.org/>`__ and `PyPy <https://pypy.org/>`
+-  runs under `Twisted <https://twistedmatrix.com/>`__ and `asyncio <https://docs.python.org/3/library/asyncio.html>`__ - implements WebSocket
+   `RFC6455 <https://tools.ietf.org/html/rfc6455>`__ and Draft Hybi-10+
+-  implements `WebSocket compression <https://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`__
+-  implements `WAMP <https://wamp-proto.org/>`__, the Web Application Messaging Protocol
 -  high-performance, fully asynchronous implementation
--  best-in-class standards conformance (100% strict passes with `Autobahn Testsuite <http://crossbar.io/autobahn#testsuite>`__: `Client <http://autobahn.ws/testsuite/reports/clients/index.html>`__ `Server <http://autobahn.ws/testsuite/reports/servers/index.html>`__)
+-  best-in-class standards conformance (100% strict passes with `Autobahn Testsuite <https://crossbar.io/autobahn#testsuite>`__: `Client <https://autobahn.ws/testsuite/reports/clients/index.html>`__ `Server <https://autobahn.ws/testsuite/reports/servers/index.html>`__)
 -  message-, frame- and streaming-APIs for WebSocket
 -  supports TLS (secure WebSocket) and proxies
 -  Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`__)
@@ -268,8 +268,9 @@ implementation, set the environment variable:
 .. |Master Branch| image:: https://img.shields.io/badge/branch-master-orange.svg
    :target: https://travis-ci.com/crossbario/autobahn-python.svg?branch=master
 
-.. |Build Status| image:: https://travis-ci.com/crossbario/autobahn-python.svg?branch=master
-   :target: https://travis-ci.com/crossbario/autobahn-python
+.. |Build Status| image:: https://github.com/crossbario/autobahn-python/workflows/main/badge.svg
+   :target: https://github.com/crossbario/autobahn-python/actions?query=workflow%3Amain
+   :alt: Build Status
 
 .. |Coverage| image:: https://img.shields.io/codecov/c/github/crossbario/autobahn-python/master.svg
    :target: https://codecov.io/github/crossbario/autobahn-python
