@@ -102,6 +102,7 @@ jobs:
     - name: Run unit tests (PyTest)
       run: |
         find . \( -name "__pycache__" -type d \) -prune -exec rm -rf {} +
+        find . -name "*.pyc" -type f -exec rm -f {} \;
         tox -c tox.ini
 
   docs:
