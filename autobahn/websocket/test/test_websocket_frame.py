@@ -37,7 +37,7 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.twisted.websocket import WebSocketClientProtocol
     from autobahn.twisted.websocket import WebSocketClientFactory
     from autobahn.websocket.compress_deflate import PerMessageDeflate
-    from autobahn.test import FakeTransport
+    from autobahn.testutil import FakeTransport
 
     from unittest.mock import MagicMock, patch
     from txaio.testutil import replace_loop
