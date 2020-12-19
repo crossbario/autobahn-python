@@ -267,14 +267,14 @@ Now, when converted to ``inlineCallbacks``, the code becomes:
 Have a look at the highlighted lines - here is what we do:
 
 1. Decorating our squaring function with ``inlineCallbacks`` (line 5). Doing so marks the function as a coroutine which allows us to use this sequential looking coding style.
-2. Inside the function, we simulate the slow execution by sleeping for a second (line 7). However, we are sleeping in a non-blocking way (:func:`autobahn.twisted.util.sleep`). The ``yield`` will put the coroutine aside until the sleep returns.
+2. Inside the function, we simulate the slow execution by sleeping for a second (line 7). However, we are sleeping in a non-blocking way (``autobahn.twisted.util.sleep``). The ``yield`` will put the coroutine aside until the sleep returns.
 3. To return values from Twisted coroutines, we need to use ``returnValue`` (line 8).
 
 .. note::
 
    The reason ``returnValue`` is necessary goes deep into implementation details of Twisted and Python. In short: co-routines in Python 2 with Twisted are simulated using exceptions. Only Python 3.3+ has gotten native support for co-routines using the new yield from statement, Python 3.5+ use await statement and it is the new recommended method.
 
-In above, we are using a little helper :func:`autobahn.twisted.util.sleep` for sleeping "inline". The helper is really trivial:
+In above, we are using a little helper ``autobahn.twisted.util.sleep`` for sleeping "inline". The helper is really trivial:
 
 .. code-block:: python
 

@@ -57,8 +57,8 @@ class ApplicationSession(protocol.ApplicationSession):
 
     Implements:
 
-        * :class:`autobahn.wamp.interfaces.ITransportHandler`
-        * :class:`autobahn.wamp.interfaces.ISession`
+        * ``autobahn.wamp.interfaces.ITransportHandler``
+        * ``autobahn.wamp.interfaces.ISession``
     """
 
     log = txaio.make_logger()
