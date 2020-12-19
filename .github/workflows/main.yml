@@ -97,6 +97,7 @@ jobs:
 
     - name: Install this package
       run: |
+        make abi_files
         pip install .
 
     - name: Run unit tests (PyTest)
@@ -125,6 +126,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements-dev.txt
+
+    - name: Install this package
+      run: |
+        make abi_files
+        pip install .
 
     - name: Run Sphinx
       run: tox -c tox.ini -e sphinx
