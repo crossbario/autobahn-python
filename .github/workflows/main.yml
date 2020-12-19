@@ -64,6 +64,8 @@ jobs:
         # https://github.com/actions/setup-python#specifying-a-pypy-version
         python-version: ['3.6', '3.7', '3.8', '3.9', 'pypy-3.6', 'pypy-3.7']
 
+        framework: ['asyncio', 'tw189', 'tw1910', 'twtrunk']
+
     # https://github.blog/changelog/2020-04-15-github-actions-new-workflow-features/
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepscontinue-on-error
     continue-on-error: false
@@ -104,7 +106,7 @@ jobs:
       run: |
         find . \( -name "__pycache__" -type d \) -prune -exec rm -rf {} +
         find . -name "*.pyc" -type f -exec rm -f {} \;
-        tox -c tox.ini
+        tox -c tox.ini ${{ matrix.framework }}
 
   docs:
     runs-on: ubuntu-20.04
