@@ -5,6 +5,13 @@
 Changelog
 =========
 
+20.12.3
+-------
+
+* fix: URL must be re-encoded when doing redirect (#1439)
+* fix: update and migrate CI/CD pipeline to GitHub Actions
+* new: minimum supported Python (language) version is now 3.6 (on CPython and PyPy)
+
 20.12.2
 -------
 

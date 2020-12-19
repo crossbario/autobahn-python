@@ -106,7 +106,8 @@ jobs:
 
     - name: Run unit tests (PyTest)
       run: |
-        python -c "import autobahn; print(autobahn.__version__); print(autobahn.xbr.HAS_XBR)"
+        python -c "import autobahn; print(autobahn.__version__)"
+        python -c "from autobahn import xbr; print(xbr.HAS_XBR)"
         python -c "from autobahn.testutil import FakeTransport; print(FakeTransport)"
         tox -c tox.ini -e ${{ matrix.framework }}
 
