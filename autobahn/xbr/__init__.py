@@ -25,6 +25,41 @@
 ###############################################################################
 
 try:
+    # PyPy 7.3.3 lacks this
+    from _hashlib import HASH
+except ImportError:
+    print('WARNING: Monkey patching PyPy! PyPy 7.3.3 lacks class _hashlib.HASH')
+
+    import _hashlib
+
+    class HASH(object):
+        def copy(self, *args, **kwargs):  # real signature unknown
+            pass
+
+        def digest(self, *args, **kwargs):  # real signature unknown
+            pass
+
+        def hexdigest(self, *args, **kwargs):  # real signature unknown
+            pass
+
+        def update(self, *args, **kwargs):  # real signature unknown
+            pass
+
+        def __init__(self, *args, **kwargs):  # real signature unknown
+            pass
+
+        def __repr__(self, *args, **kwargs):  # real signature unknown
+            pass
+
+        block_size = property(lambda self: object(), lambda self, v: None, lambda self: None)
+
+        digest_size = property(lambda self: object(), lambda self, v: None, lambda self: None)
+
+        name = property(lambda self: object(), lambda self, v: None, lambda self: None)
+
+    _hashlib.HASH = HASH
+
+try:
     from mnemonic import Mnemonic
     from autobahn.xbr._mnemonic import mnemonic_to_private_key
 
