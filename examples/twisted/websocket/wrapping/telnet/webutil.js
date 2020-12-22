@@ -1,3 +1,4 @@
+#revert the caption
 /*
  * from noVNC: HTML5 VNC client
  * Copyright (C) 2012 Joel Martin
