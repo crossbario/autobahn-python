@@ -124,6 +124,7 @@ extras_require_xbr = [
     'twisted>=20.3.0',          # MIT license
     'autobahn>=18.11.2',        # MIT license
     'web3>=4.8.1',              # MIT license
+    'jinja2>=2.11.2',           # BSD license
 
     # the following is needed for EIP712 ("signed typed data"):
     'rlp>=2.0.1',               # MIT license
