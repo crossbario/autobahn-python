@@ -3,7 +3,7 @@ Autobahn\|Python
 
 WebSocket & WAMP for Python on Twisted and asyncio.
 
-| |Version| |Build Status| |Coverage| |Docs| |Docker|
+| |Version| |Build| |Deploy| |Coverage| |Docs| |Docker|
 
 --------------
 
@@ -268,9 +268,13 @@ implementation, set the environment variable:
 .. |Master Branch| image:: https://img.shields.io/badge/branch-master-orange.svg
    :target: https://travis-ci.com/crossbario/autobahn-python.svg?branch=master
 
-.. |Build Status| image:: https://github.com/crossbario/autobahn-python/workflows/main/badge.svg
+.. |Build| image:: https://github.com/crossbario/autobahn-python/workflows/main/badge.svg
    :target: https://github.com/crossbario/autobahn-python/actions?query=workflow%3Amain
-   :alt: Build Status
+   :alt: Build
+
+.. |Deploy| image:: https://github.com/crossbario/autobahn-python/workflows/deploy/badge.svg
+   :target: https://github.com/crossbario/autobahn-python/actions?query=workflow%3Adeploy
+   :alt: Deploy
 
 .. |Coverage| image:: https://img.shields.io/codecov/c/github/crossbario/autobahn-python/master.svg
    :target: https://codecov.io/github/crossbario/autobahn-python
