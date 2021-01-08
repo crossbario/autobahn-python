@@ -5,6 +5,11 @@
 Changelog
 =========
 
+master
+------
+
+* fix: add missing jinja2 dependency for XBR CLI (#1447)
+
 20.12.3
 -------
 
