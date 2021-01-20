@@ -28,11 +28,11 @@ import traceback
 
 try:
     # PyPy 7.3.3 lacks this
-    from _hashlib import HASH
+    from _hashlib import HASH  # noqa: F401
 except ImportError:
     # This should be fixed in PyPy nightly as of 15th Jan 2021, but releases
     # name this undocumented class as Hash
-    from _hashlib import Hash as HASH
+    from _hashlib import Hash as HASH  # noqa: N814, F401
 
 try:
     from mnemonic import Mnemonic
