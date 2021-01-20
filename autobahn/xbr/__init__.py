@@ -24,40 +24,15 @@
 #
 ###############################################################################
 
+import traceback
+
 try:
     # PyPy 7.3.3 lacks this
-    from _hashlib import HASH
+    from _hashlib import HASH  # noqa: F401
 except ImportError:
-    print('WARNING: Monkey patching PyPy! PyPy 7.3.3 lacks class _hashlib.HASH')
-
-    import _hashlib
-
-    class HASH(object):
-        def copy(self, *args, **kwargs):  # real signature unknown
-            pass
-
-        def digest(self, *args, **kwargs):  # real signature unknown
-            pass
-
-        def hexdigest(self, *args, **kwargs):  # real signature unknown
-            pass
-
-        def update(self, *args, **kwargs):  # real signature unknown
-            pass
-
-        def __init__(self, *args, **kwargs):  # real signature unknown
-            pass
-
-        def __repr__(self, *args, **kwargs):  # real signature unknown
-            pass
-
-        block_size = property(lambda self: object(), lambda self, v: None, lambda self: None)
-
-        digest_size = property(lambda self: object(), lambda self, v: None, lambda self: None)
-
-        name = property(lambda self: object(), lambda self, v: None, lambda self: None)
-
-    _hashlib.HASH = HASH
+    # This should be fixed in PyPy nightly as of 15th Jan 2021, but releases
+    # name this undocumented class as Hash
+    from _hashlib import Hash as HASH  # noqa: N814, F401
 
 try:
     from mnemonic import Mnemonic
@@ -385,6 +360,7 @@ try:
 
 except (ImportError, FileNotFoundError) as e:
     import sys
+    traceback.print_tb(e.__traceback__, file=sys.stderr)
     sys.stderr.write(str(e))
     sys.stderr.flush()
     HAS_XBR = False
