@@ -767,7 +767,7 @@ class Component(ObservableMixin):
                         details=details,
                     )
                     if not txaio.is_called(done):
-                        if details.reason in ["wamp.close.normal"]:
+                        if details.reason in ["wamp.close.normal", "wamp.close.goodbye_and_out"]:
                             txaio.resolve(done, None)
                         else:
                             f = txaio.create_failure(

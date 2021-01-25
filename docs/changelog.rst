@@ -9,6 +9,7 @@ master
 ------
 
 * fix: add missing jinja2 dependency for XBR CLI (#1447)
+* fix: ``wamp.close.goodbye_and_out`` counts as a clean exit (#1370)
 
 20.12.3
 -------
