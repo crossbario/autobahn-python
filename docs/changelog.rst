@@ -5,9 +5,11 @@
 Changelog
 =========
 
-master
+21.1.1
 ------
 
+* fix: consider 'wamp.close.goodbye_and_out' a clean exit (#1450)
+* fix: HASH import as well as improve diagnostics if things go wrong (#1451)
 * fix: add missing jinja2 dependency for XBR CLI (#1447)
 * fix: ``wamp.close.goodbye_and_out`` counts as a clean exit (#1370)
 
