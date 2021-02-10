@@ -941,13 +941,10 @@ def _main():
 
     args = parser.parse_args()
 
-    # read or create a user profile
-    profile = load_or_create_profile()
-
     if args.command == 'version':
         print('')
         print(' XBR CLI {}\n'.format(hlval('v' + __version__)))
-        print('   Profile {profile} loaded from {path}\n'.format(profile=hlval(profile.name), path=hlval(profile.path)))
+        print('')
         print('   Contract addresses:\n')
         print('      XBRToken   : {} [source: {}]'.format(hlid(XBR_DEBUG_TOKEN_ADDR), XBR_DEBUG_TOKEN_ADDR_SRC))
         print('      XBRNetwork : {} [source: {}]'.format(hlid(XBR_DEBUG_NETWORK_ADDR), XBR_DEBUG_NETWORK_ADDR_SRC))
@@ -1129,6 +1126,9 @@ def _main():
         if args.command is None or args.command == 'noop':
             print('no command given. select from: {}'.format(', '.join(_COMMANDS)))
             sys.exit(0)
+
+        # read or create a user profile
+        profile = load_or_create_profile()
 
         # only start txaio logging after above, which runs click (interactively)
         if args.debug:
