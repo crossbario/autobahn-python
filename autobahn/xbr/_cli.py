@@ -941,9 +941,6 @@ def _main():
 
     args = parser.parse_args()
 
-    # read or create a user profile
-    profile = load_or_create_profile()
-
     if args.command == 'version':
         print('')
         print(' XBR CLI {}\n'.format(hlval('v' + __version__)))
@@ -1129,6 +1126,9 @@ def _main():
         if args.command is None or args.command == 'noop':
             print('no command given. select from: {}'.format(', '.join(_COMMANDS)))
             sys.exit(0)
+
+        # read or create a user profile
+        profile = load_or_create_profile()
 
         # only start txaio logging after above, which runs click (interactively)
         if args.debug:
