@@ -20,13 +20,6 @@ pip install awscli
 which aws
 aws --version
 
-# ABI JSON files are extracted directly into the package source directory, so they are bundled in the package
-echo 'downloading and extracting XBR ABI files ..'
-curl -s https://xbr.network/lib/abi/xbr-protocol-latest.zip -o /tmp/xbr-protocol-latest.zip
-unzip -t /tmp/xbr-protocol-latest.zip
-rm -rf ./autobahn/xbr/contracts
-unzip /tmp/xbr-protocol-latest.zip -d ./autobahn/xbr/contracts
-
 # build python source dist and wheels
 echo 'building package ..'
 python setup.py sdist bdist_wheel --universal
