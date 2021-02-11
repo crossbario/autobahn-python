@@ -122,7 +122,6 @@ extras_require_xbr = [
     'cbor2>=5.1.0',             # MIT license
     'zlmdb>=20.4.1',            # MIT license
     'twisted>=20.3.0',          # MIT license
-    'autobahn>=18.11.2',        # MIT license
     'web3>=4.8.1',              # MIT license
     'jinja2>=2.11.2',           # BSD license
 
