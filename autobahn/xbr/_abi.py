@@ -35,6 +35,14 @@ os.environ['ETH_HASH_BACKEND'] = 'pycryptodome'
 # print('Using eth_hash backend {}'.format(keccak256))
 import web3
 
+import xbr
+
+
+XBR_ABI_VERSION = xbr.__version__
+"""
+XBR Protocol contracts ABI bundle (Python package) version.
+"""
+
 
 #
 # Set default XBR contract addresses to
@@ -120,7 +128,7 @@ else:
 
 
 def _load_json(contract_name):
-    fn = pkg_resources.resource_filename('autobahn', 'xbr/contracts/{}.json'.format(contract_name))
+    fn = pkg_resources.resource_filename('xbr', 'abi/{}.json'.format(contract_name))
     with open(fn) as f:
         data = json.loads(f.read())
     return data
@@ -129,12 +137,12 @@ def _load_json(contract_name):
 #
 # XBR contract ABI file names
 #
-XBR_TOKEN_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRToken.json')
-XBR_NETWORK_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRNetwork.json')
-XBR_DOMAIN_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRDomain.json')
-XBR_CATALOG_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRCatalog.json')
-XBR_MARKET_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRMarket.json')
-XBR_CHANNEL_FN = pkg_resources.resource_filename('autobahn', 'xbr/contracts/XBRChannel.json')
+XBR_TOKEN_FN = pkg_resources.resource_filename('xbr', 'abi/XBRToken.json')
+XBR_NETWORK_FN = pkg_resources.resource_filename('xbr', 'abi/XBRNetwork.json')
+XBR_DOMAIN_FN = pkg_resources.resource_filename('xbr', 'abi/XBRDomain.json')
+XBR_CATALOG_FN = pkg_resources.resource_filename('xbr', 'abi/XBRCatalog.json')
+XBR_MARKET_FN = pkg_resources.resource_filename('xbr', 'abi/XBRMarket.json')
+XBR_CHANNEL_FN = pkg_resources.resource_filename('xbr', 'abi/XBRChannel.json')
 
 
 #

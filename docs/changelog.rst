@@ -5,6 +5,13 @@
 Changelog
 =========
 
+21.2.1
+------
+
+* new: XBR ABI files now via separate package ("xbr") - substantially reduce package size for non-XBR users
+* fix: circular dependency in "xbr" install flavor (prohibited pip install from github master)
+* fix: XBR package manifest and CLI user profile loading
+
 21.1.1
 ------
 

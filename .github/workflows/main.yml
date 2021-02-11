@@ -101,7 +101,6 @@ jobs:
 
     - name: Install this package
       run: |
-        make abi_files
         pip install .[all]
 
     - name: Run unit tests (PyTest)
@@ -134,7 +133,6 @@ jobs:
 
     - name: Install this package
       run: |
-        make abi_files
         pip install .[all]
 
     - name: Run Sphinx

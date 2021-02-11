@@ -119,6 +119,9 @@ if 'AUTOBAHN_USE_NVX' in os.environ:
     cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
 
 extras_require_xbr = [
+    # XBR contracts and ABI file bundle
+    'xbr>=20.1.1',              # Apache 2.0
+
     'cbor2>=5.1.0',             # MIT license
     'zlmdb>=20.4.1',            # MIT license
     'twisted>=20.3.0',          # MIT license

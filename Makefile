@@ -10,6 +10,7 @@ all:
 	@echo "   flake8           Run flake8 code checking"
 	@echo ""
 
+# deprecated with v21.2.1 (ABI files are no longer bundled in this package)
 abi_files:
 	curl -s https://xbr.network/lib/abi/xbr-protocol-latest.zip -o /tmp/xbr-protocol-latest.zip
 	unzip -t /tmp/xbr-protocol-latest.zip
@@ -17,7 +18,7 @@ abi_files:
 	unzip /tmp/xbr-protocol-latest.zip -d ${PWD}/autobahn/xbr/contracts
 
 # install locally
-install: abi_files
+install:
 	-pip uninstall -y pytest_asyncio # remove the broken shit
 	-pip uninstall -y pytest_cov # remove the broken shit
 	# enforce use of bundled libsodium
