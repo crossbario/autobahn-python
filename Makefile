@@ -98,7 +98,7 @@ test_styleguide:
 
 # direct test via pytest (only here because of setuptools test integration)
 test_pytest:
-	python -m pytest -rsx autobahn/
+	USE_ASYNCIO=1 python -m pytest -c setup.cfg -rsvx autobahn/
 
 # test via setuptools command
 test_setuptools:
@@ -114,6 +114,9 @@ test_twisted:
 	USE_TWISTED=1 trial autobahn
 	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_TWISTED=1 trial autobahn
 
+test_application_runner:
+	USE_TWISTED=1 trial autobahn.twisted.test.test_tx_application_runner
+
 test_rng:
 	USE_TWISTED=1 trial autobahn.test.test_rng
 
@@ -125,6 +128,12 @@ test_tx_cryptobox:
 
 test_tx_choosereactor:
 	USE_TWISTED=1 trial autobahn.twisted.test.test_choosereactor
+
+test_tx_cryptosign:
+	#USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign.TestAuth.test_testvectors
+	#USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign.TestAuth.test_testvectors
+	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign
+	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign
 
 test_twisted_coverage:
 	-rm .coverage

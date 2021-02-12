@@ -26,14 +26,17 @@
 
 import hashlib
 import os
+import binascii
 from unittest.mock import Mock
 
 import txaio
 
 if os.environ.get('USE_TWISTED', False):
     txaio.use_twisted()
+    from twisted.trial import unittest
 elif os.environ.get('USE_ASYNCIO', False):
     txaio.use_asyncio()
+    import unittest
 else:
     raise Exception('no networking framework selected')
 
@@ -47,7 +50,6 @@ if HAS_CRYPTOSIGN:
 
 import tempfile
 
-import unittest
 
 keybody = '''-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
@@ -60,8 +62,26 @@ Bm+RTIwv+7ZvYHW5bhFtAAAAFXNvbWV1c2VyQGZ1bmt0aGF0LmNvbQ==
 pubkey = '''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJVp3hjHwIQyEladzd8mFcf0YSXcmyKS3qMLB7VqTQKm someuser@example.com
 '''
 
+# test valid vectors for WAMP-cryptosign signature testing
+testvectors = [
+    {
+        'priv_key': '4d57d97a68f555696620a6d849c0ce582568518d729eb753dc7c732de2804510',
+        'challenge': 'ff' * 32,
+        'signature': '9b6f41540c9b95b4b7b281c3042fa9c54cef43c842d62ea3fd6030fcb66e70b3e80d49d44c29d1635da9348d02ec93f3ed1ef227dfb59a07b580095c2b82f80f9d16ca518aa0c2b707f2b2a609edeca73bca8dd59817a633f35574ac6fd80d00'
+    },
+    {
+        'priv_key': 'd511fe78e23934b3dadb52fcd022974b80bd92bccc7c5cf404e46cc0a8a2f5cd',
+        'challenge': 'b26c1f87c13fc1da14997f1b5a71995dff8fbe0a62fae8473c7bdbd05bfb607d',
+        'signature': '305aaa3ac25e98f651427688b3fc43fe7d8a68a7ec1d7d61c61517c519bd4a427c3015599d83ca28b4c652333920223844ef0725eb5dc2febfd6af7677b73f01d0852a29b460fc92ec943242ac638a053bbacc200512b18b30d15083cbdc9282'
+    },
+    {
+        'priv_key': '6e1fde9cf9e2359a87420b65a87dc0c66136e66945196ba2475990d8a0c3a25b',
+        'challenge': 'b05e6b8ad4d69abf74aa3be3c0ee40ae07d66e1895b9ab09285a2f1192d562d2',
+        'signature': 'ee3c7644fd8070532bc1fde3d70d742267da545d8c8f03e63bda63f1ad4214f4d2c4bfdb4eb9526def42deeb7e31602a6ff99eba893e0a4ad4d45892ca75e608d2b75e24a189a7f78ca776ba36fc53f6c3e31c32f251f2c524f0a44202f2902d'
+    }
+]
 
-@unittest.skipIf(not HAS_CRYPTOSIGN, 'nacl library not present')
+
 class TestAuth(unittest.TestCase):
 
     def setUp(self):
@@ -75,11 +95,45 @@ class TestAuth(unittest.TestCase):
         session = Mock()
         session._transport.get_channel_id = Mock(return_value=self.channel_id)
         challenge = types.Challenge("ticket", dict(challenge="ff" * 32))
-        signed = yield self.key.sign_challenge(session, challenge)
-        self.assertEqual(
-            '9b6f41540c9b95b4b7b281c3042fa9c54cef43c842d62ea3fd6030fcb66e70b3e80d49d44c29d1635da9348d02ec93f3ed1ef227dfb59a07b580095c2b82f80f9d16ca518aa0c2b707f2b2a609edeca73bca8dd59817a633f35574ac6fd80d00',
-            signed.result,
-        )
+        f_signed = self.key.sign_challenge(session, challenge)
+
+        def success(signed):
+            self.assertEqual(
+                192,
+                len(signed),
+            )
+            self.assertEqual(
+                '9b6f41540c9b95b4b7b281c3042fa9c54cef43c842d62ea3fd6030fcb66e70b3e80d49d44c29d1635da9348d02ec93f3ed1ef227dfb59a07b580095c2b82f80f9d16ca518aa0c2b707f2b2a609edeca73bca8dd59817a633f35574ac6fd80d00',
+                signed,
+            )
+
+        def failed(err):
+            self.fail(str(err))
+
+        txaio.add_callbacks(f_signed, success, failed)
+
+    def test_testvectors(self):
+        session = Mock()
+        session._transport.get_channel_id = Mock(return_value=self.channel_id)
+        for testvec in testvectors:
+            priv_key = SigningKey.from_key_bytes(binascii.a2b_hex(testvec['priv_key']))
+            challenge = types.Challenge("ticket", dict(challenge=testvec['challenge']))
+            f_signed = priv_key.sign_challenge(session, challenge)
+
+            def success(signed):
+                self.assertEqual(
+                    192,
+                    len(signed),
+                )
+                self.assertEqual(
+                    testvec['signature'],
+                    signed,
+                )
+
+            def failed(err):
+                self.fail(str(err))
+
+            txaio.add_callbacks(f_signed, success, failed)
 
     def test_authenticator(self):
         authenticator = create_authenticator(
@@ -90,11 +144,18 @@ class TestAuth(unittest.TestCase):
         session = Mock()
         session._transport.get_channel_id = Mock(return_value=self.channel_id)
         challenge = types.Challenge("cryptosign", dict(challenge="ff" * 32))
-        reply = yield authenticator.on_challenge(session, challenge)
-        self.assertEqual(
-            reply.result,
-            '9b6f41540c9b95b4b7b281c3042fa9c54cef43c842d62ea3fd6030fcb66e70b3e80d49d44c29d1635da9348d02ec93f3ed1ef227dfb59a07b580095c2b82f80f9d16ca518aa0c2b707f2b2a609edeca73bca8dd59817a633f35574ac6fd80d00',
-        )
+        f_reply = authenticator.on_challenge(session, challenge)
+
+        def success(reply):
+            self.assertEqual(
+                reply,
+                '9b6f41540c9b95b4b7b281c3042fa9c54cef43c842d62ea3fd6030fcb66e70b3e80d49d44c29d1635da9348d02ec93f3ed1ef227dfb59a07b580095c2b82f80f9d16ca518aa0c2b707f2b2a609edeca73bca8dd59817a633f35574ac6fd80d00',
+            )
+
+        def failed(err):
+            self.fail(str(err))
+
+        txaio.add_callbacks(f_reply, success, failed)
 
 
 class TestKey(unittest.TestCase):
@@ -104,7 +165,6 @@ class TestKey(unittest.TestCase):
         self.assertEqual(_makepad(2), '\x01\x02')
         self.assertEqual(_makepad(3), '\x01\x02\x03')
 
-    @unittest.skipIf(not HAS_CRYPTOSIGN, 'nacl library not present')
     def test_key(self):
         with tempfile.NamedTemporaryFile('w+t') as fp:
             fp.write(keybody)
@@ -113,7 +173,6 @@ class TestKey(unittest.TestCase):
             key = SigningKey.from_ssh_key(fp.name)
             self.assertEqual(key.public_key(), '1adfc8bfe1d35616e64dffbd900096f23b066f914c8c2ffbb66f6075b96e116d')
 
-    @unittest.skipIf(not HAS_CRYPTOSIGN, 'nacl library not present')
     def test_pubkey(self):
         with tempfile.NamedTemporaryFile('w+t') as fp:
             fp.write(pubkey)
