@@ -1,0 +1,78 @@
+# this build argument must be defined _before_ FROM, so the value is available in FROM.
+# however, AUTOBAHN_ARCH will _not_ be available further down the line because of this ordering!
+ARG AUTOBAHN_ARCH
+
+# Use the latest CPython
+FROM ${AUTOBAHN_ARCH}/python:3.9-slim
+
+MAINTAINER The Crossbar.io Project and Contributors <support@crossbario.com>
+
+# these build arguments should be defined _after_ FROM, so the values are available later on
+ARG AUTOBAHN_BUILD_ID
+ARG AUTOBAHN_BUILD_DATE
+ARG AUTOBAHN_VCS_REF
+ARG AUTOBAHN_VERSION
+
+# while these are defined, and we copy over to env vars (available in container at run-time)
+ENV AUTOBAHN_BUILD_ID $AUTOBAHN_BUILD_ID
+ENV AUTOBAHN_BUILD_DATE $AUTOBAHN_BUILD_DATE
+ENV AUTOBAHN_VCS_REF $AUTOBAHN_VCS_REF
+ENV AUTOBAHN_VERSION $AUTOBAHN_VERSION
+
+# !!! DO NOT REMOVE !!!
+#
+# copy qemu-x86 statically linked (!) qemu host tools into the container image,
+# so that the non-x86 image can be run on x86 hosts without qemu installed on the host
+COPY .qemu/qemu-aarch64-static /usr/bin/qemu-aarch64-static
+COPY .qemu/qemu-arm-static /usr/bin/qemu-arm-static
+#
+# !!! DO NOT REMOVE !!!
+
+ENV LANG C.UTF-8
+ENV DEBIAN_FRONTEND noninteractive
+ENV PYTHONUNBUFFERED 1
+
+RUN    apt-get update \
+    && apt-get install -y --no-install-recommends \
+               ca-certificates \
+               procps \
+               iputils-ping \
+               net-tools \
+               htop \
+               curl \
+               expat \
+               build-essential \
+               libssl-dev \
+               libffi-dev \
+               libunwind-dev \
+               libreadline-dev \
+               zlib1g-dev \
+               libbz2-dev \
+               libsqlite3-dev \
+               libncurses5-dev \
+               libsnappy-dev \
+    && pip install --upgrade --no-cache-dir setuptools pip wheel \
+    && rm -rf ~/.cache \
+    && rm -rf /var/lib/apt/lists/*
+
+# install Rust: don't bother with old distro rust (pun), use the source my jedi
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH /root/.cargo/bin:${PATH}
+RUN rustc --version
+
+# install vmprof: until it supports arm64, only on amd64
+RUN if [ "$AUTOBAHN_ARCH" = "amd64" ]; then pip install --no-cache-dir "vmprof>=0.4.12"; fi
+
+COPY ./.wheels /tmp
+RUN find /tmp
+RUN pip install --no-cache-dir \
+        /tmp/txaio-latest-py2.py3-none-any.whl \
+        /tmp/zlmdb-latest-py2.py3-none-any.whl \
+        /tmp/xbr-latest-py2.py3-none-any.whl \
+        /tmp/autobahn-latest-py2.py3-none-any.whl[accelerate,asyncio,twisted,encryption,compress,serialization,scram,xbr]
+
+RUN mkdir /app
+COPY print-versions.py /app
+WORKDIR /app
+
+CMD ["python", "print-versions.py"]

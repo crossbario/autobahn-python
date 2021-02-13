@@ -43,3 +43,4 @@ node.key
 coverage.xml
 .coverage.*
 autobahn/xbr/contracts
+.wheels

@@ -31,9 +31,11 @@ echo 'uploading package ..'
 aws s3 ls ${AWS_S3_BUCKET_NAME}/wheels/autobahn- || true
 
 # aws s3 cp --recursive ./dist s3://${AWS_S3_BUCKET_NAME}/wheels
+aws s3 rm s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID}-py2.py3-none-any.whl
 aws s3 rm s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl
 aws s3 rm s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-latest-py2.py3-none-any.whl
 
+aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID}-py2.py3-none-any.whl
 aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl
 aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-latest-py2.py3-none-any.whl
 
