@@ -1,0 +1,89 @@
+# this build argument must be defined _before_ FROM, so the value is available in FROM.
+# however, CROSSBAR_ARCH will _not_ be available further down the line because of this ordering!
+ARG CROSSBAR_ARCH
+# PyPy only comes in 3.7 for now
+FROM ${CROSSBAR_ARCH}/pypy:3.7-slim
+
+MAINTAINER The Crossbar.io Project <support@crossbario.com>
+
+# these build arguments should be defined _after_ FROM, so the values are available later on
+ARG CROSSBAR_BUILD_DATE
+ARG CROSSBAR_VCS_REF
+ARG CROSSBAR_VERSION
+
+# while these are defined, and we copy over to env vars (available in container at run-time)
+ENV CROSSBAR_BUILD_DATE $CROSSBAR_BUILD_DATE
+ENV CROSSBAR_VCS_REF $CROSSBAR_VCS_REF
+ENV CROSSBAR_VERSION $CROSSBAR_VERSION
+
+# we bindly copy over qemu deps for all archs regardless of arch
+# do we really need this any more?
+#COPY .qemu/qemu-aarch64-static /usr/bin/qemu-aarch64-static
+#COPY .qemu/qemu-arm-static /usr/bin/qemu-arm-static
+
+ENV LANG C.UTF-8
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV PYTHONUNBUFFERED 1
+ARG CROSSBAR_ARCH
+
+RUN    apt-get update \
+    && apt-get install -y --no-install-recommends \
+               ca-certificates \
+               procps \
+               iputils-ping \
+               net-tools \
+               htop \
+               curl \
+               expat \
+               build-essential \
+               libssl-dev \
+               libffi-dev \
+               libunwind-dev \
+               libreadline-dev \
+               zlib1g-dev \
+               libbz2-dev \
+               libsqlite3-dev \
+               libncurses5-dev \
+               libsnappy-dev \
+    && pip install --upgrade --no-cache-dir setuptools pip wheel \
+    && rm -rf ~/.cache \
+    && rm -rf /var/lib/apt/lists/*
+
+#
+# Install Crossbar.io (OSS)
+#
+
+COPY ./.wheels /tmp
+RUN find /tmp
+
+RUN pip install --no-cache-dir \
+        /tmp/txaio-latest-py2.py3-none-any.whl \
+        /tmp/zlmdb-latest-py2.py3-none-any.whl \
+        /tmp/autobahn-latest-py2.py3-none-any.whl[asyncio,twisted,encryption,compress,serialization,scram,xbr] \
+        /tmp/crossbar-latest-py2.py3-none-any.whl
+
+RUN if [ "$CROSSBAR_ARCH" = "amd64" ]; then pip install --no-cache-dir "vmprof>=0.4.12"; fi
+
+# test if everything installed properly
+RUN crossbar version
+
+# add our user and group
+RUN adduser --system --group --uid 242 --home /node crossbar
+
+# initialize a Crossbar.io node
+COPY ./.node/ /node/
+RUN chown -R crossbar:crossbar /node
+
+# make /node a volume to allow external configuration
+VOLUME /node
+
+# set the Crossbar.io node directory as working directory
+WORKDIR /node
+
+# run under this user, and expose default port
+USER crossbar
+EXPOSE 8080 8000
+
+# entrypoint for the Docker image is the Crossbar.io executable
+ENTRYPOINT ["crossbar", "start", "--cbdir", "/node/.crossbar"]
