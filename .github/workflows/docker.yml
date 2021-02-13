@@ -15,11 +15,11 @@ jobs:
 
   image_amd64:
 
-    # dockeer images only built and published (to DockerHub) when merging to master (not a yet unmerged PR!)
+    # docker images are only built and published (to DockerHub) when merging to master (not a yet unmerged PR!)
     if: github.ref == 'refs/heads/master'
 
-    # runs-on: ubuntu-20.04
-    runs-on: [self-hosted, linux, X64] # means matterhorn
+    # means x86-64 (xeon-d) host: matterhorn
+    runs-on: [self-hosted, linux, X64]
 
     env:
       DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
@@ -76,11 +76,11 @@ jobs:
 
   image_arm64:
 
-    # dockeer images only built and published (to DockerHub) when merging to master (not a yet unmerged PR!)
+    # docker images are only built and published (to DockerHub) when merging to master (not a yet unmerged PR!)
     if: github.ref == 'refs/heads/master'
 
-    # runs-on: ubuntu-20.04
-    runs-on: [self-hosted, linux, ARM64] # means matterhorn
+    # means ARM64v8 (AWS Graviton) host: buildbox-arm64.crossbario.com
+    runs-on: [self-hosted, linux, ARM64]
 
     env:
       DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
