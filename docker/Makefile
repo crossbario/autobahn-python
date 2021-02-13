@@ -112,7 +112,7 @@ build_cpy_amd64:
 	docker images crossbario/autobahn-python:cpy-amd64
 
 test_cpy_amd64:
-	docker run --rm -it crossbario/autobahn-python:cpy-amd64
+	docker run --rm crossbario/autobahn-python:cpy-amd64
 
 publish_cpy_amd64:
 	docker push crossbario/autobahn-python:cpy-amd64
@@ -134,7 +134,7 @@ build_cpy_arm64v8:
 	docker images crossbario/autobahn-python:cpy-arm64v8
 
 test_cpy_arm64v8:
-	docker run --rm -it crossbario/autobahn-python:cpy-arm64v8
+	docker run --rm crossbario/autobahn-python:cpy-arm64v8
 
 publish_cpy_arm64v8:
 	docker push crossbario/autobahn-python:cpy-arm64v8
@@ -156,7 +156,7 @@ build_pypy_amd64:
 	docker images crossbario/autobahn-python:pypy-amd64
 
 test_pypy_amd64:
-	docker run --rm -it crossbario/autobahn-python:pypy-amd64
+	docker run --rm crossbario/autobahn-python:pypy-amd64
 
 publish_pypy_amd64:
 	docker push crossbario/autobahn-python:pypy-amd64
@@ -178,7 +178,7 @@ build_pypy_arm64v8:
 	docker images crossbario/autobahn-python:pypy-arm64v8
 
 test_pypy_arm64v8:
-	docker run --rm -it crossbario/autobahn-python:pypy-arm64v8
+	docker run --rm crossbario/autobahn-python:pypy-arm64v8
 
 publish_pypy_arm64v8:
 	docker push crossbario/autobahn-python:pypy-arm64v8
