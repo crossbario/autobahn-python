@@ -11,14 +11,14 @@ on:
     types:
       - completed
 
+# docker images are only built and published (to DockerHub) when merging
+# to master (not a yet unmerged PR!)
+if: github.ref == 'refs/heads/master'
+
 jobs:
 
+  # runs on x86-64 (xeon-d) host: matterhorn
   image_amd64:
-
-    # docker images are only built and published (to DockerHub) when merging to master (not a yet unmerged PR!)
-    if: github.ref == 'refs/heads/master'
-
-    # means x86-64 (xeon-d) host: matterhorn
     runs-on: [self-hosted, linux, X64]
 
     env:
@@ -59,9 +59,8 @@ jobs:
         cd ./docker && \
         make download_wheels && \
         make build_cpy_amd64 && \
-        pwd && ls -la . && \
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
         make test_cpy_amd64
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
         make publish_cpy_amd64
 
     - name: Build & publish Docker image for pypy-amd64
@@ -69,17 +68,12 @@ jobs:
         cd ./docker && \
         make download_wheels && \
         make build_pypy_amd64 && \
-        pwd && ls -la . && \
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
         make test_pypy_amd64
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
         make publish_pypy_amd64
 
+  # runs on ARM64v8 (AWS Graviton) host: buildbox-arm64.crossbario.com
   image_arm64:
-
-    # docker images are only built and published (to DockerHub) when merging to master (not a yet unmerged PR!)
-    if: github.ref == 'refs/heads/master'
-
-    # means ARM64v8 (AWS Graviton) host: buildbox-arm64.crossbario.com
     runs-on: [self-hosted, linux, ARM64]
 
     env:
@@ -120,9 +114,8 @@ jobs:
         cd ./docker && \
         make download_wheels && \
         make build_cpy_arm64v8 && \
-        pwd && ls -la . && \
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
         make test_cpy_arm64v8
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
         make publish_cpy_arm64v8
 
     - name: Build & publish Docker image for pypy-arm64
@@ -130,7 +123,6 @@ jobs:
         cd ./docker && \
         make download_wheels && \
         make build_pypy_arm64v8 && \
-        pwd && ls -la . && \
-        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
         make test_pypy_arm64v8
+        docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
         make publish_pypy_arm64v8
