@@ -1,4 +1,24 @@
-# Docker Image Building
+# Docker Images
+
+## Using
+
+Use one of the following variants to select the desired image variant:
+
+```
+docker run -it --rm crossbario/autobahn-python:<PYTHON>-<ARCH>-<VERSION><COMMIT>
+```
+
+with `PYTHON: cpy, pypy` and `ARCH: amd64, arm64v8`, eg
+
+1. `docker run -it --rm crossbario/autobahn-python:cpy-amd64`
+1. `docker run -it --rm crossbario/autobahn-python:cpy-amd64-21.2.2.dev2`
+1. `docker run -it --rm crossbario/autobahn-python:cpy-amd64-21.2.2.dev2-20210213-7a3dce63`
+
+To auto-select `ARCH` using Docker Manifest, eg
+
+1. `docker run -it --rm crossbario/autobahn-python:cpy`
+
+## Building
 
 Docker images are built automatically from the [docker workflow](../github/workflows/docker.yml),
 which is triggered after a PR was merged to master.

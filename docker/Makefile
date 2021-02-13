@@ -186,31 +186,64 @@ publish_pypy_arm64v8:
 	docker push crossbario/autobahn-python:pypy-arm64v8-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID}
 
 
-# Docker multi-arch manifest - use the following for different CPU archs:
+# Docker multi-arch manifest
+#
+# https://docs.docker.com/engine/reference/commandline/manifest/
+# https://docs.docker.com/docker-for-mac/multi-arch/
+# https://www.docker.com/blog/multi-arch-build-and-images-the-simple-way/
+# https://docs.docker.com/registry/spec/manifest-v2-2/
+#
+# Use the following options for different CPU archs:
 #
 #	--os linux --arch amd64
 #	--os linux --arch 386
 #	--os linux --arch arm64 --variant armv8
 #	--os linux --arch arm
 #
-publish_manifest:
+# Older Docker CLI needs: export DOCKER_CLI_EXPERIMENTAL=enabled
+#
+publish_manifest: publish_cpy_manifest publish_pypy_manifest
+
+publish_cpy_manifest:
 	docker manifest create --amend \
-		crossbario/autobahn-python:${AUTOBAHN_VERSION} \
+		crossbario/autobahn-python:cpy \
 		crossbario/autobahn-python:cpy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
-		crossbario/autobahn-python:pypy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+		crossbario/autobahn-python:cpy-arm64v8-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
 
 	docker manifest annotate \
-		crossbario/autobahn-python:${AUTOBAHN_VERSION} \
+		crossbario/autobahn-python:cpy \
 		crossbario/autobahn-python:cpy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
 		--os linux --arch amd64
 
 	docker manifest annotate \
-		crossbario/autobahn-python:${AUTOBAHN_VERSION} \
-		crossbario/autobahn-python:pypy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
-		--os linux --arch amd64
+		crossbario/autobahn-python:cpy \
+		crossbario/autobahn-python:cpy-arm64v8-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+		--os linux --arch arm64 --variant armv8
 
 	docker manifest inspect \
-		crossbario/autobahn-python:${AUTOBAHN_VERSION}
+		crossbario/autobahn-python:cpy
 
 	docker manifest push --purge \
-		crossbario/autobahn-python:${AUTOBAHN_VERSION}
+		crossbario/autobahn-python:cpy
+
+publish_pypy_manifest:
+	docker manifest create --amend \
+		crossbario/autobahn-python:pypy \
+		crossbario/autobahn-python:pypy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+		crossbario/autobahn-python:pypy-arm64v8-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+
+	docker manifest annotate \
+		crossbario/autobahn-python:pypy \
+		crossbario/autobahn-python:pypy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+		--os linux --arch amd64
+
+	docker manifest annotate \
+		crossbario/autobahn-python:pypy \
+		crossbario/autobahn-python:pypy-arm64v8-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+		--os linux --arch arm64 --variant armv8
+
+	docker manifest inspect \
+		crossbario/autobahn-python:pypy
+
+	docker manifest push --purge \
+		crossbario/autobahn-python:pypy
