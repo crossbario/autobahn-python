@@ -32,6 +32,10 @@ ENV LANG C.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
 ENV PYTHONUNBUFFERED 1
 
+# cross-compatibility with CPython
+RUN ln -s /opt/pypy/bin/pypy3 /opt/pypy/bin/python3
+RUN ln -s /opt/pypy/bin/pypy3 /opt/pypy/bin/python
+
 RUN    apt-get update \
     && apt-get install -y --no-install-recommends \
                ca-certificates \
@@ -56,12 +60,14 @@ RUN    apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # install Rust: don't bother with old distro rust (pun), use the source my jedi
-# https://stackoverflow.com/a/57251636/884770
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH /root/.cargo/bin:${PATH}
+RUN rustc --version
 
 # install vmprof: until it supports arm64, only on amd64
 RUN if [ "$AUTOBAHN_ARCH" = "amd64" ]; then pip install --no-cache-dir "vmprof>=0.4.12"; fi
 
+# do NOT include autobahn[accelerate] in below! "accelerate" must only be included on CPython
 COPY ./.wheels /tmp
 RUN find /tmp
 RUN pip install --no-cache-dir \
@@ -69,3 +75,9 @@ RUN pip install --no-cache-dir \
         /tmp/zlmdb-latest-py2.py3-none-any.whl \
         /tmp/xbr-latest-py2.py3-none-any.whl \
         /tmp/autobahn-latest-py2.py3-none-any.whl[asyncio,twisted,encryption,compress,serialization,scram,xbr]
+
+RUN mkdir /app
+COPY print-versions.py /app
+WORKDIR /app
+
+CMD ["python", "print-versions.py"]

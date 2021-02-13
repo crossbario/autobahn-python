@@ -1,15 +1,18 @@
+# Docker Image Building
+
+Docker images are built automatically from the [docker workflow](../github/workflows/docker.yml),
+which is triggered after a PR was merged to master.
+
+To manually build the Docker images, go to the root folder of this repository and set the build variables
 
 ```
-(cpy391_4) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python$ source versions.sh
-
-Build environment configured:
-
-  AUTOBAHN_BUILD_DATE  = 2021-02-13
-  AUTOBAHN_BUILD_ID    = 20210213-35049c39
-  AUTOBAHN_VCS_REF     = 35049c39
-  AUTOBAHN_VERSION     = 21.2.2.dev1
+source versions.sh
+cd docker
+make install_qemu
+make copy_qemu
 ```
 
+then change to the `docker` subfolder and install Qemu
 
 ```
 cd docker
@@ -17,30 +20,33 @@ make install_qemu
 make copy_qemu
 ```
 
+To build from the wheels published to our S3 bucket
+
 ```
+make clean_wheels
 make download_wheels
+make build_this_wheel
 ```
 
-```
-(cpy391_4) oberstet@intel-nuci7:~/scm/crossbario/autobahn-python/docker$ make download_wheels
-...
--rw-r--r-- 1 oberstet oberstet  494324 Feb 13 13:06 autobahn-latest-py2.py3-none-any.whl
--rw-r--r-- 1 oberstet oberstet   30567 Feb 13 13:06 txaio-latest-py2.py3-none-any.whl
--rw-r--r-- 1 oberstet oberstet 1089344 Feb 13 13:06 xbr-latest-py2.py3-none-any.whl
--rw-r--r-- 1 oberstet oberstet   53045 Feb 13 13:06 zlmdb-latest-py2.py3-none-any.whl
-```
+To build the current library into a wheel and use that in the Docker image
 
 ```
+make build_this_wheel
 ```
 
-```
-```
+Then, to build and test a Docker image variant
 
 ```
+make build_cpy_amd64
+make test_cpy_amd64
 ```
 
-```
-```
+You can mix `cpy` or `pypy` for the Python flavor, with `amd64` and `arm64` for the CPU architecture.
+
+To build, test and then publish all image flavors
 
 ```
+make build
+make test
+make publish
 ```

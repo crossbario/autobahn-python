@@ -56,8 +56,9 @@ RUN    apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # install Rust: don't bother with old distro rust (pun), use the source my jedi
-# https://stackoverflow.com/a/57251636/884770
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH /root/.cargo/bin:${PATH}
+RUN rustc --version
 
 # install vmprof: until it supports arm64, only on amd64
 RUN if [ "$AUTOBAHN_ARCH" = "amd64" ]; then pip install --no-cache-dir "vmprof>=0.4.12"; fi
@@ -69,3 +70,9 @@ RUN pip install --no-cache-dir \
         /tmp/zlmdb-latest-py2.py3-none-any.whl \
         /tmp/xbr-latest-py2.py3-none-any.whl \
         /tmp/autobahn-latest-py2.py3-none-any.whl[accelerate,asyncio,twisted,encryption,compress,serialization,scram,xbr]
+
+RUN mkdir /app
+COPY print-versions.py /app
+WORKDIR /app
+
+CMD ["python", "print-versions.py"]
