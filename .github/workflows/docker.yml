@@ -58,19 +58,21 @@ jobs:
       run: |
         cd ./docker && \
         make download_wheels && \
-        make build_amd64_cpy3 && \
+        make build_cpy_amd64 && \
         pwd && ls -la . && \
         docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
-        make publish_amd64_cpy3
+        make test_cpy_amd64
+        make publish_cpy_amd64
 
     - name: Build & publish Docker image for pypy-amd64
       run: |
         cd ./docker && \
         make download_wheels && \
-        make build_amd64_pypy3 && \
+        make build_pypy_amd64 && \
         pwd && ls -la . && \
         docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
-        make publish_amd64_pypy3
+        make test_pypy_amd64
+        make publish_pypy_amd64
 
   image_arm64:
 
@@ -117,16 +119,18 @@ jobs:
       run: |
         cd ./docker && \
         make download_wheels && \
-        make build_aarch64_cpy3 && \
+        make build_cpy_arm64v8 && \
         pwd && ls -la . && \
         docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
-        make publish_aarch64_cpy3
+        make test_cpy_arm64v8
+        make publish_cpy_arm64v8
 
     - name: Build & publish Docker image for pypy-arm64
       run: |
         cd ./docker && \
         make download_wheels && \
-        make build_aarch64_pypy3 && \
+        make build_pypy_arm64v8 && \
         pwd && ls -la . && \
         docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASSWORD }} docker.io && \
-        make publish_aarch64_pypy3
+        make test_pypy_arm64v8
+        make publish_pypy_arm64v8

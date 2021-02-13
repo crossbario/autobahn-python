@@ -1,6 +1,8 @@
 # this build argument must be defined _before_ FROM, so the value is available in FROM.
 # however, AUTOBAHN_ARCH will _not_ be available further down the line because of this ordering!
 ARG AUTOBAHN_ARCH
+
+# Use the latest CPython
 FROM ${AUTOBAHN_ARCH}/python:3.9-slim
 
 MAINTAINER The Crossbar.io Project and Contributors <support@crossbario.com>
@@ -53,6 +55,13 @@ RUN    apt-get update \
     && rm -rf ~/.cache \
     && rm -rf /var/lib/apt/lists/*
 
+# install Rust: don't bother with old distro rust (pun), use the source my jedi
+# https://stackoverflow.com/a/57251636/884770
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+# install vmprof: until it supports arm64, only on amd64
+RUN if [ "$AUTOBAHN_ARCH" = "amd64" ]; then pip install --no-cache-dir "vmprof>=0.4.12"; fi
+
 COPY ./.wheels /tmp
 RUN find /tmp
 RUN pip install --no-cache-dir \
@@ -60,5 +69,3 @@ RUN pip install --no-cache-dir \
         /tmp/zlmdb-latest-py2.py3-none-any.whl \
         /tmp/xbr-latest-py2.py3-none-any.whl \
         /tmp/autobahn-latest-py2.py3-none-any.whl[accelerate,asyncio,twisted,encryption,compress,serialization,scram,xbr]
-
-RUN if [ "$AUTOBAHN_ARCH" = "amd64" ]; then pip install --no-cache-dir "vmprof>=0.4.12"; fi

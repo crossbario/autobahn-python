@@ -1,13 +1,12 @@
-SHOW_AUTOBAHN=python -c "import sys; print(sys.version); import autobahn; print('autobahn v{}'.format(autobahn.__version__)); from autobahn import xbr; print('HAS_XBR={}'.format(xbr.HAS_XBR))"
+TEST_AUTOBAHN=python -c "import sys; print(sys.version); import autobahn; print('autobahn v{}'.format(autobahn.__version__)); from autobahn import xbr; print('HAS_XBR={}'.format(xbr.HAS_XBR))"
 WHEELS=https://crossbarbuilder.s3.eu-central-1.amazonaws.com/wheels
 
 default:
 	@echo ""
 	@echo "Targets:"
 	@echo ""
-	@echo "  params                 Print build parameter"
+	@echo "  params                 Print build parameters"
 	@echo "  build                  Build images"
-	@echo "  version                Print version of images"
 	@echo "  test                   Test images"
 	@echo "  publish                Publish images"
 	@echo ""
@@ -45,12 +44,45 @@ download_wheels:
 	curl -o ./.wheels/autobahn-latest-py2.py3-none-any.whl 	$(WHEELS)/autobahn-latest-py2.py3-none-any.whl
 	ls -la ./.wheels
 
+# WARNING: this will stop and remove all containers on the local host!
+docker_stop_rm:
+	-docker stop $(docker ps -a -q)
+	-docker rm $(docker ps -a -q -f)
+
+
+build: build_cpy build_pypy
+
+test: test_cpy test_pypy
+
+publish: publish_cpy publish_pypy
+
+
+build_amd64: build_cpy_amd64 build_pypy_amd64
+
+test_amd64: test_cpy_amd64 test_pypy_amd64
+
+publish_amd64: publish_cpy_amd64 publish_pypy_amd64
+
+
+build_arm64v8: build_cpy_arm64v8 build_pypy_arm64v8
+
+test_arm64v8: test_cpy_arm64v8 test_pypy_arm64v8
+
+publish_arm64v8: publish_cpy_arm64v8 publish_pypy_arm64v8
+
 
 build_cpy: build_cpy_amd64 build_cpy_arm64v8
 
-show_cpy: show_cpy_amd64 show_cpy_arm64v8
+test_cpy: test_cpy_amd64 test_cpy_arm64v8
 
 publish_cpy: publish_cpy_amd64 publish_cpy_arm64v8
+
+
+build_pypy: build_pypy_amd64 build_pypy_arm64v8
+
+test_pypy: test_pypy_amd64 test_pypy_arm64v8
+
+publish_pypy: publish_pypy_amd64 publish_pypy_arm64v8
 
 
 build_cpy_amd64:
@@ -66,8 +98,8 @@ build_cpy_amd64:
 		-f Dockerfile.cpy-slim .
 	docker images crossbario/autobahn-python:cpy-amd64
 
-show_cpy_amd64:
-	docker run --rm -it crossbario/autobahn-python:cpy-amd64 $(SHOW_AUTOBAHN)
+test_cpy_amd64:
+	docker run --rm -it crossbario/autobahn-python:cpy-amd64 $(TEST_AUTOBAHN)
 
 publish_cpy_amd64:
 	docker push crossbario/autobahn-python:cpy-amd64
@@ -88,10 +120,54 @@ build_cpy_arm64v8:
 		-f ./Dockerfile.cpy-slim .
 	docker images crossbario/autobahn-python:cpy-arm64v8
 
-show_cpy_arm64v8:
-	docker run --rm -it crossbario/autobahn-python:cpy-arm64v8 $(SHOW_AUTOBAHN)
+test_cpy_arm64v8:
+	docker run --rm -it crossbario/autobahn-python:cpy-arm64v8 $(TEST_AUTOBAHN)
 
 publish_cpy_arm64v8:
 	docker push crossbario/autobahn-python:cpy-arm64v8
 	docker push crossbario/autobahn-python:cpy-arm64v8-${AUTOBAHN_VERSION}
 	docker push crossbario/autobahn-python:cpy-arm64v8-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID}
+
+
+build_pypy_amd64:
+	docker build \
+		--build-arg AUTOBAHN_ARCH=amd64 \
+		--build-arg AUTOBAHN_BUILD_ID=${AUTOBAHN_BUILD_ID} \
+		--build-arg AUTOBAHN_BUILD_DATE=${AUTOBAHN_BUILD_DATE} \
+		--build-arg AUTOBAHN_VCS_REF=${AUTOBAHN_VCS_REF} \
+		--build-arg AUTOBAHN_VERSION=${AUTOBAHN_VERSION} \
+		-t crossbario/autobahn-python:pypy-amd64 \
+		-t crossbario/autobahn-python:pypy-amd64-${AUTOBAHN_VERSION} \
+		-t crossbario/autobahn-python:pypy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+		-f Dockerfile.pypy-slim .
+	docker images crossbario/autobahn-python:pypy-amd64
+
+test_pypy_amd64:
+	docker run --rm -it crossbario/autobahn-python:pypy-amd64 $(TEST_AUTOBAHN)
+
+publish_pypy_amd64:
+	docker push crossbario/autobahn-python:pypy-amd64
+	docker push crossbario/autobahn-python:pypy-amd64-${AUTOBAHN_VERSION}
+	docker push crossbario/autobahn-python:pypy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID}
+
+
+build_pypy_arm64v8:
+	docker build \
+		--build-arg AUTOBAHN_ARCH=arm64v8 \
+		--build-arg AUTOBAHN_BUILD_ID=${AUTOBAHN_BUILD_ID} \
+		--build-arg AUTOBAHN_BUILD_DATE=${AUTOBAHN_BUILD_DATE} \
+		--build-arg AUTOBAHN_VCS_REF=${AUTOBAHN_VCS_REF} \
+		--build-arg AUTOBAHN_VERSION=${AUTOBAHN_VERSION} \
+		-t crossbario/autobahn-python:pypy-arm64v8 \
+		-t crossbario/autobahn-python:pypy-arm64v8-${AUTOBAHN_VERSION} \
+		-t crossbario/autobahn-python:pypy-arm64v8-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+		-f ./Dockerfile.pypy-slim .
+	docker images crossbario/autobahn-python:pypy-arm64v8
+
+test_pypy_arm64v8:
+	docker run --rm -it crossbario/autobahn-python:pypy-arm64v8 $(TEST_AUTOBAHN)
+
+publish_pypy_arm64v8:
+	docker push crossbario/autobahn-python:pypy-arm64v8
+	docker push crossbario/autobahn-python:pypy-arm64v8-${AUTOBAHN_VERSION}
+	docker push crossbario/autobahn-python:pypy-arm64v8-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID}

@@ -1,31 +1,36 @@
 # this build argument must be defined _before_ FROM, so the value is available in FROM.
-# however, CROSSBAR_ARCH will _not_ be available further down the line because of this ordering!
-ARG CROSSBAR_ARCH
-# PyPy only comes in 3.7 for now
-FROM ${CROSSBAR_ARCH}/pypy:3.7-slim
+# however, AUTOBAHN_ARCH will _not_ be available further down the line because of this ordering!
+ARG AUTOBAHN_ARCH
 
-MAINTAINER The Crossbar.io Project <support@crossbario.com>
+# PyPy only comes in 3.7 for now
+FROM ${AUTOBAHN_ARCH}/pypy:3.7-slim
+
+MAINTAINER The Crossbar.io Project and Contributors <support@crossbario.com>
 
 # these build arguments should be defined _after_ FROM, so the values are available later on
-ARG CROSSBAR_BUILD_DATE
-ARG CROSSBAR_VCS_REF
-ARG CROSSBAR_VERSION
+ARG AUTOBAHN_BUILD_ID
+ARG AUTOBAHN_BUILD_DATE
+ARG AUTOBAHN_VCS_REF
+ARG AUTOBAHN_VERSION
 
 # while these are defined, and we copy over to env vars (available in container at run-time)
-ENV CROSSBAR_BUILD_DATE $CROSSBAR_BUILD_DATE
-ENV CROSSBAR_VCS_REF $CROSSBAR_VCS_REF
-ENV CROSSBAR_VERSION $CROSSBAR_VERSION
+ENV AUTOBAHN_BUILD_ID $AUTOBAHN_BUILD_ID
+ENV AUTOBAHN_BUILD_DATE $AUTOBAHN_BUILD_DATE
+ENV AUTOBAHN_VCS_REF $AUTOBAHN_VCS_REF
+ENV AUTOBAHN_VERSION $AUTOBAHN_VERSION
 
-# we bindly copy over qemu deps for all archs regardless of arch
-# do we really need this any more?
-#COPY .qemu/qemu-aarch64-static /usr/bin/qemu-aarch64-static
-#COPY .qemu/qemu-arm-static /usr/bin/qemu-arm-static
+# !!! DO NOT REMOVE !!!
+#
+# copy qemu-x86 statically linked (!) qemu host tools into the container image,
+# so that the non-x86 image can be run on x86 hosts without qemu installed on the host
+COPY .qemu/qemu-aarch64-static /usr/bin/qemu-aarch64-static
+COPY .qemu/qemu-arm-static /usr/bin/qemu-arm-static
+#
+# !!! DO NOT REMOVE !!!
 
 ENV LANG C.UTF-8
-
 ENV DEBIAN_FRONTEND noninteractive
 ENV PYTHONUNBUFFERED 1
-ARG CROSSBAR_ARCH
 
 RUN    apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -50,40 +55,17 @@ RUN    apt-get update \
     && rm -rf ~/.cache \
     && rm -rf /var/lib/apt/lists/*
 
-#
-# Install Crossbar.io (OSS)
-#
+# install Rust: don't bother with old distro rust (pun), use the source my jedi
+# https://stackoverflow.com/a/57251636/884770
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+# install vmprof: until it supports arm64, only on amd64
+RUN if [ "$AUTOBAHN_ARCH" = "amd64" ]; then pip install --no-cache-dir "vmprof>=0.4.12"; fi
 
 COPY ./.wheels /tmp
 RUN find /tmp
-
 RUN pip install --no-cache-dir \
         /tmp/txaio-latest-py2.py3-none-any.whl \
         /tmp/zlmdb-latest-py2.py3-none-any.whl \
-        /tmp/autobahn-latest-py2.py3-none-any.whl[asyncio,twisted,encryption,compress,serialization,scram,xbr] \
-        /tmp/crossbar-latest-py2.py3-none-any.whl
-
-RUN if [ "$CROSSBAR_ARCH" = "amd64" ]; then pip install --no-cache-dir "vmprof>=0.4.12"; fi
-
-# test if everything installed properly
-RUN crossbar version
-
-# add our user and group
-RUN adduser --system --group --uid 242 --home /node crossbar
-
-# initialize a Crossbar.io node
-COPY ./.node/ /node/
-RUN chown -R crossbar:crossbar /node
-
-# make /node a volume to allow external configuration
-VOLUME /node
-
-# set the Crossbar.io node directory as working directory
-WORKDIR /node
-
-# run under this user, and expose default port
-USER crossbar
-EXPOSE 8080 8000
-
-# entrypoint for the Docker image is the Crossbar.io executable
-ENTRYPOINT ["crossbar", "start", "--cbdir", "/node/.crossbar"]
+        /tmp/xbr-latest-py2.py3-none-any.whl \
+        /tmp/autobahn-latest-py2.py3-none-any.whl[asyncio,twisted,encryption,compress,serialization,scram,xbr]
