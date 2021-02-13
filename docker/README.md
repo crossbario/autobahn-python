@@ -25,7 +25,6 @@ To build from the wheels published to our S3 bucket
 ```
 make clean_wheels
 make download_wheels
-make build_this_wheel
 ```
 
 To build the current library into a wheel and use that in the Docker image
@@ -41,7 +40,13 @@ make build_cpy_amd64
 make test_cpy_amd64
 ```
 
+```
+make build_this_wheel build_cpy_amd64 test_cpy_amd64
+```
+
 You can mix `cpy` or `pypy` for the Python flavor, with `amd64` and `arm64` for the CPU architecture.
+
+To repeat a development cycle
 
 To build, test and then publish all image flavors
 

@@ -780,6 +780,20 @@ class Client(ApplicationSession):
         return txn_hash
 
 
+def print_version():
+    print('')
+    print(' XBR CLI {}\n'.format(hlval('v' + __version__)))
+    print('')
+    print('   Contract addresses:\n')
+    print('      XBRToken   : {} [source: {}]'.format(hlid(XBR_DEBUG_TOKEN_ADDR), XBR_DEBUG_TOKEN_ADDR_SRC))
+    print('      XBRNetwork : {} [source: {}]'.format(hlid(XBR_DEBUG_NETWORK_ADDR), XBR_DEBUG_NETWORK_ADDR_SRC))
+    print('      XBRDomain  : {} [source: {}]'.format(hlid(XBR_DEBUG_DOMAIN_ADDR), XBR_DEBUG_DOMAIN_ADDR_SRC))
+    print('      XBRCatalog : {} [source: {}]'.format(hlid(XBR_DEBUG_CATALOG_ADDR), XBR_DEBUG_CATALOG_ADDR_SRC))
+    print('      XBRMarket  : {} [source: {}]'.format(hlid(XBR_DEBUG_MARKET_ADDR), XBR_DEBUG_MARKET_ADDR_SRC))
+    print('      XBRChannel : {} [source: {}]'.format(hlid(XBR_DEBUG_CHANNEL_ADDR), XBR_DEBUG_CHANNEL_ADDR_SRC))
+    print('')
+
+
 def _main():
     parser = argparse.ArgumentParser()
 
@@ -942,17 +956,7 @@ def _main():
     args = parser.parse_args()
 
     if args.command == 'version':
-        print('')
-        print(' XBR CLI {}\n'.format(hlval('v' + __version__)))
-        print('')
-        print('   Contract addresses:\n')
-        print('      XBRToken   : {} [source: {}]'.format(hlid(XBR_DEBUG_TOKEN_ADDR), XBR_DEBUG_TOKEN_ADDR_SRC))
-        print('      XBRNetwork : {} [source: {}]'.format(hlid(XBR_DEBUG_NETWORK_ADDR), XBR_DEBUG_NETWORK_ADDR_SRC))
-        print('      XBRDomain  : {} [source: {}]'.format(hlid(XBR_DEBUG_DOMAIN_ADDR), XBR_DEBUG_DOMAIN_ADDR_SRC))
-        print('      XBRCatalog : {} [source: {}]'.format(hlid(XBR_DEBUG_CATALOG_ADDR), XBR_DEBUG_CATALOG_ADDR_SRC))
-        print('      XBRMarket  : {} [source: {}]'.format(hlid(XBR_DEBUG_MARKET_ADDR), XBR_DEBUG_MARKET_ADDR_SRC))
-        print('      XBRChannel : {} [source: {}]'.format(hlid(XBR_DEBUG_CHANNEL_ADDR), XBR_DEBUG_CHANNEL_ADDR_SRC))
-        print('')
+        print_version()
 
     elif args.command == 'describe-schema':
         schema = FbsSchema.load(args.schema)

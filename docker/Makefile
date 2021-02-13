@@ -186,33 +186,31 @@ publish_pypy_arm64v8:
 	docker push crossbario/autobahn-python:pypy-arm64v8-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID}
 
 
-# docker manifest create --amend {multi-arch-tag} {os-specific-tag-1} {os-specific-tag-2}
-# docker manifest annotate {multi-arch-tag} {os-specific-tag-1} --os {os-1} --arch {arch-1}
-# docker manifest annotate {multi-arch-tag} {os-specific-tag-2} --os {os-2} --arch {arch-2}
-# docker manifest push --purge {multi-arch-tag}
+# Docker multi-arch manifest - use the following for different CPU archs:
+#
+#	--os linux --arch amd64
+#	--os linux --arch 386
+#	--os linux --arch arm64 --variant armv8
+#	--os linux --arch arm
+#
+publish_manifest:
+	docker manifest create --amend \
+		crossbario/autobahn-python:${AUTOBAHN_VERSION} \
+		crossbario/autobahn-python:cpy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+		crossbario/autobahn-python:pypy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
 
-# export DOCKER_CLI_EXPERIMENTAL=enabled
-publish_docker_manifest:
-	docker manifest create crossbario/crossbarfx:latest \
-		crossbario/crossbarfx:pypy-slim-amd64-${CROSSBARFX_VERSION} \
-		crossbario/crossbarfx:pypy-slim-i386-${CROSSBARFX_VERSION} \
-		crossbario/crossbarfx:pypy-slim-arm64v8-${CROSSBARFX_VERSION} \
-		crossbario/crossbarfx:cpy-slim-arm32v7-${CROSSBARFX_VERSION}
+	docker manifest annotate \
+		crossbario/autobahn-python:${AUTOBAHN_VERSION} \
+		crossbario/autobahn-python:cpy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+		--os linux --arch amd64
 
-	# docker manifest create crossbario/crossbarfx:latest \
-	# 	crossbario/crossbarfx:pypy-slim-amd64-${CROSSBARFX_VERSION} \
-	# 	crossbario/crossbarfx:pypy-slim-i386-${CROSSBARFX_VERSION} \
-	# 	crossbario/crossbarfx:pypy-slim-arm64v8-${CROSSBARFX_VERSION} \
-	# 	crossbario/crossbarfx:cpy-slim-amd64-${CROSSBARFX_VERSION} \
-	# 	crossbario/crossbarfx:cpy-slim-i386-${CROSSBARFX_VERSION} \
-	# 	crossbario/crossbarfx:cpy-slim-arm64v8-${CROSSBARFX_VERSION} \
-	# 	crossbario/crossbarfx:cpy-slim-arm32v7-${CROSSBARFX_VERSION}
+	docker manifest annotate \
+		crossbario/autobahn-python:${AUTOBAHN_VERSION} \
+		crossbario/autobahn-python:pypy-amd64-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID} \
+		--os linux --arch amd64
 
-	docker manifest annotate crossbario/crossbarfx:latest crossbario/crossbarfx:pypy-slim-amd64-${CROSSBARFX_VERSION} --os linux --arch amd64
-	docker manifest annotate crossbario/crossbarfx:latest crossbario/crossbarfx:pypy-slim-i386-${CROSSBARFX_VERSION} --os linux --arch 386
-	docker manifest annotate crossbario/crossbarfx:latest crossbario/crossbarfx:pypy-slim-arm64v8-${CROSSBARFX_VERSION}  --os linux --arch arm64 --variant armv8
-	docker manifest annotate crossbario/crossbarfx:latest crossbario/crossbarfx:cpy-slim-arm32v7-${CROSSBARFX_VERSION}  --os linux --arch arm
+	docker manifest inspect \
+		crossbario/autobahn-python:${AUTOBAHN_VERSION}
 
-	docker manifest inspect crossbario/crossbarfx:latest
-
-	docker manifest push --purge crossbario/crossbarfx:latest
+	docker manifest push --purge \
+		crossbario/autobahn-python:${AUTOBAHN_VERSION}

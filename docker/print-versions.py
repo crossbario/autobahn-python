@@ -12,6 +12,7 @@ from twisted.python.reflect import qual
 
 import autobahn
 from autobahn import xbr
+
 from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull
@@ -189,3 +190,7 @@ print('    LMDB                   : {}'.format(res['lmdb_ver']))
 print('    zLMDB                  : {}'.format(res['zlmdb_ver']))
 print('    NumPy                  : {}'.format(res['numpy_ver']))
 print('.' * 80)
+
+if xbr.HAS_XBR:
+    from autobahn.xbr._cli import print_version
+    print_version()
