@@ -11,15 +11,15 @@ on:
     types:
       - completed
 
-# docker images are only built and published (to DockerHub) when merging
-# to master (not a yet unmerged PR!)
-if: github.ref == 'refs/heads/master'
-
 jobs:
 
   # runs on x86-64 (xeon-d) host: matterhorn
   image_amd64:
     runs-on: [self-hosted, linux, X64]
+
+    # docker images are only built and published (to DockerHub) when merging
+    # to master (not a yet unmerged PR!)
+    if: github.ref == 'refs/heads/master'
 
     env:
       DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
@@ -75,6 +75,10 @@ jobs:
   # runs on ARM64v8 (AWS Graviton) host: buildbox-arm64.crossbario.com
   image_arm64:
     runs-on: [self-hosted, linux, ARM64]
+
+    # docker images are only built and published (to DockerHub) when merging
+    # to master (not a yet unmerged PR!)
+    if: github.ref == 'refs/heads/master'
 
     env:
       DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
