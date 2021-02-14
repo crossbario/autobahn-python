@@ -3,6 +3,9 @@
 ## service types (aka "APIs")
 ##
 import abc
+from pprint import pformat
+
+from txaio.interfaces import ILogger
 from autobahn.wamp.types import PublishOptions, SubscribeOptions
 from autobahn.wamp.request import Publication
 from autobahn.wamp.interfaces import ISession
@@ -19,13 +22,15 @@ class {{ metadata.classname }}(object):
     __slots__ = [
         'log',
         '_x_api_id',
+        '_x_prefix',
         '_x_session',
         '_x_delegate',
     ]
 
-    def __init__(self, log=None):
+    def __init__(self, prefix: str, log: Optional[ILogger]=None):
         """
 
+        :param prefix: The URI prefix under which this API will be instantiated under on the realm joined.
         :param log: If provided, log to this logger, else create a new one internally.
         """
         if log:
@@ -33,54 +38,57 @@ class {{ metadata.classname }}(object):
         else:
             import txaio
             self.log = txaio.make_logger()
-        self._x_api_id = uuid.UUID('{{ metadata.attrs.uuid }}').bytes
+        self._x_api_id = uuid.UUID('{{ metadata.attrs.uuid }}')
+        self._x_prefix = prefix
         self._x_session = None
         self._x_delegate = None
 
-    def session(self) -> Optional[ISession]:
+    @property
+    def api(self) -> Optional[uuid.UUID]:
         """
         WAMP session this API is attached to.
         """
-        return self._x_session
+        return self._x_api_id
 
-    def delegate(self) -> Optional[IDelegate]:
-        """
-        XBR (buyer/seller) delegate this API is attached to.
-        """
-        return self._x_delegate
-
+    @property
     def prefix(self) -> Optional[str]:
         """
         WAMP URI prefix under which this API is instantiated.
         """
         return self._x_prefix
 
-    def is_attched(self) -> bool:
+    @property
+    def session(self) -> Optional[ISession]:
+        """
+        WAMP session this API is attached to.
+        """
+        return self._x_session
+
+    @property
+    def delegate(self) -> Optional[IDelegate]:
+        """
+        XBR (buyer/seller) delegate this API is attached to.
+        """
+        return self._x_delegate
+
+    @property
+    def is_attached(self) -> bool:
         """
         Flag indicating whether this API instance is currently attached to a session/delegate.
         """
-        if self._x_session is None and self._x_seller is None and self._x_prefix is None:
-            return False
-        elif self._x_session is not None and self._x_seller is not None and self._x_prefix is not None:
-            return True
-        else:
-            assert False, 'logic error - should not arrive here'
+        return self._x_session is not None and self._x_delegate is not None
 
-    async def attach(self, session: ISession, delegate: IDelegate, prefix: str):
+    async def attach(self, session, delegate):
         """
         Attach this API instance with the given session and delegate, and under the given WAMP URI prefix.
 
         :param session: WAMP session this API instance is attached to.
         :param delegate: XBR (buyer/seller) delegate used by this API instance.
-        :param prefix: WAMP URI prefix under which this API instance is attached to.
         """
-        assert self._x_session is None
-        assert self._x_seller is None
-        assert self._x_prefix is None
+        assert not self.is_attached
 
         self._x_session = session
         self._x_delegate = delegate
-        self._x_prefix = prefix
         {% for call_name in metadata.calls_by_id %}
         {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
 
@@ -96,7 +104,7 @@ class {{ metadata.classname }}(object):
                 self.receive_{{ call_name }}(obj)
 
         topic = '{}.{{ call_name }}'.format(self._x_prefix)
-        await self.subscribe(do_receive_{{ call_name }}, topic, options=SubscribeOptions(details=True))
+        await self._x_session.subscribe(do_receive_{{ call_name }}, topic, options=SubscribeOptions(details=True))
         {% endif %}
         {% endfor %}
 
@@ -104,14 +112,11 @@ class {{ metadata.classname }}(object):
         """
         Detach this API instance from the session and delegate.
         """
-        assert self._x_session is not None
-        assert self._x_delegate is not None
-        assert self._x_prefix is not None
+        assert self.is_attached
         if self._x_session.is_attached():
             await self._x_session.leave()
         self._x_session = None
         self._x_delegate = None
-        self._x_prefix = None
 
     {% for call_name in metadata.calls_by_id %}
     {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
@@ -120,7 +125,7 @@ class {{ metadata.classname }}(object):
         Publish - {{ metadata.calls[call_name].docs }}
         """
         assert self._x_session is not None and self._x_session.is_attached()
-        assert self._x_seller is not None
+        assert self._x_delegate is not None
 
         topic = '{}.{{ call_name }}'.format(self._x_prefix)
         payload = device.marshal()

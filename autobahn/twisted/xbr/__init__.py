@@ -44,7 +44,7 @@ if HAS_XBR:
     import uuid
 
     from autobahn.xbr._util import hl
-    from autobahn.xbr._interfaces import IProvider, ISeller, IConsumer, IBuyer
+    from autobahn.xbr._interfaces import IProvider, ISeller, IConsumer, IBuyer, IDelegate
     from autobahn.xbr import _seller, _buyer, _blockchain
 
     class SimpleBlockchain(_blockchain.SimpleBlockchain):
@@ -101,5 +101,7 @@ if HAS_XBR:
 
     ISeller.register(SimpleSeller)
     IProvider.register(SimpleSeller)
+    IDelegate.register(SimpleSeller)
     IBuyer.register(SimpleBuyer)
     IConsumer.register(SimpleBuyer)
+    IDelegate.register(SimpleBuyer)
