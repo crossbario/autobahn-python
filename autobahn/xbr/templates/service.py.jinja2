@@ -89,6 +89,7 @@ class {{ metadata.classname }}(object):
 
         self._x_session = session
         self._x_delegate = delegate
+        subscriptions = []
         {% for call_name in metadata.calls_by_id %}
         {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
 
@@ -104,9 +105,13 @@ class {{ metadata.classname }}(object):
                 self.receive_{{ call_name }}(obj)
 
         topic = '{}.{{ call_name }}'.format(self._x_prefix)
-        await self._x_session.subscribe(do_receive_{{ call_name }}, topic, options=SubscribeOptions(details=True))
+        sub = await self._x_session.subscribe(do_receive_{{ call_name }}, topic, options=SubscribeOptions(details=True))
+        subscriptions.append(sub)
         {% endif %}
         {% endfor %}
+
+        for sub in subscriptions:
+            self.log.info('Subscription {} created for "{}"'.format(sub.id, sub.topic))
 
     async def detach(self):
         """
