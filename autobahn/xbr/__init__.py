@@ -345,6 +345,7 @@ try:
         'IConsumer',
         'ISeller',
         'IBuyer',
+        'IDelegate',
 
         'FbsSchema',
         'FbsService',

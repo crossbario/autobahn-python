@@ -7,7 +7,7 @@
 {% if render_imports %}
 import uuid
 import pprint
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TypeVar
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
@@ -15,6 +15,10 @@ np = import_numpy()
 
 
 {% endif %}
+# https://stackoverflow.com/a/46064289/884770
+T_{{ metadata.classname }} = TypeVar('T_{{ metadata.classname }}', bound='{{ metadata.classname }}')
+
+
 class {{ metadata.classname }}(object):
     """
     {{ metadata.docs }}
@@ -122,7 +126,7 @@ class {{ metadata.classname }}(object):
     {% endfor %}
 
     @staticmethod
-    def parse(data: Dict) -> object:
+    def parse(data: Dict) -> T_{{ metadata.classname }}:
         """
         Parse generic, native language object into a typed, native language object.
 
@@ -198,7 +202,7 @@ class {{ metadata.classname }}(object):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
     @staticmethod
-    def cast(buf: bytes, offset: int=0) -> object:
+    def cast(buf: bytes, offset: int=0) -> T_{{ metadata.classname }}:
         """
         Cast a FlatBuffers raw input buffer as a typed object of this class.
 

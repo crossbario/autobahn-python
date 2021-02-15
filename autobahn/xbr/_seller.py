@@ -71,7 +71,7 @@ class KeySeries(object):
         :type on_rotate: callable
         """
         assert type(api_id) == bytes and len(api_id) == 16
-        assert type(price) == int and price > 0
+        assert type(price) == int and price >= 0
         assert interval is None or (type(interval) == int and interval > 0)
         assert count is None or (type(count) == int and count > 0)
         assert (interval is None and count is not None) or (interval is not None and count is None)
@@ -292,7 +292,7 @@ class SimpleSeller(object):
         :type count: int
         """
         assert type(api_id) == bytes and len(api_id) == 16 and api_id not in self._keys
-        assert type(price) == int and price > 0
+        assert type(price) == int and price >= 0
         assert interval is None or (type(interval) == int and interval > 0)
         assert count is None or (type(count) == int and count > 0)
         assert (interval is None and count is not None) or (interval is not None and count is None)
