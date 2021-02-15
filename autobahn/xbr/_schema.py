@@ -478,6 +478,21 @@ class FbsObject(object):
         self._attrs = attrs
         self._docs = docs
 
+    def map(self, language: str) -> str:
+        if language == 'python':
+            klass = self._name.split('.')[-1]
+            return klass
+        else:
+            raise NotImplementedError()
+
+    def map_import(self, language: str) -> str:
+        if language == 'python':
+            base = self._name.split('.')[-2]
+            klass = self._name.split('.')[-1]
+            return 'from {} import {}'.format(base, klass)
+        else:
+            raise NotImplementedError()
+
     @property
     def name(self):
         return self._name

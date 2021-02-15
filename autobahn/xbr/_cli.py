@@ -1036,15 +1036,15 @@ def _main():
                 if is_first_by_category:
                     is_first_by_category_modules[(modulename, category)] = True
 
-                # render object type template into python code section
+                # render template into python code section
                 if args.language == 'python':
                     # render obj|enum|service.py.jinja2 template
                     tmpl = env.get_template('{}.py.jinja2'.format(category))
-                    code = tmpl.render(metadata=metadata, FbsType=FbsType, render_imports=is_first, is_first_by_category=is_first_by_category)
+                    code = tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType, render_imports=is_first, is_first_by_category=is_first_by_category)
 
                     # render test_obj|enum|service.py.jinja2 template
                     test_tmpl = env.get_template('test_{}.py.jinja2'.format(category))
-                    test_code = test_tmpl.render(metadata=metadata, FbsType=FbsType, render_imports=is_first, is_first_by_category=is_first_by_category)
+                    test_code = test_tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType, render_imports=is_first, is_first_by_category=is_first_by_category)
                 elif args.language == 'json':
                     code = json.dumps(metadata.marshal(),
                                       separators=(', ', ': '),
@@ -1086,7 +1086,7 @@ def _main():
                             _modulename = '.'.join(code_file_dir[:i + 1])[1:]
                             with open(fn, 'wb') as f:
                                 tmpl = env.get_template('module.py.jinja2')
-                                init_code = tmpl.render(modulename=_modulename)
+                                init_code = tmpl.render(repo=repo, modulename=_modulename)
                                 f.write(init_code.encode('utf8'))
                             initialized.add(fn)
 

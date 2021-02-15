@@ -6,7 +6,7 @@ import abc
 from pprint import pformat
 
 from txaio.interfaces import ILogger
-from autobahn.wamp.types import PublishOptions, SubscribeOptions
+from autobahn.wamp.types import PublishOptions, SubscribeOptions, EventDetails
 from autobahn.wamp.request import Publication
 from autobahn.wamp.interfaces import ISession
 from autobahn.xbr import IDelegate
@@ -97,7 +97,7 @@ class {{ metadata.classname }}(object):
             print('Received event {}, encrypted with key_id={}'.format(details.publication, uuid.UUID(bytes=key_id)))
             try:
                 payload = await self._x_delegate.unwrap(key_id, enc_ser, ciphertext)
-                obj = HomeDevice.parse(payload)
+                obj = {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}.parse(payload)
             except:
                 self.log.failure()
             else:
@@ -125,21 +125,19 @@ class {{ metadata.classname }}(object):
 
     {% for call_name in metadata.calls_by_id %}
     {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
-    async def publish_{{ call_name }}(self, device: HomeDevice) -> Publication:
+    async def publish_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, options: Optional[PublishOptions] = None) -> Publication:
         """
         Publish - {{ metadata.calls[call_name].docs }}
         """
-        assert self._x_session is not None and self._x_session.is_attached()
-        assert self._x_delegate is not None
+        assert self.is_attached
 
         topic = '{}.{{ call_name }}'.format(self._x_prefix)
-        payload = device.marshal()
+        payload = evt.marshal()
         key_id, enc_ser, ciphertext = await self._x_delegate.wrap(self._x_api_id, topic, payload)
-        pub = await self._x_session.publish(topic, key_id, enc_ser, ciphertext,
-                                            options=PublishOptions(acknowledge=True))
+        pub = await self._x_session.publish(topic, key_id, enc_ser, ciphertext, options=options)
         return pub
 
-    def receive_{{ call_name }}(self, device: HomeDevice):
+    def receive_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, details: Optional[EventDetails] = None):
         """
         Receive - {{ metadata.calls[call_name].docs }}
         """
