@@ -106,7 +106,7 @@ if HAS_CRYPTOSIGN_SSHAGENT:
 
                 for blob, comment in keys:
                     raw = _unpack(blob)
-                    algo = raw[0]
+                    algo = raw[0].decode('utf8')
                     if algo == 'ssh-ed25519':
                         algo, _pubkey = raw
                         if _pubkey == pubkey:
@@ -139,7 +139,7 @@ if HAS_CRYPTOSIGN_SSHAGENT:
                 # we are now connected to the locally running ssh-agent
                 # that agent might be the openssh-agent, or eg on Ubuntu 14.04 by
                 # default the gnome-keyring / ssh-askpass-gnome application
-                blob = _pack(['ssh-ed25519', self.public_key(binary=True)])
+                blob = _pack(['ssh-ed25519'.encode(), self.public_key(binary=True)])
 
                 # now ask the agent
                 signature_blob = yield agent.signData(blob, challenge)
