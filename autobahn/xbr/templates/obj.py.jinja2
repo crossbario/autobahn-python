@@ -202,7 +202,7 @@ class {{ metadata.classname }}(object):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
     @staticmethod
-    def cast(buf: bytes, offset: int=0) -> T_{{ metadata.classname }}:
+    def cast(buf: bytes, offset: int = 0) -> T_{{ metadata.classname }}:
         """
         Cast a FlatBuffers raw input buffer as a typed object of this class.
 

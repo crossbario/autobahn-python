@@ -204,7 +204,8 @@ class FbsType(object):
                 # .. whereas all other vectors are mapped to lists of the same element type
                 else:
                     _mapped_type = 'List[{}]'.format(FbsType.FBS2PY[self.element])
-            elif self.basetype in FbsType.SCALAR_TYPES:
+            # FIXME: follow up processing of Unions (UType/Union)
+            elif self.basetype in FbsType.SCALAR_TYPES + [FbsType.UType, FbsType.Union]:
                 if self.basetype == FbsType.ULong and attrs and 'timestamp' in attrs:
                     _mapped_type = 'np.datetime64'
                 else:
