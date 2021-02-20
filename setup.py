@@ -44,16 +44,16 @@ with open('README.rst') as f:
 # Twisted dependencies (be careful bumping these minimal versions,
 # as we make claim to support older Twisted!)
 extras_require_twisted = [
-    "zope.interface>=3.6.0",        # Zope Public License
+    "zope.interface>=5.2.0",        # Zope Public License
     "twisted>=20.3.0",              # MIT license (https://pypi.org/project/Twisted/20.3.0/)
-    "attrs>=19.2.0"                 # MIT license (https://pypi.org/project/attrs/19.2.0/)
+    "attrs>=20.3.0"                 # MIT license (https://pypi.org/project/attrs/19.2.0/)
 ]
 
 # C-based WebSocket acceleration (only use on CPython, not PyPy!)
 if CPY and sys.platform != 'win32':
     # wsaccel does not provide wheels: https://github.com/methane/wsaccel/issues/12
     extras_require_accelerate = [
-        "wsaccel>=0.6.2"            # Apache 2.0
+        "wsaccel>=0.6.3"            # Apache 2.0
     ]
 else:
     extras_require_accelerate = []
@@ -61,15 +61,15 @@ else:
 # non-standard WebSocket compression support (FIXME: consider removing altogether)
 # Ubuntu: sudo apt-get install libsnappy-dev
 extras_require_compress = [
-    "python-snappy>=0.5",       # BSD license
+    "python-snappy>=0.6.0",         # BSD license
 ]
 
 # accelerated JSON and non-JSON WAMP serialization support (namely MessagePack, CBOR and UBJSON)
 extras_require_serialization = []
 if CPY:
     extras_require_serialization.extend([
-        'msgpack>=0.6.1',       # Apache 2.0 license
-        'ujson>=1.35',          # BSD license
+        'msgpack>=1.0.2',           # Apache 2.0 license
+        'ujson>=4.0.2',             # BSD license
     ])
 else:
     os.environ['PYUBJSON_NO_EXTENSION'] = '1'  # enforce use of pure Python py-ubjson (no Cython)
@@ -78,10 +78,10 @@ else:
     ])
 
 extras_require_serialization.extend([
-    'cbor2>=5.0.1',             # MIT license
+    'cbor2>=5.2.0',             # MIT license
     'cbor>=1.0.0',              # Apache 2.0 license
-    'py-ubjson>=0.8.4',         # Apache 2.0 license
-    'flatbuffers>=1.10',        # Apache 2.0 license
+    'py-ubjson>=0.16.1',        # Apache 2.0 license
+    'flatbuffers>=1.12',        # Apache 2.0 license
 ])
 
 # TLS transport encryption
@@ -89,23 +89,23 @@ extras_require_serialization.extend([
 # WAMP-cryptosign authentication
 os.environ['SODIUM_INSTALL'] = 'bundled'  # enforce use of bundled libsodium
 extras_require_encryption = [
-    'pyopenssl>=16.2.0',            # Apache 2.0 license
+    'pyopenssl>=20.0.1',            # Apache 2.0 license
     'service_identity>=18.1.0',     # MIT license
-    'pynacl>=1.0.1',                # Apache license
-    'pytrie>=0.2',                  # BSD license
-    'pyqrcode>=1.1'                 # BSD license
+    'pynacl>=1.4.0',                # Apache license
+    'pytrie>=0.4.0',                # BSD license
+    'pyqrcode>=1.2.1'               # BSD license
 ]
 
 # Support for WAMP-SCRAM authentication
 extras_require_scram = [
-    'cffi>=1.11.5',             # MIT license
-    'argon2_cffi>=18.1.0',      # MIT license
-    'passlib>=1.7.1',           # BSD license
+    'cffi>=1.14.5',             # MIT license
+    'argon2_cffi>=20.1.0',      # MIT license
+    'passlib>=1.7.4',           # BSD license
 ]
 
 # Support native vector (SIMD) acceleration included with Autobahn
 extras_require_nvx = [
-    'cffi>=1.11.5',             # MIT license
+    'cffi>=1.14.5',             # MIT license
 ]
 
 # cffi based extension modules to build, currently only NVX
@@ -120,27 +120,25 @@ if 'AUTOBAHN_USE_NVX' in os.environ:
 
 extras_require_xbr = [
     # XBR contracts and ABI file bundle
-    'xbr>=20.1.1',              # Apache 2.0
+    'xbr>=21.2.1',              # Apache 2.0
 
-    'cbor2>=5.1.0',             # MIT license
-    'zlmdb>=20.4.1',            # MIT license
+    'cbor2>=5.2.0',             # MIT license
+    'zlmdb>=21.2.1',            # MIT license
     'twisted>=20.3.0',          # MIT license
-    'web3>=4.8.1',              # MIT license
-    'jinja2>=2.11.2',           # BSD license
+    'web3>=5.16.0',             # MIT license
+    'jinja2>=2.11.3',           # BSD license
 
     # the following is needed for EIP712 ("signed typed data"):
     'rlp>=2.0.1',               # MIT license
     'py-eth-sig-utils>=0.4.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
-    'py-ecc>=1.7.1',            # MIT license (https://github.com/ethereum/py_ecc)
-    'eth-abi>=1.3.0',           # MIT license (https://github.com/ethereum/eth-abi)
+    'py-ecc>=5.1.0',            # MIT license (https://github.com/ethereum/py_ecc)
+    'eth-abi>=2.1.1',           # MIT license (https://github.com/ethereum/eth-abi)
 
     # the following is needed (at least) for BIP32/39 mnemonic processing
-    'mnemonic>=0.13',           # MIT license (https://github.com/trezor/python-mnemonic)
-
-    # py-multihash 0.2.3 has requirement base58<2.0,>=1.0.2 (https://github.com/crossbario/crossbarfx/issues/469)
-    'base58<2.0,>=1.0.2',       # MIT license (https://github.com/keis/base58)
-    'ecdsa>=0.13',              # MIT license (https://github.com/warner/python-ecdsa)
-    'py-multihash>=0.2.3',      # MIT license (https://github.com/multiformats/py-multihash / https://pypi.org/project/py-multihash/)
+    'mnemonic>=0.19',           # MIT license (https://github.com/trezor/python-mnemonic)
+    'base58>=2.1.0',            # MIT license (https://github.com/keis/base58)
+    'ecdsa>=0.16.1',            # MIT license (https://github.com/warner/python-ecdsa)
+    'py-multihash>=2.0.1',      # MIT license (https://github.com/multiformats/py-multihash / https://pypi.org/project/py-multihash/)
 ]
 
 # everything
@@ -254,9 +252,9 @@ setup(
     url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
-        'txaio>=20.4.1',        # MIT license (https://github.com/crossbario/txaio)
-        'cryptography>=2.9.2',  # BSD *or* Apache license (https://github.com/pyca/cryptography)
-        'hyperlink>=20.0.1',    # MIT license (https://github.com/python-hyper/hyperlink)
+        'txaio>=21.2.1',        # MIT license (https://github.com/crossbario/txaio)
+        'cryptography>=3.4.6',  # BSD *or* Apache license (https://github.com/pyca/cryptography)
+        'hyperlink>=21.0.0',    # MIT license (https://github.com/python-hyper/hyperlink)
     ],
     extras_require={
         'all': extras_require_all,
@@ -286,7 +284,7 @@ setup(
 
     zip_safe=False,
 
-    python_requires='>=3.6',
+    python_requires='>=3.7',
 
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=["License :: OSI Approved :: MIT License",
@@ -297,7 +295,6 @@ setup(
                  "Operating System :: OS Independent",
                  "Programming Language :: Python",
                  "Programming Language :: Python :: 3",
-                 "Programming Language :: Python :: 3.6",
                  "Programming Language :: Python :: 3.7",
                  "Programming Language :: Python :: 3.8",
                  "Programming Language :: Python :: 3.9",

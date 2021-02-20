@@ -27,10 +27,10 @@ jobs:
         sudo apt update
         sudo apt install libenchant-dev libbz2-dev libsnappy-dev libunwind-dev
 
-    - name: Set up Python 3.8
+    - name: Set up Python 3.x
       uses: actions/setup-python@v2
       with:
-        python-version: '3.8'
+        python-version: '3.x'
         architecture: 'x64'
 
     - name: Install Python package dependencies
@@ -61,9 +61,7 @@ jobs:
         # os: [ubuntu-20.04, macos-latest, windows-latest]
 
         # https://github.com/actions/setup-python#specifying-a-pypy-version
-        # python-version: ['3.6', '3.7', '3.8', '3.9', 'pypy-3.6', 'pypy-3.7']
-        # framework: ['asyncio', 'tw189', 'tw1910', 'tw203', 'twtrunk']
-        python-version: ['3.6', '3.9', 'pypy-3.7']
+        python-version: ['3.7', '3.9', 'pypy-3.7']
         framework: ['asyncio', 'tw203', 'twtrunk']
 
     # https://github.blog/changelog/2020-04-15-github-actions-new-workflow-features/
@@ -120,10 +118,10 @@ jobs:
         sudo apt update
         sudo apt install libenchant-dev libbz2-dev libsnappy-dev libunwind-dev
 
-    - name: Set up Python 3.8
+    - name: Set up Python 3.x
       uses: actions/setup-python@v2
       with:
-        python-version: '3.8'
+        python-version: '3.x'
         architecture: 'x64'
 
     - name: Install Python package dependencies

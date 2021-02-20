@@ -30,7 +30,9 @@ You can use **Autobahn\|Python** to create clients and servers in Python speakin
 
 .. note::
 
-    **Autobahn\|Python** up to version v19.11.2 also supported Python 2 and 3.4+.
+    **Autobahn\|Python** up to version v19.11.2 supported Python 2 and 3.4+,
+    and up to version v20.7.1 supported Python 3.5+,
+    and up to version v21.2.1 supported Python 3.6+.
 
 Features
 --------
