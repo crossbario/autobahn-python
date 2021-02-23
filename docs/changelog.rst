@@ -5,12 +5,15 @@
 Changelog
 =========
 
-master
+21.2.2
 ------
 
+* new: minimum supported Python (language) version is now 3.7 (on CPython and PyPy)
+* new: more XBR proxy/stub code generation capabilities
+* fix: wamp-cryptosign loading of keys from SSH agent
 * fix: update Docker image building and build Docker multi-arch images
 * new: add more WAMP-cryptosign signature test vectors and unit tests
-* fix: include xbr code rendering templates in package manifest
+* fix: include XBR code rendering templates in package manifest
 
 21.2.1
 ------
