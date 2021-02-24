@@ -3,14 +3,21 @@
 ## service types (aka "APIs")
 ##
 import abc
+from uuid import UUID
+from typing import List
 from pprint import pformat
 
 from txaio.interfaces import ILogger
+
 import autobahn
-from autobahn.wamp.types import PublishOptions, SubscribeOptions, EventDetails
+from autobahn.wamp.types import PublishOptions, SubscribeOptions, EventDetails, CallOptions, CallDetails
 from autobahn.wamp.request import Publication
 from autobahn.wamp.interfaces import ISession
 from autobahn.xbr import IDelegate
+
+Oid = UUID
+Oids = List[UUID]
+Void = type(None)
 
 
 {% endif %}
@@ -58,29 +65,84 @@ class {{ metadata.classname }}(object):
         """
         return self._x_prefix
 
+    # WAMP PubSub part of the API:
+
     {% for call_name in metadata.calls_by_id %}
     {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
     async def publish_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, options: Optional[PublishOptions] = None) -> autobahn.wamp.request.Publication:
         """
-        As an interface *provider*, publish an event: {{ metadata.calls[call_name].docs }}
+        As an **interface provider**, publish event:
+
+        {{ metadata.calls[call_name].docs }}
 
         :param evt: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
         """
         assert self.is_attached
 
         topic = '{}.{{ call_name }}'.format(self._x_prefix)
-        payload = evt.marshal()
-        key_id, enc_ser, ciphertext = await self._x_delegate.wrap(self._x_api_id, topic, payload)
-        pub = await self._x_session.publish(topic, key_id, enc_ser, ciphertext, options=options)
+        if self._x_delegate:
+            payload = evt.marshal()
+            key_id, enc_ser, ciphertext = await self._x_delegate.wrap(self._x_api_id, topic, payload)
+            if options.acknowledge:
+                pub = await self._x_session.publish(topic, key_id, enc_ser, ciphertext, options=options)
+            else:
+                self._x_session.publish(topic, key_id, enc_ser, ciphertext, options=options)
+                pub = None
+        else:
+            if options.acknowledge:
+                pub = await self._x_session.publish(topic, evt, options=options)
+            else:
+                self._x_session.publish(topic, evt, options=options)
+                pub = None
         return pub
 
     def receive_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, details: Optional[EventDetails] = None):
         """
-        As an interface *consumer*, receive an event: {{ metadata.calls[call_name].docs }}
+        As an **interface consumer**, receive event:
+
+        {{ metadata.calls[call_name].docs }}
 
         :param evt: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
         """
         raise NotImplementedError('event handler for "{{ call_name }}" not implemented')
+
+    {% endif %}
+    {% endfor %}
+
+    # WAMP RPC part of the API:
+
+    {% for call_name in metadata.calls_by_id %}
+    {% if metadata.calls[call_name].attrs['type'] == 'procedure' %}
+    async def call_{{ call_name }}(self, req: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, options: Optional[CallOptions] = None) -> {{ repo.objs[metadata.calls[call_name].response.name].map('python') }}:
+        """
+        As an **interface consumer**, call procedure:
+
+        {{ metadata.calls[call_name].docs }}
+
+        :param req: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
+        :returns: {{ repo.objs[metadata.calls[call_name].response.name].docs }}
+        """
+        assert self.is_attached
+
+        procedure = '{}.{{ call_name }}'.format(self._x_prefix)
+        if self._x_delegate:
+            payload = req.marshal()
+            key_id, enc_ser, ciphertext = await self._x_delegate.wrap(self._x_api_id, procedure, payload)
+            result = await self._x_session.call(procedure, key_id, enc_ser, ciphertext, options=options)
+        else:
+            result = await self._x_session.call(procedure, req, options=options)
+        return result
+
+    def invoke_{{ call_name }}(self, req: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, details: Optional[CallDetails] = None) -> {{ repo.objs[metadata.calls[call_name].response.name].map('python') }}:
+        """
+        As an **interface provider**, process call invocation:
+
+        {{ metadata.calls[call_name].docs }}
+
+        :param req: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
+        :returns: {{ repo.objs[metadata.calls[call_name].response.name].docs }}
+        """
+        raise NotImplementedError('call invocation handler for "{{ call_name }}" not implemented')
 
     {% endif %}
     {% endfor %}
