@@ -445,7 +445,7 @@ class _ApplicationSession(ApplicationSession):
     @inlineCallbacks
     def onConnect(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
+        Implements :meth:`autobahn.wamp.interfaces.ISession.onConnect`
         """
         yield self.app._fire_signal('onconnect')
         self.join(self.config.realm)
@@ -453,7 +453,7 @@ class _ApplicationSession(ApplicationSession):
     @inlineCallbacks
     def onJoin(self, details):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
+        Implements :meth:`autobahn.wamp.interfaces.ISession.onJoin`
         """
         for uri, proc in self.app._procs:
             yield self.register(proc, uri)
@@ -466,7 +466,7 @@ class _ApplicationSession(ApplicationSession):
     @inlineCallbacks
     def onLeave(self, details):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
+        Implements :meth:`autobahn.wamp.interfaces.ISession.onLeave`
         """
         yield self.app._fire_signal('onleave')
         self.disconnect()
@@ -474,7 +474,7 @@ class _ApplicationSession(ApplicationSession):
     @inlineCallbacks
     def onDisconnect(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
+        Implements :meth:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
         yield self.app._fire_signal('ondisconnect')
 

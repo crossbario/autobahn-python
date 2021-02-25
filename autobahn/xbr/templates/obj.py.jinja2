@@ -9,6 +9,8 @@ import uuid
 import pprint
 from typing import Dict, List, Optional, TypeVar
 
+from autobahn.wamp.request import Publication, Subscription, Registration
+
 import flatbuffers
 from flatbuffers.compat import import_numpy
 np = import_numpy()
@@ -130,7 +132,7 @@ class {{ metadata.classname }}(object):
         """
         Parse generic, native language object into a typed, native language object.
 
-        :param data: Generic native language object to parse, eg output of ``cbor2.loads``.
+        :param data: Generic native language object to parse, e.g. output of ``cbor2.loads``.
 
         :returns: Typed object of this class.
         """
@@ -176,7 +178,7 @@ class {{ metadata.classname }}(object):
         """
         Marshal all data contained in this typed native object into a generic object.
 
-        :returns: Generic object that can be serialized to bytes using eg ``cbor2.dumps``.
+        :returns: Generic object that can be serialized to bytes using e.g. ``cbor2.dumps``.
         """
         obj = {
             {% for field_name in metadata.fields_by_id %}
@@ -195,7 +197,7 @@ class {{ metadata.classname }}(object):
 
     def __str__(self) -> str:
         """
-        Return string representation of this object, suitable for eg logging.
+        Return string representation of this object, suitable for e.g. logging.
 
         :returns: String representation of this object.
         """

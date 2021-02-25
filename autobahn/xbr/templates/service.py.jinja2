@@ -3,13 +3,21 @@
 ## service types (aka "APIs")
 ##
 import abc
+from uuid import UUID
+from typing import List
 from pprint import pformat
 
 from txaio.interfaces import ILogger
-from autobahn.wamp.types import PublishOptions, SubscribeOptions, EventDetails
-from autobahn.wamp.request import Publication
+
+import autobahn
+from autobahn.wamp.types import PublishOptions, SubscribeOptions, EventDetails, CallOptions, CallDetails, RegisterOptions
+from autobahn.wamp.request import Publication, Subscription, Registration
 from autobahn.wamp.interfaces import ISession
 from autobahn.xbr import IDelegate
+
+Oid = UUID
+Oids = List[UUID]
+Void = type(None)
 
 
 {% endif %}
@@ -17,7 +25,7 @@ class {{ metadata.classname }}(object):
     """
     {{ metadata.docs }}
 
-    @interface: "{{ metadata.attrs.uuid }}"
+    Interface UUID: ``{{ metadata.attrs.uuid }}``
     """
     __slots__ = [
         'log',
@@ -25,6 +33,8 @@ class {{ metadata.classname }}(object):
         '_x_prefix',
         '_x_session',
         '_x_delegate',
+        '_x_regs',
+        '_x_subs',
     ]
 
     def __init__(self, prefix: str, log: Optional[ILogger]=None):
@@ -42,20 +52,105 @@ class {{ metadata.classname }}(object):
         self._x_prefix = prefix
         self._x_session = None
         self._x_delegate = None
+        self._x_regs = None
+        self._x_subs = None
 
     @property
-    def api(self) -> Optional[uuid.UUID]:
+    def api(self) -> uuid.UUID:
         """
-        WAMP session this API is attached to.
+        Interface UUID of this API (``{{ metadata.attrs.uuid }}``).
         """
         return self._x_api_id
 
     @property
-    def prefix(self) -> Optional[str]:
+    def prefix(self) -> str:
         """
         WAMP URI prefix under which this API is instantiated.
         """
         return self._x_prefix
+
+    # WAMP PubSub part of the API:
+
+    {% for call_name in metadata.calls_by_id %}
+    {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
+    async def publish_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, options: Optional[PublishOptions] = None) -> Optional[Publication]:
+        """
+        As an **interface provider**, publish event:
+
+        {{ metadata.calls[call_name].docs }}
+
+        :param evt: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
+        :returns: When doing an acknowledged publish, the WAMP publication is returned.
+        """
+        assert self.is_attached
+
+        topic = '{}.{{ call_name }}'.format(self._x_prefix)
+        if self._x_delegate:
+            payload = evt.marshal()
+            key_id, enc_ser, ciphertext = await self._x_delegate.wrap(self._x_api_id, topic, payload)
+            if options.acknowledge:
+                pub = await self._x_session.publish(topic, key_id, enc_ser, ciphertext, options=options)
+            else:
+                self._x_session.publish(topic, key_id, enc_ser, ciphertext, options=options)
+                pub = None
+        else:
+            if options.acknowledge:
+                pub = await self._x_session.publish(topic, evt, options=options)
+            else:
+                self._x_session.publish(topic, evt, options=options)
+                pub = None
+        return pub
+
+    def receive_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, details: Optional[EventDetails] = None):
+        """
+        As an **interface consumer**, receive event:
+
+        {{ metadata.calls[call_name].docs }}
+
+        :param evt: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
+        """
+        raise NotImplementedError('event handler for "{{ call_name }}" not implemented')
+
+    {% endif %}
+    {% endfor %}
+
+    # WAMP RPC part of the API:
+
+    {% for call_name in metadata.calls_by_id %}
+    {% if metadata.calls[call_name].attrs['type'] == 'procedure' %}
+    async def call_{{ call_name }}(self, req: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, options: Optional[CallOptions] = None) -> {{ repo.objs[metadata.calls[call_name].response.name].map('python') }}:
+        """
+        As an **interface consumer**, call procedure:
+
+        {{ metadata.calls[call_name].docs }}
+
+        :param req: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
+        :returns: {{ repo.objs[metadata.calls[call_name].response.name].docs }}
+        """
+        assert self.is_attached
+
+        procedure = '{}.{{ call_name }}'.format(self._x_prefix)
+        if self._x_delegate:
+            payload = req.marshal()
+            key_id, enc_ser, ciphertext = await self._x_delegate.wrap(self._x_api_id, procedure, payload)
+            result = await self._x_session.call(procedure, key_id, enc_ser, ciphertext, options=options)
+        else:
+            result = await self._x_session.call(procedure, req, options=options)
+        return result
+
+    def invoke_{{ call_name }}(self, req: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, details: Optional[CallDetails] = None) -> {{ repo.objs[metadata.calls[call_name].response.name].map('python') }}:
+        """
+        As an **interface provider**, process call invocation:
+
+        {{ metadata.calls[call_name].docs }}
+
+        :param req: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
+        :returns: {{ repo.objs[metadata.calls[call_name].response.name].docs }}
+        """
+        raise NotImplementedError('call invocation handler for "{{ call_name }}" not implemented')
+
+    {% endif %}
+    {% endfor %}
 
     @property
     def session(self) -> Optional[ISession]:
@@ -71,38 +166,36 @@ class {{ metadata.classname }}(object):
         """
         return self._x_delegate
 
-    @property
-    def is_attached(self) -> bool:
-        """
-        Flag indicating whether this API instance is currently attached to a session/delegate.
-        """
-        return self._x_session is not None and self._x_delegate is not None
-
-    async def attach(self, session, delegate):
+    async def attach(self, session: ISession, delegate: Optional[IDelegate]):
         """
         Attach this API instance with the given session and delegate, and under the given WAMP URI prefix.
 
         :param session: WAMP session this API instance is attached to.
-        :param delegate: XBR (buyer/seller) delegate used by this API instance.
+        :param delegate: If using end-to-end data encryption, XBR ("buyer/seller") delegate used by this API instance.
         """
-        assert not self.is_attached
+        assert self._x_session is None and session.is_attached()
 
         self._x_session = session
         self._x_delegate = delegate
+
+        # WAMP PubSub part of the API:
+
         subscriptions = []
         {% for call_name in metadata.calls_by_id %}
         {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
-
-        async def do_receive_{{ call_name }}(key_id, enc_ser, ciphertext, details=None):
-            print('Received event {}, encrypted with key_id={}'.format(details.publication, uuid.UUID(bytes=key_id)))
-            try:
-                payload = await self._x_delegate.unwrap(key_id, enc_ser, ciphertext)
-                obj = {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}.parse(payload)
-            except:
-                self.log.failure()
-            else:
-                print('Unencrypted event payload: {}'.format(pformat(obj)))
-                self.receive_{{ call_name }}(obj)
+        if self._x_delegate:
+            async def do_receive_{{ call_name }}(key_id, enc_ser, ciphertext, details=None):
+                try:
+                    payload = await self._x_delegate.unwrap(key_id, enc_ser, ciphertext)
+                    obj = {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}.parse(payload)
+                except:
+                    self.log.failure()
+                else:
+                    self.receive_{{ call_name }}(obj, details=details)
+        else:
+            def do_receive_{{ call_name }}(evt, details=None):
+                obj = {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}.parse(evt)
+                self.receive_{{ call_name }}(obj, details=details)
 
         topic = '{}.{{ call_name }}'.format(self._x_prefix)
         sub = await self._x_session.subscribe(do_receive_{{ call_name }}, topic, options=SubscribeOptions(details=True))
@@ -112,36 +205,51 @@ class {{ metadata.classname }}(object):
 
         for sub in subscriptions:
             self.log.info('Subscription {} created for "{}"'.format(sub.id, sub.topic))
+        self._x_subs = subscriptions
 
-    async def detach(self):
+        # WAMP RPC part of the API:
+
+        registrations = []
+        {% for call_name in metadata.calls_by_id %}
+        {% if metadata.calls[call_name].attrs['type'] == 'procedure' %}
+        if self._x_delegate:
+            async def do_invoke_{{ call_name }}(key_id, enc_ser, ciphertext, details=None):
+                try:
+                    payload = await self._x_delegate.unwrap(key_id, enc_ser, ciphertext)
+                    obj = {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}.parse(payload)
+                except:
+                    self.log.failure()
+                else:
+                    self.invoke_{{ call_name }}(obj, details=details)
+        else:
+            def do_invoke_{{ call_name }}(req, details=None):
+                obj = {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}.parse(req)
+                self.invoke_{{ call_name }}(obj, details=details)
+
+        procedure = '{}.{{ call_name }}'.format(self._x_prefix)
+        reg = await self._x_session.register(do_invoke_{{ call_name }}, procedure, options=RegisterOptions(details=True))
+        registrations.append(reg)
+        {% endif %}
+        {% endfor %}
+
+        for reg in registrations:
+            self.log.info('Registration {} created for "{}"'.format(reg.id, reg.procedure))
+        self._x_regs = registrations
+
+    def detach(self):
         """
         Detach this API instance from the session and delegate.
         """
-        assert self.is_attached
+        assert self._x_session is not None
+
+        dl = []
         if self._x_session.is_attached():
-            await self._x_session.leave()
+            for reg in self._x_regs:
+                dl.append(reg.unregister())
+            for sub in self._x_subs:
+                dl.append(sub.unsubscribe())
+
         self._x_session = None
         self._x_delegate = None
 
-    {% for call_name in metadata.calls_by_id %}
-    {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
-    async def publish_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, options: Optional[PublishOptions] = None) -> Publication:
-        """
-        Publish - {{ metadata.calls[call_name].docs }}
-        """
-        assert self.is_attached
-
-        topic = '{}.{{ call_name }}'.format(self._x_prefix)
-        payload = evt.marshal()
-        key_id, enc_ser, ciphertext = await self._x_delegate.wrap(self._x_api_id, topic, payload)
-        pub = await self._x_session.publish(topic, key_id, enc_ser, ciphertext, options=options)
-        return pub
-
-    def receive_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, details: Optional[EventDetails] = None):
-        """
-        Receive - {{ metadata.calls[call_name].docs }}
-        """
-        raise NotImplementedError('event handler for "{{ call_name }}" not implemented')
-
-    {% endif %}
-    {% endfor %}
+        return txaio.gather(dl, consume_exceptions=True)
