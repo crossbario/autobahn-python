@@ -103,6 +103,14 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
 
+autoapi_type = 'python'
+autoapi_dirs = ['../autobahn']
+autoapi_add_toctree_entry = False
+autoapi_options = ['members', 'undoc-members', 'private-members', 'show-inheritance', 'special-members', 'show-module-summary']
+# autoapi_template_dir = 'docs/autoapi/templates'
+autoapi_python_use_implicit_namespaces = True
+
+
 # Check if we are building on readthedocs
 RTD_BUILD = os.environ.get('READTHEDOCS', None) == 'True'
 
@@ -110,18 +118,21 @@ RTD_BUILD = os.environ.get('READTHEDOCS', None) == 'True'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    # https://sphinx-autoapi.readthedocs.io
+    'autoapi.extension',
+
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.todo',
+    'sphinx.ext.doctest',
 
     # Usage:            .. thumbnail:: picture.png
     # Installation:     pip install sphinxcontrib-images
     # Source:           https://github.com/sphinx-contrib/images
     'sphinxcontrib.images',
 
-    'sphinx.ext.ifconfig',
-    'sphinx.ext.todo',
-    'sphinx.ext.doctest',
     #'sphinxcontrib.spelling',
     'txsphinx'
 ]

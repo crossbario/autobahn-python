@@ -68,6 +68,9 @@ publish: clean
 	python setup.py sdist bdist_wheel --universal
 	twine upload dist/*
 
+clean_docs:
+	-rm -rf ./docs/build
+
 docs:
 	cd docs && make html
 

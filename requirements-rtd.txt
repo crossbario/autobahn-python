@@ -2,3 +2,4 @@
 txaio
 twisted
 sphinxcontrib-images
+sphinx-autoapi
