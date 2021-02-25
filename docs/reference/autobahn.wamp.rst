@@ -14,6 +14,9 @@ WAMP Types
 .. automodule:: autobahn.wamp.types
     :members:
 
+.. automodule:: autobahn.wamp.request
+    :members:
+
 
 WAMP Exceptions
 ---------------

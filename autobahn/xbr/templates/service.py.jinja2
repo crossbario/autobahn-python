@@ -11,7 +11,7 @@ from txaio.interfaces import ILogger
 
 import autobahn
 from autobahn.wamp.types import PublishOptions, SubscribeOptions, EventDetails, CallOptions, CallDetails, RegisterOptions
-from autobahn.wamp.request import Publication
+from autobahn.wamp.request import Publication, Subscription, Registration
 from autobahn.wamp.interfaces import ISession
 from autobahn.xbr import IDelegate
 
@@ -73,13 +73,14 @@ class {{ metadata.classname }}(object):
 
     {% for call_name in metadata.calls_by_id %}
     {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
-    async def publish_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, options: Optional[PublishOptions] = None) -> autobahn.wamp.request.Publication:
+    async def publish_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, options: Optional[PublishOptions] = None) -> Optional[Publication]:
         """
         As an **interface provider**, publish event:
 
         {{ metadata.calls[call_name].docs }}
 
         :param evt: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
+        :returns: When doing an acknowledged publish, the WAMP publication is returned.
         """
         assert self.is_attached
 

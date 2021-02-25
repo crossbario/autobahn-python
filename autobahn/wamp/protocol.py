@@ -1289,13 +1289,13 @@ class ApplicationSession(BaseSession):
     @public
     def onJoin(self, details):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
+        Implements :meth:`autobahn.wamp.interfaces.ISession.onJoin`
         """
 
     @public
     def onWelcome(self, msg):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onWelcome`
+        Implements :meth:`autobahn.wamp.interfaces.ISession.onWelcome`
         """
 
     def _errback_outstanding_requests(self, exc):
@@ -1339,7 +1339,7 @@ class ApplicationSession(BaseSession):
     @public
     def onLeave(self, details):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
+        Implements :meth:`autobahn.wamp.interfaces.ISession.onLeave`
         """
         if details.reason != CloseDetails.REASON_DEFAULT:
             self.log.warn('session closed with reason {reason} [{message}]', reason=details.reason, message=details.message)
@@ -1357,7 +1357,7 @@ class ApplicationSession(BaseSession):
     @public
     def leave(self, reason=None, message=None):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISession.leave`
+        Implements :meth:`autobahn.wamp.interfaces.ISession.leave`
         """
         if not self._session_id:
             raise SessionNotReady("session hasn't joined a realm")
@@ -1378,7 +1378,7 @@ class ApplicationSession(BaseSession):
     @public
     def onDisconnect(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
+        Implements :meth:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
         # fire TransportLost on any _still_ outstanding requests
         # (these should have been already cleaned up in onLeave() - when
@@ -1389,7 +1389,7 @@ class ApplicationSession(BaseSession):
     @public
     def publish(self, topic, *args, **kwargs):
         """
-        Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
+        Implements :meth:`autobahn.wamp.interfaces.IPublisher.publish`
         """
         assert(type(topic) == str)
         assert(args is None or type(args) in (list, tuple))
@@ -1480,7 +1480,7 @@ class ApplicationSession(BaseSession):
     @public
     def subscribe(self, handler, topic=None, options=None, check_types=False):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
+        Implements :meth:`autobahn.wamp.interfaces.ISubscriber.subscribe`
         """
         assert((callable(handler) and topic is not None) or (hasattr(handler, '__class__') and not check_types))
         assert(topic is None or type(topic) == str)
@@ -1583,7 +1583,7 @@ class ApplicationSession(BaseSession):
     @public
     def call(self, procedure, *args, **kwargs):
         """
-        Implements :func:`autobahn.wamp.interfaces.ICaller.call`
+        Implements :meth:`autobahn.wamp.interfaces.ICaller.call`
         """
         assert(type(procedure) == str)
         assert(args is None or type(args) in (list, tuple))
@@ -1681,7 +1681,7 @@ class ApplicationSession(BaseSession):
     @public
     def register(self, endpoint, procedure=None, options=None, prefix=None, check_types=False):
         """
-        Implements :func:`autobahn.wamp.interfaces.ICallee.register`
+        Implements :meth:`autobahn.wamp.interfaces.ICallee.register`
         """
         assert((callable(endpoint) and procedure is not None) or (hasattr(endpoint, '__class__') and not check_types))
         assert(procedure is None or type(procedure) == str)

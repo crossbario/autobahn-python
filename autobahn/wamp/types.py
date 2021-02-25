@@ -322,7 +322,7 @@ class SessionDetails(object):
     """
     Provides details for a WAMP session upon open.
 
-    .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onJoin`
+    .. seealso:: :meth:`autobahn.wamp.interfaces.ISession.onJoin`
     """
 
     __slots__ = (
@@ -538,7 +538,7 @@ class CloseDetails(object):
     """
     Provides details for a WAMP session upon close.
 
-    .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onLeave`
+    .. seealso:: :meth:`autobahn.wamp.interfaces.ISession.onLeave`
     """
     REASON_DEFAULT = "wamp.close.normal"
     REASON_TRANSPORT_LOST = "wamp.close.transport_lost"
@@ -578,7 +578,7 @@ class CloseDetails(object):
 class SubscribeOptions(object):
     """
     Used to provide options for subscribing in
-    :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
+    :meth:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
     """
 
     __slots__ = (
@@ -752,7 +752,7 @@ class EventDetails(object):
 class PublishOptions(object):
     """
     Used to provide options for subscribing in
-    :func:`autobahn.wamp.interfaces.IPublisher.publish`.
+    :meth:`autobahn.wamp.interfaces.IPublisher.publish`.
     """
 
     __slots__ = (
@@ -904,7 +904,7 @@ class PublishOptions(object):
 class RegisterOptions(object):
     """
     Used to provide options for registering in
-    :func:`autobahn.wamp.interfaces.ICallee.register`.
+    :meth:`autobahn.wamp.interfaces.ICallee.register`.
     """
 
     __slots__ = (
@@ -1098,7 +1098,7 @@ class CallDetails(object):
 @public
 class CallOptions(object):
     """
-    Used to provide options for calling with :func:`autobahn.wamp.interfaces.ICaller.call`.
+    Used to provide options for calling with :meth:`autobahn.wamp.interfaces.ICaller.call`.
     """
 
     __slots__ = (
@@ -1326,7 +1326,7 @@ class ISubscription(object):
     def unsubscribe(self):
         """
         Unsubscribe this subscription that was previously created from
-        :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
+        :meth:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
 
         After a subscription has been unsubscribed successfully, no events
         will be routed to the event handler anymore.
@@ -1364,7 +1364,7 @@ class IRegistration(object):
     def unregister(self):
         """
         Unregister this registration that was previously created from
-        :func:`autobahn.wamp.interfaces.ICallee.register`.
+        :meth:`autobahn.wamp.interfaces.ICallee.register`.
 
         After a registration has been unregistered successfully, no calls
         will be routed to the endpoint anymore.
