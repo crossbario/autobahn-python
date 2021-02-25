@@ -33,6 +33,7 @@ except ImportError:
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('./_extensions'))
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('.'))
 
 # monkey-patch txaio so that we can "use" both twisted *and* asyncio,
 # at least at import time -- this is so the autodoc stuff can
