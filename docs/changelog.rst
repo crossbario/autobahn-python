@@ -8,8 +8,9 @@ Changelog
 21.2.2
 ------
 
+* fix: correct some sphinx doc references
 * new: minimum supported Python (language) version is now 3.7 (on CPython and PyPy)
-* new: more XBR proxy/stub code generation capabilities
+* new: more XBR proxy/stub code generation capabilities (RPC call/invoation handlers)
 * fix: wamp-cryptosign loading of keys from SSH agent
 * fix: update Docker image building and build Docker multi-arch images
 * new: add more WAMP-cryptosign signature test vectors and unit tests
