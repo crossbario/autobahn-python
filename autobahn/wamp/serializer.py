@@ -28,6 +28,7 @@ import os
 import struct
 import platform
 import math
+from binascii import b2a_hex, a2b_hex
 
 from txaio import time_ns
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
@@ -343,9 +344,20 @@ else:
 
     class _WAMPJsonEncoder(json.JSONEncoder):
 
+        def __init__(self, *args, **kwargs):
+            if 'use_binary_hex_encoding' in kwargs:
+                self._use_binary_hex_encoding = kwargs['use_binary_hex_encoding']
+                del kwargs['use_binary_hex_encoding']
+            else:
+                self._use_binary_hex_encoding = False
+            json.JSONEncoder.__init__(self, *args, **kwargs)
+
         def default(self, obj):
             if isinstance(obj, bytes):
-                return '\x00' + base64.b64encode(obj).decode('ascii')
+                if self._use_binary_hex_encoding:
+                    return '0x' + b2a_hex(obj).decode('ascii')
+                else:
+                    return '\x00' + base64.b64encode(obj).decode('ascii')
             else:
                 return json.JSONEncoder.default(self, obj)
 
@@ -358,8 +370,12 @@ else:
 
     def _parse_string(*args, **kwargs):
         s, idx = scanstring(*args, **kwargs)
-        if s and s[0] == '\x00':
-            s = base64.b64decode(s[1:])
+        if kwargs.get('use_binary_hex_encoding', False):
+            if s and s[0:2] == '0x':
+                s = a2b_hex(s[2:])
+        else:
+            if s and s[0] == '\x00':
+                s = base64.b64decode(s[1:])
         return s, idx
 
     class _WAMPJsonDecoder(json.JSONDecoder):
@@ -375,14 +391,17 @@ else:
             # not the C version, as the latter won't work
             # self.scan_once = scanner.make_scanner(self)
 
-    def _loads(s):
-        return json.loads(s, cls=_WAMPJsonDecoder)
+    def _loads(s, use_binary_hex_encoding=False):
+        return json.loads(s,
+                          use_binary_hex_encoding=use_binary_hex_encoding,
+                          cls=_WAMPJsonDecoder)
 
-    def _dumps(obj):
+    def _dumps(obj, use_binary_hex_encoding=False):
         return json.dumps(obj,
                           separators=(',', ':'),
                           ensure_ascii=False,
                           sort_keys=False,
+                          use_binary_hex_encoding=use_binary_hex_encoding,
                           cls=_WAMPJsonEncoder)
 
     _json = json
@@ -399,7 +418,7 @@ class JsonObjectSerializer(object):
 
     BINARY = False
 
-    def __init__(self, batched=False):
+    def __init__(self, batched=False, use_binary_hex_encoding=False):
         """
         Ctor.
 
@@ -407,12 +426,13 @@ class JsonObjectSerializer(object):
         :type batched: bool
         """
         self._batched = batched
+        self._use_binary_hex_encoding = use_binary_hex_encoding
 
     def serialize(self, obj):
         """
         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
         """
-        s = _dumps(obj)
+        s = _dumps(obj, use_binary_hex_encoding=self._use_binary_hex_encoding)
         if isinstance(s, str):
             s = s.encode('utf8')
         if self._batched:
@@ -430,7 +450,7 @@ class JsonObjectSerializer(object):
             chunks = [payload]
         if len(chunks) == 0:
             raise Exception("batch format error")
-        return [_loads(data.decode('utf8')) for data in chunks]
+        return [_loads(data.decode('utf8'), use_binary_hex_encoding=self._use_binary_hex_encoding) for data in chunks]
 
 
 IObjectSerializer.register(JsonObjectSerializer)

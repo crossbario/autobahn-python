@@ -8,6 +8,7 @@ Changelog
 21.2.2
 ------
 
+* new: use_binary_hex_encoding option for JSON object serializer
 * fix: correct some sphinx doc references
 * new: minimum supported Python (language) version is now 3.7 (on CPython and PyPy)
 * new: more XBR proxy/stub code generation capabilities (RPC call/invoation handlers)
