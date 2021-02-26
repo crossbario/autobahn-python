@@ -9,6 +9,7 @@ tox-gh-actions>=2.2.0
 codecov>=2.0.15
 sphinx>=1.7.1
 sphinxcontrib-images>=0.9.1
+sphinx-autoapi>=1.7.0
 twine>=1.10.0
 pytest>=3.4.2
 pytest-asyncio>=0.14.0

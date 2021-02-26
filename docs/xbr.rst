@@ -21,30 +21,9 @@ To talk to the XBR smart contracts on the blockchain, you need two things:
 
 Both of which are built into the Autobahn library.
 
-
-SimpleBlockchain
-................
-
 While you *can* use just the raw addresses and ABI blobs contained in Autobahn, and use whatever
 way and form to talk directly to the blockchain fully on your own, Autobahn *also* provides a convenient
-blockchain client with specific functions directly supporting XBR:
-
-.. autoclass:: autobahn.xbr.SimpleBlockchain
-    :members:
-        start,
-        stop,
-        get_contract_adrs,
-        get_balances,
-        get_member_status,
-        get_delegate_status,
-        get_actor_status,
-        get_market_status,
-        get_domain_status,
-        get_node_status
-
-
-SimpleBlockchain Example
-........................
+blockchain client with specific functions directly supporting XBR.
 
 Here is a complete example blockchain client:
 
@@ -151,9 +130,6 @@ See the `XBRNetwork contract <https://github.com/crossbario/xbr-protocol/blob/ma
     mapping(address => bytes16) private marketsByMaker;
 
 
-Off-chain XBR market maker
---------------------------
-
 SimpleBuyer
 ...........
 
@@ -162,19 +138,7 @@ to automatically quote and buy data encryption keys via the market maker from se
 in a market.
 
 The simple buyer operates in the background and automatically buys keys on demand, as the
-user calls "unwrap(ciphertext)" on received XBR encrypted application payload:
-
-.. autoclass:: autobahn.xbr.SimpleBuyer
-    :members:
-        start,
-        stop,
-        balance,
-        open_channel,
-        close_channel,
-        unwrap
-
-SimpleBuyer Example
-...................
+user calls "unwrap(ciphertext)" on received XBR encrypted application payload.
 
 Here is a complete example buyer:
 
@@ -229,19 +193,7 @@ SimpleSeller
 
 Autobahn includes a "simple seller" for use in seller delegate user services which is able
 to automatically offer and sell data encryption keys via the market maker to buyers
-in a market:
-
-.. autoclass:: autobahn.xbr.SimpleSeller
-    :members:
-        start,
-        stop,
-        wrap,
-        sell,
-        public_key,
-        add
-
-SimpleSeller Example
-....................
+in a market.
 
 Here is a complete example seller:
 
@@ -315,68 +267,3 @@ Here is a complete example seller:
 
     if __name__ == '__main__':
         run([comp])
-
-
-KeySeries
-.........
-
-Helper class used in SimpleSeller to create an auto-rotating (time-interval based)
-data encryption key series:
-
-.. autoclass:: autobahn.xbr.KeySeries
-    :members:
-        key_id,
-        encrypt,
-        encrypt_key,
-        start,
-        stop
-
-
-Interface Reference
--------------------
-
-IMarketMaker
-............
-
-.. autoclass:: autobahn.xbr.IMarketMaker
-    :members:
-        status,
-        offer,
-        revoke,
-        quote,
-        buy,
-        get_payment_channels,
-        get_payment_channel
-
-
-IProvider
-.........
-
-.. autoclass:: autobahn.xbr.IProvider
-    :members:
-        sell
-
-
-IConsumer
-.........
-
-.. autoclass:: autobahn.xbr.IConsumer
-    :members:
-
-
-ISeller
-.......
-
-.. autoclass:: autobahn.xbr.ISeller
-    :members:
-        start,
-        wrap
-
-
-IBuyer
-......
-
-.. autoclass:: autobahn.xbr.IBuyer
-    :members:
-        start,
-        unwrap
