@@ -368,20 +368,27 @@ else:
     from json import scanner
     from json.decoder import scanstring
 
-    def _parse_string(*args, **kwargs):
-        s, idx = scanstring(*args, **kwargs)
-        if kwargs.get('use_binary_hex_encoding', False):
-            if s and s[0:2] == '0x':
-                s = a2b_hex(s[2:])
-        else:
-            if s and s[0] == '\x00':
-                s = base64.b64decode(s[1:])
-        return s, idx
-
     class _WAMPJsonDecoder(json.JSONDecoder):
 
         def __init__(self, *args, **kwargs):
+            if 'use_binary_hex_encoding' in kwargs:
+                self._use_binary_hex_encoding = kwargs['use_binary_hex_encoding']
+                del kwargs['use_binary_hex_encoding']
+            else:
+                self._use_binary_hex_encoding = False
+
             json.JSONDecoder.__init__(self, *args, **kwargs)
+
+            def _parse_string(*args, **kwargs):
+                s, idx = scanstring(*args, **kwargs)
+                if self._use_binary_hex_encoding:
+                    if s and s[0:2] == '0x':
+                        s = a2b_hex(s[2:])
+                else:
+                    if s and s[0] == '\x00':
+                        s = base64.b64decode(s[1:])
+                return s, idx
+
             self.parse_string = _parse_string
 
             # we need to recreate the internal scan function ..
@@ -420,7 +427,6 @@ class JsonObjectSerializer(object):
 
     def __init__(self, batched=False, use_binary_hex_encoding=False):
         """
-        Ctor.
 
         :param batched: Flag that controls whether serializer operates in batched mode.
         :type batched: bool
