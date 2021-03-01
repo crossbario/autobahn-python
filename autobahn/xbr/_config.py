@@ -63,6 +63,10 @@ class Profile(object):
                  name=None,
                  ethkey=None,
                  cskey=None,
+                 username=None,
+                 email=None,
+                 network_url=None,
+                 network_realm=None,
                  market_url=None,
                  market_realm=None,
                  infura_url=None,
@@ -75,6 +79,10 @@ class Profile(object):
         self.name = name
         self.ethkey = ethkey
         self.cskey = cskey
+        self.username = username
+        self.email = email
+        self.network_url = network_url
+        self.network_realm = network_realm
         self.market_url = market_url
         self.market_realm = market_realm
         self.infura_url = infura_url
@@ -86,6 +94,10 @@ class Profile(object):
     def parse(path, name, items):
         ethkey = None
         cskey = None
+        username = None
+        email = None
+        network_url = None
+        network_realm = None
         market_url = None
         market_realm = None
         infura_network = None
@@ -93,7 +105,11 @@ class Profile(object):
         infura_secret = None
         infura_url = None
         for k, v in items:
-            if k == 'market_url':
+            if k == 'network_url':
+                network_url = str(v)
+            elif k == 'network_realm':
+                network_realm = str(v)
+            elif k == 'market_url':
                 market_url = str(v)
             elif k == 'market_realm':
                 market_realm = str(v)
@@ -101,6 +117,10 @@ class Profile(object):
                 ethkey = binascii.a2b_hex(v[2:])
             elif k == 'cskey':
                 cskey = binascii.a2b_hex(v[2:])
+            elif k == 'username':
+                username = str(v)
+            elif k == 'email':
+                email = str(v)
             elif k == 'infura_network':
                 infura_network = str(v)
             elif k == 'infura_key':
@@ -111,9 +131,10 @@ class Profile(object):
                 infura_url = str(v)
             else:
                 # skip unknown attribute
-                Profile.log.warn('unprocessed config attribute "{}"'.format(k))
+                print('unprocessed config attribute "{}"'.format(k))
 
-        return Profile(path, name, ethkey, cskey, market_url, market_realm, infura_url, infura_network, infura_key, infura_secret)
+        return Profile(path, name, ethkey, cskey, username, email, network_url, network_realm, market_url, market_realm,
+                       infura_url, infura_network, infura_key, infura_secret)
 
 
 class UserConfig(object):
@@ -180,11 +201,11 @@ class WampUrl(click.ParamType):
             return value
 
 
-def prompt_for_wamp_url(msg):
+def prompt_for_wamp_url(msg, default=None):
     """
     Prompt user for WAMP transport URL (eg "wss://planet.xbr.network/ws").
     """
-    value = click.prompt(msg, type=WampUrl())
+    value = click.prompt(msg, type=WampUrl(), default=default)
     return value
 
 
@@ -232,7 +253,10 @@ class PrivateKey(click.ParamType):
     def convert(self, value, param, ctx):
         try:
             value = hexstr_if_str(to_hex, value)
-            key = binascii.a2b_hex(value[2:])
+            if value[:2] in ['0x', '\\x']:
+                key = binascii.a2b_hex(value[2:])
+            else:
+                key = binascii.a2b_hex(value)
             if len(key) != self._key_len:
                 raise ValueError('key length must be {} bytes, but was {} bytes'.format(self._key_len, len(key)))
         except Exception as e:
@@ -241,38 +265,50 @@ class PrivateKey(click.ParamType):
             return value
 
 
-def prompt_for_key(msg, key_len):
+def prompt_for_key(msg, key_len, default=None):
     """
     Prompt user for a binary key of given length (in HEX).
     """
-    value = click.prompt(msg, type=PrivateKey(key_len))
+    value = click.prompt(msg, type=PrivateKey(key_len), default=default)
     return value
 
 
 # default configuration stored in $HOME/.xbrnetwork/config.ini
 _DEFAULT_CONFIG = """[default]
+# username used with this profile
+username={username}
 
-# user private Ethereum key
-ethkey={ethkey}
+# user email used with the profile (e.g. for verification emails)
+email={email}
 
-# user private WAMP client key
+# XBR network node used as a directory server and gateway to XBR smart contracts
+network_url={network_url}
+
+# WAMP realm on network node, usually "xbrnetwork"
+network_realm={network_realm}
+
+# user private WAMP-cryptosign key (for client authentication)
 cskey={cskey}
 
-# default XBR market URL to connect to
-market_url={market_url}
-market_realm={market_realm}
-
-# Infura blockchain gateway configuration
-infura_url={infura_url}
-infura_network={infura_network}
-infura_key={infura_key}
-infura_secret={infura_secret}
+# user private Ethereum key (for signing transactions and e2e data encryption)
+ethkey={ethkey}
 """
 
+# # default XBR market URL to connect to
+# market_url={market_url}
+# market_realm={market_realm}
+# # Infura blockchain gateway configuration
+# infura_url={infura_url}
+# infura_network={infura_network}
+# infura_key={infura_key}
+# infura_secret={infura_secret}
 
-def load_or_create_profile(dotdir=None, profile=None):
+
+def load_or_create_profile(dotdir=None, profile=None, default_url=None, default_realm=None, default_email=None, default_username=None):
     dotdir = dotdir or '~/.xbrnetwork'
     profile = profile or 'default'
+    default_url = default_url or 'wss://planet.xbr.network/ws'
+    default_realm = default_realm or 'xbrnetwork'
 
     config_dir = os.path.expanduser(dotdir)
     if not os.path.isdir(config_dir):
@@ -283,28 +319,14 @@ def load_or_create_profile(dotdir=None, profile=None):
     if not os.path.isfile(config_path):
         click.echo('creating new user profile "{}"'.format(style_ok(profile)))
         with open(config_path, 'w') as f:
-            market_url = prompt_for_wamp_url('enter a XBR data market URL')
-            market_realm = click.prompt('enter the WAMP realm of the XBR data market', type=str)
-            ethkey = prompt_for_key('your private Etherum key', os.urandom(32))
-            cskey = prompt_for_key('your private WAMP client key', os.urandom(32))
-
-            # infura_url=https://rinkeby.infura.io/v3/40c6...
-            # infura_network=rinkeby
-            # infura_key=40c6...
-            # infura_secret=5511...
-            infura_network = click.prompt('enter Ethereum network to use', type=str, default='')
-            if infura_network:
-                infura_url = click.prompt('enter Infura gateway URL', type=str)
-                infura_key = click.prompt('your Infura gateway key', type=str)
-                infura_secret = click.prompt('your Infura gateway secret', type=str)
-            else:
-                infura_url = ''
-                infura_key = ''
-                infura_secret = ''
-
-            f.write(_DEFAULT_CONFIG.format(market_url=market_url, market_realm=market_realm, ethkey=ethkey,
-                                           cskey=cskey, infura_url=infura_url, infura_network=infura_network,
-                                           infura_key=infura_key, infura_secret=infura_secret))
+            network_url = prompt_for_wamp_url('enter the WAMP router URL of the network directory node', default=default_url)
+            network_realm = click.prompt('enter the WAMP realm to join on the network directory node', type=str, default=default_realm)
+            cskey = prompt_for_key('your private WAMP client key', 32, default='0x' + binascii.b2a_hex(os.urandom(32)).decode())
+            ethkey = prompt_for_key('your private Etherum key', 32, default='0x' + binascii.b2a_hex(os.urandom(32)).decode())
+            email = click.prompt('user email used for with profile', type=str, default=default_email)
+            username = click.prompt('user name used with this profile', type=str, default=default_username)
+            f.write(_DEFAULT_CONFIG.format(network_url=network_url, network_realm=network_realm, ethkey=ethkey,
+                                           cskey=cskey, email=email, username=username))
             click.echo('created new local user configuration {}'.format(style_ok(config_path)))
 
     config_obj = UserConfig(config_path)
