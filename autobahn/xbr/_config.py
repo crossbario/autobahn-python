@@ -321,8 +321,8 @@ def load_or_create_profile(dotdir=None, profile=None, default_url=None, default_
         with open(config_path, 'w') as f:
             network_url = prompt_for_wamp_url('enter the WAMP router URL of the network directory node', default=default_url)
             network_realm = click.prompt('enter the WAMP realm to join on the network directory node', type=str, default=default_realm)
-            ethkey = prompt_for_key('your private Etherum key', 32, default='0x' + binascii.b2a_hex(os.urandom(32)).decode())
             cskey = prompt_for_key('your private WAMP client key', 32, default='0x' + binascii.b2a_hex(os.urandom(32)).decode())
+            ethkey = prompt_for_key('your private Etherum key', 32, default='0x' + binascii.b2a_hex(os.urandom(32)).decode())
             email = click.prompt('user email used for with profile', type=str, default=default_email)
             username = click.prompt('user name used with this profile', type=str, default=default_username)
             f.write(_DEFAULT_CONFIG.format(network_url=network_url, network_realm=network_realm, ethkey=ethkey,

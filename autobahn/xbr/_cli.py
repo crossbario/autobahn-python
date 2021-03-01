@@ -465,7 +465,7 @@ class Client(ApplicationSession):
         member_oid = result['member_oid']
         self.log.info('SUCCESS! New XBR Member onboarded: member_oid={member_oid}, transaction={transaction}',
                       member_oid=hlid(uuid.UUID(bytes=member_oid)),
-                      transaction=hlval(binascii.b2a_hex(result['transaction']).decode()))
+                      transaction=hlval('0x' + binascii.b2a_hex(result['transaction']).decode()))
 
     async def _do_create_market(self, member_oid, market_oid, marketmaker, title=None, label=None, homepage=None,
                                 provider_security=0, consumer_security=0, market_fee=0):
