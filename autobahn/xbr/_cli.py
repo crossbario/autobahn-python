@@ -326,10 +326,13 @@ class Client(ApplicationSession):
             }
             member_data['level'] = MEMBER_LEVEL_TO_STR.get(member_level, None)
 
-            self.log.info('Member found:\n\n{member_data}\n', member_data=pformat(member_data))
+            self.log.info('Member {member_oid} found for address 0x{member_adr} - current member level {member_level}',
+                          member_level=hlval(member_data['level']),
+                          member_oid=hlid(member_data['oid']),
+                          member_adr=hlval(member_data['address']))
         else:
             self.log.warn('Address 0x{member_adr} is not a member in the XBR network',
-                          member_adr=binascii.b2a_hex(member_adr).decode())
+                          member_adr=hlval(binascii.b2a_hex(member_adr).decode()))
 
     async def _do_get_actor(self, market_oid, actor_adr):
         is_member = await self.call('xbr.network.is_member', actor_adr)
@@ -460,8 +463,9 @@ class Client(ApplicationSession):
         assert 'created' in result and type(result['created']) == int and result['created'] > 0
 
         member_oid = result['member_oid']
-        self.log.info('SUCCESS! New XBR Member onboarded: member_oid={member_oid}, result=\n{result}',
-                      member_oid=uuid.UUID(bytes=member_oid), result=pformat(result))
+        self.log.info('SUCCESS! New XBR Member onboarded: member_oid={member_oid}, transaction={transaction}',
+                      member_oid=hlid(uuid.UUID(bytes=member_oid)),
+                      transaction=hlval(binascii.b2a_hex(result['transaction']).decode()))
 
     async def _do_create_market(self, member_oid, market_oid, marketmaker, title=None, label=None, homepage=None,
                                 provider_security=0, consumer_security=0, market_fee=0):
@@ -1152,7 +1156,8 @@ def _main():
             sys.exit(0)
 
         # read or create a user profile
-        profile = load_or_create_profile()
+        profile = load_or_create_profile(default_url=args.url, default_realm=args.realm,
+                                         default_username=args.username, default_email=args.email)
 
         # only start txaio logging after above, which runs click (interactively)
         if args.debug:
@@ -1171,10 +1176,12 @@ def _main():
 
             # allow to override, and add more arguments from the command line
             'command': args.command,
-            'ethkey': binascii.a2b_hex(args.ethkey[2:]) if args.ethkey else None,
-            'cskey': binascii.a2b_hex(args.cskey[2:]) if args.cskey else None,
             'username': args.username,
             'email': args.email,
+
+            'ethkey': profile.ethkey,
+            'cskey': profile.cskey,
+
             'market': uuid.UUID(args.market) if args.market else None,
             'market_title': args.market_title,
             'market_label': args.market_label,
@@ -1191,11 +1198,11 @@ def _main():
             'delegate': binascii.a2b_hex(args.delegate[2:]) if args.delegate else None,
             'amount': args.amount or 0,
         }
-        runner = ApplicationRunner(url=args.url, realm=args.realm, extra=extra, serializers=[CBORSerializer()])
+        runner = ApplicationRunner(url=profile.network_url, realm=profile.network_realm, extra=extra, serializers=[CBORSerializer()])
 
         try:
             log.info('Connecting to "{url}" {realm} ..',
-                     url=hlval(args.url), realm=('at realm "' + hlval(args.realm) + '"' if args.realm else ''))
+                     url=hlval(profile.network_url), realm=('at realm "' + hlval(profile.network_realm) + '"' if profile.network_realm else ''))
             runner.run(Client, auto_reconnect=False)
         except Exception as e:
             print(e)
