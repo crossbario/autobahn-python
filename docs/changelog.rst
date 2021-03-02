@@ -5,6 +5,11 @@
 Changelog
 =========
 
+21.3.1
+------
+
+* fix: Twisted v21.2.0 breaks Crossbar.io (see https://github.com/crossbario/crossbar/issues/1864)
+
 21.2.2
 ------
 

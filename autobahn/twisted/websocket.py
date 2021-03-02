@@ -242,7 +242,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         # the peer we are connected to
         try:
             self.peer = peer2str(self.transport.getPeer())
-        except AttributeError:
+        except (AttributeError, NotImplementedError):
             # ProcessProtocols lack getPeer()
             self.peer = 'process:{}'.format(self.transport.pid)
         self.peer_transport = 'websocket'
