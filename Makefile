@@ -1,5 +1,6 @@
 .PHONY: test docs pep8 build
 
+WHEELS=https://crossbarbuilder.s3.eu-central-1.amazonaws.com/wheels
 XBRNETWORK=${HOME}/.local/bin/xbrnetwork
 
 all:
@@ -83,6 +84,26 @@ spelling:
 run_docs:
 	twistd --nodaemon web --port=tcp:8090 --path=./docs/build/html/
 
+
+clean_wheels:
+	rm -rf ./.wheels
+	mkdir -p ./.wheels/
+
+download_wheels:
+	mkdir -p ./.wheels/
+	rm -f ./.wheels/*.whl
+	curl -o ./.wheels/txaio-latest-py2.py3-none-any.whl 	$(WHEELS)/txaio-latest-py2.py3-none-any.whl
+	curl -o ./.wheels/zlmdb-latest-py2.py3-none-any.whl 	$(WHEELS)/zlmdb-latest-py2.py3-none-any.whl
+	curl -o ./.wheels/xbr-latest-py2.py3-none-any.whl 		$(WHEELS)/xbr-latest-py2.py3-none-any.whl
+	curl -o ./.wheels/autobahn-latest-py2.py3-none-any.whl 	$(WHEELS)/autobahn-latest-py2.py3-none-any.whl
+	ls -la ./.wheels
+
+build_this_wheel:
+	mkdir -p ./.wheels/
+	rm -f ./.wheels/autobahn*.whl
+	pip3 wheel --no-deps --wheel-dir=./.wheels ..
+	mv .wheels/autobahn*.whl .wheels/autobahn-latest-py2.py3-none-any.whl
+	ls -la ./.wheels
 
 download_exe:
 	curl -o $(XBRNETWORK) \
