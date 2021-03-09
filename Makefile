@@ -120,7 +120,7 @@ upload_exe:
 		s3://download.crossbario.com/xbrnetwork/linux-amd64/${XBRNETWORK_EXE_FILENAME}
 	aws s3 cp --acl public-read \
 		./dist/xbrnetwork \
-		s3://download.crossbario.com/xbrnetwork/linux-amd64//xbrnetwork-latest
+		s3://download.crossbario.com/xbrnetwork/linux-amd64/xbrnetwork-latest
 	# aws s3api copy-object --acl public-read --copy-source \
 	# 	download.crossbario.com/xbrnetwork/linux-amd64/${XBRNETWORK_EXE_FILENAME} \
 	# 	--bucket download.crossbario.com \

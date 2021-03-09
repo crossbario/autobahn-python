@@ -3,7 +3,7 @@ Autobahn\|Python
 
 WebSocket & WAMP for Python on Twisted and asyncio.
 
-| |Version| |Build| |Deploy| |Coverage| |Docs| |Docker|
+| |Version|  |CI Test Status|  |CI Deploy Status|  |CI Docker Status|  |CI EXE Status|  |Coverage|  |Docs|  |Docker Images|  |EXE Download|
 
 --------------
 
@@ -263,20 +263,24 @@ implementation, set the environment variable:
     compared to ``cbor``.
 
 
-
 .. |Version| image:: https://img.shields.io/pypi/v/autobahn.svg
    :target: https://pypi.python.org/pypi/autobahn
 
-.. |Master Branch| image:: https://img.shields.io/badge/branch-master-orange.svg
-   :target: https://travis-ci.com/crossbario/autobahn-python.svg?branch=master
-
-.. |Build| image:: https://github.com/crossbario/autobahn-python/workflows/main/badge.svg
+.. |CI Test Status| image:: https://github.com/crossbario/autobahn-python/workflows/main/badge.svg
    :target: https://github.com/crossbario/autobahn-python/actions?query=workflow%3Amain
-   :alt: Build
+   :alt: CI Test Status
 
-.. |Deploy| image:: https://github.com/crossbario/autobahn-python/workflows/deploy/badge.svg
+.. |CI Deploy Status| image:: https://github.com/crossbario/autobahn-python/workflows/deploy/badge.svg
    :target: https://github.com/crossbario/autobahn-python/actions?query=workflow%3Adeploy
-   :alt: Deploy
+   :alt: CI Deploy Status
+
+.. |CI Docker Status| image:: https://github.com/crossbario/autobahn-python/workflows/docker/badge.svg
+   :target: https://github.com/crossbario/autobahn-python/actions?query=workflow%3Adocker
+   :alt: CI Docker Status
+
+.. |CI EXE Status| image:: https://github.com/crossbario/autobahn-python/workflows/pyinstaller/badge.svg
+   :target: https://github.com/crossbario/autobahn-python/actions?query=workflow%3Apyinstaller
+   :alt: CI EXE Status
 
 .. |Coverage| image:: https://img.shields.io/codecov/c/github/crossbario/autobahn-python/master.svg
    :target: https://codecov.io/github/crossbario/autobahn-python
@@ -284,5 +288,8 @@ implementation, set the environment variable:
 .. |Docs| image:: https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat
    :target: https://autobahn.readthedocs.io/en/latest/
 
-.. |Docker| image:: https://img.shields.io/badge/docker-ready-blue.svg?style=flat
+.. |Docker Images| image:: https://img.shields.io/badge/download-docker-blue.svg?style=flat
    :target: https://hub.docker.com/r/crossbario/autobahn-python/
+
+.. |EXE Download| image:: https://img.shields.io/badge/download-exe-blue.svg?style=flat
+   :target: https://download.crossbario.com/xbrnetwork/linux-amd64/xbrnetwork-latest
