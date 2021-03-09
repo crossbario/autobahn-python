@@ -24,18 +24,18 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.x
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.x'
+        architecture: 'x64'
 
-    # no, thanks, we don't need no fucking "new resolver"
     - name: Install Python package dependencies
       run: |
         curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-        python get-pip.py "pip<20"
-        pip show pip
-        pip install -r requirements-dev.txt
+        python3 get-pip.py "pip<20"
+        pip3 show pip
+        pip3 install -r requirements-dev.txt
 
     - name: Set environment
       run: |
@@ -63,7 +63,7 @@ jobs:
 
     - name: Install this package
       run: |
-        pip install .[all]
+        pip3 install .[all]
 
     - name: Build & publish EXE
       run: |
