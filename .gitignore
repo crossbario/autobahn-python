@@ -44,3 +44,4 @@ coverage.xml
 .coverage.*
 autobahn/xbr/contracts
 .wheels
+get-pip.py

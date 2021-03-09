@@ -1,5 +1,7 @@
 .PHONY: test docs pep8 build
 
+XBRNETWORK=${HOME}/.local/bin/xbrnetwork
+
 all:
 	@echo "Targets:"
 	@echo ""
@@ -56,6 +58,7 @@ clean:
 	-rm -rf ~/coverage
 	-rm -f  ./twisted/plugins/dropin.cache
 	-find . -name "*dropin.cache.new" -type f -exec rm -f {} \;
+	-find . -name ".pytest_cache" -type d -exec rm -rf {} \;
 	-find . -name "*.tar.gz" -type f -exec rm -f {} \;
 	-find . -name "*.egg" -type f -exec rm -f {} \;
 	-find . -name "*.pyc" -type f -exec rm -f {} \;
@@ -79,6 +82,30 @@ spelling:
 
 run_docs:
 	twistd --nodaemon web --port=tcp:8090 --path=./docs/build/html/
+
+
+download_exe:
+	curl -o $(XBRNETWORK) \
+		https://download.crossbario.com/xbrnetwork/linux-amd64/xbrnetwork-latest
+	chmod +x $(XBRNETWORK)
+	$(XBRNETWORK) version
+
+build_exe:
+	tox -e buildexe
+
+upload_exe:
+	aws s3 cp --acl public-read \
+		./dist/xbrnetwork \
+		s3://download.crossbario.com/xbrnetwork/linux-amd64/${XBRNETWORK_EXE_FILENAME}
+
+	aws s3api copy-object --acl public-read --copy-source \
+		download.crossbario.com/xbrnetwork/linux-amd64/${XBRNETWORK_EXE_FILENAME} \
+		--bucket download.crossbario.com \
+		--key xbrnetwork/linux-amd64/xbrnetwork-latest
+
+	aws cloudfront create-invalidation \
+		--distribution-id E2QIG9LNGCJSP9 --paths "/xbrnetwork/linux-amd64/*"
+
 
 test_xbr_cli:
 	xbrnetwork
