@@ -24,6 +24,19 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    # no, thanks, we don't need no fucking "new resolver"
+    - name: Install Python package dependencies
+      run: |
+        curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+        python get-pip.py "pip<20"
+        pip show pip
+        pip install -r requirements-dev.txt
+
     - name: Set environment
       run: |
         echo AUTOBAHN_BUILD_DATE=`date -u +"%Y-%m-%d"` >> $GITHUB_ENV
@@ -47,11 +60,6 @@ jobs:
         echo "  AWS_DEFAULT_REGION      = ${AWS_DEFAULT_REGION}"
         echo "  AWS_S3_BUCKET_NAME      = ${AWS_S3_BUCKET_NAME}"
         echo ""
-
-    - name: Install Python package dependencies
-      run: |
-        python -m pip install -U "pip==19.3.1"
-        pip install -U -r requirements-dev.txt
 
     - name: Install this package
       run: |
