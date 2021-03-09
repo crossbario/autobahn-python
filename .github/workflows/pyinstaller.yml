@@ -24,18 +24,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install OS package dependencies
-      run: |
-        sudo apt update
-        sudo apt install build-essential libssl-dev libffi-dev libunwind-dev \
-          libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
-          libsnappy-dev
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.x
-
     - name: Set environment
       run: |
         echo AUTOBAHN_BUILD_DATE=`date -u +"%Y-%m-%d"` >> $GITHUB_ENV
