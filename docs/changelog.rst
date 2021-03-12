@@ -5,6 +5,12 @@
 Changelog
 =========
 
+master
+------
+
+* fix: XBR IDL code generator - all 4 WAMP actions working now
+* new: add automated build of xbrnetwork CLI (single-file EXE) in CI
+
 21.3.1
 ------
 

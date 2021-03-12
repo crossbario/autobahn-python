@@ -7,6 +7,7 @@ from uuid import UUID
 from typing import List
 from pprint import pformat
 
+import txaio
 from txaio.interfaces import ILogger
 
 import autobahn
@@ -82,11 +83,11 @@ class {{ metadata.classname }}(object):
         :param evt: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
         :returns: When doing an acknowledged publish, the WAMP publication is returned.
         """
-        assert self.is_attached
+        assert self._x_session and self._x_session.is_attached()
 
         topic = '{}.{{ call_name }}'.format(self._x_prefix)
+        payload = evt.marshal()
         if self._x_delegate:
-            payload = evt.marshal()
             key_id, enc_ser, ciphertext = await self._x_delegate.wrap(self._x_api_id, topic, payload)
             if options.acknowledge:
                 pub = await self._x_session.publish(topic, key_id, enc_ser, ciphertext, options=options)
@@ -95,9 +96,9 @@ class {{ metadata.classname }}(object):
                 pub = None
         else:
             if options.acknowledge:
-                pub = await self._x_session.publish(topic, evt, options=options)
+                pub = await self._x_session.publish(topic, payload, options=options)
             else:
-                self._x_session.publish(topic, evt, options=options)
+                self._x_session.publish(topic, payload, options=options)
                 pub = None
         return pub
 
@@ -127,15 +128,15 @@ class {{ metadata.classname }}(object):
         :param req: {{ repo.objs[metadata.calls[call_name].request.name].docs }}
         :returns: {{ repo.objs[metadata.calls[call_name].response.name].docs }}
         """
-        assert self.is_attached
+        assert self._x_session and self._x_session.is_attached()
 
         procedure = '{}.{{ call_name }}'.format(self._x_prefix)
+        payload = req.marshal()
         if self._x_delegate:
-            payload = req.marshal()
             key_id, enc_ser, ciphertext = await self._x_delegate.wrap(self._x_api_id, procedure, payload)
             result = await self._x_session.call(procedure, key_id, enc_ser, ciphertext, options=options)
         else:
-            result = await self._x_session.call(procedure, req, options=options)
+            result = await self._x_session.call(procedure, payload, options=options)
         return result
 
     def invoke_{{ call_name }}(self, req: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, details: Optional[CallDetails] = None) -> {{ repo.objs[metadata.calls[call_name].response.name].map('python') }}:
@@ -243,7 +244,7 @@ class {{ metadata.classname }}(object):
         assert self._x_session is not None
 
         dl = []
-        if self._x_session.is_attached():
+        if self._x_session and self._x_session.is_attached():
             for reg in self._x_regs:
                 dl.append(reg.unregister())
             for sub in self._x_subs:
