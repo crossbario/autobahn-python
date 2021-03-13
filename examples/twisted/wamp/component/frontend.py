@@ -32,7 +32,13 @@ def main(reactor, session):
         print("prefix-match 'prefix.fail.' failed as expected: {}".format(e.error))
 
     print("calling 'example.foo'")
-    res = yield session.call("example.foo")
+    try:
+        res = yield session.call("example.foo")
+    except Exception as e:
+        # to see errors uncomment the "throw" in backend .. also try
+        # with .traceback_app enabled (in the backend)
+        print("Error from 'example.foo' call:")
+        print(e)
     print("example.foo() = {}".format(res))
 
     print("done")
