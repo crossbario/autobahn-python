@@ -56,6 +56,9 @@ component = Component(
 @component.on_join
 def join(session, details):
     print("joined {}: {}".format(session, details))
+    # if you want full tracbacks on the client-side, you enable that
+    # here:
+    # session.traceback_app = True
 
 
 @component.register(
@@ -64,6 +67,7 @@ def join(session, details):
 )
 @inlineCallbacks
 def foo(*args, **kw):
+    # raise RuntimeError("bad stuff")
     print("foo({}, {})".format(args, kw))
     for x in range(5, 0, -1):
         print("  returning in {}".format(x))
