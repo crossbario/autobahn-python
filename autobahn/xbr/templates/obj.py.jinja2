@@ -15,6 +15,7 @@ import flatbuffers
 from flatbuffers.compat import import_numpy
 np = import_numpy()
 
+import {{ render_to_basemodule.split('.')[0] }}
 
 {% endif %}
 # https://stackoverflow.com/a/46064289/884770
@@ -92,7 +93,7 @@ class {{ metadata.classname }}(object):
                 if value is not None:
                     value = np.datetime64(_value, 'ns')
             {% else %}
-            raise NotImplementedError('implement processing of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            raise NotImplementedError('implement processing [1] of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
             {% endif %}
             assert value is not None
             self._{{ metadata.fields[field_name].name }} = value
@@ -122,7 +123,7 @@ class {{ metadata.classname }}(object):
             # set default value on type "np.datetime64" attribute:
             self._{{ metadata.fields[field_name].name }} = np.datetime64(0, 'ns')
             {% else %}
-            raise NotImplementedError('implement processing of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            raise NotImplementedError('implement processing [2] of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
             {% endif %}
 
     {% endfor %}
@@ -169,7 +170,7 @@ class {{ metadata.classname }}(object):
             else:
                 obj.{{ metadata.fields[field_name].name }} = np.datetime64(0, 'ns')
             {% else %}
-            raise NotImplementedError('implement processing of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            raise NotImplementedError('implement processing [3] of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
             {% endif %}
         {% endfor %}
         return obj
@@ -188,8 +189,10 @@ class {{ metadata.classname }}(object):
             '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }}.bytes if self.{{ metadata.fields[field_name].name }} is not None else None,
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
             '{{ metadata.fields[field_name].name }}': int(self.{{ metadata.fields[field_name].name }}) if self.{{ metadata.fields[field_name].name }} is not None else None,
+            {% elif metadata.fields[field_name].type.basetype == FbsType.Vector %}
+            # FIXME
             {% else %}
-            raise NotImplementedError('implement processing of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            # implement processing [4] of FlatBuffers type "{{ metadata.fields[field_name].type | string }}" (Python type "{{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}")
             {% endif %}
             {% endfor %}
         }
@@ -253,7 +256,7 @@ class {{ metadata.classname }}(object):
         if self.{{ field_name }}:
             builder.{{ FbsType.FBS2PREPEND[metadata.fields[field_name].type.basetype] }}({{ metadata.fields[field_name].id }}, self.{{ field_name }}, 0)
         {% else %}
-        raise NotImplementedError('implement builder for type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+        raise NotImplementedError('implement builder [1] for type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
         {% endif %}{% endfor %}
 
         return builder.EndObject()

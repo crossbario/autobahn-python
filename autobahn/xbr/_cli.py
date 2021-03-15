@@ -983,8 +983,10 @@ def _main():
     #
     elif args.command == 'codegen-schema':
 
+        render_to_basemodule = 'thinghub.api.proxystub'
+
         # load repository from flatbuffers schema files
-        repo = FbsRepository()
+        repo = FbsRepository(render_to_basemodule=render_to_basemodule)
         repo.load(args.schema)
 
         # print repository summary
@@ -1044,11 +1046,17 @@ def _main():
                 if args.language == 'python':
                     # render obj|enum|service.py.jinja2 template
                     tmpl = env.get_template('{}.py.jinja2'.format(category))
-                    code = tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType, render_imports=is_first, is_first_by_category=is_first_by_category)
+                    code = tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType,
+                                       render_imports=is_first,
+                                       is_first_by_category=is_first_by_category,
+                                       render_to_basemodule=render_to_basemodule)
 
                     # render test_obj|enum|service.py.jinja2 template
                     test_tmpl = env.get_template('test_{}.py.jinja2'.format(category))
-                    test_code = test_tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType, render_imports=is_first, is_first_by_category=is_first_by_category)
+                    test_code = test_tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType,
+                                                 render_imports=is_first,
+                                                 is_first_by_category=is_first_by_category,
+                                                 render_to_basemodule=render_to_basemodule)
                 elif args.language == 'json':
                     code = json.dumps(metadata.marshal(),
                                       separators=(', ', ': '),
@@ -1069,6 +1077,21 @@ def _main():
                 else:
                     test_code_modules[modulename].append(None)
 
+        # ['', 'com.thing.driver.launchpad', 'com.thing.hub']
+        namespaces = {}
+        for code_file in code_modules.keys():
+            name_parts = code_file.split('.')
+            for i in range(len(name_parts)):
+                pn = name_parts[i]
+                ns = '.'.join(name_parts[:i])
+                if ns not in namespaces:
+                    namespaces[ns] = []
+                if pn and pn not in namespaces[ns]:
+                    namespaces[ns].append(pn)
+
+        print(':'*100)
+        pprint(namespaces)
+
         # write out code modules
         #
         i = 0
@@ -1088,9 +1111,12 @@ def _main():
                         fn = os.path.join(d, '__init__.py')
                         if not os.path.exists(fn):
                             _modulename = '.'.join(code_file_dir[:i + 1])[1:]
+                            _imports = namespaces[_modulename]
+                            print('%'*100, _modulename, _imports)
                             with open(fn, 'wb') as f:
                                 tmpl = env.get_template('module.py.jinja2')
-                                init_code = tmpl.render(repo=repo, modulename=_modulename)
+                                init_code = tmpl.render(repo=repo, modulename=_modulename, imports=_imports,
+                                                        render_to_basemodule=render_to_basemodule)
                                 f.write(init_code.encode('utf8'))
                             initialized.add(fn)
 
