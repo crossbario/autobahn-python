@@ -242,7 +242,9 @@ class FbsType(object):
                 # .. whereas all other vectors are mapped to lists of the same element type
                 else:
                     if self.objtype:
-                        _mapped_type = 'List[{}.{}]'.format(self._repository.render_to_basemodule, self.objtype)
+                        # FIXME
+                        _mapped_type = 'List[{}]'.format(self.objtype.split('.')[-1])
+                        # _mapped_type = 'List[{}.{}]'.format(self._repository.render_to_basemodule, self.objtype)
                     else:
                         _mapped_type = 'List[{}]'.format(FbsType.FBS2PY[self.element])
             # FIXME: follow up processing of Unions (UType/Union)
@@ -415,7 +417,6 @@ def parse_fields(repository, obj, objs_lst=None):
         if fbs_field_type.Index() >= 0:
             _obj = objs_lst[fbs_field_type.Index()]
             _objtype = _obj.name
-            print('.' * 100, _objtype)
 
         field_type = FbsType(repository=repository,
                              basetype=fbs_field_type.BaseType(),
