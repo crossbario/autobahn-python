@@ -122,8 +122,14 @@ class {{ metadata.classname }}(object):
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
             # set default value on type "np.datetime64" attribute:
             self._{{ metadata.fields[field_name].name }} = np.datetime64(0, 'ns')
+            # set default value on type "List" attribute:
+            {% elif metadata.fields[field_name].type.basetype == FbsType.Vector %}
+            self._{{ metadata.fields[field_name].name }} = []
+            # set default value on type "Object" attribute:
+            {% elif metadata.fields[field_name].type.basetype == FbsType.Obj %}
+            self._{{ metadata.fields[field_name].name }} = {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}()
             {% else %}
-            raise NotImplementedError('implement processing [2] of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            raise NotImplementedError('implement processing [2] of FlatBuffers type "{}", basetype {}'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}, {{ metadata.fields[field_name].type.basetype }}))
             {% endif %}
 
     {% endfor %}
@@ -169,6 +175,23 @@ class {{ metadata.classname }}(object):
                 obj.{{ metadata.fields[field_name].name }} = np.datetime64(data['{{ field_name }}'], 'ns')
             else:
                 obj.{{ metadata.fields[field_name].name }} = np.datetime64(0, 'ns')
+
+            {% elif metadata.fields[field_name].type.basetype == FbsType.Vector %}
+            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == List), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            _value = []
+            for v in data['{{ field_name }}']:
+            {% if metadata.fields[field_name].type.element == FbsType.Obj %}
+                _value.append({{ metadata.fields[field_name].type.objtype.split('.')[-1] }}.parse(v))
+            {% else %}
+                _value.append(v)
+            {% endif %}
+            obj.{{ metadata.fields[field_name].name }} = _value
+
+            {% elif metadata.fields[field_name].type.basetype == FbsType.Obj %}
+            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == Dict), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            _value = {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}.parse(data['{{ field_name }}'])
+            obj.{{ metadata.fields[field_name].name }} = _value
+
             {% else %}
             raise NotImplementedError('implement processing [3] of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
             {% endif %}
@@ -183,14 +206,26 @@ class {{ metadata.classname }}(object):
         """
         obj = {
             {% for field_name in metadata.fields_by_id %}
+
             {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes', 'int', 'long', 'float', 'double', 'bool'] %}
             '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }},
+
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
             '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }}.bytes if self.{{ metadata.fields[field_name].name }} is not None else None,
+
             {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
             '{{ metadata.fields[field_name].name }}': int(self.{{ metadata.fields[field_name].name }}) if self.{{ metadata.fields[field_name].name }} is not None else None,
+
             {% elif metadata.fields[field_name].type.basetype == FbsType.Vector %}
-            # FIXME
+            {% if metadata.fields[field_name].type.element == FbsType.Obj %}
+            '{{ metadata.fields[field_name].name }}': [o.marshal() for o in self.{{ metadata.fields[field_name].name }}] if self.{{ metadata.fields[field_name].name }} is not None else None,
+            {% else %}
+            '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }},
+            {% endif %}
+
+            {% elif metadata.fields[field_name].type.basetype == FbsType.Obj %}
+            '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }}.marshal() if self.{{ metadata.fields[field_name].name }} is not None else None,
+
             {% else %}
             # implement processing [4] of FlatBuffers type "{{ metadata.fields[field_name].type | string }}" (Python type "{{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}")
             {% endif %}

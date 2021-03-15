@@ -232,6 +232,7 @@ class FbsType(object):
         """
         if language == 'python':
             _mapped_type = None
+
             if self.basetype == FbsType.Vector:
                 # vectors of uint8 are mapped to byte strings ..
                 if self.element == FbsType.UByte:
@@ -247,14 +248,25 @@ class FbsType(object):
                         # _mapped_type = 'List[{}.{}]'.format(self._repository.render_to_basemodule, self.objtype)
                     else:
                         _mapped_type = 'List[{}]'.format(FbsType.FBS2PY[self.element])
-            # FIXME: follow up processing of Unions (UType/Union)
+
+            elif self.basetype == FbsType.Obj:
+                if self.objtype:
+                    # FIXME
+                    _mapped_type = self.objtype.split('.')[-1]
+                    # _mapped_type = '{}.{}'.format(self._repository.render_to_basemodule, self.objtype)
+                else:
+                    _mapped_type = 'List[{}]'.format(FbsType.FBS2PY[self.element])
+
             elif self.basetype in FbsType.SCALAR_TYPES + [FbsType.UType, FbsType.Union]:
+                # FIXME: follow up processing of Unions (UType/Union)
                 if self.basetype == FbsType.ULong and attrs and 'timestamp' in attrs:
                     _mapped_type = 'np.datetime64'
                 else:
                     _mapped_type = FbsType.FBS2PY[self.basetype]
+
             else:
                 raise NotImplementedError('FIXME: implement mapping of FlatBuffers type "{}" to Python in {}'.format(self.basetype, self.map))
+
             if required:
                 return _mapped_type
             else:
