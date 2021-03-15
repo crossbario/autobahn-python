@@ -177,7 +177,7 @@ class {{ metadata.classname }}(object):
                 obj.{{ metadata.fields[field_name].name }} = np.datetime64(0, 'ns')
 
             {% elif metadata.fields[field_name].type.basetype == FbsType.Vector %}
-            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == List), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == list), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
             _value = []
             for v in data['{{ field_name }}']:
             {% if metadata.fields[field_name].type.element == FbsType.Obj %}
@@ -188,7 +188,7 @@ class {{ metadata.classname }}(object):
             obj.{{ metadata.fields[field_name].name }} = _value
 
             {% elif metadata.fields[field_name].type.basetype == FbsType.Obj %}
-            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == Dict), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == dict), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
             _value = {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}.parse(data['{{ field_name }}'])
             obj.{{ metadata.fields[field_name].name }} = _value
 
