@@ -15,9 +15,8 @@ import flatbuffers
 from flatbuffers.compat import import_numpy
 np = import_numpy()
 
-# import {{ render_to_basemodule.split('.')[0] }}
-
 {% endif %}
+
 # https://stackoverflow.com/a/46064289/884770
 T_{{ metadata.classname }} = TypeVar('T_{{ metadata.classname }}', bound='{{ metadata.classname }}')
 
