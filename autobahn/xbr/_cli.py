@@ -32,6 +32,9 @@ from pprint import pprint
 
 from jinja2 import Environment, FileSystemLoader
 
+# https://github.com/google/yapf#example-as-a-module
+from yapf.yapflib.yapf_api import FormatCode
+
 from autobahn import xbr
 from autobahn import __version__
 from autobahn.xbr import FbsType
@@ -1054,6 +1057,7 @@ def _main():
                                        render_imports=is_first,
                                        is_first_by_category=is_first_by_category,
                                        render_to_basemodule=args.basemodule)
+                    code = FormatCode(code)[0]
 
                     # render test_obj|enum|service.py.jinja2 template
                     test_tmpl = env.get_template('test_{}.py.jinja2'.format(category))
@@ -1061,6 +1065,11 @@ def _main():
                                                  render_imports=is_first,
                                                  is_first_by_category=is_first_by_category,
                                                  render_to_basemodule=args.basemodule)
+                    try:
+                        test_code = FormatCode(test_code)[0]
+                    except Exception as e:
+                        print('error during formatting code:\n{}\n{}'.format(test_code, e))
+
                 elif args.language == 'json':
                     code = json.dumps(metadata.marshal(),
                                       separators=(', ', ': '),
