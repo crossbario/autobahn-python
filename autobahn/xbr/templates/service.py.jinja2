@@ -2,15 +2,12 @@
 ##
 ## service types (aka "APIs")
 ##
-import abc
 from uuid import UUID
 from typing import List
-from pprint import pformat
 
 import txaio
 from txaio.interfaces import ILogger
 
-import autobahn
 from autobahn.wamp.types import PublishOptions, SubscribeOptions, EventDetails, CallOptions, CallDetails, RegisterOptions
 from autobahn.wamp.request import Publication, Subscription, Registration
 from autobahn.wamp.interfaces import ISession

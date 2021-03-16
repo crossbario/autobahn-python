@@ -15,7 +15,7 @@ import flatbuffers
 from flatbuffers.compat import import_numpy
 np = import_numpy()
 
-import {{ render_to_basemodule.split('.')[0] }}
+# import {{ render_to_basemodule.split('.')[0] }}
 
 {% endif %}
 # https://stackoverflow.com/a/46064289/884770
@@ -124,7 +124,7 @@ class {{ metadata.classname }}(object):
 
             {% else %}
             # FIXME [5]
-            raise NotImplementedError('implement processing [1] of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            raise NotImplementedError('implement processing [5] of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
             {% endif %}
             assert value is not None
             self._{{ metadata.fields[field_name].name }} = value
@@ -335,7 +335,7 @@ class {{ metadata.classname }}(object):
 
         {% else %}
         # FIXME [1]
-        raise NotImplementedError('implement builder [1] for type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+        # raise NotImplementedError('implement builder [1] for type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
 
         {% endif %}
         {% endfor %}

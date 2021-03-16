@@ -40,8 +40,6 @@ def fill_{{ metadata.classname }}(obj: {{ metadata.classname }}):
     # class has no fields
     pass
     {% else %}
-    import os
-
     {% for field_name in metadata.fields_by_id %}
     {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
     obj.{{ metadata.fields[field_name].name }} = util.generate_activation_code()
