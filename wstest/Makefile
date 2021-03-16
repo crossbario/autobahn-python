@@ -1,6 +1,7 @@
 .PHONY: downloads
 
 CURDIR := $(CURDIR)
+REPORTDATE := `date -u +"%Y-%m-%d"`
 
 default:
 	@echo 'targets: clean, downloads, build_wstest'
@@ -17,8 +18,10 @@ dist_clean: clean
 clean_reports:
 	-rm -rf ./reports
 
+# https://s3.eu-central-1.amazonaws.com/crossbario.com/reports/autobahn-testsuite-2021-03-16/clients/index.html
+# https://crossbario.com/reports/autobahn-testsuite-2021-03-16/clients/index.html
 upload_reports:
-	./wstest/bin/aws s3 sync reports s3://autobahn.ws/testsuite/reports \
+	./wstest/bin/aws s3 sync reports s3://crossbario.com/reports/autobahn-testsuite-$(REPORTDATE) \
 		--delete --acl public-read --region=eu-central-1
 
 
@@ -35,7 +38,8 @@ build_wstest:
 	mkdir -p ./wstest
 	tar xvf ./downloads/pypy2.7-v7.3.3-linux64.tar.bz2 --strip-components=1 -C ./wstest
 	./wstest/bin/pypy ./downloads/get-pip.py
-	./wstest/bin/pip install autobahntestsuite
+	./wstest/bin/pip install -e ../../autobahn-testsuite/autobahntestsuite
+	# ./wstest/bin/pip install autobahntestsuite
 	./wstest/bin/pip install awscli
 
 
@@ -83,19 +87,19 @@ build: build_wstest \
 
 setup_pypy3_tx:
 	./pypy3/bin/virtualenv ./venv_pypy3_tx
-	cd .. && ./wstest/venv_pypy3_tx/bin/pip install .[twisted,compress]
+	cd .. && ./wstest/venv_pypy3_tx/bin/pip install -e .[twisted,compress]
 
 setup_pypy3_aio:
 	./pypy3/bin/virtualenv ./venv_pypy3_aio
-	cd .. && ./wstest/venv_pypy3_aio/bin/pip install .[asyncio,compress]
+	cd .. && ./wstest/venv_pypy3_aio/bin/pip install -e .[asyncio,compress]
 
 setup_cpy3_tx:
 	./cpy3/bin/virtualenv ./venv_cpy3_tx
-	cd .. && ./wstest/venv_cpy3_tx/bin/pip install .[accelerate,twisted,compress]
+	cd .. && ./wstest/venv_cpy3_tx/bin/pip install -e .[accelerate,twisted,compress]
 
 setup_cpy3_aio:
 	./cpy3/bin/virtualenv ./venv_cpy3_aio
-	cd .. && ./wstest/venv_cpy3_aio/bin/pip install .[accelerate,asyncio,compress]
+	cd .. && ./wstest/venv_cpy3_aio/bin/pip install -e .[accelerate,asyncio,compress]
 
 setup: setup_pypy3_tx setup_pypy3_aio setup_cpy3_tx setup_cpy3_aio
 
@@ -126,7 +130,7 @@ versions:
 
 
 wstest_server_full:
-	./wstest/bin/wstest -m fuzzingserver --spec=fuzzingserver-quick.json
+	./wstest/bin/wstest -m fuzzingserver --spec=fuzzingserver-full.json
 
 wstest_server_quick:
 	./wstest/bin/wstest -m fuzzingserver --spec=fuzzingserver-quick.json
@@ -157,50 +161,31 @@ test_clients: \
 	test_aio_clients
 
 
-start_cpy2_tx_server:
-	./venv_cpy2_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9010 &
-
 start_cpy3_tx_server:
 	./venv_cpy3_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9011 &
-
-start_pypy2_tx_server:
-	./venv_pypy2_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9012 &
 
 start_pypy3_tx_server:
 	./venv_pypy3_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9013 &
 
-
-start_cpy2_aio_server:
-	./venv_cpy2_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9014 &
-
 start_cpy3_aio_server:
 	./venv_cpy3_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9015 &
-
-start_pypy2_aio_server:
-	./venv_pypy2_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9016 &
 
 start_pypy3_aio_server:
 	./venv_pypy3_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9017 &
 
-
-start_tx_server: \
-	start_cpy2_tx_server \
+start_tx_servers: \
 	start_cpy3_tx_server \
-	start_pypy2_tx_server \
 	start_pypy3_tx_server
 
-start_aio_server: \
-	start_cpy2_aio_server \
+start_aio_servers: \
 	start_cpy3_aio_server \
-	start_pypy2_aio_server \
 	start_pypy3_aio_server
 
-start_server: \
-	start_tx_server \
-	start_aio_server
+start_servers: \
+	start_tx_servers \
+	start_aio_servers
 
-
-stop_server:
+stop_servers:
 	-pkill -f "testee_server*"
 
 
@@ -214,50 +199,32 @@ stop_server:
 # report is only for the last invocation - it would require a massive
 # code restructering / rewriting to change that. no time for that unfort.
 
-test_cpy2_tx_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9010
-
 test_cpy3_tx_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9011
-
-test_pypy2_tx_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9012
+	./wstest/bin/wstest -m fuzzingclient --spec=fuzzingclient-quick.json -w ws://127.0.0.1:9011
 
 test_pypy3_tx_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9013
-
-
-test_cpy2_aio_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9014
+	./wstest/bin/wstest -m fuzzingclient --spec=fuzzingclient-quick.json -w ws://127.0.0.1:9013
 
 test_cpy3_aio_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9015
-
-test_pypy2_aio_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9016
+	./wstest/bin/wstest -m fuzzingclient --spec=fuzzingclient-quick.json -w ws://127.0.0.1:9015
 
 test_pypy3_aio_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9017
+	./wstest/bin/wstest -m fuzzingclient --spec=fuzzingclient-quick.json -w ws://127.0.0.1:9017
 
-
-test_tx_server: \
-	test_cpy2_tx_server \
+test_tx_servers: \
 	test_cpy3_tx_server \
-	test_pypy2_tx_server \
 	test_pypy3_tx_server
 
-test_aio_server: \
-	test_cpy2_aio_server \
+test_aio_servers: \
 	test_cpy3_aio_server \
-	test_pypy2_aio_server \
 	test_pypy3_aio_server
 
 # THIS DOES NOT WORK TO PRODUCE THE FINAL COMBINED REPORT FOR ALL SERVERS!
 # see above.
 #test_server: \
-#	test_tx_server \
-#	test_aio_server
+#	test_tx_servers \
+#	test_aio_servers
 
 
-test_server:
-	./wstest/bin/wstest -m fuzzingclient
+test_servers:
+	./wstest/bin/wstest -m fuzzingclient --spec=fuzzingclient-quick.json
