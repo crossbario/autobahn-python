@@ -3,14 +3,14 @@
 We are testing on these Pythons
 
 * CPython 2.7
-* CPython 3.6
+* CPython 3.9
 * PyPy 2.7
-* PyPy3 (3.5 lang. level)
+* PyPy3 (3.7 lang. level)
 
 using these networking frameworks
 
 * Twisted
-* asyncio (or Trollius fallback)
+* asyncio
 
 for
 
