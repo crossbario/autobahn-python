@@ -8,6 +8,7 @@ Changelog
 master
 ------
 
+* fix: WebSocket compression, window size (zlib wbits) == 8 is illegal nowerdays (#1477)
 * fix: XBR IDL code generator - all 4 WAMP actions working now
 * new: add automated build of xbrnetwork CLI (single-file EXE) in CI
 

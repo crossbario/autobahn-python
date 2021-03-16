@@ -21,8 +21,10 @@ clean_reports:
 # https://s3.eu-central-1.amazonaws.com/crossbario.com/reports/autobahn-testsuite-2021-03-16/clients/index.html
 # https://crossbario.com/reports/autobahn-testsuite-2021-03-16/clients/index.html
 upload_reports:
-	./wstest/bin/aws s3 sync reports s3://crossbario.com/reports/autobahn-testsuite-$(REPORTDATE) \
-		--delete --acl public-read --region=eu-central-1
+	./wstest/bin/aws s3 sync \
+		--delete --acl public-read --region=eu-central-1 \
+		reports \
+		s3://crossbario.com/reports/autobahn-testsuite-$(REPORTDATE)
 
 
 downloads:
@@ -34,23 +36,15 @@ downloads:
 	wget -P downloads https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tar.xz
 
 
+# needs CPython 2 or PyPy 2, and https://pypi.org/project/autobahntestsuite/0.8.2/
 build_wstest:
 	mkdir -p ./wstest
 	tar xvf ./downloads/pypy2.7-v7.3.3-linux64.tar.bz2 --strip-components=1 -C ./wstest
 	./wstest/bin/pypy ./downloads/get-pip.py
-	./wstest/bin/pip install -e ../../autobahn-testsuite/autobahntestsuite
-	# ./wstest/bin/pip install autobahntestsuite
+	# ./wstest/bin/pip install -e ../../autobahn-testsuite/autobahntestsuite
+	./wstest/bin/pip install "autobahntestsuite>=0.8.2"
 	./wstest/bin/pip install awscli
 
-
-build_pypy2:
-	rm -rf ./pypy2
-	mkdir -p ./pypy2
-	tar xvf ./downloads/pypy2.7-v7.3.3-linux64.tar.bz2 --strip-components=1 -C ./pypy2
-	cd ./pypy2/bin && ln -s pypy python && cd ../..
-	./pypy2/bin/python ./downloads/get-pip.py
-	./pypy2/bin/pip install virtualenv
-	./pypy2/bin/python -V
 
 build_pypy3:
 	rm -rf ./pypy3
@@ -60,16 +54,6 @@ build_pypy3:
 	./pypy3/bin/python ./downloads/get-pip.py
 	./pypy3/bin/pip install virtualenv
 	./pypy3/bin/python -V
-
-build_cpy2:
-	rm -rf ./cpy2_build
-	mkdir -p ./cpy2_build
-	tar xvf ./downloads/Python-2.7.18.tar.xz --strip-components=1 -C ./cpy2_build
-	cd ./cpy2_build && ./configure --prefix=${CURDIR}/cpy2 && make && make install
-	rm -rf ./cpy2_build
-	./cpy2/bin/python ./downloads/get-pip.py
-	./cpy2/bin/pip install virtualenv
-	./cpy2/bin/python -V
 
 build_cpy3:
 	rm -rf ./cpy3_build
@@ -106,7 +90,7 @@ setup: setup_pypy3_tx setup_pypy3_aio setup_cpy3_tx setup_cpy3_aio
 
 versions:
 	@echo ""
-	@echo "wstest (PyPy 2):"
+	@echo "wstest (uses PyPy 2):"
 	@echo ""
 	./wstest/bin/pypy -V
 
