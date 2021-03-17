@@ -3,6 +3,8 @@
 CURDIR := $(CURDIR)
 REPORTDATE := `date -u +"%Y-%m-%d"`
 
+AUTOBAHN_TESTSUITE_DOCKER := crossbario/autobahn-testsuite:0.8.2@sha256:5d4ba3aa7d6ab2fdbf6606f3f4ecbe4b66f205ce1cbc176d6cdf650157e52242
+
 default:
 	@echo 'targets: clean, downloads, build_wstest'
 
@@ -118,6 +120,29 @@ wstest_server_full:
 
 wstest_server_quick:
 	./wstest/bin/wstest -m fuzzingserver --spec=fuzzingserver-quick.json
+
+
+wstest_server_docker_pull:
+	docker pull $(AUTOBAHN_TESTSUITE_DOCKER)
+
+wstest_server_docker_stop:
+	docker rm --force fuzzingserver
+
+wstest_server_docker_full: wstest_server_docker_stop
+	docker run -it --rm \
+		-v ${PWD}/fuzzingserver-full.json:/config/fuzzingserver.json:ro \
+		-v ${PWD}/reports:/reports \
+		-p 9001:9001 \
+		--name autobahn \
+		$(AUTOBAHN_TESTSUITE_DOCKER)
+
+wstest_server_docker_quick: wstest_server_docker_stop
+	docker run -d --rm --name fuzzingserver \
+		-u `id -u`:`id -g` \
+		-v ${PWD}/fuzzingserver-quick.json:/config/fuzzingserver.json:ro \
+		-v ${PWD}/reports:/reports \
+		-p 9001:9001 \
+		$(AUTOBAHN_TESTSUITE_DOCKER)
 
 
 test_pypy3_tx_client:

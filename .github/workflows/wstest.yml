@@ -1,0 +1,102 @@
+# runs autobahn testsuite and uploads to
+# https://crossbario.com/reports/autobahn-testsuite-2021-03-17/clients/index.html
+
+name: wstest
+
+on:
+  # Trigger this workflow when the "deploy" workflow has completed successfully
+  # https://docs.github.com/en/free-pro-team@latest/actions/reference/events-that-trigger-workflows#workflow_run
+  workflow_run:
+    workflows:
+      - deploy
+    branches:
+      - master
+    types:
+      - completed
+
+jobs:
+
+  # runs on x86-64 (xeon-d) host: matterhorn
+  wstest_amd64:
+
+    if: github.ref == 'refs/heads/master'
+
+    runs-on: [self-hosted, linux, X64]
+
+    strategy:
+      matrix:
+        python-version: ['3.9', 'pypy-3.7']
+
+    env:
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+
+    steps:
+    # Checkout sources
+    - uses: actions/checkout@v2
+
+    # Install OS packages, as we install Python packages from source:
+    #
+    # libenchant-dev              needed for pyenchant, needed for sphinx-spellcheck
+    # libbz2-dev, libsnappy-dev   needed for compression
+    # libunwind-dev               needed for vmprof
+    #
+    - name: Install OS package dependencies
+      run: |
+        sudo apt update
+        sudo apt install build-essential libssl-dev libffi-dev libunwind-dev \
+          libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
+          libsnappy-dev
+
+    # Use this Python
+    # https://github.com/actions/setup-python/blob/main/README.md
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Set environment
+      run: |
+        echo AUTOBAHN_BUILD_DATE=`date -u +"%Y-%m-%d"` >> $GITHUB_ENV
+        echo AUTOBAHN_BUILD_ID=$(date --utc +%Y%m%d)-$(git rev-parse --short ${GITHUB_SHA}) >> $GITHUB_ENV
+        echo AUTOBAHN_VCS_REF=`git rev-parse --short ${GITHUB_SHA}` >> $GITHUB_ENV
+        echo AUTOBAHN_VERSION=$(grep -E '^(__version__)' ./autobahn/_version.py | cut -d ' ' -f3 | sed -e 's|[u"'\'']||g') >> $GITHUB_ENV
+
+    - name: Print environment
+      run: |
+        echo ""
+        echo "Build environment configured:"
+        echo ""
+        echo "  AUTOBAHN_BUILD_DATE = ${AUTOBAHN_BUILD_DATE}"
+        echo "  AUTOBAHN_BUILD_ID   = ${AUTOBAHN_BUILD_ID}"
+        echo "  AUTOBAHN_VCS_REF    = ${AUTOBAHN_VCS_REF}"
+        echo "  AUTOBAHN_VERSION    = ${AUTOBAHN_VERSION}"
+        echo ""
+        echo "  AWS_DEFAULT_REGION  = ${AWS_DEFAULT_REGION}"
+        echo "  AWS_S3_BUCKET_NAME  = ${AWS_S3_BUCKET_NAME}"
+        echo ""
+
+    - name: Install Python package dependencies
+      run: |
+        python -m pip install -U pip
+        pip install -U -r requirements-dev.txt
+
+    - name: Install this package
+      run: |
+        pip install .[all]
+
+    - name: Run a Docker container with the fuzzing server
+      run: |
+        cd wstest
+        make wstest_server_docker_pull
+        make wstest_server_docker_quick
+        sleep 5
+        python testee_client_tx.py
+        python testee_client_aio.py
+        make wstest_server_docker_stop
+
+    - name: Upload reports
+      run: |
+        aws s3 sync --delete --acl public-read --region=${AWS_DEFAULT_REGION} \
+          ./wstest/reports/clients \
+          s3://crossbario.com/reports/websocket-testsuite/autobahn-${AUTOBAHN_VERSION}-${{ matrix.python-version }}
