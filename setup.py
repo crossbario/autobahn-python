@@ -139,6 +139,9 @@ extras_require_xbr = [
     'base58>=2.1.0',            # MIT license (https://github.com/keis/base58)
     'ecdsa>=0.16.1',            # MIT license (https://github.com/warner/python-ecdsa)
     'py-multihash>=2.0.1',      # MIT license (https://github.com/multiformats/py-multihash / https://pypi.org/project/py-multihash/)
+
+    # the following is needed for the WAMP/XBR IDL code generator
+    'yapf==0.29.0',             # Apache 2.0
 ]
 
 # everything
