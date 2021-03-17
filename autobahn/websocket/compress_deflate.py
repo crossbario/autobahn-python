@@ -53,7 +53,7 @@ class PerMessageDeflateMixin(object):
     Name of this WebSocket extension.
     """
 
-    WINDOW_SIZE_PERMISSIBLE_VALUES = [8, 9, 10, 11, 12, 13, 14, 15]
+    WINDOW_SIZE_PERMISSIBLE_VALUES = [9, 10, 11, 12, 13, 14, 15]
     """
     Permissible value for window size parameter.
     Higher values use more memory, but produce smaller output. The default is 15.
@@ -106,7 +106,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                 # 8.1.2.2. client_max_window_bits
 
                 # ".. This parameter has no value or a decimal integer value without
-                # leading zeroes between 8 to 15 inclusive ..""
+                # leading zeroes between 9 to 15 inclusive ..""
 
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
@@ -172,7 +172,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
         :param request_no_context_takeover: When ``True``, the client request the "no context takeover" feature.
         :type request_no_context_takeover: bool
         :param request_max_window_bits: When non-zero, the client requests the given "max window size" (must be
-            and integer from the interval ``[8..15]``).
+            and integer from the interval ``[9..15]``).
         :type request_max_window_bits: int
         """
         if type(accept_no_context_takeover) != bool:
@@ -258,7 +258,7 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
         :param request_no_context_takeover: When ``True``, the server requests the "no context takeover" feature.
         :type request_no_context_takeover: bool
         :param request_max_window_bits: When non-zero, the server requests the given "max window size" (must be
-            and integer from the interval ``[8..15]``).
+            and integer from the interval ``[9..15]``).
         :param request_max_window_bits: int
         :param no_context_takeover: Override server ("server-to-client direction") context takeover (this must
                 be compatible with the offer).
