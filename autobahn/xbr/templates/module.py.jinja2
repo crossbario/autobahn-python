@@ -1,1 +1,5 @@
 # Python module "{{ modulename }}"
+
+from . import {{ ', '.join(imports) }}
+
+__all__ = [{{ ', '.join(imports) }}]

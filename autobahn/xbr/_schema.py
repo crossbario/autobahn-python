@@ -28,15 +28,22 @@
 import os
 import pprint
 import hashlib
-from typing import Dict, Optional
+from typing import Dict, Optional, TypeVar
 from pathlib import Path
 
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
 
 
+# https://stackoverflow.com/a/46064289/884770
+T_FbsRepository = TypeVar('T_FbsRepository', bound='FbsRepository')
+
+
 class FbsType(object):
     """
+    Flatbuffers type.
+
+    See: https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
     """
 
     # no type
@@ -169,22 +176,53 @@ class FbsType(object):
         'Union': _BaseType.Union,
     }
 
-    def __init__(self, basetype: int, element: int, index: int):
+    def __init__(self,
+                 repository: T_FbsRepository,
+                 basetype: int,
+                 element: int,
+                 index: int,
+                 objtype: Optional[str] = None):
+        self._repository = repository
         self._basetype = basetype
         self._element = element
         self._index = index
+        self._objtype = objtype
 
     @property
     def basetype(self):
+        """
+        Flatbuffers base type.
+
+        :return:
+        """
         return self._basetype
 
     @property
     def element(self):
+        """
+        Only if basetype == Vector or basetype == Array.
+
+        :return:
+        """
         return self._element
 
     @property
     def index(self):
+        """
+        If basetype == Object, index into "objects".
+
+        :return:
+        """
         return self._index
+
+    @property
+    def objtype(self):
+        """
+        If basetype == Object, fully qualified object type name.
+
+        :return:
+        """
+        return self._objtype
 
     def map(self, language: str, attrs: Optional[Dict] = None, required: Optional[bool] = True) -> str:
         """
@@ -194,6 +232,7 @@ class FbsType(object):
         """
         if language == 'python':
             _mapped_type = None
+
             if self.basetype == FbsType.Vector:
                 # vectors of uint8 are mapped to byte strings ..
                 if self.element == FbsType.UByte:
@@ -203,15 +242,31 @@ class FbsType(object):
                         _mapped_type = 'bytes'
                 # .. whereas all other vectors are mapped to lists of the same element type
                 else:
+                    if self.objtype:
+                        # FIXME
+                        _mapped_type = 'List[{}]'.format(self.objtype.split('.')[-1])
+                        # _mapped_type = 'List[{}.{}]'.format(self._repository.render_to_basemodule, self.objtype)
+                    else:
+                        _mapped_type = 'List[{}]'.format(FbsType.FBS2PY[self.element])
+
+            elif self.basetype == FbsType.Obj:
+                if self.objtype:
+                    # FIXME
+                    _mapped_type = self.objtype.split('.')[-1]
+                    # _mapped_type = '{}.{}'.format(self._repository.render_to_basemodule, self.objtype)
+                else:
                     _mapped_type = 'List[{}]'.format(FbsType.FBS2PY[self.element])
-            # FIXME: follow up processing of Unions (UType/Union)
+
             elif self.basetype in FbsType.SCALAR_TYPES + [FbsType.UType, FbsType.Union]:
+                # FIXME: follow up processing of Unions (UType/Union)
                 if self.basetype == FbsType.ULong and attrs and 'timestamp' in attrs:
                     _mapped_type = 'np.datetime64'
                 else:
                     _mapped_type = FbsType.FBS2PY[self.basetype]
+
             else:
                 raise NotImplementedError('FIXME: implement mapping of FlatBuffers type "{}" to Python in {}'.format(self.basetype, self.map))
+
             if required:
                 return _mapped_type
             else:
@@ -227,6 +282,7 @@ class FbsType(object):
             'basetype': self.FBS2STR.get(self._basetype, None),
             'element': self.FBS2STR.get(self._element, None),
             'index': self._index,
+            'objtype': self._objtype,
         }
         return obj
 
@@ -241,6 +297,7 @@ class FbsAttribute(object):
 
 class FbsField(object):
     def __init__(self,
+                 repository: T_FbsRepository,
                  name: str,
                  type: FbsType,
                  id: int,
@@ -251,6 +308,7 @@ class FbsField(object):
                  required: bool,
                  attrs: Dict[str, FbsAttribute],
                  docs: str):
+        self._repository = repository
         self._name = name
         self._type = type
         self._id = id
@@ -261,6 +319,10 @@ class FbsField(object):
         self._required = required
         self._attrs = attrs
         self._docs = docs
+
+    @property
+    def repository(self):
+        return self._repository
 
     @property
     def name(self):
@@ -350,7 +412,7 @@ def parse_docs(obj):
     return docs
 
 
-def parse_fields(obj):
+def parse_fields(repository, obj, objs_lst=None):
     fields = {}
     fields_by_id = {}
     for j in range(obj.FieldsLength()):
@@ -361,12 +423,20 @@ def parse_fields(obj):
             field_name = field_name.decode('utf8')
 
         field_id = int(fbs_field.Id())
-
         fbs_field_type = fbs_field.Type()
-        field_type = FbsType(basetype=fbs_field_type.BaseType(),
+
+        _objtype = None
+        if fbs_field_type.Index() >= 0:
+            _obj = objs_lst[fbs_field_type.Index()]
+            _objtype = _obj.name
+
+        field_type = FbsType(repository=repository,
+                             basetype=fbs_field_type.BaseType(),
                              element=fbs_field_type.Element(),
-                             index=fbs_field_type.Index())
-        field = FbsField(name=field_name,
+                             index=fbs_field_type.Index(),
+                             objtype=_objtype)
+        field = FbsField(repository=repository,
+                         name=field_name,
                          type=field_type,
                          id=field_id,
                          offset=fbs_field.Offset(),
@@ -387,7 +457,7 @@ def parse_fields(obj):
     return fields, fields_by_id
 
 
-def parse_calls(svc_obj):
+def parse_calls(repository, svc_obj, objs_lst=None):
     calls = {}
     calls_by_id = {}
     for j in range(svc_obj.CallsLength()):
@@ -410,8 +480,9 @@ def parse_calls(svc_obj):
         call_req_bytesize = fbs_call_req.Bytesize()
         call_req_docs = parse_docs(fbs_call_req)
         call_req_attrs = parse_attr(fbs_call_req)
-        call_req_fields, call_fields_by_id = parse_fields(fbs_call_req)
-        call_req = FbsObject(name=call_req_name,
+        call_req_fields, call_fields_by_id = parse_fields(repository, fbs_call_req, objs_lst=objs_lst)
+        call_req = FbsObject(repository=repository,
+                             name=call_req_name,
                              fields=call_req_fields,
                              fields_by_id=call_fields_by_id,
                              is_struct=call_req_is_struct,
@@ -429,8 +500,9 @@ def parse_calls(svc_obj):
         call_resp_bytesize = fbs_call_resp.Bytesize()
         call_resp_docs = parse_docs(fbs_call_resp)
         call_resp_attrs = parse_attr(fbs_call_resp)
-        call_resp_fields, call_resp_fields_by_id = parse_fields(fbs_call_resp)
-        call_resp = FbsObject(name=call_resp_name,
+        call_resp_fields, call_resp_fields_by_id = parse_fields(repository, fbs_call_resp, objs_lst=objs_lst)
+        call_resp = FbsObject(repository=repository,
+                              name=call_resp_name,
                               fields=call_resp_fields,
                               fields_by_id=call_resp_fields_by_id,
                               is_struct=call_resp_is_struct,
@@ -441,7 +513,8 @@ def parse_calls(svc_obj):
 
         call_docs = parse_docs(fbs_call)
         call_attrs = parse_attr(fbs_call)
-        call = FbsRPCCall(name=call_name,
+        call = FbsRPCCall(repository,
+                          name=call_name,
                           id=call_id,
                           request=call_req,
                           response=call_resp,
@@ -462,6 +535,7 @@ def parse_calls(svc_obj):
 
 class FbsObject(object):
     def __init__(self,
+                 repository: T_FbsRepository,
                  name: str,
                  fields: Dict[str, FbsField],
                  fields_by_id: Dict[int, str],
@@ -470,6 +544,7 @@ class FbsObject(object):
                  bytesize: int,
                  attrs: Dict[str, FbsAttribute],
                  docs: str):
+        self._repository = repository
         self._name = name
         self._fields = fields
         self._fields_by_id = fields_by_id
@@ -493,6 +568,10 @@ class FbsObject(object):
             return 'from {} import {}'.format(base, klass)
         else:
             raise NotImplementedError()
+
+    @property
+    def repository(self):
+        return self._repository
 
     @property
     def name(self):
@@ -548,14 +627,15 @@ class FbsObject(object):
         return obj
 
     @staticmethod
-    def parse(fbs_obj):
+    def parse(repository, fbs_obj, objs_lst=None):
         obj_name = fbs_obj.Name()
         if obj_name:
             obj_name = obj_name.decode('utf8')
         obj_docs = parse_docs(fbs_obj)
         obj_attrs = parse_attr(fbs_obj)
-        obj_fields, obj_fields_by_id = parse_fields(fbs_obj)
-        obj = FbsObject(name=obj_name,
+        obj_fields, obj_fields_by_id = parse_fields(repository, fbs_obj, objs_lst=objs_lst)
+        obj = FbsObject(repository=repository,
+                        name=obj_name,
                         fields=obj_fields,
                         fields_by_id=obj_fields_by_id,
                         is_struct=fbs_obj.IsStruct(),
@@ -568,18 +648,24 @@ class FbsObject(object):
 
 class FbsRPCCall(object):
     def __init__(self,
+                 repository: T_FbsRepository,
                  name: str,
                  id: int,
                  request: FbsObject,
                  response: FbsObject,
                  docs: str,
                  attrs: Dict[str, FbsAttribute]):
+        self._repository = repository
         self._name = name
         self._id = id
         self._request = request
         self._response = response
         self._docs = docs
         self._attrs = attrs
+
+    @property
+    def repository(self):
+        return self._repository
 
     @property
     def name(self):
@@ -624,16 +710,22 @@ class FbsRPCCall(object):
 
 class FbsService(object):
     def __init__(self,
+                 repository: T_FbsRepository,
                  name: str,
                  calls: Dict[str, FbsRPCCall],
                  calls_by_id: Dict[int, str],
                  attrs: Dict[str, FbsAttribute],
                  docs: str):
+        self._repository = repository
         self._name = name
         self._calls = calls
         self._calls_by_id = calls_by_id
         self._attrs = attrs
         self._docs = docs
+
+    @property
+    def repository(self):
+        return self._repository
 
     @property
     def name(self):
@@ -675,11 +767,16 @@ class FbsService(object):
 
 
 class FbsEnumValue(object):
-    def __init__(self, name, value, docs):
+    def __init__(self, repository, name, value, docs):
+        self._repository = repository
         self._name = name
         self._value = value
         self._attrs = {}
         self._docs = docs
+
+    @property
+    def repository(self):
+        return self._repository
 
     @property
     def name(self):
@@ -718,12 +815,14 @@ class FbsEnum(object):
     FlatBuffers enum type.
     """
     def __init__(self,
+                 repository: T_FbsRepository,
                  name: str,
                  values: Dict[str, FbsEnumValue],
                  is_union: bool,
                  underlying_type: int,
                  attrs: Dict[str, FbsAttribute],
                  docs: str):
+        self._repository = repository
         self._name = name
         self._values = values
         self._is_union = is_union
@@ -732,6 +831,10 @@ class FbsEnum(object):
         self._underlying_type = underlying_type
         self._attrs = attrs
         self._docs = docs
+
+    @property
+    def repository(self):
+        return self._repository
 
     @property
     def name(self):
@@ -782,6 +885,7 @@ class FbsSchema(object):
     """
     """
     def __init__(self,
+                 repository: T_FbsRepository,
                  file_name: str,
                  file_sha256: str,
                  file_size: int,
@@ -794,6 +898,7 @@ class FbsSchema(object):
                  services: Dict[str, FbsService]):
         """
 
+        :param repository:
         :param file_name:
         :param file_sha256:
         :param file_size:
@@ -805,6 +910,7 @@ class FbsSchema(object):
         :param enums:
         :param services:
         """
+        self._repository = repository
         self._file_name = file_name
         self._file_sha256 = file_sha256
         self._file_size = file_size
@@ -815,6 +921,10 @@ class FbsSchema(object):
         self._objs = objs
         self._enums = enums
         self._services = services
+
+    @property
+    def repository(self):
+        return self._repository
 
     @property
     def file_name(self):
@@ -892,7 +1002,7 @@ class FbsSchema(object):
         return obj
 
     @staticmethod
-    def load(filename) -> object:
+    def load(repository, filename) -> object:
         """
 
         :param filename:
@@ -916,9 +1026,10 @@ class FbsSchema(object):
 
         root_table = root.RootTable()
         if root_table is not None:
-            root_table = FbsObject.parse(root_table)
+            root_table = FbsObject.parse(repository, root_table)
 
         objs = {}
+        objs_lst = []
         services = {}
         enums = {}
 
@@ -939,11 +1050,15 @@ class FbsSchema(object):
                     enum_value_name = enum_value_name.decode('utf8')
                 enum_value_value = fbs_enum_value.Value()
                 enum_value_docs = parse_docs(fbs_enum_value)
-                enum_value = FbsEnumValue(name=enum_value_name, value=enum_value_value, docs=enum_value_docs)
+                enum_value = FbsEnumValue(repository=repository,
+                                          name=enum_value_name,
+                                          value=enum_value_value,
+                                          docs=enum_value_docs)
                 assert enum_value_name not in enum_values
                 enum_values[enum_value_name] = enum_value
 
-            enum = FbsEnum(name=enum_name,
+            enum = FbsEnum(repository=repository,
+                           name=enum_name,
                            values=enum_values,
                            is_union=fbs_enum.IsUnion(),
                            underlying_type=enum_underlying_type,
@@ -954,9 +1069,10 @@ class FbsSchema(object):
 
         for i in range(root.ObjectsLength()):
             fbs_obj = root.Objects(i)
-            obj = FbsObject.parse(fbs_obj)
+            obj = FbsObject.parse(repository, fbs_obj, objs_lst=objs_lst)
             assert obj.name not in objs
             objs[obj.name] = obj
+            objs_lst.append(obj)
 
         for i in range(root.ServicesLength()):
             svc_obj = root.Services(i)
@@ -967,16 +1083,22 @@ class FbsSchema(object):
 
             docs = parse_docs(svc_obj)
             attrs = parse_attr(svc_obj)
-            calls, calls_by_id = parse_calls(svc_obj)
+            calls, calls_by_id = parse_calls(repository, svc_obj, objs_lst=objs_lst)
 
-            service = FbsService(name=svc_name, calls=calls, calls_by_id=calls_by_id, attrs=attrs, docs=docs)
+            service = FbsService(repository=repository,
+                                 name=svc_name,
+                                 calls=calls,
+                                 calls_by_id=calls_by_id,
+                                 attrs=attrs,
+                                 docs=docs)
             assert svc_name not in services
             services[svc_name] = service
 
         m = hashlib.sha256()
         m.update(data)
 
-        schema = FbsSchema(file_name=filename,
+        schema = FbsSchema(repository=repository,
+                           file_name=filename,
                            file_size=len(data),
                            file_sha256=m.hexdigest(),
                            file_ident=file_ident,
@@ -993,7 +1115,9 @@ class FbsRepository(object):
     """
     """
 
-    def __init__(self):
+    def __init__(self, render_to_basemodule):
+        self._render_to_basemodule = render_to_basemodule
+
         self._schemata = {}
 
         # Dict[str, FbsObject]
@@ -1022,6 +1146,10 @@ class FbsRepository(object):
             }
 
     @property
+    def render_to_basemodule(self):
+        return self._render_to_basemodule
+
+    @property
     def objs(self):
         return self._objs
 
@@ -1045,24 +1173,26 @@ class FbsRepository(object):
             else:
                 print('duplicate schema: {} already loaded'.format(fn))
 
+        # iterate over all schema files found
         for fn in found:
-            schema = FbsSchema.load(fn)
+            # load this schema file
+            schema = FbsSchema.load(self, fn)
 
-            # load enum types
+            # add enum types
             for enum in schema.enums.values():
                 if enum.name in self._enums:
                     print('duplicate enum for name "{}"'.format(enum.name))
                 else:
                     self._enums[enum.name] = enum
 
-            # load object types
+            # add object types
             for obj in schema.objs.values():
                 if obj.name in self._objs:
                     print('duplicate object for name "{}"'.format(obj.name))
                 else:
                     self._objs[obj.name] = obj
 
-            # load service definitions ("APIs")
+            # add service definitions ("APIs")
             for svc in schema.services.values():
                 if svc.name in self._services:
                     print('duplicate service for name "{}"'.format(svc.name))
