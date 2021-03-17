@@ -1,4 +1,9 @@
+.PHONY: downloads
+
 CURDIR := $(CURDIR)
+REPORTDATE := `date -u +"%Y-%m-%d"`
+
+AUTOBAHN_TESTSUITE_DOCKER := crossbario/autobahn-testsuite:0.8.2@sha256:5d4ba3aa7d6ab2fdbf6606f3f4ecbe4b66f205ce1cbc176d6cdf650157e52242
 
 default:
 	@echo 'targets: clean, downloads, build_wstest'
@@ -15,132 +20,130 @@ dist_clean: clean
 clean_reports:
 	-rm -rf ./reports
 
+# https://s3.eu-central-1.amazonaws.com/crossbario.com/reports/autobahn-testsuite-2021-03-16/clients/index.html
+# https://crossbario.com/reports/autobahn-testsuite-2021-03-16/clients/index.html
 upload_reports:
-	./wstest/bin/aws s3 sync reports s3://autobahn.ws/testsuite/reports \
-		--delete --acl public-read --region=eu-central-1
+	./wstest/bin/aws s3 sync \
+		--delete --acl public-read --region=eu-central-1 \
+		reports \
+		s3://crossbario.com/reports/autobahn-testsuite-$(REPORTDATE)
 
 
 downloads:
 	mkdir -p downloads
 	wget -P downloads https://bootstrap.pypa.io/get-pip.py
-	wget -P downloads https://downloads.python.org/pypy/pypy2.7-v7.3.2-linux64.tar.bz2
-	wget -P downloads https://downloads.python.org/pypy/pypy3.7-v7.3.2-linux64.tar.bz2
-	wget -P downloads https://www.python.org/ftp/python/2.7.17/Python-2.7.17.tar.xz
-	wget -P downloads https://www.python.org/ftp/python/3.9.0/Python-3.9.0.tar.xz
+	wget -P downloads https://downloads.python.org/pypy/pypy2.7-v7.3.3-linux64.tar.bz2
+	wget -P downloads https://downloads.python.org/pypy/pypy3.7-v7.3.3-linux64.tar.bz2
+	wget -P downloads https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tar.xz
+	wget -P downloads https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tar.xz
 
 
+# needs CPython 2 or PyPy 2, and https://pypi.org/project/autobahntestsuite/0.8.2/
 build_wstest:
 	mkdir -p ./wstest
-	tar xvf ./downloads/pypy2.7-v7.3.2-linux64.tar.bz2 --strip-components=1 -C ./wstest
+	tar xvf ./downloads/pypy2.7-v7.3.3-linux64.tar.bz2 --strip-components=1 -C ./wstest
 	./wstest/bin/pypy ./downloads/get-pip.py
-	./wstest/bin/pip install autobahntestsuite
+	# ./wstest/bin/pip install -e ../../autobahn-testsuite/autobahntestsuite
+	./wstest/bin/pip install "autobahntestsuite>=0.8.2"
 	./wstest/bin/pip install awscli
 
-
-build_pypy2:
-	rm -rf ./pypy2
-	mkdir -p ./pypy2
-	tar xvf ./downloads/pypy2.7-v7.3.2-linux64.tar.bz2 --strip-components=1 -C ./pypy2
-	cd ./pypy2/bin && ln -s pypy python && cd ../..
-	./pypy2/bin/python ./downloads/get-pip.py
-	./pypy2/bin/pip install virtualenv
-	./pypy2/bin/python -V
 
 build_pypy3:
 	rm -rf ./pypy3
 	mkdir -p ./pypy3
-	tar xvf ./downloads/pypy3.7-v7.3.2-linux64.tar.bz2 --strip-components=1 -C ./pypy3
+	tar xvf ./downloads/pypy3.7-v7.3.3-linux64.tar.bz2 --strip-components=1 -C ./pypy3
 	cd ./pypy3/bin && ln -s pypy3 python && cd ../..
 	./pypy3/bin/python ./downloads/get-pip.py
 	./pypy3/bin/pip install virtualenv
 	./pypy3/bin/python -V
 
-build_cpy2:
-	rm -rf ./cpy2_build
-	mkdir -p ./cpy2_build
-	tar xvf ./downloads/Python-2.7.17.tar.xz --strip-components=1 -C ./cpy2_build
-	cd ./cpy2_build && ./configure --prefix=${CURDIR}/cpy2 && make && make install
-	rm -rf ./cpy2_build
-	./cpy2/bin/python ./downloads/get-pip.py
-	./cpy2/bin/pip install virtualenv
-	./cpy2/bin/python -V
-
 build_cpy3:
 	rm -rf ./cpy3_build
 	mkdir -p ./cpy3_build
-	tar xvf ./downloads/Python-3.9.0.tar.xz --strip-components=1 -C ./cpy3_build
+	tar xvf ./downloads/Python-3.9.2.tar.xz --strip-components=1 -C ./cpy3_build
 	cd ./cpy3_build && ./configure --prefix=${CURDIR}/cpy3 && make && make install
-	cd ./cpy3/bin && ln -s python3 python && cd ../..
-	cd ./cpy3/bin && ln -s pip3 pip && cd ../..
 	rm -rf ./cpy3_build
 	./cpy3/bin/pip install virtualenv
 	./cpy3/bin/python -V
 
 build: build_wstest \
-	   build_pypy2 \
 	   build_pypy3 \
-	   build_cpy2 \
 	   build_cpy3
 
 
-versions:
-	./cpy2/bin/python -V
-	./cpy3/bin/python -V
-	./pypy2/bin/python -V
-	./pypy3/bin/python -V
-
-
-setup_pypy2_tx:
-	./pypy2/bin/virtualenv ./venv_pypy2_tx
-	./venv_pypy2_tx/bin/pip install "autobahn[twisted]==19.11.2"
-
-setup_pypy2_aio:
-	./pypy2/bin/virtualenv ./venv_pypy2_aio
-	./venv_pypy2_aio/bin/pip install "autobahn[asyncio]==19.11.2"
-
 setup_pypy3_tx:
 	./pypy3/bin/virtualenv ./venv_pypy3_tx
-	./venv_pypy3_tx/bin/pip install "autobahn[twisted]==19.11.2"
+	cd .. && ./wstest/venv_pypy3_tx/bin/pip install -e .[twisted,compress]
 
 setup_pypy3_aio:
 	./pypy3/bin/virtualenv ./venv_pypy3_aio
-	./venv_pypy3_aio/bin/pip install "autobahn[asyncio]==19.11.2"
-
-setup_cpy2_tx:
-	./cpy2/bin/python -m virtualenv ./venv_cpy2_tx
-	./venv_cpy2_tx/bin/pip install "autobahn[twisted]==19.11.2"
-
-setup_cpy2_aio:
-	./cpy2/bin/python -m virtualenv ./venv_cpy2_aio
-	./venv_cpy2_aio/bin/pip install "autobahn[asyncio]==19.11.2"
+	cd .. && ./wstest/venv_pypy3_aio/bin/pip install -e .[asyncio,compress]
 
 setup_cpy3_tx:
 	./cpy3/bin/virtualenv ./venv_cpy3_tx
-	./venv_cpy3_tx/bin/pip install "autobahn[twisted]==19.11.2"
+	cd .. && ./wstest/venv_cpy3_tx/bin/pip install -e .[accelerate,twisted,compress]
 
 setup_cpy3_aio:
 	./cpy3/bin/virtualenv ./venv_cpy3_aio
-	./venv_cpy3_aio/bin/pip install "autobahn[asyncio]==19.11.2"
+	cd .. && ./wstest/venv_cpy3_aio/bin/pip install -e .[accelerate,asyncio,compress]
 
-setup: setup_pypy2_tx \
-	   setup_pypy2_aio \
-	   setup_pypy3_tx \
-	   setup_pypy3_aio \
-	   setup_cpy2_tx \
-	   setup_cpy2_aio \
-	   setup_cpy3_tx \
-	   setup_cpy3_aio
+setup: setup_pypy3_tx setup_pypy3_aio setup_cpy3_tx setup_cpy3_aio
 
 
-wstest_server:
-	./wstest/bin/wstest -m fuzzingserver
+versions:
+	@echo ""
+	@echo "wstest (uses PyPy 2):"
+	@echo ""
+	./wstest/bin/pypy -V
+
+	@echo ""
+	@echo "CPython 3:"
+	@echo ""
+	./cpy3/bin/python -V
+	@echo "Autobahn - CPython 3 / Twisted:"
+	@./venv_cpy3_tx/bin/python -c "import autobahn; print('autobahn-{}'.format(autobahn.__version__))"
+	@echo "Autobahn - CPython 3 / asyncio:"
+	@./venv_cpy3_aio/bin/python -c "import autobahn; print('autobahn-{}'.format(autobahn.__version__))"
+
+	@echo ""
+	@echo "PyPy 3:"
+	@echo ""
+	./pypy3/bin/python -V
+	@echo "Autobahn - PyPy 3 / Twisted:"
+	@./venv_pypy3_tx/bin/python -c "import autobahn; print('autobahn-{}'.format(autobahn.__version__))"
+	@echo "Autobahn - PyPy 3 / asyncio:"
+	@./venv_pypy3_aio/bin/python -c "import autobahn; print('autobahn-{}'.format(autobahn.__version__))"
 
 
-test_pypy2_tx_client:
-	./venv_pypy2_tx/bin/python testee_client_tx.py
+wstest_server_full:
+	./wstest/bin/wstest -m fuzzingserver --spec=fuzzingserver-full.json
 
-test_pypy2_aio_client:
-	./venv_pypy2_aio/bin/python testee_client_aio.py
+wstest_server_quick:
+	./wstest/bin/wstest -m fuzzingserver --spec=fuzzingserver-quick.json
+
+
+wstest_server_docker_pull:
+	docker pull $(AUTOBAHN_TESTSUITE_DOCKER)
+
+wstest_server_docker_stop:
+	docker rm --force fuzzingserver
+
+wstest_server_docker_full: wstest_server_docker_stop
+	docker run -it --rm \
+		-v ${PWD}/fuzzingserver-full.json:/config/fuzzingserver.json:ro \
+		-v ${PWD}/reports:/reports \
+		-p 9001:9001 \
+		--name autobahn \
+		$(AUTOBAHN_TESTSUITE_DOCKER)
+
+wstest_server_docker_quick: wstest_server_docker_stop
+	docker run -d --rm --name fuzzingserver \
+		-u `id -u`:`id -g` \
+		-v ${PWD}/fuzzingserver-quick.json:/config/fuzzingserver.json:ro \
+		-v ${PWD}/reports:/reports \
+		-p 9001:9001 \
+		$(AUTOBAHN_TESTSUITE_DOCKER)
+
 
 test_pypy3_tx_client:
 	./venv_pypy3_tx/bin/python testee_client_tx.py
@@ -148,80 +151,50 @@ test_pypy3_tx_client:
 test_pypy3_aio_client:
 	./venv_pypy3_tx/bin/python testee_client_aio.py
 
-test_cpy2_tx_client:
-	./venv_cpy2_tx/bin/python testee_client_tx.py
-
-test_cpy2_aio_client:
-	./venv_cpy2_aio/bin/python testee_client_aio.py
-
 test_cpy3_tx_client:
 	./venv_cpy3_tx/bin/python testee_client_tx.py
 
 test_cpy3_aio_client:
 	./venv_cpy3_tx/bin/python testee_client_aio.py
 
-
-test_tx_client: \
-	test_pypy2_tx_client \
+test_tx_clients: \
 	test_pypy3_tx_client \
-	test_cpy2_tx_client \
 	test_cpy3_tx_client
 
-test_aio_client: \
-	test_pypy2_aio_client \
+test_aio_clients: \
 	test_pypy3_aio_client \
-	test_cpy2_aio_client \
 	test_cpy3_aio_client
 
-test_client: \
-	test_tx_client \
-	test_aio_client
+test_clients: \
+	test_tx_clients \
+	test_aio_clients
 
-
-start_cpy2_tx_server:
-	./venv_cpy2_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9010 &
 
 start_cpy3_tx_server:
 	./venv_cpy3_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9011 &
 
-start_pypy2_tx_server:
-	./venv_pypy2_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9012 &
-
 start_pypy3_tx_server:
 	./venv_pypy3_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9013 &
-
-
-start_cpy2_aio_server:
-	./venv_cpy2_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9014 &
 
 start_cpy3_aio_server:
 	./venv_cpy3_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9015 &
 
-start_pypy2_aio_server:
-	./venv_pypy2_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9016 &
-
 start_pypy3_aio_server:
 	./venv_pypy3_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9017 &
 
-
-start_tx_server: \
-	start_cpy2_tx_server \
+start_tx_servers: \
 	start_cpy3_tx_server \
-	start_pypy2_tx_server \
 	start_pypy3_tx_server
 
-start_aio_server: \
-	start_cpy2_aio_server \
+start_aio_servers: \
 	start_cpy3_aio_server \
-	start_pypy2_aio_server \
 	start_pypy3_aio_server
 
-start_server: \
-	start_tx_server \
-	start_aio_server
+start_servers: \
+	start_tx_servers \
+	start_aio_servers
 
-
-stop_server:
+stop_servers:
 	-pkill -f "testee_server*"
 
 
@@ -235,50 +208,32 @@ stop_server:
 # report is only for the last invocation - it would require a massive
 # code restructering / rewriting to change that. no time for that unfort.
 
-test_cpy2_tx_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9010
-
 test_cpy3_tx_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9011
-
-test_pypy2_tx_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9012
+	./wstest/bin/wstest -m fuzzingclient --spec=fuzzingclient-quick.json -w ws://127.0.0.1:9011
 
 test_pypy3_tx_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9013
-
-
-test_cpy2_aio_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9014
+	./wstest/bin/wstest -m fuzzingclient --spec=fuzzingclient-quick.json -w ws://127.0.0.1:9013
 
 test_cpy3_aio_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9015
-
-test_pypy2_aio_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9016
+	./wstest/bin/wstest -m fuzzingclient --spec=fuzzingclient-quick.json -w ws://127.0.0.1:9015
 
 test_pypy3_aio_server:
-	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9017
+	./wstest/bin/wstest -m fuzzingclient --spec=fuzzingclient-quick.json -w ws://127.0.0.1:9017
 
-
-test_tx_server: \
-	test_cpy2_tx_server \
+test_tx_servers: \
 	test_cpy3_tx_server \
-	test_pypy2_tx_server \
 	test_pypy3_tx_server
 
-test_aio_server: \
-	test_cpy2_aio_server \
+test_aio_servers: \
 	test_cpy3_aio_server \
-	test_pypy2_aio_server \
 	test_pypy3_aio_server
 
 # THIS DOES NOT WORK TO PRODUCE THE FINAL COMBINED REPORT FOR ALL SERVERS!
 # see above.
 #test_server: \
-#	test_tx_server \
-#	test_aio_server
+#	test_tx_servers \
+#	test_aio_servers
 
 
-test_server:
-	./wstest/bin/wstest -m fuzzingclient
+test_servers:
+	./wstest/bin/wstest -m fuzzingclient --spec=fuzzingclient-quick.json
