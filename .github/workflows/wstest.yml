@@ -74,7 +74,7 @@ jobs:
       run: |
         pip install .[all]
 
-    - name: Run a Docker container with the fuzzing server
+    - name: Run a Docker container with the fuzzing server and upload reports
       run: |
         cd wstest
         make wstest_server_docker_pull
@@ -83,9 +83,6 @@ jobs:
         python testee_client_tx.py
         python testee_client_aio.py
         make wstest_server_docker_stop
-
-    - name: Upload reports
-      run: |
         aws s3 sync --delete --acl public-read --region=${AWS_DEFAULT_REGION} \
           ./wstest/reports/clients \
           s3://crossbario.com/reports/websocket-testsuite/autobahn-${AUTOBAHN_VERSION}-${{ matrix.python-version }}
