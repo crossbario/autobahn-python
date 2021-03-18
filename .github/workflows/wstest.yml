@@ -83,6 +83,9 @@ jobs:
         python testee_client_tx.py
         python testee_client_aio.py
         make wstest_server_docker_stop
+        pwd
+        ls -la .
+        ls -la ./reports
         aws s3 sync --delete --acl public-read --region=${AWS_DEFAULT_REGION} \
-          ./wstest/reports/clients \
+          ./reports \
           s3://crossbario.com/reports/websocket-testsuite/autobahn-${AUTOBAHN_VERSION}-${{ matrix.python-version }}
