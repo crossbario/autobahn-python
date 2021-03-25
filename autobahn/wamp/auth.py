@@ -32,6 +32,7 @@ import binascii
 import hmac
 import hashlib
 import random
+from typing import Optional, Dict
 
 from autobahn.util import public
 from autobahn.util import xor as xor_array
@@ -599,3 +600,66 @@ def compute_wcs(key, challenge):
         challenge = challenge.encode('utf8')
     sig = hmac.new(key, challenge, hashlib.sha256).digest()
     return binascii.b2a_base64(sig).strip()
+
+
+def derive_scram_credential(email: str, password: str, salt: Optional[bytes] = None) -> Dict:
+    """
+    Derive WAMP-SCRAM credentials for user email and password. The SCRAM parameters used
+    are the following (these are also contained in the returned credentials):
+
+    * argon2id-13
+    * time cost 4096
+    * memory cost 512
+    * parallelism 1
+
+    :param email: User email.
+    :param password: User password.
+    :param salt: Optional salt to use (must be 16 bytes long). If none is given, compute salt
+        from email as ``salt = SHA256(email)[:16]``.
+    :return: WAMP-SCRAM credentials. When serialized, the returned credentials can be copy-pasted
+        into the ``config.json`` node configuration for a Crossbar.io node.
+    """
+    assert HAS_ARGON, 'missing dependency argon2'
+    from argon2.low_level import hash_secret
+    from argon2.low_level import Type
+
+    # derive salt from email
+    if not salt:
+        m = hashlib.sha256()
+        m.update(email.encode('utf8'))
+        salt = m.digest()[:16]
+    assert len(salt) == 16
+
+    hash_data = hash_secret(
+        secret=password.encode('utf8'),
+        salt=salt,
+        time_cost=4096,
+        memory_cost=512,
+        parallelism=1,
+        hash_len=32,
+        type=Type.ID,
+        version=19,
+    )
+    _, tag, v, params, _, salted_password = hash_data.decode('ascii').split('$')
+    assert tag == 'argon2id'
+    assert v == 'v=19'  # argon's version 1.3 is represented as 0x13, which is 19 decimal...
+    params = {
+        k: v
+        for k, v in
+        [x.split('=') for x in params.split(',')]
+    }
+
+    salted_password = salted_password.encode('ascii')
+    client_key = hmac.new(salted_password, b"Client Key", hashlib.sha256).digest()
+    stored_key = hashlib.new('sha256', client_key).digest()
+    server_key = hmac.new(salted_password, b"Server Key", hashlib.sha256).digest()
+
+    credential = {
+        "memory": int(params['m']),
+        "kdf": "argon2id-13",
+        "iterations": int(params['t']),
+        "salt": binascii.b2a_hex(salt).decode('ascii'),
+        "stored-key": binascii.b2a_hex(stored_key).decode('ascii'),
+        "server-key": binascii.b2a_hex(server_key).decode('ascii'),
+    }
+    return credential

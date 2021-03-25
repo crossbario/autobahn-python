@@ -187,6 +187,10 @@ test_tx_cryptosign:
 	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign
 	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign
 
+test_wamp_scram:
+	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_scram
+	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_scram
+
 test_twisted_coverage:
 	-rm .coverage
 	USE_TWISTED=1 coverage run --omit=*/test/* --source=autobahn `which trial` autobahn
