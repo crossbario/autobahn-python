@@ -76,13 +76,13 @@ clean_docs:
 	-rm -rf ./docs/build
 
 docs:
-	cd docs && make html
+	tox -e sphinx
 
 spelling:
 	cd docs && sphinx-build -b spelling . _spelling
 
 run_docs:
-	twistd --nodaemon web --port=tcp:8090 --path=./docs/build/html/
+	twistd --nodaemon web --port=tcp:8090 --path=./docs/_build/
 
 
 clean_wheels:

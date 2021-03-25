@@ -58,12 +58,17 @@ __all__ = (
     'AuthScram',
     'AuthCryptoSign',
     'AuthWampCra',
+    'AuthTicket',
+    'create_authenticator',
     'pbkdf2',
     'generate_totp_secret',
     'compute_totp',
+    'check_totp',
+    'qrcode_from_totp',
     'derive_key',
     'generate_wcs',
     'compute_wcs',
+    'derive_scram_credential',
 )
 
 
@@ -604,13 +609,16 @@ def compute_wcs(key, challenge):
 
 def derive_scram_credential(email: str, password: str, salt: Optional[bytes] = None) -> Dict:
     """
-    Derive WAMP-SCRAM credentials for user email and password. The SCRAM parameters used
+    Derive WAMP-SCRAM credentials from user email and password. The SCRAM parameters used
     are the following (these are also contained in the returned credentials):
 
-    * argon2id-13
-    * time cost 4096
-    * memory cost 512
-    * parallelism 1
+    * kdf ``argon2id-13``
+    * time cost ``4096``
+    * memory cost ``512``
+    * parallelism ``1``
+
+    See `draft-irtf-cfrg-argon2 <https://datatracker.ietf.org/doc/draft-irtf-cfrg-argon2/>`__ and
+    `argon2-cffi <https://argon2-cffi.readthedocs.io/en/stable/>`__.
 
     :param email: User email.
     :param password: User password.
@@ -655,8 +663,8 @@ def derive_scram_credential(email: str, password: str, salt: Optional[bytes] = N
     server_key = hmac.new(salted_password, b"Server Key", hashlib.sha256).digest()
 
     credential = {
-        "memory": int(params['m']),
         "kdf": "argon2id-13",
+        "memory": int(params['m']),
         "iterations": int(params['t']),
         "salt": binascii.b2a_hex(salt).decode('ascii'),
         "stored-key": binascii.b2a_hex(stored_key).decode('ascii'),
