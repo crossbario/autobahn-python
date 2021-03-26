@@ -146,6 +146,7 @@ extras_require_xbr = [
 
     # the following is needed for XBR account synch and device pairing
     'spake2>=0.8',              # MIT license (https://github.com/warner/python-spake2/blob/master/LICENSE)
+    'hkdf>=0.0.3',              # BSD 2-Clause "Simplified" License
 ]
 
 # everything
