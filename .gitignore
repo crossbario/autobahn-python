@@ -45,3 +45,4 @@ coverage.xml
 autobahn/xbr/contracts
 .wheels
 get-pip.py
+docs/autoapi/

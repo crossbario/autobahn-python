@@ -381,7 +381,7 @@ try:
 
         'stretch_argon2_secret',
         'expand_argon2_secret',
-        'pkm_from_argon2',
+        'pkm_from_argon2_secret',
     )
 
 except (ImportError, FileNotFoundError) as e:
