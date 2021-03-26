@@ -27,6 +27,7 @@
 import hashlib
 from typing import Optional
 import argon2
+import hkdf
 
 
 def stretch_argon2_secret(email: str, password: str, salt: Optional[bytes] = None) -> bytes:
@@ -71,15 +72,20 @@ def stretch_argon2_secret(email: str, password: str, salt: Optional[bytes] = Non
     return pkm
 
 
-def expand_argon2_secret(pkm: bytes, context: str, salt: Optional[bytes] = None) -> bytes:
+def expand_argon2_secret(pkm: bytes, context: bytes, salt: Optional[bytes] = None) -> bytes:
     """
+
+    Expand ``pkm`` and ``context`` into a key of length ``bytes`` using
+    HKDF's expand function based on HMAC SHA-512). See the HKDF draft RFC and paper for usage notes.
 
     :param pkm:
     :param context:
     :param salt:
     :return:
     """
-    pass
+    kdf = hkdf.Hkdf(salt=salt, input_key_material=pkm, hash=hashlib.sha512)
+    key = kdf.expand(info=context, length=32)
+    return key
 
 
 def pkm_from_argon2_secret(email: str, password: str, context: str, salt: Optional[bytes] = None) -> bytes:
@@ -91,4 +97,15 @@ def pkm_from_argon2_secret(email: str, password: str, context: str, salt: Option
     :param salt:
     :return:
     """
-    pass
+    if not salt:
+        m = hashlib.sha256()
+        m.update(email.encode('utf8'))
+        salt = m.digest()[:16]
+    assert len(salt) == 16
+
+    context = context.encode('utf8')
+
+    pkm = stretch_argon2_secret(email=email, password=password, salt=salt)
+    key = expand_argon2_secret(pkm=pkm, context=context, salt=salt)
+
+    return key
