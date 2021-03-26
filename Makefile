@@ -191,6 +191,10 @@ test_wamp_scram:
 	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_scram
 	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_scram
 
+test_xbr_argon2:
+	USE_ASYNCIO=1 trial autobahn.xbr.test.test_xbr_argon2
+	USE_TWISTED=1 trial autobahn.xbr.test.test_xbr_argon2
+
 test_twisted_coverage:
 	-rm .coverage
 	USE_TWISTED=1 coverage run --omit=*/test/* --source=autobahn `which trial` autobahn

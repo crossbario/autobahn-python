@@ -80,3 +80,15 @@ def expand_argon2_secret(pkm: bytes, context: str, salt: Optional[bytes] = None)
     :return:
     """
     pass
+
+
+def pkm_from_argon2_secret(email: str, password: str, context: str, salt: Optional[bytes] = None) -> bytes:
+    """
+
+    :param email:
+    :param password:
+    :param context:
+    :param salt:
+    :return:
+    """
+    pass
