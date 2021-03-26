@@ -10,20 +10,28 @@ Argon2
 
 The following helpers allow a user to maintain a set of private key materials
 based on a potentially weak (locking) password (or PIN), and is based on
-Argon2id and HKDF:
+`Argon2id <https://en.wikipedia.org/wiki/Argon2>`__ and
+`HKDF <https://en.wikipedia.org/wiki/HKDF>`__:
 
 * :meth:`stretch_argon2_secret <autobahn.xbr.stretch_argon2_secret>`
 * :meth:`expand_argon2_secret <autobahn.xbr.expand_argon2_secret>`
 * :meth:`pkm_from_argon2_secret <autobahn.xbr.pkm_from_argon2_secret>`
 
-SPAKE2
-------
-
-Write me.
-
-
 TOTP
 ----
+
+* :meth:`generate_totp_secret <autobahn.wamp.auth.generate_totp_secret>`
+* :meth:`compute_totp <autobahn.wamp.auth.compute_totp>`
+* :meth:`check_totp <autobahn.wamp.auth.check_totp>`
+* :meth:`qrcode_from_totp <autobahn.wamp.auth.qrcode_from_totp>`
+
+Verification Code
+-----------------
+
+* :meth:`generate_token <autobahn.util.generate_token>`
+
+SPAKE2
+------
 
 Write me.
 
@@ -33,6 +41,7 @@ WAMP-Cryptosign
 The following helpers allow WAMP clients to authenticate using WAMP-cryptosign
 which is based on Ed25519:
 
+* :class:`AuthCryptoSign <autobahn.wamp.auth.AuthCryptoSign>`
 * :class:`SigningKey <autobahn.wamp.cryptosign.SigningKey>`
 
 WAMP-XBR
