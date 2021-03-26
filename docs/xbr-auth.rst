@@ -3,6 +3,7 @@ XBR Authentication
 
 Overview
 --------
+
 .. thumbnail:: _static/wamp-xbr-auth.png
 
 Argon2
@@ -20,20 +21,27 @@ based on a potentially weak (locking) password (or PIN), and is based on
 TOTP
 ----
 
+The following helpers allow to use a `TOTP <https://en.wikipedia.org/wiki/Time-based_One-Time_Password>`__
+based 2nd factor for authentication purposes:
+
 * :meth:`generate_totp_secret <autobahn.wamp.auth.generate_totp_secret>`
 * :meth:`compute_totp <autobahn.wamp.auth.compute_totp>`
 * :meth:`check_totp <autobahn.wamp.auth.check_totp>`
 * :meth:`qrcode_from_totp <autobahn.wamp.auth.qrcode_from_totp>`
 
-Verification Code
------------------
-
-* :meth:`generate_token <autobahn.util.generate_token>`
-
 SPAKE2
 ------
 
 Write me.
+
+Auxiliary
+---------
+
+The following helpers provide auxiliary functions used with WAMP-XBR authentication:
+
+* :meth:`xor <autobahn.util.xor>`
+* :meth:`generate_token <autobahn.util.generate_token>`
+* :meth:`machine_id <autobahn.util.machine_id>`
 
 WAMP-Cryptosign
 ---------------
