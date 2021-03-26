@@ -74,6 +74,8 @@ try:
     from autobahn.xbr._schema import FbsSchema, FbsObject, FbsType, FbsRPCCall, FbsEnum, FbsService, FbsEnumValue, \
         FbsAttribute, FbsField, FbsRepository  # noqa
 
+    from autobahn.xbr._wallet import stretch_argon2_secret, expand_argon2_secret, pkm_from_argon2_secret  # noqa
+
     HAS_XBR = True
 
     if not hasattr(abi, 'collapse_type'):
@@ -376,6 +378,10 @@ try:
         'FbsAttribute',
         'FbsField',
         'FbsRepository',
+
+        'stretch_argon2_secret',
+        'expand_argon2_secret',
+        'pkm_from_argon2',
     )
 
 except (ImportError, FileNotFoundError) as e:
