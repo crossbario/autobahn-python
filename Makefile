@@ -169,6 +169,9 @@ test_twisted:
 test_application_runner:
 	USE_TWISTED=1 trial autobahn.twisted.test.test_tx_application_runner
 
+test_util:
+	USE_TWISTED=1 trial autobahn.test.test_util
+
 test_rng:
 	USE_TWISTED=1 trial autobahn.test.test_rng
 

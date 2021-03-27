@@ -161,16 +161,17 @@ class Client(ApplicationSession):
                       authid=hlid(details.authid),
                       authrole=hlid(details.authrole),
                       details=details)
-        try:
-            if details.realm == 'xbrnetwork':
-                await self._do_xbrnetwork_realm(details)
-            else:
-                await self._do_market_realm(details)
-        except Exception as e:
-            self.log.failure()
-            self.config.extra['error'] = e
-        finally:
-            self.leave()
+        if 'command' in self.config.extra:
+            try:
+                if details.realm == 'xbrnetwork':
+                    await self._do_xbrnetwork_realm(details)
+                else:
+                    await self._do_market_realm(details)
+            except Exception as e:
+                self.log.failure()
+                self.config.extra['error'] = e
+            finally:
+                self.leave()
 
     def onLeave(self, details):
         self.log.info('Client left realm (reason="{reason}")', reason=hlval(details.reason))
