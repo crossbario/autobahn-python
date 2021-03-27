@@ -25,7 +25,7 @@ jobs:
     - name: Install OS package dependencies
       run: |
         sudo apt update
-        sudo apt install libenchant-dev libbz2-dev libsnappy-dev libunwind-dev
+        sudo apt install libenchant-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
 
     - name: Set up Python 3.x
       uses: actions/setup-python@v2
@@ -116,7 +116,7 @@ jobs:
     - name: Install OS package dependencies
       run: |
         sudo apt update
-        sudo apt install libenchant-dev libbz2-dev libsnappy-dev libunwind-dev
+        sudo apt install libenchant-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
 
     - name: Set up Python 3.x
       uses: actions/setup-python@v2
