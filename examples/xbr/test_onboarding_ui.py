@@ -1,100 +1,98 @@
 # https://python-gtk-3-tutorial.readthedocs.io/en/latest/
 # https://twistedmatrix.com/documents/current/core/howto/choosing-reactor.html
 
-from twisted.internet import gtk3reactor
-gtk3reactor.install()
-
-from twisted.internet import reactor
+import os
 
 import gi
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
+from twisted.internet import gtk3reactor
+gtk3reactor.install()
 
-class ListBoxRowWithData(Gtk.ListBoxRow):
-    def __init__(self, data):
-        super(Gtk.ListBoxRow, self).__init__()
-        self.data = data
-        self.add(Gtk.Label(label=data))
+from twisted.internet import reactor
 
+import txaio
+txaio.use_twisted()
 
-class ListBoxWindow(Gtk.Window):
-    def __init__(self):
-        Gtk.Window.__init__(self, title="ListBox Demo")
-        self.set_border_width(10)
+import click
 
-        box_outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        self.add(box_outer)
-
-        listbox = Gtk.ListBox()
-        listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-        box_outer.pack_start(listbox, True, True, 0)
-
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
-        row.add(hbox)
-        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        hbox.pack_start(vbox, True, True, 0)
-
-        label1 = Gtk.Label(label="Automatic Date & Time", xalign=0)
-        label2 = Gtk.Label(label="Requires internet access", xalign=0)
-        vbox.pack_start(label1, True, True, 0)
-        vbox.pack_start(label2, True, True, 0)
-
-        switch = Gtk.Switch()
-        switch.props.valign = Gtk.Align.CENTER
-        hbox.pack_start(switch, False, True, 0)
-
-        listbox.add(row)
-
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
-        row.add(hbox)
-        label = Gtk.Label(label="Enable Automatic Update", xalign=0)
-        check = Gtk.CheckButton()
-        hbox.pack_start(label, True, True, 0)
-        hbox.pack_start(check, False, True, 0)
-
-        listbox.add(row)
-
-        row = Gtk.ListBoxRow()
-        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
-        row.add(hbox)
-        label = Gtk.Label(label="Date Format", xalign=0)
-        combo = Gtk.ComboBoxText()
-        combo.insert(0, "0", "24-hour")
-        combo.insert(1, "1", "AM/PM")
-        hbox.pack_start(label, True, True, 0)
-        hbox.pack_start(combo, False, True, 0)
-
-        listbox.add(row)
-
-        listbox_2 = Gtk.ListBox()
-        items = "This is a sorted ListBox Fail".split()
-
-        for item in items:
-            listbox_2.add(ListBoxRowWithData(item))
-
-        def sort_func(row_1, row_2, data, notify_destroy):
-            return row_1.data.lower() > row_2.data.lower()
-
-        def filter_func(row, data, notify_destroy):
-            return False if row.data == "Fail" else True
-
-        listbox_2.set_sort_func(sort_func, None, False)
-        listbox_2.set_filter_func(filter_func, None, False)
-
-        def on_row_activated(listbox_widget, row):
-            print(row.data)
-
-        listbox_2.connect("row-activated", on_row_activated)
-
-        box_outer.pack_start(listbox_2, True, True, 0)
-        listbox_2.show_all()
+from autobahn.xbr._config import UserConfig
 
 
-win = ListBoxWindow()
+
+class MainWindow(Gtk.Window):
+    """
+    local user profile config there?
+    if no, show:
+        - button "new account"
+        - button "synchronize account"
+        - button "recover account"
+    if yes, unlock profile (ask for password)
+    check account online: does account exist?
+        if yes, show account details + button "synchronize other device"
+        if no, start or continue registration ..
+    """
+    log = txaio.make_logger()
+
+    DOTDIR = os.path.abspath(os.path.expanduser('~/.xbrnetwork'))
+    DOTFILE = 'config.ini'
+
+    def __init__(self, profile_name: str='default'):
+        Gtk.Window.__init__(self, title='Register with XBR network')
+
+        if not os.path.isdir(self.DOTDIR):
+            os.mkdir(self.DOTDIR)
+            self.log.info('dotdir created: "{dotdir}"', dotdir=self.DOTDIR)
+
+        config_path = os.path.join(self.DOTDIR, self.DOTFILE)
+        if not os.path.isfile(config_path):
+            pass
+
+        self._config = UserConfig(config_path)
+        self._profile = config.profiles.get(profile_name, None)
+
+        if not self._profile:
+            raise click.ClickException('no such profile: "{}"'.format(profile_name))
+        else:
+            self.log.info('user profile "{profile_name}" loaded from "{config_path}"',
+                          config_path=config_path, profile_name=profile_name)
+
+        self._win_grid = Gtk.Grid()
+        self._win_grid.set_row_spacing(20)
+        self._win_grid.set_column_spacing(20)
+        self._win_grid.set_margin_top(20)
+        self._win_grid.set_margin_bottom(20)
+        self._win_grid.set_margin_start(20)
+        self._win_grid.set_margin_end(20)
+        self.add(self._win_grid)
+
+        self._win_user_email_label = Gtk.Label(label='Your email address:')
+        self._win_grid.attach(self._win_user_email_label, 0, 0, 1, 1)
+
+        self._win_user_email = Gtk.Entry()
+        self._win_user_email.set_text(profile.email)
+        self._win_user_email.set_max_length(255)
+        self._win_user_email.set_max_width_chars(40)
+        self._win_grid.attach(self._win_user_email, 1, 0, 1, 1)
+
+        self._win_eula_accept_label = Gtk.Label(label='XBR network EULA:')
+        self._win_grid.attach(self._win_eula_accept_label, 0, 1, 1, 1)
+
+        self._win_check_eula = Gtk.CheckButton(label='accept')
+        self._win_check_eula.connect('toggled', self.on_eula_toggled)
+        self._win_check_eula.set_active(False)
+        self._win_grid.attach(self._win_check_eula, 1, 1, 1, 1)
+
+    def on_eula_toggled(self, button):
+        value = button.get_active()
+        self._win_check_eula.set_editable(value)
+
+
+txaio.start_logging(level='info')
+
+win = MainWindow()
 win.connect("destroy", Gtk.main_quit)
 win.show_all()
 Gtk.main()
