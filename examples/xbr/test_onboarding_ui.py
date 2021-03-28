@@ -2,7 +2,6 @@
 # https://twistedmatrix.com/documents/current/core/howto/choosing-reactor.html
 
 import os
-import sys
 
 import gi
 
@@ -22,7 +21,6 @@ import click
 import web3
 
 from autobahn.util import parse_activation_code
-from autobahn.wamp.types import ComponentConfig
 from autobahn.wamp.serializer import CBORSerializer
 from autobahn.twisted.wamp import ApplicationRunner
 from autobahn.xbr import account_from_seedphrase, generate_seedphrase
@@ -49,12 +47,13 @@ class SelectNewProfile(Gtk.Assistant):
     SELECTED_SYNCRONIZE = 2
     SELECTED_RECOVER = 3
 
-    def __init__(self, reactor, client, config_path, profile_name, onboard_member_submitted):
+    def __init__(self, reactor, session, config_path, profile_name):
         Gtk.Assistant.__init__(self)
 
         self.reactor = reactor
-        self.client = client
-        self.onboard_member_submitted = onboard_member_submitted
+        self.session = session
+        self.config_path = config_path
+        self.profile_name = profile_name
 
         self.input_seedphrase = None
         self.input_email = None
@@ -66,11 +65,6 @@ class SelectNewProfile(Gtk.Assistant):
         self.set_border_width(50)
         self.set_resizable(False)
 
-        # assistant window/widget actions
-        self.connect("cancel", self.on_cancel_clicked)
-        self.connect("close", self.on_close_clicked)
-        self.connect("apply", self.on_apply_clicked)
-
         # setup assistant pages
         self._setup_page1()
         self._setup_page2()
@@ -79,17 +73,6 @@ class SelectNewProfile(Gtk.Assistant):
 
         # start on page 1
         self.set_current_page(0)
-
-    def on_apply_clicked(self, *args):
-        print("The 'Apply' button has been clicked")
-
-    def on_close_clicked(self, *args):
-        print("The 'Close' button has been clicked")
-        Gtk.main_quit()
-
-    def on_cancel_clicked(self, *args):
-        print("The Assistant has been cancelled.")
-        Gtk.main_quit()
 
     def on_complete_toggled(self, checkbutton):
         self.set_page_complete(self.complete, checkbutton.get_active())
@@ -174,8 +157,8 @@ class SelectNewProfile(Gtk.Assistant):
         button2_1 = Gtk.Button.new_with_label('Generate seedphrase')
 
         def on_button2_1(_):
-            sp = generate_seedphrase(strength=256, language='english')
-            textbuffer2_1.set_text(sp)
+            self.input_seedphrase = generate_seedphrase(strength=256, language='english')
+            textbuffer2_1.set_text(self.input_seedphrase)
             checkbutton2_1.set_sensitive(True)
 
         button2_1.connect('clicked', on_button2_1)
@@ -211,10 +194,9 @@ class SelectNewProfile(Gtk.Assistant):
         button2_2.set_sensitive(False)
 
         def on_button2_2(_):
-            account = account_from_seedphrase(textbuffer2_1.get_text(), index=0)
-            ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
-
-            self.input_seedphrase = textbuffer2_1.get_text()
+            self.output_account = account_from_seedphrase(self.input_seedphrase, index=0)
+            self.output_ethadr = web3.Web3.toChecksumAddress(self.output_account.address)
+            self.log.info('output_ethadr: {output_ethadr}', output_ethadr=self.output_ethadr)
             self.set_current_page(2)
 
         button2_2.connect('clicked', on_button2_2)
@@ -346,6 +328,8 @@ class SelectNewProfile(Gtk.Assistant):
         def on_button2(_):
             self.input_email = checks['email']
             self.input_password = checks['password']
+            self.log.info('input_email: {input_email}', input_email=self.input_email)
+            self.log.info('input_password: {input_password}', input_password=self.input_password)
             self.set_current_page(3)
 
         button2.connect('clicked', on_button2)
@@ -431,7 +415,7 @@ class Application(object):
     DOTDIR = os.path.abspath(os.path.expanduser('~/.xbrnetwork'))
     DOTFILE = 'config.ini'
 
-    def start(self, reactor, profile_name):
+    async def start(self, reactor, profile_name):
         txaio.start_logging(level='info')
 
         if not os.path.isdir(self.DOTDIR):
@@ -456,42 +440,48 @@ class Application(object):
         assert self._config and self._profile
 
         extra = {
+            'ready': txaio.create_future(),
+            'done': txaio.create_future(),
+            'running': True,
             'profile': self._profile,
         }
         runner = ApplicationRunner(url=self._profile.network_url,
                                    realm=self._profile.network_realm,
                                    extra=extra,
                                    serializers=[CBORSerializer()])
-        client = runner.run(Client, auto_reconnect=True, start_reactor=False)
 
-        d = txaio.create_future()
-        if False and self._config:
-            # if we have a config/profile, go on with ..
-            raise NotImplementedError()
-        else:
-            # if we don't have a config yet,
-            win = SelectNewProfile(reactor, client, config_path, 'default', d)
+        self.log.info('connecting to "{network_url}" @ "{network_realm}" ..',
+                      network_url=self._profile.network_url,
+                      network_realm=self._profile.network_realm)
+        client = await runner.run(Client, reactor=reactor, auto_reconnect=True, start_reactor=False)
+        session, details = await extra['ready']
+        print('#'*100, client, session, details)
 
+        def on_exit(_):
+            print('DESTROY main window')
+            #Gtk.main_quit()
+            extra['running'] = False
+            if session and session.is_attached():
+                session.leave()
+            txaio.resolve(extra['done'], None)
+
+        win = SelectNewProfile(reactor, session, config_path, 'default')
+        win.connect("cancel", on_exit)
+        win.connect("destroy", on_exit)
         win.show_all()
 
-        return d
+        while extra['running']:
+            from autobahn.twisted.util import sleep
+            await sleep(1)
+            print('tick')
+
+        print('FINAL END!')
 
 
 async def main(reactor, profile):
-    log = txaio.make_logger()
     app = Application()
-    d = app.start(reactor, profile)
-
-    def done(selected):
-        log.info('Selected action: {selected}', selected=selected)
-        Gtk.main_quit()
-
-    def error(err):
-        log.error('{err}', err=err)
-        sys.exit(1)
-
-    txaio.add_callbacks(d, done, error)
-    Gtk.main()
+    res = await app.start(reactor, profile)
+    print('DONE', res)
 
 
 react(main, ('default',))

@@ -127,10 +127,6 @@ class Client(ApplicationSession):
 
         self._running = True
 
-    def onUserError(self, fail, msg):
-        self.log.error(msg)
-        self.leave('wamp.error', msg)
-
     def onConnect(self):
         if self.config.realm == 'xbrnetwork':
             authextra = {
@@ -161,6 +157,9 @@ class Client(ApplicationSession):
                       authid=hlid(details.authid),
                       authrole=hlid(details.authrole),
                       details=details)
+        if 'ready' in self.config.extra:
+            txaio.resolve(self.config.extra['ready'], (self, details))
+
         if 'command' in self.config.extra:
             try:
                 if details.realm == 'xbrnetwork':
@@ -178,9 +177,10 @@ class Client(ApplicationSession):
         self._running = False
 
         if details.reason == 'wamp.close.normal':
-            # user initiated leave => end the program
-            self.config.runner.stop()
-            self.disconnect()
+            if self.config and self.config.runner:
+                # user initiated leave => end the program
+                self.config.runner.stop()
+                self.disconnect()
 
     def onDisconnect(self):
         self.log.info('Client disconnected')
