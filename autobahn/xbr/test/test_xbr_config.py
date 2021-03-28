@@ -48,3 +48,18 @@ if HAS_XBR:
         def test_create_empty_profile(self):
             p = Profile()
             self.assertTrue(p.path is None)
+
+        def test_load_home(self):
+            dotdir = '~/.xbrnetwork'
+            profile_name = 'default'
+            default_url = 'wss://planet.xbr.network/ws'
+            default_realm = 'xbrnetwork'
+            config_dir = os.path.expanduser(dotdir)
+            if not os.path.isdir(config_dir):
+                os.mkdir(config_dir)
+            config_path = os.path.join(config_dir, 'config.ini')
+            c = UserConfig(config_path)
+            c.load()
+            self.assertIn(profile_name, c.profiles)
+
+            c.save('secret123')

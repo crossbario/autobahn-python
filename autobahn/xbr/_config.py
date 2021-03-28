@@ -128,24 +128,26 @@ class Profile(object):
         self.infura_secret = infura_secret
 
     def marshal(self):
+        ethkey = '0x{}'.format(binascii.b2a_hex(self.ethkey).decode()) if self.ethkey else ''
+        cskey = '0x{}'.format(binascii.b2a_hex(self.cskey).decode()) if self.cskey else ''
         obj = {}
-        obj['path'] = self.path
-        obj['name'] = self.name
-        obj['ethkey'] = ('0x' + binascii.b2a_hex(self.ethkey).decode()) if self.ethkey else None,
-        obj['cskey'] = ('0x' + binascii.b2a_hex(self.cskey).decode()) if self.cskey else None,
-        obj['username'] = self.username
-        obj['email'] = self.email
-        obj['network_url'] = self.network_url
-        obj['network_realm'] = self.network_realm
-        obj['vaction_oid'] = str(self.vaction_oid) if self.vaction_oid else None,
-        obj['vaction_requested'] = int(self.vaction_requested) if self.vaction_requested else None,
-        obj['vaction_verified'] = int(self.vaction_verified) if self.vaction_verified else None,
-        obj['market_url'] = self.market_url
-        obj['market_realm'] = self.market_realm
-        obj['infura_url'] = self.infura_url
-        obj['infura_network'] = self.infura_network
-        obj['infura_key'] = self.infura_key
-        obj['infura_secret'] = self.infura_secret
+        obj['path'] = self.path or ''
+        obj['name'] = self.name or ''
+        obj['ethkey'] = ethkey or ''
+        obj['cskey'] = cskey or ''
+        obj['username'] = self.username or ''
+        obj['email'] = self.email or ''
+        obj['network_url'] = self.network_url or ''
+        obj['network_realm'] = self.network_realm or ''
+        obj['vaction_oid'] = str(self.vaction_oid) if self.vaction_oid else ''
+        obj['vaction_requested'] = str(self.vaction_requested) if self.vaction_requested else ''
+        obj['vaction_verified'] = str(self.vaction_verified) if self.vaction_verified else ''
+        obj['market_url'] = self.market_url or ''
+        obj['market_realm'] = self.market_realm or ''
+        obj['infura_url'] = self.infura_url or ''
+        obj['infura_network'] = self.infura_network or ''
+        obj['infura_key'] = self.infura_key or ''
+        obj['infura_secret'] = self.infura_secret or ''
         return obj
 
     @staticmethod
@@ -193,6 +195,7 @@ class Profile(object):
                 market_realm = str(v)
             elif k == 'ethkey':
                 ethkey = binascii.a2b_hex(v[2:])
+                print('88888888888888', ethkey)
             elif k == 'cskey':
                 cskey = binascii.a2b_hex(v[2:])
             elif k == 'username':
@@ -254,13 +257,19 @@ class UserConfig(object):
         :return:
         """
         config = configparser.ConfigParser()
-        for profile in self._profiles.values():
-            section = profile.marshal()
-            config.add_section(section)
+        for profile_name, profile in self._profiles.items():
+            if profile_name not in config.sections():
+                config.add_section(profile_name)
+            pd = profile.marshal()
+            from pprint import pprint
+            pprint(pd)
+            for option, value in pd.items():
+                print('SET', profile_name, option, value)
+                config.set(profile_name, option, value)
 
-        with io.BytesIO() as fp1:
+        with io.StringIO() as fp1:
             config.write(fp1)
-        config_data = bytes(config)
+        config_data = str(config).encode('utf8')
 
         if password:
             # binary file format header (64 bytes):
@@ -270,9 +279,9 @@ class UserConfig(object):
             # * 4 bytes data length (big endian)
             # * 8 bytes created timestamp ns (big endian)
             # * 8 bytes unused (filled 0x00 currently)
-            # * 32 bytes salt
+            # * 16 bytes salt
             #
-            salt = os.urandom(32)
+            salt = os.urandom(16)
             context = 'xbrnetwork-config'
             priv_key = pkm_from_argon2_secret(email='', password=password, context=context, salt=salt)
             box = nacl.secret.SecretBox(priv_key)
@@ -308,9 +317,13 @@ class UserConfig(object):
             header = data[:64]
             body = data[64:]
 
-            algo = struct.unpack('>L', header[8:12])
-            data_len = struct.unpack('>L', header[12:16])
-            created = struct.unpack('>Q', header[16:24])
+            algo = struct.unpack('>L', header[8:12])[0]
+            data_len = struct.unpack('>L', header[12:16])[0]
+            created = struct.unpack('>Q', header[16:24])[0]
+
+            print('algo', algo)
+            print('data_len', data_len)
+            print('created', created)
 
             assert algo in [0, 1]
             assert data_len == len(body)
@@ -323,13 +336,18 @@ class UserConfig(object):
             body = data
 
         config = configparser.ConfigParser()
-        config.read(io.BytesIO(body))
+        config.read_string(body.decode('utf8'))
 
         profiles = {}
         for profile_name in config.sections():
-            profile = Profile.parse(self._config_path, profile_name, config.items(profile_name))
+            from pprint import pprint
+            citems = config.items(profile_name)
+            print('>>>>>>>>>>>>')
+            pprint(citems)
+            profile = Profile.parse(self._config_path, profile_name, citems)
             profiles[profile_name] = profile
-
+            pprint(profile_name)
+            pprint(profile)
         self._profiles = profiles
 
         self.log.debug('profiles loaded: {profiles}',
