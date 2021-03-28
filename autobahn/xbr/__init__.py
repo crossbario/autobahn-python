@@ -273,13 +273,26 @@ try:
 
         :param seedphrase: The BIP-39 seedphrase from which to derive the account.
         :param index: The account index in account hierarchy defined by the seedphrase.
-        :return: The
+        :return: The new Eth account object
         """
         from web3.auto import w3
 
         derivation_path = "m/44'/60'/0'/0/{}".format(index)
         key = mnemonic_to_private_key(seedphrase, str_derivation_path=derivation_path)
         account = w3.eth.account.privateKeyToAccount(key)
+        return account
+
+    def account_from_ethkey(ethkey: bytes) -> eth_account.account.Account:
+        """
+        Create an account from the private key seed.
+
+        :param ethkey: The Ethereum private key seed (32 octets).
+        :return: The new Eth account object
+        """
+        from web3.auto import w3
+
+        assert len(ethkey) == 32
+        account = w3.eth.account.privateKeyToAccount(ethkey)
         return account
 
     ASCII_BOMB = r"""

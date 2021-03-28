@@ -103,27 +103,29 @@ class Client(ApplicationSession):
         self._default_gas = 100000
         self._chain_id = 4
 
-        profile = config.extra['profile']
+        profile = config.extra.get('profile', None)
 
-        if 'ethkey' in config.extra and config.extra['ethkey']:
+        if config.extra and 'ethkey' in config.extra and config.extra['ethkey']:
             self._ethkey_raw = config.extra['ethkey']
         else:
-            self._ethkey_raw = profile.ethkey
+            if profile:
+                self._ethkey_raw = profile.ethkey
+            else:
+                self._ethkey_raw = os.urandom(32)
 
         self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
         self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
         self._ethadr_raw = binascii.a2b_hex(self._ethadr[2:])
 
-        self.log.info('Client Ethereum key loaded, public address is {adr}',
-                      func=hltype(self.__init__), adr=hlid(self._ethadr))
-
         if 'cskey' in config.extra and config.extra['cskey']:
             cskey = config.extra['cskey']
         else:
-            cskey = profile.cskey
+            if profile:
+                cskey = profile.cskey
+            else:
+                cskey = os.urandom(32)
+
         self._key = cryptosign.SigningKey.from_key_bytes(cskey)
-        self.log.info('Client WAMP authentication key loaded, public key is {pubkey}',
-                      func=hltype(self.__init__), pubkey=hlid('0x' + self._key.public_key()))
 
         self._running = True
 
