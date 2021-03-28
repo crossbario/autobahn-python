@@ -334,6 +334,7 @@ class Client(ApplicationSession):
                           member_level=hlval(member_data['level']),
                           member_oid=hlid(member_data['oid']),
                           member_adr=hlval(member_data['address']))
+            return member_data
         else:
             self.log.warn('Address 0x{member_adr} is not a member in the XBR network',
                           member_adr=hlval(binascii.b2a_hex(member_adr).decode()))

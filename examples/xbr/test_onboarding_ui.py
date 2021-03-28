@@ -2,6 +2,8 @@
 # https://twistedmatrix.com/documents/current/core/howto/choosing-reactor.html
 
 import os
+import uuid
+import binascii
 
 import gi
 
@@ -16,17 +18,23 @@ import txaio
 txaio.use_twisted()
 
 from twisted.internet.task import react
+from twisted.internet.defer import inlineCallbacks
 
 import click
 import web3
+import numpy as np
 
 from autobahn.util import parse_activation_code
 from autobahn.wamp.serializer import CBORSerializer
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationRunner
+
 from autobahn.xbr import account_from_seedphrase, generate_seedphrase
+from autobahn.xbr import pack_uint256, unpack_uint256, sign_eip712_channel_open, make_w3
+from autobahn.xbr import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
 from autobahn.xbr._config import UserConfig
 from autobahn.xbr._cli import Client
+from autobahn.xbr._util import hlval, hlid, hltype
 
 
 class SelectNewProfile(Gtk.Assistant):
@@ -60,6 +68,11 @@ class SelectNewProfile(Gtk.Assistant):
         self.input_email = None
         self.input_password = None
 
+        self.output_account = None
+        self.output_ethadr = None
+        self.output_ethadr_raw = None
+        self.output_member_data = None
+
         # configure assistant window/widget
         self.set_title("XBR Network")
         self.set_default_size(600, 600)
@@ -71,6 +84,7 @@ class SelectNewProfile(Gtk.Assistant):
         self._setup_page2()
         self._setup_page3()
         self._setup_page4()
+        self._setup_page5()
 
         # start on page 1
         self.set_current_page(0)
@@ -194,13 +208,69 @@ class SelectNewProfile(Gtk.Assistant):
         button2_2 = Gtk.Button.new_with_label('Continue')
         button2_2.set_sensitive(False)
 
+        @inlineCallbacks
         def on_button2_2(_):
             self.output_account = account_from_seedphrase(self.input_seedphrase, index=0)
             self.output_ethadr = web3.Web3.toChecksumAddress(self.output_account.address)
+            self.output_ethadr_raw = binascii.a2b_hex(self.output_ethadr[2:])
             self.log.info('output_ethadr: {output_ethadr}', output_ethadr=self.output_ethadr)
-            self.set_current_page(2)
 
-        button2_2.connect('clicked', on_button2_2)
+            member_data = None
+
+            if self.session and self.session.is_attached():
+                is_member = yield self.session.call('xbr.network.is_member', self.output_ethadr_raw)
+                if is_member:
+                    member_data = yield self.session.call('xbr.network.get_member_by_wallet', self.output_ethadr_raw)
+
+                    member_data['address'] = web3.Web3.toChecksumAddress(member_data['address'])
+                    member_data['oid'] = uuid.UUID(bytes=member_data['oid'])
+                    member_data['balance']['eth'] = web3.Web3.fromWei(unpack_uint256(member_data['balance']['eth']),
+                                                                      'ether')
+                    member_data['balance']['xbr'] = web3.Web3.fromWei(unpack_uint256(member_data['balance']['xbr']),
+                                                                      'ether')
+                    member_data['created'] = np.datetime64(member_data['created'], 'ns')
+
+                    member_level = member_data['level']
+                    member_data['level'] = {
+                        # Member is active.
+                        1: 'ACTIVE',
+                        # Member is active and verified.
+                        2: 'VERIFIED',
+                        # Member is retired.
+                        3: 'RETIRED',
+                        # Member is subject to a temporary penalty.
+                        4: 'PENALTY',
+                        # Member is currently blocked and cannot current actively participate in the market.
+                        5: 'BLOCKED',
+                    }.get(member_level, None)
+
+                    self.log.info(
+                        'Member {member_oid} found for address 0x{member_adr} - current member level {member_level}',
+                        member_level=hlval(member_data['level']),
+                        member_oid=hlid(member_data['oid']),
+                        member_adr=hlval(member_data['address']))
+                else:
+                    self.log.warn('Address {output_ethadr} is not a member in the XBR network',
+                                  output_ethadr=self.output_ethadr)
+            else:
+                self.log.warn('not connected: could not retrieve member data for address {output_ethadr}',
+                              output_ethadr=self.output_ethadr)
+
+            if not member_data:
+                self.log.info('NOT YET A MEMBER!')
+                self.set_current_page(2)
+            else:
+                self.log.info('ALREADY A MEMBER!')
+                self.output_member_data = member_data
+                self.set_current_page(4)
+
+        def run_on_button2_2(widget):
+            self.log.info('{func}({widget})', func=hltype(run_on_button2_2), widget=widget)
+            # txaio.call_later(0, on_button2_2, widget)
+            from twisted.internet import reactor
+            reactor.callLater(0, on_button2_2, widget)
+
+        button2_2.connect('clicked', run_on_button2_2)
         box2_3.add(button2_2)
 
         box2_1.add(box2_3)
@@ -396,7 +466,48 @@ class SelectNewProfile(Gtk.Assistant):
         self.append_page(box1)
 
     def _setup_page5(self):
-        print('ONBOARDED!')
+        """
+        Page shown for a user (private eth key) that already is member.
+
+        :return:
+        """
+        box1 = Gtk.VBox()
+
+        box2 = Gtk.HBox()
+        image1 = Gtk.Image()
+        image1.set_from_file('xbr_white.svg')
+        box2.add(image1)
+        box1.add(box2)
+
+        grid1 = Gtk.Grid()
+        grid1.set_row_spacing(20)
+        grid1.set_column_spacing(20)
+        grid1.set_margin_top(20)
+        grid1.set_margin_bottom(20)
+        grid1.set_margin_start(20)
+        grid1.set_margin_end(20)
+
+        label1 = Gtk.Label(label='Member ID:')
+        grid1.attach(label1, 0, 0, 1, 1)
+
+        label2 = Gtk.Label(label='00000000-0000-0000-0000-000000000000')
+        grid1.attach(label2, 0, 1, 1, 1)
+
+        box1.add(grid1)
+
+        self.append_page(box1)
+
+
+class ApplicationClient(Client):
+    async def onJoin(self, details):
+        self.log.info('Ok, client joined on realm "{realm}" [session={session}, authid="{authid}", authrole="{authrole}"]',
+                      realm=hlid(details.realm),
+                      session=hlid(details.session),
+                      authid=hlid(details.authid),
+                      authrole=hlid(details.authrole),
+                      details=details)
+        if 'ready' in self.config.extra:
+            txaio.resolve(self.config.extra['ready'], (self, details))
 
 
 class Application(object):
@@ -453,10 +564,13 @@ class Application(object):
                                    extra=extra,
                                    serializers=[CBORSerializer()])
 
-        self.log.info('ok, now connecting to "{network_url}"@"{network_realm}"',
+        self.log.info('ok, now connecting to "{network_url}"@"{network_realm}" ..',
                       network_url=self._profile.network_url,
                       network_realm=self._profile.network_realm)
-        await runner.run(Client, reactor=reactor, auto_reconnect=True, start_reactor=False)
+        await runner.run(ApplicationClient,
+                         reactor=reactor,
+                         auto_reconnect=True,
+                         start_reactor=False)
         self.log.info('ok, application client connected')
 
         session, details = await extra['ready']
