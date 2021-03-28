@@ -198,6 +198,9 @@ test_xbr_argon2:
 	USE_ASYNCIO=1 trial autobahn.xbr.test.test_xbr_argon2
 	USE_TWISTED=1 trial autobahn.xbr.test.test_xbr_argon2
 
+test_xbr_config:
+	USE_TWISTED=1 trial autobahn.xbr.test.test_xbr_config
+
 test_twisted_coverage:
 	-rm .coverage
 	USE_TWISTED=1 coverage run --omit=*/test/* --source=autobahn `which trial` autobahn

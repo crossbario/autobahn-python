@@ -41,15 +41,16 @@ from autobahn.xbr._util import hlval, hlid, hltype
 
 class SelectNewProfile(Gtk.Assistant):
     """
-    local user profile config there?
-    if no, show:
-        - button "new account"
-        - button "synchronize account"
-        - button "recover account"
-    if yes, unlock profile (ask for password)
-    check account online: does account exist?
-        if yes, show account details + button "synchronize other device"
-        if no, start or continue registration ..
+    Main application window which provides UI for the following functions:
+
+    * N) New account
+    * R) Recover account:
+       - R1) Backup cloud device in account enabled => download encrypted account data
+           from cloud backup device, requires email (and 2FA) verification and password
+       - R2) At least one device left in account and at hand => synchronize with existing device,
+           direct device-to-device encrypted account data transfer
+       - R3) Only cold storage recovery seed phrase left => account from seed-phrase full
+           recovery, including new email and 2FA verification.
     """
     log = txaio.make_logger()
 
@@ -394,14 +395,23 @@ class SelectNewProfile(Gtk.Assistant):
         button2 = Gtk.Button.new_with_label('Register account')
         button2.set_sensitive(False)
 
+        @inlineCallbacks
         def on_button2(_):
             self.input_email = checks['email']
             self.input_password = checks['password']
+            self.input_username = self.input_email.split('@')[0].strip()
             self.log.info('input_email: {input_email}', input_email=self.input_email)
+            self.log.info('input_username: {input_username}', input_username=self.input_username)
             self.log.info('input_password: {input_password}', input_password=self.input_password)
+            result = yield self.session._do_onboard_member(self.input_username, self.input_email)
+            pprint(result)
             self.set_current_page(3)
 
-        button2.connect('clicked', on_button2)
+        def run_on_button2(widget):
+            self.log.info('{func}({widget})', func=hltype(run_on_button2), widget=widget)
+            reactor.callLater(0, on_button2, widget)
+
+        button2.connect('clicked', run_on_button2)
         grid1.attach(button2, 2, 4, 1, 1)
 
         box1.add(grid1)

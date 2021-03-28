@@ -71,6 +71,7 @@ import txaio
 txaio.use_twisted()
 
 from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks
 from twisted.internet.threads import deferToThread
 from twisted.internet.error import ReactorNotRunning
 
@@ -393,7 +394,8 @@ class Client(ApplicationSession):
             self.log.warn('Address 0x{member_adr} is not a member in the XBR network',
                           member_adr=binascii.b2a_hex(actor_adr).decode())
 
-    async def _do_onboard_member(self, member_username, member_email):
+    @inlineCallbacks
+    def _do_onboard_member(self, member_username, member_email):
         client_pubkey = binascii.a2b_hex(self._key.public_key())
 
         # fake wallet type "metamask"
@@ -406,8 +408,8 @@ class Client(ApplicationSession):
         # delegate ethereum account canonical address
         wallet_adr = wallet_key.public_key.to_canonical_address()
 
-        config = await self.call('xbr.network.get_config')
-        status = await self.call('xbr.network.get_status')
+        config = yield self.call('xbr.network.get_config')
+        status = yield self.call('xbr.network.get_status')
 
         verifyingChain = config['verifying_chain_id']
         verifyingContract = binascii.a2b_hex(config['verifying_contract_adr'][2:])
@@ -436,7 +438,7 @@ class Client(ApplicationSession):
 
         # https://xbr.network/docs/network/api.html#xbrnetwork.XbrNetworkApi.onboard_member
         try:
-            result = await self.call('xbr.network.onboard_member',
+            result = yield self.call('xbr.network.onboard_member',
                                      member_username, member_email, client_pubkey, wallet_type, wallet_adr,
                                      verifyingChain, registered, verifyingContract, eula, profile, profile_data,
                                      signature)
@@ -455,12 +457,15 @@ class Client(ApplicationSession):
         vaction_oid = uuid.UUID(bytes=result['vaction_oid'])
         self.log.info('On-boarding member - verification "{vaction_oid}" created', vaction_oid=vaction_oid)
 
-    async def _do_onboard_member_verify(self, vaction_oid, vaction_code):
+        return result
+
+    @inlineCallbacks
+    def _do_onboard_member_verify(self, vaction_oid, vaction_code):
 
         self.log.info('Verifying member using vaction_oid={vaction_oid}, vaction_code={vaction_code} ..',
                       vaction_oid=vaction_oid, vaction_code=vaction_code)
         try:
-            result = await self.call('xbr.network.verify_onboard_member', vaction_oid.bytes, vaction_code)
+            result = yield self.call('xbr.network.verify_onboard_member', vaction_oid.bytes, vaction_code)
         except ApplicationError as e:
             self.log.error('ApplicationError: {error}', error=e)
             raise e
