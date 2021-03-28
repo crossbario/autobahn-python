@@ -56,12 +56,14 @@ class SelectNewProfile(Gtk.Assistant):
     SELECTED_SYNCRONIZE = 2
     SELECTED_RECOVER = 3
 
-    def __init__(self, reactor, session, config_path, profile_name):
+    def __init__(self, reactor, session, config, config_path, profile, profile_name):
         Gtk.Assistant.__init__(self)
 
         self.reactor = reactor
         self.session = session
+        self.config = config
         self.config_path = config_path
+        self.profile = profile
         self.profile_name = profile_name
 
         self.input_seedphrase = None
@@ -86,8 +88,11 @@ class SelectNewProfile(Gtk.Assistant):
         self._setup_page4()
         self._setup_page5()
 
-        # start on page 1
-        self.set_current_page(0)
+        # start page depends on available user profile
+        if self.profile:
+            self.set_current_page(4)
+        else:
+            self.set_current_page(0)
 
     def on_complete_toggled(self, checkbutton):
         self.set_page_complete(self.complete, checkbutton.get_active())
@@ -536,28 +541,30 @@ class Application(object):
             os.mkdir(self.DOTDIR)
             self.log.info('dotdir created: "{dotdir}"', dotdir=self.DOTDIR)
 
-        config_path = os.path.join(self.DOTDIR, self.DOTFILE)
-        if not os.path.isfile(config_path):
-            self.log.info('no config exist under "{config_path}"', config_path=config_path)
-            self._config = UserConfig(config_path)
+        self._config_path = config_path = os.path.join(self.DOTDIR, self.DOTFILE)
+        self._profile_name = profile_name
+        if not os.path.isfile(self._config_path):
+            self.log.info('no config exist under "{config_path}"', config_path=self._config_path)
+            self._config = None
             self._profile = None
         else:
-            self._config = UserConfig(config_path)
-            self._profile = self._config.profiles.get(profile_name, None)
+            self._config = UserConfig(self._config_path)
+            self._profile = self._config.profiles.get(self._profile_name, None)
 
             if not self._profile:
-                raise click.ClickException('no such profile "{}" in config "{}"'.format(profile_name, config_path))
+                raise click.ClickException('no such profile "{}" in config "{}"'.format(self._profile_name, config_path))
             else:
                 self.log.info('user profile "{profile_name}" loaded from "{config_path}"',
-                            config_path=config_path, profile_name=profile_name)
-
-        assert self._config and self._profile
+                            config_path=self._config_path, profile_name=self._profile_name)
 
         extra = {
             'ready': txaio.create_future(),
             'done': txaio.create_future(),
             'running': True,
+            'config': self._config,
+            'config_path': self._config_path,
             'profile': self._profile,
+            'profile_name': self._profile_name,
         }
         runner = ApplicationRunner(url=self._profile.network_url,
                                    realm=self._profile.network_realm,
@@ -581,7 +588,7 @@ class Application(object):
             extra['running'] = False
             txaio.resolve(extra['done'], None)
 
-        win = SelectNewProfile(reactor, session, config_path, 'default')
+        win = SelectNewProfile(reactor, session, self._config, self._config_path, self._profile, self._profile_name)
         win.connect("cancel", on_exit)
         win.connect("destroy", on_exit)
         win.show_all()
