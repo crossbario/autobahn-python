@@ -22,6 +22,7 @@ import web3
 
 from autobahn.util import parse_activation_code
 from autobahn.wamp.serializer import CBORSerializer
+from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationRunner
 from autobahn.xbr import account_from_seedphrase, generate_seedphrase
 from autobahn.xbr._config import UserConfig
@@ -418,6 +419,8 @@ class Application(object):
     async def start(self, reactor, profile_name):
         txaio.start_logging(level='info')
 
+        self.log.info('ok, application starting for user profile "{profile}"', profile=profile_name)
+
         if not os.path.isdir(self.DOTDIR):
             os.mkdir(self.DOTDIR)
             self.log.info('dotdir created: "{dotdir}"', dotdir=self.DOTDIR)
@@ -450,19 +453,18 @@ class Application(object):
                                    extra=extra,
                                    serializers=[CBORSerializer()])
 
-        self.log.info('connecting to "{network_url}" @ "{network_realm}" ..',
+        self.log.info('ok, now connecting to "{network_url}"@"{network_realm}"',
                       network_url=self._profile.network_url,
                       network_realm=self._profile.network_realm)
-        client = await runner.run(Client, reactor=reactor, auto_reconnect=True, start_reactor=False)
+        await runner.run(Client, reactor=reactor, auto_reconnect=True, start_reactor=False)
+        self.log.info('ok, application client connected')
+
         session, details = await extra['ready']
-        print('#'*100, client, session, details)
+        self.log.info('ok, application session joined: {details}', details=details)
 
         def on_exit(_):
-            print('DESTROY main window')
-            #Gtk.main_quit()
+            self.log.info('exiting application ..')
             extra['running'] = False
-            if session and session.is_attached():
-                session.leave()
             txaio.resolve(extra['done'], None)
 
         win = SelectNewProfile(reactor, session, config_path, 'default')
@@ -470,18 +472,18 @@ class Application(object):
         win.connect("destroy", on_exit)
         win.show_all()
 
+        ticks = 0
         while extra['running']:
-            from autobahn.twisted.util import sleep
+            ticks += 1
+            self.log.info('ok, application main task still running at tick {ticks}', ticks=ticks)
             await sleep(1)
-            print('tick')
 
-        print('FINAL END!')
+        self.log.info('ok, application main task ended!')
 
 
 async def main(reactor, profile):
     app = Application()
-    res = await app.start(reactor, profile)
-    print('DONE', res)
+    await app.start(reactor, profile)
 
 
 react(main, ('default',))
