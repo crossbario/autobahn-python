@@ -4,6 +4,7 @@
 import os
 import uuid
 import binascii
+from pprint import pprint
 
 import gi
 
@@ -97,6 +98,17 @@ class SelectNewProfile(Gtk.Assistant):
             self.output_account = account_from_ethkey(self.profile.ethkey)
             self.output_ethadr = web3.Web3.toChecksumAddress(self.output_account.address)
             self.output_ethadr_raw = binascii.a2b_hex(self.output_ethadr[2:])
+            info = yield self.session.get_status()
+            if info:
+                self._label5_now.set_label(str(np.datetime64(info['status']['now'], 'ns')))
+                self._label5_chain.set_label(str(info['status']['chain']))
+                self._label5_status.set_label(str(info['status']['status']))
+                self._label5_xbrnetwork.set_label(str(info['config']['contracts']['xbrnetwork']))
+                self._label5_xbrtoken.set_label(str(info['config']['contracts']['xbrtoken']))
+                self._label5_blockhash.set_label('0x' + binascii.b2a_hex(info['status']['block']['hash']).decode())
+                self._label5_blocknumber.set_label(str(info['status']['block']['number']))
+
+            pprint(info)
             member_data = yield self.session.get_member(self.output_ethadr_raw)
             if not member_data:
                 self.log.info('ethadr {output_ethadr} is NOT yet a member',
@@ -107,6 +119,11 @@ class SelectNewProfile(Gtk.Assistant):
                               output_ethadr=self.output_ethadr, member_data=member_data)
                 self.output_member_data = member_data
                 self._label2.set_label(str(self.output_member_data['oid']))
+                self._label4.set_label(str(self.output_member_data['address']))
+                self._label6.set_label(str(self.output_member_data['created']))
+                self._label8.set_label(str(self.output_member_data['level']))
+                self._label10.set_label(str(self.output_member_data['balance']['eth']))
+                self._label12.set_label(str(self.output_member_data['balance']['xbr']))
                 self.set_current_page(4)
         else:
             self.set_current_page(0)
@@ -460,6 +477,95 @@ class SelectNewProfile(Gtk.Assistant):
         box2.add(image1)
         box1.add(box2)
 
+        grid2 = Gtk.Grid()
+        grid2.set_row_spacing(20)
+        grid2.set_column_spacing(20)
+        grid2.set_margin_top(20)
+        grid2.set_margin_bottom(20)
+        grid2.set_margin_start(20)
+        grid2.set_margin_end(20)
+
+        grid2_y = 0
+
+        # Current server time
+        #
+        label5_now_title = Gtk.Label(label='Current server time:')
+        label5_now_title.set_alignment(1, 0.5)
+        grid2.attach(label5_now_title, 0, grid2_y, 1, 1)
+        self._label5_now = Gtk.Label()
+        self._label5_now.set_alignment(0, 0.5)
+        self._label5_now.set_selectable(False)
+        grid2.attach(self._label5_now, 1, grid2_y, 1, 1)
+        grid2_y += 1
+
+        # Blockchain ID (e.g. 1, 3 or 5777)
+        #
+        label5_chain_title = Gtk.Label(label='Blockchain ID:')
+        label5_chain_title.set_alignment(1, 0.5)
+        grid2.attach(label5_chain_title, 0, grid2_y, 1, 1)
+        self._label5_chain = Gtk.Label()
+        self._label5_chain.set_alignment(0, 0.5)
+        self._label5_chain.set_selectable(True)
+        grid2.attach(self._label5_chain, 1, grid2_y, 1, 1)
+        grid2_y += 1
+
+        # Current server time
+        #
+        label5_status_title = Gtk.Label(label='Service status:')
+        label5_status_title.set_alignment(1, 0.5)
+        grid2.attach(label5_status_title, 0, grid2_y, 1, 1)
+        self._label5_status = Gtk.Label()
+        self._label5_status.set_alignment(0, 0.5)
+        self._label5_status.set_selectable(False)
+        grid2.attach(self._label5_status, 1, grid2_y, 1, 1)
+        grid2_y += 1
+
+        # xbrnetwork address
+        #
+        label5_xbrnetwork_title = Gtk.Label(label='XBRNetwork contract:')
+        label5_xbrnetwork_title.set_alignment(1, 0.5)
+        grid2.attach(label5_xbrnetwork_title, 0, grid2_y, 1, 1)
+        self._label5_xbrnetwork = Gtk.Label()
+        self._label5_xbrnetwork.set_alignment(0, 0.5)
+        self._label5_xbrnetwork.set_selectable(True)
+        grid2.attach(self._label5_xbrnetwork, 1, grid2_y, 1, 1)
+        grid2_y += 1
+
+        # xbrtoken address
+        #
+        label5_xbrtoken_title = Gtk.Label(label='XBRToken contract:')
+        label5_xbrtoken_title.set_alignment(1, 0.5)
+        grid2.attach(label5_xbrtoken_title, 0, grid2_y, 1, 1)
+        self._label5_xbrtoken = Gtk.Label()
+        self._label5_xbrtoken.set_alignment(0, 0.5)
+        self._label5_xbrtoken.set_selectable(True)
+        grid2.attach(self._label5_xbrtoken, 1, grid2_y, 1, 1)
+        grid2_y += 1
+
+        # Current block hash
+        #
+        label5_blockhash_title = Gtk.Label(label='Current block hash:')
+        label5_blockhash_title.set_alignment(1, 0.5)
+        grid2.attach(label5_blockhash_title, 0, grid2_y, 1, 1)
+        self._label5_blockhash = Gtk.Label()
+        self._label5_blockhash.set_alignment(0, 0.5)
+        self._label5_blockhash.set_selectable(True)
+        grid2.attach(self._label5_blockhash, 1, grid2_y, 1, 1)
+        grid2_y += 1
+
+        # Current block number
+        #
+        label5_blocknumber_title = Gtk.Label(label='Current block number:')
+        label5_blocknumber_title.set_alignment(1, 0.5)
+        grid2.attach(label5_blocknumber_title, 0, grid2_y, 1, 1)
+        self._label5_blocknumber = Gtk.Label()
+        self._label5_blocknumber.set_alignment(0, 0.5)
+        self._label5_blocknumber.set_selectable(True)
+        grid2.attach(self._label5_blocknumber, 1, grid2_y, 1, 1)
+        grid2_y += 1
+
+        box1.add(grid2)
+
         grid1 = Gtk.Grid()
         grid1.set_row_spacing(20)
         grid1.set_column_spacing(20)
@@ -468,11 +574,55 @@ class SelectNewProfile(Gtk.Assistant):
         grid1.set_margin_start(20)
         grid1.set_margin_end(20)
 
-        label1 = Gtk.Label(label='Member ID:')
+        label1 = Gtk.Label(label='User ID:')
+        label1.set_alignment(1, 0.5)
         grid1.attach(label1, 0, 0, 1, 1)
 
-        self._label2 = Gtk.Label(label=str(self.output_member_data_oid))
-        grid1.attach(self._label2, 0, 1, 1, 1)
+        self._label2 = Gtk.Label()
+        self._label2.set_alignment(0, 0.5)
+        self._label2.set_selectable(True)
+        grid1.attach(self._label2, 1, 0, 1, 1)
+
+        label3 = Gtk.Label(label='Eth Address:')
+        label3.set_alignment(1, 0.5)
+        grid1.attach(label3, 0, 1, 1, 1)
+
+        self._label4 = Gtk.Label()
+        self._label4.set_alignment(0, 0.5)
+        self._label4.set_selectable(True)
+        grid1.attach(self._label4, 1, 1, 1, 1)
+
+        label5 = Gtk.Label(label='Account Created:')
+        label5.set_alignment(1, 0.5)
+        grid1.attach(label5, 0, 2, 1, 1)
+
+        self._label6 = Gtk.Label()
+        self._label6.set_alignment(0, 0.5)
+        grid1.attach(self._label6, 1, 2, 1, 1)
+
+        label7 = Gtk.Label(label='Membership:')
+        label7.set_alignment(1, 0.5)
+        grid1.attach(label7, 0, 3, 1, 1)
+
+        self._label8 = Gtk.Label()
+        self._label8.set_alignment(0, 0.5)
+        grid1.attach(self._label8, 1, 3, 1, 1)
+
+        label9 = Gtk.Label(label='ETH Balance:')
+        label9.set_alignment(1, 0.5)
+        grid1.attach(label9, 0, 4, 1, 1)
+
+        self._label10 = Gtk.Label()
+        self._label10.set_alignment(0, 0.5)
+        grid1.attach(self._label10, 1, 4, 1, 1)
+
+        label11 = Gtk.Label(label='XBR Balance:')
+        label11.set_alignment(1, 0.5)
+        grid1.attach(label11, 0, 5, 1, 1)
+
+        self._label12 = Gtk.Label()
+        self._label12.set_alignment(0, 0.5)
+        grid1.attach(self._label12, 1, 5, 1, 1)
 
         box1.add(grid1)
 
@@ -489,6 +639,15 @@ class ApplicationClient(Client):
                       details=details)
         if 'ready' in self.config.extra:
             txaio.resolve(self.config.extra['ready'], (self, details))
+
+    @inlineCallbacks
+    def get_status(self):
+        if self.is_attached():
+            config = yield self.call('xbr.network.get_config')
+            status = yield self.call('xbr.network.get_status')
+            return {'config': config, 'status': status}
+        else:
+            self.log.warn('not connected: could not retrieve status')
 
     @inlineCallbacks
     def get_member(self, ethadr_raw):
