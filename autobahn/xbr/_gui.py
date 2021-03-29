@@ -28,6 +28,7 @@ import os
 import uuid
 import binascii
 import random
+import pkg_resources
 from pprint import pprint
 from time import time_ns
 
@@ -62,8 +63,11 @@ from autobahn.xbr._cli import Client
 from autobahn.xbr._config import UserConfig, Profile
 from autobahn.xbr._util import hlval, hlid, hltype
 
+LOGO_RESOURCE = pkg_resources.resource_filename('thingcloud', 'asset/logo.svg')
+print(LOGO_RESOURCE, os.path.isfile(LOGO_RESOURCE))
 
-class SelectNewProfile(Gtk.Assistant):
+
+class ApplicationWindow(Gtk.Assistant):
     """
     Main application window which provides UI for the following functions:
 
@@ -213,7 +217,8 @@ class SelectNewProfile(Gtk.Assistant):
         grid1.set_margin_end(20)
 
         image1 = Gtk.Image()
-        image1.set_from_file('xbr_white.svg')
+
+        image1.set_from_file(LOGO_RESOURCE)
         grid1.attach(image1, 0, 0, 2, 1)
 
         label0 = Gtk.Label(label='\n\nI am new and do not have an account yet:\n')
@@ -296,7 +301,7 @@ class SelectNewProfile(Gtk.Assistant):
 
         box2_2 = Gtk.HBox()
         image2_1 = Gtk.Image()
-        image2_1.set_from_file('xbr_white.svg')
+        image2_1.set_from_file(LOGO_RESOURCE)
         box2_2.add(image2_1)
         box2_1.add(box2_2)
 
@@ -347,7 +352,7 @@ class SelectNewProfile(Gtk.Assistant):
 
             # https://eth-account.readthedocs.io/en/latest/eth_account.signers.html#eth_account.signers.local.LocalAccount.key
             self.profile.ethkey = self.output_account.key
-            self.profile.cskey = os.urandom(32)
+            self.profile.cskey = self.session._cskey_raw
 
             member_data = yield self.session.get_member(self.output_ethadr_raw)
             pprint(member_data)
@@ -391,7 +396,7 @@ class SelectNewProfile(Gtk.Assistant):
 
         box2 = Gtk.HBox()
         image1 = Gtk.Image()
-        image1.set_from_file('xbr_white.svg')
+        image1.set_from_file(LOGO_RESOURCE)
         box2.add(image1)
         box1.add(box2)
 
@@ -559,7 +564,7 @@ class SelectNewProfile(Gtk.Assistant):
 
         box2 = Gtk.HBox()
         image1 = Gtk.Image()
-        image1.set_from_file('xbr_white.svg')
+        image1.set_from_file(LOGO_RESOURCE)
         box2.add(image1)
         box1.add(box2)
 
@@ -632,7 +637,7 @@ class SelectNewProfile(Gtk.Assistant):
 
         box2 = Gtk.HBox()
         image1 = Gtk.Image()
-        image1.set_from_file('xbr_white.svg')
+        image1.set_from_file(LOGO_RESOURCE)
         box2.add(image1)
         box1.add(box2)
 
@@ -936,7 +941,7 @@ class Application(object):
             extra['running'] = False
             txaio.resolve(extra['done'], None)
 
-        win = SelectNewProfile(reactor, session, self._config, self._config_path, self._profile, self._profile_name)
+        win = ApplicationWindow(reactor, session, self._config, self._config_path, self._profile, self._profile_name)
         win.connect("cancel", on_exit)
         win.connect("destroy", on_exit)
         win.show_all()
@@ -957,5 +962,9 @@ async def main(reactor, profile):
     await app.start(reactor, profile)
 
 
-if __name__ == '__main__':
+def _main():
     react(main, ('default',))
+
+
+if __name__ == '__main__':
+    _main()

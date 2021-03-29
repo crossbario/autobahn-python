@@ -105,18 +105,26 @@ class Client(ApplicationSession):
         self._chain_id = 4
 
         profile = config.extra.get('profile', None)
-        assert profile
-        assert type(profile.ethkey) == bytes and len(profile.ethkey) == 32
-        assert type(profile.cskey) == bytes and len(profile.cskey) == 32
-        self._ethkey_raw = profile.ethkey
-        self._cskey_raw = profile.cskey
-        self.log.info('ethkey_raw/cskey_raw loaded from profile')
+        if profile:
+            assert type(profile.ethkey) == bytes and len(profile.ethkey) == 32
+            assert type(profile.cskey) == bytes and len(profile.cskey) == 32
+            self._ethkey_raw = profile.ethkey
+            self._cskey_raw = profile.cskey
+            self.log.info('ethkey_raw/cskey_raw loaded from profile')
 
-        self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
-        self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
-        self._ethadr_raw = binascii.a2b_hex(self._ethadr[2:])
+            self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
+            self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
+            self._ethadr_raw = binascii.a2b_hex(self._ethadr[2:])
 
-        self._key = cryptosign.SigningKey.from_key_bytes(self._cskey_raw)
+            self._key = cryptosign.SigningKey.from_key_bytes(self._cskey_raw)
+        else:
+            self._cskey_raw = os.urandom(32)
+            self._key = cryptosign.SigningKey.from_key_bytes(self._cskey_raw)
+
+            self._ethkey_raw = None
+            self._ethkey = None
+            self._ethadr_raw = None
+            self._ethadr = None
 
         self._running = True
 

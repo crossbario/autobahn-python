@@ -174,6 +174,7 @@ packages = [
     'autobahn.twisted',
     'autobahn.twisted.testing',
     'autobahn.twisted.xbr',
+    'autobahn.xbr',
     'autobahn.nvx',
     'autobahn.nvx.test',
     'twisted.plugins',
@@ -195,6 +196,7 @@ else:
     packages += ['autobahn.xbr', 'autobahn.asyncio.xbr', 'autobahn.twisted.xbr']
     package_data['xbr'] = ['./xbr/contracts/*.json']
     entry_points['console_scripts'] += ["xbrnetwork = autobahn.xbr._cli:_main"]
+    entry_points['console_scripts'] += ["xbrnetwork-ui = autobahn.xbr._gui:_main"]
 
 # development dependencies
 extras_require_dev = [
