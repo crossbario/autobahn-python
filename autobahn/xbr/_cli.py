@@ -479,6 +479,8 @@ class Client(ApplicationSession):
                       member_oid=hlid(uuid.UUID(bytes=member_oid)),
                       transaction=hlval('0x' + binascii.b2a_hex(result['transaction']).decode()))
 
+        return result
+
     async def _do_create_market(self, member_oid, market_oid, marketmaker, title=None, label=None, homepage=None,
                                 provider_security=0, consumer_security=0, market_fee=0):
         member_data = await self.call('xbr.network.get_member', member_oid.bytes)

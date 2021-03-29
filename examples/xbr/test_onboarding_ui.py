@@ -1,10 +1,34 @@
-# https://python-gtk-3-tutorial.readthedocs.io/en/latest/
-# https://twistedmatrix.com/documents/current/core/howto/choosing-reactor.html
+###############################################################################
+#
+# The MIT License (MIT)
+#
+# Copyright (c) Crossbar.io Technologies GmbH
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+###############################################################################
 
 import os
 import uuid
 import binascii
 from pprint import pprint
+from time import time_ns
 
 import gi
 
@@ -25,17 +49,16 @@ from twisted.internet import reactor
 import click
 import web3
 import numpy as np
+from humanize import naturaldelta, naturaltime
 
 from autobahn.util import parse_activation_code
 from autobahn.wamp.serializer import CBORSerializer
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationRunner
-
+from autobahn.xbr import unpack_uint256
 from autobahn.xbr import account_from_seedphrase, generate_seedphrase, account_from_ethkey
-from autobahn.xbr import pack_uint256, unpack_uint256, sign_eip712_channel_open, make_w3
-from autobahn.xbr import sign_eip712_member_register, sign_eip712_market_create, sign_eip712_market_join
-from autobahn.xbr._config import UserConfig
 from autobahn.xbr._cli import Client
+from autobahn.xbr._config import UserConfig, Profile
 from autobahn.xbr._util import hlval, hlid, hltype
 
 
@@ -51,6 +74,10 @@ class SelectNewProfile(Gtk.Assistant):
            direct device-to-device encrypted account data transfer
        - R3) Only cold storage recovery seed phrase left => account from seed-phrase full
            recovery, including new email and 2FA verification.
+
+    See also:
+    * https://python-gtk-3-tutorial.readthedocs.io/en/latest/
+    * https://twistedmatrix.com/documents/current/core/howto/choosing-reactor.html
     """
     log = txaio.make_logger()
 
@@ -101,7 +128,8 @@ class SelectNewProfile(Gtk.Assistant):
             self.output_ethadr_raw = binascii.a2b_hex(self.output_ethadr[2:])
             info = yield self.session.get_status()
             if info:
-                self._label5_now.set_label(str(np.datetime64(info['status']['now'], 'ns')))
+                now = str(np.datetime64(np.datetime64(info['status']['now'], 'ns'), 's'))
+                self._label5_now.set_label(now)
                 self._label5_chain.set_label(str(info['status']['chain']))
                 self._label5_status.set_label(str(info['status']['status']))
                 self._label5_xbrnetwork.set_label(str(info['config']['contracts']['xbrnetwork']))
@@ -119,14 +147,35 @@ class SelectNewProfile(Gtk.Assistant):
                 self.log.info('ok, ethadr {output_ethadr} already is a member: {member_data}',
                               output_ethadr=self.output_ethadr, member_data=member_data)
                 self.output_member_data = member_data
+                created_ago = naturaldelta((np.datetime64(time_ns(), 'ns') - self.output_member_data['created']) / 1000000000.)
+                created = naturaltime(np.datetime64(self.output_member_data['created'], 's'))
                 self._label2.set_label(str(self.output_member_data['oid']))
                 self._label4.set_label(str(self.output_member_data['address']))
-                self._label6.set_label(str(self.output_member_data['created']))
+                self._label6.set_label('{} ({} ago)'.format(created, created_ago))
                 self._label8.set_label(str(self.output_member_data['level']))
                 self._label10.set_label(str(self.output_member_data['balance']['eth']))
                 self._label12.set_label(str(self.output_member_data['balance']['xbr']))
                 self.set_current_page(4)
         else:
+            profile = Profile()
+            profile.path = self.config_path
+            profile.ethkey = None
+            profile.cskey = None
+            profile.username = None
+            profile.email = None
+            profile.network_url = 'ws://thingcloud-box-aws.sthngs.crossbario.com:8090/ws'
+            profile.network_realm = 'xbrnetwork'
+            profile.member_oid = None
+            profile.vaction_oid = None
+            profile.vaction_requested = None
+            profile.vaction_verified = None
+            profile.data_url = None
+            profile.data_realm = None
+            profile.infura_url = None
+            profile.infura_network = None
+            profile.infura_key = None
+            profile.infura_secret = None
+            self.profile = profile
             self.set_current_page(0)
 
     def on_complete_toggled(self, checkbutton):
@@ -152,11 +201,11 @@ class SelectNewProfile(Gtk.Assistant):
         image1.set_from_file('xbr_white.svg')
         grid1.attach(image1, 0, 0, 2, 1)
 
-        label0 = Gtk.Label(label='Initial configuration, please select:\n')
-        label0.set_alignment(0, 0)
-        grid1.attach(label0, 0, 1, 1, 1)
+        label0 = Gtk.Label(label='\n\nI am new and do not have an account yet:\n')
+        label0.set_alignment(0, 0.5)
+        grid1.attach(label0, 0, 1, 2, 1)
 
-        label1 = Gtk.Label(label='Create a new account or start from fresh')
+        label1 = Gtk.Label(label='Create a new account or start from fresh. You only need an email address. [N]')
         label1.set_alignment(0, 0.5)
         label1.set_justify(Gtk.Justification.LEFT)
         grid1.attach(label1, 1, 2, 1, 1)
@@ -169,10 +218,33 @@ class SelectNewProfile(Gtk.Assistant):
         button1.connect('clicked', on_button1)
         grid1.attach(button1, 0, 2, 1, 1)
 
-        label2 = Gtk.Label(label='Synchronize device with account in other device')
+        label12 = Gtk.Label(label='\n\nI already have an existing account and want to use that:\n')
+        label12.set_alignment(0, 0.5)
+        grid1.attach(label12, 0, 3, 2, 1)
+
+        label22 = Gtk.Label(label='Restore account from cloud backup to this device. You will need access to\n'
+                                  'your account password and access to your account email address. [R1]')
+        label22.set_alignment(0, 0.5)
+        label22.set_justify(Gtk.Justification.LEFT)
+        label22.set_line_wrap(True)
+        label22.set_width_chars(12)
+        grid1.attach(label22, 1, 4, 1, 1)
+
+        button22 = Gtk.Button.new_with_label('Restore account')
+        def on_button22(res):
+            self.log.info('SELECTED_RESTORE: {res}', res=res)
+            self.set_current_page(2)
+
+        button22.connect('clicked', on_button22)
+        grid1.attach(button22, 0, 4, 1, 1)
+
+        label2 = Gtk.Label(label='Synchronize device with other device in account. You will need access to\n'
+                                 'another device currently connected to your account. [R2]')
         label2.set_alignment(0, 0.5)
         label2.set_justify(Gtk.Justification.LEFT)
-        grid1.attach(label2, 1, 3, 1, 1)
+        label2.set_line_wrap(True)
+        label2.set_width_chars(12)
+        grid1.attach(label2, 1, 5, 1, 1)
 
         button2 = Gtk.Button.new_with_label('Synchronize account')
         def on_button2(res):
@@ -180,12 +252,15 @@ class SelectNewProfile(Gtk.Assistant):
             self.set_current_page(2)
 
         button2.connect('clicked', on_button2)
-        grid1.attach(button2, 0, 3, 1, 1)
+        grid1.attach(button2, 0, 5, 1, 1)
 
-        label3 = Gtk.Label(label='Recover account from account seed phrase')
+        label3 = Gtk.Label(label='Recover account from account seed phrase. You only need access to\n'
+                                 'your 12-24 word account recovery seed phrase. [R3]')
         label3.set_alignment(0, 0.5)
         label3.set_justify(Gtk.Justification.LEFT)
-        grid1.attach(label3, 1, 4, 1, 1)
+        label3.set_line_wrap(True)
+        label3.set_width_chars(12)
+        grid1.attach(label3, 1, 6, 1, 1)
 
         button3 = Gtk.Button.new_with_label('Recover account')
         def on_button3(res):
@@ -193,7 +268,7 @@ class SelectNewProfile(Gtk.Assistant):
             self.set_current_page(3)
 
         button3.connect('clicked', on_button3)
-        grid1.attach(button3, 0, 4, 1, 1)
+        grid1.attach(button3, 0, 6, 1, 1)
 
         self.append_page(grid1)
 
@@ -253,7 +328,13 @@ class SelectNewProfile(Gtk.Assistant):
             self.output_account = account_from_seedphrase(self.input_seedphrase, index=0)
             self.output_ethadr = web3.Web3.toChecksumAddress(self.output_account.address)
             self.output_ethadr_raw = binascii.a2b_hex(self.output_ethadr[2:])
+
+            # https://eth-account.readthedocs.io/en/latest/eth_account.signers.html#eth_account.signers.local.LocalAccount.key
+            self.profile.ethkey = self.output_account.key
+            self.profile.cskey = os.urandom(32)
+
             member_data = yield self.session.get_member(self.output_ethadr_raw)
+            pprint(member_data)
             if not member_data:
                 self.log.info('ethadr {output_ethadr} is NOT yet a member',
                               output_ethadr=self.output_ethadr)
@@ -261,6 +342,14 @@ class SelectNewProfile(Gtk.Assistant):
             else:
                 self.log.info('ok, ethadr {output_ethadr} already is a member: {member_data}',
                               output_ethadr=self.output_ethadr, member_data=member_data)
+
+                self.profile.member_oid = uuid.UUID(bytes=member_data['member_oid'])
+                self.profile.member_adr = self.output_ethadr
+                self.profile.email = member_data['email']
+                self.profile.username = member_data['username']
+                self.config.profiles[self.profile_name] = self.profile
+                self.config.save(self.input_password)
+
                 self.output_member_data = member_data
                 self._label2.set_label(str(self._member_data['oid']))
                 self.set_current_page(4)
@@ -364,15 +453,25 @@ class SelectNewProfile(Gtk.Assistant):
         grid1.attach(label3, 0, 3, 1, 1)
 
         def on_entry23(_):
-            checks['password'] = entry2.get_text() == entry3.get_text() and check_password(entry2.get_text())
+            pw1_ok = False
             if check_password(entry2.get_text()):
+                pw1_ok = True
                 entry2.modify_fg(Gtk.StateFlags.NORMAL, None)
             else:
                 entry2.modify_fg(Gtk.StateFlags.NORMAL, Color(50000, 0, 0))
+
+            pw2_ok = False
             if check_password(entry3.get_text()):
+                pw2_ok = True
                 entry3.modify_fg(Gtk.StateFlags.NORMAL, None)
             else:
                 entry3.modify_fg(Gtk.StateFlags.NORMAL, Color(50000, 0, 0))
+
+            if pw1_ok and pw2_ok and entry2.get_text() == entry3.get_text() and check_password(entry2.get_text()):
+                checks['password'] = entry2.get_text()
+            else:
+                checks['password'] = None
+
             check_all()
 
         entry2.connect('changed', on_entry23)
@@ -400,11 +499,20 @@ class SelectNewProfile(Gtk.Assistant):
             self.input_email = checks['email']
             self.input_password = checks['password']
             self.input_username = self.input_email.split('@')[0].strip()
+
             self.log.info('input_email: {input_email}', input_email=self.input_email)
             self.log.info('input_username: {input_username}', input_username=self.input_username)
             self.log.info('input_password: {input_password}', input_password=self.input_password)
             result = yield self.session._do_onboard_member(self.input_username, self.input_email)
             pprint(result)
+
+            self.profile.email = self.input_email
+            self.profile.username = self.input_username
+            self.profile.vaction_oid = str(uuid.UUID(bytes=result['vaction_oid']))
+            self.profile.vaction_requested = str(np.datetime64(result['timestamp'], 'ns'))
+            self.config.profiles[self.profile_name] = self.profile
+            self.config.save(self.input_password)
+
             self.set_current_page(3)
 
         def run_on_button2(widget):
@@ -453,8 +561,8 @@ class SelectNewProfile(Gtk.Assistant):
 
         def on_entry1(entry):
             # "RWCN-94NV-CEHR" -> ("RWCN", "94NV", "CEHR") | None
-            code = parse_activation_code(entry.get_text())
-            if code:
+            vaction_code = parse_activation_code(entry.get_text())
+            if vaction_code:
                 entry1.modify_fg(Gtk.StateFlags.NORMAL, None)
                 button1.set_sensitive(True)
             else:
@@ -466,9 +574,17 @@ class SelectNewProfile(Gtk.Assistant):
         button1 = Gtk.Button.new_with_label('Verify')
         button1.set_sensitive(False)
 
-        def on_button1(res):
-            print('1' * 100, res)
-        button1.connect('clicked', on_button1)
+        @inlineCallbacks
+        def on_button1(_):
+            vaction_code = parse_activation_code(entry1.get_text())
+            result = yield self.session._do_onboard_member_verify(self.profile.vaction_oid, vaction_code)
+            pprint(result)
+
+        def run_on_button1(widget):
+            self.log.info('{func}({widget})', func=hltype(run_on_button1), widget=widget)
+            reactor.callLater(0, on_button1, widget)
+
+        button1.connect('clicked', run_on_button1)
         box1.add(button1)
 
         self.append_page(box1)
@@ -733,15 +849,18 @@ class Application(object):
         self._profile_name = profile_name
         if not os.path.isfile(self._config_path):
             self.log.info('no config exist under "{config_path}"', config_path=self._config_path)
-            self._config = None
+            self._config = UserConfig(self._config_path)
             self._profile = None
         else:
             self._config = UserConfig(self._config_path)
-            self._profile = self._config.profiles.get(self._profile_name, None)
-
-            if not self._profile:
-                raise click.ClickException('no such profile "{}" in config "{}"'.format(self._profile_name, config_path))
+            # FIXME: start modal dialog to get password from user
+            def getpw():
+                return '123secret'
+            self._config.load(cb_get_password=getpw)
+            if self._profile_name not in self._config.profiles:
+                raise click.ClickException('no such profile "{}" in config "{}" with {} profiles'.format(self._profile_name, config_path, len(self._config.profiles)))
             else:
+                self._profile = self._config.profiles[self._profile_name]
                 self.log.info('user profile "{profile_name}" loaded from "{config_path}"',
                             config_path=self._config_path, profile_name=self._profile_name)
 
@@ -803,4 +922,5 @@ async def main(reactor, profile):
     await app.start(reactor, profile)
 
 
-react(main, ('default',))
+if __name__ == '__main__':
+    react(main, ('default',))

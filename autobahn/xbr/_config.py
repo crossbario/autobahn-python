@@ -70,12 +70,14 @@ class Profile(object):
     def __init__(self,
                  path: Optional[str] = None,
                  name: Optional[str] = None,
+                 member_adr: Optional[str] = None,
                  ethkey: Optional[bytes] = None,
                  cskey: Optional[bytes] = None,
                  username: Optional[str] = None,
                  email: Optional[str] = None,
                  network_url: Optional[str] = None,
                  network_realm: Optional[str] = None,
+                 member_oid: Optional[uuid.UUID] = None,
                  vaction_oid: Optional[uuid.UUID] = None,
                  vaction_requested: Optional[np.datetime64] = None,
                  vaction_verified: Optional[np.datetime64] = None,
@@ -89,12 +91,14 @@ class Profile(object):
 
         :param path:
         :param name:
+        :param member_adr:
         :param ethkey:
         :param cskey:
         :param username:
         :param email:
         :param network_url:
         :param network_realm:
+        :param member_oid:
         :param vaction_oid:
         :param vaction_requested:
         :param vaction_verified:
@@ -110,12 +114,15 @@ class Profile(object):
 
         self.path = path
         self.name = name
+
+        self.member_adr = member_adr
         self.ethkey = ethkey
         self.cskey = cskey
         self.username = username
         self.email = email
         self.network_url = network_url
         self.network_realm = network_realm
+        self.member_oid = member_oid
         self.vaction_oid = vaction_oid
         self.vaction_requested = vaction_requested
         self.vaction_verified = vaction_verified
@@ -127,17 +134,15 @@ class Profile(object):
         self.infura_secret = infura_secret
 
     def marshal(self):
-        ethkey = '0x{}'.format(binascii.b2a_hex(self.ethkey).decode()) if self.ethkey else ''
-        cskey = '0x{}'.format(binascii.b2a_hex(self.cskey).decode()) if self.cskey else ''
         obj = {}
-        obj['path'] = self.path or ''
-        obj['name'] = self.name or ''
-        obj['ethkey'] = ethkey or ''
-        obj['cskey'] = cskey or ''
+        obj['member_adr'] = self.member_adr or ''
+        obj['ethkey'] = '0x{}'.format(binascii.b2a_hex(self.ethkey).decode()) if self.ethkey else ''
+        obj['cskey'] = '0x{}'.format(binascii.b2a_hex(self.cskey).decode()) if self.cskey else ''
         obj['username'] = self.username or ''
         obj['email'] = self.email or ''
         obj['network_url'] = self.network_url or ''
         obj['network_realm'] = self.network_realm or ''
+        obj['member_oid'] = str(self.member_oid) if self.member_oid else ''
         obj['vaction_oid'] = str(self.vaction_oid) if self.vaction_oid else ''
         obj['vaction_requested'] = str(self.vaction_requested) if self.vaction_requested else ''
         obj['vaction_verified'] = str(self.vaction_verified) if self.vaction_verified else ''
@@ -151,12 +156,16 @@ class Profile(object):
 
     @staticmethod
     def parse(path, name, items):
+        from pprint import pprint
+        pprint(items)
+        member_adr = None
         ethkey = None
         cskey = None
         username = None
         email = None
         network_url = None
         network_realm = None
+        member_oid = None
         vaction_oid = None
         vaction_requested = None
         vaction_verified = None
@@ -176,6 +185,16 @@ class Profile(object):
                     vaction_oid = uuid.UUID(v)
                 else:
                     vaction_oid = None
+            elif k == 'member_adr':
+                if type(v) == str and v != '':
+                    member_adr = v
+                else:
+                    member_adr = None
+            elif k == 'member_oid':
+                if type(v) == str and v != '':
+                    member_oid = uuid.UUID(v)
+                else:
+                    member_oid = None
             elif k == 'vaction_requested':
                 if type(v) == int and v:
                     vaction_requested = np.datetime64(v, 'ns')
@@ -212,8 +231,13 @@ class Profile(object):
                 # skip unknown attribute
                 print('unprocessed config attribute "{}"'.format(k))
 
-        return Profile(path, name, ethkey, cskey, username, email, network_url, network_realm,
-                       vaction_oid, vaction_requested, vaction_verified, data_url, data_realm,
+        return Profile(path, name,
+                       member_adr, ethkey, cskey,
+                       username, email,
+                       network_url, network_realm,
+                       member_oid,
+                       vaction_oid, vaction_requested, vaction_verified,
+                       data_url, data_realm,
                        infura_url, infura_network, infura_key, infura_secret)
 
 
@@ -223,6 +247,8 @@ class UserConfig(object):
     .ini file, or such a file encrypted with XSalsa20-Poly1305, and with a
     binary file header of 48 octets.
     """
+    from txaio import make_logger
+    log = make_logger()
 
     def __init__(self, config_path):
         """
@@ -261,10 +287,12 @@ class UserConfig(object):
 
         :return: Number of octets written to the user configuration file.
         """
+        written = 0
         config = configparser.ConfigParser()
         for profile_name, profile in self._profiles.items():
             if profile_name not in config.sections():
                 config.add_section(profile_name)
+                written += 1
             pd = profile.marshal()
             for option, value in pd.items():
                 config.set(profile_name, option, value)
@@ -304,6 +332,9 @@ class UserConfig(object):
 
         with open(self._config_path, 'wb') as fp2:
             fp2.write(data)
+
+        self.log.info('configuration with {sections} sections, {bytes_written} bytes written to {written_to}',
+                      sections=written, bytes_written=len(data), written_to=self._config_path)
 
         return len(data)
 
@@ -529,6 +560,7 @@ def load_or_create_profile(dotdir=None, profile=None, default_url=None, default_
             click.echo('created new local user configuration {}'.format(style_ok(config_path)))
 
     config_obj = UserConfig(config_path)
+    config_obj.load()
     profile_obj = config_obj.profiles.get(profile, None)
 
     if not profile_obj:
