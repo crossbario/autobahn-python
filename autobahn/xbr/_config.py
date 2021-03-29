@@ -41,7 +41,6 @@ from time import time_ns
 from eth_utils.conversions import hexstr_if_str, to_hex
 
 from autobahn.websocket.util import parse_url
-from autobahn.xbr._util import hlval, hltype
 from autobahn.xbr._wallet import pkm_from_argon2_secret
 
 _HAS_COLOR_TERM = False
@@ -80,8 +79,8 @@ class Profile(object):
                  vaction_oid: Optional[uuid.UUID] = None,
                  vaction_requested: Optional[np.datetime64] = None,
                  vaction_verified: Optional[np.datetime64] = None,
-                 market_url: Optional[str] = None,
-                 market_realm: Optional[str] = None,
+                 data_url: Optional[str] = None,
+                 data_realm: Optional[str] = None,
                  infura_url: Optional[str] = None,
                  infura_network: Optional[str] = None,
                  infura_key: Optional[str] = None,
@@ -99,8 +98,8 @@ class Profile(object):
         :param vaction_oid:
         :param vaction_requested:
         :param vaction_verified:
-        :param market_url:
-        :param market_realm:
+        :param data_url:
+        :param data_realm:
         :param infura_url:
         :param infura_network:
         :param infura_key:
@@ -120,8 +119,8 @@ class Profile(object):
         self.vaction_oid = vaction_oid
         self.vaction_requested = vaction_requested
         self.vaction_verified = vaction_verified
-        self.market_url = market_url
-        self.market_realm = market_realm
+        self.data_url = data_url
+        self.data_realm = data_realm
         self.infura_url = infura_url
         self.infura_network = infura_network
         self.infura_key = infura_key
@@ -142,8 +141,8 @@ class Profile(object):
         obj['vaction_oid'] = str(self.vaction_oid) if self.vaction_oid else ''
         obj['vaction_requested'] = str(self.vaction_requested) if self.vaction_requested else ''
         obj['vaction_verified'] = str(self.vaction_verified) if self.vaction_verified else ''
-        obj['market_url'] = self.market_url or ''
-        obj['market_realm'] = self.market_realm or ''
+        obj['data_url'] = self.data_url or ''
+        obj['data_realm'] = self.data_realm or ''
         obj['infura_url'] = self.infura_url or ''
         obj['infura_network'] = self.infura_network or ''
         obj['infura_key'] = self.infura_key or ''
@@ -161,8 +160,8 @@ class Profile(object):
         vaction_oid = None
         vaction_requested = None
         vaction_verified = None
-        market_url = None
-        market_realm = None
+        data_url = None
+        data_realm = None
         infura_network = None
         infura_key = None
         infura_secret = None
@@ -173,29 +172,26 @@ class Profile(object):
             elif k == 'network_realm':
                 network_realm = str(v)
             elif k == 'vaction_oid':
-                if type(v) == bytes:
-                    vaction_oid = uuid.UUID(bytes=v)
-                elif type(v) == str:
+                if type(v) == str and v != '':
                     vaction_oid = uuid.UUID(v)
                 else:
-                    raise ValueError('invalid type {} for vaction_oid'.format(type(v)))
+                    vaction_oid = None
             elif k == 'vaction_requested':
-                if type(v) == int:
+                if type(v) == int and v:
                     vaction_requested = np.datetime64(v, 'ns')
                 else:
-                    raise ValueError('invalid type {} for vaction_requested'.format(type(v)))
+                    vaction_requested = None
             elif k == 'vaction_verified':
                 if type(v) == int:
                     vaction_verified = np.datetime64(v, 'ns')
                 else:
-                    raise ValueError('invalid type {} for vaction_verified'.format(type(v)))
-            elif k == 'market_url':
-                market_url = str(v)
-            elif k == 'market_realm':
-                market_realm = str(v)
+                    vaction_verified = None
+            elif k == 'data_url':
+                data_url = str(v)
+            elif k == 'data_realm':
+                data_realm = str(v)
             elif k == 'ethkey':
                 ethkey = binascii.a2b_hex(v[2:])
-                print('88888888888888', ethkey)
             elif k == 'cskey':
                 cskey = binascii.a2b_hex(v[2:])
             elif k == 'username':
@@ -210,33 +206,29 @@ class Profile(object):
                 infura_secret = str(v)
             elif k == 'infura_url':
                 infura_url = str(v)
+            elif k in ['path', 'name']:
+                pass
             else:
                 # skip unknown attribute
                 print('unprocessed config attribute "{}"'.format(k))
 
         return Profile(path, name, ethkey, cskey, username, email, network_url, network_realm,
-                       vaction_oid, vaction_requested, vaction_verified, market_url, market_realm,
+                       vaction_oid, vaction_requested, vaction_verified, data_url, data_realm,
                        infura_url, infura_network, infura_key, infura_secret)
 
 
 class UserConfig(object):
     """
-    nacl.bindings.crypto_secretbox
-
-    :cvar KEY_SIZE: The size that the key is required to be.
-    :cvar NONCE_SIZE: The size that the nonce is required to be.
-    :cvar MACBYTES: The size of the authentication MAC tag in bytes.
-
-    XSalsa20
-
-    https://libsodium.gitbook.io/doc/advanced/stream_ciphers/xsalsa20
-    256 bits keys, 192 bits nonces
-
-    Encryption XSalsa20 stream cipher
-    Authentication Poly1305 MAC
+    Local user configuration file. The data is either a plain text (unencrypted)
+    .ini file, or such a file encrypted with XSalsa20-Poly1305, and with a
+    binary file header of 48 octets.
     """
 
     def __init__(self, config_path):
+        """
+
+        :param config_path: The user configuration file path.
+        """
         from txaio import make_logger
         self.log = make_logger()
         self._config_path = os.path.abspath(config_path)
@@ -244,35 +236,45 @@ class UserConfig(object):
 
     @property
     def config_path(self) -> List[str]:
+        """
+        Return the path to the user configuration file exposed by this object.,
+
+        :return: Local filesystem path.
+        """
         return self._config_path
 
     @property
     def profiles(self) -> Dict[str, object]:
+        """
+        Access to a map of user profiles in this user configuration.
+
+        :return: Map of user profiles.
+        """
         return self._profiles
 
     def save(self, password: Optional[str] = None):
         """
+        Save this user configuration to the underlying configuration file. The user
+        configuration file can be encrypted using Argon2id when a ``password`` is given.
 
-        :param password:
-        :return:
+        :param password: The optional Argon2id password.
+
+        :return: Number of octets written to the user configuration file.
         """
         config = configparser.ConfigParser()
         for profile_name, profile in self._profiles.items():
             if profile_name not in config.sections():
                 config.add_section(profile_name)
             pd = profile.marshal()
-            from pprint import pprint
-            pprint(pd)
             for option, value in pd.items():
-                print('SET', profile_name, option, value)
                 config.set(profile_name, option, value)
 
         with io.StringIO() as fp1:
             config.write(fp1)
-        config_data = str(config).encode('utf8')
+            config_data = fp1.getvalue().encode('utf8')
 
         if password:
-            # binary file format header (64 bytes):
+            # binary file format header (48 bytes):
             #
             # * 8 bytes: 0xdeadbeef 0x00000666 magic number (big endian)
             # * 4 bytes: 0x00000001 encryption type 1 for "argon2id"
@@ -305,31 +307,41 @@ class UserConfig(object):
 
         return len(data)
 
-    def load(self, cb_get_password=None):
+    def load(self, cb_get_password=None) -> List[str]:
+        """
+        Load this object from the underlying user configuration file. When the
+        file is encrypted, call back into ``cb_get_password`` to get the user password.
+
+        :param cb_get_password: Callback called when password is needed.
+
+        :return: List of profiles loaded.
+        """
         if not os.path.exists(self._config_path) or not os.path.isfile(self._config_path):
             raise RuntimeError('config path "{}" cannot be loaded: so such file'.format(self._config_path))
 
         with open(self._config_path, 'rb') as fp:
             data = fp.read()
 
-        if len(data) >= 64 and data[:8] == b'\xde\xad\xbe\xef\x00\x00\x06\x66':
+        if len(data) >= 48 and data[:8] == b'\xde\xad\xbe\xef\x00\x00\x06\x66':
             # binary format detected
-            header = data[:64]
-            body = data[64:]
+            header = data[:48]
+            body = data[48:]
 
             algo = struct.unpack('>L', header[8:12])[0]
             data_len = struct.unpack('>L', header[12:16])[0]
             created = struct.unpack('>Q', header[16:24])[0]
-
-            print('algo', algo)
-            print('data_len', data_len)
-            print('created', created)
+            # created_ts = np.datetime64(created, 'ns')
 
             assert algo in [0, 1]
             assert data_len == len(body)
             assert created < time_ns()
 
-            created_ts = np.datetime64(created, 'ns')
+            salt = header[32:48]
+            context = 'xbrnetwork-config'
+            password = cb_get_password()
+            priv_key = pkm_from_argon2_secret(email='', password=password, context=context, salt=salt)
+            box = nacl.secret.SecretBox(priv_key)
+            body = box.decrypt(body)
 
         else:
             header = None
@@ -340,19 +352,13 @@ class UserConfig(object):
 
         profiles = {}
         for profile_name in config.sections():
-            from pprint import pprint
             citems = config.items(profile_name)
-            print('>>>>>>>>>>>>')
-            pprint(citems)
             profile = Profile.parse(self._config_path, profile_name, citems)
             profiles[profile_name] = profile
-            pprint(profile_name)
-            pprint(profile)
         self._profiles = profiles
 
-        self.log.debug('profiles loaded: {profiles}',
-                       func=hltype(self.__init__),
-                       profiles=', '.join(hlval(x) for x in sorted(self.profiles.keys())))
+        loaded_profiles = sorted(self.profiles.keys())
+        return loaded_profiles
 
 
 if 'CROSSBAR_FABRIC_URL' in os.environ:

@@ -41,6 +41,12 @@ if HAS_XBR:
 
     class TestXbrUserConfig(unittest.TestCase):
 
+        DOTDIR = '~/.xbrnetwork'
+        PROFILE_NAME = 'default'
+        NETWORK_URL = 'wss://planet.xbr.network/ws'
+        NETWORK_REALM = 'xbrnetwork'
+        PASSWORD = 'secret123'
+
         def test_create_empty_config(self):
             c = UserConfig('config.ini')
             self.assertEqual(c.profiles, {})
@@ -50,16 +56,29 @@ if HAS_XBR:
             self.assertTrue(p.path is None)
 
         def test_load_home(self):
-            dotdir = '~/.xbrnetwork'
-            profile_name = 'default'
-            default_url = 'wss://planet.xbr.network/ws'
-            default_realm = 'xbrnetwork'
-            config_dir = os.path.expanduser(dotdir)
+            config_dir = os.path.expanduser(self.DOTDIR)
             if not os.path.isdir(config_dir):
                 os.mkdir(config_dir)
             config_path = os.path.join(config_dir, 'config.ini')
             c = UserConfig(config_path)
             c.load()
-            self.assertIn(profile_name, c.profiles)
+            self.assertIn(self.PROFILE_NAME, c.profiles)
 
-            c.save('secret123')
+        def test_write_default_config(self):
+            config_dir = os.path.expanduser(self.DOTDIR)
+            if not os.path.isdir(config_dir):
+                os.mkdir(config_dir)
+            config_path = os.path.join(config_dir, 'test.ini')
+
+            c = UserConfig(config_path)
+            p = Profile()
+            c.profiles[self.PROFILE_NAME] = p
+            c.save(self.PASSWORD)
+
+            c2 = UserConfig(config_path)
+
+            def get_pw():
+                return self.PASSWORD
+
+            c2.load(cb_get_password=get_pw)
+            self.assertIn(self.PROFILE_NAME, c2.profiles)
