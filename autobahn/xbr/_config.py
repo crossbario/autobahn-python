@@ -156,8 +156,6 @@ class Profile(object):
 
     @staticmethod
     def parse(path, name, items):
-        from pprint import pprint
-        pprint(items)
         member_adr = None
         ethkey = None
         cskey = None
@@ -199,12 +197,12 @@ class Profile(object):
                 if type(v) == int and v:
                     vaction_requested = np.datetime64(v, 'ns')
                 else:
-                    vaction_requested = None
+                    vaction_requested = v
             elif k == 'vaction_verified':
                 if type(v) == int:
                     vaction_verified = np.datetime64(v, 'ns')
                 else:
-                    vaction_verified = None
+                    vaction_verified = v
             elif k == 'data_url':
                 data_url = str(v)
             elif k == 'data_realm':
@@ -247,9 +245,6 @@ class UserConfig(object):
     .ini file, or such a file encrypted with XSalsa20-Poly1305, and with a
     binary file header of 48 octets.
     """
-    from txaio import make_logger
-    log = make_logger()
-
     def __init__(self, config_path):
         """
 
@@ -369,7 +364,10 @@ class UserConfig(object):
 
             salt = header[32:48]
             context = 'xbrnetwork-config'
-            password = cb_get_password()
+            if cb_get_password:
+                password = cb_get_password()
+            else:
+                password = ''
             priv_key = pkm_from_argon2_secret(email='', password=password, context=context, salt=salt)
             box = nacl.secret.SecretBox(priv_key)
             body = box.decrypt(body)

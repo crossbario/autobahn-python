@@ -27,6 +27,7 @@
 import os
 import uuid
 import binascii
+import random
 from pprint import pprint
 from time import time_ns
 
@@ -142,7 +143,16 @@ class SelectNewProfile(Gtk.Assistant):
             if not member_data:
                 self.log.info('ethadr {output_ethadr} is NOT yet a member',
                               output_ethadr=self.output_ethadr)
-                self.set_current_page(2)
+                if self.profile.vaction_oid:
+                    # switch to page "_setup_page4"
+                    self.set_current_page(3)
+                else:
+                    if self.profile.ethkey:
+                        # switch to page "_setup_page3"
+                        self.set_current_page(2)
+                    else:
+                        # switch to page "_setup_page2"
+                        self.set_current_page(1)
             else:
                 self.log.info('ok, ethadr {output_ethadr} already is a member: {member_data}',
                               output_ethadr=self.output_ethadr, member_data=member_data)
@@ -155,6 +165,8 @@ class SelectNewProfile(Gtk.Assistant):
                 self._label8.set_label(str(self.output_member_data['level']))
                 self._label10.set_label(str(self.output_member_data['balance']['eth']))
                 self._label12.set_label(str(self.output_member_data['balance']['xbr']))
+
+                # switch to page "_setup_page5"
                 self.set_current_page(4)
         else:
             profile = Profile()
@@ -176,11 +188,14 @@ class SelectNewProfile(Gtk.Assistant):
             profile.infura_key = None
             profile.infura_secret = None
             self.profile = profile
+
+            # switch to page "_setup_page1"
             self.set_current_page(0)
 
     def on_complete_toggled(self, checkbutton):
         self.set_page_complete(self.complete, checkbutton.get_active())
 
+    # no config: select new/recovery
     def _setup_page1(self):
         """
         Setup page shown when no config/profile could be found. Allows to select from:
@@ -272,6 +287,7 @@ class SelectNewProfile(Gtk.Assistant):
 
         self.append_page(grid1)
 
+    # generate seed phrase
     def _setup_page2(self):
         """
         Setup page shown to generate a new seed phrase.
@@ -365,6 +381,7 @@ class SelectNewProfile(Gtk.Assistant):
 
         self.append_page(box2_1)
 
+    # submit onboard request
     def _setup_page3(self):
         """
 
@@ -498,7 +515,9 @@ class SelectNewProfile(Gtk.Assistant):
         def on_button2(_):
             self.input_email = checks['email']
             self.input_password = checks['password']
-            self.input_username = self.input_email.split('@')[0].strip()
+            # self.input_username = self.input_email.split('@')[0].strip().replace('.', '')
+            self.input_username = 'anonymous'
+            self.input_username = '{}{}'.format(self.input_username, random.randint(0, 10000))
 
             self.log.info('input_email: {input_email}', input_email=self.input_email)
             self.log.info('input_username: {input_username}', input_username=self.input_username)
@@ -526,6 +545,7 @@ class SelectNewProfile(Gtk.Assistant):
 
         self.append_page(box1)
 
+    # submit verification code
     def _setup_page4(self):
         """
         Page shown when member registration request was submitted, a verification email
@@ -577,8 +597,20 @@ class SelectNewProfile(Gtk.Assistant):
         @inlineCallbacks
         def on_button1(_):
             vaction_code = parse_activation_code(entry1.get_text())
-            result = yield self.session._do_onboard_member_verify(self.profile.vaction_oid, vaction_code)
+            if vaction_code:
+                vaction_code = '-'.join(vaction_code.groups())
+            if type(self.profile.vaction_oid) == str:
+                vaction_oid = uuid.UUID(self.profile.vaction_oid)
+            else:
+                vaction_oid = self.profile.vaction_oid
+            result = yield self.session._do_onboard_member_verify(vaction_oid, vaction_code)
             pprint(result)
+
+            self.profile.vaction_verified = str(np.datetime64(result['created'], 'ns'))
+            self.profile.vaction_transaction = '0x' + str(binascii.b2a_hex(result['transaction']).decode())
+            self.profile.member_oid = str(uuid.UUID(bytes=result['member_oid']))
+            self.config.profiles[self.profile_name] = self.profile
+            self.config.save(self.input_password)
 
         def run_on_button1(widget):
             self.log.info('{func}({widget})', func=hltype(run_on_button1), widget=widget)
@@ -589,6 +621,7 @@ class SelectNewProfile(Gtk.Assistant):
 
         self.append_page(box1)
 
+    # show member data
     def _setup_page5(self):
         """
         Page shown for a user (private eth key) that already is member.
@@ -861,8 +894,10 @@ class Application(object):
                 raise click.ClickException('no such profile "{}" in config "{}" with {} profiles'.format(self._profile_name, config_path, len(self._config.profiles)))
             else:
                 self._profile = self._config.profiles[self._profile_name]
-                self.log.info('user profile "{profile_name}" loaded from "{config_path}"',
+                self.log.info('user profile "{profile_name}" loaded from "{config_path}":\n\n',
                             config_path=self._config_path, profile_name=self._profile_name)
+                pprint(self._profile.marshal())
+                print('\n\n')
 
         extra = {
             'ready': txaio.create_future(),
@@ -884,14 +919,14 @@ class Application(object):
                                    extra=extra,
                                    serializers=[CBORSerializer()])
 
-        self.log.info('ok, now connecting to "{network_url}"@"{network_realm}" ..',
+        self.log.info('ok, now connecting to "{network_url}", joining realm "{network_realm}" ..',
                       network_url=network_url,
                       network_realm=network_realm)
         await runner.run(ApplicationClient,
                          reactor=reactor,
                          auto_reconnect=True,
                          start_reactor=False)
-        self.log.info('ok, application client connected')
+        self.log.info('ok, application client connected!')
 
         session, details = await extra['ready']
         self.log.info('ok, application session joined: {details}', details=details)
@@ -912,7 +947,7 @@ class Application(object):
         while extra['running']:
             ticks += 1
             self.log.info('ok, application main task still running at tick {ticks}', ticks=ticks)
-            await sleep(1)
+            await sleep(5)
 
         self.log.info('ok, application main task ended!')
 
