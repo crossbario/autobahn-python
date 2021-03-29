@@ -63,7 +63,7 @@ from autobahn.xbr._cli import Client
 from autobahn.xbr._config import UserConfig, Profile
 from autobahn.xbr._util import hlval, hlid, hltype
 
-LOGO_RESOURCE = pkg_resources.resource_filename('thingcloud', 'asset/logo.svg')
+LOGO_RESOURCE = pkg_resources.resource_filename('autobahn', 'asset/xbr_gray.svg')
 print(LOGO_RESOURCE, os.path.isfile(LOGO_RESOURCE))
 
 
