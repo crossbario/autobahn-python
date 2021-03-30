@@ -60,9 +60,12 @@ if HAS_XBR:
             if not os.path.isdir(config_dir):
                 os.mkdir(config_dir)
             config_path = os.path.join(config_dir, 'config.ini')
-            c = UserConfig(config_path)
-            c.load()
-            self.assertIn(self.PROFILE_NAME, c.profiles)
+            if os.path.exists(config_path):
+                c = UserConfig(config_path)
+                c.load()
+                self.assertIn(self.PROFILE_NAME, c.profiles)
+            else:
+                print('no profile file "{}" found'.format(config_path))
 
         def test_write_default_config(self):
             config_dir = os.path.expanduser(self.DOTDIR)
