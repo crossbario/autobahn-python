@@ -122,11 +122,11 @@ extras_require_xbr = [
     # XBR contracts and ABI file bundle
     'xbr>=21.2.1',              # Apache 2.0
 
+    # the following is needed for XBR basics and XBR IDL code generation
     'cbor2>=5.2.0',             # MIT license
     'zlmdb>=21.2.1',            # MIT license
     'twisted>=20.3.0',          # MIT license
     'web3>=5.16.0',             # MIT license
-    'jinja2>=2.11.3',           # BSD license
 
     # the following is needed for EIP712 ("signed typed data"):
     'rlp>=2.0.1',               # MIT license
@@ -141,7 +141,15 @@ extras_require_xbr = [
     'py-multihash>=2.0.1',      # MIT license (https://github.com/multiformats/py-multihash / https://pypi.org/project/py-multihash/)
 
     # the following is needed for the WAMP/XBR IDL code generator
+    'jinja2>=2.11.3',           # BSD license
     'yapf==0.29.0',             # Apache 2.0
+
+    # the following is needed for XBR account synch and device pairing
+    'spake2>=0.8',              # MIT license (https://github.com/warner/python-spake2/blob/master/LICENSE)
+    'hkdf>=0.0.3',              # BSD 2-Clause "Simplified" License
+
+    # the following is needed for the graphical XBR onboarding UI
+    'PyGObject>=3.40.0',        # GNU Lesser General Public License v2 or later (LGPLv2+) (GNU LGPL)
 ]
 
 # everything
@@ -162,8 +170,11 @@ packages = [
     'autobahn.rawsocket',
     'autobahn.rawsocket.test',
     'autobahn.asyncio',
+    'autobahn.asyncio.xbr',
     'autobahn.twisted',
     'autobahn.twisted.testing',
+    'autobahn.twisted.xbr',
+    'autobahn.xbr',
     'autobahn.nvx',
     'autobahn.nvx.test',
     'twisted.plugins',
@@ -185,6 +196,7 @@ else:
     packages += ['autobahn.xbr', 'autobahn.asyncio.xbr', 'autobahn.twisted.xbr']
     package_data['xbr'] = ['./xbr/contracts/*.json']
     entry_points['console_scripts'] += ["xbrnetwork = autobahn.xbr._cli:_main"]
+    entry_points['console_scripts'] += ["xbrnetwork-ui = autobahn.xbr._gui:_main"]
 
 # development dependencies
 extras_require_dev = [

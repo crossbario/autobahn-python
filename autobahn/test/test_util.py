@@ -24,9 +24,11 @@
 #
 ###############################################################################
 
+import os
 import unittest
+from binascii import b2a_hex
 
-from autobahn.util import IdGenerator
+from autobahn.util import IdGenerator, parse_activation_code, generate_activation_code
 
 
 class TestIdGenerator(unittest.TestCase):
@@ -44,3 +46,15 @@ class TestIdGenerator(unittest.TestCase):
         self.assertEqual(v, 2 ** 53)
         v = next(g)
         self.assertEqual(v, 1)
+
+    def test_parse_valid_activation_codes(self):
+        for i in range(20):
+            code = generate_activation_code()
+            parsed_code = parse_activation_code(code)
+            self.assertTupleEqual(tuple(code.split('-')), parsed_code.groups())
+
+    def test_parse_invalid_activation_codes(self):
+        for i in range(20):
+            code = b2a_hex(os.urandom(20)).decode()
+            parsed_code = parse_activation_code(code)
+            self.assertEqual(None, parsed_code)

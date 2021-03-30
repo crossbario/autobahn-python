@@ -16,7 +16,10 @@ if len(sys.argv) not in (2, 3):
 
 password = sys.argv[1].encode('ascii')
 if len(sys.argv) == 3:
-    salt = binascii.a2b_hex(sys.argv[2].encode('ascii'))
+    m = hashlib.sha256()
+    m.update(sys.argv[2].encode('utf8'))
+    salt = m.digest()[:16]
+    # salt = binascii.a2b_hex(sys.argv[2].encode('ascii'))
     assert len(salt) == 16
 else:
     salt = os.urandom(16)
@@ -49,8 +52,8 @@ server_key = hmac.new(salted_password, b"Server Key", hashlib.sha256).digest()
 # this can be copy-pasted into the config.json for a Crossbar.io
 # static-configured scram principal; see the example router config
 key = {
-    "memory": int(params['m']),
     "kdf": "argon2id-13",
+    "memory": int(params['m']),
     "iterations": int(params['t']),
     "salt": binascii.b2a_hex(salt).decode('ascii'),
     "stored-key": binascii.b2a_hex(stored_key).decode('ascii'),

@@ -17,6 +17,7 @@ Site Contents
    wamp/aio-repl
    xbr
    xbr-cli
+   xbr-auth
    websocket/examples
    wamp/examples
    reference/autobahn

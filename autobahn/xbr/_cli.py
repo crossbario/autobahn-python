@@ -71,6 +71,7 @@ import txaio
 txaio.use_twisted()
 
 from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks
 from twisted.internet.threads import deferToThread
 from twisted.internet.error import ReactorNotRunning
 
@@ -103,33 +104,43 @@ class Client(ApplicationSession):
         self._default_gas = 100000
         self._chain_id = 4
 
-        profile = config.extra['profile']
+        profile = config.extra.get('profile', None)
 
-        if 'ethkey' in config.extra and config.extra['ethkey']:
-            self._ethkey_raw = config.extra['ethkey']
+        if profile and profile.cskey:
+            assert type(profile.cskey) == bytes and len(profile.cskey) == 32
+            self._cskey_raw = profile.cskey
+            self._key = cryptosign.SigningKey.from_key_bytes(self._cskey_raw)
+            self.log.info('WAMP-Cryptosign keys with public key {public_key} loaded', public_key=self._key.public_key)
         else:
-            self._ethkey_raw = profile.ethkey
+            self._cskey_raw = os.urandom(32)
+            self._key = cryptosign.SigningKey.from_key_bytes(self._cskey_raw)
+            self.log.info('WAMP-Cryptosign keys initialized randomly')
 
-        self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
-        self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
-        self._ethadr_raw = binascii.a2b_hex(self._ethadr[2:])
-
-        self.log.info('Client Ethereum key loaded, public address is {adr}',
-                      func=hltype(self.__init__), adr=hlid(self._ethadr))
-
-        if 'cskey' in config.extra and config.extra['cskey']:
-            cskey = config.extra['cskey']
+        if profile and profile.ethkey:
+            self.set_ethkey_from_profile(profile)
+            self.log.info('XBR ETH keys loaded from profile')
         else:
-            cskey = profile.cskey
-        self._key = cryptosign.SigningKey.from_key_bytes(cskey)
-        self.log.info('Client WAMP authentication key loaded, public key is {pubkey}',
-                      func=hltype(self.__init__), pubkey=hlid('0x' + self._key.public_key()))
+            self._ethkey_raw = None
+            self._ethkey = None
+            self._ethadr = None
+            self._ethadr_raw = None
+            self.log.info('XBR ETH keys left unset')
 
         self._running = True
 
-    def onUserError(self, fail, msg):
-        self.log.error(msg)
-        self.leave('wamp.error', msg)
+    def set_ethkey_from_profile(self, profile):
+        """
+
+        :param profile:
+        :return:
+        """
+        assert type(profile.ethkey) == bytes, 'set_ethkey_from_profile::profile invalid type "{}" - must be bytes'.format(type(profile.ethkey))
+        assert len(profile.ethkey) == 32, 'set_ethkey_from_profile::profile invalid length {} - must be 32'.format(len(profile.ethkey))
+        self._ethkey_raw = profile.ethkey
+        self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
+        self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
+        self._ethadr_raw = binascii.a2b_hex(self._ethadr[2:])
+        self.log.info('ETH keys with address {ethadr} loaded', ethadr=self._ethadr)
 
     def onConnect(self):
         if self.config.realm == 'xbrnetwork':
@@ -161,25 +172,30 @@ class Client(ApplicationSession):
                       authid=hlid(details.authid),
                       authrole=hlid(details.authrole),
                       details=details)
-        try:
-            if details.realm == 'xbrnetwork':
-                await self._do_xbrnetwork_realm(details)
-            else:
-                await self._do_market_realm(details)
-        except Exception as e:
-            self.log.failure()
-            self.config.extra['error'] = e
-        finally:
-            self.leave()
+        if 'ready' in self.config.extra:
+            txaio.resolve(self.config.extra['ready'], (self, details))
+
+        if 'command' in self.config.extra:
+            try:
+                if details.realm == 'xbrnetwork':
+                    await self._do_xbrnetwork_realm(details)
+                else:
+                    await self._do_market_realm(details)
+            except Exception as e:
+                self.log.failure()
+                self.config.extra['error'] = e
+            finally:
+                self.leave()
 
     def onLeave(self, details):
         self.log.info('Client left realm (reason="{reason}")', reason=hlval(details.reason))
         self._running = False
 
         if details.reason == 'wamp.close.normal':
-            # user initiated leave => end the program
-            self.config.runner.stop()
-            self.disconnect()
+            if self.config and self.config.runner:
+                # user initiated leave => end the program
+                self.config.runner.stop()
+                self.disconnect()
 
     def onDisconnect(self):
         self.log.info('Client disconnected')
@@ -333,6 +349,7 @@ class Client(ApplicationSession):
                           member_level=hlval(member_data['level']),
                           member_oid=hlid(member_data['oid']),
                           member_adr=hlval(member_data['address']))
+            return member_data
         else:
             self.log.warn('Address 0x{member_adr} is not a member in the XBR network',
                           member_adr=hlval(binascii.b2a_hex(member_adr).decode()))
@@ -389,7 +406,8 @@ class Client(ApplicationSession):
             self.log.warn('Address 0x{member_adr} is not a member in the XBR network',
                           member_adr=binascii.b2a_hex(actor_adr).decode())
 
-    async def _do_onboard_member(self, member_username, member_email):
+    @inlineCallbacks
+    def _do_onboard_member(self, member_username, member_email, member_password=None):
         client_pubkey = binascii.a2b_hex(self._key.public_key())
 
         # fake wallet type "metamask"
@@ -402,8 +420,8 @@ class Client(ApplicationSession):
         # delegate ethereum account canonical address
         wallet_adr = wallet_key.public_key.to_canonical_address()
 
-        config = await self.call('xbr.network.get_config')
-        status = await self.call('xbr.network.get_status')
+        config = yield self.call('xbr.network.get_config')
+        status = yield self.call('xbr.network.get_status')
 
         verifyingChain = config['verifying_chain_id']
         verifyingContract = binascii.a2b_hex(config['verifying_contract_adr'][2:])
@@ -432,7 +450,7 @@ class Client(ApplicationSession):
 
         # https://xbr.network/docs/network/api.html#xbrnetwork.XbrNetworkApi.onboard_member
         try:
-            result = await self.call('xbr.network.onboard_member',
+            result = yield self.call('xbr.network.onboard_member',
                                      member_username, member_email, client_pubkey, wallet_type, wallet_adr,
                                      verifyingChain, registered, verifyingContract, eula, profile, profile_data,
                                      signature)
@@ -451,12 +469,15 @@ class Client(ApplicationSession):
         vaction_oid = uuid.UUID(bytes=result['vaction_oid'])
         self.log.info('On-boarding member - verification "{vaction_oid}" created', vaction_oid=vaction_oid)
 
-    async def _do_onboard_member_verify(self, vaction_oid, vaction_code):
+        return result
+
+    @inlineCallbacks
+    def _do_onboard_member_verify(self, vaction_oid, vaction_code):
 
         self.log.info('Verifying member using vaction_oid={vaction_oid}, vaction_code={vaction_code} ..',
                       vaction_oid=vaction_oid, vaction_code=vaction_code)
         try:
-            result = await self.call('xbr.network.verify_onboard_member', vaction_oid.bytes, vaction_code)
+            result = yield self.call('xbr.network.verify_onboard_member', vaction_oid.bytes, vaction_code)
         except ApplicationError as e:
             self.log.error('ApplicationError: {error}', error=e)
             raise e
@@ -469,6 +490,8 @@ class Client(ApplicationSession):
         self.log.info('SUCCESS! New XBR Member onboarded: member_oid={member_oid}, transaction={transaction}',
                       member_oid=hlid(uuid.UUID(bytes=member_oid)),
                       transaction=hlval('0x' + binascii.b2a_hex(result['transaction']).decode()))
+
+        return result
 
     async def _do_create_market(self, member_oid, market_oid, marketmaker, title=None, label=None, homepage=None,
                                 provider_security=0, consumer_security=0, market_fee=0):
@@ -1165,12 +1188,11 @@ def _main():
                 fn = os.path.join(args.output, fn)
 
                 # FIXME
-                if fn not in initialized and os.path.exists(fn):
-                    print('D' * 100, fn)
-                    # os.remove(fn)
-                    # with open(fn, 'wb') as fd:
-                    #     fd.write('# Generated by Autobahn v{}\n'.format(__version__).encode('utf8'))
-                    # initialized.add(fn)
+                # if fn not in initialized and os.path.exists(fn):
+                #     os.remove(fn)
+                #     with open(fn, 'wb') as fd:
+                #         fd.write('# Generated by Autobahn v{}\n'.format(__version__).encode('utf8'))
+                #     initialized.add(fn)
 
                 with open(fn, 'ab') as fd:
                     fd.write(data)

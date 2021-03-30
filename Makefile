@@ -76,13 +76,13 @@ clean_docs:
 	-rm -rf ./docs/build
 
 docs:
-	cd docs && make html
+	tox -e sphinx
 
 spelling:
 	cd docs && sphinx-build -b spelling . _spelling
 
 run_docs:
-	twistd --nodaemon web --port=tcp:8090 --path=./docs/build/html/
+	twistd --nodaemon web --port=tcp:8090 --path=./docs/_build/
 
 
 clean_wheels:
@@ -169,6 +169,9 @@ test_twisted:
 test_application_runner:
 	USE_TWISTED=1 trial autobahn.twisted.test.test_tx_application_runner
 
+test_util:
+	USE_TWISTED=1 trial autobahn.test.test_util
+
 test_rng:
 	USE_TWISTED=1 trial autobahn.test.test_rng
 
@@ -186,6 +189,17 @@ test_tx_cryptosign:
 	#USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign.TestAuth.test_testvectors
 	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign
 	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign
+
+test_wamp_scram:
+	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_scram
+	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_scram
+
+test_xbr_argon2:
+	USE_ASYNCIO=1 trial autobahn.xbr.test.test_xbr_argon2
+	USE_TWISTED=1 trial autobahn.xbr.test.test_xbr_argon2
+
+test_xbr_config:
+	USE_TWISTED=1 trial autobahn.xbr.test.test_xbr_config
 
 test_twisted_coverage:
 	-rm .coverage
