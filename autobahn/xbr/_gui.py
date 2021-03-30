@@ -25,6 +25,7 @@
 ###############################################################################
 
 import os
+import argparse
 import uuid
 import binascii
 import random
@@ -48,9 +49,11 @@ from twisted.internet.task import react
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet import reactor
 
-import click
 import web3
+
 import numpy as np
+
+import click
 from humanize import naturaldelta, naturaltime
 
 from autobahn.util import parse_activation_code
@@ -231,6 +234,7 @@ class ApplicationWindow(Gtk.Assistant):
         grid1.attach(label1, 1, 2, 1, 1)
 
         button1 = Gtk.Button.new_with_label('New account')
+
         def on_button1(res):
             self.log.info('SELECTED_NEW: {res}', res=res)
             self.set_current_page(1)
@@ -251,6 +255,7 @@ class ApplicationWindow(Gtk.Assistant):
         grid1.attach(label22, 1, 4, 1, 1)
 
         button22 = Gtk.Button.new_with_label('Restore account')
+
         def on_button22(res):
             self.log.info('SELECTED_RESTORE: {res}', res=res)
             self.set_current_page(2)
@@ -267,6 +272,7 @@ class ApplicationWindow(Gtk.Assistant):
         grid1.attach(label2, 1, 5, 1, 1)
 
         button2 = Gtk.Button.new_with_label('Synchronize account')
+
         def on_button2(res):
             self.log.info('SELECTED_SYNCRONIZE: {res}', res=res)
             self.set_current_page(2)
@@ -283,6 +289,7 @@ class ApplicationWindow(Gtk.Assistant):
         grid1.attach(label3, 1, 6, 1, 1)
 
         button3 = Gtk.Button.new_with_label('Recover account')
+
         def on_button3(res):
             self.log.info('SELECTED_RECOVER: {res}', res=res)
             self.set_current_page(3)
@@ -351,8 +358,19 @@ class ApplicationWindow(Gtk.Assistant):
             self.output_ethadr_raw = binascii.a2b_hex(self.output_ethadr[2:])
 
             # https://eth-account.readthedocs.io/en/latest/eth_account.signers.html#eth_account.signers.local.LocalAccount.key
-            self.profile.ethkey = self.output_account.key
-            self.profile.cskey = self.session._cskey_raw
+            self.profile.ethkey = bytes(self.output_account.key)
+            self.profile.cskey = bytes(self.session._cskey_raw)
+
+            # set user eth key on client session
+            self.session.set_ethkey_from_profile(self.profile)
+
+            # save user config
+            self.config.profiles[self.profile_name] = self.profile
+            self.config.save(self.input_password)
+
+            self.log.info('XBR ETH key at address {ethadr} set from seed phrase (BIP39 account 0): "{seedphrase}"',
+                          ethadr=self.output_ethadr,
+                          seedphrase=self.input_seedphrase)
 
             member_data = yield self.session.get_member(self.output_ethadr_raw)
             pprint(member_data)
@@ -368,6 +386,8 @@ class ApplicationWindow(Gtk.Assistant):
                 self.profile.member_adr = self.output_ethadr
                 self.profile.email = member_data['email']
                 self.profile.username = member_data['username']
+
+                # save user config
                 self.config.profiles[self.profile_name] = self.profile
                 self.config.save(self.input_password)
 
@@ -422,14 +442,15 @@ class ApplicationWindow(Gtk.Assistant):
             'password': None,
             'eula': None,
         }
+
         def check_all():
             print('check_all')
             for c in checks:
                 if checks[c] is None:
                     print('check failed', c)
-                    button2.set_sensitive(False)
+                    button3.set_sensitive(False)
                     return
-            button2.set_sensitive(True)
+            button3.set_sensitive(True)
 
         def check_email(email):
             if '@' in email:
@@ -471,9 +492,6 @@ class ApplicationWindow(Gtk.Assistant):
         entry3.set_visibility(False)
         grid1.attach(entry3, 1, 2, 1, 1)
 
-        label3 = Gtk.Label(label='EULA:')
-        grid1.attach(label3, 0, 3, 1, 1)
-
         def on_entry23(_):
             pw1_ok = False
             if check_password(entry2.get_text()):
@@ -499,6 +517,9 @@ class ApplicationWindow(Gtk.Assistant):
         entry2.connect('changed', on_entry23)
         entry3.connect('changed', on_entry23)
 
+        label3 = Gtk.Label(label='EULA:')
+        grid1.attach(label3, 0, 3, 1, 1)
+
         button1 = Gtk.CheckButton(label='I accept the EULA and terms of use')
         button1.set_active(False)
         button1.set_sensitive(True)
@@ -513,16 +534,31 @@ class ApplicationWindow(Gtk.Assistant):
         button1.connect('toggled', on_button1)
         grid1.attach(button1, 1, 3, 1, 1)
 
-        button2 = Gtk.Button.new_with_label('Register account')
-        button2.set_sensitive(False)
+        label3 = Gtk.Label(label='Cloud backup:')
+        grid1.attach(label3, 0, 4, 1, 1)
+
+        button2 = Gtk.CheckButton(label='Yes, enable encrypted cloud backup of my private keys')
+        button2.set_active(False)
+        button2.set_sensitive(True)
+
+        def on_button2(button):
+            check_all()
+
+        button2.connect('toggled', on_button2)
+        grid1.attach(button2, 1, 4, 1, 1)
+
+        button3 = Gtk.Button.new_with_label('Register account')
+        button3.set_sensitive(False)
 
         @inlineCallbacks
-        def on_button2(_):
+        def on_button3(_):
             self.input_email = checks['email']
             self.input_password = checks['password']
-            # self.input_username = self.input_email.split('@')[0].strip().replace('.', '')
+            self.input_backup_enabled = button2.get_active()
             self.input_username = 'anonymous'
             self.input_username = '{}{}'.format(self.input_username, random.randint(0, 10000))
+
+            self.session.set_ethkey_from_profile(self.profile)
 
             self.log.info('input_email: {input_email}', input_email=self.input_email)
             self.log.info('input_username: {input_username}', input_username=self.input_username)
@@ -534,17 +570,18 @@ class ApplicationWindow(Gtk.Assistant):
             self.profile.username = self.input_username
             self.profile.vaction_oid = str(uuid.UUID(bytes=result['vaction_oid']))
             self.profile.vaction_requested = str(np.datetime64(result['timestamp'], 'ns'))
+
             self.config.profiles[self.profile_name] = self.profile
             self.config.save(self.input_password)
 
             self.set_current_page(3)
 
-        def run_on_button2(widget):
-            self.log.info('{func}({widget})', func=hltype(run_on_button2), widget=widget)
-            reactor.callLater(0, on_button2, widget)
+        def run_on_button3(widget):
+            self.log.info('{func}({widget})', func=hltype(run_on_button3), widget=widget)
+            reactor.callLater(0, on_button3, widget)
 
-        button2.connect('clicked', run_on_button2)
-        grid1.attach(button2, 2, 4, 1, 1)
+        button3.connect('clicked', run_on_button3)
+        grid1.attach(button3, 2, 4, 1, 1)
 
         box1.add(grid1)
 
@@ -859,32 +896,34 @@ class ApplicationClient(Client):
 
 class Application(object):
     """
-    local user profile config there?
-    if no, show:
-        - button "new account"
-        - button "synchronize account"
-        - button "recover account"
-    if yes, unlock profile (ask for password)
-    check account online: does account exist?
-        if yes, show account details + button "synchronize other device"
-        if no, start or continue registration ..
+    Main XBR member application.
     """
     log = txaio.make_logger()
 
     DOTDIR = os.path.abspath(os.path.expanduser('~/.xbrnetwork'))
     DOTFILE = 'config.ini'
 
-    async def start(self, reactor, profile_name):
+    async def start(self, reactor, url=None, realm=None, profile=None):
+        """
+        Start main application. This will read the user configuration, potentially asking
+        for a user password.
+
+        :param reactor: Twisted reactor to use.
+        :param url: Optionally override network URL as defined in profile.
+        :param realm: Optionally override network URL as defined in profile.
+        :param profile: User profile name to load.
+        :return:
+        """
         txaio.start_logging(level='info')
 
-        self.log.info('ok, application starting for user profile "{profile}"', profile=profile_name)
+        self.log.info('ok, application starting for user profile "{profile}"', profile=profile)
 
         if not os.path.isdir(self.DOTDIR):
             os.mkdir(self.DOTDIR)
             self.log.info('dotdir created: "{dotdir}"', dotdir=self.DOTDIR)
 
         self._config_path = config_path = os.path.join(self.DOTDIR, self.DOTFILE)
-        self._profile_name = profile_name
+        self._profile_name = profile or 'default'
         if not os.path.isfile(self._config_path):
             self.log.info('no config exist under "{config_path}"', config_path=self._config_path)
             self._config = UserConfig(self._config_path)
@@ -892,15 +931,17 @@ class Application(object):
         else:
             self._config = UserConfig(self._config_path)
             # FIXME: start modal dialog to get password from user
+
             def getpw():
                 return '123secret'
+
             self._config.load(cb_get_password=getpw)
             if self._profile_name not in self._config.profiles:
                 raise click.ClickException('no such profile "{}" in config "{}" with {} profiles'.format(self._profile_name, config_path, len(self._config.profiles)))
             else:
                 self._profile = self._config.profiles[self._profile_name]
                 self.log.info('user profile "{profile_name}" loaded from "{config_path}":\n\n',
-                            config_path=self._config_path, profile_name=self._profile_name)
+                              config_path=self._config_path, profile_name=self._profile_name)
                 pprint(self._profile.marshal())
                 print('\n\n')
 
@@ -914,10 +955,10 @@ class Application(object):
             'profile_name': self._profile_name,
         }
         # XBR network node used as a directory server and gateway to XBR smart contracts
-        network_url = self._profile.network_url if self._profile and self._profile.network_url else 'ws://thingcloud-box-aws.sthngs.crossbario.com:8090/ws'
+        network_url = url or (self._profile.network_url if self._profile and self._profile.network_url else 'ws://localhost:8090/ws')
 
         # WAMP realm on network node, usually "xbrnetwork"
-        network_realm = self._profile.network_realm if self._profile and self._profile.network_realm else 'xbrnetwork'
+        network_realm = realm or (self._profile.network_realm if self._profile and self._profile.network_realm else 'xbrnetwork')
 
         runner = ApplicationRunner(url=network_url,
                                    realm=network_realm,
@@ -957,13 +998,61 @@ class Application(object):
         self.log.info('ok, application main task ended!')
 
 
-async def main(reactor, profile):
+async def main(reactor, url, realm, profile):
+    """
+    Load the named user profile (or create a new one), overriding URL/realm,
+    connect to a network node, and start the network member on-boarding.
+
+    If the user credentials are already for a member, fetch member information
+    and display member page.
+
+    :param reactor: Twisted reactor to use.
+    :param url: Override network URL from user profile with this value.
+    :param realm: Override network realm from user profile with this value.
+    :param profile: Name of user profile within user
+        configuration to load (eg from ``$HOME/.xbrnetwork/config.ini``)
+    """
     app = Application()
-    await app.start(reactor, profile)
+    await app.start(reactor, url=url, realm=realm, profile=profile)
 
 
 def _main():
-    react(main, ('default',))
+    """
+    GUI entry point, parsing command line arguments and then starting the
+    actual main GUI program with parsed parameters.
+
+    To use, run:
+
+    .. code:: console
+
+        xbrnetwork-ui --profile default --url ws://localhost:8090/ws --realm xbrnetwork
+
+    This will load the user profile ``"default"`` from the user configuration, but
+    overriding any network URL and realm found therin.
+    """
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--url',
+                        dest='url',
+                        type=str,
+                        default=None,
+                        help='The router URL to connect to, e.g. "ws://localhost:8090/ws"')
+
+    parser.add_argument('--realm',
+                        dest='realm',
+                        type=str,
+                        default=None,
+                        help='The realm to join, e.g. "xbrnetwork"')
+
+    parser.add_argument('--profile',
+                        dest='profile',
+                        type=str,
+                        default='default',
+                        help='The user profile to use, e.g. "default"')
+
+    args = parser.parse_args()
+
+    react(main, (args.url, args.realm, args.profile,))
 
 
 if __name__ == '__main__':

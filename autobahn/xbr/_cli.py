@@ -105,28 +105,42 @@ class Client(ApplicationSession):
         self._chain_id = 4
 
         profile = config.extra.get('profile', None)
-        if profile:
-            assert type(profile.ethkey) == bytes and len(profile.ethkey) == 32
+
+        if profile and profile.cskey:
             assert type(profile.cskey) == bytes and len(profile.cskey) == 32
-            self._ethkey_raw = profile.ethkey
             self._cskey_raw = profile.cskey
-            self.log.info('ethkey_raw/cskey_raw loaded from profile')
-
-            self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
-            self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
-            self._ethadr_raw = binascii.a2b_hex(self._ethadr[2:])
-
             self._key = cryptosign.SigningKey.from_key_bytes(self._cskey_raw)
+            self.log.info('WAMP-Cryptosign keys with public key {public_key} loaded', public_key=self._key.public_key)
         else:
             self._cskey_raw = os.urandom(32)
             self._key = cryptosign.SigningKey.from_key_bytes(self._cskey_raw)
+            self.log.info('WAMP-Cryptosign keys initialized randomly')
 
+        if profile and profile.ethkey:
+            self.set_ethkey_from_profile(profile)
+            self.log.info('XBR ETH keys loaded from profile')
+        else:
             self._ethkey_raw = None
             self._ethkey = None
-            self._ethadr_raw = None
             self._ethadr = None
+            self._ethadr_raw = None
+            self.log.info('XBR ETH keys left unset')
 
         self._running = True
+
+    def set_ethkey_from_profile(self, profile):
+        """
+
+        :param profile:
+        :return:
+        """
+        assert type(profile.ethkey) == bytes, 'set_ethkey_from_profile::profile invalid type "{}" - must be bytes'.format(type(profile.ethkey))
+        assert len(profile.ethkey) == 32, 'set_ethkey_from_profile::profile invalid length {} - must be 32'.format(len(profile.ethkey))
+        self._ethkey_raw = profile.ethkey
+        self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
+        self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
+        self._ethadr_raw = binascii.a2b_hex(self._ethadr[2:])
+        self.log.info('ETH keys with address {ethadr} loaded', ethadr=self._ethadr)
 
     def onConnect(self):
         if self.config.realm == 'xbrnetwork':
@@ -393,7 +407,7 @@ class Client(ApplicationSession):
                           member_adr=binascii.b2a_hex(actor_adr).decode())
 
     @inlineCallbacks
-    def _do_onboard_member(self, member_username, member_email):
+    def _do_onboard_member(self, member_username, member_email, member_password=None):
         client_pubkey = binascii.a2b_hex(self._key.public_key())
 
         # fake wallet type "metamask"
