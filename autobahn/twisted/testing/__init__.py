@@ -157,7 +157,9 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         client_address = IPv4Address('TCP', '127.0.0.1', 31337)
 
         server_protocol = self._server_protocol()
-        server_protocol.factory = WebSocketServerFactory()
+        # the protocol could already have a factory
+        if getattr(server_protocol, "factory", None) is None:
+            server_protocol.factory = WebSocketServerFactory()
 
         server_transport = iosim.FakeTransport(
             server_protocol, isServer=True,
