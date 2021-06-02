@@ -31,16 +31,18 @@ from ._eip712_base import sign, recover, is_chain_id, is_address, is_bytes16, is
 
 def _create_eip712_node_pair(chainId: int, verifyingContract: bytes, member: bytes, paired: int,
                              nodeId: bytes, domainId: bytes, nodeType: int, nodeKey: bytes,
-                             config: Optional[str]) -> dict:
+                             amount: int, config: Optional[str]) -> dict:
     """
 
     :param chainId:
     :param verifyingContract:
     :param member:
-    :param joined:
-    :param marketId:
-    :param actorType:
-    :param meta:
+    :param paired:
+    :param nodeId:
+    :param domainId:
+    :param nodeKey:
+    :param amount:
+    :param config:
     :return:
     """
     assert is_chain_id(chainId)
@@ -51,6 +53,7 @@ def _create_eip712_node_pair(chainId: int, verifyingContract: bytes, member: byt
     assert is_bytes16(domainId)
     assert type(nodeType) == int
     assert is_cs_pubkey(nodeKey)
+    assert type(amount) == int
     assert config is None or type(config) == str
 
     data = {
@@ -99,6 +102,10 @@ def _create_eip712_node_pair(chainId: int, verifyingContract: bytes, member: byt
                     'type': 'bytes16'
                 },
                 {
+                    'name': 'amount',
+                    'type': 'uint256',
+                },
+                {
                     'name': 'config',
                     'type': 'string',
                 },
@@ -118,6 +125,7 @@ def _create_eip712_node_pair(chainId: int, verifyingContract: bytes, member: byt
             'domainId': domainId,
             'nodeType': nodeType,
             'nodeKey': nodeKey,
+            'amount': amount,
             'config': config or '',
         }
     }
@@ -127,7 +135,7 @@ def _create_eip712_node_pair(chainId: int, verifyingContract: bytes, member: byt
 
 def sign_eip712_node_pair(eth_privkey: bytes, chainId: int, verifyingContract: bytes, member: bytes, paired: int,
                           nodeId: bytes, domainId: bytes, nodeType: int, nodeKey: bytes,
-                          config: Optional[str]) -> bytes:
+                          amount: int, config: Optional[str]) -> bytes:
     """
 
     :param eth_privkey: Ethereum address of buyer (a raw 20 bytes Ethereum address).
@@ -139,13 +147,13 @@ def sign_eip712_node_pair(eth_privkey: bytes, chainId: int, verifyingContract: b
     assert is_eth_privkey(eth_privkey)
 
     data = _create_eip712_node_pair(chainId, verifyingContract, member, paired, nodeId, domainId, nodeType,
-                                    nodeKey, config)
+                                    nodeKey, amount, config)
     return sign(eth_privkey, data)
 
 
 def recover_eip712_node_pair(chainId: int, verifyingContract: bytes, member: bytes, paired: int,
                              nodeId: bytes, domainId: bytes, nodeType: int, nodeKey: bytes,
-                             config: str, signature: bytes) -> bytes:
+                             amount: int, config: str, signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
 
@@ -155,5 +163,5 @@ def recover_eip712_node_pair(chainId: int, verifyingContract: bytes, member: byt
     assert is_signature(signature)
 
     data = _create_eip712_node_pair(chainId, verifyingContract, member, paired, nodeId, domainId, nodeType,
-                                    nodeKey, config)
+                                    nodeKey, amount, config)
     return recover(data, signature)
