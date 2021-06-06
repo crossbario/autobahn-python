@@ -122,7 +122,7 @@ class WebSocketResource(object):
             request.setResponseCode(426, b"Upgrade required")
             # RFC says MUST set upgrade along with 426 code:
             # https://tools.ietf.org/html/rfc7231#section-6.5.15
-            request.setHeader(b"Upgrade", b"WebSocket")
+            request.setHeader(b"Upgrade", b"websocket")
             html = protocol._SERVER_STATUS_TEMPLATE % ("", protocol.__version__)
             return html.encode('utf8')
 
