@@ -170,14 +170,17 @@ packages = [
     'autobahn.rawsocket',
     'autobahn.rawsocket.test',
     'autobahn.asyncio',
-    'autobahn.asyncio.xbr',
     'autobahn.twisted',
     'autobahn.twisted.testing',
-    'autobahn.twisted.xbr',
-    'autobahn.xbr',
     'autobahn.nvx',
     'autobahn.nvx.test',
     'twisted.plugins',
+]
+
+xbr_packages = [
+    'autobahn.xbr',
+    'autobahn.asyncio.xbr',
+    'autobahn.twisted.xbr',
 ]
 
 package_data = {'autobahn.asyncio': ['./test/*']}
@@ -193,8 +196,8 @@ if 'AUTOBAHN_STRIP_XBR' in os.environ:
     shutil.rmtree('autobahn.egg-info', ignore_errors=True)
 else:
     extras_require_all += extras_require_xbr
-    packages += ['autobahn.xbr', 'autobahn.asyncio.xbr', 'autobahn.twisted.xbr']
-    package_data['xbr'] = ['./xbr/contracts/*.json']
+    packages += xbr_packages
+    package_data['xbr'] = ['./xbr/templates/*.py.jinja2']
     entry_points['console_scripts'] += ["xbrnetwork = autobahn.xbr._cli:_main"]
     entry_points['console_scripts'] += ["xbrnetwork-ui = autobahn.xbr._gui:_main"]
 
