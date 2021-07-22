@@ -5,9 +5,14 @@
 Changelog
 =========
 
-master
+21.7.1
 ------
 
+* fix: build with nvx by default and don't publish universal wheel. (#1493)
+* fix: update wamp flatbuffer schema for r2r links
+* fix: don't clobber factory (#1480)
+* fix: explicitly require setuptools
+* new: expand wamp auth scram and xbr argon2/hkdf (#1479)
 * fix: WebSocket compression, window size (zlib wbits) == 8 is illegal nowerdays (#1477)
 * fix: XBR IDL code generator - all 4 WAMP actions working now
 * new: add automated build of xbrnetwork CLI (single-file EXE) in CI
