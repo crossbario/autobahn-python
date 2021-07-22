@@ -84,10 +84,16 @@ enum MessageType: uint16
 }
 
 
-table Principal
+// WAMP session identity information.
+struct Principal
 {
+    // WAMP session ID.
     session: uint64;
+
+    // WAMP session authentication ID.
     authid: string (principal);
+
+    // WAMP session authentication role.
     authrole: string (principal);
 }
 
@@ -112,7 +118,7 @@ enum Serializer: uint8
     // Use same (dynamic) serializer for the app payload as on the transport.
     // This will be one of JSON, MSGPACK, CBOR or UBJSON.
     TRANSPORT = 0,
-    
+
     // Use JSON serializer (for dynamically typed app payload).
     JSON = 1,
 

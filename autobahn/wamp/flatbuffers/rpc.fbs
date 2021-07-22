@@ -12,20 +12,6 @@ include "types.fbs";
 namespace wamp.proto;
 
 
-// WAMP session identity information.
-struct SessionId
-{
-    // WAMP session ID.
-    session: uint64;
-
-    // WAMP session authentication ID.
-    authid: string (principal);
-
-    // WAMP session authentication role.
-    authrole: string (principal);
-}
-
-
 // CALL message (message_type = 48): [CALL, Request|id, Options|dict, Procedure|uri, Payload|binary]
 table Call
 {
@@ -63,7 +49,7 @@ table Call
     caller_authrole: string (principal);
 
     // R2R-link message forwarding route that was taken.
-    forward_for: [SessionId];
+    forward_for: [Principal];
 }
 
 
@@ -77,7 +63,7 @@ table Cancel
     mode: CancelMode = SKIP;
 
     // R2R-link message forwarding route that was taken.
-    forward_for: [SessionId];
+    forward_for: [Principal];
 }
 
 
@@ -112,7 +98,7 @@ table Result
     callee_authrole: string (principal);
 
     // R2R-link message forwarding route that was taken.
-    forward_for: [SessionId];
+    forward_for: [Principal];
 }
 
 
@@ -215,7 +201,7 @@ table Invocation
     caller_authrole: string (principal);
 
     // R2R-link message forwarding route that was taken.
-    forward_for: [SessionId];
+    forward_for: [Principal];
 }
 
 
@@ -232,7 +218,7 @@ table Interrupt
     reason: string (uri);
 
     // R2R-link message forwarding route that was taken.
-    forward_for: [SessionId];
+    forward_for: [Principal];
 }
 
 
@@ -267,5 +253,5 @@ table Yield
     callee_authrole: string (principal);
 
     // R2R-link message forwarding route that was taken.
-    forward_for: [SessionId];
+    forward_for: [Principal];
 }
