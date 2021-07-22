@@ -29,13 +29,13 @@ install:
 
 build:
 	-rm -f dist/*
-	# python setup.py sdist bdist_wheel --universal
-	AUTOBAHN_USE_NVX=1 python setup.py sdist bdist_wheel
+	# AUTOBAHN_USE_NVX=0 python setup.py sdist --universal
+	AUTOBAHN_USE_NVX=1 python setup.py sdist
 	ls -la dist
 
 # upload to our internal deployment system
 upload: clean
-	python setup.py sdist bdist_wheel --universal
+	AUTOBAHN_USE_NVX=0 python setup.py sdist --universal
 	aws s3 cp --acl public-read \
 		dist/autobahn-*.whl \
 		s3://fabric-deploy/autobahn/
@@ -69,7 +69,7 @@ clean:
 
 # publish to PyPI
 publish: clean
-	python setup.py sdist bdist_wheel --universal
+	AUTOBAHN_USE_NVX=0 python setup.py sdist --universal
 	twine upload dist/*
 
 clean_docs:

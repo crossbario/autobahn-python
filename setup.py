@@ -110,12 +110,7 @@ extras_require_nvx = [
 
 # cffi based extension modules to build, currently only NVX
 cffi_modules = []
-if 'AUTOBAHN_USE_NVX' in os.environ:
-    # FIXME: building this extension will make the wheel
-    # produced no longer universal (as in "autobahn-18.4.1-py2.py3-none-any.whl").
-    # on the other hand, I don't know how to selectively include this
-    # based on the install flavor the user has chosen (eg pip install autobahn[nvx]
-    # should make the following be included)
+if 'AUTOBAHN_USE_NVX' not in os.environ or os.environ['AUTOBAHN_USE_NVX'] not in ['0', 'false']:
     cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
 
 extras_require_xbr = [

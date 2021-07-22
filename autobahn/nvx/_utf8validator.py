@@ -44,13 +44,18 @@ ffi.cdef("""
     int nvx_utf8vld_get_impl(void* utf8vld);
 """)
 
+optional = True
+if 'AUTOBAHN_USE_NVX' in os.environ and os.environ['AUTOBAHN_USE_NVX'] in ['1', 'true']:
+    optional = False
+
 with open(os.path.join(os.path.dirname(__file__), '_utf8validator.c')) as fd:
     c_source = fd.read()
     ffi.set_source(
         "_nvx_utf8validator",
         c_source,
         libraries=[],
-        extra_compile_args=['-std=c99', '-Wall', '-Wno-strict-prototypes', '-O3', '-march=native']
+        extra_compile_args=['-std=c99', '-Wall', '-Wno-strict-prototypes', '-O3', '-march=native'],
+        optional=optional
     )
 
 
