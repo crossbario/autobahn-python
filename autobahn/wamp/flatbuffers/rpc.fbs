@@ -12,6 +12,20 @@ include "types.fbs";
 namespace wamp.proto;
 
 
+// WAMP session identity information.
+struct SessionId
+{
+    // WAMP session ID.
+    session: uint64;
+
+    // WAMP session authentication ID.
+    authid: string (principal);
+
+    // WAMP session authentication role.
+    authrole: string (principal);
+}
+
+
 // CALL message (message_type = 48): [CALL, Request|id, Options|dict, Procedure|uri, Payload|binary]
 table Call
 {
@@ -38,6 +52,18 @@ table Call
 
     // When set, indicates that the caller wants to receive progressive call results.
     receive_progress: bool;
+
+    // Caller WAMP session ID (optional).
+    caller: uint64;
+
+    // Caller WAMP session authentication ID (optional).
+    caller_authid: string (principal);
+
+    // Caller WAMP session authentication role (optional).
+    caller_authrole: string (principal);
+
+    // R2R-link message forwarding route that was taken.
+    forward_for: [SessionId];
 }
 
 
@@ -49,6 +75,9 @@ table Cancel
 
     // Specifies how to cancel the call.
     mode: CancelMode = SKIP;
+
+    // R2R-link message forwarding route that was taken.
+    forward_for: [SessionId];
 }
 
 
@@ -72,6 +101,18 @@ table Result
 
     // If true, this result is a progressive call result, and subsequent results (or a final error) will follow.
     progress: bool;
+
+    // Callee WAMP session ID (optional).
+    callee: uint64;
+
+    // Callee WAMP session authentication ID (optional).
+    callee_authid: string (principal);
+
+    // Callee WAMP session authentication role (optional).
+    callee_authrole: string (principal);
+
+    // R2R-link message forwarding route that was taken.
+    forward_for: [SessionId];
 }
 
 
@@ -172,6 +213,9 @@ table Invocation
 
     // The WAMP authrole of the caller. Only filled if caller is disclosed.
     caller_authrole: string (principal);
+
+    // R2R-link message forwarding route that was taken.
+    forward_for: [SessionId];
 }
 
 
@@ -183,6 +227,12 @@ table Interrupt
 
     // Specifies how to interrupt the invocation.
     mode: CancelMode = ABORT;
+
+    // The reason (an URI) for the invocation interrupt.
+    reason: string (uri);
+
+    // R2R-link message forwarding route that was taken.
+    forward_for: [SessionId];
 }
 
 
@@ -203,4 +253,19 @@ table Yield
 
     // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
     enc_key: [uint8];
+
+    // If true, this result is a progressive invocation result, and subsequent results (or a final error) will follow.
+    progress: bool;
+
+    // Callee WAMP session ID (optional).
+    callee: uint64;
+
+    // Callee WAMP session authentication ID (optional).
+    callee_authid: string (principal);
+
+    // Callee WAMP session authentication role (optional).
+    callee_authrole: string (principal);
+
+    // R2R-link message forwarding route that was taken.
+    forward_for: [SessionId];
 }
