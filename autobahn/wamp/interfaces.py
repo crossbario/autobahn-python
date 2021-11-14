@@ -35,7 +35,8 @@ __all__ = (
     'ITransport',
     'ITransportHandler',
     'ISession',
-    'IPayloadCodec'
+    'IPayloadCodec',
+    'ISigningKey'
 )
 
 
@@ -713,6 +714,39 @@ class IAuthenticator(abc.ABC):
         message from the server (e.g. for mutual authentication).
 
         :return: None if the session is successful or an error-message
+        """
+
+@public
+class ISigningKey(abc.ABC):
+
+    @abc.abstractmethod
+    def can_sign(self):
+        """
+        Check if the key can be used to sign.
+
+        :returns: `True`, iff the key can sign.
+        :rtype: bool
+        """
+
+    @abc.abstractmethod
+    def public_key(self):
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def sign(self):
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def sign_challenge(self):
+        """
+
+        :return:
         """
 
 

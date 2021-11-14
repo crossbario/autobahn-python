@@ -30,6 +30,7 @@ import struct
 import txaio
 
 from autobahn import util
+from autobahn.wamp.interfaces import ISigningKey
 from autobahn.wamp.types import Challenge
 
 __all__ = [
@@ -353,32 +354,11 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
 
 if HAS_CRYPTOSIGN:
 
-    @util.public
-    class SigningKey(object):
-        """
-        A cryptosign private key for signing, and hence usable for authentication or a
-        public key usable for verification (but can't be used for signing).
-        """
+    class SigningKeyBase(object):
 
-        def __init__(self, key, comment=None):
-            """
-
-            :param key: A Ed25519 private signing key or a Ed25519 public verification key.
-            :type key: instance of nacl.signing.VerifyKey or instance of nacl.signing.SigningKey
-            """
-            if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
-                raise Exception("invalid type {} for key".format(type(key)))
-
-            if not (comment is None or type(comment) == str):
-                raise Exception("invalid type {} for comment".format(type(comment)))
-
-            self._key = key
-            self._comment = comment
-            self._can_sign = isinstance(key, signing.SigningKey)
-
-        def __str__(self):
-            comment = '"{}"'.format(self.comment()) if self.comment() else None
-            return 'Key(can_sign={}, comment={}, public_key={})'.format(self.can_sign(), comment, self.public_key())
+        def __init__(self, signer, can_sign: bool) -> None:
+            self._can_sign = can_sign
+            self._key = signer
 
         @util.public
         def can_sign(self):
@@ -389,60 +369,6 @@ if HAS_CRYPTOSIGN:
             :rtype: bool
             """
             return self._can_sign
-
-        @util.public
-        def comment(self):
-            """
-            Get the key comment (if any).
-
-            :returns: The comment (if any) from the key.
-            :rtype: str or None
-            """
-            return self._comment
-
-        @util.public
-        def public_key(self, binary=False):
-            """
-            Returns the public key part of a signing key or the (public) verification key.
-
-            :returns: The public key in Hex encoding.
-            :rtype: str or None
-            """
-            if isinstance(self._key, signing.SigningKey):
-                key = self._key.verify_key
-            else:
-                key = self._key
-
-            if binary:
-                return key.encode()
-            else:
-                return key.encode(encoder=encoding.HexEncoder).decode('ascii')
-
-        @util.public
-        def sign(self, data):
-            """
-            Sign some data.
-
-            :param data: The data to be signed.
-            :type data: bytes
-
-            :returns: The signature.
-            :rtype: bytes
-            """
-            if not self._can_sign:
-                raise Exception("a signing key required to sign")
-
-            if type(data) != bytes:
-                raise Exception("data to be signed must be binary")
-
-            # sig is a nacl.signing.SignedMessage
-            sig = self._key.sign(data)
-
-            # we only return the actual signature! if we return "sig",
-            # it get coerced into the concatenation of message + signature
-            # not sure which order, but we don't want that. we only want
-            # the signature
-            return txaio.create_future_success(sig.signature)
 
         @util.public
         def sign_challenge(self, session, challenge, channel_id_type='tls-unique'):
@@ -510,6 +436,90 @@ if HAS_CRYPTOSIGN:
             txaio.add_callbacks(d1, process, None)
 
             return d2
+
+        @util.public
+        def sign(self, data):
+            """
+            Sign some data.
+
+            :param data: The data to be signed.
+            :type data: bytes
+
+            :returns: The signature.
+            :rtype: bytes
+            """
+            if not self._can_sign:
+                raise Exception("a signing key required to sign")
+
+            if type(data) != bytes:
+                raise Exception("data to be signed must be binary")
+
+            # sig is a nacl.signing.SignedMessage
+            sig = self._key.sign(data)
+
+            # we only return the actual signature! if we return "sig",
+            # it get coerced into the concatenation of message + signature
+            # not sure which order, but we don't want that. we only want
+            # the signature
+            return txaio.create_future_success(sig.signature)
+
+
+    @util.public
+    class SigningKey(SigningKeyBase):
+        """
+        A cryptosign private key for signing, and hence usable for authentication or a
+        public key usable for verification (but can't be used for signing).
+        """
+
+        def __init__(self, key, comment=None):
+            """
+
+            :param key: A Ed25519 private signing key or a Ed25519 public verification key.
+            :type key: instance of nacl.signing.VerifyKey or instance of nacl.signing.SigningKey
+            """
+            if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
+                raise Exception("invalid type {} for key".format(type(key)))
+
+            if not (comment is None or type(comment) == str):
+                raise Exception("invalid type {} for comment".format(type(comment)))
+
+            self._key = key
+            self._comment = comment
+            can_sign = isinstance(key, signing.SigningKey)
+
+            super().__init__(key, can_sign)
+
+        def __str__(self):
+            comment = '"{}"'.format(self.comment()) if self.comment() else None
+            return 'Key(can_sign={}, comment={}, public_key={})'.format(self.can_sign(), comment, self.public_key())
+
+        @util.public
+        def comment(self):
+            """
+            Get the key comment (if any).
+
+            :returns: The comment (if any) from the key.
+            :rtype: str or None
+            """
+            return self._comment
+
+        @util.public
+        def public_key(self, binary=False):
+            """
+            Returns the public key part of a signing key or the (public) verification key.
+
+            :returns: The public key in Hex encoding.
+            :rtype: str or None
+            """
+            if isinstance(self._key, signing.SigningKey):
+                key = self._key.verify_key
+            else:
+                key = self._key
+
+            if binary:
+                return key.encode()
+            else:
+                return key.encode(encoder=encoding.HexEncoder).decode('ascii')
 
         @util.public
         @classmethod
@@ -586,6 +596,10 @@ if HAS_CRYPTOSIGN:
                 key = signing.VerifyKey(keydata)
 
             return cls(key, comment)
+
+
+    ISigningKey.register(SigningKey)
+
 
 if __name__ == '__main__':
     import sys
