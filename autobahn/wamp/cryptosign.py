@@ -463,7 +463,6 @@ if HAS_CRYPTOSIGN:
             # the signature
             return txaio.create_future_success(sig.signature)
 
-
     @util.public
     class SigningKey(SigningKeyBase):
         """
@@ -596,7 +595,6 @@ if HAS_CRYPTOSIGN:
                 key = signing.VerifyKey(keydata)
 
             return cls(key, comment)
-
 
     ISigningKey.register(SigningKey)
 
