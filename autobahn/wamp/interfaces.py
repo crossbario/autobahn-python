@@ -740,7 +740,7 @@ class ISigningKey(abc.ABC):
         """
 
     @abc.abstractmethod
-    def sign(self, data: bytes) -> bytes:
+    def sign(self, data: bytes):
         """
         Sign the given data.
 
@@ -748,7 +748,7 @@ class ISigningKey(abc.ABC):
         :type data: bytes
 
         :returns: The signature.
-        :rtype: bytes
+        :rtype: txaio.Future object that resolves to bytes
         """
 
 
