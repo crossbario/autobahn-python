@@ -354,6 +354,44 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
 
 if HAS_CRYPTOSIGN:
 
+    def format_challenge(session, challenge, channel_id_type) -> bytes:
+        if not isinstance(challenge, Challenge):
+            raise Exception(
+                "challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
+
+        if 'challenge' not in challenge.extra:
+            raise Exception("missing challenge value in challenge.extra")
+
+        # the challenge sent by the router (a 32 bytes random value)
+        challenge_hex = challenge.extra['challenge']
+
+        if type(challenge_hex) != str:
+            raise Exception("invalid type {} for challenge (expected a hex string)".format(type(challenge_hex)))
+
+        if len(challenge_hex) != 64:
+            raise Exception("unexpected challenge (hex) length: was {}, but expected 64".format(len(challenge_hex)))
+
+        # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
+        challenge_raw = binascii.a2b_hex(challenge_hex)
+
+        if channel_id_type == 'tls-unique':
+            # get the TLS channel ID of the underlying TLS connection
+            channel_id_raw = session._transport.get_channel_id()
+            assert len(
+                channel_id_raw) == 32, 'unexpected TLS transport channel ID length (was {}, but expected 32)'.format(
+                len(channel_id_raw))
+
+            # with TLS channel binding of type "tls-unique", the message to be signed by the client actually
+            # is the XOR of the challenge and the TLS channel ID
+            data = util.xor(challenge_raw, channel_id_raw)
+        elif channel_id_type is None:
+            # when no channel binding was requested, the message to be signed by the client is the challenge only
+            data = challenge_raw
+        else:
+            assert False, 'invalid channel_id_type "{}"'.format(channel_id_type)
+
+        return data
+
     class SigningKeyBase(object):
 
         def __init__(self, signer, can_sign: bool) -> None:
@@ -384,37 +422,7 @@ if HAS_CRYPTOSIGN:
             :returns: A Deferred/Future that resolves to the computed signature.
             :rtype: str
             """
-            if not isinstance(challenge, Challenge):
-                raise Exception("challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
-
-            if 'challenge' not in challenge.extra:
-                raise Exception("missing challenge value in challenge.extra")
-
-            # the challenge sent by the router (a 32 bytes random value)
-            challenge_hex = challenge.extra['challenge']
-
-            if type(challenge_hex) != str:
-                raise Exception("invalid type {} for challenge (expected a hex string)".format(type(challenge_hex)))
-
-            if len(challenge_hex) != 64:
-                raise Exception("unexpected challenge (hex) length: was {}, but expected 64".format(len(challenge_hex)))
-
-            # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
-            challenge_raw = binascii.a2b_hex(challenge_hex)
-
-            if channel_id_type == 'tls-unique':
-                # get the TLS channel ID of the underlying TLS connection
-                channel_id_raw = session._transport.get_channel_id()
-                assert len(channel_id_raw) == 32, 'unexpected TLS transport channel ID length (was {}, but expected 32)'.format(len(channel_id_raw))
-
-                # with TLS channel binding of type "tls-unique", the message to be signed by the client actually
-                # is the XOR of the challenge and the TLS channel ID
-                data = util.xor(challenge_raw, channel_id_raw)
-            elif channel_id_type is None:
-                # when no channel binding was requested, the message to be signed by the client is the challenge only
-                data = challenge_raw
-            else:
-                assert False, 'invalid channel_id_type "{}"'.format(channel_id_type)
+            data = format_challenge(session, challenge, channel_id_type)
 
             # a raw byte string is signed, and the signature is also a raw byte string
             d1 = self.sign(data)
