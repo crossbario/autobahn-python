@@ -25,6 +25,7 @@
 ###############################################################################
 
 import abc
+from typing import Union
 
 from autobahn.util import public
 
@@ -729,24 +730,24 @@ class ISigningKey(abc.ABC):
         """
 
     @abc.abstractmethod
-    def public_key(self):
+    def public_key(self, binary=False) -> Union[str, bytes]:
         """
+        Returns the public key part of a signing key or the (public) verification key.
 
-        :return:
-        """
-
-    @abc.abstractmethod
-    def sign(self):
-        """
-
-        :return:
+        :param binary: If the return type should be binary instead of hex
+        :return: The public key in hex or byte encoding.
         """
 
     @abc.abstractmethod
-    def sign_challenge(self):
+    def sign(self, data: bytes) -> bytes:
         """
+        Sign the given data.
 
-        :return:
+        :param data: The data to be signed.
+        :type data: bytes
+
+        :returns: The signature.
+        :rtype: bytes
         """
 
 
