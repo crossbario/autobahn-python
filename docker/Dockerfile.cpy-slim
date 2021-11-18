@@ -47,6 +47,9 @@ RUN    apt-get update \
                libsqlite3-dev \
                libncurses5-dev \
                libsnappy-dev \
+               pkg-config \
+               libcairo2-dev \
+               libgirepository1.0-dev \
     && pip install --upgrade --no-cache-dir setuptools pip wheel \
     && rm -rf ~/.cache \
     && rm -rf /var/lib/apt/lists/*
