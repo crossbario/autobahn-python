@@ -356,6 +356,14 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
 if HAS_CRYPTOSIGN:
 
     def format_challenge(challenge: Challenge, channel_id_raw: bytes, channel_id_type: str) -> bytes:
+        """
+        Format the challenge based on provided parameters
+
+        :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
+        :param channel_id_raw: The channel ID when channel_id_type is 'tls-unique'.
+        :param channel_id_type: The type of the channel id, currently handles 'tls-unique' and
+            ignores otherwise.
+        """
         if not isinstance(challenge, Challenge):
             raise Exception(
                 "challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
@@ -392,6 +400,14 @@ if HAS_CRYPTOSIGN:
         return data
 
     def sign_challenge(data: bytes, signer_func: Callable):
+        """
+        Sign the provided data using the provided signer.
+
+        :param data: challenge to sign
+        :param signer_func: The callable function to use for signing
+        :returns: A Deferred/Future that resolves to the computed signature.
+        :rtype: str
+        """
         # a raw byte string is signed, and the signature is also a raw byte string
         d1 = signer_func(data)
 
