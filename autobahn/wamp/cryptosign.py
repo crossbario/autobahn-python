@@ -26,6 +26,7 @@
 
 import binascii
 import struct
+from typing import Callable
 
 import txaio
 
@@ -354,7 +355,7 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
 
 if HAS_CRYPTOSIGN:
 
-    def format_challenge(challenge, channel_id_raw, channel_id_type) -> bytes:
+    def format_challenge(challenge: Challenge, channel_id_raw: bytes, channel_id_type: str) -> bytes:
         if not isinstance(challenge, Challenge):
             raise Exception(
                 "challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
@@ -390,7 +391,7 @@ if HAS_CRYPTOSIGN:
 
         return data
 
-    def sign_challenge(data, signer_func):
+    def sign_challenge(data: bytes, signer_func: Callable):
         # a raw byte string is signed, and the signature is also a raw byte string
         d1 = signer_func(data)
 
