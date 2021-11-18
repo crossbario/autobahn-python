@@ -35,9 +35,10 @@ aws s3 rm s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-${AUTOB
 aws s3 rm s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl
 aws s3 rm s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-latest-py2.py3-none-any.whl
 
-aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID}-py2.py3-none-any.whl
-aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl
-aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-latest-py2.py3-none-any.whl
+aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-cp310-cp310-linux_x86_64.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-${AUTOBAHN_BUILD_ID}-py2.py3-none-any.whl
+aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-cp310-cp310-linux_x86_64.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl
+aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-cp310-cp310-linux_x86_64.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-latest-py2.py3-none-any.whl
+aws s3 cp --acl public-read ./dist/autobahn-${AUTOBAHN_VERSION}-cp310-cp310-linux_x86_64.whl s3://${AWS_S3_BUCKET_NAME}/wheels/autobahn-latest-cp310-cp310-linux_x86_64.whl
 
 #aws s3api copy-object --acl public-read \
 #    --copy-source wheels/autobahn-${AUTOBAHN_VERSION}-py2.py3-none-any.whl --bucket ${AWS_S3_BUCKET_NAME} \

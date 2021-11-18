@@ -26,6 +26,7 @@
 
 import binascii
 import struct
+from typing import Callable
 
 import txaio
 
@@ -354,7 +355,15 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
 
 if HAS_CRYPTOSIGN:
 
-    def format_challenge(session, challenge, channel_id_type) -> bytes:
+    def format_challenge(challenge: Challenge, channel_id_raw: bytes, channel_id_type: str) -> bytes:
+        """
+        Format the challenge based on provided parameters
+
+        :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
+        :param channel_id_raw: The channel ID when channel_id_type is 'tls-unique'.
+        :param channel_id_type: The type of the channel id, currently handles 'tls-unique' and
+            ignores otherwise.
+        """
         if not isinstance(challenge, Challenge):
             raise Exception(
                 "challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
@@ -375,8 +384,6 @@ if HAS_CRYPTOSIGN:
         challenge_raw = binascii.a2b_hex(challenge_hex)
 
         if channel_id_type == 'tls-unique':
-            # get the TLS channel ID of the underlying TLS connection
-            channel_id_raw = session._transport.get_channel_id()
             assert len(
                 channel_id_raw) == 32, 'unexpected TLS transport channel ID length (was {}, but expected 32)'.format(
                 len(channel_id_raw))
@@ -391,6 +398,36 @@ if HAS_CRYPTOSIGN:
             assert False, 'invalid channel_id_type "{}"'.format(channel_id_type)
 
         return data
+
+    def sign_challenge(data: bytes, signer_func: Callable):
+        """
+        Sign the provided data using the provided signer.
+
+        :param data: challenge to sign
+        :param signer_func: The callable function to use for signing
+        :returns: A Deferred/Future that resolves to the computed signature.
+        :rtype: str
+        """
+        # a raw byte string is signed, and the signature is also a raw byte string
+        d1 = signer_func(data)
+
+        # asyncio lacks callback chaining (and we cannot use co-routines, since we want
+        # to support older Pythons), hence we need d2
+        d2 = txaio.create_future()
+
+        def process(signature_raw):
+            # convert the raw signature into a hex encode value (unicode string)
+            signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
+
+            # we return the concatenation of the signature and the message signed (96 bytes)
+            data_hex = binascii.b2a_hex(data).decode('ascii')
+
+            sig = signature_hex + data_hex
+            txaio.resolve(d2, sig)
+
+        txaio.add_callbacks(d1, process, None)
+
+        return d2
 
     class SigningKeyBase(object):
 
@@ -422,28 +459,11 @@ if HAS_CRYPTOSIGN:
             :returns: A Deferred/Future that resolves to the computed signature.
             :rtype: str
             """
-            data = format_challenge(session, challenge, channel_id_type)
+            # get the TLS channel ID of the underlying TLS connection. Could be None.
+            channel_id_raw = session._transport.get_channel_id()
+            data = format_challenge(challenge, channel_id_raw, channel_id_type)
 
-            # a raw byte string is signed, and the signature is also a raw byte string
-            d1 = self.sign(data)
-
-            # asyncio lacks callback chaining (and we cannot use co-routines, since we want
-            # to support older Pythons), hence we need d2
-            d2 = txaio.create_future()
-
-            def process(signature_raw):
-                # convert the raw signature into a hex encode value (unicode string)
-                signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
-
-                # we return the concatenation of the signature and the message signed (96 bytes)
-                data_hex = binascii.b2a_hex(data).decode('ascii')
-
-                sig = signature_hex + data_hex
-                txaio.resolve(d2, sig)
-
-            txaio.add_callbacks(d1, process, None)
-
-            return d2
+            return sign_challenge(data, self.sign)
 
         @util.public
         def sign(self, data):
