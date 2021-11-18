@@ -442,6 +442,7 @@ if HAS_CRYPTOSIGN:
             :returns: A Deferred/Future that resolves to the computed signature.
             :rtype: str
             """
+            # get the TLS channel ID of the underlying TLS connection. Could be None.
             channel_id_raw = session._transport.get_channel_id()
             data = format_challenge(challenge, channel_id_raw, channel_id_type)
 
