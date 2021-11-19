@@ -106,7 +106,7 @@ jobs:
         python -c "import autobahn; print(autobahn.__version__)"
         python -c "from autobahn import xbr; print(xbr.HAS_XBR)"
         python -c "from autobahn.testutil import FakeTransport; print(FakeTransport)"
-        python -c "from autobahn.wamp.cryptosign import SigningKeyBase"
+        python -c "from autobahn.wamp.cryptosign import SigningKeyBase; print(SigningKeyBase)"
         tox -c tox.ini -e ${{ matrix.framework }}
 
   docs:
