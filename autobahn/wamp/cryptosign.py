@@ -26,10 +26,12 @@
 
 import binascii
 import struct
+from typing import Callable
 
 import txaio
 
 from autobahn import util
+from autobahn.wamp.interfaces import ISigningKey
 from autobahn.wamp.types import Challenge
 
 __all__ = [
@@ -353,8 +355,144 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
 
 if HAS_CRYPTOSIGN:
 
+    def format_challenge(challenge: Challenge, channel_id_raw: bytes, channel_id_type: str) -> bytes:
+        """
+        Format the challenge based on provided parameters
+
+        :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
+        :param channel_id_raw: The channel ID when channel_id_type is 'tls-unique'.
+        :param channel_id_type: The type of the channel id, currently handles 'tls-unique' and
+            ignores otherwise.
+        """
+        if not isinstance(challenge, Challenge):
+            raise Exception(
+                "challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
+
+        if 'challenge' not in challenge.extra:
+            raise Exception("missing challenge value in challenge.extra")
+
+        # the challenge sent by the router (a 32 bytes random value)
+        challenge_hex = challenge.extra['challenge']
+
+        if type(challenge_hex) != str:
+            raise Exception("invalid type {} for challenge (expected a hex string)".format(type(challenge_hex)))
+
+        if len(challenge_hex) != 64:
+            raise Exception("unexpected challenge (hex) length: was {}, but expected 64".format(len(challenge_hex)))
+
+        # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
+        challenge_raw = binascii.a2b_hex(challenge_hex)
+
+        if channel_id_type == 'tls-unique':
+            assert len(
+                channel_id_raw) == 32, 'unexpected TLS transport channel ID length (was {}, but expected 32)'.format(
+                len(channel_id_raw))
+
+            # with TLS channel binding of type "tls-unique", the message to be signed by the client actually
+            # is the XOR of the challenge and the TLS channel ID
+            data = util.xor(challenge_raw, channel_id_raw)
+        elif channel_id_type is None:
+            # when no channel binding was requested, the message to be signed by the client is the challenge only
+            data = challenge_raw
+        else:
+            assert False, 'invalid channel_id_type "{}"'.format(channel_id_type)
+
+        return data
+
+    def sign_challenge(data: bytes, signer_func: Callable):
+        """
+        Sign the provided data using the provided signer.
+
+        :param data: challenge to sign
+        :param signer_func: The callable function to use for signing
+        :returns: A Deferred/Future that resolves to the computed signature.
+        :rtype: str
+        """
+        # a raw byte string is signed, and the signature is also a raw byte string
+        d1 = signer_func(data)
+
+        # asyncio lacks callback chaining (and we cannot use co-routines, since we want
+        # to support older Pythons), hence we need d2
+        d2 = txaio.create_future()
+
+        def process(signature_raw):
+            # convert the raw signature into a hex encode value (unicode string)
+            signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
+
+            # we return the concatenation of the signature and the message signed (96 bytes)
+            data_hex = binascii.b2a_hex(data).decode('ascii')
+
+            sig = signature_hex + data_hex
+            txaio.resolve(d2, sig)
+
+        txaio.add_callbacks(d1, process, None)
+
+        return d2
+
+    class SigningKeyBase(object):
+
+        def __init__(self, signer, can_sign: bool) -> None:
+            self._can_sign = can_sign
+            self._key = signer
+
+        @util.public
+        def can_sign(self):
+            """
+            Check if the key can be used to sign.
+
+            :returns: `True`, iff the key can sign.
+            :rtype: bool
+            """
+            return self._can_sign
+
+        @util.public
+        def sign_challenge(self, session, challenge, channel_id_type='tls-unique'):
+            """
+            Sign WAMP-cryptosign challenge.
+
+            :param session: The authenticating WAMP session.
+            :type session: :class:`autobahn.wamp.protocol.ApplicationSession`
+
+            :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
+            :type challenge: instance of autobahn.wamp.types.Challenge
+
+            :returns: A Deferred/Future that resolves to the computed signature.
+            :rtype: str
+            """
+            # get the TLS channel ID of the underlying TLS connection. Could be None.
+            channel_id_raw = session._transport.get_channel_id()
+            data = format_challenge(challenge, channel_id_raw, channel_id_type)
+
+            return sign_challenge(data, self.sign)
+
+        @util.public
+        def sign(self, data):
+            """
+            Sign some data.
+
+            :param data: The data to be signed.
+            :type data: bytes
+
+            :returns: The signature.
+            :rtype: bytes
+            """
+            if not self._can_sign:
+                raise Exception("a signing key required to sign")
+
+            if type(data) != bytes:
+                raise Exception("data to be signed must be binary")
+
+            # sig is a nacl.signing.SignedMessage
+            sig = self._key.sign(data)
+
+            # we only return the actual signature! if we return "sig",
+            # it get coerced into the concatenation of message + signature
+            # not sure which order, but we don't want that. we only want
+            # the signature
+            return txaio.create_future_success(sig.signature)
+
     @util.public
-    class SigningKey(object):
+    class SigningKey(SigningKeyBase):
         """
         A cryptosign private key for signing, and hence usable for authentication or a
         public key usable for verification (but can't be used for signing).
@@ -374,21 +512,13 @@ if HAS_CRYPTOSIGN:
 
             self._key = key
             self._comment = comment
-            self._can_sign = isinstance(key, signing.SigningKey)
+            can_sign = isinstance(key, signing.SigningKey)
+
+            super().__init__(key, can_sign)
 
         def __str__(self):
             comment = '"{}"'.format(self.comment()) if self.comment() else None
             return 'Key(can_sign={}, comment={}, public_key={})'.format(self.can_sign(), comment, self.public_key())
-
-        @util.public
-        def can_sign(self):
-            """
-            Check if the key can be used to sign.
-
-            :returns: `True`, iff the key can sign.
-            :rtype: bool
-            """
-            return self._can_sign
 
         @util.public
         def comment(self):
@@ -417,99 +547,6 @@ if HAS_CRYPTOSIGN:
                 return key.encode()
             else:
                 return key.encode(encoder=encoding.HexEncoder).decode('ascii')
-
-        @util.public
-        def sign(self, data):
-            """
-            Sign some data.
-
-            :param data: The data to be signed.
-            :type data: bytes
-
-            :returns: The signature.
-            :rtype: bytes
-            """
-            if not self._can_sign:
-                raise Exception("a signing key required to sign")
-
-            if type(data) != bytes:
-                raise Exception("data to be signed must be binary")
-
-            # sig is a nacl.signing.SignedMessage
-            sig = self._key.sign(data)
-
-            # we only return the actual signature! if we return "sig",
-            # it get coerced into the concatenation of message + signature
-            # not sure which order, but we don't want that. we only want
-            # the signature
-            return txaio.create_future_success(sig.signature)
-
-        @util.public
-        def sign_challenge(self, session, challenge, channel_id_type='tls-unique'):
-            """
-            Sign WAMP-cryptosign challenge.
-
-            :param session: The authenticating WAMP session.
-            :type session: :class:`autobahn.wamp.protocol.ApplicationSession`
-
-            :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
-            :type challenge: instance of autobahn.wamp.types.Challenge
-
-            :returns: A Deferred/Future that resolves to the computed signature.
-            :rtype: str
-            """
-            if not isinstance(challenge, Challenge):
-                raise Exception("challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
-
-            if 'challenge' not in challenge.extra:
-                raise Exception("missing challenge value in challenge.extra")
-
-            # the challenge sent by the router (a 32 bytes random value)
-            challenge_hex = challenge.extra['challenge']
-
-            if type(challenge_hex) != str:
-                raise Exception("invalid type {} for challenge (expected a hex string)".format(type(challenge_hex)))
-
-            if len(challenge_hex) != 64:
-                raise Exception("unexpected challenge (hex) length: was {}, but expected 64".format(len(challenge_hex)))
-
-            # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
-            challenge_raw = binascii.a2b_hex(challenge_hex)
-
-            if channel_id_type == 'tls-unique':
-                # get the TLS channel ID of the underlying TLS connection
-                channel_id_raw = session._transport.get_channel_id()
-                assert len(channel_id_raw) == 32, 'unexpected TLS transport channel ID length (was {}, but expected 32)'.format(len(channel_id_raw))
-
-                # with TLS channel binding of type "tls-unique", the message to be signed by the client actually
-                # is the XOR of the challenge and the TLS channel ID
-                data = util.xor(challenge_raw, channel_id_raw)
-            elif channel_id_type is None:
-                # when no channel binding was requested, the message to be signed by the client is the challenge only
-                data = challenge_raw
-            else:
-                assert False, 'invalid channel_id_type "{}"'.format(channel_id_type)
-
-            # a raw byte string is signed, and the signature is also a raw byte string
-            d1 = self.sign(data)
-
-            # asyncio lacks callback chaining (and we cannot use co-routines, since we want
-            # to support older Pythons), hence we need d2
-            d2 = txaio.create_future()
-
-            def process(signature_raw):
-                # convert the raw signature into a hex encode value (unicode string)
-                signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
-
-                # we return the concatenation of the signature and the message signed (96 bytes)
-                data_hex = binascii.b2a_hex(data).decode('ascii')
-
-                sig = signature_hex + data_hex
-                txaio.resolve(d2, sig)
-
-            txaio.add_callbacks(d1, process, None)
-
-            return d2
 
         @util.public
         @classmethod
@@ -586,6 +623,9 @@ if HAS_CRYPTOSIGN:
                 key = signing.VerifyKey(keydata)
 
             return cls(key, comment)
+
+    ISigningKey.register(SigningKey)
+
 
 if __name__ == '__main__':
     import sys

@@ -25,6 +25,7 @@
 ###############################################################################
 
 import abc
+from typing import Union
 
 from autobahn.util import public
 
@@ -35,7 +36,8 @@ __all__ = (
     'ITransport',
     'ITransportHandler',
     'ISession',
-    'IPayloadCodec'
+    'IPayloadCodec',
+    'ISigningKey'
 )
 
 
@@ -713,6 +715,40 @@ class IAuthenticator(abc.ABC):
         message from the server (e.g. for mutual authentication).
 
         :return: None if the session is successful or an error-message
+        """
+
+
+@public
+class ISigningKey(abc.ABC):
+
+    @abc.abstractmethod
+    def can_sign(self):
+        """
+        Check if the key can be used to sign.
+
+        :returns: `True`, iff the key can sign.
+        :rtype: bool
+        """
+
+    @abc.abstractmethod
+    def public_key(self, binary=False) -> Union[str, bytes]:
+        """
+        Returns the public key part of a signing key or the (public) verification key.
+
+        :param binary: If the return type should be binary instead of hex
+        :return: The public key in hex or byte encoding.
+        """
+
+    @abc.abstractmethod
+    def sign(self, data: bytes):
+        """
+        Sign the given data.
+
+        :param data: The data to be signed.
+        :type data: bytes
+
+        :returns: The signature.
+        :rtype: txaio.Future object that resolves to bytes
         """
 
 
