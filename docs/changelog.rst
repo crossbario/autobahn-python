@@ -5,9 +5,12 @@
 Changelog
 =========
 
-21.7.1
-------
+21.11.1
+-------
 
+* fix: autobahn installation in docker (#1503)
+* new: refactor SigningKey class for reusability (#1500, #1501)
+* new: expand XBR node pairing helpers
 * fix: build with nvx by default and don't publish universal wheel. (#1493)
 * fix: update wamp flatbuffer schema for r2r links
 * fix: don't clobber factory (#1480)
