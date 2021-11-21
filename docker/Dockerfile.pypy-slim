@@ -2,7 +2,7 @@
 # however, AUTOBAHN_ARCH will _not_ be available further down the line because of this ordering!
 ARG AUTOBAHN_ARCH
 
-# PyPy only comes in 3.8 for now https://hub.docker.com/_/pypy
+# PyPy only comes in 3.8-7.3.7 for now https://hub.docker.com/_/pypy
 FROM ${AUTOBAHN_ARCH}/pypy:3.8-slim
 
 MAINTAINER The Crossbar.io Project and Contributors <support@crossbario.com>
