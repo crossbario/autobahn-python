@@ -69,7 +69,7 @@ clean:
 
 # publish to PyPI
 publish: clean
-	AUTOBAHN_USE_NVX=0 python setup.py sdist --universal
+	AUTOBAHN_USE_NVX=0 python setup.py sdist
 	twine upload dist/*
 
 clean_docs:
