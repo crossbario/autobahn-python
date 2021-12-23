@@ -29,8 +29,9 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV PYTHONUNBUFFERED 1
 
 # cross-compatibility with CPython
-RUN ln -s /opt/pypy/bin/pypy3 /opt/pypy/bin/python3
-RUN ln -s /opt/pypy/bin/pypy3 /opt/pypy/bin/python
+# ln: failed to create symbolic link '/opt/pypy/bin/python3': File exists
+# RUN ln -s /opt/pypy/bin/pypy3 /opt/pypy/bin/python3
+# RUN ln -s /opt/pypy/bin/pypy3 /opt/pypy/bin/python
 
 RUN    apt-get update \
     && apt-get install -y --no-install-recommends \

@@ -101,7 +101,7 @@ download_wheels:
 build_this_wheel:
 	mkdir -p ./.wheels/
 	rm -f ./.wheels/autobahn*.whl
-	pip3 wheel --no-deps --wheel-dir=./.wheels ..
+	pip3 wheel --no-deps --wheel-dir=./.wheels .
 	mv .wheels/autobahn*.whl .wheels/autobahn-latest-py2.py3-none-any.whl
 	ls -la ./.wheels
 
