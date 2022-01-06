@@ -72,7 +72,7 @@ def _validate_endpoint(endpoint, check_native_endpoint=None):
             raise ValueError('invalid type "{}" in endpoint'.format(endpoint['type']))
 
         for k in endpoint.keys():
-            if k not in ['type', 'host', 'port', 'path', 'tls']:
+            if k not in ['type', 'host', 'port', 'path', 'tls', 'timeout', 'version']:
                 raise ValueError(
                     "Invalid key '{}' in endpoint configuration".format(k)
                 )
