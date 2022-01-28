@@ -170,6 +170,11 @@ def utcstr(ts=None):
     Note: to parse an ISO 8601 formatted string, use the **iso8601**
     module instead (e.g. ``iso8601.parse_date("2014-05-23T13:03:44.123Z")``).
 
+    >>> txaio.time_ns()
+    1641121311914026419
+    >>> int(iso8601.parse_date(utcnow()).timestamp() * 1000000000.)
+    1641121313209000192
+
     :param ts: The timestamp to format.
     :type ts: instance of :py:class:`datetime.datetime` or ``None``
 
