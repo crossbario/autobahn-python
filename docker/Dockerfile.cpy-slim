@@ -3,7 +3,7 @@
 ARG AUTOBAHN_ARCH
 
 # Use the latest CPython
-FROM ${AUTOBAHN_ARCH}/python:3.9-slim
+FROM ${AUTOBAHN_ARCH}/python:3.10-slim
 
 MAINTAINER The Crossbar.io Project and Contributors <support@crossbario.com>
 
