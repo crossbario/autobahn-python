@@ -53,7 +53,7 @@ jobs:
     env:
       CB_FULLTESTS: 1
 
-    # Test on Ubuntu, MacOS, Windows using CPython 3.6-3.9, PyPy 3.6-3.7
+    # Test on Ubuntu, MacOS, Windows using CPython and PyPy
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -61,7 +61,7 @@ jobs:
         # os: [ubuntu-20.04, macos-latest, windows-latest]
 
         # https://github.com/actions/setup-python#specifying-a-pypy-version
-        python-version: ['3.7', '3.9', 'pypy-3.7']
+        python-version: ['3.7', '3.10', 'pypy-3.8']
         framework: ['asyncio', 'tw203', 'twtrunk']
 
     # https://github.blog/changelog/2020-04-15-github-actions-new-workflow-features/

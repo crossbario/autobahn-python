@@ -8,6 +8,7 @@ Changelog
 22.1.1
 ------
 
+* new: support Python 3.10
 * new: allow optional keys in endpoint config validation
 * fix: reset transport retry status when connection succeeds
 * fix: update Docker/PyPy to pypy:3.8-slim
