@@ -130,14 +130,15 @@ wstest_server_docker_stop:
 
 wstest_server_docker_full:
 	docker run -it --rm \
+		--name fuzzingserver \
 		-v ${PWD}/fuzzingserver-full.json:/config/fuzzingserver.json:ro \
 		-v ${PWD}/reports:/reports \
 		-p 9001:9001 \
-		--name autobahn \
 		$(AUTOBAHN_TESTSUITE_DOCKER)
 
 wstest_server_docker_quick:
-	docker run -d --rm --name fuzzingserver \
+	docker run -it --rm \
+		--name fuzzingserver \
 		-u `id -u`:`id -g` \
 		-v ${PWD}/fuzzingserver-quick.json:/config/fuzzingserver.json:ro \
 		-v ${PWD}/reports:/reports \
