@@ -37,7 +37,7 @@ jobs:
     # => fails with https://github.com/pypa/setuptools/issues/3044
     - name: Install Python package dependencies
       run: |
-        pip3 -U pip
+        pip3 install -U pip
         pip3 show pip
         pip3 install -r requirements-dev.txt
 
