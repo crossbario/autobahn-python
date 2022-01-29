@@ -32,10 +32,11 @@ jobs:
         python-version: '3.x'
         architecture: 'x64'
 
+    # python3 get-pip.py "pip<20"
     - name: Install Python package dependencies
       run: |
         curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-        python3 get-pip.py "pip<20"
+        python3 get-pip.py
         pip3 show pip
         pip3 install -r requirements-dev.txt
 
