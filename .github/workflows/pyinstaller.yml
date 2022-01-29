@@ -32,11 +32,12 @@ jobs:
         python-version: '3.x'
         architecture: 'x64'
 
+    # curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
     # python3 get-pip.py "pip<20"
+    # => fails with https://github.com/pypa/setuptools/issues/3044
     - name: Install Python package dependencies
       run: |
-        curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-        python3 get-pip.py
+        pip3 -U pip
         pip3 show pip
         pip3 install -r requirements-dev.txt
 
