@@ -75,3 +75,18 @@ make build
 make test
 make publish
 ```
+
+
+## Checking built images
+
+To show the Docker image hashes and tags:
+
+```
+clear && make show list
+```
+
+To test the Docker images and print version infos:
+
+```
+clear && make test
+```
