@@ -126,10 +126,10 @@ wstest_server_docker_pull:
 	docker pull $(AUTOBAHN_TESTSUITE_DOCKER)
 
 wstest_server_docker_stop:
-	docker rm --force fuzzingserver
+	-docker rm --force fuzzingserver
 
 wstest_server_docker_full:
-	docker run -it --rm \
+	docker run -d --rm \
 		--name fuzzingserver \
 		-v ${PWD}/fuzzingserver-full.json:/config/fuzzingserver.json:ro \
 		-v ${PWD}/reports:/reports \
@@ -137,7 +137,7 @@ wstest_server_docker_full:
 		$(AUTOBAHN_TESTSUITE_DOCKER)
 
 wstest_server_docker_quick:
-	docker run -it --rm \
+	docker run -d --rm \
 		--name fuzzingserver \
 		-u `id -u`:`id -g` \
 		-v ${PWD}/fuzzingserver-quick.json:/config/fuzzingserver.json:ro \
