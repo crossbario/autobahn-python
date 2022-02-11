@@ -515,14 +515,16 @@ class JsonSerializer(Serializer):
     WAMP-over-Longpoll HTTP fallback.
     """
 
-    def __init__(self, batched=False):
+    def __init__(self, batched=False, use_binary_hex_encoding=False, use_decimal_from_str=False):
         """
         Ctor.
 
         :param batched: Flag to control whether to put this serialized into batched mode.
         :type batched: bool
         """
-        Serializer.__init__(self, JsonObjectSerializer(batched=batched))
+        Serializer.__init__(self, JsonObjectSerializer(batched=batched,
+                                                       use_binary_hex_encoding=use_binary_hex_encoding,
+                                                       use_decimal_from_str=use_decimal_from_str))
         if batched:
             self.SERIALIZER_ID = "json.batched"
 
