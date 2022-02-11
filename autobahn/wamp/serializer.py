@@ -294,8 +294,6 @@ class Serializer(object):
                 message_type = raw_msg[0]
 
                 if type(message_type) != int:
-                    # CBOR doesn't roundtrip number types
-                    # https://bitbucket.org/bodhisnarkva/cbor/issues/6/number-types-dont-roundtrip
                     raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
 
                 Klass = self.MESSAGE_TYPE_MAP.get(message_type)
@@ -674,32 +672,17 @@ if _HAS_MSGPACK:
 
 
 _HAS_CBOR = False
-if 'AUTOBAHN_USE_CBOR2' in os.environ:
-    try:
-        # https://pypi.org/project/cbor2/
-        # https://github.com/agronholm/cbor2
-        import cbor2
-    except ImportError:
-        pass
-    else:
-        _HAS_CBOR = True
-        _cbor_loads = cbor2.loads
-        _cbor_dumps = cbor2.dumps
-        _cbor = cbor2
-        # print('Notice: Autobahn is using cbor2 library for CBOR serialization')
+
+
+try:
+    import cbor2
+except ImportError:
+    pass
 else:
-    try:
-        # https://pypi.python.org/pypi/cbor
-        # https://bitbucket.org/bodhisnarkva/cbor
-        import cbor
-    except ImportError:
-        pass
-    else:
-        _HAS_CBOR = True
-        _cbor_loads = cbor.loads
-        _cbor_dumps = cbor.dumps
-        _cbor = cbor
-        # print('Notice: Autobahn is using cbor library for CBOR serialization')
+    _HAS_CBOR = True
+    _cbor_loads = cbor2.loads
+    _cbor_dumps = cbor2.dumps
+    _cbor = cbor2
 
 
 if _HAS_CBOR:

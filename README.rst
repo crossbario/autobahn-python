@@ -249,19 +249,6 @@ Further, to speed up JSON on CPython using ``ujson``, set the environment variab
     This ability depends on features of the regular JSON standard library module
     not available on ``ujson``.
 
-To use ``cbor2``, an alternative, highly flexible and standards complicant CBOR
-implementation, set the environment variable:
-
-.. code:: console
-
-    AUTOBAHN_USE_CBOR2=1
-
-.. note::
-
-    ``cbor2`` is not used by default, because it is significantly slower currently
-    in our benchmarking for WAMP message serialization on both CPython and PyPy
-    compared to ``cbor``.
-
 
 .. |Version| image:: https://img.shields.io/pypi/v/autobahn.svg
    :target: https://pypi.python.org/pypi/autobahn

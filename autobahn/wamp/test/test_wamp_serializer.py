@@ -30,8 +30,6 @@ import random
 import decimal
 from decimal import Decimal
 
-os.environ['AUTOBAHN_USE_CBOR2'] = '1'
-
 import txaio
 if os.environ.get('USE_TWISTED', False):
     txaio.use_twisted()
@@ -344,15 +342,16 @@ class TestDecimalSerializer(unittest.TestCase):
         for wamp_ser1 in self._test_serializers:
             ser1 = wamp_ser1._serializer
             for contains_binary, msg in self._test_messages_no_dec + self._test_messages_dec:
-                payload = ser1.serialize(msg)
-                msg1 = ser1.unserialize(payload)
+                payload1 = ser1.serialize(msg)
+                msg1 = ser1.unserialize(payload1)
                 msg1 = msg1[0]
                 for wamp_ser2 in self._test_serializers:
                     ser2 = wamp_ser2._serializer
-                    payload = ser2.serialize(msg1)
-                    msg2 = ser2.unserialize(payload)
+                    payload2 = ser2.serialize(msg1)
+                    msg2 = ser2.unserialize(payload2)
                     msg2 = msg2[0]
                     self.assertEqual(msg, msg2)
+                    # print(ser1, len(payload1), ser2, len(payload2))
 
 
 class TestSerializer(unittest.TestCase):

@@ -41,7 +41,7 @@ upload: clean
 		s3://fabric-deploy/autobahn/
 
 # cleanup everything
-clean:
+clean: clean_docs
 	-rm -f ./*.so
 	-rm -rf ./docs/build
 	-rm -rf ./.cache
@@ -73,7 +73,7 @@ publish: clean
 	twine upload dist/*
 
 clean_docs:
-	-rm -rf ./docs/build
+	-rm -rf ./docs/_build
 
 docs:
 	tox -e sphinx
