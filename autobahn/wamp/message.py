@@ -33,7 +33,7 @@ from autobahn.wamp.exception import ProtocolError, InvalidUriError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
 try:
-    import cbor
+    import cbor2
     import flatbuffers
     from autobahn.wamp import message_fbs
 except ImportError:
@@ -1987,7 +1987,7 @@ class Publish(Message):
     def args(self):
         if self._args is None and self._from_fbs:
             if self._from_fbs.ArgsLength():
-                self._args = cbor.loads(bytes(self._from_fbs.ArgsAsBytes()))
+                self._args = cbor2.loads(bytes(self._from_fbs.ArgsAsBytes()))
         return self._args
 
     @args.setter
@@ -1999,7 +1999,7 @@ class Publish(Message):
     def kwargs(self):
         if self._kwargs is None and self._from_fbs:
             if self._from_fbs.KwargsLength():
-                self._kwargs = cbor.loads(bytes(self._from_fbs.KwargsAsBytes()))
+                self._kwargs = cbor2.loads(bytes(self._from_fbs.KwargsAsBytes()))
         return self._kwargs
 
     @kwargs.setter
@@ -2222,11 +2222,11 @@ class Publish(Message):
 
         args = self.args
         if args:
-            args = builder.CreateByteVector(cbor.dumps(args))
+            args = builder.CreateByteVector(cbor2.dumps(args))
 
         kwargs = self.kwargs
         if kwargs:
-            kwargs = builder.CreateByteVector(cbor.dumps(kwargs))
+            kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
 
         payload = self.payload
         if payload:
@@ -3369,7 +3369,7 @@ class Event(Message):
     def args(self):
         if self._args is None and self._from_fbs:
             if self._from_fbs.ArgsLength():
-                self._args = cbor.loads(bytes(self._from_fbs.ArgsAsBytes()))
+                self._args = cbor2.loads(bytes(self._from_fbs.ArgsAsBytes()))
         return self._args
 
     @args.setter
@@ -3381,7 +3381,7 @@ class Event(Message):
     def kwargs(self):
         if self._kwargs is None and self._from_fbs:
             if self._from_fbs.KwargsLength():
-                self._kwargs = cbor.loads(bytes(self._from_fbs.KwargsAsBytes()))
+                self._kwargs = cbor2.loads(bytes(self._from_fbs.KwargsAsBytes()))
         return self._kwargs
 
     @kwargs.setter
@@ -3533,11 +3533,11 @@ class Event(Message):
 
         args = self.args
         if args:
-            args = builder.CreateByteVector(cbor.dumps(args))
+            args = builder.CreateByteVector(cbor2.dumps(args))
 
         kwargs = self.kwargs
         if kwargs:
-            kwargs = builder.CreateByteVector(cbor.dumps(kwargs))
+            kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
 
         payload = self.payload
         if payload:
