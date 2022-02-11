@@ -25,9 +25,11 @@
 ###############################################################################
 
 import os
+import re
 import struct
 import platform
 import math
+import decimal
 from binascii import b2a_hex, a2b_hex
 
 from txaio import time_ns
@@ -358,6 +360,8 @@ else:
                     return '0x' + b2a_hex(obj).decode('ascii')
                 else:
                     return '\x00' + base64.b64encode(obj).decode('ascii')
+            elif isinstance(obj, decimal.Decimal):
+                return str(obj)
             else:
                 return json.JSONEncoder.default(self, obj)
 
@@ -368,6 +372,8 @@ else:
     from json import scanner
     from json.decoder import scanstring
 
+    _DEC_MATCH = re.compile(r'^[\+\-E\.0-9]+$')
+
     class _WAMPJsonDecoder(json.JSONDecoder):
 
         def __init__(self, *args, **kwargs):
@@ -377,6 +383,12 @@ else:
             else:
                 self._use_binary_hex_encoding = False
 
+            if 'use_decimal_from_str' in kwargs:
+                self._use_decimal_from_str = kwargs['use_decimal_from_str']
+                del kwargs['use_decimal_from_str']
+            else:
+                self._use_decimal_from_str = False
+
             json.JSONDecoder.__init__(self, *args, **kwargs)
 
             def _parse_string(*args, **kwargs):
@@ -384,9 +396,17 @@ else:
                 if self._use_binary_hex_encoding:
                     if s and s[0:2] == '0x':
                         s = a2b_hex(s[2:])
+                        return s, idx
                 else:
                     if s and s[0] == '\x00':
                         s = base64.b64decode(s[1:])
+                        return s, idx
+                if self._use_decimal_from_str and _DEC_MATCH.match(s):
+                    try:
+                        s = decimal.Decimal(s)
+                        return s, idx
+                    except decimal.InvalidOperation:
+                        pass
                 return s, idx
 
             self.parse_string = _parse_string
@@ -398,9 +418,10 @@ else:
             # not the C version, as the latter won't work
             # self.scan_once = scanner.make_scanner(self)
 
-    def _loads(s, use_binary_hex_encoding=False):
+    def _loads(s, use_binary_hex_encoding=False, use_decimal_from_str=False):
         return json.loads(s,
                           use_binary_hex_encoding=use_binary_hex_encoding,
+                          use_decimal_from_str=use_decimal_from_str,
                           cls=_WAMPJsonDecoder)
 
     def _dumps(obj, use_binary_hex_encoding=False):
@@ -425,14 +446,23 @@ class JsonObjectSerializer(object):
 
     BINARY = False
 
-    def __init__(self, batched=False, use_binary_hex_encoding=False):
+    def __init__(self, batched=False, use_binary_hex_encoding=False, use_decimal_from_str=False):
         """
 
         :param batched: Flag that controls whether serializer operates in batched mode.
         :type batched: bool
+
+        :param use_binary_hex_encoding: Flag to enable HEX encoding prefixed with ``"0x"``,
+            otherwise prefix binaries with a ``\0`` byte.
+        :type use_binary_hex_encoding: bool
+
+        :param use_decimal_from_str: Flag to automatically encode Decimals as strings, and
+            to try to parse strings as Decimals.
+        :type use_decimal_from_str: bool
         """
         self._batched = batched
         self._use_binary_hex_encoding = use_binary_hex_encoding
+        self._use_decimal_from_str = use_decimal_from_str
 
     def serialize(self, obj):
         """
@@ -456,7 +486,9 @@ class JsonObjectSerializer(object):
             chunks = [payload]
         if len(chunks) == 0:
             raise Exception("batch format error")
-        return [_loads(data.decode('utf8'), use_binary_hex_encoding=self._use_binary_hex_encoding) for data in chunks]
+        return [_loads(data.decode('utf8'),
+                       use_binary_hex_encoding=self._use_binary_hex_encoding,
+                       use_decimal_from_str=self._use_decimal_from_str) for data in chunks]
 
 
 IObjectSerializer.register(JsonObjectSerializer)

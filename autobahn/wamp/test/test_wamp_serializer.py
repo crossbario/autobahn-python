@@ -26,8 +26,10 @@
 
 import os
 import unittest
-import txaio
+import random
+from decimal import Decimal
 
+import txaio
 if os.environ.get('USE_TWISTED', False):
     txaio.use_twisted()
 elif os.environ.get('USE_ASYNCIO', False):
@@ -224,6 +226,46 @@ class TestFlatBuffersSerializer(unittest.TestCase):
             self.assertEqual(msg, msg2)
             # self.assertEqual(msg.subscription, msg2.subscription)
             # self.assertEqual(msg.publication, msg2.publication)
+
+
+class TestJsonSerializer(unittest.TestCase):
+    def test_no_decimal(self):
+        """
+        Test without ``use_decimal_from_str`` feature of JSON object serializer.
+        """
+        ser = serializer.JsonObjectSerializer(use_decimal_from_str=False)
+        objs = [
+            {
+                'a': random.random(),
+                'b': random.randint(0, 2**53),
+                'c': random.randint(0, 2**64),
+                'd': random.randint(0, 2**128),
+                'e': random.randint(0, 2**256),
+                'x': 0.123,
+                'y': os.urandom(8),
+                'z': [1, 2, 3, 0.123, 10e38, 10e38, os.urandom(8)]}
+        ]
+        for obj in objs:
+            self.assertEqual(obj, ser.unserialize(ser.serialize(obj))[0])
+
+    def test_decimal(self):
+        """
+        Test ``use_decimal_from_str`` feature of JSON object serializer.
+        """
+        ser = serializer.JsonObjectSerializer(use_decimal_from_str=True)
+        objs = [
+            {
+                'a': random.random(),
+                'b': random.randint(0, 2**53),
+                'c': random.randint(0, 2**64),
+                'd': random.randint(0, 2**128),
+                'e': random.randint(0, 2**256),
+                'x': Decimal('0.123'),
+                'y': os.urandom(8),
+                'z': [1, 2, 3, 0.123, 10e38, Decimal('10e38'), os.urandom(8)]}
+        ]
+        for obj in objs:
+            self.assertEqual(obj, ser.unserialize(ser.serialize(obj))[0])
 
 
 class TestSerializer(unittest.TestCase):
