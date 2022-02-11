@@ -41,7 +41,7 @@ upload: clean
 		s3://fabric-deploy/autobahn/
 
 # cleanup everything
-clean:
+clean: clean_docs
 	-rm -f ./*.so
 	-rm -rf ./docs/build
 	-rm -rf ./.cache
@@ -73,7 +73,7 @@ publish: clean
 	twine upload dist/*
 
 clean_docs:
-	-rm -rf ./docs/build
+	-rm -rf ./docs/_build
 
 docs:
 	tox -e sphinx
@@ -175,8 +175,8 @@ test_util:
 test_rng:
 	USE_TWISTED=1 trial autobahn.test.test_rng
 
-test_tx_serializer:
-	USE_TWISTED=1 trial autobahn.wamp.test.test_serializer
+test_serializer:
+	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_serializer
 
 test_tx_cryptobox:
 	USE_TWISTED=1 trial autobahn.wamp.test.test_cryptobox

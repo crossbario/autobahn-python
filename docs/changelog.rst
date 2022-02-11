@@ -5,6 +5,13 @@
 Changelog
 =========
 
+master
+------
+
+* new: support decimal numbers WAMP serialization and round-tripping in both JSON and CBOR
+* fix: only depend on cbor2 (for WAMP CBOR serialization), not also cbor
+* fix: PyInstaller and Docker build / CI issues
+
 22.1.1
 ------
 

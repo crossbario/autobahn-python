@@ -79,7 +79,6 @@ else:
 
 extras_require_serialization.extend([
     'cbor2>=5.2.0',             # MIT license
-    'cbor>=1.0.0',              # Apache 2.0 license
     'py-ubjson>=0.16.1',        # Apache 2.0 license
     'flatbuffers>=1.12',        # Apache 2.0 license
 ])
