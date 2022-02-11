@@ -27,6 +27,7 @@
 import os
 import unittest
 import random
+import decimal
 from decimal import Decimal
 
 import txaio
@@ -228,7 +229,20 @@ class TestFlatBuffersSerializer(unittest.TestCase):
             # self.assertEqual(msg.publication, msg2.publication)
 
 
-class TestJsonSerializer(unittest.TestCase):
+class TestDecimalSerializer(unittest.TestCase):
+    """
+    binary fixed-point
+    binary floating-point:          float (float32), double (float64)
+    decimal floating-point:         decimal128, decimal256
+    decimal fixed-point:            NUMERIC(precision, scale)
+    decimal arbitrary precision:    NUMERIC, decimal.Decimal
+
+    https://developer.nvidia.com/blog/implementing-high-precision-decimal-arithmetic-with-cuda-int128/
+    """
+    def setUp(self) -> None:
+        # enough for decimal256 precision arithmetic (76 significand decimal digits)
+        decimal.getcontext().prec = 76
+
     def test_no_decimal(self):
         """
         Test without ``use_decimal_from_str`` feature of JSON object serializer.
@@ -241,12 +255,26 @@ class TestJsonSerializer(unittest.TestCase):
                 'c': random.randint(0, 2**64),
                 'd': random.randint(0, 2**128),
                 'e': random.randint(0, 2**256),
-                'x': 0.123,
+                # float64: 52 binary digits, precision of 15-17 significant decimal digits
+                'f': 0.12345678901234567,
+                'g': 0.8765432109876545,
                 'y': os.urandom(8),
-                'z': [1, 2, 3, 0.123, 10e38, 10e38, os.urandom(8)]}
+                'z': [
+                    -1,
+                    0,
+                    1,
+                    True,
+                    None,
+                    0.12345678901234567,
+                    0.8765432109876545,
+                    os.urandom(8)
+                ]
+            }
         ]
         for obj in objs:
-            self.assertEqual(obj, ser.unserialize(ser.serialize(obj))[0])
+            _obj = ser.unserialize(ser.serialize(obj))[0]
+            self.assertEqual(obj, _obj)
+            self.assertEqual(1.0000000000000002, _obj['f'] + _obj['g'])
 
     def test_decimal(self):
         """
@@ -260,12 +288,38 @@ class TestJsonSerializer(unittest.TestCase):
                 'c': random.randint(0, 2**64),
                 'd': random.randint(0, 2**128),
                 'e': random.randint(0, 2**256),
-                'x': Decimal('0.123'),
+                # float64: 52 binary digits, precision of 15-17 significant decimal digits
+                'f': 0.12345678901234567,
+                'g': 0.8765432109876545,
+                # decimal128: precision of 38 significant decimal digits
+                'h': Decimal('0.1234567890123456789012345678901234567'),
+                'i': Decimal('0.8765432109876543210987654321098765434'),
+                # decimal256: precision of 76 significant decimal digits
+                'j': Decimal('0.123456789012345678901234567890123456701234567890123456789012345678901234567'),
+                'k': Decimal('0.876543210987654321098765432109876543298765432109876543210987654321098765434'),
                 'y': os.urandom(8),
-                'z': [1, 2, 3, 0.123, 10e38, Decimal('10e38'), os.urandom(8)]}
+                'z': [
+                    -1,
+                    0,
+                    1,
+                    True,
+                    None,
+                    0.12345678901234567,
+                    0.8765432109876545,
+                    Decimal('0.1234567890123456789012345678901234567'),
+                    Decimal('0.8765432109876543210987654321098765434'),
+                    Decimal('0.123456789012345678901234567890123456701234567890123456789012345678901234567'),
+                    Decimal('0.876543210987654321098765432109876543298765432109876543210987654321098765434'),
+                    os.urandom(8)
+                ]
+            }
         ]
         for obj in objs:
-            self.assertEqual(obj, ser.unserialize(ser.serialize(obj))[0])
+            _obj = ser.unserialize(ser.serialize(obj))[0]
+            self.assertEqual(obj, _obj)
+            self.assertEqual(1.0000000000000002, _obj['f'] + _obj['g'])
+            self.assertEqual(Decimal('1.0000000000000000000000000000000000001'), _obj['h'] + _obj['i'])
+            self.assertEqual(Decimal('1.000000000000000000000000000000000000000000000000000000000000000000000000001'), _obj['j'] + _obj['k'])
 
 
 class TestSerializer(unittest.TestCase):

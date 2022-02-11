@@ -175,8 +175,8 @@ test_util:
 test_rng:
 	USE_TWISTED=1 trial autobahn.test.test_rng
 
-test_tx_serializer:
-	USE_TWISTED=1 trial autobahn.wamp.test.test_serializer
+test_serializer:
+	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_serializer
 
 test_tx_cryptobox:
 	USE_TWISTED=1 trial autobahn.wamp.test.test_cryptobox
