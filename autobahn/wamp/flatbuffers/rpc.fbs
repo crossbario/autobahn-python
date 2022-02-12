@@ -39,6 +39,9 @@ table Call
     // When set, indicates that the caller wants to receive progressive call results.
     receive_progress: bool;
 
+    // Application provided transaction hash for router-side throttle/deduplicate.
+    transaction_hash: string;
+
     // Caller WAMP session ID (optional).
     caller: uint64;
 
@@ -190,6 +193,9 @@ table Invocation
 
     // Indicates if the callee should produce progressive results.
     receive_progress: bool;
+
+    // Application provided transaction hash for router-side throttle/deduplicate.
+    transaction_hash: string;
 
     // The WAMP session ID of the caller. Only filled if caller is disclosed.
     caller: uint64;

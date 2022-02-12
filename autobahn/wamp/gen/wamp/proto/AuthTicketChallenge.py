@@ -3,20 +3,32 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class AuthTicketChallenge(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsAuthTicketChallenge(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = AuthTicketChallenge()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsAuthTicketChallenge(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # AuthTicketChallenge
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
-def AuthTicketChallengeStart(builder): builder.StartObject(0)
-def AuthTicketChallengeEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(0)
+def AuthTicketChallengeStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def End(builder): return builder.EndObject()
+def AuthTicketChallengeEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

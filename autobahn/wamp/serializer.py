@@ -387,6 +387,14 @@ else:
             else:
                 self._use_decimal_from_str = False
 
+            if 'use_decimal_from_float' in kwargs:
+                self._use_decimal_from_float = kwargs['use_decimal_from_float']
+                del kwargs['use_decimal_from_float']
+                if self._use_decimal_from_float:
+                    kwargs['parse_float'] = decimal.Decimal
+            else:
+                self._use_decimal_from_str = False
+
             json.JSONDecoder.__init__(self, *args, **kwargs)
 
             def _parse_string(*args, **kwargs):
@@ -416,10 +424,11 @@ else:
             # not the C version, as the latter won't work
             # self.scan_once = scanner.make_scanner(self)
 
-    def _loads(s, use_binary_hex_encoding=False, use_decimal_from_str=False):
+    def _loads(s, use_binary_hex_encoding=False, use_decimal_from_str=False, use_decimal_from_float=False):
         return json.loads(s,
                           use_binary_hex_encoding=use_binary_hex_encoding,
                           use_decimal_from_str=use_decimal_from_str,
+                          use_decimal_from_float=use_decimal_from_float,
                           cls=_WAMPJsonDecoder)
 
     def _dumps(obj, use_binary_hex_encoding=False):
@@ -444,7 +453,7 @@ class JsonObjectSerializer(object):
 
     BINARY = False
 
-    def __init__(self, batched=False, use_binary_hex_encoding=False, use_decimal_from_str=False):
+    def __init__(self, batched=False, use_binary_hex_encoding=False, use_decimal_from_str=False, use_decimal_from_float=False):
         """
 
         :param batched: Flag that controls whether serializer operates in batched mode.
@@ -461,6 +470,7 @@ class JsonObjectSerializer(object):
         self._batched = batched
         self._use_binary_hex_encoding = use_binary_hex_encoding
         self._use_decimal_from_str = use_decimal_from_str
+        self._use_decimal_from_float = use_decimal_from_float
 
     def serialize(self, obj):
         """
@@ -486,7 +496,8 @@ class JsonObjectSerializer(object):
             raise Exception("batch format error")
         return [_loads(data.decode('utf8'),
                        use_binary_hex_encoding=self._use_binary_hex_encoding,
-                       use_decimal_from_str=self._use_decimal_from_str) for data in chunks]
+                       use_decimal_from_str=self._use_decimal_from_str,
+                       use_decimal_from_float=self._use_decimal_from_float) for data in chunks]
 
 
 IObjectSerializer.register(JsonObjectSerializer)

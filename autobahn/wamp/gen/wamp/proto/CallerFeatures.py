@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class CallerFeatures(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsCallerFeatures(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = CallerFeatures()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsCallerFeatures(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # CallerFeatures
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -60,11 +66,35 @@ class CallerFeatures(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def CallerFeaturesStart(builder): builder.StartObject(6)
-def CallerFeaturesAddCallerIdentification(builder, callerIdentification): builder.PrependBoolSlot(0, callerIdentification, 0)
-def CallerFeaturesAddCallTimeout(builder, callTimeout): builder.PrependBoolSlot(1, callTimeout, 0)
-def CallerFeaturesAddCallCanceling(builder, callCanceling): builder.PrependBoolSlot(2, callCanceling, 0)
-def CallerFeaturesAddProgressiveCallResults(builder, progressiveCallResults): builder.PrependBoolSlot(3, progressiveCallResults, 0)
-def CallerFeaturesAddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(4, payloadTransparency, 0)
-def CallerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(5, payloadEncryptionCryptobox, 0)
-def CallerFeaturesEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(6)
+def CallerFeaturesStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddCallerIdentification(builder, callerIdentification): builder.PrependBoolSlot(0, callerIdentification, 0)
+def CallerFeaturesAddCallerIdentification(builder, callerIdentification):
+    """This method is deprecated. Please switch to AddCallerIdentification."""
+    return AddCallerIdentification(builder, callerIdentification)
+def AddCallTimeout(builder, callTimeout): builder.PrependBoolSlot(1, callTimeout, 0)
+def CallerFeaturesAddCallTimeout(builder, callTimeout):
+    """This method is deprecated. Please switch to AddCallTimeout."""
+    return AddCallTimeout(builder, callTimeout)
+def AddCallCanceling(builder, callCanceling): builder.PrependBoolSlot(2, callCanceling, 0)
+def CallerFeaturesAddCallCanceling(builder, callCanceling):
+    """This method is deprecated. Please switch to AddCallCanceling."""
+    return AddCallCanceling(builder, callCanceling)
+def AddProgressiveCallResults(builder, progressiveCallResults): builder.PrependBoolSlot(3, progressiveCallResults, 0)
+def CallerFeaturesAddProgressiveCallResults(builder, progressiveCallResults):
+    """This method is deprecated. Please switch to AddProgressiveCallResults."""
+    return AddProgressiveCallResults(builder, progressiveCallResults)
+def AddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(4, payloadTransparency, 0)
+def CallerFeaturesAddPayloadTransparency(builder, payloadTransparency):
+    """This method is deprecated. Please switch to AddPayloadTransparency."""
+    return AddPayloadTransparency(builder, payloadTransparency)
+def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(5, payloadEncryptionCryptobox, 0)
+def CallerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
+    """This method is deprecated. Please switch to AddPayloadEncryptionCryptobox."""
+    return AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
+def End(builder): return builder.EndObject()
+def CallerFeaturesEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

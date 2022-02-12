@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Authenticate(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsAuthenticate(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Authenticate()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsAuthenticate(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Authenticate
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -30,13 +36,25 @@ class Authenticate(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .Map import Map
+            from wamp.Map import Map
             obj = Map()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-def AuthenticateStart(builder): builder.StartObject(2)
-def AuthenticateAddSignature(builder, signature): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(signature), 0)
-def AuthenticateAddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
-def AuthenticateEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def AuthenticateStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddSignature(builder, signature): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(signature), 0)
+def AuthenticateAddSignature(builder, signature):
+    """This method is deprecated. Please switch to AddSignature."""
+    return AddSignature(builder, signature)
+def AddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
+def AuthenticateAddExtra(builder, extra):
+    """This method is deprecated. Please switch to AddExtra."""
+    return AddExtra(builder, extra)
+def End(builder): return builder.EndObject()
+def AuthenticateEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

@@ -678,12 +678,13 @@ class EventDetails(object):
         'publisher_authrole',
         'topic',
         'retained',
+        'transaction_hash',
         'enc_algo',
         'forward_for',
     )
 
     def __init__(self, subscription, publication, publisher=None, publisher_authid=None, publisher_authrole=None,
-                 topic=None, retained=None, enc_algo=None, forward_for=None):
+                 topic=None, retained=None, transaction_hash=None, enc_algo=None, forward_for=None):
         """
 
         :param subscription: The (client side) subscription object on which this event is delivered.
@@ -715,6 +716,11 @@ class EventDetails(object):
             was in use (currently, either ``None`` or ``'cryptobox'``).
         :type enc_algo: str or None
 
+        :param transaction_hash: An application provided transaction hash for the originating call, which may
+            be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+        :type transaction_hash: str
+
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
@@ -725,6 +731,7 @@ class EventDetails(object):
         assert(publisher_authrole is None or type(publisher_authrole) == str)
         assert(topic is None or type(topic) == str)
         assert(retained is None or type(retained) is bool)
+        assert (transaction_hash is None or type(transaction_hash) == str)
         assert(enc_algo is None or type(enc_algo) == str)
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
@@ -741,11 +748,12 @@ class EventDetails(object):
         self.publisher_authrole = publisher_authrole
         self.topic = topic
         self.retained = retained
+        self.transaction_hash = transaction_hash
         self.enc_algo = enc_algo
         self.forward_for = forward_for
 
     def __str__(self):
-        return "EventDetails(subscription={}, publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={}, forward_for={})".format(self.subscription, self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.forward_for)
+        return "EventDetails(subscription={}, publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, transaction_hash={}, enc_algo={}, forward_for={})".format(self.subscription, self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.transaction_hash, self.enc_algo, self.forward_for)
 
 
 @public
@@ -765,6 +773,7 @@ class PublishOptions(object):
         'eligible_authid',
         'eligible_authrole',
         'retain',
+        'transaction_hash',
         'forward_for',
         'correlation_id',
         'correlation_uri',
@@ -783,6 +792,7 @@ class PublishOptions(object):
                  eligible_authrole=None,
                  retain=None,
                  forward_for=None,
+                 transaction_hash=None,
                  correlation_id=None,
                  correlation_uri=None,
                  correlation_is_anchor=None,
@@ -818,6 +828,11 @@ class PublishOptions(object):
         :param retain: If ``True``, request the broker retain this event.
         :type retain: bool or None
 
+        :param transaction_hash: An application provided transaction hash for the published event, which may
+            be used in the router to throttle or deduplicate the events on the topic. See the discussion
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+        :type transaction_hash: str
+
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
@@ -830,6 +845,7 @@ class PublishOptions(object):
         assert(eligible_authid is None or type(eligible_authid) == str or (type(eligible_authid) == list and all(type(x) == str for x in eligible_authid)))
         assert(eligible_authrole is None or type(eligible_authrole) == str or (type(eligible_authrole) == list and all(type(x) == str for x in eligible_authrole)))
         assert(retain is None or type(retain) == bool)
+        assert(transaction_hash is None or type(transaction_hash) == str)
 
         assert(forward_for is None or type(forward_for) == list), 'forward_for, when present, must have list type - was {}'.format(type(forward_for))
         if forward_for:
@@ -851,6 +867,7 @@ class PublishOptions(object):
         self.eligible_authid = eligible_authid
         self.eligible_authrole = eligible_authrole
         self.retain = retain
+        self.transaction_hash = transaction_hash
         self.forward_for = forward_for
 
         self.correlation_id = correlation_id
@@ -891,13 +908,16 @@ class PublishOptions(object):
         if self.retain is not None:
             options['retain'] = self.retain
 
+        if self.transaction_hash is not None:
+            options['transaction_hash'] = self.transaction_hash
+
         if self.forward_for is not None:
             options['forward_for'] = self.forward_for
 
         return options
 
     def __str__(self):
-        return "PublishOptions(acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, forward_for={})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.forward_for)
+        return "PublishOptions(acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, transaction_hash={}, forward_for={})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.transaction_hash, self.forward_for)
 
 
 @public
@@ -1030,12 +1050,13 @@ class CallDetails(object):
         'caller_authid',
         'caller_authrole',
         'procedure',
+        'transaction_hash',
         'enc_algo',
         'forward_for',
     )
 
     def __init__(self, registration, progress=None, caller=None, caller_authid=None,
-                 caller_authrole=None, procedure=None, enc_algo=None, forward_for=None):
+                 caller_authrole=None, procedure=None, transaction_hash=None, enc_algo=None, forward_for=None):
         """
 
         :param registration: The (client side) registration object this invocation is delivered on.
@@ -1072,6 +1093,7 @@ class CallDetails(object):
         assert(caller_authid is None or type(caller_authid) == str)
         assert(caller_authrole is None or type(caller_authrole) == str)
         assert(procedure is None or type(procedure) == str)
+        assert (transaction_hash is None or type(transaction_hash) == str)
         assert(enc_algo is None or type(enc_algo) == str)
 
         assert(forward_for is None or type(forward_for) == list)
@@ -1088,11 +1110,12 @@ class CallDetails(object):
         self.caller_authid = caller_authid
         self.caller_authrole = caller_authrole
         self.procedure = procedure
+        self.transaction_hash = transaction_hash
         self.enc_algo = enc_algo
         self.forward_for = forward_for
 
     def __str__(self):
-        return "CallDetails(registration={}, progress={}, caller={}, caller_authid={}, caller_authrole={}, procedure=<{}>, enc_algo={}, forward_for={})".format(self.registration, self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo, self.forward_for)
+        return "CallDetails(registration={}, progress={}, caller={}, caller_authid={}, caller_authrole={}, procedure=<{}>, transaction_hash={}, enc_algo={}, forward_for={})".format(self.registration, self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.transaction_hash, self.enc_algo, self.forward_for)
 
 
 @public
@@ -1104,6 +1127,7 @@ class CallOptions(object):
     __slots__ = (
         'on_progress',
         'timeout',
+        'transaction_hash',
         'caller',
         'caller_authid',
         'caller_authrole',
@@ -1118,6 +1142,7 @@ class CallOptions(object):
     def __init__(self,
                  on_progress=None,
                  timeout=None,
+                 transaction_hash=None,
                  caller=None,
                  caller_authid=None,
                  caller_authrole=None,
@@ -1136,11 +1161,17 @@ class CallOptions(object):
         :param timeout: Time in seconds after which the call should be automatically canceled.
         :type timeout: float
 
+        :param transaction_hash: An application provided transaction hash for the originating call, which may
+            be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+        :type transaction_hash: str
+
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
         assert(on_progress is None or callable(on_progress))
         assert(timeout is None or (type(timeout) in list((int, )) + [float] and timeout > 0))
+        assert(transaction_hash is None or type(transaction_hash) == str)
         assert(details is None or type(details) == bool)
         assert(caller is None or type(caller) == int)
         assert(caller_authid is None or type(caller_authid) == str)
@@ -1155,6 +1186,7 @@ class CallOptions(object):
 
         self.on_progress = on_progress
         self.timeout = timeout
+        self.transaction_hash = transaction_hash
 
         self.caller = caller
         self.caller_authid = caller_authid
@@ -1182,6 +1214,9 @@ class CallOptions(object):
         if self.on_progress is not None:
             options['receive_progress'] = True
 
+        if self.transaction_hash is not None:
+            options['transaction_hash'] = self.transaction_hash
+
         if self.forward_for is not None:
             options['forward_for'] = self.forward_for
 
@@ -1197,7 +1232,7 @@ class CallOptions(object):
         return options
 
     def __str__(self):
-        return "CallOptions(on_progress={}, timeout={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={}, details={})".format(self.on_progress, self.timeout, self.caller, self.caller_authid, self.caller_authrole, self.forward_for, self.details)
+        return "CallOptions(on_progress={}, timeout={}, transaction_hash={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={}, details={})".format(self.on_progress, self.timeout, self.transaction_hash, self.caller, self.caller_authid, self.caller_authrole, self.forward_for, self.details)
 
 
 @public

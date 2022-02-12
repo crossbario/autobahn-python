@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Interrupt(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsInterrupt(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Interrupt()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsInterrupt(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Interrupt
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,7 +38,62 @@ class Interrupt(object):
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 1
 
-def InterruptStart(builder): builder.StartObject(2)
-def InterruptAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def InterruptAddMode(builder, mode): builder.PrependUint8Slot(1, mode, 1)
-def InterruptEnd(builder): return builder.EndObject()
+    # Interrupt
+    def Reason(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Interrupt
+    def ForwardFor(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        if o != 0:
+            x = self._tab.Vector(o)
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
+            from wamp.proto.Principal import Principal
+            obj = Principal()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # Interrupt
+    def ForwardForLength(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        if o != 0:
+            return self._tab.VectorLen(o)
+        return 0
+
+    # Interrupt
+    def ForwardForIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        return o == 0
+
+def Start(builder): builder.StartObject(4)
+def InterruptStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def InterruptAddRequest(builder, request):
+    """This method is deprecated. Please switch to AddRequest."""
+    return AddRequest(builder, request)
+def AddMode(builder, mode): builder.PrependUint8Slot(1, mode, 1)
+def InterruptAddMode(builder, mode):
+    """This method is deprecated. Please switch to AddMode."""
+    return AddMode(builder, mode)
+def AddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def InterruptAddReason(builder, reason):
+    """This method is deprecated. Please switch to AddReason."""
+    return AddReason(builder, reason)
+def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def InterruptAddForwardFor(builder, forwardFor):
+    """This method is deprecated. Please switch to AddForwardFor."""
+    return AddForwardFor(builder, forwardFor)
+def StartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+def InterruptStartForwardForVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartForwardForVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def InterruptEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

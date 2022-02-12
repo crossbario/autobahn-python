@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Cancel(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsCancel(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Cancel()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsCancel(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Cancel
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,7 +38,51 @@ class Cancel(object):
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
-def CancelStart(builder): builder.StartObject(2)
-def CancelAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def CancelAddMode(builder, mode): builder.PrependUint8Slot(1, mode, 0)
-def CancelEnd(builder): return builder.EndObject()
+    # Cancel
+    def ForwardFor(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            x = self._tab.Vector(o)
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
+            from wamp.proto.Principal import Principal
+            obj = Principal()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # Cancel
+    def ForwardForLength(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            return self._tab.VectorLen(o)
+        return 0
+
+    # Cancel
+    def ForwardForIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        return o == 0
+
+def Start(builder): builder.StartObject(3)
+def CancelStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def CancelAddRequest(builder, request):
+    """This method is deprecated. Please switch to AddRequest."""
+    return AddRequest(builder, request)
+def AddMode(builder, mode): builder.PrependUint8Slot(1, mode, 0)
+def CancelAddMode(builder, mode):
+    """This method is deprecated. Please switch to AddMode."""
+    return AddMode(builder, mode)
+def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def CancelAddForwardFor(builder, forwardFor):
+    """This method is deprecated. Please switch to AddForwardFor."""
+    return AddForwardFor(builder, forwardFor)
+def StartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+def CancelStartForwardForVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartForwardForVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def CancelEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class SubscriberReceived(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsSubscriberReceived(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = SubscriberReceived()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsSubscriberReceived(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # SubscriberReceived
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -69,6 +75,11 @@ class SubscriberReceived(object):
         return 0
 
     # SubscriberReceived
+    def PayloadIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        return o == 0
+
+    # SubscriberReceived
     def EncAlgo(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
@@ -104,15 +115,56 @@ class SubscriberReceived(object):
             return self._tab.VectorLen(o)
         return 0
 
-def SubscriberReceivedStart(builder): builder.StartObject(8)
-def SubscriberReceivedAddPublication(builder, publication): builder.PrependUint64Slot(0, publication, 0)
-def SubscriberReceivedAddSubscriber(builder, subscriber): builder.PrependUint64Slot(1, subscriber, 0)
-def SubscriberReceivedAddSubscriberAuthid(builder, subscriberAuthid): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(subscriberAuthid), 0)
-def SubscriberReceivedAddSubscriberAuthrole(builder, subscriberAuthrole): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(subscriberAuthrole), 0)
-def SubscriberReceivedAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
-def SubscriberReceivedStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def SubscriberReceivedAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(5, encAlgo, 0)
-def SubscriberReceivedAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(6, encSerializer, 0)
-def SubscriberReceivedAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
-def SubscriberReceivedStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def SubscriberReceivedEnd(builder): return builder.EndObject()
+    # SubscriberReceived
+    def EncKeyIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
+        return o == 0
+
+def Start(builder): builder.StartObject(8)
+def SubscriberReceivedStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddPublication(builder, publication): builder.PrependUint64Slot(0, publication, 0)
+def SubscriberReceivedAddPublication(builder, publication):
+    """This method is deprecated. Please switch to AddPublication."""
+    return AddPublication(builder, publication)
+def AddSubscriber(builder, subscriber): builder.PrependUint64Slot(1, subscriber, 0)
+def SubscriberReceivedAddSubscriber(builder, subscriber):
+    """This method is deprecated. Please switch to AddSubscriber."""
+    return AddSubscriber(builder, subscriber)
+def AddSubscriberAuthid(builder, subscriberAuthid): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(subscriberAuthid), 0)
+def SubscriberReceivedAddSubscriberAuthid(builder, subscriberAuthid):
+    """This method is deprecated. Please switch to AddSubscriberAuthid."""
+    return AddSubscriberAuthid(builder, subscriberAuthid)
+def AddSubscriberAuthrole(builder, subscriberAuthrole): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(subscriberAuthrole), 0)
+def SubscriberReceivedAddSubscriberAuthrole(builder, subscriberAuthrole):
+    """This method is deprecated. Please switch to AddSubscriberAuthrole."""
+    return AddSubscriberAuthrole(builder, subscriberAuthrole)
+def AddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+def SubscriberReceivedAddPayload(builder, payload):
+    """This method is deprecated. Please switch to AddPayload."""
+    return AddPayload(builder, payload)
+def StartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def SubscriberReceivedStartPayloadVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartPayloadVector(builder, numElems)
+def AddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(5, encAlgo, 0)
+def SubscriberReceivedAddEncAlgo(builder, encAlgo):
+    """This method is deprecated. Please switch to AddEncAlgo."""
+    return AddEncAlgo(builder, encAlgo)
+def AddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(6, encSerializer, 0)
+def SubscriberReceivedAddEncSerializer(builder, encSerializer):
+    """This method is deprecated. Please switch to AddEncSerializer."""
+    return AddEncSerializer(builder, encSerializer)
+def AddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+def SubscriberReceivedAddEncKey(builder, encKey):
+    """This method is deprecated. Please switch to AddEncKey."""
+    return AddEncKey(builder, encKey)
+def StartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def SubscriberReceivedStartEncKeyVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartEncKeyVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def SubscriberReceivedEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

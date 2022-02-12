@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class AuthScramRequest(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsAuthScramRequest(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = AuthScramRequest()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsAuthScramRequest(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # AuthScramRequest
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,7 +38,19 @@ class AuthScramRequest(object):
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
-def AuthScramRequestStart(builder): builder.StartObject(2)
-def AuthScramRequestAddNonce(builder, nonce): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(nonce), 0)
-def AuthScramRequestAddChannelBinding(builder, channelBinding): builder.PrependUint8Slot(1, channelBinding, 0)
-def AuthScramRequestEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def AuthScramRequestStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddNonce(builder, nonce): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(nonce), 0)
+def AuthScramRequestAddNonce(builder, nonce):
+    """This method is deprecated. Please switch to AddNonce."""
+    return AddNonce(builder, nonce)
+def AddChannelBinding(builder, channelBinding): builder.PrependUint8Slot(1, channelBinding, 0)
+def AuthScramRequestAddChannelBinding(builder, channelBinding):
+    """This method is deprecated. Please switch to AddChannelBinding."""
+    return AddChannelBinding(builder, channelBinding)
+def End(builder): return builder.EndObject()
+def AuthScramRequestEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

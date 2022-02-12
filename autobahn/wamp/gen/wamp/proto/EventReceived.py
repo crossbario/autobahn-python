@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class EventReceived(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsEventReceived(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = EventReceived()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsEventReceived(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # EventReceived
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -46,6 +52,11 @@ class EventReceived(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # EventReceived
+    def PayloadIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        return o == 0
 
     # EventReceived
     def EncAlgo(self):
@@ -83,12 +94,44 @@ class EventReceived(object):
             return self._tab.VectorLen(o)
         return 0
 
-def EventReceivedStart(builder): builder.StartObject(5)
-def EventReceivedAddPublication(builder, publication): builder.PrependUint64Slot(0, publication, 0)
-def EventReceivedAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
-def EventReceivedStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def EventReceivedAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(2, encAlgo, 0)
-def EventReceivedAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(3, encSerializer, 0)
-def EventReceivedAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
-def EventReceivedStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def EventReceivedEnd(builder): return builder.EndObject()
+    # EventReceived
+    def EncKeyIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        return o == 0
+
+def Start(builder): builder.StartObject(5)
+def EventReceivedStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddPublication(builder, publication): builder.PrependUint64Slot(0, publication, 0)
+def EventReceivedAddPublication(builder, publication):
+    """This method is deprecated. Please switch to AddPublication."""
+    return AddPublication(builder, publication)
+def AddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+def EventReceivedAddPayload(builder, payload):
+    """This method is deprecated. Please switch to AddPayload."""
+    return AddPayload(builder, payload)
+def StartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def EventReceivedStartPayloadVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartPayloadVector(builder, numElems)
+def AddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(2, encAlgo, 0)
+def EventReceivedAddEncAlgo(builder, encAlgo):
+    """This method is deprecated. Please switch to AddEncAlgo."""
+    return AddEncAlgo(builder, encAlgo)
+def AddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(3, encSerializer, 0)
+def EventReceivedAddEncSerializer(builder, encSerializer):
+    """This method is deprecated. Please switch to AddEncSerializer."""
+    return AddEncSerializer(builder, encSerializer)
+def AddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+def EventReceivedAddEncKey(builder, encKey):
+    """This method is deprecated. Please switch to AddEncKey."""
+    return AddEncKey(builder, encKey)
+def StartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def EventReceivedStartEncKeyVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartEncKeyVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def EventReceivedEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

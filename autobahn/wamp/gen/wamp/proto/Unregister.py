@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Unregister(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsUnregister(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Unregister()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsUnregister(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Unregister
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,7 +38,19 @@ class Unregister(object):
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def UnregisterStart(builder): builder.StartObject(2)
-def UnregisterAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def UnregisterAddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
-def UnregisterEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def UnregisterStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def UnregisterAddRequest(builder, request):
+    """This method is deprecated. Please switch to AddRequest."""
+    return AddRequest(builder, request)
+def AddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
+def UnregisterAddRegistration(builder, registration):
+    """This method is deprecated. Please switch to AddRegistration."""
+    return AddRegistration(builder, registration)
+def End(builder): return builder.EndObject()
+def UnregisterEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)
