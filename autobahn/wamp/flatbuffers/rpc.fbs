@@ -194,6 +194,9 @@ table Invocation
     // Indicates if the callee should produce progressive results.
     receive_progress: bool;
 
+    // Application provided transaction hash for router-side throttle/deduplicate.
+    transaction_hash: string;
+
     // The WAMP session ID of the caller. Only filled if caller is disclosed.
     caller: uint64;
 

@@ -3780,9 +3780,11 @@ class Event(Message):
                 raise ProtocolError("invalid type {0} for 'retained' detail in EVENT".format(type(retained)))
 
         if 'transaction_hash' in details:
+
             detail_transaction_hash = details['transaction_hash']
             if type(detail_transaction_hash) != str:
                 raise ProtocolError("invalid type {0} for 'transaction_hash' detail in EVENT".format(type(detail_transaction_hash)))
+
             transaction_hash = detail_transaction_hash
 
         if 'x_acknowledged_delivery' in details:
@@ -5289,6 +5291,7 @@ class Invocation(Message):
         'caller_authid',
         'caller_authrole',
         'procedure',
+        'transaction_hash',
         'enc_algo',
         'enc_key',
         'enc_serializer',
@@ -5307,6 +5310,7 @@ class Invocation(Message):
                  caller_authid=None,
                  caller_authrole=None,
                  procedure=None,
+                 transaction_hash=None,
                  enc_algo=None,
                  enc_key=None,
                  enc_serializer=None,
@@ -5349,6 +5353,11 @@ class Invocation(Message):
         :param procedure: For pattern-based registrations, the invocation MUST include the actual procedure being called.
         :type procedure: str or None
 
+        :param transaction_hash: An application provided transaction hash for the originating call, which may
+            be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+        :type transaction_hash: str
+
         :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
         :type enc_algo: str or None
 
@@ -5373,6 +5382,7 @@ class Invocation(Message):
         assert(caller_authid is None or type(caller_authid) == str)
         assert(caller_authrole is None or type(caller_authrole) == str)
         assert(procedure is None or type(procedure) == str)
+        assert(transaction_hash is None or type(transaction_hash) == str)
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) == str)
         assert(enc_serializer is None or is_valid_enc_serializer(enc_serializer))
@@ -5398,6 +5408,7 @@ class Invocation(Message):
         self.caller_authid = caller_authid
         self.caller_authrole = caller_authrole
         self.procedure = procedure
+        self.transaction_hash = transaction_hash
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
@@ -5465,6 +5476,7 @@ class Invocation(Message):
         caller_authid = None
         caller_authrole = None
         procedure = None
+        transaction_hash = None
         forward_for = None
 
         if 'timeout' in details:
@@ -5518,6 +5530,14 @@ class Invocation(Message):
 
             procedure = detail_procedure
 
+        if 'transaction_hash' in details:
+
+            detail_transaction_hash = details['transaction_hash']
+            if type(detail_transaction_hash) != str:
+                raise ProtocolError("invalid type {0} for 'transaction_hash' detail in EVENT".format(type(detail_transaction_hash)))
+
+            transaction_hash = detail_transaction_hash
+
         if 'forward_for' in details:
             forward_for = details['forward_for']
             valid = False
@@ -5547,6 +5567,7 @@ class Invocation(Message):
                          caller_authid=caller_authid,
                          caller_authrole=caller_authrole,
                          procedure=procedure,
+                         transaction_hash=transaction_hash,
                          enc_algo=enc_algo,
                          enc_key=enc_key,
                          enc_serializer=enc_serializer,
@@ -5581,6 +5602,9 @@ class Invocation(Message):
         if self.procedure is not None:
             options['procedure'] = self.procedure
 
+        if self.transaction_hash is not None:
+            options['transaction_hash'] = self.transaction_hash
+
         if self.forward_for is not None:
             options['forward_for'] = self.forward_for
 
@@ -5604,7 +5628,7 @@ class Invocation(Message):
         """
         Returns string representation of this message.
         """
-        return "Invocation(request={0}, registration={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, caller={6}, caller_authid={7}, caller_authrole={8}, procedure={9}, enc_algo={10}, enc_key={11}, enc_serializer={12}, payload={13})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return "Invocation(request={0}, registration={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, caller={6}, caller_authid={7}, caller_authrole={8}, procedure={9}, transaction_hash={10}, enc_algo={11}, enc_key={12}, enc_serializer={13}, payload={14})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.transaction_hash, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Interrupt(Message):
