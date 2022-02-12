@@ -3244,6 +3244,9 @@ class Event(Message):
         # bool
         '_retained',
 
+        # string
+        '_transaction_hash',
+
         # bool - FIXME: rename to "acknowledge"
         '_x_acknowledged_delivery',
 
@@ -3253,7 +3256,7 @@ class Event(Message):
 
     def __init__(self, subscription=None, publication=None, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
-                 retained=None, x_acknowledged_delivery=None,
+                 retained=None, transaction_hash=None, x_acknowledged_delivery=None,
                  enc_algo=None, enc_key=None, enc_serializer=None, forward_for=None,
                  from_fbs=None):
         """
@@ -3290,6 +3293,11 @@ class Event(Message):
         :param retained: Whether the message was retained by the broker on the topic, rather than just published.
         :type retained: bool or None
 
+        :param transaction_hash: An application provided transaction hash for the originating call, which may
+            be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+        :type transaction_hash: str
+
         :param x_acknowledged_delivery: Whether this Event should be acknowledged.
         :type x_acknowledged_delivery: bool or None
 
@@ -3316,6 +3324,7 @@ class Event(Message):
         assert(publisher_authrole is None or type(publisher_authrole) == str)
         assert(topic is None or type(topic) == str)
         assert(retained is None or type(retained) == bool)
+        assert(transaction_hash is None or type(transaction_hash) == str)
         assert(x_acknowledged_delivery is None or type(x_acknowledged_delivery) == bool)
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (payload is not None and enc_algo is not None))
@@ -3341,6 +3350,7 @@ class Event(Message):
         self._publisher_authrole = publisher_authrole
         self._topic = topic
         self._retained = retained
+        self._transaction_hash = transaction_hash
         self._x_acknowledged_delivery = x_acknowledged_delivery
         self._enc_algo = enc_algo
         self._enc_key = enc_key
@@ -3371,6 +3381,8 @@ class Event(Message):
         if other.topic != self.topic:
             return False
         if other.retained != self.retained:
+            return False
+        if other.transaction_hash != self.transaction_hash:
             return False
         if other.x_acknowledged_delivery != self.x_acknowledged_delivery:
             return False
@@ -3509,6 +3521,19 @@ class Event(Message):
         self._retained = value
 
     @property
+    def transaction_hash(self):
+        if self._transaction_hash is None and self._from_fbs:
+            s = self._from_fbs.TransactionHash()
+            if s:
+                self._transaction_hash = s.decode('utf8')
+        return self._transaction_hash
+
+    @transaction_hash.setter
+    def transaction_hash(self, value):
+        assert value is None or type(value) == str
+        self._transaction_hash = value
+
+    @property
     def x_acknowledged_delivery(self):
         if self._x_acknowledged_delivery is None and self._from_fbs:
             x_acknowledged_delivery = self._from_fbs.Acknowledge()
@@ -3599,6 +3624,10 @@ class Event(Message):
         if topic:
             topic = builder.CreateString(topic)
 
+        transaction_hash = self.transaction_hash
+        if transaction_hash:
+            transaction_hash = builder.CreateString(transaction_hash)
+
         enc_key = self.enc_key
         if enc_key:
             enc_key = builder.CreateByteVector(enc_key)
@@ -3626,8 +3655,10 @@ class Event(Message):
 
         if topic:
             message_fbs.EventGen.EventAddTopic(builder, topic)
-        if self.retained is not None:
-            message_fbs.EventGen.EventAddRetained(builder, self.retained)
+        if transaction_hash is not None:
+            message_fbs.EventGen.EventAddTransactionHash(builder, transaction_hash)
+        if topic:
+            message_fbs.EventGen.EventAddTopic(builder, topic)
         if self.x_acknowledged_delivery is not None:
             message_fbs.EventGen.EventAddAcknowledge(builder, self.x_acknowledged_delivery)
 
@@ -3707,6 +3738,7 @@ class Event(Message):
         publisher_authrole = None
         topic = None
         retained = None
+        transaction_hash = None
         forward_for = None
         x_acknowledged_delivery = None
 
@@ -3747,6 +3779,12 @@ class Event(Message):
             if type(retained) != bool:
                 raise ProtocolError("invalid type {0} for 'retained' detail in EVENT".format(type(retained)))
 
+        if 'transaction_hash' in details:
+            detail_transaction_hash = details['transaction_hash']
+            if type(detail_transaction_hash) != str:
+                raise ProtocolError("invalid type {0} for 'transaction_hash' detail in EVENT".format(type(detail_transaction_hash)))
+            transaction_hash = detail_transaction_hash
+
         if 'x_acknowledged_delivery' in details:
             x_acknowledged_delivery = details['x_acknowledged_delivery']
             if type(x_acknowledged_delivery) != bool:
@@ -3780,6 +3818,7 @@ class Event(Message):
                     publisher_authrole=publisher_authrole,
                     topic=topic,
                     retained=retained,
+                    transaction_hash=transaction_hash,
                     x_acknowledged_delivery=x_acknowledged_delivery,
                     enc_algo=enc_algo,
                     enc_key=enc_key,
@@ -3812,6 +3851,9 @@ class Event(Message):
         if self.retained is not None:
             details['retained'] = self.retained
 
+        if self.transaction_hash is not None:
+            details['transaction_hash'] = self.transaction_hash
+
         if self.x_acknowledged_delivery is not None:
             details['x_acknowledged_delivery'] = self.x_acknowledged_delivery
 
@@ -3838,7 +3880,7 @@ class Event(Message):
         """
         Returns string representation of this message.
         """
-        return "Event(subscription={}, publication={}, args={}, kwargs={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic={}, retained={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
+        return "Event(subscription={}, publication={}, args={}, kwargs={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic={}, retained={}, transaction_hash={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.transaction_hash, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
 
 
 class EventReceived(Message):

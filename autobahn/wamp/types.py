@@ -678,12 +678,13 @@ class EventDetails(object):
         'publisher_authrole',
         'topic',
         'retained',
+        'transaction_hash',
         'enc_algo',
         'forward_for',
     )
 
     def __init__(self, subscription, publication, publisher=None, publisher_authid=None, publisher_authrole=None,
-                 topic=None, retained=None, enc_algo=None, forward_for=None):
+                 topic=None, retained=None, transaction_hash=None, enc_algo=None, forward_for=None):
         """
 
         :param subscription: The (client side) subscription object on which this event is delivered.
@@ -715,6 +716,11 @@ class EventDetails(object):
             was in use (currently, either ``None`` or ``'cryptobox'``).
         :type enc_algo: str or None
 
+        :param transaction_hash: An application provided transaction hash for the originating call, which may
+            be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+        :type transaction_hash: str
+
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
@@ -725,6 +731,7 @@ class EventDetails(object):
         assert(publisher_authrole is None or type(publisher_authrole) == str)
         assert(topic is None or type(topic) == str)
         assert(retained is None or type(retained) is bool)
+        assert (transaction_hash is None or type(transaction_hash) == str)
         assert(enc_algo is None or type(enc_algo) == str)
         assert(forward_for is None or type(forward_for) == list)
         if forward_for:
@@ -741,11 +748,12 @@ class EventDetails(object):
         self.publisher_authrole = publisher_authrole
         self.topic = topic
         self.retained = retained
+        self.transaction_hash = transaction_hash
         self.enc_algo = enc_algo
         self.forward_for = forward_for
 
     def __str__(self):
-        return "EventDetails(subscription={}, publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={}, forward_for={})".format(self.subscription, self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.forward_for)
+        return "EventDetails(subscription={}, publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, transaction_hash={}, enc_algo={}, forward_for={})".format(self.subscription, self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.transaction_hash, self.enc_algo, self.forward_for)
 
 
 @public
@@ -1042,12 +1050,13 @@ class CallDetails(object):
         'caller_authid',
         'caller_authrole',
         'procedure',
+        'transaction_hash',
         'enc_algo',
         'forward_for',
     )
 
     def __init__(self, registration, progress=None, caller=None, caller_authid=None,
-                 caller_authrole=None, procedure=None, enc_algo=None, forward_for=None):
+                 caller_authrole=None, procedure=None, transaction_hash=None, enc_algo=None, forward_for=None):
         """
 
         :param registration: The (client side) registration object this invocation is delivered on.
@@ -1084,6 +1093,7 @@ class CallDetails(object):
         assert(caller_authid is None or type(caller_authid) == str)
         assert(caller_authrole is None or type(caller_authrole) == str)
         assert(procedure is None or type(procedure) == str)
+        assert (transaction_hash is None or type(transaction_hash) == str)
         assert(enc_algo is None or type(enc_algo) == str)
 
         assert(forward_for is None or type(forward_for) == list)
@@ -1100,11 +1110,12 @@ class CallDetails(object):
         self.caller_authid = caller_authid
         self.caller_authrole = caller_authrole
         self.procedure = procedure
+        self.transaction_hash = transaction_hash
         self.enc_algo = enc_algo
         self.forward_for = forward_for
 
     def __str__(self):
-        return "CallDetails(registration={}, progress={}, caller={}, caller_authid={}, caller_authrole={}, procedure=<{}>, enc_algo={}, forward_for={})".format(self.registration, self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo, self.forward_for)
+        return "CallDetails(registration={}, progress={}, caller={}, caller_authid={}, caller_authrole={}, procedure=<{}>, transaction_hash={}, enc_algo={}, forward_for={})".format(self.registration, self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.transaction_hash, self.enc_algo, self.forward_for)
 
 
 @public

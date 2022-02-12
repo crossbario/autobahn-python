@@ -180,6 +180,9 @@ table Event
     // Whether the message was retained by the broker on the topic, rather than just published.
     retained: bool;
 
+    // Application provided transaction hash for router-side throttle/deduplicate.
+    transaction_hash: string;
+
     // Hint to request acknowledgement of the reception of this Event by a subscriber.
     acknowledge: bool;
 

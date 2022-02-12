@@ -121,29 +121,36 @@ class Call(object):
         return False
 
     # Call
-    def Caller(self):
+    def TransactionHash(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Call
+    def Caller(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Call
     def CallerAuthid(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-    # Call
-    def CallerAuthrole(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Call
-    def ForwardFor(self, j):
+    def CallerAuthrole(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Call
+    def ForwardFor(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
@@ -155,17 +162,17 @@ class Call(object):
 
     # Call
     def ForwardForLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Call
     def ForwardForIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         return o == 0
 
-def Start(builder): builder.StartObject(12)
+def Start(builder): builder.StartObject(13)
 def CallStart(builder):
     """This method is deprecated. Please switch to Start."""
     return Start(builder)
@@ -209,19 +216,23 @@ def AddReceiveProgress(builder, receiveProgress): builder.PrependBoolSlot(7, rec
 def CallAddReceiveProgress(builder, receiveProgress):
     """This method is deprecated. Please switch to AddReceiveProgress."""
     return AddReceiveProgress(builder, receiveProgress)
-def AddCaller(builder, caller): builder.PrependUint64Slot(8, caller, 0)
+def AddTransactionHash(builder, transactionHash): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(transactionHash), 0)
+def CallAddTransactionHash(builder, transactionHash):
+    """This method is deprecated. Please switch to AddTransactionHash."""
+    return AddTransactionHash(builder, transactionHash)
+def AddCaller(builder, caller): builder.PrependUint64Slot(9, caller, 0)
 def CallAddCaller(builder, caller):
     """This method is deprecated. Please switch to AddCaller."""
     return AddCaller(builder, caller)
-def AddCallerAuthid(builder, callerAuthid): builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(callerAuthid), 0)
+def AddCallerAuthid(builder, callerAuthid): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(callerAuthid), 0)
 def CallAddCallerAuthid(builder, callerAuthid):
     """This method is deprecated. Please switch to AddCallerAuthid."""
     return AddCallerAuthid(builder, callerAuthid)
-def AddCallerAuthrole(builder, callerAuthrole): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(callerAuthrole), 0)
+def AddCallerAuthrole(builder, callerAuthrole): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(callerAuthrole), 0)
 def CallAddCallerAuthrole(builder, callerAuthrole):
     """This method is deprecated. Please switch to AddCallerAuthrole."""
     return AddCallerAuthrole(builder, callerAuthrole)
-def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(12, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
 def CallAddForwardFor(builder, forwardFor):
     """This method is deprecated. Please switch to AddForwardFor."""
     return AddForwardFor(builder, forwardFor)

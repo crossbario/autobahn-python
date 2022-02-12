@@ -199,15 +199,22 @@ class Event(object):
         return False
 
     # Event
-    def Acknowledge(self):
+    def TransactionHash(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Event
+    def Acknowledge(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
         if o != 0:
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # Event
     def ForwardFor(self, j):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
         if o != 0:
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
@@ -219,17 +226,17 @@ class Event(object):
 
     # Event
     def ForwardForLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Event
     def ForwardForIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
         return o == 0
 
-def Start(builder): builder.StartObject(15)
+def Start(builder): builder.StartObject(16)
 def EventStart(builder):
     """This method is deprecated. Please switch to Start."""
     return Start(builder)
@@ -301,11 +308,15 @@ def AddRetained(builder, retained): builder.PrependBoolSlot(12, retained, 0)
 def EventAddRetained(builder, retained):
     """This method is deprecated. Please switch to AddRetained."""
     return AddRetained(builder, retained)
-def AddAcknowledge(builder, acknowledge): builder.PrependBoolSlot(13, acknowledge, 0)
+def AddTransactionHash(builder, transactionHash): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(transactionHash), 0)
+def EventAddTransactionHash(builder, transactionHash):
+    """This method is deprecated. Please switch to AddTransactionHash."""
+    return AddTransactionHash(builder, transactionHash)
+def AddAcknowledge(builder, acknowledge): builder.PrependBoolSlot(14, acknowledge, 0)
 def EventAddAcknowledge(builder, acknowledge):
     """This method is deprecated. Please switch to AddAcknowledge."""
     return AddAcknowledge(builder, acknowledge)
-def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(14, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(15, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
 def EventAddForwardFor(builder, forwardFor):
     """This method is deprecated. Please switch to AddForwardFor."""
     return AddForwardFor(builder, forwardFor)

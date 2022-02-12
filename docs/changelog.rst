@@ -8,6 +8,7 @@ Changelog
 master
 ------
 
+* new: experimental support for ``transaction_hash`` in WAMP Publish/Call (see discussion `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_).
 * new: support decimal numbers WAMP serialization and round-tripping in both JSON and CBOR
 * fix: only depend on cbor2 (for WAMP CBOR serialization), not also cbor
 * fix: PyInstaller and Docker build / CI issues
