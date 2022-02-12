@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Unsubscribed(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsUnsubscribed(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Unsubscribed()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsUnsubscribed(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Unsubscribed
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -39,8 +45,23 @@ class Unsubscribed(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def UnsubscribedStart(builder): builder.StartObject(3)
-def UnsubscribedAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def UnsubscribedAddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
-def UnsubscribedAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
-def UnsubscribedEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(3)
+def UnsubscribedStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def UnsubscribedAddRequest(builder, request):
+    """This method is deprecated. Please switch to AddRequest."""
+    return AddRequest(builder, request)
+def AddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
+def UnsubscribedAddSubscription(builder, subscription):
+    """This method is deprecated. Please switch to AddSubscription."""
+    return AddSubscription(builder, subscription)
+def AddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def UnsubscribedAddReason(builder, reason):
+    """This method is deprecated. Please switch to AddReason."""
+    return AddReason(builder, reason)
+def End(builder): return builder.EndObject()
+def UnsubscribedEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

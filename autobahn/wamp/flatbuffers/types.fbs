@@ -90,11 +90,13 @@ struct Principal
     // WAMP session ID.
     session: uint64;
 
-    // WAMP session authentication ID.
-    authid: string (principal);
-
-    // WAMP session authentication role.
-    authrole: string (principal);
+// FIXME: error: structs may contain only scalar or struct fields
+//
+//     // WAMP session authentication ID.
+//     authid: string (principal);
+//
+//     // WAMP session authentication role.
+//     authrole: string (principal);
 }
 
 

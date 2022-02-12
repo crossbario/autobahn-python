@@ -1745,6 +1745,9 @@ class Publish(Message):
         # bool
         '_retain',
 
+        # string
+        '_transaction_hash',
+
         # [Principal]
         '_forward_for',
     )
@@ -1764,6 +1767,7 @@ class Publish(Message):
                  eligible_authid=None,
                  eligible_authrole=None,
                  retain=None,
+                 transaction_hash=None,
                  enc_algo=None,
                  enc_key=None,
                  enc_serializer=None,
@@ -1818,6 +1822,11 @@ class Publish(Message):
         :param retain: If ``True``, request the broker retain this event.
         :type retain: bool or None
 
+        :param transaction_hash: An application provided transaction hash for the published event, which may
+            be used in the router to throttle or deduplicate the events on the topic. See the discussion
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+        :type transaction_hash: str
+
         :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
         :type enc_algo: str or None
 
@@ -1838,6 +1847,7 @@ class Publish(Message):
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(retain is None or type(retain) == bool)
+        assert(transaction_hash is None or type(transaction_hash) == str)
 
         # publisher exlusion and black-/whitelisting
         assert(exclude_me is None or type(exclude_me) == bool)
@@ -1905,6 +1915,9 @@ class Publish(Message):
         # event retention
         self._retain = retain
 
+        # application provided transaction hash for event
+        self._transaction_hash = transaction_hash
+
         # payload transparency related knobs
         self._enc_algo = enc_algo
         self._enc_key = enc_key
@@ -1945,6 +1958,8 @@ class Publish(Message):
         if other.eligible_authrole != self.eligible_authrole:
             return False
         if other.retain != self.retain:
+            return False
+        if other.transaction_hash != self.transaction_hash:
             return False
         if other.enc_algo != self.enc_algo:
             return False
@@ -2167,6 +2182,19 @@ class Publish(Message):
         self._retain = value
 
     @property
+    def transaction_hash(self):
+        if self._transaction_hash is None and self._from_fbs:
+            s = self._from_fbs.TransactionHash()
+            if s:
+                self._transaction_hash = s.decode('utf8')
+        return self._transaction_hash
+
+    @transaction_hash.setter
+    def transaction_hash(self, value):
+        assert value is None or type(value) == str
+        self._transaction_hash = value
+
+    @property
     def enc_algo(self):
         if self._enc_algo is None and self._from_fbs:
             enc_algo = self._from_fbs.EncAlgo()
@@ -2235,6 +2263,10 @@ class Publish(Message):
         topic = self.topic
         if topic:
             topic = builder.CreateString(topic)
+
+        transaction_hash = self.transaction_hash
+        if transaction_hash:
+            transaction_hash = builder.CreateString(transaction_hash)
 
         enc_key = self.enc_key
         if enc_key:
@@ -2316,10 +2348,15 @@ class Publish(Message):
         if payload:
             message_fbs.PublishGen.PublishAddPayload(builder, payload)
 
+        if self.enc_algo:
+            message_fbs.PublishGen.PublishAddEncAlgo(builder, self.enc_algo)
+        if self.enc_serializer:
+            message_fbs.PublishGen.PublishAddEncSerializer(builder, self.enc_serializer)
+        if enc_key:
+            message_fbs.PublishGen.PublishAddEncKey(builder, enc_key)
+
         if self.acknowledge is not None:
             message_fbs.PublishGen.PublishAddAcknowledge(builder, self.acknowledge)
-        if self.retain is not None:
-            message_fbs.PublishGen.PublishAddRetain(builder, self.retain)
         if self.exclude_me is not None:
             message_fbs.PublishGen.PublishAddExcludeMe(builder, self.exclude_me)
 
@@ -2337,12 +2374,10 @@ class Publish(Message):
         if eligible_authrole:
             message_fbs.PublishGen.PublishAddEligibleAuthrole(builder, eligible_authrole)
 
-        if self.enc_algo:
-            message_fbs.PublishGen.PublishAddEncAlgo(builder, self.enc_algo)
-        if enc_key:
-            message_fbs.PublishGen.PublishAddEncKey(builder, enc_key)
-        if self.enc_serializer:
-            message_fbs.PublishGen.PublishAddEncSerializer(builder, self.enc_serializer)
+        if self.retain is not None:
+            message_fbs.PublishGen.PublishAddRetain(builder, self.retain)
+        if transaction_hash is not None:
+            message_fbs.PublishGen.PublishAddTransactionHash(builder, self.transaction_hash)
 
         # FIXME: add forward_for
 
@@ -2419,6 +2454,7 @@ class Publish(Message):
         eligible_authid = None
         eligible_authrole = None
         retain = None
+        transaction_hash = None
         forward_for = None
 
         if 'acknowledge' in options:
@@ -2514,6 +2550,11 @@ class Publish(Message):
             if type(retain) != bool:
                 raise ProtocolError("invalid type {0} for 'retain' option in PUBLISH".format(type(retain)))
 
+        if 'transaction_hash' in options:
+            transaction_hash = options['transaction_hash']
+            if type(transaction_hash) != str:
+                raise ProtocolError("invalid type {0} for 'transaction_hash' option in PUBLISH".format(type(transaction_hash)))
+
         if 'forward_for' in options:
             forward_for = options['forward_for']
             valid = False
@@ -2546,6 +2587,7 @@ class Publish(Message):
                       eligible_authid=eligible_authid,
                       eligible_authrole=eligible_authrole,
                       retain=retain,
+                      transaction_hash=transaction_hash,
                       enc_algo=enc_algo,
                       enc_key=enc_key,
                       enc_serializer=enc_serializer,
@@ -2575,6 +2617,8 @@ class Publish(Message):
             options['eligible_authrole'] = self.eligible_authrole
         if self.retain is not None:
             options['retain'] = self.retain
+        if self.transaction_hash is not None:
+            options['transaction_hash'] = self.transaction_hash
 
         if self.payload:
             if self.enc_algo is not None:
@@ -2612,7 +2656,7 @@ class Publish(Message):
         """
         Returns string representation of this message.
         """
-        return "Publish(request={}, topic={}, args={}, kwargs={}, acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
+        return "Publish(request={}, topic={}, args={}, kwargs={}, acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, transaction_hash={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.transaction_hash, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
 
 
 class Published(Message):
@@ -3888,6 +3932,7 @@ class Call(Message):
         'payload',
         'timeout',
         'receive_progress',
+        'transaction_hash',
         'enc_algo',
         'enc_key',
         'enc_serializer',
@@ -3905,6 +3950,7 @@ class Call(Message):
                  payload=None,
                  timeout=None,
                  receive_progress=None,
+                 transaction_hash=None,
                  enc_algo=None,
                  enc_key=None,
                  enc_serializer=None,
@@ -3939,6 +3985,11 @@ class Call(Message):
            progressive call results.
         :type receive_progress: bool or None
 
+        :param transaction_hash: An application provided transaction hash for the originating call, which may
+            be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+        :type transaction_hash: str
+
         :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
         :type enc_algo: str or None
 
@@ -3968,6 +4019,7 @@ class Call(Message):
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(timeout is None or type(timeout) == int)
         assert(receive_progress is None or type(receive_progress) == bool)
+        assert(transaction_hash is None or type(transaction_hash) == str)
 
         # payload transparency related knobs
         assert(enc_algo is None or is_valid_enc_algo(enc_algo))
@@ -3995,6 +4047,7 @@ class Call(Message):
         self.payload = payload
         self.timeout = timeout
         self.receive_progress = receive_progress
+        self.transaction_hash = transaction_hash
 
         # payload transparency related knobs
         self.enc_algo = enc_algo
@@ -4063,6 +4116,7 @@ class Call(Message):
 
         timeout = None
         receive_progress = None
+        transaction_hash = None
         caller = None
         caller_authid = None
         caller_authrole = None
@@ -4086,6 +4140,14 @@ class Call(Message):
                 raise ProtocolError("invalid type {0} for 'receive_progress' option in CALL".format(type(option_receive_progress)))
 
             receive_progress = option_receive_progress
+
+        if 'transaction_hash' in options:
+
+            option_transaction_hash = options['transaction_hash']
+            if type(option_transaction_hash) != str:
+                raise ProtocolError("invalid type {0} for 'transaction_hash' detail in CALL".format(type(option_transaction_hash)))
+
+            transaction_hash = option_transaction_hash
 
         if 'caller' in options:
 
@@ -4136,6 +4198,7 @@ class Call(Message):
                    payload=payload,
                    timeout=timeout,
                    receive_progress=receive_progress,
+                   transaction_hash=transaction_hash,
                    enc_algo=enc_algo,
                    enc_key=enc_key,
                    enc_serializer=enc_serializer,
@@ -4154,6 +4217,9 @@ class Call(Message):
 
         if self.receive_progress is not None:
             options['receive_progress'] = self.receive_progress
+
+        if self.transaction_hash is not None:
+            options['transaction_hash'] = self.transaction_hash
 
         if self.payload:
             if self.enc_algo is not None:
@@ -4198,7 +4264,7 @@ class Call(Message):
         """
         Returns string representation of this message.
         """
-        return "Call(request={}, procedure={}, args={}, kwargs={}, timeout={}, receive_progress={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.caller, self.caller_authid, self.caller_authrole, self.forward_for)
+        return "Call(request={}, procedure={}, args={}, kwargs={}, timeout={}, receive_progress={}, transaction_hash={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.transaction_hash, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.caller, self.caller_authid, self.caller_authrole, self.forward_for)
 
 
 class Cancel(Message):

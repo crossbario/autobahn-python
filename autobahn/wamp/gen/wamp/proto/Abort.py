@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Abort(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsAbort(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Abort()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsAbort(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Abort
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,7 +38,19 @@ class Abort(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def AbortStart(builder): builder.StartObject(2)
-def AbortAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
-def AbortAddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
-def AbortEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def AbortStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def AbortAddReason(builder, reason):
+    """This method is deprecated. Please switch to AddReason."""
+    return AddReason(builder, reason)
+def AddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
+def AbortAddMessage(builder, message):
+    """This method is deprecated. Please switch to AddMessage."""
+    return AddMessage(builder, message)
+def End(builder): return builder.EndObject()
+def AbortEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

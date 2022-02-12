@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class AuthCraChallenge(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsAuthCraChallenge(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = AuthCraChallenge()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsAuthCraChallenge(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # AuthCraChallenge
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -46,9 +52,27 @@ class AuthCraChallenge(object):
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 32
 
-def AuthCraChallengeStart(builder): builder.StartObject(4)
-def AuthCraChallengeAddChallenge(builder, challenge): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(challenge), 0)
-def AuthCraChallengeAddSalt(builder, salt): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(salt), 0)
-def AuthCraChallengeAddIterations(builder, iterations): builder.PrependUint32Slot(2, iterations, 1000)
-def AuthCraChallengeAddKeylen(builder, keylen): builder.PrependUint8Slot(3, keylen, 32)
-def AuthCraChallengeEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(4)
+def AuthCraChallengeStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddChallenge(builder, challenge): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(challenge), 0)
+def AuthCraChallengeAddChallenge(builder, challenge):
+    """This method is deprecated. Please switch to AddChallenge."""
+    return AddChallenge(builder, challenge)
+def AddSalt(builder, salt): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(salt), 0)
+def AuthCraChallengeAddSalt(builder, salt):
+    """This method is deprecated. Please switch to AddSalt."""
+    return AddSalt(builder, salt)
+def AddIterations(builder, iterations): builder.PrependUint32Slot(2, iterations, 1000)
+def AuthCraChallengeAddIterations(builder, iterations):
+    """This method is deprecated. Please switch to AddIterations."""
+    return AddIterations(builder, iterations)
+def AddKeylen(builder, keylen): builder.PrependUint8Slot(3, keylen, 32)
+def AuthCraChallengeAddKeylen(builder, keylen):
+    """This method is deprecated. Please switch to AddKeylen."""
+    return AddKeylen(builder, keylen)
+def End(builder): return builder.EndObject()
+def AuthCraChallengeEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

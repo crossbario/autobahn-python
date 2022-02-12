@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class AuthScramChallenge(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsAuthScramChallenge(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = AuthScramChallenge()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsAuthScramChallenge(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # AuthScramChallenge
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -60,11 +66,35 @@ class AuthScramChallenge(object):
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
-def AuthScramChallengeStart(builder): builder.StartObject(6)
-def AuthScramChallengeAddNonce(builder, nonce): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(nonce), 0)
-def AuthScramChallengeAddSalt(builder, salt): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(salt), 0)
-def AuthScramChallengeAddKdf(builder, kdf): builder.PrependUint8Slot(2, kdf, 2)
-def AuthScramChallengeAddIterations(builder, iterations): builder.PrependUint32Slot(3, iterations, 0)
-def AuthScramChallengeAddMemory(builder, memory): builder.PrependUint32Slot(4, memory, 0)
-def AuthScramChallengeAddChannelBinding(builder, channelBinding): builder.PrependUint8Slot(5, channelBinding, 0)
-def AuthScramChallengeEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(6)
+def AuthScramChallengeStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddNonce(builder, nonce): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(nonce), 0)
+def AuthScramChallengeAddNonce(builder, nonce):
+    """This method is deprecated. Please switch to AddNonce."""
+    return AddNonce(builder, nonce)
+def AddSalt(builder, salt): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(salt), 0)
+def AuthScramChallengeAddSalt(builder, salt):
+    """This method is deprecated. Please switch to AddSalt."""
+    return AddSalt(builder, salt)
+def AddKdf(builder, kdf): builder.PrependUint8Slot(2, kdf, 2)
+def AuthScramChallengeAddKdf(builder, kdf):
+    """This method is deprecated. Please switch to AddKdf."""
+    return AddKdf(builder, kdf)
+def AddIterations(builder, iterations): builder.PrependUint32Slot(3, iterations, 0)
+def AuthScramChallengeAddIterations(builder, iterations):
+    """This method is deprecated. Please switch to AddIterations."""
+    return AddIterations(builder, iterations)
+def AddMemory(builder, memory): builder.PrependUint32Slot(4, memory, 0)
+def AuthScramChallengeAddMemory(builder, memory):
+    """This method is deprecated. Please switch to AddMemory."""
+    return AddMemory(builder, memory)
+def AddChannelBinding(builder, channelBinding): builder.PrependUint8Slot(5, channelBinding, 0)
+def AuthScramChallengeAddChannelBinding(builder, channelBinding):
+    """This method is deprecated. Please switch to AddChannelBinding."""
+    return AddChannelBinding(builder, channelBinding)
+def End(builder): return builder.EndObject()
+def AuthScramChallengeEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

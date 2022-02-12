@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Invocation(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsInvocation(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Invocation()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsInvocation(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Invocation
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -55,6 +61,11 @@ class Invocation(object):
         return 0
 
     # Invocation
+    def PayloadIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        return o == 0
+
+    # Invocation
     def EncAlgo(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
@@ -89,6 +100,11 @@ class Invocation(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Invocation
+    def EncKeyIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        return o == 0
 
     # Invocation
     def Procedure(self):
@@ -132,19 +148,99 @@ class Invocation(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def InvocationStart(builder): builder.StartObject(12)
-def InvocationAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def InvocationAddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
-def InvocationAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
-def InvocationStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def InvocationAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(3, encAlgo, 0)
-def InvocationAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(4, encSerializer, 0)
-def InvocationAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
-def InvocationStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def InvocationAddProcedure(builder, procedure): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(procedure), 0)
-def InvocationAddTimeout(builder, timeout): builder.PrependUint32Slot(7, timeout, 0)
-def InvocationAddReceiveProgress(builder, receiveProgress): builder.PrependBoolSlot(8, receiveProgress, 0)
-def InvocationAddCaller(builder, caller): builder.PrependUint64Slot(9, caller, 0)
-def InvocationAddCallerAuthid(builder, callerAuthid): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(callerAuthid), 0)
-def InvocationAddCallerAuthrole(builder, callerAuthrole): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(callerAuthrole), 0)
-def InvocationEnd(builder): return builder.EndObject()
+    # Invocation
+    def ForwardFor(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
+        if o != 0:
+            x = self._tab.Vector(o)
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
+            from wamp.proto.Principal import Principal
+            obj = Principal()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # Invocation
+    def ForwardForLength(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
+        if o != 0:
+            return self._tab.VectorLen(o)
+        return 0
+
+    # Invocation
+    def ForwardForIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
+        return o == 0
+
+def Start(builder): builder.StartObject(13)
+def InvocationStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def InvocationAddRequest(builder, request):
+    """This method is deprecated. Please switch to AddRequest."""
+    return AddRequest(builder, request)
+def AddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
+def InvocationAddRegistration(builder, registration):
+    """This method is deprecated. Please switch to AddRegistration."""
+    return AddRegistration(builder, registration)
+def AddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+def InvocationAddPayload(builder, payload):
+    """This method is deprecated. Please switch to AddPayload."""
+    return AddPayload(builder, payload)
+def StartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def InvocationStartPayloadVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartPayloadVector(builder, numElems)
+def AddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(3, encAlgo, 0)
+def InvocationAddEncAlgo(builder, encAlgo):
+    """This method is deprecated. Please switch to AddEncAlgo."""
+    return AddEncAlgo(builder, encAlgo)
+def AddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(4, encSerializer, 0)
+def InvocationAddEncSerializer(builder, encSerializer):
+    """This method is deprecated. Please switch to AddEncSerializer."""
+    return AddEncSerializer(builder, encSerializer)
+def AddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+def InvocationAddEncKey(builder, encKey):
+    """This method is deprecated. Please switch to AddEncKey."""
+    return AddEncKey(builder, encKey)
+def StartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def InvocationStartEncKeyVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartEncKeyVector(builder, numElems)
+def AddProcedure(builder, procedure): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(procedure), 0)
+def InvocationAddProcedure(builder, procedure):
+    """This method is deprecated. Please switch to AddProcedure."""
+    return AddProcedure(builder, procedure)
+def AddTimeout(builder, timeout): builder.PrependUint32Slot(7, timeout, 0)
+def InvocationAddTimeout(builder, timeout):
+    """This method is deprecated. Please switch to AddTimeout."""
+    return AddTimeout(builder, timeout)
+def AddReceiveProgress(builder, receiveProgress): builder.PrependBoolSlot(8, receiveProgress, 0)
+def InvocationAddReceiveProgress(builder, receiveProgress):
+    """This method is deprecated. Please switch to AddReceiveProgress."""
+    return AddReceiveProgress(builder, receiveProgress)
+def AddCaller(builder, caller): builder.PrependUint64Slot(9, caller, 0)
+def InvocationAddCaller(builder, caller):
+    """This method is deprecated. Please switch to AddCaller."""
+    return AddCaller(builder, caller)
+def AddCallerAuthid(builder, callerAuthid): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(callerAuthid), 0)
+def InvocationAddCallerAuthid(builder, callerAuthid):
+    """This method is deprecated. Please switch to AddCallerAuthid."""
+    return AddCallerAuthid(builder, callerAuthid)
+def AddCallerAuthrole(builder, callerAuthrole): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(callerAuthrole), 0)
+def InvocationAddCallerAuthrole(builder, callerAuthrole):
+    """This method is deprecated. Please switch to AddCallerAuthrole."""
+    return AddCallerAuthrole(builder, callerAuthrole)
+def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(12, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def InvocationAddForwardFor(builder, forwardFor):
+    """This method is deprecated. Please switch to AddForwardFor."""
+    return AddForwardFor(builder, forwardFor)
+def StartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+def InvocationStartForwardForVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartForwardForVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def InvocationEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

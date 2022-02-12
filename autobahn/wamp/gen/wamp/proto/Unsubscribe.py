@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Unsubscribe(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsUnsubscribe(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Unsubscribe()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsUnsubscribe(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Unsubscribe
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,7 +38,19 @@ class Unsubscribe(object):
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def UnsubscribeStart(builder): builder.StartObject(2)
-def UnsubscribeAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def UnsubscribeAddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
-def UnsubscribeEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def UnsubscribeStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def UnsubscribeAddRequest(builder, request):
+    """This method is deprecated. Please switch to AddRequest."""
+    return AddRequest(builder, request)
+def AddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
+def UnsubscribeAddSubscription(builder, subscription):
+    """This method is deprecated. Please switch to AddSubscription."""
+    return AddSubscription(builder, subscription)
+def End(builder): return builder.EndObject()
+def UnsubscribeEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

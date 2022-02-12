@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Unregistered(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsUnregistered(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Unregistered()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsUnregistered(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Unregistered
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -39,8 +45,23 @@ class Unregistered(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def UnregisteredStart(builder): builder.StartObject(3)
-def UnregisteredAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def UnregisteredAddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
-def UnregisteredAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
-def UnregisteredEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(3)
+def UnregisteredStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def UnregisteredAddRequest(builder, request):
+    """This method is deprecated. Please switch to AddRequest."""
+    return AddRequest(builder, request)
+def AddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
+def UnregisteredAddRegistration(builder, registration):
+    """This method is deprecated. Please switch to AddRegistration."""
+    return AddRegistration(builder, registration)
+def AddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def UnregisteredAddReason(builder, reason):
+    """This method is deprecated. Please switch to AddReason."""
+    return AddReason(builder, reason)
+def End(builder): return builder.EndObject()
+def UnregisteredEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

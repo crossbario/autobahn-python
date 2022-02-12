@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Goodbye(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsGoodbye(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Goodbye()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsGoodbye(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Goodbye
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -39,8 +45,23 @@ class Goodbye(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def GoodbyeStart(builder): builder.StartObject(3)
-def GoodbyeAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
-def GoodbyeAddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
-def GoodbyeAddResumable(builder, resumable): builder.PrependBoolSlot(2, resumable, 0)
-def GoodbyeEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(3)
+def GoodbyeStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def GoodbyeAddReason(builder, reason):
+    """This method is deprecated. Please switch to AddReason."""
+    return AddReason(builder, reason)
+def AddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
+def GoodbyeAddMessage(builder, message):
+    """This method is deprecated. Please switch to AddMessage."""
+    return AddMessage(builder, message)
+def AddResumable(builder, resumable): builder.PrependBoolSlot(2, resumable, 0)
+def GoodbyeAddResumable(builder, resumable):
+    """This method is deprecated. Please switch to AddResumable."""
+    return AddResumable(builder, resumable)
+def End(builder): return builder.EndObject()
+def GoodbyeEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

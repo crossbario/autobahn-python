@@ -3,20 +3,32 @@
 # namespace: wamp
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Void(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsVoid(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Void()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsVoid(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Void
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
-def VoidStart(builder): builder.StartObject(0)
-def VoidEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(0)
+def VoidStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def End(builder): return builder.EndObject()
+def VoidEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

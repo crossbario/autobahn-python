@@ -119,6 +119,9 @@ table Publish
     // If true, request the broker retain this event.
     retain: bool;
 
+    // Application provided transaction hash for router-side throttle/deduplicate.
+    transaction_hash: string;
+
     // When this message is forwarded in router-to-router traffic, the route of the message in tuples of (session, authid, authrole) beginning with the publisher session followed by a series of router-link sessions.
     forward_for: [Principal];
 }

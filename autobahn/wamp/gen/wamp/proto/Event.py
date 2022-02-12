@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Event(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsEvent(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Event()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsEvent(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Event
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,7 +38,7 @@ class Event(object):
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-# /// Positional values for application-defined event payload.
+    # Positional values for application-defined event payload.
     # Event
     def Args(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
@@ -55,7 +61,12 @@ class Event(object):
             return self._tab.VectorLen(o)
         return 0
 
-# /// Keyword values for application-defined event payload.
+    # Event
+    def ArgsIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        return o == 0
+
+    # Keyword values for application-defined event payload.
     # Event
     def Kwargs(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
@@ -78,7 +89,12 @@ class Event(object):
             return self._tab.VectorLen(o)
         return 0
 
-# /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
+    # Event
+    def KwargsIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        return o == 0
+
+    # Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     # Event
     def Payload(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
@@ -100,6 +116,11 @@ class Event(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Event
+    def PayloadIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        return o == 0
 
     # Event
     def EncAlgo(self):
@@ -136,6 +157,11 @@ class Event(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Event
+    def EncKeyIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
+        return o == 0
 
     # Event
     def Publisher(self):
@@ -184,9 +210,8 @@ class Event(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
         if o != 0:
             x = self._tab.Vector(o)
-            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
-            x = self._tab.Indirect(x)
-            from .Principal import Principal
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
+            from wamp.proto.Principal import Principal
             obj = Principal()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -199,25 +224,96 @@ class Event(object):
             return self._tab.VectorLen(o)
         return 0
 
-def EventStart(builder): builder.StartObject(15)
-def EventAddSubscription(builder, subscription): builder.PrependUint64Slot(0, subscription, 0)
-def EventAddPublication(builder, publication): builder.PrependUint64Slot(1, publication, 0)
-def EventAddArgs(builder, args): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(args), 0)
-def EventStartArgsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def EventAddKwargs(builder, kwargs): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(kwargs), 0)
-def EventStartKwargsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def EventAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
-def EventStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def EventAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(5, encAlgo, 0)
-def EventAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(6, encSerializer, 0)
-def EventAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
-def EventStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def EventAddPublisher(builder, publisher): builder.PrependUint64Slot(8, publisher, 0)
-def EventAddPublisherAuthid(builder, publisherAuthid): builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(publisherAuthid), 0)
-def EventAddPublisherAuthrole(builder, publisherAuthrole): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(publisherAuthrole), 0)
-def EventAddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
-def EventAddRetained(builder, retained): builder.PrependBoolSlot(12, retained, 0)
-def EventAddAcknowledge(builder, acknowledge): builder.PrependBoolSlot(13, acknowledge, 0)
-def EventAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(14, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
-def EventStartForwardForVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def EventEnd(builder): return builder.EndObject()
+    # Event
+    def ForwardForIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
+        return o == 0
+
+def Start(builder): builder.StartObject(15)
+def EventStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddSubscription(builder, subscription): builder.PrependUint64Slot(0, subscription, 0)
+def EventAddSubscription(builder, subscription):
+    """This method is deprecated. Please switch to AddSubscription."""
+    return AddSubscription(builder, subscription)
+def AddPublication(builder, publication): builder.PrependUint64Slot(1, publication, 0)
+def EventAddPublication(builder, publication):
+    """This method is deprecated. Please switch to AddPublication."""
+    return AddPublication(builder, publication)
+def AddArgs(builder, args): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(args), 0)
+def EventAddArgs(builder, args):
+    """This method is deprecated. Please switch to AddArgs."""
+    return AddArgs(builder, args)
+def StartArgsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def EventStartArgsVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartArgsVector(builder, numElems)
+def AddKwargs(builder, kwargs): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(kwargs), 0)
+def EventAddKwargs(builder, kwargs):
+    """This method is deprecated. Please switch to AddKwargs."""
+    return AddKwargs(builder, kwargs)
+def StartKwargsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def EventStartKwargsVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartKwargsVector(builder, numElems)
+def AddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+def EventAddPayload(builder, payload):
+    """This method is deprecated. Please switch to AddPayload."""
+    return AddPayload(builder, payload)
+def StartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def EventStartPayloadVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartPayloadVector(builder, numElems)
+def AddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(5, encAlgo, 0)
+def EventAddEncAlgo(builder, encAlgo):
+    """This method is deprecated. Please switch to AddEncAlgo."""
+    return AddEncAlgo(builder, encAlgo)
+def AddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(6, encSerializer, 0)
+def EventAddEncSerializer(builder, encSerializer):
+    """This method is deprecated. Please switch to AddEncSerializer."""
+    return AddEncSerializer(builder, encSerializer)
+def AddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+def EventAddEncKey(builder, encKey):
+    """This method is deprecated. Please switch to AddEncKey."""
+    return AddEncKey(builder, encKey)
+def StartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def EventStartEncKeyVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartEncKeyVector(builder, numElems)
+def AddPublisher(builder, publisher): builder.PrependUint64Slot(8, publisher, 0)
+def EventAddPublisher(builder, publisher):
+    """This method is deprecated. Please switch to AddPublisher."""
+    return AddPublisher(builder, publisher)
+def AddPublisherAuthid(builder, publisherAuthid): builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(publisherAuthid), 0)
+def EventAddPublisherAuthid(builder, publisherAuthid):
+    """This method is deprecated. Please switch to AddPublisherAuthid."""
+    return AddPublisherAuthid(builder, publisherAuthid)
+def AddPublisherAuthrole(builder, publisherAuthrole): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(publisherAuthrole), 0)
+def EventAddPublisherAuthrole(builder, publisherAuthrole):
+    """This method is deprecated. Please switch to AddPublisherAuthrole."""
+    return AddPublisherAuthrole(builder, publisherAuthrole)
+def AddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
+def EventAddTopic(builder, topic):
+    """This method is deprecated. Please switch to AddTopic."""
+    return AddTopic(builder, topic)
+def AddRetained(builder, retained): builder.PrependBoolSlot(12, retained, 0)
+def EventAddRetained(builder, retained):
+    """This method is deprecated. Please switch to AddRetained."""
+    return AddRetained(builder, retained)
+def AddAcknowledge(builder, acknowledge): builder.PrependBoolSlot(13, acknowledge, 0)
+def EventAddAcknowledge(builder, acknowledge):
+    """This method is deprecated. Please switch to AddAcknowledge."""
+    return AddAcknowledge(builder, acknowledge)
+def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(14, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def EventAddForwardFor(builder, forwardFor):
+    """This method is deprecated. Please switch to AddForwardFor."""
+    return AddForwardFor(builder, forwardFor)
+def StartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+def EventStartForwardForVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartForwardForVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def EventEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class ClientRoles(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsClientRoles(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = ClientRoles()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsClientRoles(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # ClientRoles
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -23,7 +29,7 @@ class ClientRoles(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .PublisherFeatures import PublisherFeatures
+            from wamp.proto.PublisherFeatures import PublisherFeatures
             obj = PublisherFeatures()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -34,7 +40,7 @@ class ClientRoles(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .SubscriberFeatures import SubscriberFeatures
+            from wamp.proto.SubscriberFeatures import SubscriberFeatures
             obj = SubscriberFeatures()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -45,7 +51,7 @@ class ClientRoles(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .CallerFeatures import CallerFeatures
+            from wamp.proto.CallerFeatures import CallerFeatures
             obj = CallerFeatures()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -56,15 +62,33 @@ class ClientRoles(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .CalleeFeatures import CalleeFeatures
+            from wamp.proto.CalleeFeatures import CalleeFeatures
             obj = CalleeFeatures()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-def ClientRolesStart(builder): builder.StartObject(4)
-def ClientRolesAddPublisher(builder, publisher): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(publisher), 0)
-def ClientRolesAddSubscriber(builder, subscriber): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(subscriber), 0)
-def ClientRolesAddCaller(builder, caller): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(caller), 0)
-def ClientRolesAddCallee(builder, callee): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(callee), 0)
-def ClientRolesEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(4)
+def ClientRolesStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddPublisher(builder, publisher): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(publisher), 0)
+def ClientRolesAddPublisher(builder, publisher):
+    """This method is deprecated. Please switch to AddPublisher."""
+    return AddPublisher(builder, publisher)
+def AddSubscriber(builder, subscriber): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(subscriber), 0)
+def ClientRolesAddSubscriber(builder, subscriber):
+    """This method is deprecated. Please switch to AddSubscriber."""
+    return AddSubscriber(builder, subscriber)
+def AddCaller(builder, caller): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(caller), 0)
+def ClientRolesAddCaller(builder, caller):
+    """This method is deprecated. Please switch to AddCaller."""
+    return AddCaller(builder, caller)
+def AddCallee(builder, callee): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(callee), 0)
+def ClientRolesAddCallee(builder, callee):
+    """This method is deprecated. Please switch to AddCallee."""
+    return AddCallee(builder, callee)
+def End(builder): return builder.EndObject()
+def ClientRolesEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

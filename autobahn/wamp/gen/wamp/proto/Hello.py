@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Hello(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsHello(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Hello()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsHello(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Hello
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -23,7 +29,7 @@ class Hello(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .ClientRoles import ClientRoles
+            from wamp.proto.ClientRoles import ClientRoles
             obj = ClientRoles()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -59,6 +65,11 @@ class Hello(object):
         return 0
 
     # Hello
+    def AuthmethodsIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        return o == 0
+
+    # Hello
     def Authid(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
@@ -77,7 +88,7 @@ class Hello(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .Map import Map
+            from wamp.Map import Map
             obj = Map()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -104,15 +115,51 @@ class Hello(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def HelloStart(builder): builder.StartObject(9)
-def HelloAddRoles(builder, roles): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(roles), 0)
-def HelloAddRealm(builder, realm): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(realm), 0)
-def HelloAddAuthmethods(builder, authmethods): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(authmethods), 0)
-def HelloStartAuthmethodsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def HelloAddAuthid(builder, authid): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(authid), 0)
-def HelloAddAuthrole(builder, authrole): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(authrole), 0)
-def HelloAddAuthextra(builder, authextra): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(authextra), 0)
-def HelloAddResumable(builder, resumable): builder.PrependBoolSlot(6, resumable, 0)
-def HelloAddResumeSession(builder, resumeSession): builder.PrependUint64Slot(7, resumeSession, 0)
-def HelloAddResumeToken(builder, resumeToken): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(resumeToken), 0)
-def HelloEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(9)
+def HelloStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRoles(builder, roles): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(roles), 0)
+def HelloAddRoles(builder, roles):
+    """This method is deprecated. Please switch to AddRoles."""
+    return AddRoles(builder, roles)
+def AddRealm(builder, realm): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(realm), 0)
+def HelloAddRealm(builder, realm):
+    """This method is deprecated. Please switch to AddRealm."""
+    return AddRealm(builder, realm)
+def AddAuthmethods(builder, authmethods): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(authmethods), 0)
+def HelloAddAuthmethods(builder, authmethods):
+    """This method is deprecated. Please switch to AddAuthmethods."""
+    return AddAuthmethods(builder, authmethods)
+def StartAuthmethodsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def HelloStartAuthmethodsVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartAuthmethodsVector(builder, numElems)
+def AddAuthid(builder, authid): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(authid), 0)
+def HelloAddAuthid(builder, authid):
+    """This method is deprecated. Please switch to AddAuthid."""
+    return AddAuthid(builder, authid)
+def AddAuthrole(builder, authrole): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(authrole), 0)
+def HelloAddAuthrole(builder, authrole):
+    """This method is deprecated. Please switch to AddAuthrole."""
+    return AddAuthrole(builder, authrole)
+def AddAuthextra(builder, authextra): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(authextra), 0)
+def HelloAddAuthextra(builder, authextra):
+    """This method is deprecated. Please switch to AddAuthextra."""
+    return AddAuthextra(builder, authextra)
+def AddResumable(builder, resumable): builder.PrependBoolSlot(6, resumable, 0)
+def HelloAddResumable(builder, resumable):
+    """This method is deprecated. Please switch to AddResumable."""
+    return AddResumable(builder, resumable)
+def AddResumeSession(builder, resumeSession): builder.PrependUint64Slot(7, resumeSession, 0)
+def HelloAddResumeSession(builder, resumeSession):
+    """This method is deprecated. Please switch to AddResumeSession."""
+    return AddResumeSession(builder, resumeSession)
+def AddResumeToken(builder, resumeToken): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(resumeToken), 0)
+def HelloAddResumeToken(builder, resumeToken):
+    """This method is deprecated. Please switch to AddResumeToken."""
+    return AddResumeToken(builder, resumeToken)
+def End(builder): return builder.EndObject()
+def HelloEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

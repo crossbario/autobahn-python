@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Published(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsPublished(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Published()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsPublished(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Published
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,7 +38,19 @@ class Published(object):
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def PublishedStart(builder): builder.StartObject(2)
-def PublishedAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def PublishedAddPublication(builder, publication): builder.PrependUint64Slot(1, publication, 0)
-def PublishedEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def PublishedStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def PublishedAddRequest(builder, request):
+    """This method is deprecated. Please switch to AddRequest."""
+    return AddRequest(builder, request)
+def AddPublication(builder, publication): builder.PrependUint64Slot(1, publication, 0)
+def PublishedAddPublication(builder, publication):
+    """This method is deprecated. Please switch to AddPublication."""
+    return AddPublication(builder, publication)
+def End(builder): return builder.EndObject()
+def PublishedEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Challenge(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsChallenge(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Challenge()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsChallenge(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Challenge
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -30,13 +36,25 @@ class Challenge(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from .Map import Map
+            from wamp.Map import Map
             obj = Map()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-def ChallengeStart(builder): builder.StartObject(2)
-def ChallengeAddMethod(builder, method): builder.PrependUint8Slot(0, method, 0)
-def ChallengeAddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
-def ChallengeEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def ChallengeStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddMethod(builder, method): builder.PrependUint8Slot(0, method, 0)
+def ChallengeAddMethod(builder, method):
+    """This method is deprecated. Please switch to AddMethod."""
+    return AddMethod(builder, method)
+def AddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
+def ChallengeAddExtra(builder, extra):
+    """This method is deprecated. Please switch to AddExtra."""
+    return AddExtra(builder, extra)
+def End(builder): return builder.EndObject()
+def ChallengeEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

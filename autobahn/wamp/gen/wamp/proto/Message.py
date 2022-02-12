@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Message(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsMessage(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Message()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsMessage(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Message
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -35,7 +41,19 @@ class Message(object):
             return obj
         return None
 
-def MessageStart(builder): builder.StartObject(2)
-def MessageAddMsgType(builder, msgType): builder.PrependUint8Slot(0, msgType, 0)
-def MessageAddMsg(builder, msg): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(msg), 0)
-def MessageEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(2)
+def MessageStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddMsgType(builder, msgType): builder.PrependUint8Slot(0, msgType, 0)
+def MessageAddMsgType(builder, msgType):
+    """This method is deprecated. Please switch to AddMsgType."""
+    return AddMsgType(builder, msgType)
+def AddMsg(builder, msg): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(msg), 0)
+def MessageAddMsg(builder, msg):
+    """This method is deprecated. Please switch to AddMsg."""
+    return AddMsg(builder, msg)
+def End(builder): return builder.EndObject()
+def MessageEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

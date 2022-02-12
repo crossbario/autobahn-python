@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Publish(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsPublish(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Publish()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsPublish(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Publish
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -32,7 +38,7 @@ class Publish(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-# /// Positional values for application-defined event payload.
+    # Positional values for application-defined event payload.
     # Publish
     def Args(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
@@ -55,7 +61,12 @@ class Publish(object):
             return self._tab.VectorLen(o)
         return 0
 
-# /// Keyword values for application-defined event payload.
+    # Publish
+    def ArgsIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        return o == 0
+
+    # Keyword values for application-defined event payload.
     # Publish
     def Kwargs(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
@@ -78,7 +89,12 @@ class Publish(object):
             return self._tab.VectorLen(o)
         return 0
 
-# /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
+    # Publish
+    def KwargsIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        return o == 0
+
+    # Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     # Publish
     def Payload(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
@@ -100,6 +116,11 @@ class Publish(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Publish
+    def PayloadIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        return o == 0
 
     # Publish
     def EncAlgo(self):
@@ -138,6 +159,11 @@ class Publish(object):
         return 0
 
     # Publish
+    def EncKeyIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
+        return o == 0
+
+    # Publish
     def Acknowledge(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
@@ -174,6 +200,11 @@ class Publish(object):
         return 0
 
     # Publish
+    def ExcludeIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
+        return o == 0
+
+    # Publish
     def ExcludeAuthid(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         if o != 0:
@@ -189,6 +220,11 @@ class Publish(object):
         return 0
 
     # Publish
+    def ExcludeAuthidIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
+        return o == 0
+
+    # Publish
     def ExcludeAuthrole(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
@@ -202,6 +238,11 @@ class Publish(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Publish
+    def ExcludeAuthroleIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
+        return o == 0
 
     # Publish
     def Eligible(self, j):
@@ -226,6 +267,11 @@ class Publish(object):
         return 0
 
     # Publish
+    def EligibleIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
+        return o == 0
+
+    # Publish
     def EligibleAuthid(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
         if o != 0:
@@ -239,6 +285,11 @@ class Publish(object):
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
+
+    # Publish
+    def EligibleAuthidIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(32))
+        return o == 0
 
     # Publish
     def EligibleAuthrole(self, j):
@@ -256,6 +307,11 @@ class Publish(object):
         return 0
 
     # Publish
+    def EligibleAuthroleIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
+        return o == 0
+
+    # Publish
     def Retain(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(36))
         if o != 0:
@@ -263,13 +319,19 @@ class Publish(object):
         return False
 
     # Publish
-    def ForwardFor(self, j):
+    def TransactionHash(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(38))
         if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Publish
+    def ForwardFor(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(40))
+        if o != 0:
             x = self._tab.Vector(o)
-            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
-            x = self._tab.Indirect(x)
-            from .Principal import Principal
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
+            from wamp.proto.Principal import Principal
             obj = Principal()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -277,39 +339,141 @@ class Publish(object):
 
     # Publish
     def ForwardForLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(38))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(40))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
-def PublishStart(builder): builder.StartObject(18)
-def PublishAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def PublishAddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
-def PublishAddArgs(builder, args): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(args), 0)
-def PublishStartArgsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def PublishAddKwargs(builder, kwargs): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(kwargs), 0)
-def PublishStartKwargsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def PublishAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
-def PublishStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def PublishAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(5, encAlgo, 0)
-def PublishAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(6, encSerializer, 0)
-def PublishAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
-def PublishStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def PublishAddAcknowledge(builder, acknowledge): builder.PrependBoolSlot(8, acknowledge, 0)
-def PublishAddExcludeMe(builder, excludeMe): builder.PrependBoolSlot(9, excludeMe, 1)
-def PublishAddExclude(builder, exclude): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(exclude), 0)
-def PublishStartExcludeVector(builder, numElems): return builder.StartVector(8, numElems, 8)
-def PublishAddExcludeAuthid(builder, excludeAuthid): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(excludeAuthid), 0)
-def PublishStartExcludeAuthidVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def PublishAddExcludeAuthrole(builder, excludeAuthrole): builder.PrependUOffsetTRelativeSlot(12, flatbuffers.number_types.UOffsetTFlags.py_type(excludeAuthrole), 0)
-def PublishStartExcludeAuthroleVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def PublishAddEligible(builder, eligible): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(eligible), 0)
-def PublishStartEligibleVector(builder, numElems): return builder.StartVector(8, numElems, 8)
-def PublishAddEligibleAuthid(builder, eligibleAuthid): builder.PrependUOffsetTRelativeSlot(14, flatbuffers.number_types.UOffsetTFlags.py_type(eligibleAuthid), 0)
-def PublishStartEligibleAuthidVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def PublishAddEligibleAuthrole(builder, eligibleAuthrole): builder.PrependUOffsetTRelativeSlot(15, flatbuffers.number_types.UOffsetTFlags.py_type(eligibleAuthrole), 0)
-def PublishStartEligibleAuthroleVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def PublishAddRetain(builder, retain): builder.PrependBoolSlot(16, retain, 0)
-def PublishAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(17, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
-def PublishStartForwardForVector(builder, numElems): return builder.StartVector(4, numElems, 4)
-def PublishEnd(builder): return builder.EndObject()
+    # Publish
+    def ForwardForIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(40))
+        return o == 0
+
+def Start(builder): builder.StartObject(19)
+def PublishStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def PublishAddRequest(builder, request):
+    """This method is deprecated. Please switch to AddRequest."""
+    return AddRequest(builder, request)
+def AddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
+def PublishAddTopic(builder, topic):
+    """This method is deprecated. Please switch to AddTopic."""
+    return AddTopic(builder, topic)
+def AddArgs(builder, args): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(args), 0)
+def PublishAddArgs(builder, args):
+    """This method is deprecated. Please switch to AddArgs."""
+    return AddArgs(builder, args)
+def StartArgsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def PublishStartArgsVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartArgsVector(builder, numElems)
+def AddKwargs(builder, kwargs): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(kwargs), 0)
+def PublishAddKwargs(builder, kwargs):
+    """This method is deprecated. Please switch to AddKwargs."""
+    return AddKwargs(builder, kwargs)
+def StartKwargsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def PublishStartKwargsVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartKwargsVector(builder, numElems)
+def AddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+def PublishAddPayload(builder, payload):
+    """This method is deprecated. Please switch to AddPayload."""
+    return AddPayload(builder, payload)
+def StartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def PublishStartPayloadVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartPayloadVector(builder, numElems)
+def AddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(5, encAlgo, 0)
+def PublishAddEncAlgo(builder, encAlgo):
+    """This method is deprecated. Please switch to AddEncAlgo."""
+    return AddEncAlgo(builder, encAlgo)
+def AddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(6, encSerializer, 0)
+def PublishAddEncSerializer(builder, encSerializer):
+    """This method is deprecated. Please switch to AddEncSerializer."""
+    return AddEncSerializer(builder, encSerializer)
+def AddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+def PublishAddEncKey(builder, encKey):
+    """This method is deprecated. Please switch to AddEncKey."""
+    return AddEncKey(builder, encKey)
+def StartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def PublishStartEncKeyVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartEncKeyVector(builder, numElems)
+def AddAcknowledge(builder, acknowledge): builder.PrependBoolSlot(8, acknowledge, 0)
+def PublishAddAcknowledge(builder, acknowledge):
+    """This method is deprecated. Please switch to AddAcknowledge."""
+    return AddAcknowledge(builder, acknowledge)
+def AddExcludeMe(builder, excludeMe): builder.PrependBoolSlot(9, excludeMe, 1)
+def PublishAddExcludeMe(builder, excludeMe):
+    """This method is deprecated. Please switch to AddExcludeMe."""
+    return AddExcludeMe(builder, excludeMe)
+def AddExclude(builder, exclude): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(exclude), 0)
+def PublishAddExclude(builder, exclude):
+    """This method is deprecated. Please switch to AddExclude."""
+    return AddExclude(builder, exclude)
+def StartExcludeVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+def PublishStartExcludeVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartExcludeVector(builder, numElems)
+def AddExcludeAuthid(builder, excludeAuthid): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(excludeAuthid), 0)
+def PublishAddExcludeAuthid(builder, excludeAuthid):
+    """This method is deprecated. Please switch to AddExcludeAuthid."""
+    return AddExcludeAuthid(builder, excludeAuthid)
+def StartExcludeAuthidVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def PublishStartExcludeAuthidVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartExcludeAuthidVector(builder, numElems)
+def AddExcludeAuthrole(builder, excludeAuthrole): builder.PrependUOffsetTRelativeSlot(12, flatbuffers.number_types.UOffsetTFlags.py_type(excludeAuthrole), 0)
+def PublishAddExcludeAuthrole(builder, excludeAuthrole):
+    """This method is deprecated. Please switch to AddExcludeAuthrole."""
+    return AddExcludeAuthrole(builder, excludeAuthrole)
+def StartExcludeAuthroleVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def PublishStartExcludeAuthroleVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartExcludeAuthroleVector(builder, numElems)
+def AddEligible(builder, eligible): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(eligible), 0)
+def PublishAddEligible(builder, eligible):
+    """This method is deprecated. Please switch to AddEligible."""
+    return AddEligible(builder, eligible)
+def StartEligibleVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+def PublishStartEligibleVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartEligibleVector(builder, numElems)
+def AddEligibleAuthid(builder, eligibleAuthid): builder.PrependUOffsetTRelativeSlot(14, flatbuffers.number_types.UOffsetTFlags.py_type(eligibleAuthid), 0)
+def PublishAddEligibleAuthid(builder, eligibleAuthid):
+    """This method is deprecated. Please switch to AddEligibleAuthid."""
+    return AddEligibleAuthid(builder, eligibleAuthid)
+def StartEligibleAuthidVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def PublishStartEligibleAuthidVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartEligibleAuthidVector(builder, numElems)
+def AddEligibleAuthrole(builder, eligibleAuthrole): builder.PrependUOffsetTRelativeSlot(15, flatbuffers.number_types.UOffsetTFlags.py_type(eligibleAuthrole), 0)
+def PublishAddEligibleAuthrole(builder, eligibleAuthrole):
+    """This method is deprecated. Please switch to AddEligibleAuthrole."""
+    return AddEligibleAuthrole(builder, eligibleAuthrole)
+def StartEligibleAuthroleVector(builder, numElems): return builder.StartVector(4, numElems, 4)
+def PublishStartEligibleAuthroleVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartEligibleAuthroleVector(builder, numElems)
+def AddRetain(builder, retain): builder.PrependBoolSlot(16, retain, 0)
+def PublishAddRetain(builder, retain):
+    """This method is deprecated. Please switch to AddRetain."""
+    return AddRetain(builder, retain)
+def AddTransactionHash(builder, transactionHash): builder.PrependUOffsetTRelativeSlot(17, flatbuffers.number_types.UOffsetTFlags.py_type(transactionHash), 0)
+def PublishAddTransactionHash(builder, transactionHash):
+    """This method is deprecated. Please switch to AddTransactionHash."""
+    return AddTransactionHash(builder, transactionHash)
+def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(18, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def PublishAddForwardFor(builder, forwardFor):
+    """This method is deprecated. Please switch to AddForwardFor."""
+    return AddForwardFor(builder, forwardFor)
+def StartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+def PublishStartForwardForVector(builder, numElems):
+    """This method is deprecated. Please switch to Start."""
+    return StartForwardForVector(builder, numElems)
+def End(builder): return builder.EndObject()
+def PublishEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)

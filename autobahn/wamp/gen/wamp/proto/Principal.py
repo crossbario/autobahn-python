@@ -3,44 +3,24 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Principal(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsPrincipal(cls, buf, offset):
-        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
-        x = Principal()
-        x.Init(buf, n + offset)
-        return x
+    def SizeOf(cls):
+        return 8
 
     # Principal
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Principal
-    def Session(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
-        return 0
+    def Session(self): return self._tab.Get(flatbuffers.number_types.Uint64Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0))
 
-    # Principal
-    def Authid(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-    # Principal
-    def Authrole(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-def PrincipalStart(builder): builder.StartObject(3)
-def PrincipalAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
-def PrincipalAddAuthid(builder, authid): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(authid), 0)
-def PrincipalAddAuthrole(builder, authrole): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(authrole), 0)
-def PrincipalEnd(builder): return builder.EndObject()
+def CreatePrincipal(builder, session):
+    builder.Prep(8, 8)
+    builder.PrependUint64(session)
+    return builder.Offset()

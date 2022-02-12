@@ -3,17 +3,23 @@
 # namespace: proto
 
 import flatbuffers
+from flatbuffers.compat import import_numpy
+np = import_numpy()
 
 class Subscribe(object):
     __slots__ = ['_tab']
 
     @classmethod
-    def GetRootAsSubscribe(cls, buf, offset):
+    def GetRootAs(cls, buf, offset=0):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
         x = Subscribe()
         x.Init(buf, n + offset)
         return x
 
+    @classmethod
+    def GetRootAsSubscribe(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Subscribe
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -46,9 +52,27 @@ class Subscribe(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def SubscribeStart(builder): builder.StartObject(4)
-def SubscribeAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def SubscribeAddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
-def SubscribeAddMatch(builder, match): builder.PrependUint8Slot(2, match, 0)
-def SubscribeAddGetRetained(builder, getRetained): builder.PrependBoolSlot(3, getRetained, 0)
-def SubscribeEnd(builder): return builder.EndObject()
+def Start(builder): builder.StartObject(4)
+def SubscribeStart(builder):
+    """This method is deprecated. Please switch to Start."""
+    return Start(builder)
+def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def SubscribeAddRequest(builder, request):
+    """This method is deprecated. Please switch to AddRequest."""
+    return AddRequest(builder, request)
+def AddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
+def SubscribeAddTopic(builder, topic):
+    """This method is deprecated. Please switch to AddTopic."""
+    return AddTopic(builder, topic)
+def AddMatch(builder, match): builder.PrependUint8Slot(2, match, 0)
+def SubscribeAddMatch(builder, match):
+    """This method is deprecated. Please switch to AddMatch."""
+    return AddMatch(builder, match)
+def AddGetRetained(builder, getRetained): builder.PrependBoolSlot(3, getRetained, 0)
+def SubscribeAddGetRetained(builder, getRetained):
+    """This method is deprecated. Please switch to AddGetRetained."""
+    return AddGetRetained(builder, getRetained)
+def End(builder): return builder.EndObject()
+def SubscribeEnd(builder):
+    """This method is deprecated. Please switch to End."""
+    return End(builder)
