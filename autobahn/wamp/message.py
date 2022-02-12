@@ -3655,10 +3655,10 @@ class Event(Message):
 
         if topic:
             message_fbs.EventGen.EventAddTopic(builder, topic)
+        if self.retained is not None:
+            message_fbs.EventGen.EventAddRetained(builder, self.retained)
         if transaction_hash is not None:
             message_fbs.EventGen.EventAddTransactionHash(builder, transaction_hash)
-        if topic:
-            message_fbs.EventGen.EventAddTopic(builder, topic)
         if self.x_acknowledged_delivery is not None:
             message_fbs.EventGen.EventAddAcknowledge(builder, self.x_acknowledged_delivery)
 
