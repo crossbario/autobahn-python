@@ -730,7 +730,7 @@ class ApplicationSession(BaseSession):
                         invoke_kwargs = msg.kwargs if msg.kwargs else dict()
 
                         if handler.details_arg:
-                            invoke_kwargs[handler.details_arg] = types.EventDetails(subscription, msg.publication, publisher=msg.publisher, publisher_authid=msg.publisher_authid, publisher_authrole=msg.publisher_authrole, topic=topic, retained=msg.retained, enc_algo=msg.enc_algo, forward_for=msg.forward_for)
+                            invoke_kwargs[handler.details_arg] = types.EventDetails(subscription, msg.publication, publisher=msg.publisher, publisher_authid=msg.publisher_authid, publisher_authrole=msg.publisher_authrole, topic=topic, transaction_hash=msg.transaction_hash, retained=msg.retained, enc_algo=msg.enc_algo, forward_for=msg.forward_for)
 
                         # FIXME: https://github.com/crossbario/autobahn-python/issues/764
                         def _success(_):
@@ -1020,6 +1020,7 @@ class ApplicationSession(BaseSession):
                                                                                         caller_authid=msg.caller_authid,
                                                                                         caller_authrole=msg.caller_authrole,
                                                                                         procedure=proc,
+                                                                                        transaction_hash=msg.transaction_hash,
                                                                                         enc_algo=msg.enc_algo)
 
                             on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
