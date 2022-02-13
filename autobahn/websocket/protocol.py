@@ -33,6 +33,7 @@ import os
 import pickle
 import copy
 import json
+import time
 
 from pprint import pformat
 from collections import deque
@@ -47,7 +48,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
 from autobahn.websocket.types import ConnectingRequest
 
-from autobahn.util import Stopwatch, newid, wildcards2patterns, encode_truncate
+from autobahn.util import Stopwatch, wildcards2patterns, encode_truncate
 from autobahn.util import _LazyHexFormatter
 from autobahn.util import ObservableMixin
 from autobahn.websocket.utf8validator import Utf8Validator
@@ -511,7 +512,8 @@ class WebSocketProtocol(ObservableMixin):
                            'tcpNoDelay',
                            'autoPingInterval',
                            'autoPingTimeout',
-                           'autoPingSize']
+                           'autoPingSize',
+                           'autoPingRestartOnAnyTraffic']
     """
     Configuration attributes common to servers and clients.
     """
@@ -836,6 +838,21 @@ class WebSocketProtocol(ObservableMixin):
         else:
             self.log.debug('skipping closing handshake timeout: WebSocket connection is already closed')
 
+    def onAutoPong(self, ping_sent, ping_seq, pong_received, pong_rtt, payload):
+        """
+        When doing automatic ping/pongs, this is called upon a successful pong.
+
+        :param ping_sent: Posix time in ns when ping was sent.
+        :param ping_seq: Sequence number of ping that was sent.
+        :param pong_received: Posix time in ns when pong was received.
+        :param pong_rtt: Pong roundtrip-time in ms measured.
+        :param payload: The complete WebSocket ping/pong message payload
+            (ping_sent 8 bytes big-endian | ping_seq 4 bytes big endian | max. 113 optional random bytes).
+        """
+        self.log.info(
+            "Auto ping/pong: received pending pong (size={size}) for auto-ping (sent={sent}, seq={seq}, received={}) in RTT of {rtt} ms",
+            size=len(payload), sent=ping_sent, seq=ping_seq, received=pong_received, rtt=pong_rtt)
+
     def onAutoPingTimeout(self):
         """
         When doing automatic ping/pongs to detect broken connection, the peer
@@ -1068,6 +1085,8 @@ class WebSocketProtocol(ObservableMixin):
         self.autoPingTimeoutCall = None
         self.autoPingPending = None
         self.autoPingPendingCall = None
+        self.autoPingPendingSeq = 0
+        self.autoPingPendingSent = None
 
         # set opening handshake timeout handler
         if self.openHandshakeTimeout > 0:
@@ -1681,7 +1700,10 @@ class WebSocketProtocol(ObservableMixin):
 
             self._onMessageFrameEnd()
 
-            if self.autoPingTimeoutCall:
+            if self.autoPingTimeoutCall and self.autoPingRestartOnAnyTraffic:
+                # cancel a pending ping timeout already by having received a data frame
+                # note that this is slightly wrong, but see _cancelAutoPingTimeoutCall and:
+                # https://github.com/crossbario/autobahn-python/issues/1327
                 self._cancelAutoPingTimeoutCall()
 
             if self.current_frame.fin:
@@ -1742,12 +1764,22 @@ class WebSocketProtocol(ObservableMixin):
             if self.autoPingPending:
                 try:
                     if payload == self.autoPingPending:
-                        self.log.debug("Auto ping/pong: received pending pong for auto-ping/pong")
+                        # self.autoPingPendingSent
+                        ping_sent = struct.unpack('>Q', payload[:8])[0]
+
+                        # self.autoPingPendingSeq
+                        ping_seq = struct.unpack('>L', payload[8:12])[0]
+
+                        pong_received = time.time_ns()
+                        pong_rtt = int((pong_received - ping_sent) / 10**6)
+
+                        self.onAutoPong(ping_sent, ping_seq, pong_received, pong_rtt, payload)
 
                         if self.autoPingTimeoutCall:
                             self.autoPingTimeoutCall.cancel()
 
                         self.autoPingPending = None
+                        self.autoPingPendingSent = None
                         self.autoPingTimeoutCall = None
 
                         if self.autoPingInterval:
@@ -1756,9 +1788,9 @@ class WebSocketProtocol(ObservableMixin):
                                 self._sendAutoPing,
                             )
                     else:
-                        self.log.debug("Auto ping/pong: received non-pending pong")
+                        self.log.warn("Auto ping/pong: received non-pending pong")
                 except:
-                    self.log.debug("Auto ping/pong: received non-pending pong")
+                    self.log.warn("Auto ping/pong: received non-pending pong")
 
             # fire app-level callback
             #
@@ -1886,14 +1918,19 @@ class WebSocketProtocol(ObservableMixin):
 
         self.autoPingPendingCall = None
 
-        self.autoPingPending = newid(self.autoPingSize).encode('utf8')
+        self.autoPingPendingSent = time.time_ns()
+        self.autoPingPendingSeq += 1
+        self.autoPingPending = b''.join([struct.pack('>Q', self.autoPingPendingSent),
+                                         struct.pack('>L', self.autoPingPendingSeq),
+                                         os.urandom(self.autoPingSize - 12)])
 
         self.sendPing(self.autoPingPending)
 
         if self.autoPingTimeout:
             self.log.debug(
-                "Expecting ping in {seconds} seconds for auto-ping/pong",
+                "Expecting pong in {seconds} seconds for auto-ping ({size} bytes)",
                 seconds=self.autoPingTimeout,
+                size=len(self.autoPingPending),
             )
             self.autoPingTimeoutCall = self.factory._batched_timer.call_later(
                 self.autoPingTimeout,
@@ -1903,7 +1940,7 @@ class WebSocketProtocol(ObservableMixin):
     def _cancelAutoPingTimeoutCall(self):
         """
         When data is received from client, use it in leu of timely PONG response - cancel pending timeout call
-        that will drop connection
+        that will drop connection. See https://github.com/crossbario/autobahn-python/issues/1327
         """
         self.log.debug("Cancelling autoPingTimeoutCall due to incoming data")
         self.autoPingTimeoutCall.cancel()
@@ -3222,7 +3259,10 @@ class WebSocketServerFactory(WebSocketFactory):
         #
         self.autoPingInterval = 0
         self.autoPingTimeout = 0
-        self.autoPingSize = 4
+        self.autoPingSize = 12
+
+        # see: https://github.com/crossbario/autobahn-python/issues/1327 and _cancelAutoPingTimeoutCall
+        self.autoPingRestartOnAnyTraffic = True
 
         # check WebSocket origin against this list
         self.allowedOrigins = ["*"]
@@ -3254,6 +3294,7 @@ class WebSocketServerFactory(WebSocketFactory):
                            autoPingInterval=None,
                            autoPingTimeout=None,
                            autoPingSize=None,
+                           autoPingRestartOnAnyTraffic=None,
                            serveFlashSocketPolicy=None,
                            flashSocketPolicy=None,
                            allowedOrigins=None,
@@ -3320,8 +3361,12 @@ class WebSocketServerFactory(WebSocketFactory):
 
         if autoPingSize is not None and autoPingSize != self.autoPingSize:
             assert(type(autoPingSize) == float or type(autoPingSize) == int)
-            assert(4 <= autoPingSize <= 125)
+            assert(12 <= autoPingSize <= 125)
             self.autoPingSize = autoPingSize
+
+        if autoPingRestartOnAnyTraffic is not None and autoPingRestartOnAnyTraffic != self.autoPingRestartOnAnyTraffic:
+            assert(type(autoPingRestartOnAnyTraffic) == bool)
+            self.autoPingRestartOnAnyTraffic = autoPingRestartOnAnyTraffic
 
         if serveFlashSocketPolicy is not None and serveFlashSocketPolicy != self.serveFlashSocketPolicy:
             self.serveFlashSocketPolicy = serveFlashSocketPolicy
@@ -3971,7 +4016,10 @@ class WebSocketClientFactory(WebSocketFactory):
         #
         self.autoPingInterval = 0
         self.autoPingTimeout = 0
-        self.autoPingSize = 4
+        self.autoPingSize = 12
+
+        # see: https://github.com/crossbario/autobahn-python/issues/1327 and _cancelAutoPingTimeoutCall
+        self.autoPingRestartOnAnyTraffic = True
 
     def setProtocolOptions(self,
                            version=None,
@@ -3992,7 +4040,8 @@ class WebSocketClientFactory(WebSocketFactory):
                            perMessageCompressionAccept=None,
                            autoPingInterval=None,
                            autoPingTimeout=None,
-                           autoPingSize=None):
+                           autoPingSize=None,
+                           autoPingRestartOnAnyTraffic=None):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory.setProtocolOptions`
         """
@@ -4061,5 +4110,9 @@ class WebSocketClientFactory(WebSocketFactory):
 
         if autoPingSize is not None and autoPingSize != self.autoPingSize:
             assert(type(autoPingSize) == float or type(autoPingSize) == int)
-            assert(4 <= autoPingSize <= 125)
+            assert(12 <= autoPingSize <= 125)
             self.autoPingSize = autoPingSize
+
+        if autoPingRestartOnAnyTraffic is not None and autoPingRestartOnAnyTraffic != self.autoPingRestartOnAnyTraffic:
+            assert(type(autoPingRestartOnAnyTraffic) == bool)
+            self.autoPingRestartOnAnyTraffic = autoPingRestartOnAnyTraffic

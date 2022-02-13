@@ -207,7 +207,7 @@ class IWebSocketServerChannelFactory(abc.ABC):
            peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingTimeout: float or None
 
-        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
+        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[12, 125]`. (default: `12`).
         :type autoPingSize: int or None
 
         :param serveFlashSocketPolicy: Serve the Flash Socket Policy when we receive a policy file request on this protocol. (default: `False`).
@@ -395,7 +395,7 @@ class IWebSocketClientChannelFactory(abc.ABC):
            peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingTimeout: float or None
 
-        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
+        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[12, 125]`. (default: `12`).
         :type autoPingSize: int
         """
 
