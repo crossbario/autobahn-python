@@ -220,7 +220,7 @@ class ApplicationRunner(object):
                                                  tcpNoDelay=True,
                                                  autoPingInterval=10.,
                                                  autoPingTimeout=5.,
-                                                 autoPingSize=4,
+                                                 autoPingSize=12,
                                                  perMessageCompressionOffers=offers,
                                                  perMessageCompressionAccept=accept)
         # SSL context for client connection
