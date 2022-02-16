@@ -699,6 +699,13 @@ else:
 if _HAS_CBOR:
 
     class CBORObjectSerializer(object):
+        """
+        CBOR serializer based on `cbor2 <https://github.com/agronholm/cbor2>`_.
+
+        This CBOR serializer has proper support for arbitrary precision decimals,
+        via tagged decimal fraction encoding, as described in
+        `RFC7049 section 2.4.3 <https://datatracker.ietf.org/doc/html/rfc7049#section-2.4.3>`_.
+        """
 
         NAME = 'cbor'
 
@@ -711,7 +718,6 @@ if _HAS_CBOR:
 
         def __init__(self, batched=False):
             """
-            Ctor.
 
             :param batched: Flag that controls whether serializer operates in batched mode.
             :type batched: bool

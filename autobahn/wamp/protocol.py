@@ -37,7 +37,7 @@ from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError, TypeCheckError
-from autobahn.wamp.interfaces import IPayloadCodec, IAuthenticator  # noqa
+from autobahn.wamp.interfaces import ISession, IPayloadCodec, IAuthenticator  # noqa
 from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
 from autobahn.exception import PayloadExceededError
 from autobahn.wamp.request import \
@@ -1940,7 +1940,7 @@ class _SessionShim(ApplicationSession):
 
 
 # ISession.register collides with the abc.ABCMeta.register method
-# ISession.register(ApplicationSession)
+ISession._abc_register(ApplicationSession)
 
 
 class ApplicationSessionFactory(object):
