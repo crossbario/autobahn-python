@@ -556,13 +556,13 @@ class WebSocketProtocol(ObservableMixin):
 
     def onOpen(self):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
         """
         self.log.debug("WebSocketProtocol.onOpen")
 
     def onMessageBegin(self, isBinary):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageBegin`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageBegin`
         """
         self.message_is_binary = isBinary
         self.message_data = []
@@ -570,7 +570,7 @@ class WebSocketProtocol(ObservableMixin):
 
     def onMessageFrameBegin(self, length):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameBegin`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameBegin`
         """
         self.frame_length = length
         self.frame_data = []
@@ -589,7 +589,7 @@ class WebSocketProtocol(ObservableMixin):
 
     def onMessageFrameData(self, payload):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameData`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameData`
         """
         if not self.failedByMe:
             if self.websocket_version == 0:
@@ -605,7 +605,7 @@ class WebSocketProtocol(ObservableMixin):
 
     def onMessageFrameEnd(self):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameEnd`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameEnd`
         """
         if not self.failedByMe:
             self._onMessageFrame(self.frame_data)
@@ -614,14 +614,14 @@ class WebSocketProtocol(ObservableMixin):
 
     def onMessageFrame(self, payload):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrame`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrame`
         """
         if not self.failedByMe:
             self.message_data.extend(payload)
 
     def onMessageEnd(self):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageEnd`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageEnd`
         """
         if not self.failedByMe:
             payload = b''.join(self.message_data)
@@ -645,7 +645,7 @@ class WebSocketProtocol(ObservableMixin):
 
     def onMessage(self, payload, isBinary):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
         """
         self.log.debug(
             "WebSocketProtocol.onMessage(payload=<{payload_len} bytes)>, isBinary={isBinary}",
@@ -655,7 +655,7 @@ class WebSocketProtocol(ObservableMixin):
 
     def onPing(self, payload):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPing`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onPing`
         """
         self.log.debug(
             "WebSocketProtocol.onPing(payload=<{payload_len} bytes>)",
@@ -666,7 +666,7 @@ class WebSocketProtocol(ObservableMixin):
 
     def onPong(self, payload):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPong`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onPong`
         """
         self.log.debug(
             "WebSocketProtocol.onPong(payload=<{payload_len} bytes>)",
@@ -675,7 +675,7 @@ class WebSocketProtocol(ObservableMixin):
 
     def onClose(self, wasClean, code, reason):
         """
-        Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
+        Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
         """
         self.log.debug(
             "WebSocketProtocol.onClose(wasClean={wasClean}, code={code}, reason={reason})",
@@ -2534,7 +2534,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         to accept the WebSocket connection request.
 
         :param request: WebSocket connection request information.
-        :type request: instance of :class:`autobahn.websocket.protocol.ConnectionRequest`
+        :type request: instance of :class:`autobahn.websocket.types.ConnectionRequest`
         """
         return None
 
@@ -3428,7 +3428,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         connection was established.
 
         :param response: WebSocket connection response information.
-        :type response: instance of :class:`autobahn.websocket.protocol.ConnectionResponse`
+        :type response: instance of :class:`autobahn.websocket.types.ConnectionResponse`
         """
         pass
 

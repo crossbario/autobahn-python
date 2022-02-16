@@ -330,8 +330,13 @@ class ITransportHandler(abc.ABC):
         """
 
 
+# ISession.register collides with the abc.ABCMeta.register method
+class _ABC(abc.ABC):
+    _abc_register = abc.ABC.register
+
+
 @public
-class ISession(abc.ABC):
+class ISession(_ABC):
     """
     Interface for WAMP sessions.
     """

@@ -26,7 +26,7 @@
 
 
 import re
-
+from typing import Optional, Union
 
 from autobahn.util import public
 from autobahn.wamp.types import RegisterOptions, SubscribeOptions
@@ -40,7 +40,7 @@ __all__ = (
 )
 
 
-def convert_starred_uri(uri):
+def convert_starred_uri(uri: str):
     """
     Convert a starred URI to a standard WAMP URI and a detected matching
     policy. A starred URI is one that may contain the character '*' used
@@ -130,7 +130,8 @@ class Pattern(object):
         This pattern is stricter than a general WAMP URI component since a valid Python identifier is required.
     """
 
-    def __init__(self, uri, target, options=None, check_types=False):
+    def __init__(self, uri: str, target: int, options: Optional[Union[SubscribeOptions, RegisterOptions]] = None,
+                 check_types: Optional[bool] = None):
         """
 
         :param uri: The URI or URI pattern, e.g. ``"com.myapp.product.<product:int>.update"``.
@@ -153,15 +154,15 @@ class Pattern(object):
         :type check_types: bool
 
         """
-        assert(type(uri) == str)
-        assert(len(uri) > 0)
-        assert(target in [Pattern.URI_TARGET_ENDPOINT,
-                          Pattern.URI_TARGET_HANDLER,
-                          Pattern.URI_TARGET_EXCEPTION])
+        assert (type(uri) == str)
+        assert (len(uri) > 0)
+        assert (target in [Pattern.URI_TARGET_ENDPOINT,
+                           Pattern.URI_TARGET_HANDLER,
+                           Pattern.URI_TARGET_EXCEPTION])
         if target == Pattern.URI_TARGET_ENDPOINT:
-            assert(options is None or type(options) == RegisterOptions)
+            assert (options is None or type(options) == RegisterOptions)
         elif target == Pattern.URI_TARGET_HANDLER:
-            assert(options is None or type(options) == SubscribeOptions)
+            assert (options is None or type(options) == SubscribeOptions)
         else:
             options = None
 
@@ -327,7 +328,7 @@ class Pattern(object):
 
 
 @public
-def register(uri, options=None, check_types=False):
+def register(uri: Optional[str], options: Optional[RegisterOptions] = None, check_types: Optional[bool] = None):
     """
     Decorator for WAMP procedure endpoints.
 
@@ -360,7 +361,7 @@ def register(uri, options=None, check_types=False):
 
 
 @public
-def subscribe(uri, options=None, check_types=False):
+def subscribe(uri: Optional[str], options: Optional[SubscribeOptions] = None, check_types: Optional[bool] = None):
     """
     Decorator for WAMP event handlers.
 
@@ -389,7 +390,7 @@ def subscribe(uri, options=None, check_types=False):
 
 
 @public
-def error(uri):
+def error(uri: str):
     """
     Decorator for WAMP error classes.
     """
