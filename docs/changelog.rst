@@ -5,8 +5,8 @@
 Changelog
 =========
 
-22.2.1.dev1
------------
+22.2.1
+------
 
 * new: add auto-ping/pong configuration knob ``autoPingRestartOnAnyTraffic`` (see discussion `here <https://github.com/crossbario/autobahn-python/issues/1327>`_).
 * new: extended websocket auto-ping/pong ("heartbeating") with builtin RTT measurement

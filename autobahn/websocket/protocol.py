@@ -850,7 +850,7 @@ class WebSocketProtocol(ObservableMixin):
             (ping_sent 8 bytes big-endian | ping_seq 4 bytes big endian | max. 113 optional random bytes).
         """
         self.log.info(
-            "Auto ping/pong: received pending pong (size={size}) for auto-ping (sent={sent}, seq={seq}, received={}) in RTT of {rtt} ms",
+            "Auto ping/pong: received pending pong (size={size}) for auto-ping (sent={sent}, seq={seq}, received={received}) in RTT of {rtt} ms",
             size=len(payload), sent=ping_sent, seq=ping_seq, received=pong_received, rtt=pong_rtt)
 
     def onAutoPingTimeout(self):
