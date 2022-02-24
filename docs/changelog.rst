@@ -5,6 +5,11 @@
 Changelog
 =========
 
+22.2.2
+------
+
+* fix: auto ping/pong logs should be debug instead of info (#1524)
+
 22.2.1
 ------
 
