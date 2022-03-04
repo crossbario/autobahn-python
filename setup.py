@@ -262,6 +262,9 @@ setup(
     license='MIT License',
     author='Crossbar.io Technologies GmbH',
     url='http://crossbar.io/autobahn',
+    project_urls={
+        'Source': 'https://github.com/crossbario/autobahn-python',
+    },
     platforms='Any',
     install_requires=[
         'txaio>=21.2.1',        # MIT license (https://github.com/crossbario/txaio)
