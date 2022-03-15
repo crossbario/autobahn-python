@@ -28,7 +28,7 @@ import os
 import unittest
 from binascii import b2a_hex
 
-from autobahn.util import IdGenerator, parse_activation_code, generate_activation_code
+from autobahn.util import IdGenerator, parse_activation_code, generate_activation_code, generate_token
 
 
 class TestIdGenerator(unittest.TestCase):
@@ -58,3 +58,10 @@ class TestIdGenerator(unittest.TestCase):
             code = b2a_hex(os.urandom(20)).decode()
             parsed_code = parse_activation_code(code)
             self.assertEqual(None, parsed_code)
+
+    def test_generate_token(self):
+        token = generate_token(5, 4)
+        self.assertEqual(len(token), len('NUAG-UPQJ-MFGA-K5P5-MUGA'))
+        self.assertEqual(len(token.split('-')), 5)
+        for part in token.split('-'):
+            self.assertEqual(len(part), 4)

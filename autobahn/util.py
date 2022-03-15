@@ -358,9 +358,9 @@ Delta" and telephone operators' "Is that 'd' as in 'dog'?".
 @public
 def generate_token(char_groups: int,
                    chars_per_group: int,
-                   chars=Optional[str],
-                   sep=Optional[str],
-                   lower_case=False) -> str:
+                   chars: Optional[str] = None,
+                   sep: Optional[str] = None,
+                   lower_case: Optional[bool] = False) -> str:
     """
     Generate cryptographically strong tokens, which are strings like `M6X5-YO5W-T5IK`.
     These can be used e.g. for used-only-once activation tokens or the like.
@@ -400,7 +400,7 @@ def generate_token(char_groups: int,
     """
     assert(type(char_groups) == int)
     assert(type(chars_per_group) == int)
-    assert(chars is None or type(chars) == str)
+    assert(chars is None or type(chars) == str), 'chars must be str, was {}'.format(type(chars))
     chars = chars or DEFAULT_TOKEN_CHARS
     if lower_case:
         chars = chars.lower()
