@@ -553,6 +553,9 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
         """
         WampRawSocketFactory.__init__(self, factory)
 
+        # Reduce the factory logs noise
+        self.noisy = False
+
         if serializer is None:
 
             # try CBOR WAMP serializer

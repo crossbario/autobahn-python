@@ -858,3 +858,6 @@ class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocket
         kwargs['protocols'] = self._protocols
 
         WebSocketClientFactory.__init__(self, *args, **kwargs)
+
+        # Reduce the factory logs noise
+        self.noisy = False
