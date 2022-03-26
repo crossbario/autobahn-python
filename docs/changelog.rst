@@ -5,6 +5,14 @@
 Changelog
 =========
 
+22.3.1
+------
+
+* fix: reduce twisted log noise for wamp clients (#1537)
+* fix: roundrobin in WAMP component (#1533)
+* fix: generate_token (#1531)
+* fix: add GitHub URL for PyPi (#1528)
+
 22.2.2
 ------
 
