@@ -199,36 +199,12 @@ else:
     entry_points['console_scripts'] += ["xbrnetwork-ui = autobahn.xbr._gui:_main"]
 
 # development dependencies
-extras_require_dev = [
-    # flake8 will install the version "it needs"
-    # "pep8>=1.6.2",                      # MIT license
-    "pep8-naming>=0.3.3",               # MIT license
-    "flake8>=2.5.1",                    # MIT license
-    "pyflakes>=1.0.0",                  # MIT license
-
-    # pytest 3.3.0 has dropped support for Python 3.3
-    # https://docs.pytest.org/en/latest/changelog.html#pytest-3-3-0-2017-11-23
-    "pytest>=2.8.6,<3.3.0",             # MIT license
-
-    "twine>=1.6.5",                     # Apache 2.0
-    'sphinx>=1.2.3',                    # BSD
-    'sphinxcontrib-images>=0.9.2',      # Apache 2.0
-    'pyenchant>=1.6.6',                 # LGPL
-    'sphinxcontrib-spelling>=2.1.2',    # BSD
-    'sphinx_rtd_theme>=0.1.9',          # BSD
-
-    'awscli',                           # Apache 2.0
-    'qualname',                         # BSD
-    'passlib',                          # BSD license
-    'wheel',                            # MIT license
-]
-
-extras_require_dev.extend([
-    # pytest-asyncio 0.6 has dropped support for Py <3.5
-    # https://github.com/pytest-dev/pytest-asyncio/issues/57
-    'pytest_asyncio<0.6',  # Apache 2.0
-    'pytest-aiohttp',  # Apache 2.0
-])
+extras_require_dev = []
+with open('requirements-dev.txt') as f:
+    for line in f.read().splitlines():
+        line = line.strip()
+        if not line.startswith('#'):
+            extras_require_dev.append(line)
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
 test_requirements = [
