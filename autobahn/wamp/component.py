@@ -391,7 +391,7 @@ class Component(ObservableMixin):
 
             @component.register(
                 "com.example.add",
-                options=RegisterOptions(invoke='round_robin'),
+                options=RegisterOptions(invoke='roundrobin'),
             )
             def add(*args, **kw):
                 print("add({}, {}): event received".format(args, kw))
