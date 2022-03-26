@@ -1,5 +1,0 @@
-# requirements for building the docs on RTD
-txaio
-twisted
-sphinxcontrib-images
-sphinx-autoapi
