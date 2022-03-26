@@ -64,7 +64,28 @@ except ImportError:
 
 class Profile(object):
     """
-    User profile, stored as named section in ``${HOME}/.xbrnetwork/config.ini``.
+    User profile, stored as named section in ``${HOME}/.xbrnetwork/config.ini``:
+
+    .. code-block:: INI
+
+        [default]
+        # username used with this profile
+        username=joedoe
+
+        # user email used with the profile (e.g. for verification emails)
+        email=joe.doe@example.com
+
+        # XBR network node used as a directory server and gateway to XBR smart contracts
+        network_url=ws://localhost:8090/ws
+
+        # WAMP realm on network node, usually "xbrnetwork"
+        network_realm=xbrnetwork
+
+        # user private WAMP-cryptosign key (for client authentication)
+        cskey=0xb18bbe88ca0e189689e99f87b19addfb179d46aab3d59ec5d93a15286b949eb6
+
+        # user private Ethereum key (for signing transactions and e2e data encryption)
+        ethkey=0xfbada363e724d4db2faa2eeaa7d7aca37637b1076dd8cf6fefde13983abaa2ef
     """
 
     def __init__(self,

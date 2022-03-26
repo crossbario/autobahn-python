@@ -141,7 +141,10 @@ extras_require_xbr = [
     # the following is needed for XBR account synch and device pairing
     'spake2>=0.8',              # MIT license (https://github.com/warner/python-spake2/blob/master/LICENSE)
     'hkdf>=0.0.3',              # BSD 2-Clause "Simplified" License
+]
 
+# required for UI based tools, e.g. xbrnetwork-ui (autobahn.xbr._gui:_main)
+extras_require_ui = [
     # the following is needed for the graphical XBR onboarding UI
     'PyGObject>=3.40.0',        # GNU Lesser General Public License v2 or later (LGPLv2+) (GNU LGPL)
 ]
@@ -149,7 +152,7 @@ extras_require_xbr = [
 # everything
 extras_require_all = extras_require_twisted + extras_require_accelerate + extras_require_compress + \
                      extras_require_serialization + extras_require_encryption + extras_require_scram + \
-                     extras_require_nvx
+                     extras_require_nvx + extras_require_xbr + extras_require_ui
 
 packages = [
     'autobahn',
@@ -284,6 +287,7 @@ setup(
         'nvx': extras_require_nvx,
         'dev': extras_require_dev,
         'xbr': extras_require_xbr,
+        'ui': extras_require_ui,
     },
     tests_require=test_requirements,
     cmdclass={

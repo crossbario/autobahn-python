@@ -182,7 +182,7 @@ class ApplicationWindow(Gtk.Assistant):
             profile.cskey = None
             profile.username = None
             profile.email = None
-            profile.network_url = 'ws://thingcloud-box-aws.sthngs.crossbario.com:8090/ws'
+            profile.network_url = 'ws://localhost:8090/ws'
             profile.network_realm = 'xbrnetwork'
             profile.member_oid = None
             profile.vaction_oid = None

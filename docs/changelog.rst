@@ -5,6 +5,11 @@
 Changelog
 =========
 
+master
+------
+
+* fix: split out UI deps into separate dist flavor (#1532)
+
 22.3.1
 ------
 
