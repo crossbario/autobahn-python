@@ -5,10 +5,12 @@
 Changelog
 =========
 
-master
+22.3.2
 ------
 
 * fix: split out UI deps into separate dist flavor (#1532)
+* fix: deps for RTD builds (#1540)
+* fix: use and bundle dev deps from requirements file
 
 22.3.1
 ------
