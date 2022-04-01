@@ -25,7 +25,7 @@
 ###############################################################################
 
 import hashlib
-from typing import Optional
+from typing import Optional, Union
 
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address, UNIXAddress
@@ -40,6 +40,7 @@ try:
     _HAS_IPV6 = True
 except ImportError:
     _HAS_IPV6 = False
+    IPv6Address = type(None)
 
 __all = (
     'sleep',
@@ -68,19 +69,21 @@ def sleep(delay, reactor=None):
     return d
 
 
-def peer2str(addr):
+def peer2str(addr: Union[IPv4Address, IPv6Address, UNIXAddress, PipeAddress]) -> str:
     """
     Convert a Twisted address as returned from ``self.transport.getPeer()`` to a string.
 
     :returns: Returns a string representation of the peer on a Twisted transport.
-    :rtype: unicode
     """
     if isinstance(addr, IPv4Address):
         res = "tcp4:{0}:{1}".format(addr.host, addr.port)
     elif _HAS_IPV6 and isinstance(addr, IPv6Address):
         res = "tcp6:{0}:{1}".format(addr.host, addr.port)
     elif isinstance(addr, UNIXAddress):
-        res = "unix:{0}".format(addr.name)
+        if addr.name:
+            res = "unix:{0}".format(addr.name)
+        else:
+            res = "unix"
     elif isinstance(addr, PipeAddress):
         res = "<pipe>"
     else:
