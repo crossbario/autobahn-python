@@ -68,9 +68,6 @@ class BaseSession(ObservableMixin):
     log = None
 
     def __init__(self):
-        """
-
-        """
         self.log = txaio.make_logger()
 
         self.set_valid_events(
@@ -104,6 +101,7 @@ class BaseSession(ObservableMixin):
         self._authrole = None
         self._authmethod = None
         self._authprovider = None
+        self._authextra = None
 
         # payload transparency codec
         self._payload_codec = None
@@ -134,6 +132,10 @@ class BaseSession(ObservableMixin):
     @property
     def authprovider(self):
         return self._authprovider
+
+    @property
+    def authextra(self):
+        return self._authextra
 
     def define(self, exception, error=None):
         """
@@ -553,6 +555,7 @@ class ApplicationSession(BaseSession):
                     self._authrole = msg.authrole
                     self._authmethod = msg.authmethod
                     self._authprovider = msg.authprovider
+                    self._authextra = msg.authextra
                     self._router_roles = msg.roles
 
                     details = SessionDetails(

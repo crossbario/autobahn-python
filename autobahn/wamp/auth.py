@@ -85,8 +85,10 @@ def create_authenticator(name, **kwargs):
         klass = {
             AuthScram.name: AuthScram,
             AuthCryptoSign.name: AuthCryptoSign,
+            AuthCryptoSignProxy.name: AuthCryptoSignProxy,
             AuthWampCra.name: AuthWampCra,
             AuthAnonymous.name: AuthAnonymous,
+            AuthAnonymousProxy.name: AuthAnonymousProxy,
             AuthTicket.name: AuthTicket,
         }[name]
     except KeyError:
@@ -119,6 +121,13 @@ class AuthAnonymous(object):
 
 
 IAuthenticator.register(AuthAnonymous)
+
+
+class AuthAnonymousProxy(AuthAnonymous):
+    name = 'anonymous-proxy'
+
+
+IAuthenticator.register(AuthAnonymousProxy)
 
 
 class AuthTicket(object):
@@ -192,6 +201,13 @@ class AuthCryptoSign(object):
 
 
 IAuthenticator.register(AuthCryptoSign)
+
+
+class AuthCryptoSignProxy(AuthCryptoSign):
+    name = 'cryptosign-proxy'
+
+
+IAuthenticator.register(AuthCryptoSignProxy)
 
 
 def _hash_argon2id13_secret(password, salt, iterations, memory):
