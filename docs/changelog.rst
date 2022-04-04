@@ -5,6 +5,12 @@
 Changelog
 =========
 
+22.4.1.devX
+-----------
+
+* fix: do not throw (but log) when leaving a session not joined
+* fix: store WAMP authextra received
+
 22.3.2
 ------
 
