@@ -36,7 +36,7 @@ from autobahn.wamp import message
 from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
-from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError, TypeCheckError
+from autobahn.wamp.exception import ApplicationError, ProtocolError, SerializationError, TypeCheckError
 from autobahn.wamp.interfaces import ISession, IPayloadCodec, IAuthenticator  # noqa
 from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
 from autobahn.exception import PayloadExceededError
@@ -1364,7 +1364,8 @@ class ApplicationSession(BaseSession):
         Implements :meth:`autobahn.wamp.interfaces.ISession.leave`
         """
         if not self._session_id:
-            raise SessionNotReady("session hasn't joined a realm")
+            self.log.warn('session is not joined on a realm - no session to leave')
+            return
 
         if not self._goodbye_sent:
             if not reason:
@@ -1804,8 +1805,8 @@ class _SessionShim(ApplicationSession):
             self.join(
                 self.config.realm,
                 authmethods=list(self._authenticators.keys()),
-                authid=authid or 'public',
-                authrole=authrole or 'default',
+                authid=authid,
+                authrole=authrole,
                 authextra=authextra,
             )
         else:
@@ -1816,8 +1817,9 @@ class _SessionShim(ApplicationSession):
             authenticator = self._authenticators[challenge.method]
         except KeyError:
             raise RuntimeError(
-                "Received challenge for unknown authmethod '{}'".format(
-                    challenge.method
+                "Received challenge for unknown authmethod '{}' [authenticators={}]".format(
+                    challenge.method,
+                    str(sorted(self._authenticators.keys()))
                 )
             )
         return authenticator.on_challenge(self, challenge)
@@ -1830,8 +1832,9 @@ class _SessionShim(ApplicationSession):
             authenticator = self._authenticators[msg.authmethod]
         except KeyError:
             raise RuntimeError(
-                "Received onWelcome for unknown authmethod '{}'".format(
-                    msg.authmethod
+                "Received onWelcome for unknown authmethod '{}' [authenticators={}]".format(
+                    msg.authmethod,
+                    str(sorted(self._authenticators.keys()))
                 )
             )
         return authenticator.on_welcome(self, msg.authextra)
