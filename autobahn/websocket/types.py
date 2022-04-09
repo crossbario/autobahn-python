@@ -27,8 +27,6 @@
 from pprint import pformat
 from autobahn.util import public
 
-import json
-
 __all__ = (
     'ConnectionRequest',
     'ConnectionResponse',
