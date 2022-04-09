@@ -161,9 +161,11 @@ class TestAuth(unittest.TestCase):
 class TestKey(unittest.TestCase):
 
     def test_pad(self):
-        self.assertEqual(_makepad(0), '')
-        self.assertEqual(_makepad(2), '\x01\x02')
-        self.assertEqual(_makepad(3), '\x01\x02\x03')
+        self.assertEqual(_makepad(0), b'')
+        self.assertEqual(_makepad(2), b'\x01\x02')
+        self.assertEqual(_makepad(3), b'\x01\x02\x03')
+        self.assertEqual(_makepad(30), b'\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e')
+        self.assertEqual(binascii.b2a_hex(_makepad(30)).decode(), '0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e')
 
     def test_key(self):
         with tempfile.NamedTemporaryFile('w+t') as fp:

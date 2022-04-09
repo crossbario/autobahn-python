@@ -8,6 +8,7 @@ Changelog
 22.4.1.devX
 -----------
 
+* fix: string formatting with binary values in TransportDetails.secure_channel_id (#1483)
 * fix: never default set authid/authrole in component authenticators
 * fix: do not throw (but log) when leaving a session not joined
 * fix: store WAMP authextra received

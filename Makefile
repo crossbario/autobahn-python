@@ -184,9 +184,7 @@ test_tx_cryptobox:
 test_tx_choosereactor:
 	USE_TWISTED=1 trial autobahn.twisted.test.test_choosereactor
 
-test_tx_cryptosign:
-	#USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign.TestAuth.test_testvectors
-	#USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign.TestAuth.test_testvectors
+test_cryptosign:
 	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign
 	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign
 
