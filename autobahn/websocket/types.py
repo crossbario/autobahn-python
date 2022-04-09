@@ -24,6 +24,7 @@
 #
 ###############################################################################
 
+from pprint import pformat
 from autobahn.util import public
 
 import json
@@ -121,7 +122,7 @@ class ConnectionRequest(object):
                 'extensions': self.extensions}
 
     def __str__(self):
-        return json.dumps(self.__json__())
+        return pformat(self.__json__())
 
 
 @public
@@ -185,7 +186,7 @@ class ConnectingRequest(object):
         }
 
     def __str__(self):
-        return json.dumps(self.__json__())
+        return pformat(self.__json__())
 
 
 @public
@@ -226,7 +227,7 @@ class TransportDetails(object):
         }
 
     def __str__(self):
-        return json.dumps(self.__json__())
+        return pformat(self.__json__())
 
 
 @public
@@ -278,7 +279,7 @@ class ConnectionResponse(object):
                 'extensions': self.extensions}
 
     def __str__(self):
-        return json.dumps(self.__json__())
+        return pformat(self.__json__())
 
 
 @public
