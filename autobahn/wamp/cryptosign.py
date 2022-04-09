@@ -142,8 +142,9 @@ class _SSHPacketReader:
         return self.get_bytes(self.get_uint32())
 
 
-def _makepad(size):
-    return ''.join(chr(x) for x in range(1, size + 1))
+def _makepad(size: int) -> bytes:
+    assert 0 <= size < 255
+    return b''.join(x.to_bytes(1, byteorder='big') for x in range(1, size + 1))
 
 
 def _read_ssh_ed25519_privkey(keydata):
