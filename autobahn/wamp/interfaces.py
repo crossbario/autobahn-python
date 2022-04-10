@@ -26,6 +26,7 @@
 
 import abc
 from typing import Union, Dict, Any, Optional
+from collections.abc import Iterator
 
 from autobahn.util import public
 from autobahn.wamp.types import Challenge
@@ -37,11 +38,12 @@ __all__ = (
     'ITransport',
     'ITransportHandler',
     'ISession',
-    'IPayloadCodec',
+    'IAuthenticator',
     'ISigningKey',
     'IEd25519Key',
     'IEthereumKey',
     'ISecurityModule',
+    'IPayloadCodec',
 )
 
 
@@ -746,6 +748,14 @@ class ISigningKey(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def key_id(self) -> str:
+        """
+
+        :return:
+        """
+
+    @property
+    @abc.abstractmethod
     def key_type(self) -> str:
         """
         Type of key and signature scheme, currently one of:
@@ -765,6 +775,34 @@ class ISigningKey(abc.ABC):
 
         :param binary: If the return type should be binary instead of hex
         :return: The public key in hex or byte encoding.
+        """
+
+    @abc.abstractmethod
+    def can_lock(self) -> bool:
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def is_locked(self) -> bool:
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def lock(self):
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def unlock(self):
+        """
+
+        :return:
         """
 
     @abc.abstractmethod
@@ -814,6 +852,18 @@ class IEd25519Key(ISigningKey):
         :return:
         """
 
+    @abc.abstractmethod
+    def recover_challenge(self, challenge: Challenge, signature: bytes, channel_id: Optional[bytes] = None,
+                          channel_id_type: Optional[str] = None):
+        """
+
+        :param challenge:
+        :param signature:
+        :param channel_id:
+        :param channel_id_type:
+        :return:
+        """
+
 
 @public
 class IEthereumKey(ISigningKey):
@@ -844,6 +894,15 @@ class IEthereumKey(ISigningKey):
         :return: The signature, that is a future object that resolves to bytes.
         """
 
+    @abc.abstractmethod
+    def recover_typed_data(self, data: Dict[str, Any], signature: bytes) -> bytes:
+        """
+
+        :param data:
+        :param signature:
+        :return:
+        """
+
 
 @public
 class ISecurityModule(abc.ABC):
@@ -855,72 +914,94 @@ class ISecurityModule(abc.ABC):
     * two key types and signature schemes
 
     The two key types and signature schemes support WAMP-cryptosign based authentication
-    for WAMP sessions, and WAMP-XBR based signed transactions and data encryption:
-
-    * `wamp`: **EdDSA** signing algo with **Curve25519** elliptic curve and **SHA-512** hash
-    * `ethereum`: **ECDSA** signing algo, **secp256k1** elliptic curve and **Keccak-256** hash
-
-    Secure Object identifiers and types
-
-
-    GetVersion
-    GetTimestamp
-    GetRandom
-
-    CreateCryptoObject
-    ReadCryptoObjectList
-    DeleteCryptoObject
-    DeleteAll
-
-    ECDSASign
-    ECDSAVerify
-    EdDSASign
-    EdDSAVerify
-
-
-    SIG_ECDSA_SHA_256
-    SIG_ED25519PURE
-
-    ECC_ED_25519
-    EC SEC_P256_K1
-
-    EdDSASign
-    EdDSAVerify
-
-    open, close
-    unlock, lock, is_locked
-    get time, random, counter
-
-    sign
-    sign_challenge
-    sign_form
-
-    https://neuromancer.sk/std/secg/secp256r1
-    https://neuromancer.sk/std/secg/secp256k1
-    https://asecuritysite.com/curve25519/eddsa2
-    https://asecuritysite.com/secp256k1/ecdsa
-    https://safecurves.cr.yp.to/
-    https://www.ietf.org/rfc/rfc3279.txt
-    https://crypto.stackexchange.com/questions/70927/naming-convention-for-nist-elliptic-curves-in-openssl
-    https://www.johndcook.com/blog/2018/08/21/a-tale-of-two-elliptic-curves/
-
-
-    operations
-    generate
-    get public key
-    sign
-    verify
-
-    The instance AID for SE050 IoT applet - pre-provisioned by NXP - is ``A0000003965453000000010300000000``.
+    for WAMP sessions, and WAMP-XBR based signed transactions and data encryption.
 
     References:
 
     * `SE050 APDU Specification (AN12413) <https://www.nxp.com/docs/en/application-note/AN12413.pdf>`_
+    * https://neuromancer.sk/std/secg/secp256r1
+    * https://neuromancer.sk/std/secg/secp256k1
+    * https://asecuritysite.com/curve25519/eddsa2
+    * https://asecuritysite.com/secp256k1/ecdsa
+    * https://safecurves.cr.yp.to/
+    * https://www.ietf.org/rfc/rfc3279.txt
+    * https://crypto.stackexchange.com/questions/70927/naming-convention-for-nist-elliptic-curves-in-openssl
+    * https://www.johndcook.com/blog/2018/08/21/a-tale-of-two-elliptic-curves/
     """
 
     @abc.abstractmethod
-    def open(self) -> bytes:
-        pass
+    def open(self):
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def close(self):
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def is_open(self) -> bool:
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def random(self, octets: int) -> bytes:
+        """
+
+        :param octets:
+        :return:
+        """
+
+    @abc.abstractmethod
+    def current(self, counter_id: str) -> int:
+        """
+
+        :param counter_id:
+        :return:
+        """
+
+    @abc.abstractmethod
+    def next(self, counter_id: str) -> int:
+        """
+
+        :param counter_id:
+        :return:
+        """
+
+    @abc.abstractmethod
+    def __len__(self) -> int:
+        """
+        :return:
+        """
+
+    @abc.abstractmethod
+    def __iter__(self) -> Iterator[str]:
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def __contains__(self, key_id: str) -> bool:
+        """
+
+        :param key_id:
+        :return:
+        """
+
+    @abc.abstractmethod
+    def __getitem__(self, key_id: str) -> Union[IEd25519Key, IEthereumKey]:
+        """
+
+        :param key_id:
+        :return:
+        """
 
 
 @public
