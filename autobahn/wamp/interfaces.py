@@ -25,9 +25,10 @@
 ###############################################################################
 
 import abc
-from typing import Union
+from typing import Union, Dict, Any, Optional
 
 from autobahn.util import public
+from autobahn.wamp.types import Challenge
 
 __all__ = (
     'IObjectSerializer',
@@ -37,7 +38,10 @@ __all__ = (
     'ITransportHandler',
     'ISession',
     'IPayloadCodec',
-    'ISigningKey'
+    'ISigningKey',
+    'IEd25519Key',
+    'IEthereumKey',
+    'ISecurityModule',
 )
 
 
@@ -50,7 +54,8 @@ class IObjectSerializer(abc.ABC):
     """
 
     @public
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def BINARY(self):
         """
         Flag (read-only) to indicate if serializer requires a binary clean
@@ -91,14 +96,16 @@ class ISerializer(abc.ABC):
     """
 
     @public
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def MESSAGE_TYPE_MAP(self):
         """
         Mapping of WAMP message type codes to WAMP message classes.
         """
 
     @public
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def SERIALIZER_ID(self):
         """
         The WAMP serialization format ID.
@@ -108,7 +115,7 @@ class ISerializer(abc.ABC):
     @abc.abstractmethod
     def serialize(self, message):
         """
-        Serializes a WAMP message to bytes for sending over a transport.
+        Serializes a WAMP message to bytes for sending over a WAMP transport.
 
         :param message: The WAMP message to be serialized.
         :type message: object implementing :class:`autobahn.wamp.interfaces.IMessage`
@@ -119,7 +126,7 @@ class ISerializer(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def unserialize(self, payload, isBinary):
+    def unserialize(self, payload, is_binary):
         """
         Deserialize bytes from a transport and parse into WAMP messages.
 
@@ -138,10 +145,13 @@ class ISerializer(abc.ABC):
 @public
 class IMessage(abc.ABC):
     """
+    A WAMP message, e.g. one of the messages defined in the WAMP specification
+    `here <https://wamp-proto.org/_static/gen/wamp_latest_ietf.html#rfc.section.6.5>`_.
     """
 
     @public
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def MESSAGE_TYPE(self):
         """
         WAMP message type code.
@@ -287,7 +297,8 @@ class ITransport(abc.ABC):
 class ITransportHandler(abc.ABC):
 
     @public
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def transport(self):
         """
         When the transport this handler is attached to is currently open, this property
@@ -415,7 +426,7 @@ class ISession(_ABC):
         May return a Deferred/Future.
 
         :param welcome_msg: The WELCOME message received from the server
-        :type challenge: Instance of :class:`autobahn.wamp.message.Welcome`.
+        :type welcome_msg: Instance of :class:`autobahn.wamp.message.Welcome`.
 
         :return: None, or an error message
         """
@@ -725,18 +736,30 @@ class IAuthenticator(abc.ABC):
 
 @public
 class ISigningKey(abc.ABC):
+    """
+    Interface to an asymmetric verification key, e.g. a WAMP-Cryptosign client or server authentication
+    public key (with Ed25519), or a WAMP-XBR data transaction signature public key or address (with Ethereum).
+
+    The key implementation can use various methods, such as a key read from a file, database table
+    or a key residing in a hardware device.
+    """
+
+    @property
+    @abc.abstractmethod
+    def key_type(self) -> str:
+        """
+        Type of key and signature scheme, currently one of:
+
+        * ``ed25519``: Ed25519, that is **EdDSA** signing algo with **Curve25519** elliptic curve and **SHA-512** hash,
+                used with WAMP-cryptosign session authentication
+        * ``eth``: Ethereum, that is **ECDSA** signing algo, **secp256k1** elliptic curve and **Keccak-256** hash,
+                used with WAMP-XBR data and transaction signatures
+
+        :return: Key type, one of ``ed25519`` or ``eth``.
+        """
 
     @abc.abstractmethod
-    def can_sign(self):
-        """
-        Check if the key can be used to sign.
-
-        :returns: `True`, iff the key can sign.
-        :rtype: bool
-        """
-
-    @abc.abstractmethod
-    def public_key(self, binary=False) -> Union[str, bytes]:
+    def public_key(self, binary: bool = False) -> Union[str, bytes]:
         """
         Returns the public key part of a signing key or the (public) verification key.
 
@@ -745,16 +768,159 @@ class ISigningKey(abc.ABC):
         """
 
     @abc.abstractmethod
-    def sign(self, data: bytes):
+    def can_sign(self) -> bool:
         """
-        Sign the given data.
+        Check if the key can be used to sign and create new signatures, or only to verify signatures.
+
+        :returns: ``True``, if the key can be used for signing.
+        """
+
+    @abc.abstractmethod
+    def sign(self, data: bytes) -> bytes:
+        """
+        Sign the given data, only available if ``can_sign == True``. This method (always) runs asynchronously.
 
         :param data: The data to be signed.
-        :type data: bytes
 
-        :returns: The signature.
-        :rtype: txaio.Future object that resolves to bytes
+        :return: The signature, that is a future object that resolves to bytes.
         """
+
+    @abc.abstractmethod
+    def recover(self, data: bytes, signature: bytes) -> bytes:
+        """
+        Recover the signer from the data signed, and the signature given. This method (always) runs asynchronously.
+
+        :param data: The data that was signed.
+        :param signature: The signature over the data.
+
+        :return: The signer public key that signed the data to create the signature given.
+        """
+
+
+@public
+class IEd25519Key(ISigningKey):
+    """
+    Interface to a WAMP-Cryptosign client authentication (or server verification) key.
+    """
+
+    @abc.abstractmethod
+    def sign_challenge(self, challenge: Challenge, channel_id: Optional[bytes] = None,
+                       channel_id_type: Optional[str] = None):
+        """
+
+        :param challenge:
+        :param channel_id:
+        :param channel_id_type:
+        :return:
+        """
+
+
+@public
+class IEthereumKey(ISigningKey):
+    """
+    Interface to an Ethereum signing (or transaction verification) key, used for WAMP-XBR transaction
+    signing (or verification).
+    """
+
+    @abc.abstractmethod
+    def address(self, binary: bool = False) -> Union[str, bytes]:
+        """
+        Returns the Ethereum (public) address of the key (which is derived from
+        the public key).
+
+        :param binary: Return address as 160 bits (20 bytes) binary instead of
+            the ``0x`` prefixed hex, check-summed address as a string.
+        :return: The address in hex or byte encoding.
+        """
+
+    @abc.abstractmethod
+    def sign_typed_data(self, data: Dict[str, Any]) -> bytes:
+        """
+        Sign the given typed data according to `EIP712 <https://eips.ethereum.org/EIPS/eip-712>`_
+        and create an Ethereum signature.
+
+        :param data: The data to be signed. This must follow EIP712.
+
+        :return: The signature, that is a future object that resolves to bytes.
+        """
+
+
+@public
+class ISecurityModule(abc.ABC):
+    """
+    Interface for key security modules, which
+
+    * include filesystem and HSM backed persistent key implementations, and
+    * provides secure key signature generation and verification with
+    * two key types and signature schemes
+
+    The two key types and signature schemes support WAMP-cryptosign based authentication
+    for WAMP sessions, and WAMP-XBR based signed transactions and data encryption:
+
+    * `wamp`: **EdDSA** signing algo with **Curve25519** elliptic curve and **SHA-512** hash
+    * `ethereum`: **ECDSA** signing algo, **secp256k1** elliptic curve and **Keccak-256** hash
+
+    Secure Object identifiers and types
+
+
+    GetVersion
+    GetTimestamp
+    GetRandom
+
+    CreateCryptoObject
+    ReadCryptoObjectList
+    DeleteCryptoObject
+    DeleteAll
+
+    ECDSASign
+    ECDSAVerify
+    EdDSASign
+    EdDSAVerify
+
+
+    SIG_ECDSA_SHA_256
+    SIG_ED25519PURE
+
+    ECC_ED_25519
+    EC SEC_P256_K1
+
+    EdDSASign
+    EdDSAVerify
+
+    open, close
+    unlock, lock, is_locked
+    get time, random, counter
+
+    sign
+    sign_challenge
+    sign_form
+
+    https://neuromancer.sk/std/secg/secp256r1
+    https://neuromancer.sk/std/secg/secp256k1
+    https://asecuritysite.com/curve25519/eddsa2
+    https://asecuritysite.com/secp256k1/ecdsa
+    https://safecurves.cr.yp.to/
+    https://www.ietf.org/rfc/rfc3279.txt
+    https://crypto.stackexchange.com/questions/70927/naming-convention-for-nist-elliptic-curves-in-openssl
+    https://www.johndcook.com/blog/2018/08/21/a-tale-of-two-elliptic-curves/
+
+
+    operations
+    generate
+    get public key
+    sign
+    verify
+
+    The instance AID for SE050 IoT applet - pre-provisioned by NXP - is ``A0000003965453000000010300000000``.
+
+    References:
+
+    * `SE050 APDU Specification (AN12413) <https://www.nxp.com/docs/en/application-note/AN12413.pdf>`_
+    """
+
+    @abc.abstractmethod
+    def open(self) -> bytes:
+        pass
 
 
 @public
@@ -814,8 +980,8 @@ class IPayloadCodec(abc.ABC):
             the payload is to be encoded (eg topic or procedure).
         :type uri: str
 
-        :param payload: The encoded application payload to be decoded.
-        :type payload: instance of :class:`autobahn.wamp.types.EncodedPayload`
+        :param encoded_payload: The encoded application payload to be decoded.
+        :type encoded_payload: instance of :class:`autobahn.wamp.types.EncodedPayload`
 
         :returns: A tuple with the decoded positional and keyword-based
             application payload: ``(uri, args, kwargs)``

@@ -31,7 +31,7 @@ from typing import Callable, Optional, Union
 import txaio
 
 from autobahn import util
-from autobahn.wamp.interfaces import ICryptosignKey, ISession
+from autobahn.wamp.interfaces import IEd25519Key, ISession
 from autobahn.wamp.types import Challenge
 
 __all__ = [
@@ -626,7 +626,7 @@ if HAS_CRYPTOSIGN:
 
             return cls(key, comment)
 
-    ICryptosignKey.register(SigningKey)
+    IEd25519Key.register(SigningKey)
 
 
 if __name__ == '__main__':
