@@ -34,7 +34,9 @@ from twisted.internet.utils import getProcessOutput
 __all__ = ('get_passphrase_from_dialog',)
 
 
-def get_passphrase_from_dialog(reactor: IReactorProcess) -> Deferred:
+def get_passphrase_from_dialog(reactor: IReactorProcess, title: str = 'Unlock key',
+                               text: str = 'Please enter passphrase to unlock key',
+                               hide_text: bool = True) -> Deferred:
     """
     Show a Gnome/GTK desktop dialog asking for a passphrase.
 
@@ -52,21 +54,36 @@ def get_passphrase_from_dialog(reactor: IReactorProcess) -> Deferred:
     - https://wiki.ubuntuusers.de/Zenity/
     - https://bash.cyberciti.biz/guide/Zenity:_Shell_Scripting_with_Gnome
 
+    :param reactor: Twisted reactor to use.
+    :param title: Dialog window title to show.
+    :param text: Dialog text to show above text entry field.
+    :param hide_text: Hide entry field text.
+
     :return: A deferred that resolves with the string the user entered.
     """
     exe = shutil.which('zenity')
     if not exe:
-        raise RuntimeError('show_passphrase_dialog(): could not find zenity (install with "apt install zenity")')
-    args = ['--title', 'Unlock key', '--text', 'Please enter passphrase to unlock key', '--entry', '--hide-text']
-    return getProcessOutput(exe, args=args, env=os.environ, reactor=reactor)
+        raise RuntimeError('get_passphrase_from_dialog(): could not find zenity (install with "apt install zenity")')
+    args = ['--entry', '--title', title, '--text', text]
+    if hide_text:
+        args.append('--hide-text')
+    d = getProcessOutput(exe, args=args, env=os.environ, reactor=reactor)
+
+    def _consume(output):
+        passphrase = output.decode('utf8').strip()
+        return passphrase
+
+    d.addCallback(_consume)
+    return d
 
 
 if __name__ == "__main__":
     from twisted.internet.task import react
 
+
     async def main(reactor):
-        output = await get_passphrase_from_dialog(reactor)
-        passphrase = output.decode('utf8')
-        print(passphrase)
+        passphrase = await get_passphrase_from_dialog(reactor)
+        print(type(passphrase), len(passphrase), '[{}]'.format(passphrase))
+
 
     react(main)
