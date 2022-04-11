@@ -95,12 +95,15 @@ def peer2str(addr: Union[IPv4Address, IPv6Address, UNIXAddress, PipeAddress]) ->
 
 try:
     from twisted.protocols.tls import TLSMemoryBIOProtocol
+    from OpenSSL.SSL import Connection
 except ImportError:
     def transport_channel_id(transport: object, is_server: bool, channel_id_type: Optional[str] = None) -> bytes:
         if channel_id_type is None:
             return b'\x00' * 32
+        else:
+            assert False, 'transport_channel_id() used, when TLS is not available'
 else:
-    def transport_channel_id(transport: TLSMemoryBIOProtocol, is_server: bool, channel_id_type: Optional[str] = None) -> bytes:
+    def transport_channel_id(transport: object, is_server: bool, channel_id_type: Optional[str] = None) -> bytes:
         """
         Application-layer user authentication protocols are vulnerable to generic
         credential forwarding attacks, where an authentication credential sent by
@@ -122,11 +125,9 @@ else:
         if channel_id_type not in ['tls-unique']:
             raise Exception("invalid channel ID type {}".format(channel_id_type))
 
-        # transport:                instance of :class:`twisted.protocols.tls.TLSMemoryBIOProtocol`
-        # transport._tlsConnection: instance of :class:`OpenSSL.SSL.Connection`
-        if not hasattr(transport, '_tlsConnection'):
-            print("TLS transport channel_id for tls-unique requested, but _tlsConnection not found on transport {}".format(dir(transport)))
-            return b'\x00' * 32
+        # https://twistedmatrix.com/documents/current/api/twisted.protocols.tls.TLSMemoryBIOProtocol.html#getHandle
+        assert isinstance(transport, TLSMemoryBIOProtocol)
+        assert isinstance(transport.getHandle(), Connection)
 
         # Obtain latest TLS Finished message that we expected from peer, or None if handshake is not completed.
         # http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_peer_finished
@@ -137,11 +138,11 @@ else:
             if is_server != is_not_resumed:
                 # for routers (=servers) XOR new sessions, the channel ID is based on the TLS Finished message we
                 # expected to receive from the client
-                tls_finished_msg = transport._tlsConnection.get_peer_finished()
+                tls_finished_msg = transport.getHandle().get_peer_finished()
             else:
                 # for clients XOR resumed sessions, the channel ID is based on the TLS Finished message we sent
                 # to the router (=server)
-                tls_finished_msg = transport._tlsConnection.get_finished()
+                tls_finished_msg = transport.getHandle().get_finished()
 
             if tls_finished_msg is None:
                 # this can occur if we made a successful connection (in a

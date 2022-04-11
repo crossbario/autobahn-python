@@ -541,7 +541,7 @@ class ApplicationSession(BaseSession):
 
                 def success(res):
                     if res is not None:
-                        self.log.info("Session denied by onWelcome")
+                        self.log.info("Session denied by onWelcome: {res}", res=res)
                         reply = message.Abort(
                             "wamp.error.cannot_authenticate", "{0}".format(res)
                         )

@@ -405,7 +405,8 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
             }
         else:
             secure_channel_id = {}
-        return TransportDetails(peer=self.peer, is_secure=is_secure, secure_channel_id=secure_channel_id)
+        details = TransportDetails(peer=self.peer, is_secure=is_secure, secure_channel_id=secure_channel_id)
+        return details
 
 
 class WebSocketAdapterFactory(object):

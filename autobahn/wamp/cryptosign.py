@@ -447,7 +447,7 @@ if HAS_CRYPTOSIGN:
             return self._can_sign
 
         @util.public
-        def sign_challenge(self, session: ISession, challenge: Challenge, channel_id_type: str = 'tls-unique') -> bytes:
+        def sign_challenge(self, session: ISession, challenge: Challenge, channel_id_type: Optional[str] = None) -> bytes:
             """
             Sign WAMP-cryptosign challenge.
 
