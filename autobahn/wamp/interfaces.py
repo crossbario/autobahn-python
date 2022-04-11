@@ -26,7 +26,9 @@
 
 import abc
 from typing import Union, Dict, Any, Optional
-from collections.abc import Iterator
+
+# FIXME: see ISecurityModule.__iter__
+# from collections.abc import Iterator
 
 from autobahn.util import public
 from autobahn.wamp.types import Challenge
@@ -778,34 +780,6 @@ class ISigningKey(abc.ABC):
         """
 
     @abc.abstractmethod
-    def can_lock(self) -> bool:
-        """
-
-        :return:
-        """
-
-    @abc.abstractmethod
-    def is_locked(self) -> bool:
-        """
-
-        :return:
-        """
-
-    @abc.abstractmethod
-    def lock(self):
-        """
-
-        :return:
-        """
-
-    @abc.abstractmethod
-    def unlock(self):
-        """
-
-        :return:
-        """
-
-    @abc.abstractmethod
     def can_sign(self) -> bool:
         """
         Check if the key can be used to sign and create new signatures, or only to verify signatures.
@@ -843,7 +817,7 @@ class IEd25519Key(ISigningKey):
 
     @abc.abstractmethod
     def sign_challenge(self, challenge: Challenge, channel_id: Optional[bytes] = None,
-                       channel_id_type: Optional[str] = None):
+                       channel_id_type: Optional[str] = None) -> bytes:
         """
 
         :param challenge:
@@ -853,8 +827,8 @@ class IEd25519Key(ISigningKey):
         """
 
     @abc.abstractmethod
-    def recover_challenge(self, challenge: Challenge, signature: bytes, channel_id: Optional[bytes] = None,
-                          channel_id_type: Optional[str] = None):
+    def verify_challenge(self, challenge: Challenge, signature: bytes, channel_id: Optional[bytes] = None,
+                         channel_id_type: Optional[str] = None) -> bytes:
         """
 
         :param challenge:
@@ -895,7 +869,7 @@ class IEthereumKey(ISigningKey):
         """
 
     @abc.abstractmethod
-    def recover_typed_data(self, data: Dict[str, Any], signature: bytes) -> bytes:
+    def verify_typed_data(self, data: Dict[str, Any], signature: bytes) -> bool:
         """
 
         :param data:
@@ -951,6 +925,34 @@ class ISecurityModule(abc.ABC):
         """
 
     @abc.abstractmethod
+    def can_lock(self) -> bool:
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def is_locked(self) -> bool:
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def lock(self):
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
+    def unlock(self):
+        """
+
+        :return:
+        """
+
+    @abc.abstractmethod
     def random(self, octets: int) -> bytes:
         """
 
@@ -975,17 +977,40 @@ class ISecurityModule(abc.ABC):
         """
 
     @abc.abstractmethod
+    def create(self, key_type: str) -> str:
+        """
+
+        :param key_type:
+        :return:
+        """
+
+    @abc.abstractmethod
+    def delete(self, key_id: str):
+        """
+
+        :param key_id:
+        :return:
+        """
+
+    @abc.abstractmethod
     def __len__(self) -> int:
         """
         :return:
         """
 
-    @abc.abstractmethod
-    def __iter__(self) -> Iterator[str]:
-        """
-
-        :return:
-        """
+    # FIXME: the following works on CPy 3.9+, but fails on CPy 3.7 and PyPy 3.8
+    #   AttributeError: type object 'Iterator' has no attribute '__class_getitem__'
+    #   See also:
+    #       - https://docs.python.org/3/library/abc.html#abc.ABCMeta.__subclasshook__
+    #       - https://docs.python.org/3/library/stdtypes.html#container.__iter__
+    #
+    # @abc.abstractmethod
+    # def __iter__(self) -> Iterator[str]:
+    #     """
+    #     Return an iterator object over all key accessible in this security module.
+    #
+    #     :return:
+    #     """
 
     @abc.abstractmethod
     def __contains__(self, key_id: str) -> bool:
