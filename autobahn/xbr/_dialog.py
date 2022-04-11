@@ -63,7 +63,7 @@ def get_input_from_dialog(reactor: IReactorProcess, title: str = 'Unlock key',
     """
     exe = shutil.which('zenity')
     if not exe:
-        raise RuntimeError('get_passphrase_from_dialog(): could not find zenity (install with "apt install zenity")')
+        raise RuntimeError('get_input_from_dialog(): could not find zenity (install with "apt install zenity")')
     args = ['--entry', '--title', title, '--text', text]
     if hide_text:
         args.append('--hide-text')

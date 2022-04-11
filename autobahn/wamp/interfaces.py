@@ -819,23 +819,39 @@ class IEd25519Key(ISigningKey):
     def sign_challenge(self, challenge: Challenge, channel_id: Optional[bytes] = None,
                        channel_id_type: Optional[str] = None) -> bytes:
         """
+        Sign the data from the given WAMP challenge message, and the optional TLS channel ID
+        using this key and return a valid signature that can be used in a WAMP-cryptosign
+        authentication handshake.
 
-        :param challenge:
-        :param channel_id:
-        :param channel_id_type:
-        :return:
+        :param challenge: The WAMP challenge message as sent or received during the WAMP-cryptosign
+            authentication handshake. This can be used by WAMP clients to compute the signature
+            returned in the handshake, or by WAMP routers to verify the signature returned by clients,
+            during WAMP-cryptosign client authentication.
+
+        :param channel_id: Optional TLS channel ID. Using this binds the WAMP session authentication
+            to the underlying TLS channel, and thus prevents authentication-forwarding attacks.
+        :param channel_id_type: Optional TLS channel ID type, e.g. ``"tls-unique"``.
+
+        :return: The signature, that is a future object that resolves to bytes.
         """
 
     @abc.abstractmethod
     def verify_challenge(self, challenge: Challenge, signature: bytes, channel_id: Optional[bytes] = None,
-                         channel_id_type: Optional[str] = None) -> bytes:
+                         channel_id_type: Optional[str] = None) -> bool:
         """
+        Verify the data from the given WAMP challenge message, and the optional TLS channel ID
+        to be signed by this key.
 
-        :param challenge:
-        :param signature:
-        :param channel_id:
-        :param channel_id_type:
-        :return:
+        :param challenge: The WAMP challenge message as sent or received during the WAMP-cryptosign
+            authentication handshake. This can be used by WAMP clients to compute the signature
+            returned in the handshake, or by WAMP routers to verify the signature returned by clients,
+            during WAMP-cryptosign client authentication.
+
+        :param channel_id: Optional TLS channel ID. Using this binds the WAMP session authentication
+            to the underlying TLS channel, and thus prevents authentication-forwarding attacks.
+        :param channel_id_type: Optional TLS channel ID type, e.g. ``"tls-unique"``.
+
+        :return: Returns ``True`` if the signature over the data matches this key.
         """
 
 
@@ -871,10 +887,13 @@ class IEthereumKey(ISigningKey):
     @abc.abstractmethod
     def verify_typed_data(self, data: Dict[str, Any], signature: bytes) -> bool:
         """
+        Verify the given typed data according to `EIP712 <https://eips.ethereum.org/EIPS/eip-712>`_
+        to be signed by this key.
 
-        :param data:
-        :param signature:
-        :return:
+        :param data: The data to be signed. This must follow EIP712.
+        :param signature: The signature to be verified.
+
+        :return: Returns ``True`` if the signature over the data matches this key.
         """
 
 
@@ -906,96 +925,110 @@ class ISecurityModule(abc.ABC):
     @abc.abstractmethod
     def open(self):
         """
-
-        :return:
+        Open this security module. This method (always) runs asynchronously.
         """
 
     @abc.abstractmethod
     def close(self):
         """
-
-        :return:
+        Close this security module. This method (always) runs asynchronously.
         """
 
     @abc.abstractmethod
     def is_open(self) -> bool:
         """
+        Check if the security module is currently opened. Security module operations
+        can only be run when the module is opened.
 
-        :return:
+        :return: Flag indicating whether the security module is currently opened.
         """
 
     @abc.abstractmethod
     def can_lock(self) -> bool:
         """
+        Flag indicating whether this security module can be locked, e.g. by a
+        user passphrase or PIN.
 
-        :return:
+        :return: Flag indicating whether the security module can be locked/unlocked at all.
         """
 
     @abc.abstractmethod
     def is_locked(self) -> bool:
         """
+        Check if this security module is currently locked.
 
-        :return:
+        :return: Flag indicating whether the security module is currently locked.
         """
 
     @abc.abstractmethod
     def lock(self):
         """
-
-        :return:
+        Lock this security module. This method (always) runs asynchronously.
         """
 
     @abc.abstractmethod
     def unlock(self):
         """
-
-        :return:
+        Unlock this security module. This method (always) runs asynchronously.
         """
 
     @abc.abstractmethod
     def random(self, octets: int) -> bytes:
         """
+        Generate random bytes within the security module.
 
-        :param octets:
-        :return:
+        :param octets: Number of bytes (octets) to generate.
+
+        :return: Random bytes, generated within the security module, e.g. in a HW RNG.
         """
 
     @abc.abstractmethod
     def current(self, counter_id: str) -> int:
         """
+        Return current value of the given persistent counter.
 
-        :param counter_id:
-        :return:
+        :param counter_id: The ID of the counter to access.
+
+        :return: Current value of counter, or ``0`` to indicate the counter does not
+            exists (was never incremented).
         """
 
     @abc.abstractmethod
     def next(self, counter_id: str) -> int:
         """
+        Increment the given persistent counter and return the new value.
 
         :param counter_id:
-        :return:
+
+        :param counter_id: The ID of the counter to access.
+
+        :return: New value of counter, e.g. ``1`` once a counter was first incremented.
         """
 
     @abc.abstractmethod
     def create(self, key_type: str) -> str:
         """
+        Create a new public-private asymmetric key pair, stored within the security module.
 
-        :param key_type:
-        :return:
+        :param key_type: Type of key to generate, e.g. ``ed25519`` or ``eth``.
+
+        :return: ID of new key.
         """
 
     @abc.abstractmethod
     def delete(self, key_id: str):
         """
+        Delete an existing key pair stored within the security module.
 
-        :param key_id:
-        :return:
+        :param key_id: ID of key to delete.
         """
 
     @abc.abstractmethod
     def __len__(self) -> int:
         """
-        :return:
+        Get number of key pairs currently stored within the security module.
+
+        :return: Current number of persistent keys.
         """
 
     # FIXME: the following works on CPy 3.9+, but fails on CPy 3.7 and PyPy 3.8
@@ -1015,17 +1048,22 @@ class ISecurityModule(abc.ABC):
     @abc.abstractmethod
     def __contains__(self, key_id: str) -> bool:
         """
+        Check if the security module, acting as a key container, contains a persistent
+        key with the given ID.
 
-        :param key_id:
-        :return:
+        :param key_id: ID of key to check.
+
+        :return: ``True`` if a key with given ID exists.
         """
 
     @abc.abstractmethod
     def __getitem__(self, key_id: str) -> Union[IEd25519Key, IEthereumKey]:
         """
+        Get a key from the security module given the key ID.
 
-        :param key_id:
-        :return:
+        :param key_id: ID of key to get.
+
+        :return: The key, either a :class:`IEd25519Key` or :class:`IEthereumKey` instance.
         """
 
 
