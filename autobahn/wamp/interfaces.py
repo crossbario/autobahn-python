@@ -25,9 +25,13 @@
 ###############################################################################
 
 import abc
-from typing import Union
+from typing import Union, Dict, Any, Optional
+
+# FIXME: see ISecurityModule.__iter__
+# from collections.abc import Iterator
 
 from autobahn.util import public
+from autobahn.wamp.types import Challenge
 
 __all__ = (
     'IObjectSerializer',
@@ -36,8 +40,12 @@ __all__ = (
     'ITransport',
     'ITransportHandler',
     'ISession',
+    'IAuthenticator',
+    'ISigningKey',
+    'IEd25519Key',
+    'IEthereumKey',
+    'ISecurityModule',
     'IPayloadCodec',
-    'ISigningKey'
 )
 
 
@@ -50,7 +58,8 @@ class IObjectSerializer(abc.ABC):
     """
 
     @public
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def BINARY(self):
         """
         Flag (read-only) to indicate if serializer requires a binary clean
@@ -91,14 +100,16 @@ class ISerializer(abc.ABC):
     """
 
     @public
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def MESSAGE_TYPE_MAP(self):
         """
         Mapping of WAMP message type codes to WAMP message classes.
         """
 
     @public
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def SERIALIZER_ID(self):
         """
         The WAMP serialization format ID.
@@ -108,7 +119,7 @@ class ISerializer(abc.ABC):
     @abc.abstractmethod
     def serialize(self, message):
         """
-        Serializes a WAMP message to bytes for sending over a transport.
+        Serializes a WAMP message to bytes for sending over a WAMP transport.
 
         :param message: The WAMP message to be serialized.
         :type message: object implementing :class:`autobahn.wamp.interfaces.IMessage`
@@ -119,7 +130,7 @@ class ISerializer(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def unserialize(self, payload, isBinary):
+    def unserialize(self, payload, is_binary):
         """
         Deserialize bytes from a transport and parse into WAMP messages.
 
@@ -138,10 +149,13 @@ class ISerializer(abc.ABC):
 @public
 class IMessage(abc.ABC):
     """
+    A WAMP message, e.g. one of the messages defined in the WAMP specification
+    `here <https://wamp-proto.org/_static/gen/wamp_latest_ietf.html#rfc.section.6.5>`_.
     """
 
     @public
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def MESSAGE_TYPE(self):
         """
         WAMP message type code.
@@ -287,7 +301,8 @@ class ITransport(abc.ABC):
 class ITransportHandler(abc.ABC):
 
     @public
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def transport(self):
         """
         When the transport this handler is attached to is currently open, this property
@@ -415,7 +430,7 @@ class ISession(_ABC):
         May return a Deferred/Future.
 
         :param welcome_msg: The WELCOME message received from the server
-        :type challenge: Instance of :class:`autobahn.wamp.message.Welcome`.
+        :type welcome_msg: Instance of :class:`autobahn.wamp.message.Welcome`.
 
         :return: None, or an error message
         """
@@ -725,18 +740,38 @@ class IAuthenticator(abc.ABC):
 
 @public
 class ISigningKey(abc.ABC):
+    """
+    Interface to an asymmetric verification key, e.g. a WAMP-Cryptosign client or server authentication
+    public key (with Ed25519), or a WAMP-XBR data transaction signature public key or address (with Ethereum).
+
+    The key implementation can use various methods, such as a key read from a file, database table
+    or a key residing in a hardware device.
+    """
+
+    @property
+    @abc.abstractmethod
+    def key_id(self) -> str:
+        """
+
+        :return:
+        """
+
+    @property
+    @abc.abstractmethod
+    def key_type(self) -> str:
+        """
+        Type of key and signature scheme, currently one of:
+
+        * ``ed25519``: Ed25519, that is **EdDSA** signing algo with **Curve25519** elliptic curve and **SHA-512** hash,
+                used with WAMP-cryptosign session authentication
+        * ``eth``: Ethereum, that is **ECDSA** signing algo, **secp256k1** elliptic curve and **Keccak-256** hash,
+                used with WAMP-XBR data and transaction signatures
+
+        :return: Key type, one of ``ed25519`` or ``eth``.
+        """
 
     @abc.abstractmethod
-    def can_sign(self):
-        """
-        Check if the key can be used to sign.
-
-        :returns: `True`, iff the key can sign.
-        :rtype: bool
-        """
-
-    @abc.abstractmethod
-    def public_key(self, binary=False) -> Union[str, bytes]:
+    def public_key(self, binary: bool = False) -> Union[str, bytes]:
         """
         Returns the public key part of a signing key or the (public) verification key.
 
@@ -745,15 +780,290 @@ class ISigningKey(abc.ABC):
         """
 
     @abc.abstractmethod
-    def sign(self, data: bytes):
+    def can_sign(self) -> bool:
         """
-        Sign the given data.
+        Check if the key can be used to sign and create new signatures, or only to verify signatures.
+
+        :returns: ``True``, if the key can be used for signing.
+        """
+
+    @abc.abstractmethod
+    def sign(self, data: bytes) -> bytes:
+        """
+        Sign the given data, only available if ``can_sign == True``. This method (always) runs asynchronously.
 
         :param data: The data to be signed.
-        :type data: bytes
 
-        :returns: The signature.
-        :rtype: txaio.Future object that resolves to bytes
+        :return: The signature, that is a future object that resolves to bytes.
+        """
+
+    @abc.abstractmethod
+    def recover(self, data: bytes, signature: bytes) -> bytes:
+        """
+        Recover the signer from the data signed, and the signature given. This method (always) runs asynchronously.
+
+        :param data: The data that was signed.
+        :param signature: The signature over the data.
+
+        :return: The signer public key that signed the data to create the signature given.
+        """
+
+
+@public
+class IEd25519Key(ISigningKey):
+    """
+    Interface to a WAMP-Cryptosign client authentication (or server verification) key.
+    """
+
+    @abc.abstractmethod
+    def sign_challenge(self, challenge: Challenge, channel_id: Optional[bytes] = None,
+                       channel_id_type: Optional[str] = None) -> bytes:
+        """
+        Sign the data from the given WAMP challenge message, and the optional TLS channel ID
+        using this key and return a valid signature that can be used in a WAMP-cryptosign
+        authentication handshake.
+
+        :param challenge: The WAMP challenge message as sent or received during the WAMP-cryptosign
+            authentication handshake. This can be used by WAMP clients to compute the signature
+            returned in the handshake, or by WAMP routers to verify the signature returned by clients,
+            during WAMP-cryptosign client authentication.
+
+        :param channel_id: Optional TLS channel ID. Using this binds the WAMP session authentication
+            to the underlying TLS channel, and thus prevents authentication-forwarding attacks.
+        :param channel_id_type: Optional TLS channel ID type, e.g. ``"tls-unique"``.
+
+        :return: The signature, that is a future object that resolves to bytes.
+        """
+
+    @abc.abstractmethod
+    def verify_challenge(self, challenge: Challenge, signature: bytes, channel_id: Optional[bytes] = None,
+                         channel_id_type: Optional[str] = None) -> bool:
+        """
+        Verify the data from the given WAMP challenge message, and the optional TLS channel ID
+        to be signed by this key.
+
+        :param challenge: The WAMP challenge message as sent or received during the WAMP-cryptosign
+            authentication handshake. This can be used by WAMP clients to compute the signature
+            returned in the handshake, or by WAMP routers to verify the signature returned by clients,
+            during WAMP-cryptosign client authentication.
+
+        :param channel_id: Optional TLS channel ID. Using this binds the WAMP session authentication
+            to the underlying TLS channel, and thus prevents authentication-forwarding attacks.
+        :param channel_id_type: Optional TLS channel ID type, e.g. ``"tls-unique"``.
+
+        :return: Returns ``True`` if the signature over the data matches this key.
+        """
+
+
+@public
+class IEthereumKey(ISigningKey):
+    """
+    Interface to an Ethereum signing (or transaction verification) key, used for WAMP-XBR transaction
+    signing (or verification).
+    """
+
+    @abc.abstractmethod
+    def address(self, binary: bool = False) -> Union[str, bytes]:
+        """
+        Returns the Ethereum (public) address of the key (which is derived from
+        the public key).
+
+        :param binary: Return address as 160 bits (20 bytes) binary instead of
+            the ``0x`` prefixed hex, check-summed address as a string.
+        :return: The address in hex or byte encoding.
+        """
+
+    @abc.abstractmethod
+    def sign_typed_data(self, data: Dict[str, Any]) -> bytes:
+        """
+        Sign the given typed data according to `EIP712 <https://eips.ethereum.org/EIPS/eip-712>`_
+        and create an Ethereum signature.
+
+        :param data: The data to be signed. This must follow EIP712.
+
+        :return: The signature, that is a future object that resolves to bytes.
+        """
+
+    @abc.abstractmethod
+    def verify_typed_data(self, data: Dict[str, Any], signature: bytes) -> bool:
+        """
+        Verify the given typed data according to `EIP712 <https://eips.ethereum.org/EIPS/eip-712>`_
+        to be signed by this key.
+
+        :param data: The data to be signed. This must follow EIP712.
+        :param signature: The signature to be verified.
+
+        :return: Returns ``True`` if the signature over the data matches this key.
+        """
+
+
+@public
+class ISecurityModule(abc.ABC):
+    """
+    Interface for key security modules, which
+
+    * include filesystem and HSM backed persistent key implementations, and
+    * provides secure key signature generation and verification with
+    * two key types and signature schemes
+
+    The two key types and signature schemes support WAMP-cryptosign based authentication
+    for WAMP sessions, and WAMP-XBR based signed transactions and data encryption.
+
+    References:
+
+    * `SE050 APDU Specification (AN12413) <https://www.nxp.com/docs/en/application-note/AN12413.pdf>`_
+    * https://neuromancer.sk/std/secg/secp256r1
+    * https://neuromancer.sk/std/secg/secp256k1
+    * https://asecuritysite.com/curve25519/eddsa2
+    * https://asecuritysite.com/secp256k1/ecdsa
+    * https://safecurves.cr.yp.to/
+    * https://www.ietf.org/rfc/rfc3279.txt
+    * https://crypto.stackexchange.com/questions/70927/naming-convention-for-nist-elliptic-curves-in-openssl
+    * https://www.johndcook.com/blog/2018/08/21/a-tale-of-two-elliptic-curves/
+    """
+
+    @abc.abstractmethod
+    def open(self):
+        """
+        Open this security module. This method (always) runs asynchronously.
+        """
+
+    @abc.abstractmethod
+    def close(self):
+        """
+        Close this security module. This method (always) runs asynchronously.
+        """
+
+    @abc.abstractmethod
+    def is_open(self) -> bool:
+        """
+        Check if the security module is currently opened. Security module operations
+        can only be run when the module is opened.
+
+        :return: Flag indicating whether the security module is currently opened.
+        """
+
+    @abc.abstractmethod
+    def can_lock(self) -> bool:
+        """
+        Flag indicating whether this security module can be locked, e.g. by a
+        user passphrase or PIN.
+
+        :return: Flag indicating whether the security module can be locked/unlocked at all.
+        """
+
+    @abc.abstractmethod
+    def is_locked(self) -> bool:
+        """
+        Check if this security module is currently locked.
+
+        :return: Flag indicating whether the security module is currently locked.
+        """
+
+    @abc.abstractmethod
+    def lock(self):
+        """
+        Lock this security module. This method (always) runs asynchronously.
+        """
+
+    @abc.abstractmethod
+    def unlock(self):
+        """
+        Unlock this security module. This method (always) runs asynchronously.
+        """
+
+    @abc.abstractmethod
+    def random(self, octets: int) -> bytes:
+        """
+        Generate random bytes within the security module.
+
+        :param octets: Number of bytes (octets) to generate.
+
+        :return: Random bytes, generated within the security module, e.g. in a HW RNG.
+        """
+
+    @abc.abstractmethod
+    def current(self, counter_id: str) -> int:
+        """
+        Return current value of the given persistent counter.
+
+        :param counter_id: The ID of the counter to access.
+
+        :return: Current value of counter, or ``0`` to indicate the counter does not
+            exists (was never incremented).
+        """
+
+    @abc.abstractmethod
+    def next(self, counter_id: str) -> int:
+        """
+        Increment the given persistent counter and return the new value.
+
+        :param counter_id:
+
+        :param counter_id: The ID of the counter to access.
+
+        :return: New value of counter, e.g. ``1`` once a counter was first incremented.
+        """
+
+    @abc.abstractmethod
+    def create(self, key_type: str) -> str:
+        """
+        Create a new public-private asymmetric key pair, stored within the security module.
+
+        :param key_type: Type of key to generate, e.g. ``ed25519`` or ``eth``.
+
+        :return: ID of new key.
+        """
+
+    @abc.abstractmethod
+    def delete(self, key_id: str):
+        """
+        Delete an existing key pair stored within the security module.
+
+        :param key_id: ID of key to delete.
+        """
+
+    @abc.abstractmethod
+    def __len__(self) -> int:
+        """
+        Get number of key pairs currently stored within the security module.
+
+        :return: Current number of persistent keys.
+        """
+
+    # FIXME: the following works on CPy 3.9+, but fails on CPy 3.7 and PyPy 3.8
+    #   AttributeError: type object 'Iterator' has no attribute '__class_getitem__'
+    #   See also:
+    #       - https://docs.python.org/3/library/abc.html#abc.ABCMeta.__subclasshook__
+    #       - https://docs.python.org/3/library/stdtypes.html#container.__iter__
+    #
+    # @abc.abstractmethod
+    # def __iter__(self) -> Iterator[str]:
+    #     """
+    #     Return an iterator object over all key accessible in this security module.
+    #
+    #     :return:
+    #     """
+
+    @abc.abstractmethod
+    def __contains__(self, key_id: str) -> bool:
+        """
+        Check if the security module, acting as a key container, contains a persistent
+        key with the given ID.
+
+        :param key_id: ID of key to check.
+
+        :return: ``True`` if a key with given ID exists.
+        """
+
+    @abc.abstractmethod
+    def __getitem__(self, key_id: str) -> Union[IEd25519Key, IEthereumKey]:
+        """
+        Get a key from the security module given the key ID.
+
+        :param key_id: ID of key to get.
+
+        :return: The key, either a :class:`IEd25519Key` or :class:`IEthereumKey` instance.
         """
 
 
@@ -814,8 +1124,8 @@ class IPayloadCodec(abc.ABC):
             the payload is to be encoded (eg topic or procedure).
         :type uri: str
 
-        :param payload: The encoded application payload to be decoded.
-        :type payload: instance of :class:`autobahn.wamp.types.EncodedPayload`
+        :param encoded_payload: The encoded application payload to be decoded.
+        :type encoded_payload: instance of :class:`autobahn.wamp.types.EncodedPayload`
 
         :returns: A tuple with the decoded positional and keyword-based
             application payload: ``(uri, args, kwargs)``

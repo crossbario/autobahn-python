@@ -24,13 +24,14 @@
 #
 ###############################################################################
 
+from typing import Dict, Any
 from binascii import a2b_hex
 from py_eth_sig_utils import signing
 
 _EIP712_SIG_LEN = 32 + 32 + 1
 
 
-def sign(eth_privkey, data):
+def sign(eth_privkey: bytes, data: Dict[str, Any]) -> bytes:
     """
     Sign the given data using the given Ethereum private key.
 
@@ -38,14 +39,19 @@ def sign(eth_privkey, data):
     :param data: Data to sign.
     :return: Signature.
     """
+    # internally, this is using py_eth_sig_utils.eip712.encode_typed_data
     _args = signing.sign_typed_data(data, eth_privkey)
+
+    # serialize structured signature (v, r, s) into bytes
     signature = signing.v_r_s_to_signature(*_args)
-    assert len(signature) == _EIP712_SIG_LEN
+
+    # be paranoid about what to expect
+    assert type(signature) == bytes and len(signature) == _EIP712_SIG_LEN
 
     return signature
 
 
-def recover(data, signature):
+def recover(data: Dict[str, Any], signature: bytes) -> bytes:
     """
     Recover the Ethereum address of the signer, given the data and signature.
 
@@ -59,7 +65,7 @@ def recover(data, signature):
     return a2b_hex(signer_address[2:])
 
 
-def is_address(provided):
+def is_address(provided: Any) -> bool:
     """
     Check if the value is a proper Ethereum address.
 
@@ -69,7 +75,7 @@ def is_address(provided):
     return type(provided) == bytes and len(provided) == 20
 
 
-def is_bytes16(provided):
+def is_bytes16(provided: Any) -> bool:
     """
     Check if the value is a proper (binary) UUID.
 
@@ -79,7 +85,7 @@ def is_bytes16(provided):
     return type(provided) == bytes and len(provided) == 16
 
 
-def is_signature(provided):
+def is_signature(provided: Any) -> bool:
     """
     Check if the value is a proper Ethereum signature.
 
@@ -89,9 +95,9 @@ def is_signature(provided):
     return type(provided) == bytes and len(provided) == _EIP712_SIG_LEN
 
 
-def is_eth_privkey(provided):
+def is_eth_privkey(provided: Any) -> bool:
     """
-    Check if the value is a proper WAMP-cryptosign private key.
+    Check if the value is a proper Ethereum private key (seed).
 
     :param provided: The value to check.
     :return: True iff the value is of correct type.
@@ -99,7 +105,7 @@ def is_eth_privkey(provided):
     return type(provided) == bytes and len(provided) == 32
 
 
-def is_cs_pubkey(provided):
+def is_cs_pubkey(provided: Any) -> bool:
     """
     Check if the value is a proper WAMP-cryptosign public key.
 
@@ -109,7 +115,7 @@ def is_cs_pubkey(provided):
     return type(provided) == bytes and len(provided) == 32
 
 
-def is_block_number(provided):
+def is_block_number(provided: Any) -> bool:
     """
     Check if the value is a proper Ethereum block number.
 
@@ -119,7 +125,7 @@ def is_block_number(provided):
     return type(provided) == int
 
 
-def is_chain_id(provided):
+def is_chain_id(provided: Any) -> bool:
     """
     Check if the value is a proper Ethereum chain ID.
 

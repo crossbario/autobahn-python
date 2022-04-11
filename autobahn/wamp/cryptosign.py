@@ -26,12 +26,12 @@
 
 import binascii
 import struct
-from typing import Callable
+from typing import Callable, Optional, Union
 
 import txaio
 
 from autobahn import util
-from autobahn.wamp.interfaces import ISigningKey
+from autobahn.wamp.interfaces import IEd25519Key, ISession
 from autobahn.wamp.types import Challenge
 
 __all__ = [
@@ -400,7 +400,7 @@ if HAS_CRYPTOSIGN:
 
         return data
 
-    def sign_challenge(data: bytes, signer_func: Callable):
+    def sign_challenge(data: bytes, signer_func: Callable) -> bytes:
         """
         Sign the provided data using the provided signer.
 
@@ -447,7 +447,7 @@ if HAS_CRYPTOSIGN:
             return self._can_sign
 
         @util.public
-        def sign_challenge(self, session, challenge, channel_id_type='tls-unique'):
+        def sign_challenge(self, session: ISession, challenge: Challenge, channel_id_type: str = 'tls-unique') -> bytes:
             """
             Sign WAMP-cryptosign challenge.
 
@@ -461,13 +461,13 @@ if HAS_CRYPTOSIGN:
             :rtype: str
             """
             # get the TLS channel ID of the underlying TLS connection. Could be None.
-            channel_id_raw = session._transport.get_channel_id()
+            channel_id_raw = session._transport.get_channel_id(channel_id_type)
             data = format_challenge(challenge, channel_id_raw, channel_id_type)
 
             return sign_challenge(data, self.sign)
 
         @util.public
-        def sign(self, data):
+        def sign(self, data: bytes) -> bytes:
             """
             Sign some data.
 
@@ -487,7 +487,7 @@ if HAS_CRYPTOSIGN:
             sig = self._key.sign(data)
 
             # we only return the actual signature! if we return "sig",
-            # it get coerced into the concatenation of message + signature
+            # it gets coerced into the concatenation of message + signature
             # not sure which order, but we don't want that. we only want
             # the signature
             return txaio.create_future_success(sig.signature)
@@ -532,7 +532,7 @@ if HAS_CRYPTOSIGN:
             return self._comment
 
         @util.public
-        def public_key(self, binary=False):
+        def public_key(self, binary: bool = False) -> Union[str, bytes]:
             """
             Returns the public key part of a signing key or the (public) verification key.
 
@@ -551,7 +551,7 @@ if HAS_CRYPTOSIGN:
 
         @util.public
         @classmethod
-        def from_key_bytes(cls, keydata, comment=None):
+        def from_key_bytes(cls, keydata: str, comment: Optional[str] = None) -> 'SigningKey':
             if not (comment is None or type(comment) == str):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
@@ -564,8 +564,9 @@ if HAS_CRYPTOSIGN:
             key = signing.SigningKey(keydata)
             return cls(key, comment)
 
+        @util.public
         @classmethod
-        def from_raw_key(cls, filename, comment=None):
+        def from_raw_key(cls, filename: str, comment: Optional[str] = None) -> 'SigningKey':
             """
             Load an Ed25519 (private) signing key (actually, the seed for the key) from a raw file of 32 bytes length.
             This can be any random byte sequence, such as generated from Python code like
@@ -594,7 +595,7 @@ if HAS_CRYPTOSIGN:
 
         @util.public
         @classmethod
-        def from_ssh_key(cls, filename):
+        def from_ssh_key(cls, filename: str) -> 'SigningKey':
             """
             Load an Ed25519 key from a SSH key file. The key file can be a (private) signing
             key (from a SSH private key file) or a (public) verification key (from a SSH
@@ -607,7 +608,7 @@ if HAS_CRYPTOSIGN:
 
         @util.public
         @classmethod
-        def from_ssh_data(cls, keydata):
+        def from_ssh_data(cls, keydata: str) -> 'SigningKey':
             """
             Load an Ed25519 key from SSH key file. The key file can be a (private) signing
             key (from a SSH private key file) or a (public) verification key (from a SSH
@@ -625,7 +626,7 @@ if HAS_CRYPTOSIGN:
 
             return cls(key, comment)
 
-    ISigningKey.register(SigningKey)
+    IEd25519Key.register(SigningKey)
 
 
 if __name__ == '__main__':
