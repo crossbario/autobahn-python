@@ -31,12 +31,12 @@ from twisted.internet.defer import Deferred
 from twisted.internet.interfaces import IReactorProcess
 from twisted.internet.utils import getProcessOutput
 
-__all__ = ('get_passphrase_from_dialog',)
+__all__ = ('get_input_from_dialog',)
 
 
-def get_passphrase_from_dialog(reactor: IReactorProcess, title: str = 'Unlock key',
-                               text: str = 'Please enter passphrase to unlock key',
-                               hide_text: bool = True) -> Deferred:
+def get_input_from_dialog(reactor: IReactorProcess, title: str = 'Unlock key',
+                          text: str = 'Please enter passphrase to unlock key',
+                          hide_text: bool = True) -> Deferred:
     """
     Show a Gnome/GTK desktop dialog asking for a passphrase.
 
@@ -80,10 +80,8 @@ def get_passphrase_from_dialog(reactor: IReactorProcess, title: str = 'Unlock ke
 if __name__ == "__main__":
     from twisted.internet.task import react
 
-
     async def main(reactor):
-        passphrase = await get_passphrase_from_dialog(reactor)
-        print(type(passphrase), len(passphrase), '[{}]'.format(passphrase))
-
+        passphrase = await get_input_from_dialog(reactor)
+        print(type(passphrase), len(passphrase), '"{}"'.format(passphrase))
 
     react(main)
