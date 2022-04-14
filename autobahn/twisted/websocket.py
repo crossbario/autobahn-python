@@ -375,6 +375,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     log = txaio.make_logger()
 
     def _onConnect(self, response):
+        self.log.debug('{func}(response={response})', func=self._onConnect, response=response)
         self.onConnect(response)
 
     def startTLS(self):

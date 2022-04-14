@@ -682,7 +682,7 @@ class Application(object):
                 yield handler(*args, **kwargs)
             except Exception as e:
                 # FIXME
-                self.log.info("Warning: exception in signal handler swallowed: {err}", err=e)
+                self.log.warn("Warning: exception in signal handler swallowed: {err}", err=e)
 
 
 class Service(service.MultiService):

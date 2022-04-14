@@ -51,33 +51,6 @@ class WampWebSocketProtocol(object):
         self.log.debug('Failing WAMP-over-WebSocket transport: code={code}, reason="{reason}"', code=code, reason=reason)
         self._fail_connection(code, reason)
 
-    def onConnecting(self, transport_details: TransportDetails) -> Optional[ConnectingRequest]:
-        """
-        Callback fired after the connection is established, but before the handshake has started. This may return a
-        :class:`autobahn.websocket.types.ConnectingRequest` instance (or a future which resolves to one) to control
-        aspects of the handshake (or None for defaults).
-        """
-        # create a new WAMP session instance for this WebSocket protocol instance
-        if not self._session:
-            self._session = self.factory._factory()
-
-        connecting_request = ConnectingRequest(
-            # required (no defaults):
-            host=self.factory.host,
-            port=self.factory.port,
-            resource=self.factory.resource,
-            # optional (useful defaults):
-            headers=self.factory.headers,  # might be None
-            useragent=self.factory.useragent,  # might be None
-            origin=self.factory.origin,  # might be None
-            protocols=self.factory.protocols,  # might be None
-        )
-
-        if hasattr(self._session, 'onConnecting'):
-            connecting_request = self._session.onConnecting(transport_details, connecting_request)
-
-        return connecting_request
-
     def onOpen(self):
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
@@ -88,6 +61,7 @@ class WampWebSocketProtocol(object):
         # create a new WAMP session instance for this WebSocket protocol instance
         if not self._session:
             self._session = self.factory._factory()
+            self._session._transport = self
 
         try:
             self._session.onOpen(self)
@@ -235,10 +209,39 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
 
     STRICT_PROTOCOL_NEGOTIATION = True
 
+    def onConnecting(self, transport_details: TransportDetails) -> Optional[ConnectingRequest]:
+        """
+        Callback fired after the connection is established, but before the handshake has started. This may return a
+        :class:`autobahn.websocket.types.ConnectingRequest` instance (or a future which resolves to one) to control
+        aspects of the handshake (or None for defaults).
+        """
+        # create a new WAMP session instance for this WebSocket protocol instance
+        if not self._session:
+            self._session = self.factory._factory()
+            self._session._transport = self
+
+        connecting_request = ConnectingRequest(
+            # required (no defaults):
+            host=self.factory.host,
+            port=self.factory.port,
+            resource=self.factory.resource,
+            # optional (useful defaults):
+            headers=self.factory.headers,  # might be None
+            useragent=self.factory.useragent,  # might be None
+            origin=self.factory.origin,  # might be None
+            protocols=self.factory.protocols,  # might be None
+        )
+
+        if hasattr(self._session, 'onConnecting'):
+            connecting_request = self._session.onConnecting(transport_details, connecting_request)
+
+        return connecting_request
+
     def onConnect(self, response: ConnectionResponse):
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect`
         """
+        self.log.debug('{func}(response={response})', func=self.onConnect, response=response)
         if response.protocol not in self.factory.protocols:
             if self.STRICT_PROTOCOL_NEGOTIATION:
                 raise Exception('The server does not speak any of the WebSocket subprotocols {} we requested.'.format(', '.join(self.factory.protocols)))
