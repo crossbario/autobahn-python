@@ -97,37 +97,46 @@ try:
     from twisted.protocols.tls import TLSMemoryBIOProtocol
     from OpenSSL.SSL import Connection
 except ImportError:
-    def transport_channel_id(transport: object, is_server: bool, channel_id_type: Optional[str] = None) -> bytes:
+    def transport_channel_id(transport: object, is_server: bool, channel_id_type: Optional[str] = None) -> Optional[bytes]:
         if channel_id_type is None:
             return b'\x00' * 32
         else:
-            assert False, 'transport_channel_id() used, when TLS is not available'
+            raise RuntimeError('cannot determine TLS channel ID of type "{}" when TLS is not available on this system'.format(channel_id_type))
 else:
-    def transport_channel_id(transport: object, is_server: bool, channel_id_type: Optional[str] = None) -> bytes:
+    def transport_channel_id(transport: object, is_server: bool, channel_id_type: Optional[str] = None) -> Optional[bytes]:
         """
-        Application-layer user authentication protocols are vulnerable to generic
-        credential forwarding attacks, where an authentication credential sent by
-        a client C to a server M may then be used by M to impersonate C at another
-        server S. To prevent such credential forwarding attacks, modern authentication
-        protocols rely on channel bindings. For example, WAMP-cryptosign can use
-        the tls-unique channel identifier provided by the TLS layer to strongly bind
-        authentication credentials to the underlying channel, so that a credential
-        received on one TLS channel cannot be forwarded on another.
+        Return TLS channel ID of WAMP transport of the given TLS channel ID type.
 
-        :param transport: The Twisted TLS transport to extract the TLS channel ID from.
-        :param is_server: Flag indicating the transport is for a server.
-        :param channel_id_type: TLS channel ID type, currently only "tls-unique" is supported.
-        :returns: The TLS channel id (32 bytes).
+        Application-layer user authentication protocols are vulnerable to generic credential forwarding attacks,
+        where an authentication credential sent by a client C to a server M may then be used by M to impersonate C at
+        another server S.
+        To prevent such credential forwarding attacks, modern authentication protocols rely on channel bindings.
+        For example, WAMP-cryptosign can use the tls-unique channel identifier provided by the TLS layer to strongly
+        bind authentication credentials to the underlying channel, so that a credential received on one TLS channel
+        cannot be forwarded on another.
+
+        :param transport: The Twisted TLS transport to extract the TLS channel ID from. If the transport isn't
+            TLS based, and non-empty ``channel_id_type`` is requested, ``None`` will be returned. If the transport
+            is indeed TLS based, an empty ``channel_id_type`` of ``None`` is requested, 32 NUL bytes will be returned.
+        :param is_server: Flag indicating that the transport is a server transport.
+        :param channel_id_type: TLS channel ID type, if set currently only ``"tls-unique"`` is supported.
+        :returns: The TLS channel ID (32 bytes).
         """
         if channel_id_type is None:
             return b'\x00' * 32
 
         if channel_id_type not in ['tls-unique']:
-            raise Exception("invalid channel ID type {}".format(channel_id_type))
+            raise RuntimeError('invalid TLS channel ID type "{}" requested'.format(channel_id_type))
 
+        if not isinstance(transport, TLSMemoryBIOProtocol):
+            raise RuntimeError(
+                'cannot determine TLS channel ID of type "{}" when TLS is not available on this transport {}'.format(
+                    channel_id_type, type(transport)))
+
+        # get access to the OpenSSL connection underlying the Twisted protocol
         # https://twistedmatrix.com/documents/current/api/twisted.protocols.tls.TLSMemoryBIOProtocol.html#getHandle
-        assert isinstance(transport, TLSMemoryBIOProtocol)
-        assert isinstance(transport.getHandle(), Connection)
+        connection: Connection = transport.getHandle()
+        assert connection and isinstance(connection, Connection)
 
         # Obtain latest TLS Finished message that we expected from peer, or None if handshake is not completed.
         # http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_peer_finished
@@ -154,4 +163,4 @@ else:
                 m.update(tls_finished_msg)
                 return m.digest()
         else:
-            assert False, 'should not arrive here'
+            raise NotImplementedError('should not arrive here (unhandled channel_id_type "{}")'.format(channel_id_type))

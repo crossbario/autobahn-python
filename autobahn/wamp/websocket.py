@@ -26,11 +26,13 @@
 
 import copy
 import traceback
+from typing import Optional
 
 from autobahn.websocket import protocol
-from autobahn.websocket.types import ConnectionDeny
+from autobahn.websocket.types import ConnectionDeny, ConnectingRequest, ConnectionResponse, TransportDetails
 from autobahn.wamp.interfaces import ITransport
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
+from autobahn.wamp.message import Message
 
 __all__ = ('WampWebSocketServerProtocol',
            'WampWebSocketClientProtocol',
@@ -43,11 +45,38 @@ class WampWebSocketProtocol(object):
     Base class for WAMP-over-WebSocket transport mixins.
     """
 
-    _session = None  # default; self.session is set in onOpen
+    _session = None  # default; self._session is set in onConnecting
 
     def _bailout(self, code, reason=None):
         self.log.debug('Failing WAMP-over-WebSocket transport: code={code}, reason="{reason}"', code=code, reason=reason)
         self._fail_connection(code, reason)
+
+    def onConnecting(self, transport_details: TransportDetails) -> Optional[ConnectingRequest]:
+        """
+        Callback fired after the connection is established, but before the handshake has started. This may return a
+        :class:`autobahn.websocket.types.ConnectingRequest` instance (or a future which resolves to one) to control
+        aspects of the handshake (or None for defaults).
+        """
+        # create a new WAMP session instance for this WebSocket protocol instance
+        if not self._session:
+            self._session = self.factory._factory()
+
+        connecting_request = ConnectingRequest(
+            # required (no defaults):
+            host=self.factory.host,
+            port=self.factory.port,
+            resource=self.factory.resource,
+            # optional (useful defaults):
+            headers=self.factory.headers,  # might be None
+            useragent=self.factory.useragent,  # might be None
+            origin=self.factory.origin,  # might be None
+            protocols=self.factory.protocols,  # might be None
+        )
+
+        if hasattr(self._session, 'onConnecting'):
+            connecting_request = self._session.onConnecting(transport_details, connecting_request)
+
+        return connecting_request
 
     def onOpen(self):
         """
@@ -55,15 +84,19 @@ class WampWebSocketProtocol(object):
         """
         # WebSocket connection established. Now let the user WAMP session factory
         # create a new WAMP session and fire off session open callback.
-        try:
+
+        # create a new WAMP session instance for this WebSocket protocol instance
+        if not self._session:
             self._session = self.factory._factory()
+
+        try:
             self._session.onOpen(self)
         except Exception as e:
             self.log.critical("{tb}", tb=traceback.format_exc())
             reason = 'WAMP Internal Error ({0})'.format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason=reason)
 
-    def onClose(self, wasClean, code, reason):
+    def onClose(self, wasClean: bool, code: int, reason: str):
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
         """
@@ -80,7 +113,7 @@ class WampWebSocketProtocol(object):
                 self.log.critical("{tb}", tb=traceback.format_exc())
             self._session = None
 
-    def onMessage(self, payload, isBinary):
+    def onMessage(self, payload: bytes, isBinary: bool):
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
         """
@@ -104,7 +137,7 @@ class WampWebSocketProtocol(object):
             reason = 'WAMP Internal Error ({0})'.format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason=reason)
 
-    def send(self, msg):
+    def send(self, msg: Message):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.send`
         """
@@ -126,7 +159,7 @@ class WampWebSocketProtocol(object):
         else:
             raise TransportLost()
 
-    def isOpen(self):
+    def isOpen(self) -> bool:
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.isOpen`
         """
@@ -202,7 +235,7 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
 
     STRICT_PROTOCOL_NEGOTIATION = True
 
-    def onConnect(self, response):
+    def onConnect(self, response: ConnectionResponse):
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect`
         """
@@ -217,6 +250,12 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
 
         # copy over serializer form factory, so that we keep per-session serializer stats
         self._serializer = copy.copy(self.factory._serializers[serializerId])
+
+        # if the WAMP session class provides an onConnect hook, forward to give the WAMP session
+        # a chance to hook into transport establishment (that is, before the session will be authenticated
+        # and actually be available for WAMP app use)
+        if hasattr(self._session, 'onConnect'):
+            return self._session.onConnect(response)
 
 
 class WampWebSocketFactory(object):

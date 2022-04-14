@@ -462,6 +462,9 @@ if HAS_CRYPTOSIGN:
             """
             # get the TLS channel ID of the underlying TLS connection. Could be None.
             channel_id_raw = session._transport.get_channel_id(channel_id_type)
+
+            print('ö'*100, binascii.b2a_hex(channel_id_raw).decode() if channel_id_raw else None)
+
             data = format_challenge(challenge, channel_id_raw, channel_id_type)
 
             return sign_challenge(data, self.sign)

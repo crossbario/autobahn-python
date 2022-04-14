@@ -392,6 +392,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         Internal helper.
         Base class calls this to create a TransportDetails
         """
+        print('='*100, self._create_transport_details, self.transport)
         # note that ITLSTransport exists too, which is "a TCP
         # transport that *can be upgraded* to TLS" .. if it *is*
         # upgraded to TLS, then the transport will implement

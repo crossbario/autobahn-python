@@ -443,7 +443,7 @@ class _ApplicationSession(ApplicationSession):
         self.app = app
 
     @inlineCallbacks
-    def onConnect(self):
+    def onConnect(self, connection_response=None):
         """
         Implements :meth:`autobahn.wamp.interfaces.ISession.onConnect`
         """
