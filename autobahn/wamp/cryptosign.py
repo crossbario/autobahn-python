@@ -463,8 +463,6 @@ if HAS_CRYPTOSIGN:
             # get the TLS channel ID of the underlying TLS connection. Could be None.
             channel_id_raw = session._transport.get_channel_id(channel_id_type)
 
-            print('ö'*100, binascii.b2a_hex(channel_id_raw).decode() if channel_id_raw else None)
-
             data = format_challenge(challenge, channel_id_raw, channel_id_type)
 
             return sign_challenge(data, self.sign)
@@ -630,28 +628,3 @@ if HAS_CRYPTOSIGN:
             return cls(key, comment)
 
     IEd25519Key.register(SigningKey)
-
-
-if __name__ == '__main__':
-    import sys
-    if not HAS_CRYPTOSIGN:
-        print('NaCl library must be installed for this to function.', file=sys.stderr)
-        sys.exit(1)
-
-    from optparse import OptionParser
-
-    parser = OptionParser()
-    parser.add_option('-f', '--file', dest='keyfile',
-                      help='file containing ssh key')
-    parser.add_option('-p', action='store_true', dest='printpub', default=False,
-                      help='print public key information')
-
-    options, args = parser.parse_args()
-
-    if not options.printpub:
-        print("Print public key must be specified as it's the only option.")
-        parser.print_usage()
-        sys.exit(1)
-
-    key = SigningKey.from_ssh_key(options.keyfile)
-    print(key.public_key())
