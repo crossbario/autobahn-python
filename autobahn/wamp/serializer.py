@@ -31,9 +31,10 @@ import platform
 import math
 import decimal
 from binascii import b2a_hex, a2b_hex
+from typing import Optional, List, Tuple
 
 from txaio import time_ns
-from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
+from autobahn.wamp.interfaces import IObjectSerializer, ISerializer, IMessage
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
 
@@ -247,7 +248,7 @@ class Serializer(object):
             self._stats_reset = time_ns()
         return data
 
-    def serialize(self, msg):
+    def serialize(self, msg: IMessage) -> Tuple[bytes, bool]:
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.serialize`
         """
@@ -265,7 +266,7 @@ class Serializer(object):
 
         return data, is_binary
 
-    def unserialize(self, payload, isBinary=None):
+    def unserialize(self, payload: bytes, isBinary: Optional[bool] = None) -> List[IMessage]:
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
         """
