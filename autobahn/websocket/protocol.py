@@ -34,6 +34,8 @@ import pickle
 import copy
 import json
 import time
+from typing import Optional, Union, Tuple, Dict
+from types import NoneType
 
 from pprint import pformat
 from collections import deque
@@ -45,8 +47,8 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
     IWebSocketChannelFrameApi, \
     IWebSocketChannelStreamingApi
 
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
-from autobahn.websocket.types import ConnectingRequest
+from autobahn.websocket.types import ConnectingRequest, ConnectionRequest, ConnectionResponse, ConnectionDeny, \
+    TransportDetails
 
 from autobahn.util import Stopwatch, wildcards2patterns, encode_truncate
 from autobahn.util import _LazyHexFormatter
@@ -2518,7 +2520,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
     CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_SERVER
 
-    def onConnect(self, request):
+    def onConnect(self, request: ConnectionRequest) -> Union[Optional[str], Tuple[Optional[str], Dict[str, str]]]:
         """
         Callback fired during WebSocket opening handshake when new WebSocket client
         connection is about to be established.
@@ -2534,7 +2536,13 @@ class WebSocketServerProtocol(WebSocketProtocol):
         to accept the WebSocket connection request.
 
         :param request: WebSocket connection request information.
-        :type request: instance of :class:`autobahn.websocket.types.ConnectionRequest`
+
+        :returns:
+           You may return one of:
+              * ``None``: the connection is accepted with no specific WebSocket subprotocol,
+              * ``str``: the connection is accepted with the returned name as the WebSocket subprotocol, or
+              * ``(str, dict)``: a pair of subprotocol accepted and HTTP headers to send to the client.
+           You can also return a Deferred/Future that resolves/rejects to the above.
         """
         return None
 
@@ -3411,27 +3419,30 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
     CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_CLIENT
 
-    def onConnecting(self, transport_details):
+    def onConnecting(self, transport_details: TransportDetails) -> Optional[ConnectingRequest]:
         """
-        :param transport_details: a :class:`autobahn.websocket.types.TransportDetails`
-
         Callback fired after the connection is established, but before the
         handshake has started. This may return a
         :class:`autobahn.websocket.types.ConnectingRequest` instance
         (or a future which resolves to one) to control aspects of the
         handshake (or None for defaults)
-        """
-        pass
 
-    def onConnect(self, response):
-        """
-        Callback fired directly after WebSocket opening handshake when new WebSocket server
-        connection was established.
+        :param transport_details: Details of the transport underlying the WebSocket connection being established.
 
-        :param response: WebSocket connection response information.
-        :type response: instance of :class:`autobahn.websocket.types.ConnectionResponse`
+        :returns: A
+            :class:`autobahn.websocket.types.ConnectingRequest`
+            instance is returned to indicate which options should be
+            used for this connection. If you wish to use the default
+            behavior, ``None`` may be returned (this is the default).
         """
-        pass
+
+    def onConnect(self, response: ConnectionResponse) -> NoneType:
+        """
+        Callback fired directly after WebSocket opening handshake when new WebSocket
+        connection was established from the client to a server.
+
+        :param response: WebSocket connection response information sent by server.
+        """
 
     def _connectionMade(self):
         """
