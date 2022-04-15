@@ -25,8 +25,10 @@
 ###############################################################################
 
 import abc
+from typing import Optional, Union
 
 from autobahn.util import public
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectingRequest, TransportDetails
 
 __all__ = ('IWebSocketServerChannelFactory',
            'IWebSocketClientChannelFactory',
@@ -82,7 +84,8 @@ class IWebSocketServerChannelFactory(abc.ABC):
                     This will use an implicit URL of ``ws://localhost``.
         :type url: str
 
-        :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
+        :param protocols: List of subprotocols the server supports. The subprotocol used is the first from
+            the list of subprotocols announced by the client that is contained in this list.
         :type protocols: list of str
 
         :param server: Server as announced in HTTP response header during opening handshake.
@@ -91,7 +94,8 @@ class IWebSocketServerChannelFactory(abc.ABC):
         :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
         :type headers: dict
 
-        :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
+        :param externalPort: Optionally, the external visible port this server will be reachable under
+            (i.e. when running behind a L2/L3 forwarding device).
         :type externalPort: int
         """
 
@@ -111,7 +115,8 @@ class IWebSocketServerChannelFactory(abc.ABC):
                     This will use an implicit URL of ``ws://localhost``.
         :type url: str
 
-        :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
+        :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the
+            list of subprotocols announced by the client that is contained in this list.
         :type protocols: list of str
 
         :param server: Server as announced in HTTP response header during opening handshake.
@@ -120,7 +125,8 @@ class IWebSocketServerChannelFactory(abc.ABC):
         :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
         :type headers: dict
 
-        :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
+        :param externalPort: Optionally, the external visible port this server will be reachable under
+            (i.e. when running behind a L2/L3 forwarding device).
         :type externalPort: int
         """
 
@@ -154,7 +160,8 @@ class IWebSocketServerChannelFactory(abc.ABC):
         """
         Set WebSocket protocol options used as defaults for new protocol instances.
 
-        :param versions: The WebSocket protocol versions accepted by the server (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
+        :param versions: The WebSocket protocol versions accepted by the server
+            (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
         :type versions: list of ints or None
 
         :param webStatus: Return server status/version on HTTP/GET without WebSocket upgrade header (default: `True`).
@@ -169,28 +176,36 @@ class IWebSocketServerChannelFactory(abc.ABC):
         :param requireMaskedClientFrames: Require client-to-server frames to be masked (default: `True`).
         :type requireMaskedClientFrames: bool or None
 
-        :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: `True`).
+        :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and
+            incoming frames (default: `True`).
         :type applyMask: bool or None
 
-        :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or `0` for unlimited (default: `0`).
+        :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or
+            `0` for unlimited (default: `0`).
         :type maxFramePayloadSize: int or None
 
-        :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or `0` for unlimited (default: `0`).
+        :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that
+            will be accepted when receiving or `0` for unlimited (default: `0`).
         :type maxMessagePayloadSize: int or None
 
-        :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
+        :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API)
+            into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
         :type autoFragmentSize: int or None
 
-        :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: `True`).
-        :type failbyDrop: bool or None
+        :param failByDrop: Fail connections by dropping the TCP connection without performing closing
+            handshake (default: `True`).
+        :type failByDrop: bool or None
 
-        :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with `code == 1000, reason = ""` (default: `False`).
+        :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply
+            with `code == 1000, reason = ""` (default: `False`).
         :type echoCloseCodeReason: bool or None
 
-        :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or `0` to deactivate (default: `0`).
+        :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or
+            `0` to deactivate (default: `0`).
         :type openHandshakeTimeout: float or None
 
-        :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: `1`).
+        :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout
+            in seconds (default: `1`).
         :type closeHandshakeTimeout: float or None
 
         :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: `True`).
@@ -207,13 +222,16 @@ class IWebSocketServerChannelFactory(abc.ABC):
            peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingTimeout: float or None
 
-        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[12, 125]`. (default: `12`).
+        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer
+            from `[12, 125]`. (default: `12`).
         :type autoPingSize: int or None
 
-        :param serveFlashSocketPolicy: Serve the Flash Socket Policy when we receive a policy file request on this protocol. (default: `False`).
+        :param serveFlashSocketPolicy: Serve the Flash Socket Policy when we receive a policy file request
+            on this protocol. (default: `False`).
         :type serveFlashSocketPolicy: bool or None
 
-        :param flashSocketPolicy: The flash socket policy to be served when we are serving the Flash Socket Policy on this protocol
+        :param flashSocketPolicy: The flash socket policy to be served when we are serving
+            the Flash Socket Policy on this protocol
            and when Flash tried to connect to the destination port. It must end with a null character.
         :type flashSocketPolicy: str or None
 
@@ -226,7 +244,8 @@ class IWebSocketServerChannelFactory(abc.ABC):
         :param maxConnections: Maximum number of concurrent connections. Set to `0` to disable (default: `0`).
         :type maxConnections: int or None
 
-        :param trustXForwardedFor: Number of trusted web servers in front of this server that add their own X-Forwarded-For header (default: `0`)
+        :param trustXForwardedFor: Number of trusted web servers in front of this server that add their
+            own X-Forwarded-For header (default: `0`)
         :type trustXForwardedFor: int
         """
 
@@ -268,7 +287,8 @@ class IWebSocketClientChannelFactory(abc.ABC):
         :param origin: The origin to be sent in WebSocket opening handshake or None (default: `None`).
         :type origin: str
 
-        :param protocols: List of subprotocols the client should announce in WebSocket opening handshake (default: `[]`).
+        :param protocols: List of subprotocols the client should announce in WebSocket opening
+            handshake (default: `[]`).
         :type protocols: list of strings
 
         :param useragent: User agent as announced in HTTP request header or None (default: `AutobahnWebSocket/?.?.?`).
@@ -339,7 +359,8 @@ class IWebSocketClientChannelFactory(abc.ABC):
         """
         Set WebSocket protocol options used as defaults for _new_ protocol instances.
 
-        :param version: The WebSocket protocol spec (draft) version to be used (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
+        :param version: The WebSocket protocol spec (draft) version to be used
+            (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
         :type version: int
 
         :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: `True`).
@@ -351,37 +372,47 @@ class IWebSocketClientChannelFactory(abc.ABC):
         :param maskClientFrames: Mask client-to-server frames (default: `True`).
         :type maskClientFrames: bool
 
-        :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: `True`).
+        :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and
+            incoming frames (default: `True`).
         :type applyMask: bool
 
-        :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or `0` for unlimited (default: `0`).
+        :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or
+            `0` for unlimited (default: `0`).
         :type maxFramePayloadSize: int
 
-        :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or `0` for unlimited (default: `0`).
+        :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that
+            will be accepted when receiving or `0` for unlimited (default: `0`).
         :type maxMessagePayloadSize: int
 
-        :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
+        :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API)
+            into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
         :type autoFragmentSize: int
 
-        :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: `True`).
-        :type failbyDrop: bool
+        :param failByDrop: Fail connections by dropping the TCP connection without performing
+            closing handshake (default: `True`).
+        :type failByDrop: bool
 
-        :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with `code == 1000, reason = ""` (default: `False`).
+        :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply
+            with `code == 1000, reason = ""` (default: `False`).
         :type echoCloseCodeReason: bool
 
-        :param serverConnectionDropTimeout: When the client expects the server to drop the TCP, timeout in seconds (default: `1`).
+        :param serverConnectionDropTimeout: When the client expects the server to drop the TCP, timeout in
+            seconds (default: `1`).
         :type serverConnectionDropTimeout: float
 
-        :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or `0` to deactivate (default: `0`).
+        :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or `0` to
+            deactivate (default: `0`).
         :type openHandshakeTimeout: float
 
-        :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: `1`).
+        :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout
+            in seconds (default: `1`).
         :type closeHandshakeTimeout: float
 
         :param tcpNoDelay: TCP NODELAY ("Nagle"): bool socket option (default: `True`).
         :type tcpNoDelay: bool
 
-        :param perMessageCompressionOffers: A list of offers to provide to the server for the permessage-compress WebSocket extension. Must be a list of instances of subclass of PerMessageCompressOffer.
+        :param perMessageCompressionOffers: A list of offers to provide to the server for the permessage-compress
+            WebSocket extension. Must be a list of instances of subclass of PerMessageCompressOffer.
         :type perMessageCompressionOffers: list of instance of subclass of PerMessageCompressOffer
 
         :param perMessageCompressionAccept: Acceptor function for responses.
@@ -395,7 +426,8 @@ class IWebSocketClientChannelFactory(abc.ABC):
            peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingTimeout: float or None
 
-        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[12, 125]`. (default: `12`).
+        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer
+            from `[12, 125]`. (default: `12`).
         :type autoPingSize: int
         """
 
@@ -415,15 +447,56 @@ class IWebSocketChannel(abc.ABC):
 
     This interface defines a message-based API to WebSocket plus auxiliary hooks
     and methods.
+
+    When a WebSocket connection is established, the following callbacks are fired:
+
+    * :meth:`IWebSocketChannel.onConnecting`: Transport bytestream open
+    * :meth:`IWebSocketChannel.onConnect`: WebSocket handshake
+    * :meth:`IWebSocketChannel.onOpen`: WebSocket connection open
+
+    Once a WebSocket connection is open, messages can be sent and received using:
+
+    * :meth:`IWebSocketChannel.sendMessage`
+    * :meth:`IWebSocketChannel.onMessage`
+
+    The WebSocket connection can be closed and closing observed using:
+
+    * :meth:`IWebSocketChannel.sendClose`
+    * :meth:`IWebSocketChannel.onClose`
+
+    Finally, WebSocket ping/pong messages (e.g. for heart-beating) can use:
+
+    * :meth:`IWebSocketChannel.sendPing`
+    * :meth:`IWebSocketChannel.onPing`
+    * :meth:`IWebSocketChannel.sendPong`
+    * :meth:`IWebSocketChannel.onPong`
     """
 
     @public
     @abc.abstractmethod
-    def onConnect(self, request_or_response):
+    def onConnecting(self, transport_details: TransportDetails) -> Optional[ConnectingRequest]:
         """
-        Callback fired during WebSocket opening handshake when a client connects (to a server with
-        request from client) or when server connection established (by a client with response from
-        server). This method may run asynchronous code.
+        This method is called when the WebSocket peer is connected at the byte stream level (e.g. TCP,
+        TLS or Serial), but before the WebSocket opening handshake (e.g. at the HTTP request level).
+
+        :param transport_details: information about the transport.
+
+        :returns: A
+            :class:`autobahn.websocket.types.ConnectingRequest`
+            instance is returned to indicate which options should be
+            used for this connection. If you wish to use the default
+            behavior, ``None`` may be returned (this is the default).
+        """
+
+    @public
+    @abc.abstractmethod
+    def onConnect(self, request_or_response: Union[ConnectionRequest, ConnectionResponse]) -> Optional[str]:
+        """
+        Callback fired during WebSocket opening handshake when a client connects to a server with
+        request with a :class:`ConnectionRequest` from the client or when a server connection was established
+        by a client with a :class:`ConnectionResponse` response from the server.
+
+        *This method may run asynchronously.*
 
         :param request_or_response: Connection request (for servers) or response (for clients).
         :type request_or_response: Instance of :class:`autobahn.websocket.types.ConnectionRequest`
@@ -432,26 +505,10 @@ class IWebSocketChannel(abc.ABC):
         :returns:
            When this callback is fired on a WebSocket server, you may return either ``None`` (in
            which case the connection is accepted with no specific WebSocket subprotocol) or
-           an str instance with the name of the WebSocket subprotocol accepted.
+           a ``str`` instance with the name of the WebSocket subprotocol accepted.
            When the callback is fired on a WebSocket client, this method must return ``None``.
-           To deny a connection, raise an Exception.
+           To deny a connection (client and server), raise an Exception.
            You can also return a Deferred/Future that resolves/rejects to the above.
-        """
-
-    @public
-    @abc.abstractmethod
-    def onConnecting(self, transport_details):
-        """
-        This method is called when we've connected, but before the handshake is done.
-
-        :param transport_details: information about the transport.
-        :type transport_details: :class:`autobahn.websocket.types.TransportDetails`
-
-        :returns: A
-            :class:`autobahn.websocket.types.ConnectingRequest`
-            instance is returned to indicate which options should be
-            used for this connection. If you wish to use the default
-            behavior, `None` may be returned (this is the default).
         """
 
     @public
@@ -460,69 +517,64 @@ class IWebSocketChannel(abc.ABC):
         """
         Callback fired when the initial WebSocket opening handshake was completed.
         You now can send and receive WebSocket messages.
+
+        *This method may run asynchronously.*
         """
 
     @public
     @abc.abstractmethod
-    def sendMessage(self, payload, isBinary):
+    def sendMessage(self, payload: bytes, isBinary: bool):
         """
         Send a WebSocket message over the connection to the peer.
 
         :param payload: The WebSocket message to be sent.
-        :type payload: bytes
 
         :param isBinary: Flag indicating whether payload is binary or
             UTF-8 encoded text.
-        :type isBinary: bool
         """
 
     @public
     @abc.abstractmethod
-    def onMessage(self, payload, isBinary):
+    def onMessage(self, payload: bytes, isBinary: bool):
         """
         Callback fired when a complete WebSocket message was received.
 
+        *This method may run asynchronously.*
+
         :param payload: The WebSocket message received.
-        :type payload: bytes
 
         :param isBinary: Flag indicating whether payload is binary or
             UTF-8 encoded text.
-        :type isBinary: bool
         """
 
     @public
     @abc.abstractmethod
-    def sendClose(self, code=None, reason=None):
+    def sendClose(self, code: Optional[int] = None, reason: Optional[str] = None):
         """
         Starts a WebSocket closing handshake tearing down the WebSocket connection.
 
         :param code: An optional close status code (``1000`` for normal close or ``3000-4999`` for
            application specific close).
-        :type code: int
         :param reason: An optional close reason (a string that when present, a status
            code MUST also be present).
-        :type reason: str
         """
 
     @public
     @abc.abstractmethod
-    def onClose(self, wasClean, code, reason):
+    def onClose(self, wasClean: bool, code: int, reason: str):
         """
         Callback fired when the WebSocket connection has been closed (WebSocket closing
         handshake has been finished or the connection was closed uncleanly).
 
         :param wasClean: ``True`` iff the WebSocket connection was closed cleanly.
-        :type wasClean: bool
 
         :param code: Close status code as sent by the WebSocket peer.
-        :type code: int or None
 
         :param reason: Close reason as sent by the WebSocket peer.
-        :type reason: str or None
         """
 
     @abc.abstractmethod
-    def sendPing(self, payload=None):
+    def sendPing(self, payload: Optional[bytes] = None):
         """
         Send a WebSocket ping to the peer.
 
@@ -530,21 +582,19 @@ class IWebSocketChannel(abc.ABC):
         one ping is outstanding at a peer, the peer may elect to respond only to the last ping.
 
         :param payload: An (optional) arbitrary payload of length **less than 126** octets.
-        :type payload: bytes or None
         """
 
     @abc.abstractmethod
-    def onPing(self, payload):
+    def onPing(self, payload: bytes):
         """
         Callback fired when a WebSocket ping was received. A default implementation responds
         by sending a WebSocket pong.
 
         :param payload: Payload of ping (when there was any). Can be arbitrary, up to `125` octets.
-        :type payload: bytes
         """
 
     @abc.abstractmethod
-    def sendPong(self, payload=None):
+    def sendPong(self, payload: Optional[bytes] = None):
         """
         Send a WebSocket pong to the peer.
 
@@ -552,16 +602,14 @@ class IWebSocketChannel(abc.ABC):
         A response to an unsolicited pong is "not expected".
 
         :param payload: An (optional) arbitrary payload of length < 126 octets.
-        :type payload: bytes
         """
 
     @abc.abstractmethod
-    def onPong(self, payload):
+    def onPong(self, payload: bytes):
         """
         Callback fired when a WebSocket pong was received. A default implementation does nothing.
 
         :param payload: Payload of pong (when there was any). Can be arbitrary, up to 125 octets.
-        :type payload: bytes
         """
 
 
@@ -571,7 +619,7 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
     """
 
     @abc.abstractmethod
-    def onMessageBegin(self, isBinary):
+    def onMessageBegin(self, isBinary: bool):
         """
         Callback fired when receiving of a new WebSocket message has begun.
 
@@ -580,7 +628,7 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         """
 
     @abc.abstractmethod
-    def onMessageFrame(self, payload):
+    def onMessageFrame(self, payload: bytes):
         """
         Callback fired when a complete WebSocket message frame for a previously begun
         WebSocket message has been received.
@@ -597,7 +645,7 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         """
 
     @abc.abstractmethod
-    def beginMessage(self, isBinary=False, doNotCompress=False):
+    def beginMessage(self, isBinary: bool = False, doNotCompress: bool = False):
         """
         Begin sending a new WebSocket message.
 
@@ -611,7 +659,7 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         """
 
     @abc.abstractmethod
-    def sendMessageFrame(self, payload, sync=False):
+    def sendMessageFrame(self, payload: bytes, sync: bool = False):
         """
         When a message has been previously begun, send a complete message frame in one go.
 
@@ -641,7 +689,7 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
     """
 
     @abc.abstractmethod
-    def onMessageFrameBegin(self, length):
+    def onMessageFrameBegin(self, length: int):
         """
         Callback fired when receiving a new message frame has begun.
         A default implementation will prepare to buffer message frame data.
@@ -651,7 +699,7 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
         """
 
     @abc.abstractmethod
-    def onMessageFrameData(self, payload):
+    def onMessageFrameData(self, payload: bytes):
         """
         Callback fired when receiving data within a previously begun message frame.
         A default implementation will buffer data for frame.
@@ -669,7 +717,7 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
         """
 
     @abc.abstractmethod
-    def beginMessageFrame(self, length):
+    def beginMessageFrame(self, length: int):
         """
         Begin sending a new message frame.
 
@@ -678,7 +726,7 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
         """
 
     @abc.abstractmethod
-    def sendMessageFrameData(self, payload, sync=False):
+    def sendMessageFrameData(self, payload: bytes, sync: bool = False):
         """
         Send out data when within a message frame (message was begun, frame was begun).
         Note that the frame is automatically ended when enough data has been sent.
