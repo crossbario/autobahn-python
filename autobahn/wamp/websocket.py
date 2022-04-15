@@ -60,6 +60,7 @@ class WampWebSocketProtocol(object):
         # create a new WAMP session and fire off session open callback.
         try:
             self._session = self.factory._factory()
+            self._session._transport = self
             self._session.onOpen(self)
         except Exception as e:
             self.log.critical("{tb}", tb=traceback.format_exc())

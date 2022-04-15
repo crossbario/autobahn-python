@@ -33,7 +33,7 @@ from typing import Union, Dict, Any, Optional, List, Tuple, Callable
 from autobahn.util import public
 from autobahn.wamp.types import Challenge, SessionDetails, CloseDetails, CallResult, RegisterOptions, \
     SubscribeOptions, Registration, Subscription, Publication, ComponentConfig
-from autobahn.wamp.message import Welcome
+from autobahn.wamp.message import Message, Welcome
 
 __all__ = (
     'IObjectSerializer',
@@ -211,6 +211,9 @@ class IMessage(abc.ABC):
         """
         Resets the serialization cache for this message.
         """
+
+
+IMessage.register(Message)
 
 
 @public
@@ -535,16 +538,14 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def define(self, exception, error=None):
+    def define(self, exception: Exception, error: Optional[str] = None):
         """
         Defines an exception for a WAMP error in the context of this WAMP session.
 
         :param exception: The exception class to define an error mapping for.
-        :type exception: A class that derives of ``Exception``.
 
         :param error: The URI (or URI pattern) the exception class should be mapped for.
             Iff the ``exception`` class is decorated, this must be ``None``.
-        :type error: str
         """
 
     @public

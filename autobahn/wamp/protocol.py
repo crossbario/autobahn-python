@@ -23,7 +23,7 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-from typing import Union, Optional
+from typing import Union, Optional, Dict, Any, ClassVar, List, Callable
 
 import txaio
 import inspect
@@ -37,8 +37,9 @@ from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SerializationError, TypeCheckError
-from autobahn.wamp.interfaces import ISession, IPayloadCodec, IAuthenticator, ITransport  # noqa
-from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
+from autobahn.wamp.interfaces import ISession, IPayloadCodec, IAuthenticator, ITransport, IMessage  # noqa
+from autobahn.wamp.types import Challenge, SessionDetails, CloseDetails, EncodedPayload, SubscribeOptions, \
+    CallResult, RegisterOptions
 from autobahn.exception import PayloadExceededError
 from autobahn.wamp.request import \
     Publication, \
@@ -85,70 +86,74 @@ class BaseSession(ObservableMixin):
         # procedures)
         self.traceback_app = False
 
-        # mapping of exception classes to WAMP error URIs
-        self._ecls_to_uri_pat = {}
+        # mapping of exception classes to list of WAMP error URI patterns
+        self._ecls_to_uri_pat: Dict[ClassVar, List[uri.Pattern]] = {}
 
         # mapping of WAMP error URIs to exception classes
-        self._uri_to_ecls = {
+        self._uri_to_ecls: Dict[str, ClassVar] = {
             ApplicationError.INVALID_PAYLOAD: SerializationError,
             ApplicationError.PAYLOAD_SIZE_EXCEEDED: PayloadExceededError,
         }
 
         # session authentication information
-        self._realm = None
-        self._session_id = None
-        self._authid = None
-        self._authrole = None
-        self._authmethod = None
-        self._authprovider = None
-        self._authextra = None
+        self._realm: Optional[str] = None
+        self._session_id: Optional[int] = None
+        self._authid: Optional[str] = None
+        self._authrole: Optional[str] = None
+        self._authmethod: Optional[str] = None
+        self._authprovider: Optional[str] = None
+        self._authextra: Optional[Dict[str, Any]] = None
 
         # payload transparency codec
-        self._payload_codec = None
+        self._payload_codec: Optional[IPayloadCodec] = None
 
         # generator for WAMP request IDs
         self._request_id_gen = IdGenerator()
 
     @property
-    def realm(self):
+    def realm(self) -> Optional[str]:
         return self._realm
 
     @property
-    def session_id(self):
+    def session_id(self) -> Optional[int]:
         return self._session_id
 
     @property
-    def authid(self):
+    def authid(self) -> Optional[str]:
         return self._authid
 
     @property
-    def authrole(self):
+    def authrole(self) -> Optional[str]:
         return self._authrole
 
     @property
-    def authmethod(self):
+    def authmethod(self) -> Optional[str]:
         return self._authmethod
 
     @property
-    def authprovider(self):
+    def authprovider(self) -> Optional[str]:
         return self._authprovider
 
     @property
-    def authextra(self):
+    def authextra(self) -> Optional[Dict[str, Any]]:
         return self._authextra
 
-    def define(self, exception, error=None):
+    def define(self, exception: Exception, error: Optional[str] = None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.define`
         """
         if error is None:
-            assert(hasattr(exception, '_wampuris'))
-            self._ecls_to_uri_pat[exception] = exception._wampuris
-            self._uri_to_ecls[exception._wampuris[0].uri()] = exception
+            if hasattr(exception, '_wampuris'):
+                self._ecls_to_uri_pat[exception] = exception._wampuris
+                self._uri_to_ecls[exception._wampuris[0].uri()] = exception
+            else:
+                raise RuntimeError('cannot define WAMP exception from class with no decoration ("_wampuris" unset)')
         else:
-            assert(not hasattr(exception, '_wampuris'))
-            self._ecls_to_uri_pat[exception] = [uri.Pattern(error, uri.Pattern.URI_TARGET_HANDLER)]
-            self._uri_to_ecls[error] = exception
+            if not hasattr(exception, '_wampuris'):
+                self._ecls_to_uri_pat[exception] = [uri.Pattern(error, uri.Pattern.URI_TARGET_HANDLER)]
+                self._uri_to_ecls[error] = exception
+            else:
+                raise RuntimeError('cannot define WAMP exception: error URI is explicit, but class is decorated ("_wampuris" set')
 
     def _message_from_exception(self, request_type, request, exc, tb=None, enc_algo=None):
         """
@@ -326,17 +331,20 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession`
         """
         BaseSession.__init__(self)
-        self.config = config or types.ComponentConfig(realm="realm1")
+        self.config: types.ComponentConfig = config or types.ComponentConfig(realm="realm1")
 
         # set client role features supported and announced
-        self._session_roles = role.DEFAULT_CLIENT_ROLES
+        self._session_roles: Dict[str, role.RoleFeatures] = role.DEFAULT_CLIENT_ROLES
 
         self._transport: Optional[ITransport] = None
-        self._session_id = None
-        self._realm = None
+        self._session_id: Optional[int] = None
+        self._realm: Optional[str] = None
 
-        self._goodbye_sent = False
-        self._transport_is_closing = False
+        self._goodbye_sent: bool = False
+        self._transport_is_closing: bool = False
+
+        # WAMP application payload codec (e.g. for WAMP-cryptobox E2E)
+        self._payload_codec: Optional[IPayloadCodec] = None
 
         # outstanding requests
         self._publish_reqs = {}
@@ -355,28 +363,36 @@ class ApplicationSession(BaseSession):
         # incoming invocations
         self._invocations = {}
 
+    @property
+    def transport(self) -> Optional[ITransport]:
+        """
+        Implements :func:`autobahn.wamp.interfaces.ITransportHandler.transport`
+        """
+        return self._transport
+
     @public
-    def set_payload_codec(self, payload_codec):
+    def set_payload_codec(self, payload_codec: Optional[IPayloadCodec]):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.set_payload_codec`
         """
-        assert(payload_codec is None or isinstance(payload_codec, IPayloadCodec))
         self._payload_codec = payload_codec
 
     @public
-    def get_payload_codec(self):
+    def get_payload_codec(self) -> Optional[IPayloadCodec]:
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.get_payload_codec`
         """
         return self._payload_codec
 
     @public
-    def onOpen(self, transport):
+    def onOpen(self, transport: ITransport):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
         """
         self.log.debug('{func}(transport={transport})', func=self.onOpen, transport=transport)
         self._transport = transport
+
+        # FIXME: the observer API gets "transport" as argument, but _not_ the onConnect callback below?
         d = self.fire('connect', self, transport)
         txaio.add_callbacks(
             d, None,
@@ -398,26 +414,17 @@ class ApplicationSession(BaseSession):
 
     @public
     def join(self,
-             realm,
-             authmethods=None,
-             authid=None,
-             authrole=None,
-             authextra=None,
-             resumable=None,
-             resume_session=None,
-             resume_token=None):
+             realm: str,
+             authmethods: Optional[List[str]] = None,
+             authid: Optional[str] = None,
+             authrole: Optional[str] = None,
+             authextra: Optional[Dict[str, Any]] = None,
+             resumable: Optional[bool] = None,
+             resume_session: Optional[int] = None,
+             resume_token: Optional[str] = None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.join`
         """
-        assert(realm is None or type(realm) == str)
-        assert(authmethods is None or type(authmethods) == list)
-        if type(authmethods) == list:
-            for authmethod in authmethods:
-                assert(type(authmethod) == str)
-        assert(authid is None or type(authid) == str)
-        assert(authrole is None or type(authrole) == str)
-        assert(authextra is None or type(authextra) == dict)
-
         if self._session_id:
             raise Exception("session already joined")
 
@@ -452,14 +459,14 @@ class ApplicationSession(BaseSession):
             self._transport.close()
 
     @public
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.is_connected`
         """
         return self._transport is not None and self._transport.isOpen()
 
     @public
-    def is_attached(self):
+    def is_attached(self) -> bool:
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.is_attached`
         """
@@ -531,7 +538,7 @@ class ApplicationSession(BaseSession):
 
         return _type_check
 
-    def onMessage(self, msg):
+    def onMessage(self, msg: IMessage):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
         """
@@ -1294,20 +1301,20 @@ class ApplicationSession(BaseSession):
         txaio.add_callbacks(d, success, _error)
 
     @public
-    def onChallenge(self, challenge):
+    def onChallenge(self, challenge: Challenge) -> str:
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onChallenge`
         """
-        raise Exception("received authentication challenge, but onChallenge not implemented")
+        raise NotImplementedError('received authentication challenge, but onChallenge not implemented')
 
     @public
-    def onJoin(self, details):
+    def onJoin(self, details: SessionDetails):
         """
         Implements :meth:`autobahn.wamp.interfaces.ISession.onJoin`
         """
 
     @public
-    def onWelcome(self, msg):
+    def onWelcome(self, welcome: message.Welcome) -> Optional[str]:
         """
         Implements :meth:`autobahn.wamp.interfaces.ISession.onWelcome`
         """
@@ -1351,7 +1358,7 @@ class ApplicationSession(BaseSession):
         return d
 
     @public
-    def onLeave(self, details):
+    def onLeave(self, details: SessionDetails):
         """
         Implements :meth:`autobahn.wamp.interfaces.ISession.onLeave`
         """
@@ -1369,7 +1376,7 @@ class ApplicationSession(BaseSession):
         return d
 
     @public
-    def leave(self, reason=None, message=None):
+    def leave(self, reason: Optional[str] = None, message: Optional[str] = None):
         """
         Implements :meth:`autobahn.wamp.interfaces.ISession.leave`
         """
@@ -1402,7 +1409,8 @@ class ApplicationSession(BaseSession):
         self._errback_outstanding_requests(exc)
 
     @public
-    def publish(self, topic, *args, **kwargs):
+    def publish(self, topic: str, *args: Optional[List[Any]], **kwargs: Optional[Dict[str, Any]]) -> \
+            Optional[Publication]:
         """
         Implements :meth:`autobahn.wamp.interfaces.IPublisher.publish`
         """
@@ -1493,7 +1501,9 @@ class ApplicationSession(BaseSession):
         return on_reply
 
     @public
-    def subscribe(self, handler, topic=None, options=None, check_types=False):
+    def subscribe(self, handler: Union[Callable, Any], topic: Optional[str] = None,
+                  options: Optional[SubscribeOptions] = None, check_types: Optional[bool] = None) -> \
+            Union[Subscription, List[Subscription]]:
         """
         Implements :meth:`autobahn.wamp.interfaces.ISubscriber.subscribe`
         """
@@ -1596,7 +1606,8 @@ class ApplicationSession(BaseSession):
             return txaio.create_future_success(scount)
 
     @public
-    def call(self, procedure, *args, **kwargs):
+    def call(self, procedure: str, *args: Optional[List[Any]], **kwargs: Optional[Dict[str, Any]]) -> \
+            Union[Any, CallResult]:
         """
         Implements :meth:`autobahn.wamp.interfaces.ICaller.call`
         """
@@ -1694,14 +1705,13 @@ class ApplicationSession(BaseSession):
         return on_reply
 
     @public
-    def register(self, endpoint, procedure=None, options=None, prefix=None, check_types=False):
+    def register(self, endpoint: Union[Callable, Any], procedure: Optional[str] = None,
+                 options: Optional[RegisterOptions] = None, prefix: Optional[str] = None,
+                 check_types: Optional[bool] = None) -> Union[Registration, List[Registration]]:
         """
         Implements :meth:`autobahn.wamp.interfaces.ICallee.register`
         """
         assert((callable(endpoint) and procedure is not None) or (hasattr(endpoint, '__class__') and not check_types))
-        assert(procedure is None or type(procedure) == str)
-        assert(options is None or isinstance(options, types.RegisterOptions))
-        assert prefix is None or isinstance(prefix, str)
 
         if not self._transport:
             raise exception.TransportLost()
