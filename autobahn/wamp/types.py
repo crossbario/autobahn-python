@@ -27,7 +27,7 @@
 
 from autobahn.util import public
 
-from autobahn.wamp.request import Subscription, Registration
+from autobahn.wamp.request import Subscription, Registration, Publication
 
 
 __all__ = (
@@ -47,7 +47,10 @@ __all__ = (
     'CallDetails',
     'CallOptions',
     'CallResult',
-    'EncodedPayload'
+    'EncodedPayload',
+    'Subscription',
+    'Registration',
+    'Publication',
 )
 
 
