@@ -35,8 +35,6 @@ import copy
 import json
 import time
 from typing import Optional, Union, Tuple, Dict
-from types import NoneType
-
 from pprint import pformat
 from collections import deque
 from urllib import parse
@@ -62,6 +60,10 @@ from autobahn.util import _maybe_tls_reason
 
 import txaio
 import hyperlink
+
+# https://stackoverflow.com/a/15844751/884770
+# from types import NoneType
+NoneType = type(None)
 
 
 __all__ = ("WebSocketProtocol",
