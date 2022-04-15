@@ -32,6 +32,7 @@ from typing import Union, Dict, Any, Optional
 
 from autobahn.util import public
 from autobahn.wamp.types import Challenge
+from autobahn.websocket.types import ConnectionResponse
 
 __all__ = (
     'IObjectSerializer',
@@ -296,6 +297,13 @@ class ITransport(abc.ABC):
         :rtype: binary or None
         """
 
+    @public
+    @abc.abstractmethod
+    def get_transport_details(self) -> Dict[str, Any]:
+        """
+        :return:
+        """
+
 
 @public
 class ITransportHandler(abc.ABC):
@@ -390,6 +398,16 @@ class ISession(_ABC):
     def onConnect(self):
         """
         Callback fired when the transport this session will run over has been established.
+        """
+
+    @public
+    @abc.abstractmethod
+    def onConnectEx(self, transport: ITransportHandler):
+        """
+        Callback fired when the transport this session will run over has been established.
+
+        .. note::
+            This API is expanded versus the older :meth:`ISession.onConnect` callback.
         """
 
     @public
