@@ -258,7 +258,8 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
         # a chance to hook into transport establishment (that is, before the session will be authenticated
         # and actually be available for WAMP app use)
         if hasattr(self._session, 'onConnect'):
-            return self._session.onConnect(response)
+            # return self._session.onConnect(response)
+            return self._session.onConnect()
 
 
 class WampWebSocketFactory(object):
