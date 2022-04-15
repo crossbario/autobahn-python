@@ -23,7 +23,7 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-from typing import Union
+from typing import Union, Optional
 
 import txaio
 import inspect
@@ -37,7 +37,7 @@ from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SerializationError, TypeCheckError
-from autobahn.wamp.interfaces import ISession, IPayloadCodec, IAuthenticator  # noqa
+from autobahn.wamp.interfaces import ISession, IPayloadCodec, IAuthenticator, ITransport  # noqa
 from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
 from autobahn.exception import PayloadExceededError
 from autobahn.wamp.request import \
@@ -313,7 +313,12 @@ class BaseSession(ObservableMixin):
 @public
 class ApplicationSession(BaseSession):
     """
-    WAMP endpoint session.
+    WAMP application session for applications (networking framework agnostic parts).
+
+    Implements (partially):
+
+        * :class:`autobahn.wamp.interfaces.ITransportHandler`
+        * :class:`autobahn.wamp.interfaces.ISession`
     """
 
     def __init__(self, config=None):
@@ -326,7 +331,7 @@ class ApplicationSession(BaseSession):
         # set client role features supported and announced
         self._session_roles = role.DEFAULT_CLIENT_ROLES
 
-        self._transport = None
+        self._transport: Optional[ITransport] = None
         self._session_id = None
         self._realm = None
 
@@ -451,14 +456,14 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.is_connected`
         """
-        return self._transport is not None
+        return self._transport is not None and self._transport.isOpen()
 
     @public
     def is_attached(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.is_attached`
         """
-        return self._transport is not None and self._session_id is not None
+        return self._session_id is not None and self.is_connected()
 
     @public
     def onUserError(self, fail, msg):
