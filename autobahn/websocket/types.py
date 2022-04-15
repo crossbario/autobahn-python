@@ -29,12 +29,15 @@ from autobahn.util import public
 
 __all__ = (
     'ConnectionRequest',
+    'ConnectingRequest',
+    'TransportDetails',
     'ConnectionResponse',
     'ConnectionAccept',
     'ConnectionDeny',
     'Message',
     'IncomingMessage',
     'OutgoingMessage',
+    'Ping',
 )
 
 
