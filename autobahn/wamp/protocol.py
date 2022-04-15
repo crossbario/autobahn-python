@@ -370,6 +370,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
         """
+        self.log.debug('{func}(transport={transport})', func=self.onOpen, transport=transport)
         self._transport = transport
         d = self.fire('connect', self, transport)
         txaio.add_callbacks(
@@ -387,6 +388,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
         """
+        self.log.debug('{func}()', func=self.onConnect)
         self.join(self.config.realm)
 
     @public
@@ -412,7 +414,10 @@ class ApplicationSession(BaseSession):
         assert(authextra is None or type(authextra) == dict)
 
         if self._session_id:
-            raise Exception("already joined")
+            raise Exception("session already joined")
+
+        if not self._transport:
+            raise Exception("no transport set for session")
 
         # store the realm requested by client, though this might be overwritten later,
         # when realm redirection kicks in
@@ -541,7 +546,7 @@ class ApplicationSession(BaseSession):
 
                 def success(res):
                     if res is not None:
-                        self.log.info("Session denied by onWelcome")
+                        self.log.debug("Session denied by onWelcome: {res}", res=res)
                         reply = message.Abort(
                             "wamp.error.cannot_authenticate", "{0}".format(res)
                         )
@@ -1188,7 +1193,7 @@ class ApplicationSession(BaseSession):
                             "UNREGISTERED received for non-existant registration"
                             " ID {0}".format(msg.registration)
                         )
-                    self.log.info(
+                    self.log.debug(
                         "Router unregistered procedure '{proc}' with ID {id}",
                         proc=reg.procedure,
                         id=msg.registration,
