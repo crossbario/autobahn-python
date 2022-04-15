@@ -25,13 +25,15 @@
 ###############################################################################
 
 import abc
-from typing import Union, Dict, Any, Optional
+from typing import Union, Dict, Any, Optional, List, Tuple, Callable
 
 # FIXME: see ISecurityModule.__iter__
 # from collections.abc import Iterator
 
 from autobahn.util import public
-from autobahn.wamp.types import Challenge
+from autobahn.wamp.types import Challenge, SessionDetails, CloseDetails, CallResult, RegisterOptions, \
+    SubscribeOptions, Registration, Subscription, Publication, ComponentConfig
+from autobahn.wamp.message import Welcome
 
 __all__ = (
     'IObjectSerializer',
@@ -60,7 +62,15 @@ class IObjectSerializer(abc.ABC):
     @public
     @property
     @abc.abstractmethod
-    def BINARY(self):
+    def NAME(self) -> str:
+        """
+        Object serializer name (read-only).
+        """
+
+    @public
+    @property
+    @abc.abstractmethod
+    def BINARY(self) -> bool:
         """
         Flag (read-only) to indicate if serializer requires a binary clean
         transport or if UTF8 transparency is sufficient.
@@ -68,28 +78,24 @@ class IObjectSerializer(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def serialize(self, obj):
+    def serialize(self, obj: Any) -> bytes:
         """
         Serialize an object to a byte string.
 
-        :param obj: Object to serialize.
-        :type obj: any (serializable type)
+        :param obj: Object (any serializable type) to serialize.
 
         :returns: Serialized bytes.
-        :rtype: bytes
         """
 
     @public
     @abc.abstractmethod
-    def unserialize(self, payload):
+    def unserialize(self, payload: bytes) -> List[Any]:
         """
-        Unserialize objects from a byte string.
+        Deserialize objects from a byte string.
 
-        :param payload: Objects to unserialize.
-        :type payload: bytes
+        :param payload: Objects to deserialize.
 
-        :returns: List of (raw) objects unserialized.
-        :rtype: list
+        :returns: List of deserialized (raw) objects.
         """
 
 
@@ -102,7 +108,7 @@ class ISerializer(abc.ABC):
     @public
     @property
     @abc.abstractmethod
-    def MESSAGE_TYPE_MAP(self):
+    def MESSAGE_TYPE_MAP(self) -> Dict[int, 'IMessage']:
         """
         Mapping of WAMP message type codes to WAMP message classes.
         """
@@ -110,39 +116,50 @@ class ISerializer(abc.ABC):
     @public
     @property
     @abc.abstractmethod
-    def SERIALIZER_ID(self):
+    def SERIALIZER_ID(self) -> str:
         """
-        The WAMP serialization format ID.
+        The WAMP serialization format ID as used for WebSocket, e.g. ``"json"`` (or ``"json.batched"``) for JSON.
+        """
+
+    @public
+    @property
+    @abc.abstractmethod
+    def RAWSOCKET_SERIALIZER_ID(self) -> int:
+        """
+        The WAMP serialization format ID as used for RawSocket, e.g. ``1`` for JSON.
+        """
+
+    @public
+    @property
+    @abc.abstractmethod
+    def MIME_TYPE(self) -> str:
+        """
+        The WAMP serialization format MIME type, e.g. ``"application/json"`` for JSON.
         """
 
     @public
     @abc.abstractmethod
-    def serialize(self, message):
+    def serialize(self, message: 'IMessage') -> Tuple[bytes, bool]:
         """
         Serializes a WAMP message to bytes for sending over a WAMP transport.
 
         :param message: The WAMP message to be serialized.
-        :type message: object implementing :class:`autobahn.wamp.interfaces.IMessage`
 
-        :returns: A pair ``(payload, isBinary)``.
-        :rtype: tuple
+        :returns: A pair ``(payload, is_binary)``.
         """
 
     @public
     @abc.abstractmethod
-    def unserialize(self, payload, is_binary):
+    def unserialize(self, payload: bytes, is_binary: Optional[bool] = None) -> List['IMessage']:
         """
         Deserialize bytes from a transport and parse into WAMP messages.
 
         :param payload: Byte string from wire.
-        :type payload: bytes
 
         :param is_binary: Type of payload. True if payload is a binary string, else
             the payload is UTF-8 encoded Unicode text.
-        :type is_binary: bool
 
-        :returns: List of ``a.w.m.Message`` objects.
-        :rtype: list
+        :returns: List of WAMP messages.
         """
 
 
@@ -156,7 +173,7 @@ class IMessage(abc.ABC):
     @public
     @property
     @abc.abstractmethod
-    def MESSAGE_TYPE(self):
+    def MESSAGE_TYPE(self) -> int:
         """
         WAMP message type code.
         """
@@ -166,29 +183,26 @@ class IMessage(abc.ABC):
     @public
     @staticmethod
     @abc.abstractmethod
-    def parse(wmsg):
+    def parse(wmsg) -> 'IMessage':
         """
         Factory method that parses a unserialized raw message (as returned byte
         :func:`autobahn.interfaces.ISerializer.unserialize`) into an instance
         of this class.
 
         :returns: The parsed WAMP message.
-        :rtype: object implementing :class:`autobahn.wamp.interfaces.IMessage`
         """
 
     @public
     @abc.abstractmethod
-    def serialize(self, serializer):
+    def serialize(self, serializer: ISerializer) -> bytes:
         """
         Serialize this object into a wire level bytes representation and cache
         the resulting bytes. If the cache already contains an entry for the given
         serializer, return the cached representation directly.
 
         :param serializer: The wire level serializer to use.
-        :type serializer: object implementing :class:`autobahn.wamp.interfaces.ISerializer`
 
         :returns: The serialized bytes.
-        :rtype: bytes
         """
 
     @public
@@ -208,7 +222,7 @@ class ITransport(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def send(self, message):
+    def send(self, message: IMessage):
         """
         Send a WAMP message over the transport to the peer. If the transport is
         not open, this raises :class:`autobahn.wamp.exception.TransportLost`.
@@ -217,20 +231,16 @@ class ITransport(abc.ABC):
         has not yet fired, the send will fail immediately.
 
         :param message: The WAMP message to send over the transport.
-        :type message: object implementing :class:`autobahn.wamp.interfaces.IMessage`
-
-        :returns: obj -- A Deferred/Future
         """
 
     @public
     @abc.abstractmethod
-    def isOpen(self):
+    def isOpen(self) -> bool:
         """
         Check if the transport is open for messaging.
 
         :returns: ``True``, if the transport is open.
-        :rtype: bool
-        """
+s        """
 
     @public
     @abc.abstractmethod
@@ -303,7 +313,7 @@ class ITransportHandler(abc.ABC):
     @public
     @property
     @abc.abstractmethod
-    def transport(self):
+    def transport(self) -> Optional[ITransport]:
         """
         When the transport this handler is attached to is currently open, this property
         can be read from. The property should be considered read-only. When the transport
@@ -312,36 +322,33 @@ class ITransportHandler(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def onOpen(self, transport):
+    def onOpen(self, transport: ITransport):
         """
         Callback fired when transport is open. May run asynchronously. The transport
         is considered running and is_open() would return true, as soon as this callback
         has completed successfully.
 
         :param transport: The WAMP transport.
-        :type transport: object implementing :class:`autobahn.wamp.interfaces.ITransport`
         """
 
     @public
     @abc.abstractmethod
-    def onMessage(self, message):
+    def onMessage(self, message: IMessage):
         """
         Callback fired when a WAMP message was received. May run asynchronously. The callback
         should return or fire the returned deferred/future when it's done processing the message.
         In particular, an implementation of this callback must not access the message afterwards.
 
         :param message: The WAMP message received.
-        :type message: object implementing :class:`autobahn.wamp.interfaces.IMessage`
         """
 
     @public
     @abc.abstractmethod
-    def onClose(self, wasClean):
+    def onClose(self, wasClean: bool):
         """
         Callback fired when the transport has been closed.
 
         :param wasClean: Indicates if the transport has been closed regularly.
-        :type wasClean: bool
         """
 
 
@@ -357,11 +364,10 @@ class ISession(_ABC):
     """
 
     @abc.abstractmethod
-    def __init__(self, config=None):
+    def __init__(self, config: Optional[ComponentConfig] = None):
         """
 
         :param config: Configuration for session.
-        :type config: instance of :class:`autobahn.wamp.types.ComponentConfig`.
         """
 
     @public
@@ -395,33 +401,32 @@ class ISession(_ABC):
     @public
     @abc.abstractmethod
     def join(self,
-             realm,
-             authmethods=None,
-             authid=None,
-             authrole=None,
-             authextra=None,
-             resumable=None,
-             resume_session=None,
-             resume_token=None):
+             realm: str,
+             authmethods: Optional[List[str]] = None,
+             authid: Optional[str] = None,
+             authrole: Optional[str] = None,
+             authextra: Optional[Dict[str, Any]] = None,
+             resumable: Optional[bool] = None,
+             resume_session: Optional[int] = None,
+             resume_token: Optional[str] = None):
         """
         Attach the session to the given realm. A session is open as soon as it is attached to a realm.
         """
 
     @public
     @abc.abstractmethod
-    def onChallenge(self, challenge):
+    def onChallenge(self, challenge: Challenge) -> str:
         """
         Callback fired when the peer demands authentication.
 
         May return a Deferred/Future.
 
         :param challenge: The authentication challenge.
-        :type challenge: Instance of :class:`autobahn.wamp.types.Challenge`.
         """
 
     @public
     @abc.abstractmethod
-    def onWelcome(self, welcome_msg):
+    def onWelcome(self, welcome: Welcome) -> Optional[str]:
         """
         Callback fired after the peer has successfully authenticated. If
         this returns anything other than None/False, the session is
@@ -429,49 +434,51 @@ class ISession(_ABC):
 
         May return a Deferred/Future.
 
-        :param welcome_msg: The WELCOME message received from the server
-        :type welcome_msg: Instance of :class:`autobahn.wamp.message.Welcome`.
+        .. note::
+            Before we let user code see the session -- that is, before we fire "join"
+            we give authentication instances a chance to abort the session. Usually
+            this would be for "mutual authentication" scenarios. For example, WAMP-SCRAM
+            uses this to confirm the server-signature.
 
-        :return: None, or an error message
+        :param welcome: The WELCOME message received from the server
+
+        :return: None, or an error message (using a fixed error URI
+            ``wamp.error.cannot_authenticate``).
         """
 
     @public
     @abc.abstractmethod
-    def onJoin(self, details):
+    def onJoin(self, details: SessionDetails):
         """
         Callback fired when WAMP session has been established.
 
         May return a Deferred/Future.
 
         :param details: Session information.
-        :type details: Instance of :class:`autobahn.wamp.types.SessionDetails`.
         """
 
     @public
     @abc.abstractmethod
-    def leave(self, reason=None, message=None):
+    def leave(self, reason: Optional[str] = None, message: Optional[str] = None):
         """
         Actively close this WAMP session.
 
         :param reason: An optional URI for the closing reason. If you
-            want to permanently log out, this should be `wamp.close.logout`
-        :type reason: str
+            want to permanently log out, this should be ``wamp.close.logout``.
 
-        :param message: An optional (human readable) closing message, intended for
-                        logging purposes.
-        :type message: str
+        :param message: An optional (human-readable) closing message, intended for
+            logging purposes.
 
         :return: may return a Future/Deferred that fires when we've disconnected
         """
 
     @public
     @abc.abstractmethod
-    def onLeave(self, details):
+    def onLeave(self, details: CloseDetails):
         """
         Callback fired when WAMP session has is closed
 
-        :param details: Close information.
-        :type details: Instance of :class:`autobahn.wamp.types.CloseDetails`.
+        :param details: Close information for session.
         """
 
     @public
@@ -490,21 +497,21 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """
         Check if the underlying transport is connected.
         """
 
     @public
     @abc.abstractmethod
-    def is_attached(self):
+    def is_attached(self) -> bool:
         """
         Check if the session has currently joined a realm.
         """
 
     @public
     @abc.abstractmethod
-    def set_payload_codec(self, payload_codec):
+    def set_payload_codec(self, payload_codec: Optional['IPayloadCodec']):
         """
         Set a payload codec on the session. To remove a previously set payload codec,
         set the codec to ``None``.
@@ -513,21 +520,17 @@ class ISession(_ABC):
 
         :param payload_codec: The payload codec that should process application
             payload of the given encoding.
-        :type payload_codec: object
-            implementing :class:`autobahn.wamp.interfaces.IPayloadCodec` or ``None``
         """
 
     @public
     @abc.abstractmethod
-    def get_payload_codec(self):
+    def get_payload_codec(self) -> Optional['IPayloadCodec']:
         """
         Get the current payload codec (if any) for the session.
 
         Payload codecs are used with WAMP payload transparency mode.
 
         :returns: The current payload codec or ``None`` if no codec is active.
-        :rtype: object implementing
-            :class:`autobahn.wamp.interfaces.IPayloadCodec` or ``None``
         """
 
     @public
@@ -546,7 +549,8 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def call(self, procedure, *args, **kwargs):
+    def call(self, procedure: str, *args: Optional[List[Any]], **kwargs: Optional[Dict[str, Any]]) -> \
+            Union[Any, CallResult]:
         """
         Call a remote procedure.
 
@@ -569,21 +573,19 @@ class ISession(_ABC):
         be canceled by canceling the returned Deferred/Future.
 
         :param procedure: The URI of the remote procedure to be called, e.g. ``"com.myapp.hello"``.
-        :type procedure: unicode
 
         :param args: Any positional arguments for the call.
-        :type args: list
 
         :param kwargs: Any keyword arguments for the call.
-        :type kwargs: dict
 
-        :returns: A Deferred/Future for the call result -
-        :rtype: instance of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
+        :returns: A Deferred/Future for the call result.
         """
 
     @public
     @abc.abstractmethod
-    def register(self, endpoint, procedure=None, options=None, prefix=None, check_types=None):
+    def register(self, endpoint: Union[Callable, Any], procedure: Optional[str] = None,
+                 options: Optional[RegisterOptions] = None, prefix: Optional[str] = None,
+                 check_types: Optional[bool] = None) -> Union[Registration, List[Registration]]:
         """
         Register a procedure for remote calling.
 
@@ -603,23 +605,18 @@ class ISession(_ABC):
         DeferredList or Future is returned that gathers all individual underlying Deferreds/Futures.
 
         :param endpoint: The endpoint called under the procedure.
-        :type endpoint: callable or object
 
         :param procedure: When ``endpoint`` is a callable, the URI (or URI pattern)
            of the procedure to register for. When ``endpoint`` is an object,
            the argument is ignored (and should be ``None``).
-        :type procedure: unicode
 
         :param options: Options for registering.
-        :type options: instance of :class:`autobahn.wamp.types.RegisterOptions`.
-
 
         :param prefix: if not None, this specifies a prefix to prepend
             to all URIs registered for this class. So if there was an
             @wamp.register('method_foo') on a method and
             prefix='com.something.' then a method
             'com.something.method_foo' would ultimately be registered.
-        :type prefix: str
 
         :param check_types: Enable automatic type checking against (Python 3.5+) type hints
             specified on the ``endpoint`` callable. Types are checked at run-time on each
@@ -628,15 +625,14 @@ class ISession(_ABC):
             :class:`autobahn.wamp.protocol.ApplicationSession`. An error
             of type :class:`autobahn.wamp.exception.TypeCheckError` is also raised and
             returned to the caller (via the router).
-        :type check_types: bool
 
         :returns: A registration or a list of registrations (or errors)
-        :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
         """
 
     @public
     @abc.abstractmethod
-    def publish(self, topic, *args, **kwargs):
+    def publish(self, topic: str, *args: Optional[List[Any]], **kwargs: Optional[Dict[str, Any]]) -> \
+            Optional[Publication]:
         """
         Publish an event to a topic.
 
@@ -659,21 +655,19 @@ class ISession(_ABC):
           of :class:`autobahn.wamp.exception.ApplicationError`.
 
         :param topic: The URI of the topic to publish to, e.g. ``"com.myapp.mytopic1"``.
-        :type topic: unicode
 
         :param args: Arbitrary application payload for the event (positional arguments).
-        :type args: list
 
         :param kwargs: Arbitrary application payload for the event (keyword arguments).
-        :type kwargs: dict
 
         :returns: Acknowledgement for acknowledge publications - otherwise nothing.
-        :rtype: ``None`` or instance of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
         """
 
     @public
     @abc.abstractmethod
-    def subscribe(self, handler, topic=None, options=None, check_types=None):
+    def subscribe(self, handler: Union[Callable, Any], topic: Optional[str] = None,
+                  options: Optional[SubscribeOptions] = None, check_types: Optional[bool] = None) -> \
+            Union[Subscription, List[Subscription]]:
         """
         Subscribe to a topic for receiving events.
 
@@ -693,33 +687,30 @@ class ISession(_ABC):
         and a list of Deferreds/Futures is returned that each resolves or rejects as above.
 
         :param handler: The event handler to receive events.
-        :type handler: callable or object
 
         :param topic: When ``handler`` is a callable, the URI (or URI pattern)
            of the topic to subscribe to. When ``handler`` is an object, this
            value is ignored (and should be ``None``).
-        :type topic: unicode
 
         :param options: Options for subscribing.
-        :type options: An instance of :class:`autobahn.wamp.types.SubscribeOptions`.
 
         :param check_types: Enable automatic type checking against (Python 3.5+) type hints
             specified on the ``endpoint`` callable. Types are checked at run-time on each
             invocation of the ``endpoint`` callable. When a type mismatch occurs, the error
             is forwarded to the subscriber code in ``onUserError`` override method of
             :class:`autobahn.wamp.protocol.ApplicationSession`.
-        :type check_types: bool
 
         :returns: A single Deferred/Future or a list of such objects
-        :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
         """
 
 
-# experimental authentication API
 class IAuthenticator(abc.ABC):
+    """
+    Experimental authentication API.
+    """
 
     @abc.abstractmethod
-    def on_challenge(self, session, challenge):
+    def on_challenge(self, session: ISession, challenge: Challenge):
         """
         Formulate a challenge response for the given session and Challenge
         instance. This is sent to the server in the AUTHENTICATE
@@ -727,7 +718,7 @@ class IAuthenticator(abc.ABC):
         """
 
     @abc.abstractmethod
-    def on_welcome(self, authextra):
+    def on_welcome(self, authextra: Optional[Dict[str, Any]]) -> Optional[str]:
         """
         This hook is called when the onWelcome/on_welcome hook is invoked
         in the protocol, with the 'authextra' dict extracted from the

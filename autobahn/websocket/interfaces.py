@@ -25,7 +25,7 @@
 ###############################################################################
 
 import abc
-from typing import Optional, Union
+from typing import Optional, Union, Tuple, Dict
 
 from autobahn.util import public
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectingRequest, TransportDetails
@@ -490,7 +490,8 @@ class IWebSocketChannel(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def onConnect(self, request_or_response: Union[ConnectionRequest, ConnectionResponse]) -> Optional[str]:
+    def onConnect(self, request_or_response: Union[ConnectionRequest, ConnectionResponse]) -> \
+            Union[Optional[str], Tuple[Optional[str], Dict[str, str]]]:
         """
         Callback fired during WebSocket opening handshake when a client connects to a server with
         request with a :class:`ConnectionRequest` from the client or when a server connection was established
@@ -503,10 +504,11 @@ class IWebSocketChannel(abc.ABC):
            or :class:`autobahn.websocket.types.ConnectionResponse`.
 
         :returns:
-           When this callback is fired on a WebSocket server, you may return either ``None`` (in
-           which case the connection is accepted with no specific WebSocket subprotocol) or
-           a ``str`` instance with the name of the WebSocket subprotocol accepted.
-           When the callback is fired on a WebSocket client, this method must return ``None``.
+           When this callback is fired on a WebSocket **server**, you may return one of:
+              * ``None``: the connection is accepted with no specific WebSocket subprotocol,
+              * ``str``: the connection is accepted with the returned name as the WebSocket subprotocol, or
+              * ``(str, dict)``: a pair of subprotocol accepted and HTTP headers to send to the client.
+           When this callback is fired on a WebSocket **client**, this method must return ``None``.
            To deny a connection (client and server), raise an Exception.
            You can also return a Deferred/Future that resolves/rejects to the above.
         """
