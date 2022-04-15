@@ -33,6 +33,7 @@ from twisted.internet import reactor
 
 import autobahn
 
+from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.twisted.websocket import connectWS, WebSocketClientFactory, \
     WebSocketClientProtocol
 
@@ -57,7 +58,8 @@ class TesteeClientProtocol(WebSocketClientProtocol):
             self.factory.endCaseId = int(msg)
             self.log.info("Ok, will run {case_count} cases", case_count=self.factory.endCaseId)
         else:
-            self.sendMessage(msg, binary)
+            if self.state == WebSocketProtocol.STATE_OPEN:
+                self.sendMessage(msg, binary)
 
 
 class TesteeClientFactory(WebSocketClientFactory):
