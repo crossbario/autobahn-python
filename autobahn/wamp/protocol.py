@@ -1305,7 +1305,11 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onChallenge`
         """
-        raise NotImplementedError('received authentication challenge, but onChallenge not implemented')
+        # Note: if we use NotImplementedError in below, the type checking in PyCharm
+        # will recognize that, and complain about "not implemented abstract method"
+        # in e.g. autobahn.twisted.wamp.ApplicationSession even though the latter
+        # derives from this base class! IOW: don't change it;)
+        raise RuntimeError('received authentication challenge, but onChallenge not implemented')
 
     @public
     def onJoin(self, details: SessionDetails):
@@ -1966,7 +1970,7 @@ class _SessionShim(ApplicationSession):
 
 
 # ISession.register collides with the abc.ABCMeta.register method
-ISession._abc_register(ApplicationSession)
+ISession.abc_register(ApplicationSession)
 
 
 class ApplicationSessionFactory(object):
