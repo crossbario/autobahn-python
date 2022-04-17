@@ -36,7 +36,7 @@ from autobahn.util import public
 from autobahn.asyncio.util import transport_channel_id, peer2str
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
-from autobahn.websocket.types import TransportDetails
+from autobahn.wamp.types import TransportDetails
 
 __all__ = (
     'WebSocketServerProtocol',

@@ -32,7 +32,7 @@ from typing import Union, Dict, Any, Optional, List, Tuple, Callable
 
 from autobahn.util import public
 from autobahn.wamp.types import Challenge, SessionDetails, CloseDetails, CallResult, RegisterOptions, \
-    SubscribeOptions, Registration, Subscription, Publication, ComponentConfig
+    SubscribeOptions, Registration, Subscription, Publication, ComponentConfig, TransportDetails
 from autobahn.wamp.message import Message, Welcome
 
 __all__ = (
@@ -222,6 +222,14 @@ class ITransport(abc.ABC):
     A WAMP transport is a bidirectional, full-duplex, reliable, ordered,
     message-based channel.
     """
+
+    @public
+    @property
+    @abc.abstractmethod
+    def transport_details(self) -> Optional[TransportDetails]:
+        """
+        Return details about the transport (when the transport is open).
+        """
 
     @public
     @abc.abstractmethod

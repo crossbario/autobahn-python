@@ -28,7 +28,8 @@ import abc
 from typing import Optional, Union, Tuple, Dict
 
 from autobahn.util import public
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectingRequest, TransportDetails
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectingRequest
+from autobahn.wamp.types import TransportDetails
 
 __all__ = ('IWebSocketServerChannelFactory',
            'IWebSocketClientChannelFactory',

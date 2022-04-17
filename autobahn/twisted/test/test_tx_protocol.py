@@ -30,7 +30,7 @@ from autobahn.util import wildcards2patterns
 from autobahn.twisted.websocket import WebSocketServerFactory
 from autobahn.twisted.websocket import WebSocketServerProtocol
 from autobahn.twisted.websocket import WebSocketClientProtocol
-from autobahn.websocket.types import TransportDetails
+from autobahn.wamp.types import TransportDetails
 from autobahn.websocket.types import ConnectingRequest
 from twisted.python.failure import Failure
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \

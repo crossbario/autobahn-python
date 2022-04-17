@@ -45,8 +45,8 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
     IWebSocketChannelFrameApi, \
     IWebSocketChannelStreamingApi
 
-from autobahn.websocket.types import ConnectingRequest, ConnectionRequest, ConnectionResponse, ConnectionDeny, \
-    TransportDetails
+from autobahn.websocket.types import ConnectingRequest, ConnectionRequest, ConnectionResponse, ConnectionDeny
+from autobahn.wamp.types import TransportDetails
 
 from autobahn.util import Stopwatch, wildcards2patterns, encode_truncate
 from autobahn.util import _LazyHexFormatter

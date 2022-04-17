@@ -43,6 +43,8 @@ from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateResponse, PerMessageDeflateResponseAccept
 
+from autobahn.wamp.interfaces import ITransportHandler, ISession
+
 __all__ = (
     'ApplicationSession',
     'ApplicationSessionFactory',
@@ -64,12 +66,18 @@ class ApplicationSession(protocol.ApplicationSession):
     log = txaio.make_logger()
 
 
+ITransportHandler.register(ApplicationSession)
+
+# ISession.register collides with the abc.ABCMeta.register method
+ISession.abc_register(ApplicationSession)
+
+
 class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
     WAMP application session factory for asyncio-based applications.
     """
 
-    session = ApplicationSession
+    session: ApplicationSession = ApplicationSession
     """
     The application session class this application session factory will use.
     Defaults to :class:`autobahn.asyncio.wamp.ApplicationSession`.
@@ -276,6 +284,7 @@ class ApplicationRunner(object):
             loop.close()
 
 
+# new API
 class Session(protocol._SessionShim):
     # XXX these methods are redundant, but put here for possibly
     # better clarity; maybe a bad idea.
