@@ -326,7 +326,7 @@ class ApplicationSession(BaseSession):
         * :class:`autobahn.wamp.interfaces.ISession`
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config: Optional[types.ComponentConfig] = None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession`
         """
@@ -336,6 +336,7 @@ class ApplicationSession(BaseSession):
         # set client role features supported and announced
         self._session_roles: Dict[str, role.RoleFeatures] = role.DEFAULT_CLIENT_ROLES
 
+        # WAMP ITransport (_not_ a Twisted protocol, which is self.transport - when using Twisted)
         self._transport: Optional[ITransport] = None
         self._session_id: Optional[int] = None
         self._realm: Optional[str] = None
@@ -368,6 +369,8 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.transport`
         """
+        # Note: self._transport (which is a WAMP ITransport) is different from self.transport (which
+        # is a Twisted protocol when using Twisted)!
         return self._transport
 
     @public
@@ -390,6 +393,8 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
         """
         self.log.debug('{func}(transport={transport})', func=self.onOpen, transport=transport)
+
+        # The WAMP transport (e.g. WebSocket connection)
         self._transport = transport
 
         # FIXME: the observer API gets "transport" as argument, but _not_ the onConnect callback below?
