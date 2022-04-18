@@ -23,15 +23,18 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-
+from pprint import pformat
+from typing import Optional, Any, Dict
+from binascii import a2b_hex
 
 from autobahn.util import public
 
-from autobahn.wamp.request import Subscription, Registration
+from autobahn.wamp.request import Subscription, Registration, Publication
 
 
 __all__ = (
     'ComponentConfig',
+    'TransportDetails',
     'HelloReturn',
     'Accept',
     'Deny',
@@ -47,7 +50,10 @@ __all__ = (
     'CallDetails',
     'CallOptions',
     'CallResult',
-    'EncodedPayload'
+    'EncodedPayload',
+    'Subscription',
+    'Registration',
+    'Publication',
 )
 
 
@@ -1332,6 +1338,7 @@ class EncodedPayload(object):
         self.enc_key = enc_key
 
 
+@public
 class IPublication(object):
     """
     Represents a publication of an event. This is used with acknowledged publications.
@@ -1343,6 +1350,7 @@ class IPublication(object):
         """
 
 
+@public
 class ISubscription(object):
     """
     Represents a subscription to a topic.
@@ -1381,6 +1389,7 @@ class ISubscription(object):
         """
 
 
+@public
 class IRegistration(object):
     """
     Represents a registration of an endpoint.
@@ -1417,3 +1426,186 @@ class IRegistration(object):
         :returns: A Deferred/Future for the unregistration
         :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
         """
+
+
+@public
+class TransportDetails(object):
+    """
+    Details about a WAMP transport used for carrying a WAMP session. WAMP can be communicated
+    over different bidirectional underlying transport mechanisms, such as TCP, TLS, Serial
+    connections or In-memory queues.
+    """
+
+    __slots__ = (
+        '_channel_type',
+        '_peer',
+        '_is_server',
+        '_is_secure',
+        '_channel_id',
+        '_peer_cert',
+    )
+
+    TRANSPORT_TYPE_NONE = 0
+    TRANSPORT_TYPE_FUNCTION = 1
+    TRANSPORT_TYPE_MEMORY = 2
+    TRANSPORT_TYPE_SERIAL = 3
+    TRANSPORT_TYPE_TCP = 4
+    TRANSPORT_TYPE_TLS_TCP = 5
+    TRANSPORT_TYPE_UDP = 6
+    TRANSPORT_TYPE_DTLS_UDP = 7
+
+    TRANSPORT_TYPE_TO_STR = {
+        TRANSPORT_TYPE_NONE: 'null',
+        TRANSPORT_TYPE_FUNCTION: 'function',
+        TRANSPORT_TYPE_MEMORY: 'memory',
+        TRANSPORT_TYPE_SERIAL: 'serial',
+        TRANSPORT_TYPE_TCP: 'tcp',
+        TRANSPORT_TYPE_TLS_TCP: 'tcp-tls',
+        TRANSPORT_TYPE_UDP: 'udp',
+        TRANSPORT_TYPE_DTLS_UDP: 'dtls-udp',
+    }
+
+    TRANSPORT_TYPE_FROM_STR = {
+        'null': TRANSPORT_TYPE_NONE,
+        'function': TRANSPORT_TYPE_FUNCTION,
+        'memory': TRANSPORT_TYPE_MEMORY,
+        'serial': TRANSPORT_TYPE_SERIAL,
+        'tcp': TRANSPORT_TYPE_TCP,
+        'tcp-tls': TRANSPORT_TYPE_TLS_TCP,
+        'udp': TRANSPORT_TYPE_UDP,
+        'dtls-udp': TRANSPORT_TYPE_DTLS_UDP,
+    }
+
+    def __init__(self, channel_type: Optional[int], peer: Optional[str] = None, is_server: Optional[bool] = None,
+                 is_secure: Optional[bool] = None, channel_id: Optional[Dict[str, bytes]] = None,
+                 peer_cert: Optional[Dict[str, Any]] = None):
+        self._channel_type = channel_type
+        self._peer = peer
+        self._is_server = is_server
+        self._is_secure = is_secure
+        self._channel_id = channel_id
+        self._peer_cert = peer_cert
+
+    @staticmethod
+    def parse(data: Dict[str, Any]):
+        assert type(data) == dict
+
+        obj = TransportDetails()
+        if 'channel_type' in data and data['channel_type'] is not None:
+            if type(data['channel_type']) != int or data['channel_type'] not in TransportDetails.TRANSPORT_TYPE_FROM_STR:
+                raise ValueError('invalid "channel_type", was type {} (value {})'.format(type(data['channel_type']), data['channel_type']))
+            obj.channel_type = TransportDetails.TRANSPORT_TYPE_FROM_STR[data['channel_type']]
+        if 'peer' in data and data['peer'] is not None:
+            if type(data['peer']) != str:
+                raise ValueError('"peer" must be a string, was {}'.format(type(data['peer'])))
+            obj.peer = data['peer']
+        if 'is_server' in data and data['is_server'] is not None:
+            if type(data['is_server']) != bool:
+                raise ValueError('"is_server" must be a bool, was {}'.format(type(data['is_server'])))
+            obj.peer = data['is_server']
+        if 'is_secure' in data and data['is_secure'] is not None:
+            if type(data['is_secure']) != bool:
+                raise ValueError('"is_secure" must be a bool, was {}'.format(type(data['is_secure'])))
+            obj.peer = data['is_secure']
+        if 'channel_id' in data and data['channel_id'] is not None:
+            if type(data['channel_id']) != Dict[str, Any]:
+                raise ValueError('"channel_id" must be a dict, was {}'.format(type(data['channel_id'])))
+            channel_id = {}
+            for binding_type in data['channel_id']:
+                if binding_type not in ['tls-unique']:
+                    raise ValueError('invalid binding type "{}" in "channel_id" map'.format(binding_type))
+                binding_id_hex = data['channel_id'][binding_type]
+                if type(binding_id_hex) != str or len(binding_id_hex) != 64:
+                    raise ValueError('invalid binding ID "{}" in "channel_id" map'.format(binding_id_hex))
+                binding_id = a2b_hex(binding_id_hex)
+                channel_id[binding_type] = binding_id
+            obj.channel_id = channel_id
+        return obj
+
+    def marshal(self) -> Dict[str, Any]:
+        return {
+            'channel_type': self.TRANSPORT_TYPE_TO_STR.get(self._channel_type, None),
+            'peer': self._peer,
+            'is_server': self._is_server,
+            'is_secure': self._is_secure,
+            'channel_id': self._channel_id,
+            'peer_cert': self._peer_cert,
+        }
+
+    def __str__(self) -> str:
+        return pformat(self.marshal())
+
+    @property
+    def channel_type(self) -> Optional[int]:
+        """
+        The peer this transport is connected to.
+        """
+        return self._channel_type
+
+    @channel_type.setter
+    def channel_type(self, value: Optional[int]):
+        self._channel_type = value
+
+    @property
+    def peer(self) -> Optional[str]:
+        """
+        The peer this transport is connected to.
+        """
+        return self._peer
+
+    @peer.setter
+    def peer(self, value: Optional[str]):
+        self._peer = value
+
+    @property
+    def is_server(self) -> Optional[bool]:
+        """
+        The peer this transport is connected to.
+        """
+        return self._is_server
+
+    @is_server.setter
+    def is_server(self, value: Optional[bool]):
+        self._is_server = value
+
+    @property
+    def is_secure(self) -> Optional[bool]:
+        """
+        Flag indicating whether this transport runs over TLS (or similar), and hence is encrypting at
+        the byte stream or datagram transport level (beneath WAMP payload encryption).
+        """
+        return self._is_secure
+
+    @is_secure.setter
+    def is_secure(self, value: Optional[bool]):
+        """
+        Flag indicating whether this transport runs over TLS (or similar), and hence is encrypting at
+        the byte stream or datagram transport level (beneath WAMP payload encryption).
+        """
+        self._is_secure = value
+
+    @property
+    def channel_id(self) -> Dict[str, bytes]:
+        """
+        If this The peer this transport is connected to.
+        """
+        return self._channel_id
+
+    @channel_id.setter
+    def channel_id(self, value: Dict[str, bytes]):
+        self._channel_id = value
+
+    @property
+    def peer_cert(self) -> Dict[str, Any]:
+        """
+        If this transport is using TLS and the TLS peer has provided a valid certificate,
+        this attribute returns the peer certificate.
+
+        See `here <https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.getpeercert>`_ for details
+        about the object returned.
+        """
+        return self._peer_certificate
+
+    @peer_cert.setter
+    def peer_cert(self, value: Dict[str, Any]):
+        self._peer_cert = value

@@ -34,6 +34,7 @@ import autobahn
 
 from autobahn.websocket.util import parse_url
 
+from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.asyncio.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory
 
@@ -58,7 +59,8 @@ class TesteeClientProtocol(WebSocketClientProtocol):
             self.factory.endCaseId = int(msg)
             self.log.info("Ok, will run {case_count} cases", case_count=self.factory.endCaseId)
         else:
-            self.sendMessage(msg, binary)
+            if self.state == WebSocketProtocol.STATE_OPEN:
+                self.sendMessage(msg, binary)
 
     def onClose(self, wasClean, code, reason):
         txaio.resolve(self.factory._done, None)

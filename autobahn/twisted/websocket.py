@@ -42,11 +42,12 @@ from twisted.internet.defer import Deferred
 from autobahn.util import public
 from autobahn.util import _is_tls_error, _maybe_tls_reason
 from autobahn.wamp import websocket
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny, \
-    TransportDetails
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
+from autobahn.wamp.types import TransportDetails
 from autobahn.websocket import protocol
 from autobahn.websocket.interfaces import IWebSocketClientAgent
 from autobahn.twisted.util import peer2str, transport_channel_id
+from autobahn.xbr._util import hltype
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
@@ -374,8 +375,9 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
     log = txaio.make_logger()
 
-    def _onConnect(self, response):
-        self.onConnect(response)
+    def _onConnect(self, response: ConnectionResponse):
+        self.log.debug('{meth}(response={response})', meth=hltype(self._onConnect), response=response)
+        return self.onConnect(response)
 
     def startTLS(self):
         self.log.debug("Starting TLS upgrade")
@@ -398,14 +400,20 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         # ISSLTransport at that point according to Twisted
         # documentation
         # the peer we are connected to
+        is_server = False
         is_secure = ISSLTransport.providedBy(self.transport)
         if is_secure:
-            secure_channel_id = {
-                'tls-unique': transport_channel_id(self.transport, False, 'tls-unique'),
+            channel_id = {
+                'tls-unique': transport_channel_id(self.transport, is_server, 'tls-unique'),
             }
+            channel_type = TransportDetails.TRANSPORT_TYPE_TLS_TCP
+            peer_cert = None
         else:
-            secure_channel_id = {}
-        return TransportDetails(peer=self.peer, is_secure=is_secure, secure_channel_id=secure_channel_id)
+            channel_id = {}
+            channel_type = TransportDetails.TRANSPORT_TYPE_TCP
+            peer_cert = None
+        return TransportDetails(channel_type=channel_type, peer=self.peer, is_server=is_server, is_secure=is_secure,
+                                channel_id=channel_id, peer_cert=peer_cert)
 
 
 class WebSocketAdapterFactory(object):

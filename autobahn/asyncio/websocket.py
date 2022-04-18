@@ -36,7 +36,7 @@ from autobahn.util import public
 from autobahn.asyncio.util import transport_channel_id, peer2str
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
-from autobahn.websocket.types import TransportDetails
+from autobahn.wamp.types import TransportDetails
 
 __all__ = (
     'WebSocketServerProtocol',
@@ -229,14 +229,20 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         Internal helper.
         Base class calls this to create a TransportDetails
         """
+        is_server = False
         is_secure = self.transport.get_extra_info('peercert', None) is not None
         if is_secure:
-            secure_channel_id = {
-                'tls-unique': transport_channel_id(self.transport, False, 'tls-unique'),
+            channel_id = {
+                'tls-unique': transport_channel_id(self.transport, is_server, 'tls-unique'),
             }
+            channel_type = TransportDetails.TRANSPORT_TYPE_TLS_TCP
+            peer_cert = None
         else:
-            secure_channel_id = {}
-        return TransportDetails(peer=self.peer, is_secure=is_secure, secure_channel_id=secure_channel_id)
+            channel_id = {}
+            channel_type = TransportDetails.TRANSPORT_TYPE_TCP
+            peer_cert = None
+        return TransportDetails(channel_type=channel_type, peer=self.peer, is_server=is_server, is_secure=is_secure,
+                                channel_id=channel_id, peer_cert=peer_cert)
 
 
 class WebSocketAdapterFactory(object):

@@ -46,9 +46,8 @@ from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateResponse, PerMessageDeflateResponseAccept
 
 from autobahn.wamp import protocol, auth
-from autobahn.wamp.interfaces import IAuthenticator
+from autobahn.wamp.interfaces import ITransportHandler, ISession, IAuthenticator
 from autobahn.wamp.types import ComponentConfig
-
 
 __all__ = [
     'ApplicationSession',
@@ -77,12 +76,18 @@ class ApplicationSession(protocol.ApplicationSession):
     log = txaio.make_logger()
 
 
+ITransportHandler.register(ApplicationSession)
+
+# ISession.register collides with the abc.ABCMeta.register method
+ISession.abc_register(ApplicationSession)
+
+
 class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
     WAMP application session factory for Twisted-based applications.
     """
 
-    session = ApplicationSession
+    session: ApplicationSession = ApplicationSession
     """
     The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
     """

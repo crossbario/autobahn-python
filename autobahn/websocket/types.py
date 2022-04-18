@@ -29,12 +29,14 @@ from autobahn.util import public
 
 __all__ = (
     'ConnectionRequest',
+    'ConnectingRequest',
     'ConnectionResponse',
     'ConnectionAccept',
     'ConnectionDeny',
     'Message',
     'IncomingMessage',
     'OutgoingMessage',
+    'Ping',
 )
 
 
@@ -181,47 +183,6 @@ class ConnectingRequest(object):
             'useragent': self.useragent,
             'origin': self.origin,
             'protocols': self.protocols,
-        }
-
-    def __str__(self):
-        return pformat(self.__json__())
-
-
-@public
-class TransportDetails(object):
-    """
-    Details of our transport made available to the `onConnecting`
-    callback.
-    """
-
-    __slots__ = (
-        'peer',
-        'is_secure',
-        'secure_channel_id',
-    )
-    # possibly useful:
-    # peer_certificate  # getPeerCertificate(), .get_extra_info('peercert')
-
-    def __init__(self, peer, is_secure, secure_channel_id):
-        """
-        :param str peer: the peer to which we are connected
-
-        :param bool is_secure: using TLS or not
-
-        :param dict secure_channel_id: information about our
-            channel-binding or None if not using TLS. The only
-            channel-binding currently is `tls-unique` so if this is a
-            `dict` it will be: `{'tls-unique': bytes}`
-        """
-        self.peer = peer
-        self.is_secure = is_secure
-        self.secure_channel_id = secure_channel_id
-
-    def __json__(self):
-        return {
-            'peer': self.peer,
-            'is_secure': self.is_secure,
-            'secure_channel_id': self.secure_channel_id,
         }
 
     def __str__(self):
