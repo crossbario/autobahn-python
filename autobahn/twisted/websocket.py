@@ -47,6 +47,7 @@ from autobahn.wamp.types import TransportDetails
 from autobahn.websocket import protocol
 from autobahn.websocket.interfaces import IWebSocketClientAgent
 from autobahn.twisted.util import peer2str, transport_channel_id
+from autobahn.xbr._util import hltype
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
@@ -374,8 +375,9 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
     log = txaio.make_logger()
 
-    def _onConnect(self, response):
-        self.onConnect(response)
+    def _onConnect(self, response: ConnectionResponse):
+        self.log.debug('{meth}(response={response})', meth=hltype(self._onConnect), response=response)
+        return self.onConnect(response)
 
     def startTLS(self):
         self.log.debug("Starting TLS upgrade")

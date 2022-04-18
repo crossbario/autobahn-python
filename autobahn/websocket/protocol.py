@@ -57,6 +57,7 @@ from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 from autobahn.websocket.util import parse_url
 from autobahn.exception import PayloadExceededError, Disconnected
 from autobahn.util import _maybe_tls_reason
+from autobahn.xbr._util import hltype
 
 import txaio
 import hyperlink
@@ -557,6 +558,12 @@ class WebSocketProtocol(ObservableMixin):
         self.set_valid_events([
             "message",  # like onMessage (takes: payload, is_binary=)
         ])
+
+        self._transport_details = None
+
+    @property
+    def transport_details(self) -> Optional[TransportDetails]:
+        return self._transport_details
 
     def onOpen(self):
         """
@@ -3454,7 +3461,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         implementation _before_ your code.
         """
         WebSocketProtocol._connectionMade(self)
-        self.log.debug("connection to {peer} established", peer=self.peer)
+        self.log.debug('{meth}: connection to {peer} established', meth=hltype(self._connectionMade), peer=self.peer)
 
         if not self.factory.isServer and self.factory.proxy is not None:
             # start by doing a HTTP/CONNECT for explicit proxies
@@ -3577,13 +3584,16 @@ class WebSocketClientProtocol(WebSocketProtocol):
         """
         Start WebSocket opening handshake.
         """
-
         # extract framework-specific transport information
-        transport_details = self._create_transport_details()
+        self._transport_details = self._create_transport_details()
+
+        self.log.debug('{meth}: starting handshake with transport_details=\n{transport_details}',
+                       meth=hltype(self.startHandshake),
+                       transport_details=pformat(self._transport_details.marshal()))
 
         # ask our specialized framework-specific (or user-code) for a
         # ConnectingRequest instance
-        options_d = txaio.as_future(self.onConnecting, transport_details)
+        options_d = txaio.as_future(self.onConnecting, self._transport_details)
 
         def got_options(request_options):
             """
@@ -3688,7 +3698,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
         self.http_request_data = request.encode('utf8')
         self.sendData(self.http_request_data)
 
-        self.log.debug("{request}", request=request)
+        self.log.debug('{meth}: sent HTTP request:\n{request}', meth=hltype(self._actuallyStartHandshake),
+                       request=request)
 
     def processHandshake(self):
         """
@@ -3699,11 +3710,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
         end_of_header = self.data.find(b"\x0d\x0a\x0d\x0a")
         if end_of_header >= 0:
 
-            self.http_response_data = self.data[:end_of_header + 4]
-            self.log.debug(
-                "received HTTP response:\n\n{response}\n\n",
-                response=self.http_response_data,
-            )
+            self.http_response_data: bytes = self.data[:end_of_header + 4]
+            self.log.debug('{meth}: received HTTP response:\n{response}', meth=hltype(self.processHandshake),
+                           response=self.http_response_data.decode('utf8'))
 
             # extract HTTP status line and headers
             #
@@ -3885,32 +3894,32 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # we handle this symmetrical to server-side .. that is, give the
             # client a chance to bail out .. i.e. on no subprotocol selected
             # by server
-            try:
-                response = ConnectionResponse(self.peer,
-                                              self.http_headers,
-                                              self.websocket_version,
-                                              self.websocket_protocol_in_use,
-                                              self.websocket_extensions_in_use)
+            response = ConnectionResponse(self.peer,
+                                          self.http_headers,
+                                          self.websocket_version,
+                                          self.websocket_protocol_in_use,
+                                          self.websocket_extensions_in_use)
 
-                self._onConnect(response)
+            d = txaio.as_future(self._onConnect, response)
 
-            except Exception as e:
-                # immediately close the WS connection
-                #
-                self._fail_connection(1000, '{}'.format(e))
-            else:
-                # fire handler on derived class
-                #
+            def on_connect_success(res):
+                self.log.info('onConnect callback completed successfully with result={res}', res=res)
                 if self.trackedTimings:
-                    self.trackedTimings.track("onOpen")
+                    self.trackedTimings.track('onOpen')
                 self._onOpen()
+                txaio.resolve(self.is_open, None)
+                if len(self.data) > 0:
+                    self.consumeData()
 
-            txaio.resolve(self.is_open, None)
+            def on_connect_failed(fail):
+                self.log.error(
+                    'onConnect failed with {fail}',
+                    fail=fail,
+                )
+                self._fail_connection(1000, '{}'.format(fail))
 
-            # process rest, if any
-            #
-            if len(self.data) > 0:
-                self.consumeData()
+            txaio.add_callbacks(d, on_connect_success, on_connect_failed)
+            return d
 
     def failHandshake(self, reason):
         """
