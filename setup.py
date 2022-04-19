@@ -116,6 +116,9 @@ extras_require_xbr = [
     # XBR contracts and ABI file bundle
     'xbr>=21.2.1',              # Apache 2.0
 
+    # CLI handling and color terminal output
+    'click>=8.1.2',             # BSD license
+
     # the following is needed for XBR basics and XBR IDL code generation
     'cbor2>=5.2.0',             # MIT license
     'zlmdb>=21.2.1',            # MIT license
@@ -235,7 +238,7 @@ class PyTest(test_command):
 
 setup(
     name='autobahn',
-    version=__version__,
+    version=__version__,  # noqa
     description='WebSocket client & server library, WAMP real-time framework',
     long_description=docstr,
     license='MIT License',
@@ -253,7 +256,7 @@ setup(
     ],
     extras_require={
         'all': extras_require_all,
-        'asyncio': [], # backwards compatibility
+        'asyncio': [],  # backwards compatibility
         'twisted': extras_require_twisted,
         'accelerate': extras_require_accelerate,
         'compress': extras_require_compress,

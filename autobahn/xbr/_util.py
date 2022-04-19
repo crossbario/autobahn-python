@@ -24,9 +24,6 @@
 #
 ###############################################################################
 
-import inspect
-
-import click
 import web3
 
 
@@ -108,55 +105,3 @@ def pack_uint256(value):
         return b'\x00' * (32 - len(data)) + data
     else:
         return b'\x00' * 32
-
-
-def hl(text, bold=False, color='yellow'):
-    if not isinstance(text, str):
-        text = '{}'.format(text)
-    return click.style(text, fg=color, bold=bold)
-
-
-def _qn(obj):
-    if inspect.isclass(obj) or inspect.isfunction(obj) or inspect.ismethod(obj):
-        qn = '{}.{}'.format(obj.__module__, obj.__qualname__)
-    else:
-        qn = 'unknown'
-    return qn
-
-
-def hltype(obj):
-    qn = _qn(obj).split('.')
-    text = hl(qn[0], color='yellow', bold=True) + hl('.' + '.'.join(qn[1:]), color='yellow', bold=False)
-    return '<' + text + '>'
-
-
-def hlid(oid):
-    return hl('{}'.format(oid), color='blue', bold=True)
-
-
-def hluserid(oid):
-    if not isinstance(oid, str):
-        oid = '{}'.format(oid)
-    return hl('"{}"'.format(oid), color='yellow', bold=True)
-
-
-def hlval(val, color='green'):
-    return hl('{}'.format(val), color=color, bold=True)
-
-
-def hlcontract(oid):
-    if not isinstance(oid, str):
-        oid = '{}'.format(oid)
-    return hl('<{}>'.format(oid), color='magenta', bold=True)
-
-
-def with_0x(address):
-    if address and not address.startswith('0x'):
-        return '0x{address}'.format(address=address)
-    return address
-
-
-def without_0x(address):
-    if address and address.startswith('0x'):
-        return address[2:]
-    return address

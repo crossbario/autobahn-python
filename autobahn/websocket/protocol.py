@@ -48,7 +48,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
 from autobahn.websocket.types import ConnectingRequest, ConnectionRequest, ConnectionResponse, ConnectionDeny
 from autobahn.wamp.types import TransportDetails
 
-from autobahn.util import Stopwatch, wildcards2patterns, encode_truncate
+from autobahn.util import Stopwatch, wildcards2patterns, encode_truncate, hltype
 from autobahn.util import _LazyHexFormatter
 from autobahn.util import ObservableMixin
 from autobahn.websocket.utf8validator import Utf8Validator
@@ -57,7 +57,6 @@ from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 from autobahn.websocket.util import parse_url
 from autobahn.exception import PayloadExceededError, Disconnected
 from autobahn.util import _maybe_tls_reason
-from autobahn.xbr._util import hltype
 
 import txaio
 import hyperlink

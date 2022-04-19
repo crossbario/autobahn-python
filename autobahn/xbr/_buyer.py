@@ -42,7 +42,7 @@ from ._util import unpack_uint256, pack_uint256
 
 import eth_keys
 
-from ._util import hl, hlval
+from ..util import hl, hlval
 from ._eip712_channel_close import sign_eip712_channel_close, recover_eip712_channel_close
 
 

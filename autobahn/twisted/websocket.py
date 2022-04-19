@@ -39,7 +39,7 @@ from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
 from twisted.internet.defer import Deferred
 
-from autobahn.util import public
+from autobahn.util import public, hltype
 from autobahn.util import _is_tls_error, _maybe_tls_reason
 from autobahn.wamp import websocket
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
@@ -47,7 +47,6 @@ from autobahn.wamp.types import TransportDetails
 from autobahn.websocket import protocol
 from autobahn.websocket.interfaces import IWebSocketClientAgent
 from autobahn.twisted.util import peer2str, transport_channel_id
-from autobahn.xbr._util import hltype
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
