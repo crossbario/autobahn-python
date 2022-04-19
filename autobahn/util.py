@@ -68,7 +68,15 @@ __all__ = ("public",
            "generate_activation_code",
            "generate_serial_number",
            "generate_user_password",
-           "machine_id")
+           "machine_id",
+           "hl",
+           "hltype",
+           "hlid",
+           "hluserid",
+           "hlval",
+           "hlcontract",
+           "with_0x",
+           "without_0x")
 
 
 def public(obj):
