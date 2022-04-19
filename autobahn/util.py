@@ -23,7 +23,7 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-
+import inspect
 import os
 import time
 import struct
@@ -68,7 +68,15 @@ __all__ = ("public",
            "generate_activation_code",
            "generate_serial_number",
            "generate_user_password",
-           "machine_id")
+           "machine_id",
+           "hl",
+           "hltype",
+           "hlid",
+           "hluserid",
+           "hlval",
+           "hlcontract",
+           "with_0x",
+           "without_0x")
 
 
 def public(obj):
@@ -912,3 +920,65 @@ def machine_id() -> str:
         return plistlib.loads(plist_data)[0]["IOPlatformSerialNumber"]
     else:
         return socket.gethostname()
+
+
+try:
+    import click
+    _HAS_CLICK = True
+except ImportError:
+    _HAS_CLICK = False
+
+
+def hl(text, bold=False, color='yellow'):
+    if not isinstance(text, str):
+        text = '{}'.format(text)
+    if _HAS_CLICK:
+        return click.style(text, fg=color, bold=bold)
+    else:
+        return text
+
+
+def _qn(obj):
+    if inspect.isclass(obj) or inspect.isfunction(obj) or inspect.ismethod(obj):
+        qn = '{}.{}'.format(obj.__module__, obj.__qualname__)
+    else:
+        qn = 'unknown'
+    return qn
+
+
+def hltype(obj):
+    qn = _qn(obj).split('.')
+    text = hl(qn[0], color='yellow', bold=True) + hl('.' + '.'.join(qn[1:]), color='yellow', bold=False)
+    return '<' + text + '>'
+
+
+def hlid(oid):
+    return hl('{}'.format(oid), color='blue', bold=True)
+
+
+def hluserid(oid):
+    if not isinstance(oid, str):
+        oid = '{}'.format(oid)
+    return hl('"{}"'.format(oid), color='yellow', bold=True)
+
+
+def hlval(val, color='green'):
+    return hl('{}'.format(val), color=color, bold=True)
+
+
+def hlcontract(oid):
+    if not isinstance(oid, str):
+        oid = '{}'.format(oid)
+    return hl('<{}>'.format(oid), color='magenta', bold=True)
+
+
+def with_0x(address):
+    if address and not address.startswith('0x'):
+        return '0x{address}'.format(address=address)
+    return address
+
+
+def without_0x(address):
+    if address and address.startswith('0x'):
+        return address[2:]
+    return address

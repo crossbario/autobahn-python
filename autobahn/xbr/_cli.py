@@ -85,8 +85,7 @@ from autobahn.xbr import sign_eip712_member_register, sign_eip712_market_create,
 from autobahn.xbr import ActorType, ChannelType
 
 from autobahn.xbr._config import load_or_create_profile
-from autobahn.xbr._util import hlval, hlid, hltype
-
+from autobahn.util import hltype, hlid, hlval
 
 _COMMANDS = ['version', 'get-member', 'register-member', 'register-member-verify',
              'get-market', 'create-market', 'create-market-verify',

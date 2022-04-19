@@ -56,7 +56,7 @@ import numpy as np
 import click
 from humanize import naturaldelta, naturaltime
 
-from autobahn.util import parse_activation_code
+from autobahn.util import parse_activation_code, hltype, hlid, hlval
 from autobahn.wamp.serializer import CBORSerializer
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationRunner
@@ -64,7 +64,6 @@ from autobahn.xbr import unpack_uint256
 from autobahn.xbr import account_from_seedphrase, generate_seedphrase, account_from_ethkey
 from autobahn.xbr._cli import Client
 from autobahn.xbr._config import UserConfig, Profile
-from autobahn.xbr._util import hlval, hlid, hltype
 
 LOGO_RESOURCE = pkg_resources.resource_filename('autobahn', 'asset/xbr_gray.svg')
 print(LOGO_RESOURCE, os.path.isfile(LOGO_RESOURCE))

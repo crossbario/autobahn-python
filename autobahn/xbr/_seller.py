@@ -42,7 +42,7 @@ import nacl.utils
 import nacl.public
 import txaio
 
-from ._util import hl, hlval
+from ..util import hl, hlval
 from ._eip712_channel_close import sign_eip712_channel_close, recover_eip712_channel_close
 
 

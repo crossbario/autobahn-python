@@ -38,7 +38,7 @@ if HAS_XBR:
 
     import uuid
 
-    from autobahn.xbr._util import hl
+    from autobahn.util import hl
     from autobahn.xbr._interfaces import IProvider, ISeller, IConsumer, IBuyer
 
     def run_in_executor(*args, **kwargs):
