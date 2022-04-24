@@ -1536,21 +1536,55 @@ class TransportDetails(object):
         self._http_headers_sent = None
         self._http_cbtid = None
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if other._channel_type != self._channel_type:
+            return False
+        if other._channel_framing != self._channel_framing:
+            return False
+        if other._channel_serializer != self._channel_serializer:
+            return False
+        if other._peer != self._peer:
+            return False
+        if other._is_server != self._is_server:
+            return False
+        if other._is_secure != self._is_secure:
+            return False
+        if other._channel_id != self._channel_id:
+            return False
+        if other._peer_cert != self._peer_cert:
+            return False
+        if other._websocket_protocol != self._websocket_protocol:
+            return False
+        if other._websocket_extensions_in_use != self._websocket_extensions_in_use:
+            return False
+        if other._http_headers_received != self._http_headers_received:
+            return False
+        if other._http_headers_sent != self._http_headers_sent:
+            return False
+        if other._http_cbtid != self._http_cbtid:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @staticmethod
     def parse(data: Dict[str, Any]) -> 'TransportDetails':
         assert type(data) == dict
 
         obj = TransportDetails()
         if 'channel_type' in data and data['channel_type'] is not None:
-            if type(data['channel_type']) != int or data['channel_type'] not in TransportDetails.CHANNEL_TYPE_FROM_STR:
+            if type(data['channel_type']) != str or data['channel_type'] not in TransportDetails.CHANNEL_TYPE_FROM_STR:
                 raise ValueError('invalid "channel_type", was type {} (value {})'.format(type(data['channel_type']), data['channel_type']))
             obj.channel_type = TransportDetails.CHANNEL_TYPE_FROM_STR[data['channel_type']]
         if 'channel_framing' in data and data['channel_framing'] is not None:
-            if type(data['channel_framing']) != int or data['channel_framing'] not in TransportDetails.CHANNEL_FRAMING_FROM_STR:
+            if type(data['channel_framing']) != str or data['channel_framing'] not in TransportDetails.CHANNEL_FRAMING_FROM_STR:
                 raise ValueError('invalid "channel_framing", was type {} (value {})'.format(type(data['channel_framing']), data['channel_framing']))
             obj.channel_framing = TransportDetails.CHANNEL_FRAMING_FROM_STR[data['channel_framing']]
         if 'channel_serializer' in data and data['channel_serializer'] is not None:
-            if type(data['channel_serializer']) != int or data['channel_serializer'] not in TransportDetails.CHANNEL_SERIALIZER_FROM_STR:
+            if type(data['channel_serializer']) != str or data['channel_serializer'] not in TransportDetails.CHANNEL_SERIALIZER_FROM_STR:
                 raise ValueError('invalid "channel_serializer", was type {} (value {})'.format(type(data['channel_serializer']), data['channel_serializer']))
             obj.channel_serializer = TransportDetails.CHANNEL_SERIALIZER_FROM_STR[data['channel_serializer']]
         if 'peer' in data and data['peer'] is not None:
@@ -1560,11 +1594,11 @@ class TransportDetails(object):
         if 'is_server' in data and data['is_server'] is not None:
             if type(data['is_server']) != bool:
                 raise ValueError('"is_server" must be a bool, was {}'.format(type(data['is_server'])))
-            obj.peer = data['is_server']
+            obj.is_server = data['is_server']
         if 'is_secure' in data and data['is_secure'] is not None:
             if type(data['is_secure']) != bool:
                 raise ValueError('"is_secure" must be a bool, was {}'.format(type(data['is_secure'])))
-            obj.peer = data['is_secure']
+            obj.is_secure = data['is_secure']
         if 'channel_id' in data and data['channel_id'] is not None:
             if type(data['channel_id']) != Dict[str, Any]:
                 raise ValueError('"channel_id" must be a dict, was {}'.format(type(data['channel_id'])))
@@ -1587,11 +1621,11 @@ class TransportDetails(object):
                 raise ValueError('"websocket_extensions_in_use" must be a list of strings, was {}'.format(type(data['websocket_extensions_in_use'])))
             obj.websocket_extensions_in_use = data['websocket_extensions_in_use']
         if 'http_headers_received' in data and data['http_headers_received'] is not None:
-            if type(data['http_headers_received']) != Dict[str, Any]:
+            if type(data['http_headers_received']) != dict:
                 raise ValueError('"http_headers_received" must be a map of strings, was {}'.format(type(data['http_headers_received'])))
             obj.http_headers_received = data['http_headers_received']
         if 'http_headers_sent' in data and data['http_headers_sent'] is not None:
-            if type(data['http_headers_sent']) != Dict[str, Any]:
+            if type(data['http_headers_sent']) != dict:
                 raise ValueError('"http_headers_sent" must be a map of strings, was {}'.format(type(data['http_headers_sent'])))
             obj.http_headers_sent = data['http_headers_sent']
         if 'http_cbtid' in data and data['http_cbtid'] is not None:
