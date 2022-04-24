@@ -31,7 +31,8 @@ from typing import Optional, Dict, Tuple
 
 from autobahn.websocket import protocol
 from autobahn.websocket.types import ConnectionDeny, ConnectionRequest, ConnectionResponse
-from autobahn.wamp.interfaces import ITransport
+from autobahn.wamp.types import TransportDetails
+from autobahn.wamp.interfaces import ITransport, ISession
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
 __all__ = ('WampWebSocketServerProtocol',
@@ -45,7 +46,8 @@ class WampWebSocketProtocol(object):
     Base class for WAMP-over-WebSocket transport mixins.
     """
 
-    _session = None  # default; self.session is set in onOpen
+    _session: Optional[ISession] = None  # default; self.session is set in onOpen
+    _transport_details: Optional[TransportDetails] = None
 
     def _bailout(self, code: int, reason: Optional[str] = None):
         self.log.debug('Failing WAMP-over-WebSocket transport: code={code}, reason="{reason}"', code=code,
@@ -137,6 +139,13 @@ class WampWebSocketProtocol(object):
         Implements :func:`autobahn.wamp.interfaces.ITransport.isOpen`
         """
         return self._session is not None
+
+    @property
+    def transport_details(self) -> Optional[TransportDetails]:
+        """
+        Implements :func:`autobahn.wamp.interfaces.ITransport.transport_details`
+        """
+        return self._transport_details
 
     def close(self):
         """
