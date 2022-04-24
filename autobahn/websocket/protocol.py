@@ -3586,9 +3586,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
         # extract framework-specific transport information
         self._transport_details = self._create_transport_details()
 
-        self.log.debug('{meth}: starting handshake with transport_details=\n{transport_details}',
-                       meth=hltype(self.startHandshake),
-                       transport_details=pformat(self._transport_details.marshal()))
+        self.log.info('{meth}: starting handshake with transport_details=\n{transport_details}',
+                      meth=hltype(self.startHandshake),
+                      transport_details=pformat(self._transport_details.marshal()))
 
         # ask our specialized framework-specific (or user-code) for a
         # ConnectingRequest instance
@@ -3618,10 +3618,12 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         def options_failed(fail):
             self.log.error(
-                "onConnecting failed: {fail}",
+                "{meth} onConnecting failed: {fail}",
                 fail=fail,
+                meth=hltype(self.startHandshake),
             )
             self.dropConnection(abort=False)
+            # return fail
             return None
         txaio.add_callbacks(options_d, got_options, options_failed)
         return options_d

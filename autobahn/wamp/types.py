@@ -1519,7 +1519,7 @@ class TransportDetails(object):
         'flatbuffers': CHANNEL_SERIALIZER_FLATBUFFERS,
     }
 
-    def __init__(self, channel_type: Optional[int], peer: Optional[str] = None, is_server: Optional[bool] = None,
+    def __init__(self, channel_type: Optional[int] = None, peer: Optional[str] = None, is_server: Optional[bool] = None,
                  is_secure: Optional[bool] = None, channel_id: Optional[Dict[str, bytes]] = None,
                  peer_cert: Optional[Dict[str, Any]] = None):
         self._channel_type = channel_type

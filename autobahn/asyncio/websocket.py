@@ -218,12 +218,6 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     def startTLS(self):
         raise Exception("WSS over explicit proxies not implemented")
 
-    def get_channel_id(self, channel_id_type=None):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
-        """
-        return transport_channel_id(self.transport, False, channel_id_type)
-
     def _create_transport_details(self):
         """
         Internal helper.
@@ -235,11 +229,11 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
             channel_id = {
                 'tls-unique': transport_channel_id(self.transport, is_server, 'tls-unique'),
             }
-            channel_type = TransportDetails.TRANSPORT_TYPE_TLS_TCP
+            channel_type = TransportDetails.CHANNEL_TYPE_TLS_TCP
             peer_cert = None
         else:
             channel_id = {}
-            channel_type = TransportDetails.TRANSPORT_TYPE_TCP
+            channel_type = TransportDetails.CHANNEL_TYPE_TCP
             peer_cert = None
         return TransportDetails(channel_type=channel_type, peer=self.peer, is_server=is_server, is_secure=is_secure,
                                 channel_id=channel_id, peer_cert=peer_cert)
