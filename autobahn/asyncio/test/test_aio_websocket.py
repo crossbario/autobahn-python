@@ -3,7 +3,6 @@ import asyncio
 import pytest
 
 import txaio
-txaio.use_asyncio()
 
 # because py.test tries to collect it as a test-case
 from unittest.mock import Mock
@@ -18,8 +17,8 @@ async def echo_async(what, when):
     return what
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
+@pytest.mark.asyncio
 async def test_echo_async():
     assert 'Hello!' == await echo_async('Hello!', 0)
 
@@ -33,8 +32,8 @@ def test_websocket_custom_loop(event_loop):
     server.connection_made(transport)
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
+@pytest.mark.asyncio
 async def test_async_on_connect_server(event_loop):
 
     num = 42

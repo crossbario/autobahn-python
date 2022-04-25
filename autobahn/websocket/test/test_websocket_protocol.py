@@ -32,13 +32,6 @@ from unittest.mock import Mock
 
 import txaio
 
-if os.environ.get('USE_ASYNCIO', False):
-    txaio.use_asyncio()
-elif os.environ.get('USE_TWISTED', False):
-    txaio.use_twisted()
-else:
-    raise RuntimeError('neither USE_ASYNCIO nor USE_TWISTED selected')
-
 from autobahn.websocket.protocol import WebSocketServerProtocol
 from autobahn.websocket.protocol import WebSocketServerFactory
 from autobahn.websocket.protocol import WebSocketClientProtocol

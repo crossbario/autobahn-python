@@ -27,14 +27,6 @@
 import os
 import unittest
 
-if os.environ.get('USE_TWISTED', False):
-    import txaio
-    txaio.use_twisted()
-
-if os.environ.get('USE_ASYNCIO', False):
-    import txaio
-    txaio.use_asyncio()
-
 from autobahn.xbr import HAS_XBR
 
 if HAS_XBR:
