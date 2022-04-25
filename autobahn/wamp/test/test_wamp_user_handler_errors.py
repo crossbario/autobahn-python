@@ -106,6 +106,7 @@ if os.environ.get('USE_TWISTED', False):
         # twice)...but that would mean switching all test-running over
         # to py-test
 
+        # the whole variable must not be defined to deactivate (!)
         skip = True
 
         def test_on_join(self):
