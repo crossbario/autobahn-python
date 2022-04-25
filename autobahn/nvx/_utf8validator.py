@@ -68,7 +68,7 @@ class Utf8Validator:
         self.lib = lib
 
         self._vld = self.ffi.gc(self.lib.nvx_utf8vld_new(), self.lib.nvx_utf8vld_free)
-        print(self.lib.nvx_utf8vld_get_impl(self._vld))
+        # print(self.lib.nvx_utf8vld_get_impl(self._vld))
 
     def reset(self):
         self.lib.nvx_utf8vld_reset(self._vld)

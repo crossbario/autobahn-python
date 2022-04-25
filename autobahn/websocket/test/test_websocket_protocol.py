@@ -30,6 +30,15 @@ from hashlib import sha1
 from base64 import b64encode
 from unittest.mock import Mock
 
+import txaio
+
+if os.environ.get('USE_ASYNCIO', False):
+    txaio.use_asyncio()
+elif os.environ.get('USE_TWISTED', False):
+    txaio.use_twisted()
+else:
+    raise RuntimeError('neither USE_ASYNCIO nor USE_TWISTED selected')
+
 from autobahn.websocket.protocol import WebSocketServerProtocol
 from autobahn.websocket.protocol import WebSocketServerFactory
 from autobahn.websocket.protocol import WebSocketClientProtocol
@@ -37,8 +46,7 @@ from autobahn.websocket.protocol import WebSocketClientFactory
 from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.websocket.types import ConnectingRequest
 from autobahn.testutil import FakeTransport
-
-import txaio
+from autobahn.wamp.types import TransportDetails
 
 
 class WebSocketClientProtocolTests(unittest.TestCase):
@@ -49,7 +57,7 @@ class WebSocketClientProtocolTests(unittest.TestCase):
         p = WebSocketClientProtocol()
         p.factory = f
         p.transport = t
-        p._create_transport_details = Mock()
+        p._transport_details = TransportDetails()
 
         p._connectionMade()
         p.state = p.STATE_OPEN

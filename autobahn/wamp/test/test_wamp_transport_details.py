@@ -38,8 +38,12 @@ class TestTransportDetails(unittest.TestCase):
             'channel_type': None,
             'channel_framing': None,
             'channel_serializer': None,
+            'own': None,
             'peer': None,
             'is_server': None,
+            'own_pid': None,
+            'own_tid': None,
+            'own_fd': None,
             'is_secure': None,
             'channel_id': None,
             'peer_cert': None,
@@ -76,6 +80,12 @@ class TestTransportDetails(unittest.TestCase):
 
             # TransportDetails.CHANNEL_SERIALIZER_TO_STR[TransportDetails.CHANNEL_SERIALIZER_CBOR]
             'channel_serializer': 'cbor',
+
+            # This end of the connection
+            'own': 'ws://localhost:8080/ws',
+            'own_pid': 9182731,
+            'own_tid': 7563483,
+            'own_fd': 20914571,
 
             # Peer of the connection
             'peer': 'tcp4:127.0.0.1:48576',

@@ -24,11 +24,17 @@
 #
 ###############################################################################
 
+import os
 import hashlib
+import threading
 from typing import Optional, Union
 
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address, UNIXAddress
+from twisted.internet.interfaces import ITransport, IProcessTransport, ISSLTransport
+
+from autobahn.wamp.types import TransportDetails
+
 try:
     from twisted.internet.stdio import PipeAddress
 except ImportError:
@@ -45,7 +51,8 @@ except ImportError:
 __all = (
     'sleep',
     'peer2str',
-    'transport_channel_id'
+    'transport_channel_id',
+    'create_transport_details',
 )
 
 
@@ -69,27 +76,42 @@ def sleep(delay, reactor=None):
     return d
 
 
-def peer2str(addr: Union[IPv4Address, IPv6Address, UNIXAddress, PipeAddress]) -> str:
+def peer2str(transport: Union[ITransport, IProcessTransport]) -> str:
     """
-    Convert a Twisted address as returned from ``self.transport.getPeer()`` to a string.
+    Return a *peer descriptor* given a Twisted transport, for example:
 
-    :returns: Returns a string representation of the peer on a Twisted transport.
+    * ``tcp4:127.0.0.1:52914``: a TCPv4 socket
+    * ``unix:/tmp/server.sock``: a Unix domain socket
+    * ``process:142092``: a Pipe originating from a spawning (parent) process
+    * ``pipe``: a Pipe terminating in a spawned (child) process
+
+    :returns: Returns a string representation of the peer of the Twisted transport.
     """
-    if isinstance(addr, IPv4Address):
-        res = "tcp4:{0}:{1}".format(addr.host, addr.port)
-    elif _HAS_IPV6 and isinstance(addr, IPv6Address):
-        res = "tcp6:{0}:{1}".format(addr.host, addr.port)
-    elif isinstance(addr, UNIXAddress):
-        if addr.name:
-            res = "unix:{0}".format(addr.name)
+    # IMPORTANT: we need to _first_ test for IProcessTransport
+    if IProcessTransport.providedBy(transport):
+        # note the PID of the forked process in the peer descriptor
+        res = "process:{}".format(transport.pid)
+    elif ITransport.providedBy(transport):
+        addr: Union[IPv4Address, IPv6Address, UNIXAddress, PipeAddress] = transport.getPeer()
+        if isinstance(addr, IPv4Address):
+            res = "tcp4:{0}:{1}".format(addr.host, addr.port)
+        elif _HAS_IPV6 and isinstance(addr, IPv6Address):
+            res = "tcp6:{0}:{1}".format(addr.host, addr.port)
+        elif isinstance(addr, UNIXAddress):
+            if addr.name:
+                res = "unix:{0}".format(addr.name)
+            else:
+                res = "unix"
+        elif isinstance(addr, PipeAddress):
+            # sadly, we don't have a way to get at the PID of the other side of the pipe
+            # res = "pipe"
+            res = "process:{0}".format(os.getppid())
         else:
-            res = "unix"
-    elif isinstance(addr, PipeAddress):
-        res = "<pipe>"
+            # gracefully fallback if we can't map the peer's address
+            res = "unknown"
     else:
-        # gracefully fallback if we can't map the peer's address
-        res = "?:{0}".format(addr)
-
+        # gracefully fallback if we can't map the peer's transport
+        res = "unknown"
     return res
 
 
@@ -164,3 +186,34 @@ else:
                 return m.digest()
         else:
             raise NotImplementedError('should not arrive here (unhandled channel_id_type "{}")'.format(channel_id_type))
+
+
+def create_transport_details(transport: Union[ITransport, IProcessTransport], is_server: bool) -> TransportDetails:
+    """
+
+    :param transport:
+    :param is_server:
+    :return:
+    """
+    peer = peer2str(transport)
+
+    own_pid = os.getpid()
+    own_tid = threading.get_native_id()
+    own_fd = -1
+
+    is_secure = ISSLTransport.providedBy(transport)
+    if is_secure:
+        channel_id = {
+            'tls-unique': transport_channel_id(transport, is_server, 'tls-unique'),
+        }
+        channel_type = TransportDetails.CHANNEL_TYPE_TLS_TCP
+        peer_cert = None
+    else:
+        channel_id = {}
+        channel_type = TransportDetails.CHANNEL_TYPE_TCP
+        peer_cert = None
+    channel_framing = TransportDetails.CHANNEL_FRAMING_WEBSOCKET
+
+    return TransportDetails(channel_type=channel_type, channel_framing=channel_framing, peer=peer,
+                            is_server=is_server, own_pid=own_pid, own_tid=own_tid, own_fd=own_fd,
+                            is_secure=is_secure, channel_id=channel_id, peer_cert=peer_cert)

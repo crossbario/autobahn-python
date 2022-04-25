@@ -90,10 +90,14 @@ class TestAuth(unittest.TestCase):
         m = hashlib.sha256()
         m.update("some TLS message".encode())
         self.channel_id = m.digest()
+        self.transport_details = Mock(return_value=types.TransportDetails(channel_id={'tls-unique': self.channel_id}))
 
     def test_valid(self):
         session = Mock()
-        session._transport.get_channel_id = Mock(return_value=self.channel_id)
+
+        # session._transport.get_channel_id = Mock(return_value=self.channel_id)
+        # session._transport.transport_details = self.transport_details
+
         challenge = types.Challenge("ticket", dict(challenge="ff" * 32))
         f_signed = self.key.sign_challenge(session, challenge)
 
@@ -114,7 +118,8 @@ class TestAuth(unittest.TestCase):
 
     def test_testvectors(self):
         session = Mock()
-        session._transport.get_channel_id = Mock(return_value=self.channel_id)
+        session._transport.transport_details = self.transport_details
+
         for testvec in testvectors:
             priv_key = SigningKey.from_key_bytes(binascii.a2b_hex(testvec['priv_key']))
             challenge = types.Challenge("ticket", dict(challenge=testvec['challenge']))
@@ -142,7 +147,7 @@ class TestAuth(unittest.TestCase):
             privkey=self.privkey_hex,
         )
         session = Mock()
-        session._transport.get_channel_id = Mock(return_value=self.channel_id)
+        session._transport.transport_details = self.transport_details
         challenge = types.Challenge("cryptosign", dict(challenge="ff" * 32))
         f_reply = authenticator.on_challenge(session, challenge)
 

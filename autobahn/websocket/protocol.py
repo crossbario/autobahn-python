@@ -48,7 +48,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
 from autobahn.websocket.types import ConnectingRequest, ConnectionRequest, ConnectionResponse, ConnectionDeny
 from autobahn.wamp.types import TransportDetails
 
-from autobahn.util import Stopwatch, wildcards2patterns, encode_truncate, hltype
+from autobahn.util import Stopwatch, wildcards2patterns, encode_truncate, hltype, hlval
 from autobahn.util import _LazyHexFormatter
 from autobahn.util import ObservableMixin
 from autobahn.websocket.utf8validator import Utf8Validator
@@ -370,6 +370,7 @@ class WebSocketProtocol(ObservableMixin):
       * :class:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi`
     """
 
+    # set in WebSocketAdapterProtocol.connectionMade (Twisted) and FIXME (asyncio)
     peer = '<never connected>'
 
     SUPPORTED_SPEC_VERSIONS = [10, 11, 12, 13, 14, 15, 16, 17, 18]
@@ -558,10 +559,16 @@ class WebSocketProtocol(ObservableMixin):
             "message",  # like onMessage (takes: payload, is_binary=)
         ])
 
-        self._transport_details = None
+        # set in
+        #   * autobahn.twisted.websocket.WebSocketAdapterProtocol.connectionMade
+        #   * autobahn.asyncio.websocket.WebSocketAdapterProtocol.
+        self._transport_details: Optional[TransportDetails] = None
 
     @property
     def transport_details(self) -> Optional[TransportDetails]:
+        """
+        Implements :class:`autobahn.wamp.interfaces.ITransport.transport_details`.
+        """
         return self._transport_details
 
     def onOpen(self):
@@ -1357,6 +1364,10 @@ class WebSocketProtocol(ObservableMixin):
                 self._trigger()
             else:
                 self.transport.write(data)
+                self.log.debug('{func} sent {data_len} bytes for peer {peer}',
+                               func=hltype(self.sendData),
+                               peer=hlval(self.peer),
+                               data_len=hlval(len(data)))
 
                 if self.state == WebSocketProtocol.STATE_OPEN:
                     self.trafficStats.outgoingOctetsWireLevel += len(data)
@@ -2552,6 +2563,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
               * ``(str, dict)``: a pair of subprotocol accepted and HTTP headers to send to the client.
            You can also return a Deferred/Future that resolves/rejects to the above.
         """
+        self.log.info('{func}: request={request}', func=hltype(self.onConnect), request=request)
         return None
 
     def _connectionMade(self):
@@ -2561,9 +2573,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
         handshake. When overriding in derived class, make sure to call this base class
         implementation *before* your code.
         """
+        self.log.debug('{func}: connection accepted from peer {peer}',
+                       func=hltype(self._connectionMade), peer=self.peer)
         WebSocketProtocol._connectionMade(self)
         self.factory.countConnections += 1
-        self.log.debug("connection accepted from peer {peer}", peer=self.peer)
 
     def _connectionLost(self, reason):
         """
@@ -2572,6 +2585,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
         When overriding in derived class, make sure to call this base class
         implementation *after* your code.
         """
+        self.log.info('{func}: connection lost to peer {peer}: reason={reason}',
+                      func=hltype(self._connectionLost), peer=self.peer, reason=hlval(reason))
         WebSocketProtocol._connectionLost(self, reason)
         self.factory.countConnections -= 1
 
@@ -2586,6 +2601,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
         #
         end_of_header = self.data.find(b"\x0d\x0a\x0d\x0a")
         if end_of_header >= 0:
+            self.log.info('{func} found end of HTTP request header at byte {end_of_header}',
+                          func=hltype(self.processHandshake), end_of_header=hlval(end_of_header))
 
             self.http_request_data = self.data[:end_of_header + 4]
             self.log.debug(
@@ -2892,6 +2909,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 #   - return None to continue with no subprotocol
                 #   - return a pair (subprotocol, headers)
                 #   - raise a ConnectionDeny to dismiss the client
+
                 f = txaio.as_future(self.onConnect, request)
 
                 def forward_error(err):
@@ -3459,8 +3477,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
         When overriding in derived class, make sure to call this base class
         implementation _before_ your code.
         """
+        self.log.debug('{func}: connection accepted from peer {peer}',
+                       func=hltype(self._connectionMade), peer=self.peer)
         WebSocketProtocol._connectionMade(self)
-        self.log.debug('{meth}: connection to {peer} established', meth=hltype(self._connectionMade), peer=self.peer)
 
         if not self.factory.isServer and self.factory.proxy is not None:
             # start by doing a HTTP/CONNECT for explicit proxies
@@ -3476,6 +3495,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
         When overriding in derived class, make sure to call this base class
         implementation _after_ your code.
         """
+        self.log.info('{func}: connection lost to peer {peer}: reason={reason}',
+                      func=hltype(self._connectionLost), peer=self.peer, reason=hlval(reason))
         WebSocketProtocol._connectionLost(self, reason)
 
     def startProxyConnect(self):
@@ -3583,12 +3604,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
         """
         Start WebSocket opening handshake.
         """
-        # extract framework-specific transport information
-        self._transport_details = self._create_transport_details()
-
-        self.log.info('{meth}: starting handshake with transport_details=\n{transport_details}',
-                      meth=hltype(self.startHandshake),
-                      transport_details=pformat(self._transport_details.marshal()))
+        self.log.debug('{meth}: starting handshake with transport_details=\n{transport_details}',
+                       meth=hltype(self.startHandshake),
+                       transport_details=pformat(self._transport_details.marshal()))
 
         # ask our specialized framework-specific (or user-code) for a
         # ConnectingRequest instance

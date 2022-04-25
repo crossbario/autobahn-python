@@ -1431,8 +1431,12 @@ class TransportDetails(object):
         '_channel_type',
         '_channel_framing',
         '_channel_serializer',
+        '_own',
         '_peer',
         '_is_server',
+        '_own_pid',
+        '_own_tid',
+        '_own_fd',
         '_is_secure',
         '_channel_id',
         '_peer_cert',
@@ -1519,22 +1523,41 @@ class TransportDetails(object):
         'flatbuffers': CHANNEL_SERIALIZER_FLATBUFFERS,
     }
 
-    def __init__(self, channel_type: Optional[int] = None, peer: Optional[str] = None, is_server: Optional[bool] = None,
-                 is_secure: Optional[bool] = None, channel_id: Optional[Dict[str, bytes]] = None,
-                 peer_cert: Optional[Dict[str, Any]] = None):
+    def __init__(self,
+                 channel_type: Optional[int] = None,
+                 channel_framing: Optional[int] = None,
+                 channel_serializer: Optional[int] = None,
+                 own: Optional[str] = None,
+                 peer: Optional[str] = None,
+                 is_server: Optional[bool] = None,
+                 own_pid: Optional[int] = None,
+                 own_tid: Optional[int] = None,
+                 own_fd: Optional[int] = None,
+                 is_secure: Optional[bool] = None,
+                 channel_id: Optional[Dict[str, bytes]] = None,
+                 peer_cert: Optional[Dict[str, Any]] = None,
+                 websocket_protocol: Optional[str] = None,
+                 websocket_extensions_in_use: Optional[List[str]] = None,
+                 http_headers_received: Optional[Dict[str, Any]] = None,
+                 http_headers_sent: Optional[Dict[str, Any]] = None,
+                 http_cbtid: Optional[str] = None):
         self._channel_type = channel_type
-        self._channel_framing = None
-        self._channel_serializer = None
+        self._channel_framing = channel_framing
+        self._channel_serializer = channel_serializer
+        self._own = own
         self._peer = peer
         self._is_server = is_server
+        self._own_pid = own_pid
+        self._own_tid = own_tid
+        self._own_fd = own_fd
         self._is_secure = is_secure
         self._channel_id = channel_id
         self._peer_cert = peer_cert
-        self._websocket_protocol = None
-        self._websocket_extensions_in_use = None
-        self._http_headers_received = None
-        self._http_headers_sent = None
-        self._http_cbtid = None
+        self._websocket_protocol = websocket_protocol
+        self._websocket_extensions_in_use = websocket_extensions_in_use
+        self._http_headers_received = http_headers_received
+        self._http_headers_sent = http_headers_sent
+        self._http_cbtid = http_cbtid
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -1545,9 +1568,17 @@ class TransportDetails(object):
             return False
         if other._channel_serializer != self._channel_serializer:
             return False
+        if other._own != self._own:
+            return False
         if other._peer != self._peer:
             return False
         if other._is_server != self._is_server:
+            return False
+        if other._own_pid != self._own_pid:
+            return False
+        if other._own_tid != self._own_tid:
+            return False
+        if other._own_fd != self._own_fd:
             return False
         if other._is_secure != self._is_secure:
             return False
@@ -1587,6 +1618,10 @@ class TransportDetails(object):
             if type(data['channel_serializer']) != str or data['channel_serializer'] not in TransportDetails.CHANNEL_SERIALIZER_FROM_STR:
                 raise ValueError('invalid "channel_serializer", was type {} (value {})'.format(type(data['channel_serializer']), data['channel_serializer']))
             obj.channel_serializer = TransportDetails.CHANNEL_SERIALIZER_FROM_STR[data['channel_serializer']]
+        if 'own' in data and data['own'] is not None:
+            if type(data['own']) != str:
+                raise ValueError('"own" must be a string, was {}'.format(type(data['own'])))
+            obj.own = data['own']
         if 'peer' in data and data['peer'] is not None:
             if type(data['peer']) != str:
                 raise ValueError('"peer" must be a string, was {}'.format(type(data['peer'])))
@@ -1595,6 +1630,18 @@ class TransportDetails(object):
             if type(data['is_server']) != bool:
                 raise ValueError('"is_server" must be a bool, was {}'.format(type(data['is_server'])))
             obj.is_server = data['is_server']
+        if 'own_pid' in data and data['own_pid'] is not None:
+            if type(data['own_pid']) != int:
+                raise ValueError('"own_pid" must be an int, was {}'.format(type(data['own_pid'])))
+            obj.own_pid = data['own_pid']
+        if 'own_tid' in data and data['own_tid'] is not None:
+            if type(data['own_tid']) != int:
+                raise ValueError('"own_tid" must be an int, was {}'.format(type(data['own_tid'])))
+            obj.own_tid = data['own_tid']
+        if 'own_fd' in data and data['own_fd'] is not None:
+            if type(data['own_fd']) != int:
+                raise ValueError('"own_fd" must be an int, was {}'.format(type(data['own_fd'])))
+            obj.own_fd = data['own_fd']
         if 'is_secure' in data and data['is_secure'] is not None:
             if type(data['is_secure']) != bool:
                 raise ValueError('"is_secure" must be a bool, was {}'.format(type(data['is_secure'])))
@@ -1639,8 +1686,12 @@ class TransportDetails(object):
             'channel_type': self.CHANNEL_TYPE_TO_STR.get(self._channel_type, None),
             'channel_framing': self.CHANNEL_FRAMING_TO_STR.get(self._channel_framing, None),
             'channel_serializer': self.CHANNEL_SERIALIZER_TO_STR.get(self._channel_serializer, None),
+            'own': self._own,
             'peer': self._peer,
             'is_server': self._is_server,
+            'own_pid': self._own_pid,
+            'own_tid': self._own_tid,
+            'own_fd': self._own_fd,
             'is_secure': self._is_secure,
             'channel_id': self._channel_id,
             'peer_cert': self._peer_cert,
@@ -1688,9 +1739,44 @@ class TransportDetails(object):
         self._channel_serializer = value
 
     @property
+    def own(self) -> Optional[str]:
+        """
+
+        https://github.com/crossbario/autobahn-python/blob/master/autobahn/websocket/test/test_websocket_url.py
+        https://github.com/crossbario/autobahn-python/blob/master/autobahn/rawsocket/test/test_rawsocket_url.py
+
+        A WebSocket server URL:
+
+        * ``ws://localhost``
+        * ``wss://example.com:443/ws``
+        * ``ws://62.146.25.34:80/ws``
+        * ``wss://localhost:9090/ws?foo=bar``
+
+        A RawSocket server URL:
+
+        * ``rs://crossbar:8081``
+        * ``rss://example.com``
+        * ``rs://unix:/tmp/file.sock``
+        * ``rss://unix:../file.sock``
+        """
+        return self._own
+
+    @own.setter
+    def own(self, value: Optional[str]):
+        self._own = value
+
+    @property
     def peer(self) -> Optional[str]:
         """
         The peer this transport is connected to.
+
+        process:12784
+        pipe
+
+        tcp4:127.0.0.1:38810
+        tcp4:127.0.0.1:8080
+        unix:/tmp/file.sock
+
         """
         return self._peer
 
@@ -1709,6 +1795,41 @@ class TransportDetails(object):
     @is_server.setter
     def is_server(self, value: Optional[bool]):
         self._is_server = value
+
+    @property
+    def own_pid(self) -> Optional[int]:
+        """
+        The process ID (PID) of this end of the connection.
+        """
+        return self._own_pid
+
+    @own_pid.setter
+    def own_pid(self, value: Optional[int]):
+        self._own_pid = value
+
+    @property
+    def own_tid(self) -> Optional[int]:
+        """
+        The native thread ID of this end of the connection.
+
+        See https://docs.python.org/3/library/threading.html#threading.get_native_id.
+        """
+        return self._own_tid
+
+    @own_tid.setter
+    def own_tid(self, value: Optional[int]):
+        self._own_tid = value
+
+    @property
+    def own_fd(self) -> Optional[int]:
+        """
+        The file descriptor (FD) at this end of the connection.
+        """
+        return self._own_fd
+
+    @own_fd.setter
+    def own_fd(self, value: Optional[int]):
+        self._own_fd = value
 
     @property
     def is_secure(self) -> Optional[bool]:

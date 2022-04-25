@@ -64,8 +64,6 @@ if HAS_XBR:
                 c = UserConfig(config_path)
                 c.load()
                 self.assertIn(self.PROFILE_NAME, c.profiles)
-            else:
-                print('no profile file "{}" found'.format(config_path))
 
         def test_write_default_config(self):
             config_dir = os.path.expanduser(self.DOTDIR)

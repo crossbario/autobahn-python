@@ -1,72 +1,75 @@
-import pytest
 import os
-import sys
+import asyncio
+import pytest
+
+import txaio
+txaio.use_asyncio()
 
 # because py.test tries to collect it as a test-case
 from unittest.mock import Mock
 
 from autobahn.asyncio.websocket import WebSocketServerFactory
-from unittest import TestCase
-import txaio
+
+# https://medium.com/ideas-at-igenius/testing-asyncio-python-code-with-pytest-a2f3628f82bc
 
 
-@pytest.mark.skipif(True, reason='pytest sucks')
-@pytest.mark.skipif(sys.version_info < (3, 3), reason="requires Python 3.3+")
-@pytest.mark.skipif(os.environ.get('USE_ASYNCIO', False) is False, reason="only for asyncio")
-@pytest.mark.usefixtures("event_loop")  # ensure we have pytest_asyncio installed
-class Test(TestCase):
+async def echo_async(what, when):
+    await asyncio.sleep(when)
+    return what
 
-    @pytest.mark.asyncio(forbid_global_loop=True)
-    def test_websocket_custom_loop(self, event_loop):
-        factory = WebSocketServerFactory(loop=event_loop)
-        server = factory()
-        transport = Mock()
 
-        server.connection_made(transport)
+@pytest.mark.asyncio
+@pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
+async def test_echo_async():
+    assert 'Hello!' == await echo_async('Hello!', 0)
 
-    # not sure when this last worked, tests haven't been running
-    # properly under asyncio for a while it seems.
-    @pytest.mark.xfail
-    def test_async_on_connect_server(self):
-        # see also issue 757
 
-        # for python 3.5, this can be "async def foo"
-        def foo(x):
-            f = txaio.create_future()
-            txaio.resolve(f, x * x)
-            return f
+# @pytest.mark.asyncio(forbid_global_loop=True)
+@pytest.mark.asyncio
+@pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
+def test_websocket_custom_loop(event_loop):
+    factory = WebSocketServerFactory(loop=event_loop)
+    server = factory()
+    transport = Mock()
+    server.connection_made(transport)
 
-        values = []
 
-        def on_connect(req):
-            f = txaio.create_future()
+@pytest.mark.asyncio
+@pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
+async def test_async_on_connect_server(event_loop):
 
-            def cb(x):
-                f = foo(42)
-                f.add_callbacks(f, lambda v: values.append(v), None)
-                return f
-            txaio.add_callbacks(f, cb, None)
-            return f
+    num = 42
+    done = txaio.create_future()
+    values = []
 
-        factory = WebSocketServerFactory()
-        server = factory()
-        server.onConnect = on_connect
-        transport = Mock()
+    async def foo(x):
+        await asyncio.sleep(1)
+        return x * x
 
-        server.connection_made(transport)
-        # need/want to insert real-fake handshake data?
-        server.data = b"\r\n".join([
-            b'GET /ws HTTP/1.1',
-            b'Host: www.example.com',
-            b'Sec-WebSocket-Version: 13',
-            b'Origin: http://www.example.com.malicious.com',
-            b'Sec-WebSocket-Extensions: permessage-deflate',
-            b'Sec-WebSocket-Key: tXAxWFUqnhi86Ajj7dRY5g==',
-            b'Connection: keep-alive, Upgrade',
-            b'Upgrade: websocket',
-            b'\r\n',  # last string doesn't get a \r\n from join()
-        ])
-        server.processHandshake()
+    async def on_connect(req):
+        v = await foo(num)
+        values.append(v)
+        txaio.resolve(done, req)
 
-        self.assertEqual(1, len(values))
-        self.assertEqual(42 * 42, values[0])
+    factory = WebSocketServerFactory()
+    server = factory()
+    server.onConnect = on_connect
+    transport = Mock()
+
+    server.connection_made(transport)
+    server.data = b'\r\n'.join([
+        b'GET /ws HTTP/1.1',
+        b'Host: www.example.com',
+        b'Sec-WebSocket-Version: 13',
+        b'Origin: http://www.example.com.malicious.com',
+        b'Sec-WebSocket-Extensions: permessage-deflate',
+        b'Sec-WebSocket-Key: tXAxWFUqnhi86Ajj7dRY5g==',
+        b'Connection: keep-alive, Upgrade',
+        b'Upgrade: websocket',
+        b'\r\n',  # last string doesn't get a \r\n from join()
+    ])
+    server.processHandshake()
+    await done
+
+    assert len(values) == 1
+    assert values[0] == num * num

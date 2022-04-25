@@ -349,8 +349,8 @@ class UserConfig(object):
         with open(self._config_path, 'wb') as fp2:
             fp2.write(data)
 
-        self.log.info('configuration with {sections} sections, {bytes_written} bytes written to {written_to}',
-                      sections=written, bytes_written=len(data), written_to=self._config_path)
+        self.log.debug('configuration with {sections} sections, {bytes_written} bytes written to {written_to}',
+                       sections=written, bytes_written=len(data), written_to=self._config_path)
 
         return len(data)
 

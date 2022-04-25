@@ -222,8 +222,10 @@ test_coverage:
 
 # test under asyncio
 test_asyncio:
-	USE_ASYNCIO=1 python -m pytest -rsx autobahn
-	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_ASYNCIO=1 python -m pytest -rsx
+	USE_ASYNCIO=1 pytest -s -v -rfP --ignore=./autobahn/twisted autobahn
+#	USE_ASYNCIO=1 pytest -s -v -rA --ignore=./autobahn/twisted ./autobahn/asyncio/test/test_aio_websocket.py
+#	USE_ASYNCIO=1 pytest -s -v -rA --log-cli-level=info --ignore=./autobahn/twisted ./autobahn/asyncio/test/test_aio_websocket.py
+
 
 test_cs1:
 	USE_ASYNCIO=1 python -m pytest -s -v autobahn/wamp/test/test_cryptosign.py
