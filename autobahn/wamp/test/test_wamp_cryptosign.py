@@ -89,14 +89,15 @@ class TestAuth(unittest.TestCase):
         self.privkey_hex = self.key._key.encode(encoder=HexEncoder)
         m = hashlib.sha256()
         m.update("some TLS message".encode())
-        self.channel_id = m.digest()
-        self.transport_details = Mock(return_value=types.TransportDetails(channel_id={'tls-unique': self.channel_id}))
+        channel_id = m.digest()
+        self.transport_details = types.TransportDetails(channel_id={'tls-unique': channel_id})
+
+    def test_public_key(self):
+        self.assertEqual(self.key.public_key(binary=False), '1adfc8bfe1d35616e64dffbd900096f23b066f914c8c2ffbb66f6075b96e116d')
 
     def test_valid(self):
         session = Mock()
-
-        # session._transport.get_channel_id = Mock(return_value=self.channel_id)
-        # session._transport.transport_details = self.transport_details
+        session._transport.transport_details = self.transport_details
 
         challenge = types.Challenge("ticket", dict(challenge="ff" * 32))
         f_signed = self.key.sign_challenge(session, challenge)

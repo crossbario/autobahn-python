@@ -455,10 +455,13 @@ if HAS_CRYPTOSIGN:
             :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
             :returns: A Deferred/Future that resolves to the computed signature.
             """
-            # get the TLS channel ID of the underlying TLS connection. Could be None.
-            channel_id = session.transport.transport_details.channel_id.get(channel_id_type, None)
-            channel_id = None
-            channel_id_type = None
+            # get the TLS channel ID of the underlying TLS connection
+            channel_id_type = 'tls-unique'
+            if channel_id_type in session._transport.transport_details.channel_id:
+                channel_id = session._transport.transport_details.channel_id.get(channel_id_type, None)
+            else:
+                channel_id_type = None
+                channel_id = None
 
             data = format_challenge(challenge, channel_id, channel_id_type)
 

@@ -185,7 +185,8 @@ test_tx_choosereactor:
 	USE_TWISTED=1 trial autobahn.twisted.test.test_choosereactor
 
 test_cryptosign:
-	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign
+#	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign
+	USE_ASYNCIO=1 pytest -s -v -rfA --ignore=./autobahn/twisted autobahn/wamp/test/test_wamp_cryptosign.py
 	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign
 
 test_wamp_scram:
