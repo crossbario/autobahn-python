@@ -31,9 +31,12 @@ version = __version__
 import os
 import txaio
 
+# this is used in the unit tests (trial/pytest), and when already done here, there
+# is no risk and headaches with finding out if/where an import implies a framework
 if os.environ.get('USE_TWISTED', False):
     txaio.use_twisted()
 elif os.environ.get('USE_ASYNCIO', False):
     txaio.use_asyncio()
 else:
-    raise RuntimeError('neither USE_TWISTED nor USE_ASYNCIO selected')
+    # neither USE_TWISTED nor USE_ASYNCIO selected from env var
+    pass
