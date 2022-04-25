@@ -28,7 +28,6 @@
 
 import struct
 import unittest
-import pytest
 
 from autobahn.websocket.utf8validator import Utf8Validator as StandardUtf8Validator
 
@@ -309,6 +308,8 @@ class TestNvxUtf8Validator(unittest.TestCase):
 
     # FIXME
     # see also (I think ..): https://twistedmatrix.com/trac/ticket/4811
+    #
+    # import pytest
     #
     # @pytest.mark.xfail(reason='NVX UTF8 validator lacks incremental mode implementation')
     # @unittest.expectedFailure
