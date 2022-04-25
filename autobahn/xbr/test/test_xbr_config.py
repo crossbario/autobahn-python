@@ -26,7 +26,6 @@
 
 import os
 import unittest
-from autobahn.xbr import HAS_XBR
 
 if os.environ.get('USE_TWISTED', False):
     import txaio
@@ -35,6 +34,8 @@ if os.environ.get('USE_TWISTED', False):
 if os.environ.get('USE_ASYNCIO', False):
     import txaio
     txaio.use_asyncio()
+
+from autobahn.xbr import HAS_XBR
 
 if HAS_XBR:
     from autobahn.xbr import Profile, UserConfig

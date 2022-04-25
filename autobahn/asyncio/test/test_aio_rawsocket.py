@@ -8,7 +8,6 @@ from autobahn.asyncio.util import get_serializers
 from autobahn.wamp import message
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
 def test_sers(event_loop):
     serializers = get_serializers()
@@ -17,7 +16,6 @@ def test_sers(event_loop):
     assert m
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
 def test_prefix(event_loop):
     p = PrefixProtocol()
@@ -61,7 +59,6 @@ def test_prefix(event_loop):
     assert p._buffer == b'\x00'
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
 def test_is_closed(event_loop):
     class CP(RawSocketClientProtocol):
@@ -83,7 +80,6 @@ def test_is_closed(event_loop):
     assert client.is_closed.done()
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
 def test_raw_socket_server1(event_loop):
 
@@ -109,7 +105,6 @@ def test_raw_socket_server1(event_loop):
     receiver.assert_called_once_with(b'abcd')
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
 def test_raw_socket_server_errors(event_loop):
 
@@ -141,7 +136,6 @@ def test_raw_socket_server_errors(event_loop):
     transport.write.assert_called_once_with(b'\x7F\x10\x00\x00')
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
 def test_raw_socket_client1(event_loop):
     class CP(RawSocketClientProtocol):
@@ -165,7 +159,6 @@ def test_raw_socket_client1(event_loop):
     receiver.assert_called_once_with(b'abcd')
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
 def test_raw_socket_client_error(event_loop):
     class CP(RawSocketClientProtocol):

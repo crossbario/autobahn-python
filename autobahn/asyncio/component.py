@@ -30,8 +30,6 @@ import signal
 from functools import wraps
 
 import txaio
-txaio.use_asyncio()  # noqa
-
 from autobahn.asyncio.websocket import WampWebSocketClientFactory
 from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
 

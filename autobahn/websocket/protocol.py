@@ -562,7 +562,7 @@ class WebSocketProtocol(ObservableMixin):
         # set in
         #   * autobahn.twisted.websocket.WebSocketAdapterProtocol.connectionMade
         #   * autobahn.asyncio.websocket.WebSocketAdapterProtocol.
-        self._transport_details: Optional[TransportDetails] = None
+        self._transport_details: Optional[TransportDetails] = TransportDetails()
 
     @property
     def transport_details(self) -> Optional[TransportDetails]:

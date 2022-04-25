@@ -23,17 +23,3 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-
-from autobahn._version import __version__
-
-version = __version__
-
-import os
-import txaio
-
-if os.environ.get('USE_TWISTED', False):
-    txaio.use_twisted()
-elif os.environ.get('USE_ASYNCIO', False):
-    txaio.use_asyncio()
-else:
-    raise RuntimeError('neither USE_TWISTED nor USE_ASYNCIO selected')

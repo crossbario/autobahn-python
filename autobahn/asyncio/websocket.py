@@ -31,8 +31,6 @@ from collections import deque
 from typing import Optional
 
 import txaio
-txaio.use_asyncio()
-
 from autobahn.util import public, hltype
 from autobahn.asyncio.util import create_transport_details
 from autobahn.wamp import websocket

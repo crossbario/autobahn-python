@@ -25,7 +25,6 @@ async def test_echo_async():
 
 
 # @pytest.mark.asyncio(forbid_global_loop=True)
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
 def test_websocket_custom_loop(event_loop):
     factory = WebSocketServerFactory(loop=event_loop)

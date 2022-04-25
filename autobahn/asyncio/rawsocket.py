@@ -30,11 +30,10 @@ import math
 import copy
 from typing import Optional
 
+import txaio
 from autobahn.util import public, _LazyHexFormatter, hltype
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 from autobahn.asyncio.util import get_serializers, create_transport_details
-
-import txaio
 
 __all__ = (
     'WampRawSocketServerProtocol',
@@ -42,8 +41,6 @@ __all__ = (
     'WampRawSocketServerFactory',
     'WampRawSocketClientFactory'
 )
-
-txaio.use_asyncio()
 
 FRAME_TYPE_DATA = 0
 FRAME_TYPE_PING = 1

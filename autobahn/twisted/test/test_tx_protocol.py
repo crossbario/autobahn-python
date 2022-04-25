@@ -26,6 +26,9 @@
 
 from unittest.mock import Mock
 
+import txaio
+txaio.use_twisted()
+
 from autobahn.util import wildcards2patterns
 from autobahn.twisted.websocket import WebSocketServerFactory
 from autobahn.twisted.websocket import WebSocketServerProtocol

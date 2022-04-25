@@ -27,6 +27,16 @@
 import os
 import struct
 
+import txaio
+
+if os.environ.get('USE_ASYNCIO', False):
+    txaio.use_asyncio()
+elif os.environ.get('USE_TWISTED', False):
+    txaio.use_twisted()
+else:
+    raise RuntimeError('neither USE_ASYNCIO nor USE_TWISTED selected')
+
+
 if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
     from twisted.internet.address import IPv4Address
