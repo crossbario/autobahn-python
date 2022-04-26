@@ -27,7 +27,7 @@
 import os
 import hashlib
 import threading
-from typing import Optional, Union
+from typing import Optional, Union, Dict, Any
 
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address, UNIXAddress
@@ -52,6 +52,7 @@ __all = (
     'sleep',
     'peer2str',
     'transport_channel_id',
+    'extract_peer_certificate',
     'create_transport_details',
 )
 
@@ -188,6 +189,58 @@ else:
             raise NotImplementedError('should not arrive here (unhandled channel_id_type "{}")'.format(channel_id_type))
 
 
+def extract_peer_certificate(transport: TLSMemoryBIOProtocol) -> Optional[Dict[str, Any]]:
+    """
+    Extract TLS x509 client certificate information from a Twisted stream transport, and
+    return a dict with x509 TLS client certificate information (if the client provided a
+    TLS client certificate).
+    """
+    # check if the Twisted transport is a TLSMemoryBIOProtocol
+    if not (ISSLTransport.providedBy(transport) and hasattr(transport, 'getPeerCertificate')):
+        return None
+
+    cert = transport.getPeerCertificate()
+    if cert:
+        # extract x509 name components from an OpenSSL X509Name object
+        def maybe_bytes(_value):
+            if isinstance(_value, bytes):
+                return _value.decode('utf8')
+            else:
+                return _value
+
+        result = {
+            'md5': '{}'.format(maybe_bytes(cert.digest('md5'))).upper(),
+            'sha1': '{}'.format(maybe_bytes(cert.digest('sha1'))).upper(),
+            'sha256': '{}'.format(maybe_bytes(cert.digest('sha256'))).upper(),
+            'expired': bool(cert.has_expired()),
+            'hash': maybe_bytes(cert.subject_name_hash()),
+            'serial': int(cert.get_serial_number()),
+            'signature_algorithm': maybe_bytes(cert.get_signature_algorithm()),
+            'version': int(cert.get_version()),
+            'not_before': maybe_bytes(cert.get_notBefore()),
+            'not_after': maybe_bytes(cert.get_notAfter()),
+            'extensions': []
+        }
+
+        for i in range(cert.get_extension_count()):
+            ext = cert.get_extension(i)
+            ext_info = {
+                'name': '{}'.format(maybe_bytes(ext.get_short_name())),
+                'value': '{}'.format(maybe_bytes(ext)),
+                'critical': ext.get_critical() != 0
+            }
+            result['extensions'].append(ext_info)
+
+        for entity, name in [('subject', cert.get_subject()), ('issuer', cert.get_issuer())]:
+            result[entity] = {}
+            for key, value in name.get_components():
+                key = maybe_bytes(key)
+                value = maybe_bytes(value)
+                result[entity]['{}'.format(key).lower()] = '{}'.format(value)
+
+        return result
+
+
 def create_transport_details(transport: Union[ITransport, IProcessTransport], is_server: bool) -> TransportDetails:
     """
 
@@ -212,7 +265,7 @@ def create_transport_details(transport: Union[ITransport, IProcessTransport], is
             'tls-unique': transport_channel_id(transport, is_server, 'tls-unique'),
         }
         channel_type = TransportDetails.CHANNEL_TYPE_TLS_TCP
-        peer_cert = None
+        peer_cert = extract_peer_certificate(transport)
     else:
         channel_id = {}
         channel_type = TransportDetails.CHANNEL_TYPE_TCP
