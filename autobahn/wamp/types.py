@@ -1813,6 +1813,11 @@ class TransportDetails(object):
         The native thread ID of this end of the connection.
 
         See https://docs.python.org/3/library/threading.html#threading.get_native_id.
+
+        .. note::
+
+            On CPython 3.7, instead of the native thread ID, a synthetic thread ID that has no direct meaning
+            is used (via ``threading.get_ident()``).
         """
         return self._own_tid
 

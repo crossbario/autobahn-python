@@ -198,7 +198,12 @@ def create_transport_details(transport: Union[ITransport, IProcessTransport], is
     peer = peer2str(transport)
 
     own_pid = os.getpid()
-    own_tid = threading.get_native_id()
+    if hasattr(threading, 'get_native_id'):
+        # New in Python 3.8
+        # https://docs.python.org/3/library/threading.html?highlight=get_native_id#threading.get_native_id
+        own_tid = threading.get_native_id()
+    else:
+        own_tid = threading.get_ident()
     own_fd = -1
 
     is_secure = ISSLTransport.providedBy(transport)
