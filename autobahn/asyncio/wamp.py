@@ -247,7 +247,11 @@ class ApplicationRunner(object):
             loop = asyncio.get_event_loop()
             if hasattr(transport_factory, 'loop'):
                 transport_factory.loop = loop
-        txaio.use_asyncio()
+
+        # assure we are using asyncio
+        # txaio.use_asyncio()
+        assert txaio._explicit_framework == 'asyncio'
+
         txaio.config.loop = loop
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
 

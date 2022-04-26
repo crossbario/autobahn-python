@@ -25,21 +25,11 @@
 ###############################################################################
 
 import hashlib
-import os
 import binascii
+import unittest
 from unittest.mock import Mock
 
 import txaio
-
-if os.environ.get('USE_TWISTED', False):
-    txaio.use_twisted()
-    from twisted.trial import unittest
-elif os.environ.get('USE_ASYNCIO', False):
-    txaio.use_asyncio()
-    import unittest
-else:
-    raise Exception('no networking framework selected')
-
 from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN
 from autobahn.wamp import types
 from autobahn.wamp.auth import create_authenticator
