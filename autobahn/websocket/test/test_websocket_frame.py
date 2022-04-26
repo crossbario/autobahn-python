@@ -27,6 +27,7 @@
 import os
 import struct
 
+
 if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
     from twisted.internet.address import IPv4Address

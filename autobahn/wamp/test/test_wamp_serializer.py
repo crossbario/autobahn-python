@@ -30,12 +30,6 @@ import random
 import decimal
 from decimal import Decimal
 
-import txaio
-if os.environ.get('USE_TWISTED', False):
-    txaio.use_twisted()
-elif os.environ.get('USE_ASYNCIO', False):
-    txaio.use_asyncio()
-
 from autobahn.wamp import message
 from autobahn.wamp import role
 from autobahn.wamp import serializer

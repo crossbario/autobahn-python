@@ -25,14 +25,18 @@
 ###############################################################################
 
 import hashlib
+from subprocess import Popen
 from typing import Optional
+import asyncio
 from asyncio import sleep  # noqa
 
+from autobahn.wamp.types import TransportDetails
 
 __all = (
     'sleep',
     'peer2str',
     'transport_channel_id',
+    'create_transport_details',
 )
 
 
@@ -55,6 +59,7 @@ def transport_channel_id(transport, is_server: bool, channel_id_type: Optional[s
     if channel_id_type is None:
         return b'\x00' * 32
 
+    # ssl.CHANNEL_BINDING_TYPES
     if channel_id_type not in ['tls-unique']:
         raise Exception("invalid channel ID type {}".format(channel_id_type))
 
@@ -67,23 +72,47 @@ def transport_channel_id(transport, is_server: bool, channel_id_type: Optional[s
 
     # https://python.readthedocs.io/en/latest/library/ssl.html#ssl.SSLSocket.get_channel_binding
     # https://tools.ietf.org/html/rfc5929.html
-    tls_finished_msg = ssl_obj.get_channel_binding(cb_type='tls-unique')
+    tls_finished_msg: bytes = ssl_obj.get_channel_binding(cb_type='tls-unique')
 
-    m = hashlib.sha256()
-    m.update(tls_finished_msg)
-    channel_id = m.digest()
-
-    return channel_id
-
-
-def peer2str(peer):
-    if isinstance(peer, tuple):
-        ip_ver = 4 if len(peer) == 2 else 6
-        return "tcp{2}:{0}:{1}".format(peer[0], peer[1], ip_ver)
-    elif isinstance(peer, str):
-        return "unix:{0}".format(peer)
+    if type(tls_finished_msg) != bytes:
+        return b'\x00' * 32
     else:
-        return "?:{0}".format(peer)
+        m = hashlib.sha256()
+        m.update(tls_finished_msg)
+        channel_id = m.digest()
+        return channel_id
+
+
+def peer2str(transport: asyncio.transports.BaseTransport) -> str:
+    # https://docs.python.org/3.9/library/asyncio-protocol.html?highlight=get_extra_info#asyncio.BaseTransport.get_extra_info
+    # https://docs.python.org/3.9/library/socket.html#socket.socket.getpeername
+    try:
+        peer = transport.get_extra_info('peername')
+        if isinstance(peer, tuple):
+            ip_ver = 4 if len(peer) == 2 else 6
+            return "tcp{2}:{0}:{1}".format(peer[0], peer[1], ip_ver)
+        elif isinstance(peer, str):
+            return "unix:{0}".format(peer)
+        else:
+            return "?:{0}".format(peer)
+    except:
+        pass
+
+    try:
+        proc: Popen = transport.get_extra_info('subprocess')
+        # return 'process:{}'.format(transport.pid)
+        return 'process:{}'.format(proc.pid)
+    except:
+        pass
+
+    try:
+        pipe = transport.get_extra_info('pipe')
+        return 'pipe:{}'.format(pipe)
+    except:
+        pass
+
+    # gracefully fallback if we can't map the peer's transport
+    return 'unknown'
 
 
 def get_serializers():
@@ -93,3 +122,26 @@ def get_serializers():
     serializers = list(filter(lambda x: x, map(lambda s: getattr(serializer, s) if hasattr(serializer, s)
                                                else None, serializers)))
     return serializers
+
+
+def create_transport_details(transport, is_server: bool) -> TransportDetails:
+    # Internal helper. Base class calls this to create a TransportDetails
+    peer = peer2str(transport)
+
+    # https://docs.python.org/3.9/library/asyncio-protocol.html?highlight=get_extra_info#asyncio.BaseTransport.get_extra_info
+    is_secure = transport.get_extra_info('peercert', None) is not None
+    if is_secure:
+        channel_id = {
+            'tls-unique': transport_channel_id(transport, is_server, 'tls-unique'),
+        }
+        channel_type = TransportDetails.CHANNEL_TYPE_TLS_TCP
+        peer_cert = None
+    else:
+        channel_id = {}
+        channel_type = TransportDetails.CHANNEL_TYPE_TCP
+        peer_cert = None
+    channel_framing = TransportDetails.CHANNEL_FRAMING_WEBSOCKET
+
+    return TransportDetails(channel_type=channel_type, channel_framing=channel_framing,
+                            peer=peer, is_server=is_server, is_secure=is_secure,
+                            channel_id=channel_id, peer_cert=peer_cert)

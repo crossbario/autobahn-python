@@ -24,17 +24,9 @@
 #
 ###############################################################################
 
-import os
-
 # we need to select a txaio subsystem because we're importing the base
 # protocol classes here for testing purposes. "normally" yo'd import
 # from autobahn.twisted.wamp or autobahn.asyncio.wamp explicitly.
-import txaio
-if os.environ.get('USE_TWISTED', False):
-    txaio.use_twisted()
-else:
-    txaio.use_asyncio()
-
 from autobahn import wamp
 from autobahn.wamp import message
 from autobahn.wamp import exception

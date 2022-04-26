@@ -24,18 +24,8 @@
 #
 ###############################################################################
 
-import os
-import txaio
+import unittest
 from binascii import a2b_hex
-
-if os.environ.get('USE_TWISTED', False):
-    txaio.use_twisted()
-    from twisted.trial import unittest
-elif os.environ.get('USE_ASYNCIO', False):
-    txaio.use_asyncio()
-    import unittest
-else:
-    raise Exception('no networking framework selected')
 
 from autobahn.wamp.auth import derive_scram_credential
 

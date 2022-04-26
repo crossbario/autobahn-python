@@ -26,15 +26,8 @@
 
 import os
 import unittest
+
 from autobahn.xbr import HAS_XBR
-
-if os.environ.get('USE_TWISTED', False):
-    import txaio
-    txaio.use_twisted()
-
-if os.environ.get('USE_ASYNCIO', False):
-    import txaio
-    txaio.use_asyncio()
 
 if HAS_XBR:
     from autobahn.xbr import Profile, UserConfig
@@ -64,8 +57,6 @@ if HAS_XBR:
                 c = UserConfig(config_path)
                 c.load()
                 self.assertIn(self.PROFILE_NAME, c.profiles)
-            else:
-                print('no profile file "{}" found'.format(config_path))
 
         def test_write_default_config(self):
             config_dir = os.path.expanduser(self.DOTDIR)

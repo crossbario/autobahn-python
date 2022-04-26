@@ -356,7 +356,7 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
 
 if HAS_CRYPTOSIGN:
 
-    def format_challenge(challenge: Challenge, channel_id_raw: bytes, channel_id_type: str) -> bytes:
+    def format_challenge(challenge: Challenge, channel_id_raw: Optional[bytes], channel_id_type: Optional[str]) -> bytes:
         """
         Format the challenge based on provided parameters
 
@@ -452,18 +452,18 @@ if HAS_CRYPTOSIGN:
             Sign WAMP-cryptosign challenge.
 
             :param session: The authenticating WAMP session.
-            :type session: :class:`autobahn.wamp.protocol.ApplicationSession`
-
             :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
-            :type challenge: instance of autobahn.wamp.types.Challenge
-
             :returns: A Deferred/Future that resolves to the computed signature.
-            :rtype: str
             """
-            # get the TLS channel ID of the underlying TLS connection. Could be None.
-            channel_id_raw = session._transport.get_channel_id(channel_id_type)
+            # get the TLS channel ID of the underlying TLS connection
+            channel_id_type = 'tls-unique'
+            if channel_id_type in session._transport.transport_details.channel_id:
+                channel_id = session._transport.transport_details.channel_id.get(channel_id_type, None)
+            else:
+                channel_id_type = None
+                channel_id = None
 
-            data = format_challenge(challenge, channel_id_raw, channel_id_type)
+            data = format_challenge(challenge, channel_id, channel_id_type)
 
             return sign_challenge(data, self.sign)
 

@@ -130,7 +130,8 @@ if os.environ.get('USE_ASYNCIO', False):
             # process already-completed Futures like Twisted does)
 
             def nuke_transport():
-                actual_protocol[0].connection_lost(None)  # asyncio can call this with None
+                if actual_protocol[0] is not None:
+                    actual_protocol[0].connection_lost(None)  # asyncio can call this with None
             txaio.call_later(0.1, nuke_transport)
 
             finished = txaio.create_future()

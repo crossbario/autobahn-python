@@ -28,12 +28,12 @@ import asyncio
 import struct
 import math
 import copy
-
-from autobahn.util import public, _LazyHexFormatter
-from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
-from autobahn.asyncio.util import peer2str, get_serializers, transport_channel_id
+from typing import Optional
 
 import txaio
+from autobahn.util import public, _LazyHexFormatter, hltype
+from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
+from autobahn.asyncio.util import get_serializers, create_transport_details
 
 __all__ = (
     'WampRawSocketServerProtocol',
@@ -41,8 +41,6 @@ __all__ = (
     'WampRawSocketServerFactory',
     'WampRawSocketClientFactory'
 )
-
-txaio.use_asyncio()
 
 FRAME_TYPE_DATA = 0
 FRAME_TYPE_PING = 1
@@ -58,12 +56,22 @@ class PrefixProtocol(asyncio.Protocol):
     max_length = 16 * 1024 * 1024
     max_length_send = max_length
     log = txaio.make_logger()  # @UndefinedVariable
+    peer: Optional[str] = None
+    is_server: Optional[bool] = None
 
     def connection_made(self, transport):
-        self.transport = transport
-        peer = transport.get_extra_info('peername')
-        self.peer = peer2str(peer)
+        # asyncio networking framework entry point, called by asyncio
+        # when the connection is established (either a client or a server)
         self.log.debug('RawSocker Asyncio: Connection made with peer {peer}', peer=self.peer)
+
+        self.transport = transport
+
+        # determine preliminary transport details (what is know at this point)
+        self._transport_details = create_transport_details(self.transport, self.is_server)
+
+        # backward compatibility
+        self.peer = self._transport_details.peer
+
         self._buffer = b''
         self._header = None
         self._wait_closed = txaio.create_future()
@@ -150,9 +158,6 @@ class PrefixProtocol(asyncio.Protocol):
 
 class RawSocketProtocol(PrefixProtocol):
 
-    peer = None
-    peer_transport = None
-
     def __init__(self):
         max_size = None
         if max_size:
@@ -166,13 +171,6 @@ class RawSocketProtocol(PrefixProtocol):
             self.max_length = 2**24
 
     def connection_made(self, transport):
-        # the peer we are connected to
-        try:
-            self.peer = peer2str(transport.get_extra_info('peername'))
-        except:
-            self.peer = 'process:{}'.format(self.transport.pid)
-        self.peer_transport = 'rawsocket'
-
         PrefixProtocol.connection_made(self, transport)
         self._handshake_done = False
 
@@ -183,7 +181,6 @@ class RawSocketProtocol(PrefixProtocol):
         buf = bytearray(self._buffer[:4])
         if buf[0] != MAGIC_BYTE:
             raise HandshakeError('Invalid magic byte in handshake')
-            return
         ser = buf[1] & 0x0F
         lexp = buf[1] >> 4
         self.max_length_send = 2**(lexp + 9)
@@ -232,6 +229,8 @@ class HandshakeError(Exception):
 
 class RawSocketClientProtocol(RawSocketProtocol):
 
+    is_server = False
+
     def check_serializer(self, ser_id):
         return True
 
@@ -258,6 +257,8 @@ class RawSocketClientProtocol(RawSocketProtocol):
 
 
 class RawSocketServerProtocol(RawSocketProtocol):
+
+    is_server = True
 
     def supports_serializer(self, ser_id):
         raise NotImplementedError()
@@ -308,7 +309,7 @@ class WampRawSocketMixinGeneral(object):
         Implements :func:`autobahn.wamp.interfaces.ITransport.send`
         """
         if self.isOpen():
-            self.log.debug("WampRawSocketProtocol: TX WAMP message: {msg}", msg=msg)
+            self.log.debug('{func}: TX WAMP message: {msg}', func=hltype(self.send), msg=msg)
             try:
                 payload, _ = self._serializer.serialize(msg)
             except Exception as e:
@@ -393,12 +394,6 @@ class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
             self.abort()
             return False
 
-    def get_channel_id(self, channel_id_type=None):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
-        """
-        return transport_channel_id(self.transport, is_server=True, channel_id_type=channel_id_type)
-
 
 @public
 class WampRawSocketClientProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinAsyncio, RawSocketClientProtocol):
@@ -415,12 +410,6 @@ class WampRawSocketClientProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
         if not hasattr(self, '_serializer'):
             self._serializer = copy.copy(self.factory._serializer)
         return self._serializer.RAWSOCKET_SERIALIZER_ID
-
-    def get_channel_id(self, channel_id_type=None):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
-        """
-        return transport_channel_id(self.transport, is_server=False, channel_id_type=channel_id_type)
 
 
 class WampRawSocketFactory(object):

@@ -25,6 +25,8 @@
 ###############################################################################
 
 from base64 import b64encode, b64decode
+from pprint import pformat
+from typing import Optional
 
 from zope.interface import implementer
 
@@ -33,20 +35,22 @@ txaio.use_twisted()
 
 import twisted.internet.protocol
 from twisted.internet import endpoints
-from twisted.internet.interfaces import ITransport, ISSLTransport
+from twisted.internet.interfaces import ITransport
 
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
 from twisted.internet.defer import Deferred
+from twisted.python.failure import Failure
+from twisted.internet.protocol import connectionDone
 
-from autobahn.util import public, hltype
+from autobahn.util import public, hltype, hlval
 from autobahn.util import _is_tls_error, _maybe_tls_reason
 from autobahn.wamp import websocket
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
 from autobahn.wamp.types import TransportDetails
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
 from autobahn.websocket import protocol
 from autobahn.websocket.interfaces import IWebSocketClientAgent
-from autobahn.twisted.util import peer2str, transport_channel_id
+from autobahn.twisted.util import create_transport_details
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
@@ -231,36 +235,74 @@ class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
 class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     """
     Adapter class for Twisted WebSocket client and server protocols.
+
+    Called from Twisted:
+
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol.connectionMade`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol.connectionLost`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol.dataReceived`
+
+    Called from Network-independent Code (WebSocket implementation):
+
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._onOpen`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._onMessageBegin`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._onMessageFrameData`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._onMessageFrameEnd`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._onMessageEnd`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._onMessage`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._onPing`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._onPong`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._onClose`
+
+    FIXME:
+
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._closeConnection`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol._create_transport_details`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol.registerProducer`
+    * :meth:`autobahn.twisted.websocket.WebSocketAdapterProtocol.unregisterProducer`
     """
 
     log = txaio.make_logger()
 
-    peer = None
-    peer_transport = None
+    peer: Optional[str] = None
+    is_server: Optional[bool] = None
 
     def connectionMade(self):
-        # the peer we are connected to
-        try:
-            self.peer = peer2str(self.transport.getPeer())
-        except (AttributeError, NotImplementedError):
-            # ProcessProtocols lack getPeer()
-            self.peer = 'process:{}'.format(self.transport.pid)
-        self.peer_transport = 'websocket'
+        # Twisted networking framework entry point, called by Twisted
+        # when the connection is established (either a client or a server)
 
-        self._connectionMade()
-        self.log.debug('Connection made to {peer}', peer=self.peer)
+        # determine preliminary transport details (what is know at this point)
+        self._transport_details = create_transport_details(self.transport, self.is_server)
+        self._transport_details.channel_framing = TransportDetails.CHANNEL_FRAMING_WEBSOCKET
 
-        # Set "Nagle"
+        # backward compatibility
+        self.peer = self._transport_details.peer
+
+        # try to set "Nagle" option for TCP sockets
         try:
             self.transport.setTcpNoDelay(self.tcpNoDelay)
         except:  # don't touch this! does not work: AttributeError, OSError
             # eg Unix Domain sockets throw Errno 22 on this
             pass
 
-    def connectionLost(self, reason):
+        # ok, now forward to the networking framework independent code for websocket
+        self._connectionMade()
+
+        # ok, done!
+        self.log.info('{func} connection established for peer="{peer}", transport_details=\n{transport_details}',
+                      func=hltype(self.connectionMade),
+                      peer=hlval(self.peer),
+                      transport_details=pformat(self._transport_details.marshal()))
+
+    def connectionLost(self, reason: Failure = connectionDone):
+        # Twisted networking framework entry point, called by Twisted
+        # when the connection is lost (either a client or a server)
+
+        was_clean = False
         if isinstance(reason.value, ConnectionDone):
             self.log.debug("Connection to/from {peer} was closed cleanly",
                            peer=self.peer)
+            was_clean = True
 
         elif _is_tls_error(reason.value):
             self.log.error(_maybe_tls_reason(reason.value))
@@ -284,9 +326,27 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             self.log.debug("Connection to/from {peer} lost ({error_type}): {error})",
                            peer=self.peer, error_type=type(reason.value), error=reason.value)
 
+        # ok, now forward to the networking framework independent code for websocket
         self._connectionLost(reason)
 
-    def dataReceived(self, data):
+        # ok, done!
+        if was_clean:
+            self.log.info('{func} connection lost for peer="{peer}", closed cleanly',
+                          func=hltype(self.connectionLost),
+                          peer=hlval(self.peer))
+        else:
+            self.log.info('{func} connection lost for peer="{peer}", closed with error {reason}',
+                          func=hltype(self.connectionLost),
+                          peer=hlval(self.peer),
+                          reason=reason)
+
+    def dataReceived(self, data: bytes):
+        self.log.debug('{func} received {data_len} bytes for peer="{peer}"',
+                       func=hltype(self.dataReceived),
+                       peer=hlval(self.peer),
+                       data_len=hlval(len(data)))
+
+        # bytes received from Twisted, forward to the networking framework independent code for websocket
         self._dataReceived(data)
 
     def _closeConnection(self, abort=False):
@@ -356,12 +416,10 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
     """
 
     log = txaio.make_logger()
+    is_server = True
 
-    def get_channel_id(self, channel_id_type=None):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
-        """
-        return transport_channel_id(self.transport, True, channel_id_type)
+    # def onConnect(self, request: ConnectionRequest) -> Union[Optional[str], Tuple[Optional[str], Dict[str, str]]]:
+    #     pass
 
 
 @public
@@ -373,6 +431,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     """
 
     log = txaio.make_logger()
+    is_server = False
 
     def _onConnect(self, response: ConnectionResponse):
         self.log.debug('{meth}(response={response})', meth=hltype(self._onConnect), response=response)
@@ -381,38 +440,6 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     def startTLS(self):
         self.log.debug("Starting TLS upgrade")
         self.transport.startTLS(self.factory.contextFactory)
-
-    def get_channel_id(self, channel_id_type=None):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
-        """
-        return transport_channel_id(self.transport, False, channel_id_type)
-
-    def _create_transport_details(self):
-        """
-        Internal helper.
-        Base class calls this to create a TransportDetails
-        """
-        # note that ITLSTransport exists too, which is "a TCP
-        # transport that *can be upgraded* to TLS" .. if it *is*
-        # upgraded to TLS, then the transport will implement
-        # ISSLTransport at that point according to Twisted
-        # documentation
-        # the peer we are connected to
-        is_server = False
-        is_secure = ISSLTransport.providedBy(self.transport)
-        if is_secure:
-            channel_id = {
-                'tls-unique': transport_channel_id(self.transport, is_server, 'tls-unique'),
-            }
-            channel_type = TransportDetails.TRANSPORT_TYPE_TLS_TCP
-            peer_cert = None
-        else:
-            channel_id = {}
-            channel_type = TransportDetails.TRANSPORT_TYPE_TCP
-            peer_cert = None
-        return TransportDetails(channel_type=channel_type, peer=self.peer, is_server=is_server, is_secure=is_secure,
-                                channel_id=channel_id, peer_cert=peer_cert)
 
 
 class WebSocketAdapterFactory(object):

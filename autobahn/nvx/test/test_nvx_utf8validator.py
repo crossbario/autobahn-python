@@ -306,14 +306,19 @@ class TestNvxUtf8Validator(unittest.TestCase):
         validator = StandardUtf8Validator()
         return self._test_utf8_incremental(validator)
 
-    # NVX UTF8 validator lack incremental mode implementation
-    @unittest.expectedFailure
-    def test_nvx_utf8validator_incremental(self):
-        """
-        Test NVX implementation of UTF8 validator in incremental mode.
-        """
-        validator = NvxUtf8Validator()
-        return self._test_utf8_incremental(validator)
+    # FIXME
+    # see also (I think ..): https://twistedmatrix.com/trac/ticket/4811
+    #
+    # import pytest
+    #
+    # @pytest.mark.xfail(reason='NVX UTF8 validator lacks incremental mode implementation')
+    # @unittest.expectedFailure
+    # def test_nvx_utf8validator_incremental(self):
+    #     """
+    #     Test NVX implementation of UTF8 validator in incremental mode.
+    #     """
+    #     validator = NvxUtf8Validator()
+    #     return self._test_utf8_incremental(validator)
 
     def _test_utf8(self, validator):
         for s in self._TEST_SEQUENCES:

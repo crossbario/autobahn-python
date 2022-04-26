@@ -26,6 +26,9 @@
 
 from unittest.mock import Mock
 
+import txaio
+txaio.use_twisted()
+
 from autobahn.util import wildcards2patterns
 from autobahn.twisted.websocket import WebSocketServerFactory
 from autobahn.twisted.websocket import WebSocketServerProtocol
@@ -378,25 +381,27 @@ class OnConnectingTests(unittest.TestCase):
 
     def test_on_connecting_client_fails(self):
 
+        MAGIC_STR = 'bad stuff'
+
         class TestProto(WebSocketClientProtocol):
             state = None
             wasClean = True
             log = Mock()
 
             def onConnecting(self, transport_details):
-                raise RuntimeError("bad stuff")
+                raise RuntimeError(MAGIC_STR)
 
-        from autobahn.testutil import FakeTransport
         proto = TestProto()
         proto.transport = FakeTransport()
         d = proto.startHandshake()
         self.successResultOf(d)  # error is ignored
         # ... but error should be logged
         self.assertTrue(len(proto.log.mock_calls) > 0)
-        self.assertIn(
-            "bad stuff",
-            str(proto.log.mock_calls[0]),
-        )
+        magic_found = False
+        for i in range(len(proto.log.mock_calls)):
+            if MAGIC_STR in str(proto.log.mock_calls[i]):
+                magic_found = True
+        self.assertTrue(magic_found, 'MAGIC_STR not found when expected')
 
     def test_on_connecting_client_success(self):
 
@@ -415,7 +420,6 @@ class OnConnectingTests(unittest.TestCase):
                     resource="/ws",
                 )
 
-        from autobahn.test import FakeTransport
         proto = TestProto()
         proto.transport = FakeTransport()
         proto.factory = Mock()
@@ -429,7 +433,7 @@ class OnConnectingTests(unittest.TestCase):
 
     def test_str_transport(self):
         details = TransportDetails(
-            channel_type=TransportDetails.TRANSPORT_TYPE_FUNCTION,
+            channel_type=TransportDetails.CHANNEL_TYPE_FUNCTION,
             peer="example.com",
             is_secure=False,
             channel_id={},

@@ -24,7 +24,7 @@
 #
 ###############################################################################
 from pprint import pformat
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 from binascii import a2b_hex
 
 from autobahn.util import public
@@ -145,26 +145,17 @@ class Accept(HelloReturn):
         'authextra',
     )
 
-    def __init__(self, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None):
+    def __init__(self, realm: Optional[str] = None, authid: Optional[str] = None, authrole: Optional[str] = None,
+                 authmethod: Optional[str] = None, authprovider: Optional[str] = None,
+                 authextra: Optional[Dict[str, Any]] = None):
         """
 
         :param realm: The realm the client is joined to.
-        :type realm: str
-
         :param authid: The authentication ID the client is assigned, e.g. ``"joe"`` or ``"joe@example.com"``.
-        :type authid: str
-
         :param authrole: The authentication role the client is assigned, e.g. ``"anonymous"``, ``"user"`` or ``"com.myapp.user"``.
-        :type authrole: str
-
         :param authmethod: The authentication method that was used to authenticate the client, e.g. ``"cookie"`` or ``"wampcra"``.
-        :type authmethod: str
-
         :param authprovider: The authentication provider that was used to authenticate the client, e.g. ``"mozilla-persona"``.
-        :type authprovider: str
-
         :param authextra: Application-specific authextra to be forwarded to the client in `WELCOME.details.authextra`.
-        :type authextra: dict
         """
         assert(realm is None or type(realm) == str)
         assert(authid is None or type(authid) == str)
@@ -1438,63 +1429,199 @@ class TransportDetails(object):
 
     __slots__ = (
         '_channel_type',
+        '_channel_framing',
+        '_channel_serializer',
+        '_own',
         '_peer',
         '_is_server',
+        '_own_pid',
+        '_own_tid',
+        '_own_fd',
         '_is_secure',
         '_channel_id',
         '_peer_cert',
+        '_websocket_protocol',
+        '_websocket_extensions_in_use',
+        '_http_headers_received',
+        '_http_headers_sent',
+        '_http_cbtid',
     )
 
-    TRANSPORT_TYPE_NONE = 0
-    TRANSPORT_TYPE_FUNCTION = 1
-    TRANSPORT_TYPE_MEMORY = 2
-    TRANSPORT_TYPE_SERIAL = 3
-    TRANSPORT_TYPE_TCP = 4
-    TRANSPORT_TYPE_TLS_TCP = 5
-    TRANSPORT_TYPE_UDP = 6
-    TRANSPORT_TYPE_DTLS_UDP = 7
+    CHANNEL_TYPE_NONE = 0
+    CHANNEL_TYPE_FUNCTION = 1
+    CHANNEL_TYPE_MEMORY = 2
+    CHANNEL_TYPE_SERIAL = 3
+    CHANNEL_TYPE_TCP = 4
+    CHANNEL_TYPE_TLS_TCP = 5
+    CHANNEL_TYPE_UDP = 6
+    CHANNEL_TYPE_DTLS_UDP = 7
 
-    TRANSPORT_TYPE_TO_STR = {
-        TRANSPORT_TYPE_NONE: 'null',
-        TRANSPORT_TYPE_FUNCTION: 'function',
-        TRANSPORT_TYPE_MEMORY: 'memory',
-        TRANSPORT_TYPE_SERIAL: 'serial',
-        TRANSPORT_TYPE_TCP: 'tcp',
-        TRANSPORT_TYPE_TLS_TCP: 'tcp-tls',
-        TRANSPORT_TYPE_UDP: 'udp',
-        TRANSPORT_TYPE_DTLS_UDP: 'dtls-udp',
+    CHANNEL_TYPE_TO_STR = {
+        CHANNEL_TYPE_NONE: 'null',
+        CHANNEL_TYPE_FUNCTION: 'function',
+        CHANNEL_TYPE_MEMORY: 'memory',
+        CHANNEL_TYPE_SERIAL: 'serial',
+        CHANNEL_TYPE_TCP: 'tcp',
+        CHANNEL_TYPE_TLS_TCP: 'tcp-tls',
+        CHANNEL_TYPE_UDP: 'udp',
+        CHANNEL_TYPE_DTLS_UDP: 'dtls-udp',
     }
 
-    TRANSPORT_TYPE_FROM_STR = {
-        'null': TRANSPORT_TYPE_NONE,
-        'function': TRANSPORT_TYPE_FUNCTION,
-        'memory': TRANSPORT_TYPE_MEMORY,
-        'serial': TRANSPORT_TYPE_SERIAL,
-        'tcp': TRANSPORT_TYPE_TCP,
-        'tcp-tls': TRANSPORT_TYPE_TLS_TCP,
-        'udp': TRANSPORT_TYPE_UDP,
-        'dtls-udp': TRANSPORT_TYPE_DTLS_UDP,
+    CHANNEL_TYPE_FROM_STR = {
+        'null': CHANNEL_TYPE_NONE,
+        'function': CHANNEL_TYPE_FUNCTION,
+        'memory': CHANNEL_TYPE_MEMORY,
+        'serial': CHANNEL_TYPE_SERIAL,
+        'tcp': CHANNEL_TYPE_TCP,
+        'tcp-tls': CHANNEL_TYPE_TLS_TCP,
+        'udp': CHANNEL_TYPE_UDP,
+        'dtls-udp': CHANNEL_TYPE_DTLS_UDP,
     }
 
-    def __init__(self, channel_type: Optional[int], peer: Optional[str] = None, is_server: Optional[bool] = None,
-                 is_secure: Optional[bool] = None, channel_id: Optional[Dict[str, bytes]] = None,
-                 peer_cert: Optional[Dict[str, Any]] = None):
+    CHANNEL_FRAMING_NONE = 0
+    CHANNEL_FRAMING_NATIVE = 1
+    CHANNEL_FRAMING_WEBSOCKET = 2
+    CHANNEL_FRAMING_RAWSOCKET = 3
+
+    CHANNEL_FRAMING_TO_STR = {
+        CHANNEL_FRAMING_NONE: 'null',
+        CHANNEL_FRAMING_NATIVE: 'native',
+        CHANNEL_FRAMING_WEBSOCKET: 'websocket',
+        CHANNEL_FRAMING_RAWSOCKET: 'rawsocket',
+    }
+
+    CHANNEL_FRAMING_FROM_STR = {
+        'null': CHANNEL_TYPE_NONE,
+        'native': CHANNEL_FRAMING_NATIVE,
+        'websocket': CHANNEL_FRAMING_WEBSOCKET,
+        'rawsocket': CHANNEL_FRAMING_RAWSOCKET,
+    }
+
+    # Keep in sync with Serializer.SERIALIZER_ID and Serializer.RAWSOCKET_SERIALIZER_ID
+    CHANNEL_SERIALIZER_NONE = 0
+    CHANNEL_SERIALIZER_JSON = 1
+    CHANNEL_SERIALIZER_MSGPACK = 2
+    CHANNEL_SERIALIZER_CBOR = 3
+    CHANNEL_SERIALIZER_UBJSON = 4
+    CHANNEL_SERIALIZER_FLATBUFFERS = 5
+
+    CHANNEL_SERIALIZER_TO_STR = {
+        CHANNEL_SERIALIZER_NONE: 'null',
+        CHANNEL_SERIALIZER_JSON: 'json',
+        CHANNEL_SERIALIZER_MSGPACK: 'msgpack',
+        CHANNEL_SERIALIZER_CBOR: 'cbor',
+        CHANNEL_SERIALIZER_UBJSON: 'ubjson',
+        CHANNEL_SERIALIZER_FLATBUFFERS: 'flatbuffers',
+    }
+
+    CHANNEL_SERIALIZER_FROM_STR = {
+        'null': CHANNEL_SERIALIZER_NONE,
+        'json': CHANNEL_SERIALIZER_JSON,
+        'msgpack': CHANNEL_SERIALIZER_MSGPACK,
+        'cbor': CHANNEL_SERIALIZER_CBOR,
+        'ubjson': CHANNEL_SERIALIZER_UBJSON,
+        'flatbuffers': CHANNEL_SERIALIZER_FLATBUFFERS,
+    }
+
+    def __init__(self,
+                 channel_type: Optional[int] = None,
+                 channel_framing: Optional[int] = None,
+                 channel_serializer: Optional[int] = None,
+                 own: Optional[str] = None,
+                 peer: Optional[str] = None,
+                 is_server: Optional[bool] = None,
+                 own_pid: Optional[int] = None,
+                 own_tid: Optional[int] = None,
+                 own_fd: Optional[int] = None,
+                 is_secure: Optional[bool] = None,
+                 channel_id: Optional[Dict[str, bytes]] = None,
+                 peer_cert: Optional[Dict[str, Any]] = None,
+                 websocket_protocol: Optional[str] = None,
+                 websocket_extensions_in_use: Optional[List[str]] = None,
+                 http_headers_received: Optional[Dict[str, Any]] = None,
+                 http_headers_sent: Optional[Dict[str, Any]] = None,
+                 http_cbtid: Optional[str] = None):
         self._channel_type = channel_type
+        self._channel_framing = channel_framing
+        self._channel_serializer = channel_serializer
+        self._own = own
         self._peer = peer
         self._is_server = is_server
+        self._own_pid = own_pid
+        self._own_tid = own_tid
+        self._own_fd = own_fd
         self._is_secure = is_secure
         self._channel_id = channel_id
         self._peer_cert = peer_cert
+        self._websocket_protocol = websocket_protocol
+        self._websocket_extensions_in_use = websocket_extensions_in_use
+        self._http_headers_received = http_headers_received
+        self._http_headers_sent = http_headers_sent
+        self._http_cbtid = http_cbtid
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if other._channel_type != self._channel_type:
+            return False
+        if other._channel_framing != self._channel_framing:
+            return False
+        if other._channel_serializer != self._channel_serializer:
+            return False
+        if other._own != self._own:
+            return False
+        if other._peer != self._peer:
+            return False
+        if other._is_server != self._is_server:
+            return False
+        if other._own_pid != self._own_pid:
+            return False
+        if other._own_tid != self._own_tid:
+            return False
+        if other._own_fd != self._own_fd:
+            return False
+        if other._is_secure != self._is_secure:
+            return False
+        if other._channel_id != self._channel_id:
+            return False
+        if other._peer_cert != self._peer_cert:
+            return False
+        if other._websocket_protocol != self._websocket_protocol:
+            return False
+        if other._websocket_extensions_in_use != self._websocket_extensions_in_use:
+            return False
+        if other._http_headers_received != self._http_headers_received:
+            return False
+        if other._http_headers_sent != self._http_headers_sent:
+            return False
+        if other._http_cbtid != self._http_cbtid:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     @staticmethod
-    def parse(data: Dict[str, Any]):
+    def parse(data: Dict[str, Any]) -> 'TransportDetails':
         assert type(data) == dict
 
         obj = TransportDetails()
         if 'channel_type' in data and data['channel_type'] is not None:
-            if type(data['channel_type']) != int or data['channel_type'] not in TransportDetails.TRANSPORT_TYPE_FROM_STR:
+            if type(data['channel_type']) != str or data['channel_type'] not in TransportDetails.CHANNEL_TYPE_FROM_STR:
                 raise ValueError('invalid "channel_type", was type {} (value {})'.format(type(data['channel_type']), data['channel_type']))
-            obj.channel_type = TransportDetails.TRANSPORT_TYPE_FROM_STR[data['channel_type']]
+            obj.channel_type = TransportDetails.CHANNEL_TYPE_FROM_STR[data['channel_type']]
+        if 'channel_framing' in data and data['channel_framing'] is not None:
+            if type(data['channel_framing']) != str or data['channel_framing'] not in TransportDetails.CHANNEL_FRAMING_FROM_STR:
+                raise ValueError('invalid "channel_framing", was type {} (value {})'.format(type(data['channel_framing']), data['channel_framing']))
+            obj.channel_framing = TransportDetails.CHANNEL_FRAMING_FROM_STR[data['channel_framing']]
+        if 'channel_serializer' in data and data['channel_serializer'] is not None:
+            if type(data['channel_serializer']) != str or data['channel_serializer'] not in TransportDetails.CHANNEL_SERIALIZER_FROM_STR:
+                raise ValueError('invalid "channel_serializer", was type {} (value {})'.format(type(data['channel_serializer']), data['channel_serializer']))
+            obj.channel_serializer = TransportDetails.CHANNEL_SERIALIZER_FROM_STR[data['channel_serializer']]
+        if 'own' in data and data['own'] is not None:
+            if type(data['own']) != str:
+                raise ValueError('"own" must be a string, was {}'.format(type(data['own'])))
+            obj.own = data['own']
         if 'peer' in data and data['peer'] is not None:
             if type(data['peer']) != str:
                 raise ValueError('"peer" must be a string, was {}'.format(type(data['peer'])))
@@ -1502,11 +1629,23 @@ class TransportDetails(object):
         if 'is_server' in data and data['is_server'] is not None:
             if type(data['is_server']) != bool:
                 raise ValueError('"is_server" must be a bool, was {}'.format(type(data['is_server'])))
-            obj.peer = data['is_server']
+            obj.is_server = data['is_server']
+        if 'own_pid' in data and data['own_pid'] is not None:
+            if type(data['own_pid']) != int:
+                raise ValueError('"own_pid" must be an int, was {}'.format(type(data['own_pid'])))
+            obj.own_pid = data['own_pid']
+        if 'own_tid' in data and data['own_tid'] is not None:
+            if type(data['own_tid']) != int:
+                raise ValueError('"own_tid" must be an int, was {}'.format(type(data['own_tid'])))
+            obj.own_tid = data['own_tid']
+        if 'own_fd' in data and data['own_fd'] is not None:
+            if type(data['own_fd']) != int:
+                raise ValueError('"own_fd" must be an int, was {}'.format(type(data['own_fd'])))
+            obj.own_fd = data['own_fd']
         if 'is_secure' in data and data['is_secure'] is not None:
             if type(data['is_secure']) != bool:
                 raise ValueError('"is_secure" must be a bool, was {}'.format(type(data['is_secure'])))
-            obj.peer = data['is_secure']
+            obj.is_secure = data['is_secure']
         if 'channel_id' in data and data['channel_id'] is not None:
             if type(data['channel_id']) != Dict[str, Any]:
                 raise ValueError('"channel_id" must be a dict, was {}'.format(type(data['channel_id'])))
@@ -1520,16 +1659,47 @@ class TransportDetails(object):
                 binding_id = a2b_hex(binding_id_hex)
                 channel_id[binding_type] = binding_id
             obj.channel_id = channel_id
+        if 'websocket_protocol' in data and data['websocket_protocol'] is not None:
+            if type(data['websocket_protocol']) != str:
+                raise ValueError('"websocket_protocol" must be a string, was {}'.format(type(data['websocket_protocol'])))
+            obj.websocket_protocol = data['websocket_protocol']
+        if 'websocket_extensions_in_use' in data and data['websocket_extensions_in_use'] is not None:
+            if type(data['websocket_extensions_in_use']) != List[str]:
+                raise ValueError('"websocket_extensions_in_use" must be a list of strings, was {}'.format(type(data['websocket_extensions_in_use'])))
+            obj.websocket_extensions_in_use = data['websocket_extensions_in_use']
+        if 'http_headers_received' in data and data['http_headers_received'] is not None:
+            if type(data['http_headers_received']) != dict:
+                raise ValueError('"http_headers_received" must be a map of strings, was {}'.format(type(data['http_headers_received'])))
+            obj.http_headers_received = data['http_headers_received']
+        if 'http_headers_sent' in data and data['http_headers_sent'] is not None:
+            if type(data['http_headers_sent']) != dict:
+                raise ValueError('"http_headers_sent" must be a map of strings, was {}'.format(type(data['http_headers_sent'])))
+            obj.http_headers_sent = data['http_headers_sent']
+        if 'http_cbtid' in data and data['http_cbtid'] is not None:
+            if type(data['http_cbtid']) != str:
+                raise ValueError('"http_cbtid" must be a string, was {}'.format(type(data['http_cbtid'])))
+            obj.http_cbtid = data['http_cbtid']
         return obj
 
     def marshal(self) -> Dict[str, Any]:
         return {
-            'channel_type': self.TRANSPORT_TYPE_TO_STR.get(self._channel_type, None),
+            'channel_type': self.CHANNEL_TYPE_TO_STR.get(self._channel_type, None),
+            'channel_framing': self.CHANNEL_FRAMING_TO_STR.get(self._channel_framing, None),
+            'channel_serializer': self.CHANNEL_SERIALIZER_TO_STR.get(self._channel_serializer, None),
+            'own': self._own,
             'peer': self._peer,
             'is_server': self._is_server,
+            'own_pid': self._own_pid,
+            'own_tid': self._own_tid,
+            'own_fd': self._own_fd,
             'is_secure': self._is_secure,
             'channel_id': self._channel_id,
             'peer_cert': self._peer_cert,
+            'websocket_protocol': self._websocket_protocol,
+            'websocket_extensions_in_use': self._websocket_extensions_in_use,
+            'http_headers_received': self._http_headers_received,
+            'http_headers_sent': self._http_headers_sent,
+            'http_cbtid': self._http_cbtid,
         }
 
     def __str__(self) -> str:
@@ -1538,7 +1708,7 @@ class TransportDetails(object):
     @property
     def channel_type(self) -> Optional[int]:
         """
-        The peer this transport is connected to.
+        The underlying transport type, e.g. TCP.
         """
         return self._channel_type
 
@@ -1547,9 +1717,66 @@ class TransportDetails(object):
         self._channel_type = value
 
     @property
+    def channel_framing(self) -> Optional[int]:
+        """
+        The message framing used on this transport, e.g. WebSocket.
+        """
+        return self._channel_framing
+
+    @channel_framing.setter
+    def channel_framing(self, value: Optional[int]):
+        self._channel_framing = value
+
+    @property
+    def channel_serializer(self) -> Optional[int]:
+        """
+        The message serializer used on this transport, e.g. CBOR (batched or unbatched).
+        """
+        return self._channel_serializer
+
+    @channel_serializer.setter
+    def channel_serializer(self, value: Optional[int]):
+        self._channel_serializer = value
+
+    @property
+    def own(self) -> Optional[str]:
+        """
+
+        https://github.com/crossbario/autobahn-python/blob/master/autobahn/websocket/test/test_websocket_url.py
+        https://github.com/crossbario/autobahn-python/blob/master/autobahn/rawsocket/test/test_rawsocket_url.py
+
+        A WebSocket server URL:
+
+        * ``ws://localhost``
+        * ``wss://example.com:443/ws``
+        * ``ws://62.146.25.34:80/ws``
+        * ``wss://localhost:9090/ws?foo=bar``
+
+        A RawSocket server URL:
+
+        * ``rs://crossbar:8081``
+        * ``rss://example.com``
+        * ``rs://unix:/tmp/file.sock``
+        * ``rss://unix:../file.sock``
+        """
+        return self._own
+
+    @own.setter
+    def own(self, value: Optional[str]):
+        self._own = value
+
+    @property
     def peer(self) -> Optional[str]:
         """
         The peer this transport is connected to.
+
+        process:12784
+        pipe
+
+        tcp4:127.0.0.1:38810
+        tcp4:127.0.0.1:8080
+        unix:/tmp/file.sock
+
         """
         return self._peer
 
@@ -1560,13 +1787,54 @@ class TransportDetails(object):
     @property
     def is_server(self) -> Optional[bool]:
         """
-        The peer this transport is connected to.
+        Flag indicating whether this side of the peer is a "server" (on underlying transports that
+            follows a client-server approach).
         """
         return self._is_server
 
     @is_server.setter
     def is_server(self, value: Optional[bool]):
         self._is_server = value
+
+    @property
+    def own_pid(self) -> Optional[int]:
+        """
+        The process ID (PID) of this end of the connection.
+        """
+        return self._own_pid
+
+    @own_pid.setter
+    def own_pid(self, value: Optional[int]):
+        self._own_pid = value
+
+    @property
+    def own_tid(self) -> Optional[int]:
+        """
+        The native thread ID of this end of the connection.
+
+        See https://docs.python.org/3/library/threading.html#threading.get_native_id.
+
+        .. note::
+
+            On CPython 3.7, instead of the native thread ID, a synthetic thread ID that has no direct meaning
+            is used (via ``threading.get_ident()``).
+        """
+        return self._own_tid
+
+    @own_tid.setter
+    def own_tid(self, value: Optional[int]):
+        self._own_tid = value
+
+    @property
+    def own_fd(self) -> Optional[int]:
+        """
+        The file descriptor (FD) at this end of the connection.
+        """
+        return self._own_fd
+
+    @own_fd.setter
+    def own_fd(self, value: Optional[int]):
+        self._own_fd = value
 
     @property
     def is_secure(self) -> Optional[bool]:
@@ -1578,16 +1846,49 @@ class TransportDetails(object):
 
     @is_secure.setter
     def is_secure(self, value: Optional[bool]):
-        """
-        Flag indicating whether this transport runs over TLS (or similar), and hence is encrypting at
-        the byte stream or datagram transport level (beneath WAMP payload encryption).
-        """
         self._is_secure = value
 
     @property
     def channel_id(self) -> Dict[str, bytes]:
         """
-        If this The peer this transport is connected to.
+        If this transport runs over a secure underlying connection, e.g. TLS,
+        return a map of channel binding by binding type.
+
+        Return the unique channel ID of the underlying transport. This is used to
+        mitigate credential forwarding man-in-the-middle attacks when running
+        application level authentication (eg WAMP-cryptosign) which are decoupled
+        from the underlying transport.
+
+        The channel ID is only available when running over TLS (either WAMP-WebSocket
+        or WAMP-RawSocket). It is not available for non-TLS transports (plain TCP or
+        Unix domain sockets). It is also not available for WAMP-over-HTTP/Longpoll.
+        Further, it is currently unimplemented for asyncio (only works on Twisted).
+
+        The channel ID is computed as follows:
+
+           - for a client, the SHA256 over the "TLS Finished" message sent by the client
+             to the server is returned.
+
+           - for a server, the SHA256 over the "TLS Finished" message the server expected
+             the client to send
+
+        Note: this is similar to `tls-unique` as described in RFC5929, but instead
+        of returning the raw "TLS Finished" message, it returns a SHA256 over such a
+        message. The reason is that we use the channel ID mainly with WAMP-cryptosign,
+        which is based on Ed25519, where keys are always 32 bytes. And having a channel ID
+        which is always 32 bytes (independent of the TLS ciphers/hashfuns in use) allows
+        use to easily XOR channel IDs with Ed25519 keys and WAMP-cryptosign challenges.
+
+        WARNING: For safe use of this (that is, for safely binding app level authentication
+        to the underlying transport), you MUST use TLS, and you SHOULD deactivate both
+        TLS session renegotiation and TLS session resumption.
+
+        References:
+
+           - https://tools.ietf.org/html/rfc5056
+           - https://tools.ietf.org/html/rfc5929
+           - http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_finished
+           - http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_peer_finished
         """
         return self._channel_id
 
@@ -1604,8 +1905,69 @@ class TransportDetails(object):
         See `here <https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.getpeercert>`_ for details
         about the object returned.
         """
-        return self._peer_certificate
+        return self._peer_cert
 
     @peer_cert.setter
     def peer_cert(self, value: Dict[str, Any]):
         self._peer_cert = value
+
+    @property
+    def websocket_protocol(self) -> Optional[str]:
+        """
+        If the underlying connection uses a regular HTTP based WebSocket opening handshake,
+        the WebSocket subprotocol negotiated, e.g. ``"wamp.2.cbor.batched"``.
+        """
+        return self._websocket_protocol
+
+    @websocket_protocol.setter
+    def websocket_protocol(self, value: Optional[str]):
+        self._websocket_protocol = value
+
+    @property
+    def websocket_extensions_in_use(self) -> Optional[List[str]]:
+        """
+        If the underlying connection uses a regular HTTP based WebSocket opening handshake, the WebSocket extensions
+        negotiated, e.g. ``["permessage-deflate", "client_no_context_takeover", "client_max_window_bits"]``.
+        """
+        return self._websocket_extensions_in_use
+
+    @websocket_extensions_in_use.setter
+    def websocket_extensions_in_use(self, value: Optional[List[str]]):
+        self._websocket_extensions_in_use = value
+
+    @property
+    def http_headers_received(self) -> Dict[str, Any]:
+        """
+        If the underlying connection uses a regular HTTP based WebSocket opening handshake,
+        the HTTP request headers as received from the client on this connection.
+        """
+        return self._http_headers_received
+
+    @http_headers_received.setter
+    def http_headers_received(self, value: Dict[str, Any]):
+        self._http_headers_received = value
+
+    @property
+    def http_headers_sent(self) -> Dict[str, Any]:
+        """
+        If the underlying connection uses a regular HTTP based WebSocket opening handshake,
+        the HTTP response headers as sent from the server on this connection.
+        """
+        return self._http_headers_sent
+
+    @http_headers_sent.setter
+    def http_headers_sent(self, value: Dict[str, Any]):
+        self._http_headers_sent = value
+
+    @property
+    def http_cbtid(self) -> Optional[str]:
+        """
+        If the underlying connection uses a regular HTTP based WebSocket opening handshake,
+        the HTTP cookie value of the WAMP tracking cookie if any is associated with this
+        connection.
+        """
+        return self._http_cbtid
+
+    @http_cbtid.setter
+    def http_cbtid(self, value: Optional[str]):
+        self._http_cbtid = value

@@ -164,7 +164,7 @@ test:
 # test under Twisted
 test_twisted:
 	USE_TWISTED=1 trial autobahn
-	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_TWISTED=1 trial autobahn
+#	WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_TWISTED=1 trial autobahn
 
 test_application_runner:
 	USE_TWISTED=1 trial autobahn.twisted.test.test_tx_application_runner
@@ -185,7 +185,8 @@ test_tx_choosereactor:
 	USE_TWISTED=1 trial autobahn.twisted.test.test_choosereactor
 
 test_cryptosign:
-	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign
+#	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign
+	USE_ASYNCIO=1 pytest -s -v -rfA --ignore=./autobahn/twisted autobahn/wamp/test/test_wamp_cryptosign.py
 	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign
 
 test_wamp_scram:
@@ -198,6 +199,13 @@ test_xbr_argon2:
 
 test_xbr_config:
 	USE_TWISTED=1 trial autobahn.xbr.test.test_xbr_config
+
+test_transport_details:
+	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_transport_details
+	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_transport_details
+
+test_tx_protocol:
+	USE_TWISTED=1 trial autobahn.twisted.test.test_tx_protocol
 
 test_twisted_coverage:
 	-rm .coverage
@@ -215,8 +223,10 @@ test_coverage:
 
 # test under asyncio
 test_asyncio:
-	USE_ASYNCIO=1 python -m pytest -rsx autobahn
-	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_ASYNCIO=1 python -m pytest -rsx
+	USE_ASYNCIO=1 pytest -s -v -rfP --ignore=./autobahn/twisted autobahn
+#	USE_ASYNCIO=1 pytest -s -v -rA --ignore=./autobahn/twisted ./autobahn/asyncio/test/test_aio_websocket.py
+#	USE_ASYNCIO=1 pytest -s -v -rA --log-cli-level=info --ignore=./autobahn/twisted ./autobahn/asyncio/test/test_aio_websocket.py
+
 
 test_cs1:
 	USE_ASYNCIO=1 python -m pytest -s -v autobahn/wamp/test/test_cryptosign.py

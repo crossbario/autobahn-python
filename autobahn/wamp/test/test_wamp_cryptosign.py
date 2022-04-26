@@ -25,21 +25,11 @@
 ###############################################################################
 
 import hashlib
-import os
 import binascii
+import unittest
 from unittest.mock import Mock
 
 import txaio
-
-if os.environ.get('USE_TWISTED', False):
-    txaio.use_twisted()
-    from twisted.trial import unittest
-elif os.environ.get('USE_ASYNCIO', False):
-    txaio.use_asyncio()
-    import unittest
-else:
-    raise Exception('no networking framework selected')
-
 from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN
 from autobahn.wamp import types
 from autobahn.wamp.auth import create_authenticator
@@ -89,11 +79,16 @@ class TestAuth(unittest.TestCase):
         self.privkey_hex = self.key._key.encode(encoder=HexEncoder)
         m = hashlib.sha256()
         m.update("some TLS message".encode())
-        self.channel_id = m.digest()
+        channel_id = m.digest()
+        self.transport_details = types.TransportDetails(channel_id={'tls-unique': channel_id})
+
+    def test_public_key(self):
+        self.assertEqual(self.key.public_key(binary=False), '1adfc8bfe1d35616e64dffbd900096f23b066f914c8c2ffbb66f6075b96e116d')
 
     def test_valid(self):
         session = Mock()
-        session._transport.get_channel_id = Mock(return_value=self.channel_id)
+        session._transport.transport_details = self.transport_details
+
         challenge = types.Challenge("ticket", dict(challenge="ff" * 32))
         f_signed = self.key.sign_challenge(session, challenge)
 
@@ -114,7 +109,8 @@ class TestAuth(unittest.TestCase):
 
     def test_testvectors(self):
         session = Mock()
-        session._transport.get_channel_id = Mock(return_value=self.channel_id)
+        session._transport.transport_details = self.transport_details
+
         for testvec in testvectors:
             priv_key = SigningKey.from_key_bytes(binascii.a2b_hex(testvec['priv_key']))
             challenge = types.Challenge("ticket", dict(challenge=testvec['challenge']))
@@ -142,7 +138,7 @@ class TestAuth(unittest.TestCase):
             privkey=self.privkey_hex,
         )
         session = Mock()
-        session._transport.get_channel_id = Mock(return_value=self.channel_id)
+        session._transport.transport_details = self.transport_details
         challenge = types.Challenge("cryptosign", dict(challenge="ff" * 32))
         f_reply = authenticator.on_challenge(session, challenge)
 
