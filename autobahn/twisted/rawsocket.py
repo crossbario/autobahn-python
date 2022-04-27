@@ -61,6 +61,14 @@ class WampRawSocketProtocol(Int32StringReceiver):
     def __init__(self):
         # set the RawSocket maximum message size by default
         self._max_message_size = 2**24
+        self._transport_details = None
+
+    @property
+    def transport_details(self) -> Optional[TransportDetails]:
+        """
+        Implements :func:`autobahn.wamp.interfaces.ITransport.transport_details`
+        """
+        return self._transport_details
 
     def lengthLimitExceeded(self, length):
         # override hook in Int32StringReceiver base class that is fired when a message is (to be) received
@@ -74,7 +82,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
 
         # determine preliminary transport details (what is know at this point)
         self._transport_details = create_transport_details(self.transport, self.is_server)
-        self._transport_details.channel_framing = TransportDetails.CHANNEL_FRAMING_WEBSOCKET
+        self._transport_details.channel_framing = TransportDetails.CHANNEL_FRAMING_RAWSOCKET
 
         # backward compatibility
         self.peer = self._transport_details.peer
