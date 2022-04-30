@@ -962,7 +962,7 @@ def hluserid(oid):
     return hl('"{}"'.format(oid), color='yellow', bold=True)
 
 
-def hlval(val, color='green'):
+def hlval(val, color='white'):
     return hl('{}'.format(val), color=color, bold=True)
 
 
