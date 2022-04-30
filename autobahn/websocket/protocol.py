@@ -2585,8 +2585,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
         When overriding in derived class, make sure to call this base class
         implementation *after* your code.
         """
-        self.log.info('{func}: connection lost to peer {peer}: reason={reason}',
-                      func=hltype(self._connectionLost), peer=self.peer, reason=hlval(reason))
+        self.log.debug('{func}: connection lost to peer {peer}: reason={reason}',
+                       func=hltype(self._connectionLost), peer=self.peer, reason=hlval(reason))
         WebSocketProtocol._connectionLost(self, reason)
         self.factory.countConnections -= 1
 
@@ -2601,8 +2601,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
         #
         end_of_header = self.data.find(b"\x0d\x0a\x0d\x0a")
         if end_of_header >= 0:
-            self.log.info('{func} found end of HTTP request header at byte {end_of_header}',
-                          func=hltype(self.processHandshake), end_of_header=hlval(end_of_header))
+            self.log.debug('{func} found end of HTTP request header at byte {end_of_header}',
+                           func=hltype(self.processHandshake), end_of_header=hlval(end_of_header))
 
             self.http_request_data = self.data[:end_of_header + 4]
             self.log.debug(
@@ -3495,8 +3495,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
         When overriding in derived class, make sure to call this base class
         implementation _after_ your code.
         """
-        self.log.info('{func}: connection lost to peer {peer}: reason={reason}',
-                      func=hltype(self._connectionLost), peer=self.peer, reason=hlval(reason))
+        self.log.debug('{func}: connection lost to peer {peer}: reason={reason}',
+                       func=hltype(self._connectionLost), peer=self.peer, reason=hlval(reason))
         WebSocketProtocol._connectionLost(self, reason)
 
     def startProxyConnect(self):

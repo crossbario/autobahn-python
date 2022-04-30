@@ -1647,7 +1647,7 @@ class TransportDetails(object):
                 raise ValueError('"is_secure" must be a bool, was {}'.format(type(data['is_secure'])))
             obj.is_secure = data['is_secure']
         if 'channel_id' in data and data['channel_id'] is not None:
-            if type(data['channel_id']) != Dict[str, Any]:
+            if type(data['channel_id']) != dict:
                 raise ValueError('"channel_id" must be a dict, was {}'.format(type(data['channel_id'])))
             channel_id = {}
             for binding_type in data['channel_id']:
@@ -1664,7 +1664,7 @@ class TransportDetails(object):
                 raise ValueError('"websocket_protocol" must be a string, was {}'.format(type(data['websocket_protocol'])))
             obj.websocket_protocol = data['websocket_protocol']
         if 'websocket_extensions_in_use' in data and data['websocket_extensions_in_use'] is not None:
-            if type(data['websocket_extensions_in_use']) != List[str]:
+            if type(data['websocket_extensions_in_use']) != list:
                 raise ValueError('"websocket_extensions_in_use" must be a list of strings, was {}'.format(type(data['websocket_extensions_in_use'])))
             obj.websocket_extensions_in_use = data['websocket_extensions_in_use']
         if 'http_headers_received' in data and data['http_headers_received'] is not None:

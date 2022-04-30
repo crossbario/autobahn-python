@@ -25,7 +25,6 @@
 ###############################################################################
 
 from base64 import b64encode, b64decode
-from pprint import pformat
 from typing import Optional
 
 from zope.interface import implementer
@@ -289,10 +288,9 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         self._connectionMade()
 
         # ok, done!
-        self.log.info('{func} connection established for peer="{peer}", transport_details=\n{transport_details}',
+        self.log.info('{func} connection established for peer="{peer}"',
                       func=hltype(self.connectionMade),
-                      peer=hlval(self.peer),
-                      transport_details=pformat(self._transport_details.marshal()))
+                      peer=hlval(self.peer))
 
     def connectionLost(self, reason: Failure = connectionDone):
         # Twisted networking framework entry point, called by Twisted
