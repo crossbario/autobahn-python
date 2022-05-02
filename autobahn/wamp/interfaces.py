@@ -277,16 +277,6 @@ class ITransport(abc.ABC):
 class ITransportHandler(abc.ABC):
 
     @public
-    @property
-    @abc.abstractmethod
-    def transport(self) -> Optional[ITransport]:
-        """
-        When the transport this handler is attached to is currently open, this property
-        can be read from. The property should be considered read-only. When the transport
-        is gone, this property is set to None.
-        """
-
-    @public
     @abc.abstractmethod
     def onOpen(self, transport: ITransport):
         """
@@ -335,6 +325,16 @@ class ISession(_ABC):
     def config(self) -> ComponentConfig:
         """
         Configuration for session.
+        """
+
+    @public
+    @property
+    @abc.abstractmethod
+    def transport(self) -> Optional[ITransport]:
+        """
+        When the transport this session is attached to is currently open, this property
+        can be read from. The property should be considered read-only. When the transport
+        is gone, this property is set to None.
         """
 
     @public
