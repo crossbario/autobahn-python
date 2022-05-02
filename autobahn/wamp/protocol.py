@@ -95,6 +95,9 @@ class BaseSession(ObservableMixin):
             ApplicationError.PAYLOAD_SIZE_EXCEEDED: PayloadExceededError,
         }
 
+        # WAMP ITransport (_not_ a Twisted protocol, which is self.transport - when using Twisted)
+        self._transport: Optional[ITransport] = None
+
         # session authentication information
         self._realm: Optional[str] = None
         self._session_id: Optional[int] = None
@@ -104,11 +107,47 @@ class BaseSession(ObservableMixin):
         self._authprovider: Optional[str] = None
         self._authextra: Optional[Dict[str, Any]] = None
 
+        # set client role features supported and announced
+        self._session_roles: Dict[str, role.RoleFeatures] = role.DEFAULT_CLIENT_ROLES
+
+        # complete session details
+        self._session_details: Optional[SessionDetails] = None
+
         # payload transparency codec
         self._payload_codec: Optional[IPayloadCodec] = None
 
         # generator for WAMP request IDs
         self._request_id_gen = IdGenerator()
+
+    @property
+    def transport(self) -> Optional[ITransport]:
+        """
+        Implements :func:`autobahn.wamp.interfaces.ITransportHandler.transport`
+        """
+        # Note: self._transport (which is a WAMP ITransport) is different from self.transport (which
+        # is a Twisted protocol when using Twisted)!
+        return self._transport
+
+    @public
+    def is_connected(self) -> bool:
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISession.is_connected`
+        """
+        return self._transport is not None and self._transport.isOpen()
+
+    @public
+    def is_attached(self) -> bool:
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISession.is_attached`
+        """
+        return self._session_id is not None and self.is_connected()
+
+    @property
+    def session_details(self) -> Optional[SessionDetails]:
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISession.session_details`
+        """
+        return self._session_details
 
     @property
     def realm(self) -> Optional[str]:
@@ -331,16 +370,9 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession`
         """
         BaseSession.__init__(self)
-        self.config: types.ComponentConfig = config or types.ComponentConfig(realm="realm1")
+        self._config: types.ComponentConfig = config or types.ComponentConfig(realm="realm1")
 
-        # set client role features supported and announced
-        self._session_roles: Dict[str, role.RoleFeatures] = role.DEFAULT_CLIENT_ROLES
-
-        # WAMP ITransport (_not_ a Twisted protocol, which is self.transport - when using Twisted)
-        self._transport: Optional[ITransport] = None
-        self._session_id: Optional[int] = None
-        self._realm: Optional[str] = None
-
+        # for keeping transport-closing state
         self._goodbye_sent: bool = False
         self._transport_is_closing: bool = False
 
@@ -365,13 +397,8 @@ class ApplicationSession(BaseSession):
         self._invocations = {}
 
     @property
-    def transport(self) -> Optional[ITransport]:
-        """
-        Implements :func:`autobahn.wamp.interfaces.ITransportHandler.transport`
-        """
-        # Note: self._transport (which is a WAMP ITransport) is different from self.transport (which
-        # is a Twisted protocol when using Twisted)!
-        return self._transport
+    def config(self) -> types.ComponentConfig:
+        return self._config
 
     @public
     def set_payload_codec(self, payload_codec: Optional[IPayloadCodec]):
@@ -462,20 +489,6 @@ class ApplicationSession(BaseSession):
         """
         if self._transport:
             self._transport.close()
-
-    @public
-    def is_connected(self) -> bool:
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISession.is_connected`
-        """
-        return self._transport is not None and self._transport.isOpen()
-
-    @public
-    def is_attached(self) -> bool:
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISession.is_attached`
-        """
-        return self._session_id is not None and self.is_connected()
 
     @public
     def onUserError(self, fail, msg):
@@ -580,7 +593,7 @@ class ApplicationSession(BaseSession):
                     self._authextra = msg.authextra
                     self._router_roles = msg.roles
 
-                    details = SessionDetails(
+                    self._session_details = SessionDetails(
                         realm=self._realm,
                         session=self._session_id,
                         authid=self._authid,
@@ -594,12 +607,13 @@ class ApplicationSession(BaseSession):
                         resumable=msg.resumable,
                         resume_token=msg.resume_token,
                     )
+
                     # firing 'join' *before* running onJoin, so that
                     # the idiom where you "do stuff" in onJoin --
                     # possibly including self.leave() -- works
                     # properly. Besides, there's "ready" that fires
                     # after 'join' and onJoin have all completed...
-                    d = self.fire('join', self, details)
+                    d = self.fire('join', self, self._session_details)
                     # add a logging errback first, which will ignore any
                     # errors from fire()
                     txaio.add_callbacks(
@@ -609,7 +623,7 @@ class ApplicationSession(BaseSession):
                     # this should run regardless
                     txaio.add_callbacks(
                         d,
-                        lambda _: txaio.as_future(self.onJoin, details),
+                        lambda _: txaio.as_future(self.onJoin, self._session_details),
                         None
                     )
                     # ignore any errors from onJoin (XXX or, should that be fatal?)

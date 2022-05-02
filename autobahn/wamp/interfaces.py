@@ -329,11 +329,21 @@ class ISession(_ABC):
     Interface for WAMP sessions.
     """
 
+    @public
+    @property
     @abc.abstractmethod
-    def __init__(self, config: Optional[ComponentConfig] = None):
+    def config(self) -> ComponentConfig:
+        """
+        Configuration for session.
         """
 
-        :param config: Configuration for session.
+    @public
+    @property
+    @abc.abstractmethod
+    def session_details(self) -> Optional[SessionDetails]:
+        """
+        Return details about the session, the same as initially provided to the
+        :meth:`ISession.onJoin` callback on an implementation.
         """
 
     @public
