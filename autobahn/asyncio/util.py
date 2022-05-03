@@ -134,7 +134,7 @@ def create_transport_details(transport, is_server: bool) -> TransportDetails:
         channel_id = {
             'tls-unique': transport_channel_id(transport, is_server, 'tls-unique'),
         }
-        channel_type = TransportDetails.CHANNEL_TYPE_TLS_TCP
+        channel_type = TransportDetails.CHANNEL_TYPE_TLS
         peer_cert = None
     else:
         channel_id = {}

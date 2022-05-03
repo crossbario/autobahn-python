@@ -5,13 +5,20 @@
 Changelog
 =========
 
-22.4.1.devX
------------
+22.4.1
+------
 
+* new: modernize SessionDetails
+* new: improve ISession/ITransportHandler and implementations (#1557)
+* new: expand and refactor TransportDetails (#1551)
+* fix: misc fixes, add type hints, more docs (#1547)
+* new: key modules for use with WAMP-cryptosign (#1544)
 * fix: string formatting with binary values in TransportDetails.secure_channel_id (#1483)
 * fix: never default set authid/authrole in component authenticators
-* fix: do not throw (but log) when leaving a session not joined
-* fix: store WAMP authextra received
+* fix: TransportDetails string formatting (fixes #1486)
+* fix: reading private ssh key for cryptosign (fixes #932)
+* fix: do not throw (but log) when leaving a session not joined (#1542)
+* fix: store WAMP authextra received (#1541)
 
 22.3.2
 ------

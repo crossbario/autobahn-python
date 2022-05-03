@@ -43,6 +43,7 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.wamp.exception import InvalidUri, ProtocolError
     from autobahn.wamp.auth import create_authenticator
     from autobahn.wamp.interfaces import IAuthenticator
+    from autobahn.wamp.types import TransportDetails
 
     class MockTransport(object):
 
@@ -64,6 +65,11 @@ if os.environ.get('USE_TWISTED', False):
             msg = message.Welcome(self._my_session_id, roles)
             self._handler.onMessage(msg)
             self._fake_router_session = ApplicationSession()
+
+            self._transport_details = TransportDetails()
+
+        def transport_details(self):
+            return self._transport_details
 
         def drop_registration(self, reg_id):
             self._handler.onMessage(

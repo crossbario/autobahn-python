@@ -33,10 +33,15 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.wamp import message, role
     from autobahn.wamp.exception import ProtocolError
     from autobahn.twisted.wamp import ApplicationSession
+    from autobahn.wamp.types import TransportDetails
 
     class MockTransport:
         def __init__(self):
             self.messages = []
+            self._transport_details = TransportDetails()
+
+        def transport_details(self):
+            return self._transport_details
 
         def send(self, msg):
             self.messages.append(msg)

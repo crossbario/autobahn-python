@@ -34,13 +34,11 @@ from autobahn.wamp.request import Subscription, Registration, Publication
 
 __all__ = (
     'ComponentConfig',
-    'TransportDetails',
     'HelloReturn',
     'Accept',
     'Deny',
     'Challenge',
     'HelloDetails',
-    'SessionDetails',
     'SessionIdent',
     'CloseDetails',
     'SubscribeOptions',
@@ -54,6 +52,8 @@ __all__ = (
     'Subscription',
     'Registration',
     'Publication',
+    'TransportDetails',
+    'SessionDetails',
 )
 
 
@@ -312,118 +312,6 @@ class HelloDetails(object):
 
     def __str__(self):
         return "HelloDetails(realm=<{}>, authmethods={}, authid=<{}>, authrole=<{}>, authextra={}, session_roles={}, pending_session={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.authmethods, self.authid, self.authrole, self.authextra, self.session_roles, self.pending_session, self.resumable, self.resume_session, self.resume_token)
-
-
-@public
-class SessionDetails(object):
-    """
-    Provides details for a WAMP session upon open.
-
-    .. seealso:: :meth:`autobahn.wamp.interfaces.ISession.onJoin`
-    """
-
-    __slots__ = (
-        'realm',
-        'session',
-        'authid',
-        'authrole',
-        'authmethod',
-        'authprovider',
-        'authextra',
-        'serializer',
-        'transport',
-        'resumed',
-        'resumable',
-        'resume_token',
-    )
-
-    def __init__(self, realm, session, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None,
-                 serializer=None, transport=None, resumed=None, resumable=None, resume_token=None):
-        """
-
-        :param realm: The realm this WAMP session is attached to.
-        :type realm: str
-
-        :param session: WAMP session ID of this session.
-        :type session: int
-
-        :param resumed: Whether the session is a resumed one.
-        :type resumed: bool or None
-
-        :param resumable: Whether this session can be resumed later.
-        :type resumable: bool or None
-
-        :param resume_token: The secure authorisation token to resume the session.
-        :type resume_token: str or None
-        """
-        assert(type(realm) == str)
-        assert(type(session) == int)
-        assert(authid is None or type(authid) == str)
-        assert(authrole is None or type(authrole) == str)
-        assert(authmethod is None or type(authmethod) == str)
-        assert(authprovider is None or type(authprovider) == str)
-        assert(authextra is None or type(authextra) == dict)
-        assert(serializer is None or type(serializer) == str)
-        assert(transport is None or type(transport) == str)
-        assert(resumed is None or type(resumed) == bool)
-        assert(resumable is None or type(resumable) == bool)
-        assert(resume_token is None or type(resume_token) == str)
-
-        self.realm = realm
-        self.session = session
-        self.authid = authid
-        self.authrole = authrole
-        self.authmethod = authmethod
-        self.authprovider = authprovider
-        self.authextra = authextra
-        self.serializer = serializer
-        self.transport = transport
-        self.resumed = resumed
-        self.resumable = resumable
-        self.resume_token = resume_token
-
-    def marshal(self):
-        obj = {
-            'realm': self.realm,
-            'session': self.session,
-            'authid': self.authid,
-            'authrole': self.authrole,
-            'authmethod': self.authmethod,
-            'authprovider': self.authprovider,
-            'authextra': self.authextra,
-            'serializer': self.serializer,
-            'transport': self.transport,
-            'resumed': self.resumed,
-            'resumable': self.resumable,
-            'resume_token': self.resume_token
-        }
-        return obj
-
-    def __str__(self):
-        return """
-SessionDetails(realm={},
-               session={},
-               authid={},
-               authrole={},
-               authmethod={},
-               authprovider={},
-               authextra={},
-               serializer={},
-               transport={},
-               resumed={},
-               resumable={},
-               resume_token={})""".format('"' + self.realm + '"' if self.realm is not None else 'None',
-                                          self.session,
-                                          '"' + self.authid + '"' if self.authid is not None else 'None',
-                                          '"' + self.authrole + '"' if self.authrole is not None else 'None',
-                                          '"' + self.authmethod + '"' if self.authmethod is not None else 'None',
-                                          '"' + self.authprovider + '"' if self.authprovider is not None else 'None',
-                                          self.authextra,
-                                          '"' + self.serializer + '"' if self.serializer is not None else 'None',
-                                          '"' + self.transport + '"' if self.transport is not None else 'None',
-                                          self.resumed,
-                                          self.resumable,
-                                          self.resume_token)
 
 
 @public
@@ -1452,9 +1340,9 @@ class TransportDetails(object):
     CHANNEL_TYPE_MEMORY = 2
     CHANNEL_TYPE_SERIAL = 3
     CHANNEL_TYPE_TCP = 4
-    CHANNEL_TYPE_TLS_TCP = 5
+    CHANNEL_TYPE_TLS = 5
     CHANNEL_TYPE_UDP = 6
-    CHANNEL_TYPE_DTLS_UDP = 7
+    CHANNEL_TYPE_DTLS = 7
 
     CHANNEL_TYPE_TO_STR = {
         CHANNEL_TYPE_NONE: 'null',
@@ -1462,20 +1350,36 @@ class TransportDetails(object):
         CHANNEL_TYPE_MEMORY: 'memory',
         CHANNEL_TYPE_SERIAL: 'serial',
         CHANNEL_TYPE_TCP: 'tcp',
-        CHANNEL_TYPE_TLS_TCP: 'tcp-tls',
+        CHANNEL_TYPE_TLS: 'tls',
         CHANNEL_TYPE_UDP: 'udp',
-        CHANNEL_TYPE_DTLS_UDP: 'dtls-udp',
+        CHANNEL_TYPE_DTLS: 'dtls',
     }
 
     CHANNEL_TYPE_FROM_STR = {
         'null': CHANNEL_TYPE_NONE,
+
+        # for same process, function-call based transports of WAMP,
+        # e.g. in router embedded WAMP sessions
         'function': CHANNEL_TYPE_FUNCTION,
+
+        # for Unix domain sockets and pipes (IPC)
         'memory': CHANNEL_TYPE_MEMORY,
+
+        # for Serial ports to wired devices
         'serial': CHANNEL_TYPE_SERIAL,
+
+        # for plain, unencrypted TCPv4/TCPv6 connections, most commonly over
+        # "real" network connections (incl. loopback)
         'tcp': CHANNEL_TYPE_TCP,
-        'tcp-tls': CHANNEL_TYPE_TLS_TCP,
+
+        # for TLS encrypted TCPv4/TCPv6 connections
+        'tls': CHANNEL_TYPE_TLS,
+
+        # for plain, unencrypted UDPv4/UDPv6 datagram transports of WAMP (future!)
         'udp': CHANNEL_TYPE_UDP,
-        'dtls-udp': CHANNEL_TYPE_DTLS_UDP,
+
+        # for DTLS encrypted UDPv6 datagram transports of WAMP (future!)
+        'dtls': CHANNEL_TYPE_DTLS,
     }
 
     CHANNEL_FRAMING_NONE = 0
@@ -1704,6 +1608,24 @@ class TransportDetails(object):
 
     def __str__(self) -> str:
         return pformat(self.marshal())
+
+    @property
+    def channel_typeid(self):
+        """
+        Return a short type identifier string for the combination transport type, framing
+        and serializer. Here are some common examples:
+
+        * ``"tcp-websocket-json"``
+        * ``"tls-websocket-msgpack"``
+        * ``"memory-rawsocket-cbor"``
+        * ``"memory-rawsocket-flatbuffers"``
+        * ``"function-native-native"``
+
+        :return:
+        """
+        return '{}-{}-{}'.format(self.CHANNEL_TYPE_TO_STR[self.channel_type or 0],
+                                 self.CHANNEL_FRAMING_TO_STR[self.channel_framing or 0],
+                                 self.CHANNEL_SERIALIZER_TO_STR[self.channel_serializer or 0])
 
     @property
     def channel_type(self) -> Optional[int]:
@@ -1971,3 +1893,345 @@ class TransportDetails(object):
     @http_cbtid.setter
     def http_cbtid(self, value: Optional[str]):
         self._http_cbtid = value
+
+
+@public
+class SessionDetails(object):
+    """
+    Provides details for a WAMP session upon open.
+
+    .. seealso:: :meth:`autobahn.wamp.interfaces.ISession.onJoin`
+    """
+
+    __slots__ = (
+        '_realm',
+        '_session',
+        '_authid',
+        '_authrole',
+        '_authmethod',
+        '_authprovider',
+        '_authextra',
+        '_serializer',
+        '_transport',
+        '_resumed',
+        '_resumable',
+        '_resume_token',
+    )
+
+    def __init__(self,
+                 realm: Optional[str] = None,
+                 session: Optional[int] = None,
+                 authid: Optional[str] = None,
+                 authrole: Optional[str] = None,
+                 authmethod: Optional[str] = None,
+                 authprovider: Optional[str] = None,
+                 authextra: Optional[Dict[str, Any]] = None,
+                 serializer: Optional[str] = None,
+                 transport: Optional[TransportDetails] = None,
+                 resumed: Optional[bool] = None,
+                 resumable: Optional[bool] = None,
+                 resume_token: Optional[str] = None):
+        """
+
+        :param realm: The WAMP realm this session is attached to, e.g. ``"realm1"``.
+        :param session: WAMP session ID of this session, e.g. ``7069739155960584``.
+        :param authid: The WAMP authid this session is joined as, e.g. ``"joe89"``
+        :param authrole: The WAMP authrole this session is joined as, e.g. ``"user"``.
+        :param authmethod: The WAMP authentication method the session is authenticated under,
+            e.g. ``"anonymous"`` or ``"wampcra"``.
+        :param authprovider: The WAMP authentication provider that handled the session authentication,
+            e.g. ``"static"`` or ``"dynamic"``.
+        :param authextra: The (optional) WAMP authentication extra that was provided to the authenticating session.
+        :param serializer: The WAMP serializer (variant) this session is using,
+            e.g. ``"json"`` or ``"cbor.batched"``.
+        :param transport: The details of the WAMP transport this session is hosted on (communicates over).
+        :param resumed: Whether the session is a resumed one.
+        :param resumable: Whether this session can be resumed later.
+        :param resume_token: The secure authorization token to resume the session.
+        """
+        self._realm = realm
+        self._session = session
+        self._authid = authid
+        self._authrole = authrole
+        self._authmethod = authmethod
+        self._authprovider = authprovider
+        self._authextra = authextra
+        self._serializer = serializer
+        self._transport = transport
+        self._resumed = resumed
+        self._resumable = resumable
+        self._resume_token = resume_token
+
+    def __eq__(self, other):
+        """
+
+        :param other:
+        :return:
+        """
+        if not isinstance(other, self.__class__):
+            return False
+        if other._realm != self._realm:
+            return False
+        if other._session != self._session:
+            return False
+        if other._authid != self._authid:
+            return False
+        if other._authrole != self._authrole:
+            return False
+        if other._authmethod != self._authmethod:
+            return False
+        if other._authprovider != self._authprovider:
+            return False
+        if other._authextra != self._authextra:
+            return False
+        if other._serializer != self._serializer:
+            return False
+        if other._transport != self._transport:
+            return False
+        if other._resumed != self._resumed:
+            return False
+        if other._resumable != self._resumable:
+            return False
+        if other._resume_token != self._resume_token:
+            return False
+        return True
+
+    def __ne__(self, other):
+        """
+
+        :param other:
+        :return:
+        """
+        return not self.__eq__(other)
+
+    @staticmethod
+    def parse(data: Dict[str, Any]) -> 'SessionDetails':
+        """
+
+        :param data:
+        :return:
+        """
+        assert type(data) == dict
+
+        obj = SessionDetails()
+
+        if 'realm' in data and data['realm'] is not None:
+            if type(data['realm']) != str:
+                raise ValueError('"realm" must be a string, was {}'.format(type(data['realm'])))
+            obj._realm = data['realm']
+
+        if 'session' in data and data['session'] is not None:
+            if type(data['session']) != int:
+                raise ValueError('"session" must be an int, was {}'.format(type(data['session'])))
+            obj._session = data['session']
+
+        if 'authid' in data and data['authid'] is not None:
+            if type(data['authid']) != str:
+                raise ValueError('"authid" must be a string, was {}'.format(type(data['authid'])))
+            obj._authid = data['authid']
+
+        if 'authrole' in data and data['authrole'] is not None:
+            if type(data['authrole']) != str:
+                raise ValueError('"authrole" must be a string, was {}'.format(type(data['authrole'])))
+            obj._authrole = data['authrole']
+
+        if 'authmethod' in data and data['authmethod'] is not None:
+            if type(data['authmethod']) != str:
+                raise ValueError('"authmethod" must be a string, was {}'.format(type(data['authmethod'])))
+            obj._authmethod = data['authmethod']
+
+        if 'authprovider' in data and data['authprovider'] is not None:
+            if type(data['authprovider']) != str:
+                raise ValueError('"authprovider" must be a string, was {}'.format(type(data['authprovider'])))
+            obj._authprovider = data['authprovider']
+
+        if 'authextra' in data and data['authextra'] is not None:
+            if type(data['authextra']) != dict:
+                raise ValueError('"authextra" must be a dict, was {}'.format(type(data['authextra'])))
+            for key in data['authextra'].keys():
+                if type(key) != str:
+                    raise ValueError('key "{}" in authextra must be a string, was {}'.format(key, type(key)))
+            obj._authextra = data['authextra']
+
+        if 'serializer' in data and data['serializer'] is not None:
+            if type(data['serializer']) != str:
+                raise ValueError('"serializer" must be a string, was {}'.format(type(data['serializer'])))
+            obj._serializer = data['serializer']
+
+        if 'transport' in data and data['transport'] is not None:
+            obj._transport = TransportDetails.parse(data['transport'])
+
+        if 'resumed' in data and data['resumed'] is not None:
+            if type(data['resumed']) != bool:
+                raise ValueError('"resumed" must be a bool, was {}'.format(type(data['resumed'])))
+            obj._resumed = data['resumed']
+
+        if 'resumable' in data and data['resumable'] is not None:
+            if type(data['resumable']) != bool:
+                raise ValueError('"resumable" must be a bool, was {}'.format(type(data['resumable'])))
+            obj._resumable = data['resumable']
+
+        if 'resume_token' in data and data['resume_token'] is not None:
+            if type(data['resume_token']) != str:
+                raise ValueError('"resume_token" must be a string, was {}'.format(type(data['resume_token'])))
+            obj._resume_token = data['resume_token']
+
+        return obj
+
+    def marshal(self) -> Dict[str, Any]:
+        """
+
+        :return:
+        """
+        obj = {
+            'realm': self._realm,
+            'session': self._session,
+            'authid': self._authid,
+            'authrole': self._authrole,
+            'authmethod': self._authmethod,
+            'authprovider': self._authprovider,
+            'authextra': self._authextra,
+            'serializer': self._serializer,
+            'transport': self._transport.marshal() if self._transport else None,
+            'resumed': self._resumed,
+            'resumable': self._resumable,
+            'resume_token': self._resume_token
+        }
+        return obj
+
+    def __str__(self) -> str:
+        return pformat(self.marshal())
+
+    @property
+    def realm(self) -> Optional[str]:
+        """
+        The WAMP realm this session is attached to, e.g. ``"realm1"``.
+        """
+        return self._realm
+
+    @realm.setter
+    def realm(self, value: Optional[str]):
+        self._realm = value
+
+    @property
+    def session(self) -> Optional[int]:
+        """
+        WAMP session ID of this session, e.g. ``7069739155960584``.
+        """
+        return self._session
+
+    @session.setter
+    def session(self, value: Optional[int]):
+        self._session = value
+
+    @property
+    def authid(self) -> Optional[str]:
+        """
+        The WAMP authid this session is joined as, e.g. ``"joe89"``
+        """
+        return self._authid
+
+    @authid.setter
+    def authid(self, value: Optional[str]):
+        self._authid = value
+
+    @property
+    def authrole(self) -> Optional[str]:
+        """
+        The WAMP authrole this session is joined as, e.g. ``"user"``.
+        """
+        return self._authrole
+
+    @authrole.setter
+    def authrole(self, value: Optional[str]):
+        self._authrole = value
+
+    @property
+    def authmethod(self) -> Optional[str]:
+        """
+        The WAMP authentication method the session is authenticated under, e.g. ``"anonymous"``
+        or ``"wampcra"``.
+        """
+        return self._authmethod
+
+    @authmethod.setter
+    def authmethod(self, value: Optional[str]):
+        self._authmethod = value
+
+    @property
+    def authprovider(self) -> Optional[str]:
+        """
+        The WAMP authentication provider that handled the session authentication, e.g. ``"static"``
+        or ``"dynamic"``.
+        """
+        return self._authprovider
+
+    @authprovider.setter
+    def authprovider(self, value: Optional[str]):
+        self._authprovider = value
+
+    @property
+    def authextra(self) -> Optional[Dict[str, Any]]:
+        """
+        The (optional) WAMP authentication extra that was provided to the authenticating session.
+        """
+        return self._authextra
+
+    @authextra.setter
+    def authextra(self, value: Optional[Dict[str, Any]]):
+        self._authextra = value
+
+    @property
+    def serializer(self) -> Optional[str]:
+        """
+        The WAMP serializer (variant) this session is using, e.g. ``"json"`` or ``"cbor.batched"``.
+        """
+        return self._serializer
+
+    @serializer.setter
+    def serializer(self, value: Optional[str]):
+        self._serializer = value
+
+    @property
+    def transport(self) -> Optional[TransportDetails]:
+        """
+        The details of the WAMP transport this session is hosted on (communicates over).
+        """
+        return self._transport
+
+    @transport.setter
+    def transport(self, value: Optional[TransportDetails]):
+        self._transport = value
+
+    @property
+    def resumed(self) -> Optional[bool]:
+        """
+        Whether the session is a resumed one.
+        """
+        return self._resumed
+
+    @resumed.setter
+    def resumed(self, value: Optional[bool]):
+        self._resumed = value
+
+    @property
+    def resumable(self) -> Optional[bool]:
+        """
+        Whether this session can be resumed later.
+        """
+        return self._resumable
+
+    @resumable.setter
+    def resumable(self, value: Optional[bool]):
+        self._resumable = value
+
+    @property
+    def resume_token(self) -> Optional[str]:
+        """
+        The secure authorization token to resume the session.
+        """
+        return self._resume_token
+
+    @resume_token.setter
+    def resume_token(self, value: Optional[str]):
+        self._resume_token = value
