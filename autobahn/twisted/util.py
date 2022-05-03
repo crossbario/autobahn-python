@@ -264,7 +264,7 @@ def create_transport_details(transport: Union[ITransport, IProcessTransport], is
         channel_id = {
             'tls-unique': transport_channel_id(transport, is_server, 'tls-unique'),
         }
-        channel_type = TransportDetails.CHANNEL_TYPE_TLS_TCP
+        channel_type = TransportDetails.CHANNEL_TYPE_TLS
         peer_cert = extract_peer_certificate(transport)
     else:
         channel_id = {}

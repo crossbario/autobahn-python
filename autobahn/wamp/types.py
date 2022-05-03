@@ -1340,9 +1340,9 @@ class TransportDetails(object):
     CHANNEL_TYPE_MEMORY = 2
     CHANNEL_TYPE_SERIAL = 3
     CHANNEL_TYPE_TCP = 4
-    CHANNEL_TYPE_TLS_TCP = 5
+    CHANNEL_TYPE_TLS = 5
     CHANNEL_TYPE_UDP = 6
-    CHANNEL_TYPE_DTLS_UDP = 7
+    CHANNEL_TYPE_DTLS = 7
 
     CHANNEL_TYPE_TO_STR = {
         CHANNEL_TYPE_NONE: 'null',
@@ -1350,20 +1350,36 @@ class TransportDetails(object):
         CHANNEL_TYPE_MEMORY: 'memory',
         CHANNEL_TYPE_SERIAL: 'serial',
         CHANNEL_TYPE_TCP: 'tcp',
-        CHANNEL_TYPE_TLS_TCP: 'tcp-tls',
+        CHANNEL_TYPE_TLS: 'tls',
         CHANNEL_TYPE_UDP: 'udp',
-        CHANNEL_TYPE_DTLS_UDP: 'dtls-udp',
+        CHANNEL_TYPE_DTLS: 'dtls',
     }
 
     CHANNEL_TYPE_FROM_STR = {
         'null': CHANNEL_TYPE_NONE,
+
+        # for same process, function-call based transports of WAMP,
+        # e.g. in router embedded WAMP sessions
         'function': CHANNEL_TYPE_FUNCTION,
+
+        # for Unix domain sockets and pipes (IPC)
         'memory': CHANNEL_TYPE_MEMORY,
+
+        # for Serial ports to wired devices
         'serial': CHANNEL_TYPE_SERIAL,
+
+        # for plain, unencrypted TCPv4/TCPv6 connections, most commonly over
+        # "real" network connections (incl. loopback)
         'tcp': CHANNEL_TYPE_TCP,
-        'tcp-tls': CHANNEL_TYPE_TLS_TCP,
+
+        # for TLS encrypted TCPv4/TCPv6 connections
+        'tls': CHANNEL_TYPE_TLS,
+
+        # for plain, unencrypted UDPv4/UDPv6 datagram transports of WAMP (future!)
         'udp': CHANNEL_TYPE_UDP,
-        'dtls-udp': CHANNEL_TYPE_DTLS_UDP,
+
+        # for DTLS encrypted UDPv6 datagram transports of WAMP (future!)
+        'dtls': CHANNEL_TYPE_DTLS,
     }
 
     CHANNEL_FRAMING_NONE = 0
@@ -1592,6 +1608,24 @@ class TransportDetails(object):
 
     def __str__(self) -> str:
         return pformat(self.marshal())
+
+    @property
+    def channel_typeid(self):
+        """
+        Return a short type identifier string for the combination transport type, framing
+        and serializer. Here are some common examples:
+
+        * ``"tcp-websocket-json"``
+        * ``"tls-websocket-msgpack"``
+        * ``"memory-rawsocket-cbor"``
+        * ``"memory-rawsocket-flatbuffers"``
+        * ``"function-native-native"``
+
+        :return:
+        """
+        return '{}-{}-{}'.format(self.CHANNEL_TYPE_TO_STR[self.channel_type or 0],
+                                 self.CHANNEL_FRAMING_TO_STR[self.channel_framing or 0],
+                                 self.CHANNEL_SERIALIZER_TO_STR[self.channel_serializer or 0])
 
     @property
     def channel_type(self) -> Optional[int]:
@@ -1885,8 +1919,8 @@ class SessionDetails(object):
     )
 
     def __init__(self,
-                 realm: str,
-                 session: int,
+                 realm: Optional[str] = None,
+                 session: Optional[int] = None,
                  authid: Optional[str] = None,
                  authrole: Optional[str] = None,
                  authmethod: Optional[str] = None,
@@ -1915,19 +1949,6 @@ class SessionDetails(object):
         :param resumable: Whether this session can be resumed later.
         :param resume_token: The secure authorization token to resume the session.
         """
-        assert(type(realm) == str)
-        assert(type(session) == int)
-        assert(authid is None or type(authid) == str)
-        assert(authrole is None or type(authrole) == str)
-        assert(authmethod is None or type(authmethod) == str)
-        assert(authprovider is None or type(authprovider) == str)
-        assert(authextra is None or type(authextra) == dict)
-        assert(serializer is None or type(serializer) == str)
-        assert(transport is None or type(transport) == str)
-        assert(resumed is None or type(resumed) == bool)
-        assert(resumable is None or type(resumable) == bool)
-        assert(resume_token is None or type(resume_token) == str)
-
         self._realm = realm
         self._session = session
         self._authid = authid
@@ -2022,11 +2043,14 @@ class SessionDetails(object):
         if 'authprovider' in data and data['authprovider'] is not None:
             if type(data['authprovider']) != str:
                 raise ValueError('"authprovider" must be a string, was {}'.format(type(data['authprovider'])))
-            obj._realm = data['authprovider']
+            obj._authprovider = data['authprovider']
 
         if 'authextra' in data and data['authextra'] is not None:
-            if type(data['authextra']) != str:
-                raise ValueError('"authextra" must be a string, was {}'.format(type(data['authextra'])))
+            if type(data['authextra']) != dict:
+                raise ValueError('"authextra" must be a dict, was {}'.format(type(data['authextra'])))
+            for key in data['authextra'].keys():
+                if type(key) != str:
+                    raise ValueError('key "{}" in authextra must be a string, was {}'.format(key, type(key)))
             obj._authextra = data['authextra']
 
         if 'serializer' in data and data['serializer'] is not None:

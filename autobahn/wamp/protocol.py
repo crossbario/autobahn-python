@@ -602,7 +602,7 @@ class ApplicationSession(BaseSession):
                         authprovider=self._authprovider,
                         authextra=msg.authextra,
                         serializer=self._transport._serializer.SERIALIZER_ID,
-                        transport=self._transport.peer_transport if hasattr(self._transport, 'peer_transport') else None,
+                        transport=self._transport.transport_details,
                         resumed=msg.resumed,
                         resumable=msg.resumable,
                         resume_token=msg.resume_token,
@@ -1381,7 +1381,7 @@ class ApplicationSession(BaseSession):
         return d
 
     @public
-    def onLeave(self, details: SessionDetails):
+    def onLeave(self, details: CloseDetails):
         """
         Implements :meth:`autobahn.wamp.interfaces.ISession.onLeave`
         """
