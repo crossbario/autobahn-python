@@ -603,9 +603,10 @@ class ApplicationSession(BaseSession):
                         authextra=msg.authextra,
                         serializer=self._transport._serializer.SERIALIZER_ID,
                         transport=self._transport.transport_details,
-                        resumed=msg.resumed,
-                        resumable=msg.resumable,
-                        resume_token=msg.resume_token,
+                        # FIXME
+                        resumed=False,  # msg.resumed,
+                        resumable=False,  # msg.resumable,
+                        resume_token=None,  # msg.resume_token,
                     )
 
                     # firing 'join' *before* running onJoin, so that
