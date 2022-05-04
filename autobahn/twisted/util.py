@@ -31,7 +31,7 @@ from typing import Optional, Union, Dict, Any
 
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address, UNIXAddress
-from twisted.internet.interfaces import ITransport, IProcessTransport, ISSLTransport
+from twisted.internet.interfaces import ITransport, IProcessTransport
 
 from autobahn.wamp.types import TransportDetails
 
@@ -47,6 +47,14 @@ try:
 except ImportError:
     _HAS_IPV6 = False
     IPv6Address = type(None)
+
+try:
+    from twisted.internet.interfaces import ISSLTransport
+    from twisted.protocols.tls import TLSMemoryBIOProtocol
+    from OpenSSL.SSL import Connection
+    _HAS_TLS = True
+except ImportError:
+    _HAS_TLS = False
 
 __all = (
     'sleep',
@@ -116,10 +124,7 @@ def peer2str(transport: Union[ITransport, IProcessTransport]) -> str:
     return res
 
 
-try:
-    from twisted.protocols.tls import TLSMemoryBIOProtocol
-    from OpenSSL.SSL import Connection
-except ImportError:
+if not _HAS_TLS:
     def transport_channel_id(transport: object, is_server: bool, channel_id_type: Optional[str] = None) -> Optional[bytes]:
         if channel_id_type is None:
             return b'\x00' * 32
@@ -189,64 +194,78 @@ else:
             raise NotImplementedError('should not arrive here (unhandled channel_id_type "{}")'.format(channel_id_type))
 
 
-def extract_peer_certificate(transport: TLSMemoryBIOProtocol) -> Optional[Dict[str, Any]]:
-    """
-    Extract TLS x509 client certificate information from a Twisted stream transport, and
-    return a dict with x509 TLS client certificate information (if the client provided a
-    TLS client certificate).
-    """
-    # check if the Twisted transport is a TLSMemoryBIOProtocol
-    if not (ISSLTransport.providedBy(transport) and hasattr(transport, 'getPeerCertificate')):
+if not _HAS_TLS:
+    def extract_peer_certificate(transport: object) -> Optional[Dict[str, Any]]:
+        """
+        Dummy when no TLS is available.
+
+        :param transport: Ignored.
+        :return: Always return ``None``.
+        """
         return None
+else:
+    def extract_peer_certificate(transport: TLSMemoryBIOProtocol) -> Optional[Dict[str, Any]]:
+        """
+        Extract TLS x509 client certificate information from a Twisted stream transport, and
+        return a dict with x509 TLS client certificate information (if the client provided a
+        TLS client certificate).
 
-    cert = transport.getPeerCertificate()
-    if cert:
-        # extract x509 name components from an OpenSSL X509Name object
-        def maybe_bytes(_value):
-            if isinstance(_value, bytes):
-                return _value.decode('utf8')
-            else:
-                return _value
+        :param transport: The secure transport from which to extract the peer certificate (if present).
+        :returns: If the peer provided a certificate, the parsed certificate information set.
+        """
+        # check if the Twisted transport is a TLSMemoryBIOProtocol
+        if not (ISSLTransport.providedBy(transport) and hasattr(transport, 'getPeerCertificate')):
+            return None
 
-        result = {
-            'md5': '{}'.format(maybe_bytes(cert.digest('md5'))).upper(),
-            'sha1': '{}'.format(maybe_bytes(cert.digest('sha1'))).upper(),
-            'sha256': '{}'.format(maybe_bytes(cert.digest('sha256'))).upper(),
-            'expired': bool(cert.has_expired()),
-            'hash': maybe_bytes(cert.subject_name_hash()),
-            'serial': int(cert.get_serial_number()),
-            'signature_algorithm': maybe_bytes(cert.get_signature_algorithm()),
-            'version': int(cert.get_version()),
-            'not_before': maybe_bytes(cert.get_notBefore()),
-            'not_after': maybe_bytes(cert.get_notAfter()),
-            'extensions': []
-        }
+        cert = transport.getPeerCertificate()
+        if cert:
+            # extract x509 name components from an OpenSSL X509Name object
+            def maybe_bytes(_value):
+                if isinstance(_value, bytes):
+                    return _value.decode('utf8')
+                else:
+                    return _value
 
-        for i in range(cert.get_extension_count()):
-            ext = cert.get_extension(i)
-            ext_info = {
-                'name': '{}'.format(maybe_bytes(ext.get_short_name())),
-                'value': '{}'.format(maybe_bytes(ext)),
-                'critical': ext.get_critical() != 0
+            result = {
+                'md5': '{}'.format(maybe_bytes(cert.digest('md5'))).upper(),
+                'sha1': '{}'.format(maybe_bytes(cert.digest('sha1'))).upper(),
+                'sha256': '{}'.format(maybe_bytes(cert.digest('sha256'))).upper(),
+                'expired': bool(cert.has_expired()),
+                'hash': maybe_bytes(cert.subject_name_hash()),
+                'serial': int(cert.get_serial_number()),
+                'signature_algorithm': maybe_bytes(cert.get_signature_algorithm()),
+                'version': int(cert.get_version()),
+                'not_before': maybe_bytes(cert.get_notBefore()),
+                'not_after': maybe_bytes(cert.get_notAfter()),
+                'extensions': []
             }
-            result['extensions'].append(ext_info)
 
-        for entity, name in [('subject', cert.get_subject()), ('issuer', cert.get_issuer())]:
-            result[entity] = {}
-            for key, value in name.get_components():
-                key = maybe_bytes(key)
-                value = maybe_bytes(value)
-                result[entity]['{}'.format(key).lower()] = '{}'.format(value)
+            for i in range(cert.get_extension_count()):
+                ext = cert.get_extension(i)
+                ext_info = {
+                    'name': '{}'.format(maybe_bytes(ext.get_short_name())),
+                    'value': '{}'.format(maybe_bytes(ext)),
+                    'critical': ext.get_critical() != 0
+                }
+                result['extensions'].append(ext_info)
 
-        return result
+            for entity, name in [('subject', cert.get_subject()), ('issuer', cert.get_issuer())]:
+                result[entity] = {}
+                for key, value in name.get_components():
+                    key = maybe_bytes(key)
+                    value = maybe_bytes(value)
+                    result[entity]['{}'.format(key).lower()] = '{}'.format(value)
+
+            return result
 
 
 def create_transport_details(transport: Union[ITransport, IProcessTransport], is_server: bool) -> TransportDetails:
     """
+    Create transport details from Twisted transport.
 
-    :param transport:
-    :param is_server:
-    :return:
+    :param transport: The Twisted transport to extract information from.
+    :param is_server: Flag indicating whether this transport side is a "server" (as in TCP server).
+    :return: Transport details object filled with information from the Twisted transport.
     """
     peer = peer2str(transport)
 
@@ -259,17 +278,20 @@ def create_transport_details(transport: Union[ITransport, IProcessTransport], is
         own_tid = threading.get_ident()
     own_fd = -1
 
-    is_secure = ISSLTransport.providedBy(transport)
-    if is_secure:
+    if _HAS_TLS and ISSLTransport.providedBy(transport):
         channel_id = {
             'tls-unique': transport_channel_id(transport, is_server, 'tls-unique'),
         }
         channel_type = TransportDetails.CHANNEL_TYPE_TLS
         peer_cert = extract_peer_certificate(transport)
+        is_secure = True
     else:
         channel_id = {}
         channel_type = TransportDetails.CHANNEL_TYPE_TCP
         peer_cert = None
+        is_secure = False
+
+    # FIXME: really set a default (websocket)?
     channel_framing = TransportDetails.CHANNEL_FRAMING_WEBSOCKET
 
     return TransportDetails(channel_type=channel_type, channel_framing=channel_framing, peer=peer,

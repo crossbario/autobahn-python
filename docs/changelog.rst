@@ -5,6 +5,11 @@
 Changelog
 =========
 
+22.4.2
+------
+
+* fix: can not import autobahn.twisted.util with no-TLS (#1559)
+
 22.4.1
 ------
 
