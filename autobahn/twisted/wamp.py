@@ -27,12 +27,22 @@
 import inspect
 import binascii
 import random
+from typing import Optional, Dict, Any, List, Union
 
 import txaio
+from autobahn.websocket.protocol import WebSocketProtocol
+
 txaio.use_twisted()  # noqa
 
-from twisted.internet.defer import inlineCallbacks, succeed
+from twisted.internet.defer import inlineCallbacks, succeed, Deferred
 from twisted.application import service
+from twisted.internet.interfaces import IReactorCore, IStreamClientEndpoint
+
+try:
+    from twisted.internet.ssl import CertificateOptions
+except ImportError:
+    # PyOpenSSL / TLS not available
+    CertificateOptions = Any
 
 from autobahn.util import public
 
@@ -46,7 +56,7 @@ from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateResponse, PerMessageDeflateResponseAccept
 
 from autobahn.wamp import protocol, auth
-from autobahn.wamp.interfaces import ITransportHandler, ISession, IAuthenticator
+from autobahn.wamp.interfaces import ITransportHandler, ISession, IAuthenticator, ISerializer
 from autobahn.wamp.types import ComponentConfig
 
 __all__ = [
@@ -108,68 +118,46 @@ class ApplicationRunner(object):
     log = txaio.make_logger()
 
     def __init__(self,
-                 url,
-                 realm=None,
-                 extra=None,
-                 serializers=None,
-                 ssl=None,
-                 proxy=None,
-                 headers=None,
-                 max_retries=None,
-                 initial_retry_delay=None,
-                 max_retry_delay=None,
-                 retry_delay_growth=None,
-                 retry_delay_jitter=None):
+                 url: str,
+                 realm: Optional[str] = None,
+                 extra: Optional[Dict[str, Any]] = None,
+                 serializers: Optional[List[ISerializer]] = None,
+                 ssl: Optional[CertificateOptions] = None,
+                 proxy: Optional[Dict[str, Any]] = None,
+                 headers: Optional[Dict[str, Any]] = None,
+                 websocket_options: Optional[Dict[str, Any]] = None,
+                 max_retries: Optional[int] = None,
+                 initial_retry_delay: Optional[float] = None,
+                 max_retry_delay: Optional[float] = None,
+                 retry_delay_growth: Optional[float] = None,
+                 retry_delay_jitter: Optional[float] = None):
         """
 
-        :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
-        :type url: str
-
+        :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://example.com:8080/mypath`)
         :param realm: The WAMP realm to join the application session to.
-        :type realm: str
-
         :param extra: Optional extra configuration to forward to the application component.
-        :type extra: dict
-
         :param serializers: A list of WAMP serializers to use (or None for default serializers).
            Serializers must implement :class:`autobahn.wamp.interfaces.ISerializer`.
         :type serializers: list
-
         :param ssl: (Optional). If specified this should be an
             instance suitable to pass as ``sslContextFactory`` to
             :class:`twisted.internet.endpoints.SSL4ClientEndpoint`` such
             as :class:`twisted.internet.ssl.CertificateOptions`. Leaving
-            it as ``None`` will use the result of calling Twisted's
+            it as ``None`` will use the result of calling Twisted
             :meth:`twisted.internet.ssl.platformTrust` which tries to use
             your distribution's CA certificates.
-        :type ssl: :class:`twisted.internet.ssl.CertificateOptions`
-
-        :param proxy: Explicit proxy server to use; a dict with ``host`` and ``port`` keys
-        :type proxy: dict or None
-
+        :param proxy: Explicit proxy server to use; a dict with ``host`` and ``port`` keys.
         :param headers: Additional headers to send (only applies to WAMP-over-WebSocket).
-        :type headers: dict
-
+        :param websocket_options: Specific WebSocket options to set (only applies to WAMP-over-WebSocket).
+            If not provided, conservative and practical default are chosen.
         :param max_retries: Maximum number of reconnection attempts. Unlimited if set to -1.
-        :type max_retries: int
-
         :param initial_retry_delay: Initial delay for reconnection attempt in seconds (Default: 1.0s).
-        :type initial_retry_delay: float
-
         :param max_retry_delay: Maximum delay for reconnection attempts in seconds (Default: 60s).
-        :type max_retry_delay: float
-
-        :param retry_delay_growth: The growth factor applied to the retry delay between reconnection attempts (Default 1.5).
-        :type retry_delay_growth: float
-
-        :param retry_delay_jitter: A 0-argument callable that introduces nose into the delay. (Default random.random)
-        :type retry_delay_jitter: float
+        :param retry_delay_growth: The growth factor applied to the retry delay between reconnection
+            attempts (Default 1.5).
+        :param retry_delay_jitter: A 0-argument callable that introduces noise into the
+            delay (Default ``random.random``).
         """
-        assert(type(url) == str)
-        assert(realm is None or type(realm) == str)
-        assert(extra is None or type(extra) == dict)
-        assert(headers is None or type(headers) == dict)
-        assert(proxy is None or type(proxy) == dict)
         self.url = url
         self.realm = realm
         self.extra = extra or dict()
@@ -177,6 +165,7 @@ class ApplicationRunner(object):
         self.ssl = ssl
         self.proxy = proxy
         self.headers = headers
+        self.websocket_options = websocket_options
         self.max_retries = max_retries
         self.initial_retry_delay = initial_retry_delay
         self.max_retry_delay = max_retry_delay
@@ -201,21 +190,24 @@ class ApplicationRunner(object):
             return succeed(None)
 
     @public
-    def run(self, make, start_reactor=True, auto_reconnect=False, log_level='info', endpoint=None, reactor=None):
+    def run(self, make, start_reactor: bool = True, auto_reconnect: bool = False,
+            log_level: str = 'info', endpoint: Optional[IStreamClientEndpoint] = None,
+            reactor: Optional[IReactorCore] = None) -> Union[type(None), Deferred]:
         """
         Run the application component.
 
         :param make: A factory that produces instances of :class:`autobahn.twisted.wamp.ApplicationSession`
            when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
-        :type make: callable
-
         :param start_reactor: When ``True`` (the default) this method starts
            the Twisted reactor and doesn't return until the reactor
            stops. If there are any problems starting the reactor or
            connect()-ing, we stop the reactor and raise the exception
            back to the caller.
-
-        :returns: None is returned, unless you specify
+        :param auto_reconnect:
+        :param log_level:
+        :param endpoint:
+        :param reactor:
+        :return: None is returned, unless you specify
             ``start_reactor=False`` in which case the Deferred that
             connect() returns is returned; this will callback() with
             an IProtocol instance, which will actually be an instance
@@ -249,7 +241,7 @@ class ApplicationRunner(object):
             create = make
 
         if self.url.startswith('rs'):
-            # try to parse RawSocket URL ..
+            # try to parse RawSocket URL
             isSecure, host, port = parse_rs_url(self.url)
 
             # use the first configured serializer if any (which means, auto-choose "best")
@@ -259,7 +251,7 @@ class ApplicationRunner(object):
             transport_factory = WampRawSocketClientFactory(create, serializer=serializer)
 
         else:
-            # try to parse WebSocket URL ..
+            # try to parse WebSocket URL
             isSecure, host, port, resource, path, params = parse_ws_url(self.url)
 
             # create a WAMP-over-WebSocket transport client factory
@@ -269,27 +261,48 @@ class ApplicationRunner(object):
             # - http://crossbar.io/docs/WebSocket-Compression/#production-settings
             # - http://crossbar.io/docs/WebSocket-Options/#production-settings
 
-            # The permessage-deflate extensions offered to the server ..
+            # The permessage-deflate extensions offered to the server
             offers = [PerMessageDeflateOffer()]
 
-            # Function to accept permessage_delate responses from the server ..
+            # Function to accept permessage-deflate responses from the server
             def accept(response):
                 if isinstance(response, PerMessageDeflateResponse):
                     return PerMessageDeflateResponseAccept(response)
 
-            # set WebSocket options for all client connections
-            transport_factory.setProtocolOptions(maxFramePayloadSize=1048576,
-                                                 maxMessagePayloadSize=1048576,
-                                                 autoFragmentSize=65536,
-                                                 failByDrop=False,
-                                                 openHandshakeTimeout=2.5,
-                                                 closeHandshakeTimeout=1.,
-                                                 tcpNoDelay=True,
-                                                 autoPingInterval=10.,
-                                                 autoPingTimeout=5.,
-                                                 autoPingSize=12,
-                                                 perMessageCompressionOffers=offers,
-                                                 perMessageCompressionAccept=accept)
+            # default WebSocket options for all client connections
+            protocol_options = {
+                'version': WebSocketProtocol.DEFAULT_SPEC_VERSION,
+                'utf8validateIncoming': True,
+                'acceptMaskedServerFrames': False,
+                'maskClientFrames': True,
+                'applyMask': True,
+                'maxFramePayloadSize': 1048576,
+                'maxMessagePayloadSize': 1048576,
+                'autoFragmentSize': 65536,
+                'failByDrop': True,
+                'echoCloseCodeReason': False,
+                'serverConnectionDropTimeout': 1.,
+                'openHandshakeTimeout': 2.5,
+                'closeHandshakeTimeout': 1.,
+                'tcpNoDelay': True,
+                'perMessageCompressionOffers': offers,
+                'perMessageCompressionAccept': accept,
+                'autoPingInterval': 10.,
+                'autoPingTimeout': 5.,
+                'autoPingSize': 12,
+
+                # see: https://github.com/crossbario/autobahn-python/issues/1327 and
+                # _cancelAutoPingTimeoutCall
+                'autoPingRestartOnAnyTraffic': True,
+            }
+
+            # let user override above default options
+            if self.websocket_options:
+                protocol_options.update(self.websocket_options)
+
+            # set websocket protocol options on Autobahn/Twisted protocol factory, from where it will
+            # be applied for every Autobahn/Twisted protocol instance from the factory
+            transport_factory.setProtocolOptions(**protocol_options)
 
         # supress pointless log noise
         transport_factory.noisy = False
@@ -353,34 +366,41 @@ class ApplicationRunner(object):
 
         if use_service:
             # this code path is automatically reconnecting ..
-            self.log.debug('using t.a.i.ClientService')
+            self.log.info('using t.a.i.ClientService')
 
-            if self.max_retries or self.initial_retry_delay or self.max_retry_delay or self.retry_delay_growth or self.retry_delay_jitter:
-                kwargs = {}
+            if (self.max_retries is not None or self.initial_retry_delay is not None or self.max_retry_delay is not None or self.retry_delay_growth is not None or self.retry_delay_jitter is not None):
 
-                def _jitter():
-                    j = 1 if self.retry_delay_jitter is None else self.retry_delay_jitter
-                    return random.random() * j
+                if self.max_retry_delay > 0:
+                    kwargs = {}
 
-                for key, val in [('initialDelay', self.initial_retry_delay),
-                                 ('maxDelay', self.max_retry_delay),
-                                 ('factor', self.retry_delay_growth),
-                                 ('jitter', _jitter)]:
-                    if val:
-                        kwargs[key] = val
+                    def _jitter():
+                        j = 1 if self.retry_delay_jitter is None else self.retry_delay_jitter
+                        return random.random() * j
 
-                # retry policy that will only try to reconnect if we connected
-                # successfully at least once before (so it fails on host unreachable etc ..)
-                def retry(failed_attempts):
-                    if self._connect_successes > 0 and (self.max_retries == -1 or failed_attempts < self.max_retries):
-                        return backoffPolicy(**kwargs)(failed_attempts)
-                    else:
-                        print('hit stop')
-                        self.stop()
-                        return 100000000000000
+                    for key, val in [('initialDelay', self.initial_retry_delay),
+                                     ('maxDelay', self.max_retry_delay),
+                                     ('factor', self.retry_delay_growth),
+                                     ('jitter', _jitter)]:
+                        if val is not None:
+                            kwargs[key] = val
+
+                    # retry policy that will only try to reconnect if we connected
+                    # successfully at least once before (so it fails on host unreachable etc ..)
+                    def retry(failed_attempts):
+                        if self._connect_successes > 0 and (self.max_retries == -1 or failed_attempts < self.max_retries):
+                            return backoffPolicy(**kwargs)(failed_attempts)
+                        else:
+                            print('hit stop')
+                            self.stop()
+                            return 100000000000000
+                else:
+                    # immediately reconnect (zero delay)
+                    def retry(_):
+                        return 0
             else:
                 retry = backoffPolicy()
 
+            # https://twistedmatrix.com/documents/current/api/twisted.application.internet.ClientService.html
             self._client_service = ClientService(client, transport_factory, retryPolicy=retry)
             self._client_service.startService()
 
@@ -388,7 +408,7 @@ class ApplicationRunner(object):
 
         else:
             # this code path is only connecting once!
-            self.log.debug('using t.i.e.connect()')
+            self.log.info('using t.i.e.connect()')
 
             d = client.connect(transport_factory)
 
