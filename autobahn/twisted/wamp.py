@@ -158,6 +158,10 @@ class ApplicationRunner(object):
         :param retry_delay_jitter: A 0-argument callable that introduces noise into the
             delay (Default ``random.random``).
         """
+        # IMPORTANT: keep this, as it is tested in
+        # autobahn.twisted.test.test_tx_application_runner.TestApplicationRunner.test_runner_bad_proxy
+        assert (proxy is None or type(proxy) == dict)
+
         self.url = url
         self.realm = realm
         self.extra = extra or dict()
