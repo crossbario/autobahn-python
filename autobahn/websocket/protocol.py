@@ -3922,7 +3922,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             d = txaio.as_future(self._onConnect, response)
 
             def on_connect_success(res):
-                self.log.info('onConnect callback completed successfully with result={res}', res=res)
+                self.log.debug('onConnect callback completed successfully with result={res}', res=res)
                 if self.trackedTimings:
                     self.trackedTimings.track('onOpen')
                 self._onOpen()

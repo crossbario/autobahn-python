@@ -370,7 +370,7 @@ class ApplicationRunner(object):
 
         if use_service:
             # this code path is automatically reconnecting ..
-            self.log.info('using t.a.i.ClientService')
+            self.log.debug('using t.a.i.ClientService')
 
             if (self.max_retries is not None or self.initial_retry_delay is not None or self.max_retry_delay is not None or self.retry_delay_growth is not None or self.retry_delay_jitter is not None):
 
@@ -412,7 +412,7 @@ class ApplicationRunner(object):
 
         else:
             # this code path is only connecting once!
-            self.log.info('using t.i.e.connect()')
+            self.log.debug('using t.i.e.connect()')
 
             d = client.connect(transport_factory)
 
