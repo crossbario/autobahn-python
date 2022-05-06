@@ -8,6 +8,7 @@ Changelog
 latest
 ------
 
+* fix: reduce log noise (regression) on ApplicationRunner Twisted (#1561)
 * new: allow ``max_retry_delay==0`` for always-immediate auto-reconnect in ApplicationRunner on Twisted
 * new: add ``websocket_options`` to WAMP ApplicationRunner on Twisted (#888)
 * new: more type hints and docs

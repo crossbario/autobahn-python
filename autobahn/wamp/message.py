@@ -26,7 +26,7 @@
 
 import re
 import binascii
-
+from typing import Any, Dict, Optional
 
 import autobahn
 from autobahn.wamp.exception import ProtocolError, InvalidUriError
@@ -67,34 +67,48 @@ __all__ = ('Message',
            'Interrupt',
            'Yield',
            'check_or_raise_uri',
+           'check_or_raise_realm_name',
            'check_or_raise_id',
+           'check_or_raise_extra',
            'is_valid_enc_algo',
            'is_valid_enc_serializer',
+           'identity_realm_name_category',
            'PAYLOAD_ENC_CRYPTO_BOX',
            'PAYLOAD_ENC_MQTT',
            'PAYLOAD_ENC_STANDARD_IDENTIFIERS')
 
+# all realm names in Autobahn/Crossbar.io must match this
+_URI_PAT_REALM_NAME = re.compile(r"^[A-Za-z][A-Za-z\d_\-@\.]{2,254}$")
+
+# if Ethereum addresses are enabled, realm names which are "0x" prefixed Ethereum addresses are also valid
+_URI_PAT_REALM_NAME_ETH = re.compile(r"^0x([A-Fa-f\d]{40})$")
+
+# realms names might also specifically match ENS URIs
+_URI_PAT_REALM_NAME_ENS = re.compile(r"^([a-z\d_\-@\.]{2,250})\.eth$")
+
+# since WAMP recommends using reverse dotted notation, reverse ENS names can be checked with this pattern
+_URI_PAT_REALM_NAME_ENS_REVERSE = re.compile(r"^eth\.([a-z\d_\-@\.]{2,250})$")
 
 # strict URI check allowing empty URI components
-_URI_PAT_STRICT_EMPTY = re.compile(r"^(([0-9a-z_]+\.)|\.)*([0-9a-z_]+)?$")
+_URI_PAT_STRICT_EMPTY = re.compile(r"^(([\da-z_]+\.)|\.)*([\da-z_]+)?$")
 
 # loose URI check allowing empty URI components
 _URI_PAT_LOOSE_EMPTY = re.compile(r"^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$")
 
 # strict URI check disallowing empty URI components
-_URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]+)$")
+_URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([\da-z_]+\.)*([\da-z_]+)$")
 
 # loose URI check disallowing empty URI components
 _URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)$")
 
 # strict URI check disallowing empty URI components in all but the last component
-_URI_PAT_STRICT_LAST_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]*)$")
+_URI_PAT_STRICT_LAST_EMPTY = re.compile(r"^([\da-z_]+\.)*([\da-z_]*)$")
 
 # loose URI check disallowing empty URI components in all but the last component
 _URI_PAT_LOOSE_LAST_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]*)$")
 
 # custom (=implementation specific) WAMP attributes (used in WAMP message details/options)
-_CUSTOM_ATTRIBUTE = re.compile(r"^x_([a-z][0-9a-z_]+)?$")
+_CUSTOM_ATTRIBUTE = re.compile(r"^x_([a-z][\da-z_]+)?$")
 
 # Value for algo attribute in end-to-end encrypted messages using cryptobox, which
 # is a scheme based on Curve25519, SHA512, Salsa20 and Poly1305.
@@ -211,33 +225,54 @@ def b2a(data, max_len=40):
         return s
 
 
-def check_or_raise_uri(value, message="WAMP message invalid", strict=False, allow_empty_components=False, allow_last_empty=False, allow_none=False):
+def identity_realm_name_category(value: Any) -> Optional[str]:
+    """
+    Identify the real name category of the given value:
+
+    * ``"normal"``: A normal WAMP realm name, e.g. ``"realm1"``.
+    * ``"eth"``: An Ethereum address, e.g. ``"0xe59C7418403CF1D973485B36660728a5f4A8fF9c"``.
+    * ``"ens"``: An Ethereum ENS name, e.g. ``"wamp-proto.eth"``.
+    * ``"reverse-ens"``: An Ethereum ENS name in reverse notation, e.g. ``"eth.wamp-proto"``.
+    * ``None``: The value is not a WAMP realm name.
+
+    :param value: The value for which to identify realm name category.
+    :return: The category identified, one of ``["normal", "eth", "ens", "reverse-ens"]``
+        or ``None``.
+    """
+    if type(value) != str:
+        return None
+    if _URI_PAT_REALM_NAME.match(value):
+        if _URI_PAT_REALM_NAME_ENS.match(value):
+            return 'ens'
+        elif _URI_PAT_REALM_NAME_ENS_REVERSE.match(value):
+            return 'reverse-ens'
+        else:
+            return 'normal'
+    elif _URI_PAT_REALM_NAME_ETH.match(value):
+        return 'eth'
+    else:
+        return None
+
+
+def check_or_raise_uri(value: Any, message: str = "WAMP message invalid", strict: bool = False,
+                       allow_empty_components: bool = False, allow_last_empty: bool = False,
+                       allow_none: bool = False) -> str:
     """
     Check a value for being a valid WAMP URI.
 
-    If the value is not a valid WAMP URI is invalid, raises :class:`autobahn.wamp.exception.ProtocolError`.
-    Otherwise return the value.
+    If the value is not a valid WAMP URI is invalid, raises :class:`autobahn.wamp.exception.InvalidUriError`,
+    otherwise returns the value.
 
     :param value: The value to check.
-    :type value: str or None
-
     :param message: Prefix for message in exception raised when value is invalid.
-    :type message: str
-
     :param strict: If ``True``, do a strict check on the URI (the WAMP spec SHOULD behavior).
-    :type strict: bool
-
     :param allow_empty_components: If ``True``, allow empty URI components (for pattern based
        subscriptions and registrations).
-    :type allow_empty_components: bool
-
+    :param allow_last_empty: If ``True``, allow the last URI component to be empty (for prefix based
+       subscriptions and registrations).
     :param allow_none: If ``True``, allow ``None`` for URIs.
-    :type allow_none: bool
-
     :returns: The URI value (if valid).
-    :rtype: str
-
-    :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
+    :raises: instance of :class:`autobahn.wamp.exception.InvalidUriError`
     """
     if value is None:
         if allow_none:
@@ -270,22 +305,55 @@ def check_or_raise_uri(value, message="WAMP message invalid", strict=False, allo
         return value
 
 
-def check_or_raise_id(value, message="WAMP message invalid"):
+def check_or_raise_realm_name(value, message="WAMP message invalid", allow_eth=True):
+    """
+    Check a value for being a valid WAMP URI.
+
+    If the value is not a valid WAMP URI is invalid, raises :class:`autobahn.wamp.exception.InvalidUriError`,
+    otherwise returns the value.
+
+    :param value: The value to check, e.g. ``"realm1"`` or ``"com.example.myapp"`` or ``"eth.example"``.
+    :param message: Prefix for message in exception raised when value is invalid.
+    :param allow_eth: If ``True``, allow Ethereum addresses as realm names,
+        e.g. ``"0xe59C7418403CF1D973485B36660728a5f4A8fF9c"``.
+    :returns: The URI value (if valid).
+    :raises: instance of :class:`autobahn.wamp.exception.InvalidUriError`
+    """
+    if value is None:
+        raise InvalidUriError("{0}: realm name cannot be null".format(message))
+
+    if type(value) != str:
+        raise InvalidUriError("{0}: invalid type {1} for realm name".format(message, type(value)))
+
+    if allow_eth:
+        if _URI_PAT_REALM_NAME.match(value) or _URI_PAT_REALM_NAME_ETH.match(value):
+            return value
+        else:
+            raise InvalidUriError(
+                '{0}: invalid value "{1}" for realm name (did not match patterns '
+                '"{2}" or "{3}")'.format(message, value,
+                                         _URI_PAT_REALM_NAME.pattern,
+                                         _URI_PAT_REALM_NAME_ETH.pattern))
+    else:
+        if _URI_PAT_REALM_NAME.match(value):
+            return value
+        else:
+            raise InvalidUriError(
+                '{0}: invalid value "{1}" for realm name (did not match pattern '
+                '"{2}")'.format(message, value,
+                                _URI_PAT_REALM_NAME.pattern))
+
+
+def check_or_raise_id(value: Any, message: str = "WAMP message invalid") -> int:
     """
     Check a value for being a valid WAMP ID.
 
-    If the value is not a valid WAMP ID, raises :class:`autobahn.wamp.exception.ProtocolError`.
-    Otherwise return the value.
+    If the value is not a valid WAMP ID, raises :class:`autobahn.wamp.exception.ProtocolError`,
+    otherwise return the value.
 
     :param value: The value to check.
-    :type value: int
-
     :param message: Prefix for message in exception raised when value is invalid.
-    :type message: str
-
     :returns: The ID value (if valid).
-    :rtype: int
-
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
     if type(value) != int:
@@ -297,22 +365,16 @@ def check_or_raise_id(value, message="WAMP message invalid"):
     return value
 
 
-def check_or_raise_extra(value, message="WAMP message invalid"):
+def check_or_raise_extra(value: Any, message: str = "WAMP message invalid") -> Dict[str, Any]:
     """
     Check a value for being a valid WAMP extra dictionary.
 
-    If the value is not a valid WAMP extra dictionary, raises :class:`autobahn.wamp.exception.ProtocolError`.
-    Otherwise return the value.
+    If the value is not a valid WAMP extra dictionary, raises :class:`autobahn.wamp.exception.ProtocolError`,
+    otherwise return the value.
 
     :param value: The value to check.
-    :type value: dict
-
     :param message: Prefix for message in exception raised when value is invalid.
-    :type message: str
-
     :returns: The extra dictionary (if valid).
-    :rtype: dict
-
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
     if type(value) != dict:
