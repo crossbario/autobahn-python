@@ -232,7 +232,7 @@ def identity_realm_name_category(value: Any) -> Optional[str]:
     * ``"normal"``: A normal WAMP realm name, e.g. ``"realm1"``.
     * ``"eth"``: An Ethereum address, e.g. ``"0xe59C7418403CF1D973485B36660728a5f4A8fF9c"``.
     * ``"ens"``: An Ethereum ENS name, e.g. ``"wamp-proto.eth"``.
-    * ``"reverse-ens"``: An Ethereum ENS name in reverse notation, e.g. ``"eth.wamp-proto"``.
+    * ``"reverse_ens"``: An Ethereum ENS name in reverse notation, e.g. ``"eth.wamp-proto"``.
     * ``None``: The value is not a WAMP realm name.
 
     :param value: The value for which to identify realm name category.
@@ -245,7 +245,7 @@ def identity_realm_name_category(value: Any) -> Optional[str]:
         if _URI_PAT_REALM_NAME_ENS.match(value):
             return 'ens'
         elif _URI_PAT_REALM_NAME_ENS_REVERSE.match(value):
-            return 'reverse-ens'
+            return 'reverse_ens'
         else:
             return 'normal'
     elif _URI_PAT_REALM_NAME_ETH.match(value):
