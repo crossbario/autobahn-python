@@ -113,7 +113,9 @@ jobs:
         python -c "from autobahn.testutil import FakeTransport; print(FakeTransport)"
         python -c "import os; print('WEB3_INFURA_PROJECT_ID', len(os.environ.get('WEB3_INFURA_PROJECT_ID', '')))"
         python -c "import os; print('WEB3_INFURA_API_SECRET', len(os.environ.get('WEB3_INFURA_API_SECRET', '')))"
-        python -c "from web3.auto.infura import w3; print(w3.isConnected())"
+
+    # does not work on py3.10
+    # python -c "from web3.auto.infura import w3; print(w3.isConnected())"
 
     - name: Run unit tests (PyTest)
       run: |
