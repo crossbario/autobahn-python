@@ -1,11 +1,16 @@
 import os
+import sys
 import unittest
 from autobahn.xbr import HAS_XBR
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ
 
+# TypeError: As of 3.10, the *loop* parameter was removed from Lock() since it is no longer necessary
+IS_CPY_310 = sys.version_info.minor == 10
 
+
+@unittest.skipIf(IS_CPY_310, 'web3 raised TypeError on Python 3.10')
 @unittest.skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
 @unittest.skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
 class TestWeb3(unittest.TestCase):
