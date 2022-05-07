@@ -10,11 +10,17 @@ HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ
 IS_CPY_310 = sys.version_info.minor == 10
 
 
-@unittest.skipIf(IS_CPY_310, 'web3 raised TypeError on Python 3.10')
 @unittest.skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
 @unittest.skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
 class TestWeb3(unittest.TestCase):
+    gw_config = {
+        'type': 'infura',
+        'key': os.environ['WEB3_INFURA_PROJECT_ID'],
+        'network': 'mainnet',
+    }
 
+    # solved via: websockets>=10.3
+    # @unittest.skipIf(IS_CPY_310, 'Web3 v5.29.0 (web3.auto.infura) raises TypeError on Python 3.10')
     def test_connect_w3_infura_auto(self):
         from web3.auto.infura import w3
 
@@ -22,13 +28,7 @@ class TestWeb3(unittest.TestCase):
 
     def test_connect_w3_autobahn(self):
         from autobahn.xbr import make_w3
-
-        gw_config = {
-            'type': 'infura',
-            'key': os.environ['WEB3_INFURA_PROJECT_ID'],
-            'network': 'mainnet',
-        }
-        w3 = make_w3(gw_config)
+        w3 = make_w3(self.gw_config)
         self.assertTrue(w3.isConnected())
 
     def test_ens_valid_names(self):
@@ -38,9 +38,10 @@ class TestWeb3(unittest.TestCase):
             self.assertTrue(ENS.is_valid_name(name))
 
     def test_ens_resolve_names(self):
-        from web3.auto.infura import w3
+        from autobahn.xbr import make_w3
         from ens.main import ENS
 
+        w3 = make_w3(self.gw_config)
         ens = ENS.fromWeb3(w3)
         for name, adr in [
             ('wamp-proto.eth', '0x66267d0b1114cFae80C37942177a846d666b114a'),
