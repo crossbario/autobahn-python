@@ -108,7 +108,7 @@ jobs:
         python -c "import autobahn; print(autobahn.__version__)"
         python -c "from autobahn import xbr; print(xbr.HAS_XBR)"
         python -c "from autobahn.testutil import FakeTransport; print(FakeTransport)"
-        time -f "%e" python -c "from web3.auto.infura import w3; print(w3.isConnected())"
+        python -c "from web3.auto.infura import w3; print(w3.isConnected())"
         tox -c tox.ini -e ${{ matrix.framework }}
 
   docs:
