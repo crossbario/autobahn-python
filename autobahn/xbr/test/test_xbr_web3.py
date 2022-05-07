@@ -1,7 +1,13 @@
 import os
 import sys
-import unittest
+
+from unittest import skipIf
+from twisted.trial.unittest import TestCase
+
+from twisted.internet.defer import inlineCallbacks
+
 from autobahn.xbr import HAS_XBR
+from autobahn.xbr._util import Datapool
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
@@ -10,9 +16,9 @@ HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INF
 IS_CPY_310 = sys.version_info.minor == 10
 
 
-@unittest.skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
-@unittest.skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
-class TestWeb3(unittest.TestCase):
+@skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
+@skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
+class TestWeb3(TestCase):
     gw_config = {
         'type': 'infura',
         'key': os.environ.get('WEB3_INFURA_PROJECT_ID', ''),
@@ -20,7 +26,7 @@ class TestWeb3(unittest.TestCase):
     }
 
     # solved via websockets>=10.3, but web3==5.29.0 requires websockets<10
-    @unittest.skipIf(IS_CPY_310, 'Web3 v5.29.0 (web3.auto.infura) raises TypeError on Python 3.10')
+    @skipIf(IS_CPY_310, 'Web3 v5.29.0 (web3.auto.infura) raises TypeError on Python 3.10')
     def test_connect_w3_infura_auto(self):
         from web3.auto.infura import w3
 
@@ -48,3 +54,30 @@ class TestWeb3(unittest.TestCase):
         ]:
             _adr = ens.address(name)
             self.assertEqual(adr, _adr)
+
+    def test_datapool_ctor(self):
+        name = 'wamp-proto.eth'
+
+        dp1 = Datapool(name)
+        self.assertEqual(dp1.status, 'STOPPED')
+        self.assertEqual(dp1.name_or_address, name)
+        self.assertEqual(dp1.gateway_config, None)
+        self.assertEqual(dp1.name_category, 'ens')
+
+        dp2 = Datapool(name, self.gw_config)
+        self.assertEqual(dp2.status, 'STOPPED')
+        self.assertEqual(dp2.name_or_address, name)
+        self.assertEqual(dp2.gateway_config, self.gw_config)
+        self.assertEqual(dp2.name_category, 'ens')
+
+    @inlineCallbacks
+    def test_datapool_initialize(self):
+        name = 'wamp-proto.eth'
+
+        dp1 = Datapool(name)
+
+        self.assertEqual(dp1.status, 'STOPPED')
+        yield dp1.initialize()
+        self.assertEqual(dp1.status, 'RUNNING')
+
+        self.assertEqual(dp1.address, '0x66267d0b1114cFae80C37942177a846d666b114a')
