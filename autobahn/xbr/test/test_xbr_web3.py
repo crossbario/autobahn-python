@@ -4,7 +4,7 @@ import unittest
 from autobahn.xbr import HAS_XBR
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
-HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ
+HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
 
 # TypeError: As of 3.10, the *loop* parameter was removed from Lock() since it is no longer necessary
 IS_CPY_310 = sys.version_info.minor == 10
@@ -15,7 +15,7 @@ IS_CPY_310 = sys.version_info.minor == 10
 class TestWeb3(unittest.TestCase):
     gw_config = {
         'type': 'infura',
-        'key': os.environ['WEB3_INFURA_PROJECT_ID'],
+        'key': os.environ.get('WEB3_INFURA_PROJECT_ID', ''),
         'network': 'mainnet',
     }
 
