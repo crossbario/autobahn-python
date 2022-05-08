@@ -10,6 +10,7 @@ if HAS_XBR:
     from autobahn.xbr._frealm import Seeder, FederatedRealm
 
 
+@skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
 @skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
 class TestFederatedRealm(TestCase):
 
