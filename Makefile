@@ -198,9 +198,13 @@ test_cryptosign:
 	USE_ASYNCIO=1 pytest -s -v -rfA --ignore=./autobahn/twisted autobahn/wamp/test/test_wamp_cryptosign.py
 	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign
 
-test_web3:
-	#pytest -s -v -rfA autobahn/xbr/test/test_xbr_web3.py
+test_xbr_web3:
+#	pytest -s -v -rfA autobahn/xbr/test/test_xbr_web3.py
 	trial autobahn/xbr/test/test_xbr_web3.py
+
+test_xbr_frealm:
+#	pytest -s -v -rfA autobahn/xbr/test/test_xbr_frealm.py
+	trial autobahn/xbr/test/test_xbr_frealm.py
 
 test_wamp_scram:
 	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_scram
