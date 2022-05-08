@@ -2,12 +2,13 @@ import os
 import sys
 
 from unittest import skipIf
+from unittest.mock import MagicMock
 from twisted.trial.unittest import TestCase
 
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.xbr import HAS_XBR
-from autobahn.xbr._util import Datapool
+from autobahn.xbr._util import Datapool, Seeder
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
@@ -81,3 +82,28 @@ class TestWeb3(TestCase):
         self.assertEqual(dp1.status, 'RUNNING')
 
         self.assertEqual(dp1.address, '0x66267d0b1114cFae80C37942177a846d666b114a')
+
+    def test_datapool_seeders(self):
+        dp1 = MagicMock()
+        dp1.name_or_address = 'wamp-proto.eth'
+        dp1.address = '0x66267d0b1114cFae80C37942177a846d666b114a'
+        dp1.status = 'RUNNING'
+        dp1.seeders = [
+            Seeder(url='wss://datapool1.example.com/ws',
+                   label='Example Inc.',
+                   operator='0xf5fb56886f033855C1a36F651E927551749361bC',
+                   country='US'),
+            Seeder(url='wss://dp1.foobar.org/ws',
+                   label='Foobar Foundation',
+                   operator='0xe59C7418403CF1D973485B36660728a5f4A8fF9c',
+                   country='DE'),
+            Seeder(url='wss://public-datapool1.pierre.fr:443',
+                   label='Pierre PP',
+                   operator='0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
+                   country='FR'),
+        ]
+        self.assertEqual(len(dp1.seeders), 3)
+
+        transports = [s.url for s in dp1.seeders]
+        self.assertEqual(transports, ['wss://datapool1.example.com/ws', 'wss://dp1.foobar.org/ws',
+                                      'wss://public-datapool1.pierre.fr:443'])

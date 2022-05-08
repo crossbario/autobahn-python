@@ -116,18 +116,70 @@ def pack_uint256(value):
 
 
 class Seeder(object):
+    """
+
+    """
     __slots__ = (
-        '_label',
         '_url',
+        '_label',
         '_operator',
         '_country',
     )
 
-    def __init__(self):
-        self._label: Optional[str] = None
-        self._url: Optional[str] = None
-        self._operator: Optional[str] = None
-        self._country: Optional[str] = None
+    def __init__(self,
+                 url: Optional[str] = None,
+                 label: Optional[str] = None,
+                 operator: Optional[str] = None,
+                 country: Optional[str] = None):
+        """
+
+        :param url:
+        :param label:
+        :param operator:
+        :param country:
+        """
+        self._url: Optional[str] = url
+        self._label: Optional[str] = label
+        self._operator: Optional[str] = operator
+        self._country: Optional[str] = country
+
+    @property
+    def url(self) -> Optional[str]:
+        """
+        Public WAMP endpoint of seeder. Secure WebSocket URL resolving to a public IPv4
+        or IPv6 listening url accepting incoming WAMP-WebSocket connections,
+        e.g. ``wss://service1.example.com/ws``.
+
+        :return: The url URL.
+        """
+        return self._url
+
+    @property
+    def label(self) -> Optional[str]:
+        """
+        Operator endpoint label.
+
+        :return: A human readable label for the operator or specific operator endpoint.
+        """
+        return self._label
+
+    @property
+    def operator(self) -> Optional[str]:
+        """
+        Operator address, e.g. ``"0xe59C7418403CF1D973485B36660728a5f4A8fF9c"``.
+
+        :return: The Ethereum address of the endpoint operator.
+        """
+        return self._operator
+
+    @property
+    def country(self) -> Optional[str]:
+        """
+        Operator country (ISO 3166-1 alpha-2), e.g. ``"US"``.
+
+        :return: ISO 3166-1 alpha-2 country code.
+        """
+        return self._country
 
 
 class Datapool(object):

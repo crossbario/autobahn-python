@@ -132,6 +132,9 @@ upload_exe:
 test_infura:
 	time -f "%e" python -c "from web3.auto.infura import w3; print(w3.isConnected())"
 
+test_xbr:
+	USE_TWISTED=1 trial autobahn.xbr
+
 test_xbr_cli:
 	xbrnetwork
 	xbrnetwork version
