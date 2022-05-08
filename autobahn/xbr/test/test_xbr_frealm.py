@@ -1,9 +1,11 @@
 import os
 from unittest import skipIf
 from unittest.mock import MagicMock
-from twisted.trial.unittest import TestCase
 
+from twisted.trial.unittest import TestCase
 from twisted.internet.defer import inlineCallbacks
+
+from autobahn.twisted.component import Component, run
 
 from autobahn.xbr import HAS_XBR
 if HAS_XBR:
@@ -73,3 +75,22 @@ class TestFederatedRealm(TestCase):
         transports = [s.endpoint for s in fr1.seeders]
         self.assertEqual(transports, ['wss://frealm1.example.com/ws', 'wss://fr1.foobar.org/ws',
                                       'wss://public-frealm1.pierre.fr:443'])
+
+    @skipIf(not os.environ.get('WAMP_ROUTER_URLS', None), 'needs to have WAMP_ROUTER_URLS define')
+    def test_seeders_multi_reconnect(self):
+        # WAMP_ROUTER_URLS
+        # crossbar start --cbdir=./autobahn/wamp/test/.crossbar --config=config1.json
+        transports = ['ws://localhost:8080/ws', 'ws://localhost:8081/ws', 'ws://localhost:8082/ws']
+        realm = 'realm1'
+        authentication = {
+            'scram': {
+                'authid': None,
+                'password': None,
+                'kdf': 'argon2id13',
+                'iterations': 4096,
+                'memory': 512,
+            }
+        }
+        component = Component(transports=transports, realm=realm, authentication=authentication)
+        d = run([component], log_level='info')
+        return d
