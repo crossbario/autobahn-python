@@ -18,6 +18,12 @@ on:
 
 jobs:
   check:
+    env:
+      WEB3_INFURA_PROJECT_ID: "1c91697c211f4fcd8c7361f4c4e1f55f"
+      # not sure why, but this doesn't work currently:
+      # WEB3_INFURA_PROJECT_ID: ${{ secrets.WEB3_INFURA_PROJECT_ID }}
+      # WEB3_INFURA_API_SECRET: ${{ secrets.WEB3_INFURA_API_SECRET }}
+
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
