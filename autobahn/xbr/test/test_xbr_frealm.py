@@ -56,7 +56,7 @@ class TestFederatedRealm(TestCase):
     @inlineCallbacks
     def test_frealm_initialize(self):
         name = 'wamp-proto.eth'
-        fr1 = FederatedRealm(name)
+        fr1 = FederatedRealm(name, self.gw_config)
 
         self.assertEqual(fr1.status, 'STOPPED')
         yield fr1.initialize()
