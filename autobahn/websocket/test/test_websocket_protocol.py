@@ -47,7 +47,9 @@ class WebSocketClientProtocolTests(unittest.TestCase):
     def setUp(self):
         t = FakeTransport()
         f = WebSocketClientFactory()
+        f.log = txaio.make_logger()
         p = WebSocketClientProtocol()
+        p.log = txaio.make_logger()
         p.factory = f
         p.transport = t
         p._transport_details = TransportDetails()
@@ -110,7 +112,9 @@ class WebSocketServerProtocolTests(unittest.TestCase):
     def setUp(self):
         t = FakeTransport()
         f = WebSocketServerFactory()
+        f.log = txaio.make_logger()
         p = WebSocketServerProtocol()
+        p.log = txaio.make_logger()
         p.factory = f
         p.transport = t
 

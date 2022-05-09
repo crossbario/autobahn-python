@@ -24,12 +24,21 @@
 #
 ###############################################################################
 
+import os
 import hashlib
 import binascii
 import unittest
 from unittest.mock import Mock
 
 import txaio
+
+if os.environ.get('USE_TWISTED', None):
+    txaio.use_twisted()
+elif os.environ.get('USE_ASYNCIO', None):
+    txaio.use_asyncio()
+else:
+    raise RuntimeError('need either USE_TWISTED=1 or USE_ASYNCIO=1')
+
 from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN
 from autobahn.wamp import types
 from autobahn.wamp.auth import create_authenticator

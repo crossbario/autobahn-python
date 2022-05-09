@@ -171,7 +171,7 @@ packages = [
     'autobahn.rawsocket.test',
     'autobahn.asyncio',
     'autobahn.twisted',
-    'autobahn.twisted.testing',
+    'autobahn.twisted.test',
     'autobahn.nvx',
     'autobahn.nvx.test',
     'twisted.plugins',
@@ -179,6 +179,7 @@ packages = [
 
 xbr_packages = [
     'autobahn.xbr',
+    'autobahn.xbr.test',
     'autobahn.asyncio.xbr',
     'autobahn.twisted.xbr',
 ]
