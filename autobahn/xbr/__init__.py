@@ -76,6 +76,8 @@ try:
 
     from autobahn.xbr._wallet import stretch_argon2_secret, expand_argon2_secret, pkm_from_argon2_secret  # noqa
 
+    from autobahn.xbr._frealm import FederatedRealm, Seeder
+
     HAS_XBR = True
 
     if not hasattr(abi, 'collapse_type'):
@@ -393,6 +395,9 @@ try:
         'stretch_argon2_secret',
         'expand_argon2_secret',
         'pkm_from_argon2_secret',
+
+        'FederatedRealm',
+        'Seeder',
     )
 
 except (ImportError, FileNotFoundError) as e:
