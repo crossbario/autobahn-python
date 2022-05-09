@@ -31,6 +31,8 @@ from collections import deque
 from typing import Optional
 
 import txaio
+txaio.use_asyncio()  # noqa
+
 from autobahn.util import public, hltype
 from autobahn.asyncio.util import create_transport_details
 from autobahn.wamp import websocket
@@ -193,6 +195,8 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
     * :class:`autobahn.websocket.interfaces.IWebSocketChannel`
     """
 
+    log = txaio.make_logger()
+
 
 @public
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
@@ -203,6 +207,8 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
     * :class:`autobahn.websocket.interfaces.IWebSocketChannel`
     """
+
+    log = txaio.make_logger()
 
     def _onConnect(self, response):
         res = self.onConnect(response)
@@ -236,6 +242,8 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
     * :class:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`
     """
 
+    log = txaio.make_logger()
+
     protocol = WebSocketServerProtocol
 
     def __init__(self, *args, **kwargs):
@@ -262,6 +270,8 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
     * :class:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`
     """
 
+    log = txaio.make_logger()
+
     def __init__(self, *args, **kwargs):
         """
 
@@ -287,12 +297,16 @@ class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSock
     * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
+    log = txaio.make_logger()
+
 
 @public
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
     """
     asyncio-based WAMP-over-WebSocket server factory.
     """
+
+    log = txaio.make_logger()
 
     protocol = WampWebSocketServerProtocol
 
@@ -329,12 +343,16 @@ class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSock
     * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
+    log = txaio.make_logger()
+
 
 @public
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):
     """
     asyncio-based WAMP-over-WebSocket client factory.
     """
+
+    log = txaio.make_logger()
 
     protocol = WampWebSocketClientProtocol
 

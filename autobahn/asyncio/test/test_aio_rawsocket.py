@@ -2,6 +2,7 @@ import pytest
 import os
 
 from unittest.mock import Mock, call
+
 from autobahn.asyncio.rawsocket import PrefixProtocol, RawSocketClientProtocol, RawSocketServerProtocol, \
     WampRawSocketClientFactory, WampRawSocketServerFactory
 from autobahn.asyncio.util import get_serializers

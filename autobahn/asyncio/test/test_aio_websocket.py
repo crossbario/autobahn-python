@@ -9,8 +9,6 @@ from unittest.mock import Mock
 
 from autobahn.asyncio.websocket import WebSocketServerFactory
 
-# https://medium.com/ideas-at-igenius/testing-asyncio-python-code-with-pytest-a2f3628f82bc
-
 
 async def echo_async(what, when):
     await asyncio.sleep(when)

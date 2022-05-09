@@ -454,6 +454,8 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
     Implements :class:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`
     """
 
+    log = txaio.make_logger()
+
     def __init__(self, *args, **kwargs):
         """
 
@@ -479,6 +481,8 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
 
     Implements :class:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`
     """
+
+    log = txaio.make_logger()
 
     def __init__(self, *args, **kwargs):
         """

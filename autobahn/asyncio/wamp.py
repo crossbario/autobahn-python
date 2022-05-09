@@ -28,6 +28,8 @@ import asyncio
 import signal
 
 import txaio
+txaio.use_asyncio()  # noqa
+
 from autobahn.util import public
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
