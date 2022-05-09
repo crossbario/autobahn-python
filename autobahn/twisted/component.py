@@ -365,7 +365,7 @@ def run(components: List[Component], log_level: str = 'info', stop_at_close: boo
 
     log = txaio.make_logger()
 
-    if False and stop_at_close:
+    if stop_at_close:
         def done_callback(reactor, arg):
             if isinstance(arg, Failure):
                 log.error('Something went wrong: {log_failure}', failure=arg)
@@ -377,5 +377,4 @@ def run(components: List[Component], log_level: str = 'info', stop_at_close: boo
     else:
         done_callback = None
 
-    # react(component._run, (components, done_callback))
-    return react(component._run, (components,))
+    react(component._run, (components, done_callback))

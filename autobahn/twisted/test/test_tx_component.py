@@ -394,7 +394,7 @@ if os.environ.get('USE_TWISTED', False):
                         "foo"
                     ]
                 )
-            self.assertIn("must be a dict", str(ctx.exception))
+            self.assertIn("invalid WebSocket URL", str(ctx.exception))
 
         def test_no_url(self):
             with self.assertRaises(ValueError) as ctx:

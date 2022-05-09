@@ -5,8 +5,6 @@ from unittest.mock import MagicMock
 from twisted.trial.unittest import TestCase
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.component import Component, run
-
 from autobahn.xbr import HAS_XBR
 if HAS_XBR:
     from autobahn.xbr._frealm import Seeder, FederatedRealm
@@ -77,34 +75,36 @@ class TestFederatedRealm(TestCase):
                                       'wss://public-frealm1.pierre.fr:443'])
 
 
-@skipIf(not os.environ.get('WAMP_ROUTER_URLS', None), 'WAMP_ROUTER_URLS not defined')
-@skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
-@skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
-class TestFederatedRealmNetworked(TestCase):
-
-    def test_seeders_multi_reconnect(self):
-        # WAMP_ROUTER_URLS=ws://localhost:8080/ws,ws://localhost:8081/ws,ws://localhost:8082/ws
-        # crossbar start --cbdir=./autobahn/xbr/test/.crossbar --config=config1.json
-        transports = os.environ.get('WAMP_ROUTER_URLS', '').split(',')
-        realm = 'realm1'
-        authentication = {
-            'cryptosign': {
-                'privkey': '20e8c05d0ede9506462bb049c4843032b18e8e75b314583d0c8d8a4942f9be40',
-            }
-        }
-
-        component = Component(transports=transports, realm=realm, authentication=authentication)
-        # component.start()
-
-        # @inlineCallbacks
-        # def main(reactor, session):
-        #     print("Client session={}".format(session))
-        #     res = yield session.call('user.add2', 23, 666)
-        #     print(res)
-        #     session.leave()
-        #
-        # from autobahn.wamp.component import _run
-        # from twisted.internet import reactor
-        # d = _run(reactor, [component])
-        # #d = run([component], log_level='info', stop_at_close=True)
-        # res = yield d
+# @skipIf(not os.environ.get('WAMP_ROUTER_URLS', None), 'WAMP_ROUTER_URLS not defined')
+# @skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
+# @skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
+# class TestFederatedRealmNetworked(TestCase):
+#
+#     def test_seeders_multi_reconnect(self):
+#         from autobahn.twisted.component import Component, run
+#
+#         # WAMP_ROUTER_URLS=ws://localhost:8080/ws,ws://localhost:8081/ws,ws://localhost:8082/ws
+#         # crossbar start --cbdir=./autobahn/xbr/test/.crossbar --config=config1.json
+#         transports = os.environ.get('WAMP_ROUTER_URLS', '').split(',')
+#         realm = 'realm1'
+#         authentication = {
+#             'cryptosign': {
+#                 'privkey': '20e8c05d0ede9506462bb049c4843032b18e8e75b314583d0c8d8a4942f9be40',
+#             }
+#         }
+#
+#         component = Component(transports=transports, realm=realm, authentication=authentication)
+#         # component.start()
+#
+#         # @inlineCallbacks
+#         # def main(reactor, session):
+#         #     print("Client session={}".format(session))
+#         #     res = yield session.call('user.add2', 23, 666)
+#         #     print(res)
+#         #     session.leave()
+#         #
+#         # from autobahn.wamp.component import _run
+#         # from twisted.internet import reactor
+#         # d = _run(reactor, [component])
+#         # #d = run([component], log_level='info', stop_at_close=True)
+#         # res = yield d
