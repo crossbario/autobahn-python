@@ -30,14 +30,16 @@ from autobahn.wamp.uri import error
 
 __all__ = (
     'Error',
-    'TypeCheckError',
     'SessionNotReady',
     'SerializationError',
+    'InvalidUriError',
     'ProtocolError',
     'TransportLost',
     'ApplicationError',
     'NotAuthorized',
     'InvalidUri',
+    'InvalidPayload',
+    'TypeCheckError',
 )
 
 

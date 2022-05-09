@@ -1432,9 +1432,11 @@ class ApplicationSession(BaseSession):
         exc = exception.TransportLost()
         self._errback_outstanding_requests(exc)
 
+    # FIXME:
+    # def publish(self, topic: str, *args: Optional[List[Any]], **kwargs: Optional[Dict[str, Any]]) -> Optional[Publication]:
+
     @public
-    def publish(self, topic: str, *args: Optional[List[Any]], **kwargs: Optional[Dict[str, Any]]) -> \
-            Optional[Publication]:
+    def publish(self, topic: str, *args, **kwargs) -> Optional[Publication]:
         """
         Implements :meth:`autobahn.wamp.interfaces.IPublisher.publish`
         """

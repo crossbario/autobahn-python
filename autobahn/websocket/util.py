@@ -137,13 +137,13 @@ def parse_url(url):
     parsed = urlparse.urlparse(url)
 
     if parsed.scheme not in ["ws", "wss"]:
-        raise Exception("invalid WebSocket URL: protocol scheme '{}' is not for WebSocket".format(parsed.scheme))
+        raise ValueError("invalid WebSocket URL: protocol scheme '{}' is not for WebSocket".format(parsed.scheme))
 
     if not parsed.hostname or parsed.hostname == "":
-        raise Exception("invalid WebSocket URL: missing hostname")
+        raise ValueError("invalid WebSocket URL: missing hostname")
 
     if parsed.fragment is not None and parsed.fragment != "":
-        raise Exception("invalid WebSocket URL: non-empty fragment '%s" % parsed.fragment)
+        raise ValueError("invalid WebSocket URL: non-empty fragment '%s" % parsed.fragment)
 
     if parsed.path is not None and parsed.path != "":
         ppath = parsed.path
@@ -182,6 +182,6 @@ def parse_url(url):
             tcp_port = int(parsed.port)
 
         if tcp_port < 1 or tcp_port > 65535:
-            raise Exception("invalid port {}".format(tcp_port))
+            raise ValueError("invalid port {}".format(tcp_port))
 
         return parsed.scheme == "wss", parsed.hostname, tcp_port, resource, path, params

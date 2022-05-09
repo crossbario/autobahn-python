@@ -123,7 +123,7 @@ extras_require_xbr = [
     'cbor2>=5.2.0',             # MIT license
     'zlmdb>=21.2.1',            # MIT license
     'twisted>=20.3.0',          # MIT license
-    'web3>=5.16.0',             # MIT license
+    'web3>=5.29.0',             # MIT license
 
     # the following is needed for EIP712 ("signed typed data"):
     'rlp>=2.0.1',               # MIT license

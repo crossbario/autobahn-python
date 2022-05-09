@@ -5,6 +5,19 @@
 Changelog
 =========
 
+22.5.1.dev1
+-----------
+
+* new: initial support for federated WAMP realms via a.x.FederatedRealm/Seeder
+* new: moved utility functions and unit tests for WAMP realm name checking from Crossbar.io
+* new: allow list of URLs for transports in a.t.component.Component
+* new: add websocket_options to a.t.wamp.ApplicationRunner
+* new: add stop_at_close flag in a.t.component.run
+* fix: reduce log noise (regression) on ApplicationRunner Twisted (#1561)
+* new: allow ``max_retry_delay==0`` for always-immediate auto-reconnect in ApplicationRunner on Twisted
+* new: add ``websocket_options`` to WAMP ApplicationRunner on Twisted (#888)
+* new: more type hints and docs
+
 22.4.2
 ------
 

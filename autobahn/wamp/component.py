@@ -487,7 +487,7 @@ class Component(ObservableMixin):
         if transports is None:
             transports = 'ws://127.0.0.1:8080/ws'
 
-        # allows to provide an URL instead of a list of transports
+        # allows to provide a URL instead of a list of transports
         if isinstance(transports, (str, str)):
             url = transports
             # 'endpoint' will get filled in by parsing the 'url'
@@ -497,7 +497,7 @@ class Component(ObservableMixin):
             }
             transports = [transport]
 
-        # allows a single transport instead of a list (convenience)
+        # allows single transport instead of a list (convenience)
         elif isinstance(transports, dict):
             transports = [transports]
 
@@ -508,8 +508,16 @@ class Component(ObservableMixin):
         # now check and save list of transports
         self._transports = []
         for idx, transport in enumerate(transports):
+            # allows to provide a URL instead of transport dict
+            if type(transport) == str:
+                _transport = {
+                    'type': 'websocket',
+                    'url': transport,
+                }
+            else:
+                _transport = transport
             self._transports.append(
-                _create_transport(idx, transport, self._check_native_endpoint)
+                _create_transport(idx, _transport, self._check_native_endpoint)
             )
 
         # XXX should have some checkconfig support
@@ -611,7 +619,7 @@ class Component(ObservableMixin):
                 elif isinstance(fail.value, OSError):
                     # failed to connect entirely, like nobody
                     # listening etc.
-                    self.log.info("Connection failed: {msg}", msg=txaio.failure_message(fail))
+                    self.log.info("Connection failed with OS error: {msg}", msg=txaio.failure_message(fail))
 
                 elif self._is_ssl_error(fail.value):
                     # Quoting pyOpenSSL docs: "Whenever
@@ -691,16 +699,17 @@ class Component(ObservableMixin):
                     break
 
             delay = transport.next_delay()
-            self.log.debug(
-                'trying transport {transport_idx} using connect delay {transport_delay}',
+            self.log.warn(
+                'trying transport {transport_idx} ("{transport_url}") using connect delay {transport_delay}',
                 transport_idx=transport.idx,
+                transport_url=transport.url,
                 transport_delay=delay,
             )
 
             self._delay_f = txaio.sleep(delay)
             txaio.add_callbacks(self._delay_f, attempt_connect, error)
 
-        # issue our first event, then start the reconnect loop
+        # issue our first event, then start reconnect loop
         start_f = self.fire('start', loop, self)
         txaio.add_callbacks(start_f, transport_check, error)
         return self._done_f
@@ -723,7 +732,7 @@ class Component(ObservableMixin):
 
     def _connect_once(self, reactor, transport):
 
-        self.log.debug(
+        self.log.info(
             'connecting once using transport type "{transport_type}" '
             'over endpoint "{endpoint_desc}"',
             transport_type=transport.type,
@@ -893,7 +902,7 @@ class Component(ObservableMixin):
         self.on('connectfailure', fn)
 
 
-def _run(reactor, components, done_callback):
+def _run(reactor, components, done_callback=None):
     """
     Internal helper. Use "run" method from autobahn.twisted.wamp or
     autobahn.asyncio.wamp
@@ -958,9 +967,10 @@ def _run(reactor, components, done_callback):
         dl.append(d)
     done_d = txaio.gather(dl, consume_exceptions=False)
 
-    def all_done(arg):
-        log.debug("All components ended; stopping reactor")
-        done_callback(reactor, arg)
+    if done_callback:
+        def all_done(arg):
+            log.debug("All components ended; stopping reactor")
+            done_callback(reactor, arg)
+        txaio.add_callbacks(done_d, all_done, all_done)
 
-    txaio.add_callbacks(done_d, all_done, all_done)
     return done_d

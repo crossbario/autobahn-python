@@ -28,7 +28,8 @@ from autobahn.wamp.types import TransportDetails, SessionDetails
 
 import unittest
 
-from .test_wamp_transport_details import TRANSPORT_DETAILS_1
+# from .test_wamp_transport_details import TRANSPORT_DETAILS_1
+from autobahn.wamp.test.test_wamp_transport_details import TRANSPORT_DETAILS_1
 
 
 class TestSessionDetails(unittest.TestCase):

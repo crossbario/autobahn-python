@@ -128,6 +128,12 @@ upload_exe:
 	aws cloudfront create-invalidation \
 		--distribution-id E2QIG9LNGCJSP9 --paths "/xbrnetwork/linux-amd64/*"
 
+# WEB3_INFURA_PROJECT_ID must be defined for this
+test_infura:
+	time -f "%e" python -c "from web3.auto.infura import w3; print(w3.isConnected())"
+
+test_xbr:
+	USE_TWISTED=1 trial autobahn.xbr
 
 test_xbr_cli:
 	xbrnetwork
@@ -178,6 +184,9 @@ test_rng:
 test_serializer:
 	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_serializer
 
+test_wamp_identifiers:
+	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_identifiers
+
 test_tx_cryptobox:
 	USE_TWISTED=1 trial autobahn.wamp.test.test_cryptobox
 
@@ -188,6 +197,14 @@ test_cryptosign:
 #	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_cryptosign
 	USE_ASYNCIO=1 pytest -s -v -rfA --ignore=./autobahn/twisted autobahn/wamp/test/test_wamp_cryptosign.py
 	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_cryptosign
+
+test_xbr_web3:
+#	pytest -s -v -rfA autobahn/xbr/test/test_xbr_web3.py
+	trial autobahn/xbr/test/test_xbr_web3.py
+
+test_xbr_frealm:
+#	pytest -s -v -rfA autobahn/xbr/test/test_xbr_frealm.py
+	trial autobahn/xbr/test/test_xbr_frealm.py
 
 test_wamp_scram:
 	USE_ASYNCIO=1 trial autobahn.wamp.test.test_wamp_scram

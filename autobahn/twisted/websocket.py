@@ -288,9 +288,9 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         self._connectionMade()
 
         # ok, done!
-        self.log.info('{func} connection established for peer="{peer}"',
-                      func=hltype(self.connectionMade),
-                      peer=hlval(self.peer))
+        self.log.debug('{func} connection established for peer="{peer}"',
+                       func=hltype(self.connectionMade),
+                       peer=hlval(self.peer))
 
     def connectionLost(self, reason: Failure = connectionDone):
         # Twisted networking framework entry point, called by Twisted
@@ -329,14 +329,14 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
         # ok, done!
         if was_clean:
-            self.log.info('{func} connection lost for peer="{peer}", closed cleanly',
-                          func=hltype(self.connectionLost),
-                          peer=hlval(self.peer))
+            self.log.debug('{func} connection lost for peer="{peer}", closed cleanly',
+                           func=hltype(self.connectionLost),
+                           peer=hlval(self.peer))
         else:
-            self.log.info('{func} connection lost for peer="{peer}", closed with error {reason}',
-                          func=hltype(self.connectionLost),
-                          peer=hlval(self.peer),
-                          reason=reason)
+            self.log.debug('{func} connection lost for peer="{peer}", closed with error {reason}',
+                           func=hltype(self.connectionLost),
+                           peer=hlval(self.peer),
+                           reason=reason)
 
     def dataReceived(self, data: bytes):
         self.log.debug('{func} received {data_len} bytes for peer="{peer}"',
