@@ -86,6 +86,8 @@ class TestAuth(unittest.TestCase):
     def setUp(self):
         self.key = SigningKey.from_ssh_data(keybody)
         self.privkey_hex = self.key._key.encode(encoder=HexEncoder)
+
+        # all tests here fake the use of channel_id_type='tls-unique' with the following channel_id
         m = hashlib.sha256()
         m.update("some TLS message".encode())
         channel_id = m.digest()
@@ -99,7 +101,7 @@ class TestAuth(unittest.TestCase):
         session._transport.transport_details = self.transport_details
 
         challenge = types.Challenge("ticket", dict(challenge="ff" * 32))
-        f_signed = self.key.sign_challenge(session, challenge)
+        f_signed = self.key.sign_challenge(session, challenge, channel_id_type='tls-unique')
 
         def success(signed):
             self.assertEqual(
@@ -123,7 +125,7 @@ class TestAuth(unittest.TestCase):
         for testvec in testvectors:
             priv_key = SigningKey.from_key_bytes(binascii.a2b_hex(testvec['priv_key']))
             challenge = types.Challenge("ticket", dict(challenge=testvec['challenge']))
-            f_signed = priv_key.sign_challenge(session, challenge)
+            f_signed = priv_key.sign_challenge(session, challenge, channel_id_type='tls-unique')
 
             def success(signed):
                 self.assertEqual(
@@ -144,6 +146,7 @@ class TestAuth(unittest.TestCase):
         authenticator = create_authenticator(
             "cryptosign",
             authid="someone",
+            authextra={'channel_binding': 'tls-unique'},
             privkey=self.privkey_hex,
         )
         session = Mock()
