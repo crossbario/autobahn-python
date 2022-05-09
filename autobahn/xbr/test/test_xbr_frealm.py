@@ -1,4 +1,5 @@
 import os
+import sys
 from unittest import skipIf
 from unittest.mock import MagicMock
 
@@ -10,7 +11,15 @@ if HAS_XBR:
     from autobahn.xbr._frealm import Seeder, FederatedRealm
 
 
+# https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
+HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
+
+# TypeError: As of 3.10, the *loop* parameter was removed from Lock() since it is no longer necessary
+IS_CPY_310 = sys.version_info.minor == 10
+
+
 @skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
+@skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
 @skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
 class TestFederatedRealm(TestCase):
 
@@ -20,20 +29,29 @@ class TestFederatedRealm(TestCase):
         'network': 'mainnet',
     }
 
-    def test_frealm_ctor(self):
+    # "builtins.TypeError: As of 3.10, the *loop* parameter was removed from Lock() since
+    # it is no longer necessary"
+    #
+    # solved via websockets>=10.3, but web3==5.29.0 requires websockets<10
+    #
+    @skipIf(IS_CPY_310, 'Web3 v5.29.0 (web3.auto.infura) raises TypeError on Python 3.10')
+    def test_frealm_ctor_auto(self):
         name = 'wamp-proto.eth'
 
-        fr1 = FederatedRealm(name)
-        self.assertEqual(fr1.status, 'STOPPED')
-        self.assertEqual(fr1.name_or_address, name)
-        self.assertEqual(fr1.gateway_config, None)
-        self.assertEqual(fr1.name_category, 'ens')
+        fr = FederatedRealm(name)
+        self.assertEqual(fr.status, 'STOPPED')
+        self.assertEqual(fr.name_or_address, name)
+        self.assertEqual(fr.gateway_config, None)
+        self.assertEqual(fr.name_category, 'ens')
 
-        fr2 = FederatedRealm(name, self.gw_config)
-        self.assertEqual(fr2.status, 'STOPPED')
-        self.assertEqual(fr2.name_or_address, name)
-        self.assertEqual(fr2.gateway_config, self.gw_config)
-        self.assertEqual(fr2.name_category, 'ens')
+    def test_frealm_ctor_gw(self):
+        name = 'wamp-proto.eth'
+
+        fr = FederatedRealm(name, self.gw_config)
+        self.assertEqual(fr.status, 'STOPPED')
+        self.assertEqual(fr.name_or_address, name)
+        self.assertEqual(fr.gateway_config, self.gw_config)
+        self.assertEqual(fr.name_category, 'ens')
 
     @inlineCallbacks
     def test_frealm_initialize(self):
