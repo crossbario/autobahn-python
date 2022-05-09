@@ -715,10 +715,26 @@ class ISigningKey(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def key_id(self) -> str:
+    def security_module(self) -> Optional['ISecurityModule']:
+        """
+        When this key is hosted by a security module, return a reference.
+        If the key is freestanding (exists of its own outside any security
+        module or key store), return ``None``.
+
+        :return: The security module of the key if the key is hosted.
         """
 
-        :return:
+    @property
+    @abc.abstractmethod
+    def key_id(self) -> Optional[str]:
+        """
+        When this key is hosted by a security module, return an identifier
+        to refer to this key within the security module.
+        If the key is freestanding (exists of its own outside any security
+        module or key store), return ``None``.
+
+        :return: The identifier of this key within the security
+            module if this key is hosted.
         """
 
     @property
@@ -809,9 +825,9 @@ class IEd25519Key(ISigningKey):
 
         :param challenge: The WAMP challenge message as sent or received during the WAMP-cryptosign
             authentication handshake. This can be used by WAMP clients to compute the signature
-            returned in the handshake, or by WAMP routers to verify the signature returned by clients,
+            returned within the handshake, or by WAMP routers to verify the signature returned by clients,
             during WAMP-cryptosign client authentication.
-
+        :param signature: The signature to verify.
         :param channel_id: Optional TLS channel ID. Using this binds the WAMP session authentication
             to the underlying TLS channel, and thus prevents authentication-forwarding attacks.
         :param channel_id_type: Optional TLS channel ID type, e.g. ``"tls-unique"``.
