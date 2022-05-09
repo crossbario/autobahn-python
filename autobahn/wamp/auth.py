@@ -187,6 +187,8 @@ class AuthCryptoSign(object):
         else:
             kw['authextra'] = kw.get('authextra', dict())
             kw['authextra']['pubkey'] = self._privkey.public_key()
+
+        self._channel_binding = kw.get('authextra', dict()).get('channel_binding', None)
         self._args = kw
 
     @property
@@ -194,7 +196,7 @@ class AuthCryptoSign(object):
         return self._args.get('authextra', dict())
 
     def on_challenge(self, session, challenge):
-        return self._privkey.sign_challenge(session, challenge)
+        return self._privkey.sign_challenge(session, challenge, channel_id_type=self._channel_binding)
 
     def on_welcome(self, msg, authextra):
         return None
