@@ -902,7 +902,7 @@ class Component(ObservableMixin):
         self.on('connectfailure', fn)
 
 
-def _run(reactor, components, done_callback):
+def _run(reactor, components, done_callback=None):
     """
     Internal helper. Use "run" method from autobahn.twisted.wamp or
     autobahn.asyncio.wamp
@@ -967,9 +967,10 @@ def _run(reactor, components, done_callback):
         dl.append(d)
     done_d = txaio.gather(dl, consume_exceptions=False)
 
-    def all_done(arg):
-        log.debug("All components ended; stopping reactor")
-        done_callback(reactor, arg)
+    if done_callback:
+        def all_done(arg):
+            log.debug("All components ended; stopping reactor")
+            done_callback(reactor, arg)
+        txaio.add_callbacks(done_d, all_done, all_done)
 
-    txaio.add_callbacks(done_d, all_done, all_done)
     return done_d

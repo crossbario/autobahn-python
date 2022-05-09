@@ -3,30 +3,21 @@ from twisted.internet.defer import inlineCallbacks
 from autobahn.twisted.wamp import ApplicationSession
 from autobahn.wamp.exception import ApplicationError
 
+# public-key-ed25519: 15cfa4acef5cc312e0b9ba77634849d0a8c6222a546f90eb5123667935d2f561
+# private-key-ed25519: 20e8c05d0ede9506462bb049c4843032b18e8e75b314583d0c8d8a4942f9be40
+# public-adr-eth: 0xe59C7418403CF1D973485B36660728a5f4A8fF9c
+# private-key-eth: 6b08b6e186bd2a3b9b2f36e6ece3f8031fe788ab3dc4a1cfd3a489ea387c496b
 
 PRINCIPALS = [
     {
-        "authid": "client01@example.com",
-        "realm": "devices",
-        "role": "device",
+        "authid": "client1@example.com",
+        "realm": "realm1",
+        "role": "user",
         "extra": {
             "foo": 23
         },
         "authorized_keys": [
-            "545efb0a2192db8d43f118e9bf9aee081466e1ef36c708b96ee6f62dddad9122"
-        ]
-    },
-    {
-        "authid": "client02@example.com",
-        "realm": "devices",
-        "role": "device",
-        "extra": {
-            "foo": 42,
-            "bar": "baz"
-        },
-        "authorized_keys": [
-            "9c194391af3bf566fc11a619e8df200ba02efb35b91bdd98b424f20f4163875e",
-            "585df51991780ee8dce4766324058a04ecae429dffd786ee80839c9467468c28"
+            "15cfa4acef5cc312e0b9ba77634849d0a8c6222a546f90eb5123667935d2f561"
         ]
     }
 ]

@@ -26,6 +26,7 @@
 
 
 from functools import wraps
+from typing import List
 
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
@@ -334,7 +335,7 @@ class Component(component.Component):
         return self._start(loop=reactor)
 
 
-def run(components, log_level='info'):
+def run(components: List[Component], log_level: str = 'info', stop_at_close: bool = True):
     """
     High-level API to run a series of components.
 
@@ -347,10 +348,8 @@ def run(components, log_level='info'):
     each component yourself.
 
     :param components: the Component(s) you wish to run
-    :type components: instance or list of :class:`autobahn.twisted.component.Component`
-
     :param log_level: a valid log-level (or None to avoid calling start_logging)
-    :type log_level: string
+    :param stop_at_close: Flag to control whether to stop the reactor when done.
     """
     # only for Twisted > 12
     # ...so this isn't in all Twisted versions we test against -- need
@@ -366,12 +365,17 @@ def run(components, log_level='info'):
 
     log = txaio.make_logger()
 
-    def done_callback(reactor, arg):
-        if isinstance(arg, Failure):
-            log.error("Something went wrong: {log_failure}", failure=arg)
-        try:
-            reactor.stop()
-        except ReactorNotRunning:
-            pass
+    if False and stop_at_close:
+        def done_callback(reactor, arg):
+            if isinstance(arg, Failure):
+                log.error('Something went wrong: {log_failure}', failure=arg)
+                try:
+                    log.warn('Stopping reactor ..')
+                    reactor.stop()
+                except ReactorNotRunning:
+                    pass
+    else:
+        done_callback = None
 
-    react(component._run, (components, done_callback))
+    # react(component._run, (components, done_callback))
+    return react(component._run, (components,))

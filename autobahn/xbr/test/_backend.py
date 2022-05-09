@@ -26,35 +26,45 @@
 
 from typing import Optional
 
+from twisted.internet.task import LoopingCall
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.util import hltype, hlval
 from autobahn.wamp import register
-from autobahn.wamp.types import CallDetails, PublishOptions, SessionDetails, CloseDetails
+from autobahn.wamp.types import CallDetails, PublishOptions, SessionDetails, CloseDetails, RegisterOptions
 from autobahn.twisted.wamp import ApplicationSession
-from autobahn.twisted.util import sleep
 
 
 class Backend(ApplicationSession):
+    def __init__(self, config):
+        super().__init__(config)
+        self._counter = 0
+        self._last_msg = 'Hello, world'
+        self._background_loop = LoopingCall(self._run_in_background)
+
     @inlineCallbacks
     def onJoin(self, details: SessionDetails):
         self.log.info('{func} session joined with details {details}',
                       func=hltype(self.onJoin), details=details)
 
-        regs = yield self.register(self)
+        regs = yield self.register(self, options=RegisterOptions(details=True))
         for reg in regs:
             self.log.info('{func} registered procedure with {reg}', func=hltype(self.onJoin), reg=str(reg))
 
-        counter = 0
-        self._last_msg = 'Hello, world'
+        self._background_loop.start(1.)
+        self.log.info('{func} ready!', func=hltype(self.onJoin))
 
-        while self.is_attached():
-            counter += 1
-            pub = yield self.publish('public.topic1', self._last_msg, counter, options=PublishOptions(acknowledge=True))
-            self.log.info('{func} published event with {pub}', func=hltype(self.onJoin), pub=str(pub))
-            yield sleep(1)
+    @inlineCallbacks
+    def _run_in_background(self):
+        if self.is_attached():
+            self._counter += 1
+            pub = yield self.publish('public.topic1', self._last_msg, self._counter,
+                                     options=PublishOptions(acknowledge=True))
+            if self._counter % 10 == 0:
+                self.log.info('{func} published event with {pub}', func=hltype(self._run_in_background), pub=str(pub))
 
     def onLeave(self, details: CloseDetails):
+        self._background_loop.stop()
         self.log.info('{func} session closed with details {details}',
                       func=hltype(self.onClose), details=details)
 
