@@ -31,7 +31,7 @@ from typing import Callable, Optional, Union
 import txaio
 
 from autobahn import util
-from autobahn.wamp.interfaces import IEd25519Key, ISession
+from autobahn.wamp.interfaces import ISecurityModule, IEd25519Key, ISession
 from autobahn.wamp.types import Challenge
 
 __all__ = [
@@ -41,6 +41,7 @@ __all__ = [
 try:
     # try to import everything we need for WAMP-cryptosign
     from nacl import encoding, signing, bindings
+    from nacl.signing import SignedMessage
 except ImportError:
     HAS_CRYPTOSIGN = False
 else:
@@ -431,32 +432,71 @@ if HAS_CRYPTOSIGN:
         return d2
 
     class SigningKeyBase(object):
+        """
+        Base class to implement :class:`autobahn.wamp.interfaces.ISigningKey`.
+        """
 
-        def __init__(self, signer, can_sign: bool) -> None:
-            self._can_sign = can_sign
+        def __init__(self, signer, can_sign: bool, security_module: Optional[ISecurityModule] = None,
+                     key_id: Optional[str] = None) -> None:
             self._key = signer
+            self._can_sign = can_sign
+            self._security_module = security_module
+            self._key_id = key_id
+
+        @property
+        def security_module(self) -> Optional['ISecurityModule']:
+            """
+            Implements :meth:`autobahn.wamp.interfaces.ISigningKey.security_module`.
+            """
+            return self._security_module
+
+        @property
+        def key_id(self) -> Optional[str]:
+            """
+            Implements :meth:`autobahn.wamp.interfaces.ISigningKey.key_id`.
+            """
+            return self._key_id
+
+        @property
+        def key_type(self) -> str:
+            """
+            Implements :meth:`autobahn.wamp.interfaces.ISigningKey.key_type`.
+            """
+            return 'ed25519'
 
         @util.public
-        def can_sign(self):
+        def can_sign(self) -> bool:
             """
-            Check if the key can be used to sign.
-
-            :returns: `True`, iff the key can sign.
-            :rtype: bool
+            Implements :meth:`autobahn.wamp.interfaces.ISigningKey.can_sign`.
             """
             return self._can_sign
 
         @util.public
-        def sign_challenge(self, session: ISession, challenge: Challenge, channel_id_type: Optional[str] = None) -> bytes:
+        def sign(self, data: bytes) -> bytes:
             """
-            Sign WAMP-cryptosign challenge.
+            Implements :meth:`autobahn.wamp.interfaces.ISigningKey.sign`.
+            """
+            if not self._can_sign:
+                raise Exception("a signing key required to sign")
 
-            :param session: The authenticating WAMP session.
-            :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
-            :returns: A Deferred/Future that resolves to the computed signature.
+            if type(data) != bytes:
+                raise Exception("data to be signed must be binary")
+
+            sig: SignedMessage = self._key.sign(data)
+
+            # we only return the actual signature! if we return "sig",
+            # it gets coerced into the concatenation of message + signature
+            # not sure which order, but we don't want that. we only want
+            # the signature
+            return txaio.create_future_success(sig.signature)
+
+        @util.public
+        def sign_challenge(self, session: ISession, challenge: Challenge,
+                           channel_id_type: Optional[str] = None) -> bytes:
+            """
+            Implements :meth:`autobahn.wamp.interfaces.IEd25519Key.sign_challenge`.
             """
             # get the TLS channel ID of the underlying TLS connection
-            channel_id_type = 'tls-unique'
             if channel_id_type in session._transport.transport_details.channel_id:
                 channel_id = session._transport.transport_details.channel_id.get(channel_id_type, None)
             else:
@@ -466,32 +506,6 @@ if HAS_CRYPTOSIGN:
             data = format_challenge(challenge, channel_id, channel_id_type)
 
             return sign_challenge(data, self.sign)
-
-        @util.public
-        def sign(self, data: bytes) -> bytes:
-            """
-            Sign some data.
-
-            :param data: The data to be signed.
-            :type data: bytes
-
-            :returns: The signature.
-            :rtype: bytes
-            """
-            if not self._can_sign:
-                raise Exception("a signing key required to sign")
-
-            if type(data) != bytes:
-                raise Exception("data to be signed must be binary")
-
-            # sig is a nacl.signing.SignedMessage
-            sig = self._key.sign(data)
-
-            # we only return the actual signature! if we return "sig",
-            # it gets coerced into the concatenation of message + signature
-            # not sure which order, but we don't want that. we only want
-            # the signature
-            return txaio.create_future_success(sig.signature)
 
     @util.public
     class SigningKey(SigningKeyBase):
@@ -503,8 +517,9 @@ if HAS_CRYPTOSIGN:
         def __init__(self, key, comment=None):
             """
 
-            :param key: A Ed25519 private signing key or a Ed25519 public verification key.
-            :type key: instance of nacl.signing.VerifyKey or instance of nacl.signing.SigningKey
+            :param key: A Ed25519 private signing key or Ed25519 public verification key.
+            :type key: instance of :class:`nacl.signing.VerifyKey`
+                or instance of :class:`nacl.signing.SigningKey`
             """
             if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
                 raise Exception("invalid type {} for key".format(type(key)))
@@ -552,7 +567,7 @@ if HAS_CRYPTOSIGN:
 
         @util.public
         @classmethod
-        def from_key_bytes(cls, keydata: str, comment: Optional[str] = None) -> 'SigningKey':
+        def from_key_bytes(cls, keydata: bytes, comment: Optional[str] = None) -> 'SigningKey':
             if not (comment is None or type(comment) == str):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
