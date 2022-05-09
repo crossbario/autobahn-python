@@ -27,10 +27,13 @@
 from typing import Optional, Dict, Any, List
 
 import web3
-from ens import ENS
-from twisted.internet.threads import deferToThread
 from web3.contract import Contract
+from ens import ENS
 
+from twisted.internet.defer import succeed, Deferred
+from twisted.internet.threads import deferToThread
+
+from autobahn.wamp.interfaces import IEd25519Key, IEthereumKey
 from autobahn.wamp.message import identity_realm_name_category
 from autobahn.xbr import make_w3
 
@@ -79,6 +82,57 @@ class Seeder(object):
         self._endpoint: Optional[str] = endpoint
         self._bandwidth_requested: Optional[str] = bandwidth_requested
         self._bandwidth_offered: Optional[str] = bandwidth_offered
+
+    def create_authextra(self,
+                         client_key: IEd25519Key,
+                         delegate_key: IEthereumKey,
+                         bandwidth_requested: int,
+                         channel_id: Optional[bytes] = None,
+                         channel_id_type: Optional[str] = None) -> Deferred:
+        """
+
+        :param client_key:
+        :param operator_key:
+        :param bandwidth_requested:
+        :param channel_id:
+        :param channel_id_type:
+        :return:
+        """
+        authextra = {
+            # string
+            'pubkey': client_key.public_key(binary=False),
+
+            # string
+            'challenge': None,
+
+            # string
+            'channel_binding': channel_id_type,
+
+            # string
+            'channel_id': channel_id,
+
+            # address
+            'realm': self._frealm.address,
+
+            # int
+            'chain_id': None,
+
+            # int
+            'block_no': None,
+
+            # address
+            'delegate': delegate_key.address(binary=False),
+
+            # address
+            'seeder': self._operator,
+
+            # int: requested bandwidth in kbps
+            'bandwidth': bandwidth_requested,
+
+            # string: Eth signature by delegate_key over EIP712 typed data as above
+            'signature': None,
+        }
+        return succeed(authextra)
 
     @property
     def frealm(self) -> 'FederatedRealm':
