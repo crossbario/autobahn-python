@@ -50,7 +50,6 @@ try:
     from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC  # noqa
     from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer, IDelegate  # noqa
     from autobahn.xbr._util import make_w3, pack_uint256, unpack_uint256  # noqa
-
     from autobahn.xbr._eip712_member_register import sign_eip712_member_register, recover_eip712_member_register  # noqa
     from autobahn.xbr._eip712_member_login import sign_eip712_member_login, recover_eip712_member_login  # noqa
     from autobahn.xbr._eip712_market_create import sign_eip712_market_create, recover_eip712_market_create  # noqa
@@ -64,19 +63,14 @@ try:
         recover_eip712_market_member_login  # noqa
     from autobahn.xbr._eip712_base import is_address, is_chain_id, is_block_number, is_signature, \
         is_cs_pubkey, is_bytes16, is_eth_privkey  # noqa
-
     from autobahn.xbr._blockchain import SimpleBlockchain  # noqa
     from autobahn.xbr._seller import SimpleSeller, KeySeries  # noqa
     from autobahn.xbr._buyer import SimpleBuyer  # noqa
-
     from autobahn.xbr._config import load_or_create_profile, UserConfig, Profile  # noqa
-
     from autobahn.xbr._schema import FbsSchema, FbsObject, FbsType, FbsRPCCall, FbsEnum, FbsService, FbsEnumValue, \
         FbsAttribute, FbsField, FbsRepository  # noqa
-
     from autobahn.xbr._wallet import stretch_argon2_secret, expand_argon2_secret, pkm_from_argon2_secret  # noqa
-
-    from autobahn.xbr._frealm import FederatedRealm, Seeder
+    from autobahn.xbr._frealm import FederatedRealm, Seeder  # noqa
 
     HAS_XBR = True
 
