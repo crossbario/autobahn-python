@@ -8,8 +8,8 @@ from twisted.trial.unittest import TestCase
 
 from py_eth_sig_utils.eip712 import encode_typed_data
 from py_eth_sig_utils.utils import ecsign
-from py_eth_sig_utils.signing import v_r_s_to_signature
-from py_eth_sig_utils.signing import sign_typed_data
+from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
+from py_eth_sig_utils.signing import sign_typed_data, recover_typed_data
 
 from autobahn.xbr import HAS_XBR
 from autobahn.xbr import make_w3, EthereumKey
@@ -90,57 +90,104 @@ class TestEthereumKey(TestCase):
         self._eip_data_objects = [
             _create_eip712_member_register(chainId=1, verifyingContract=verifying_contract, member=member,
                                            registered=666, eula=eula, profile=profile),
+            _create_eip712_member_register(chainId=23, verifyingContract=a2b_hex(self._addresses[0][2:]),
+                                           member=a2b_hex(self._addresses[1][2:]), registered=9999, eula=eula, profile=''),
+        ]
+        self._eip_data_obj_hashes = [
+            'e7e354cc11e83970374ab27c6a37282139ee7b531d7d5e291532c842e44035b4',
+            'a696e32dfebc67058a4db7490952e04313ffa05012575baab3ac946eb1749717',
+        ]
+        self._eip_data_obj_signatures = [
+            '39cd6eec124908a9da2e42ff1e93baf97ad8a08865d60f5f00cdd0c233bcb73b14355c1e286d630be6f012c485f11b684adc6725fc010dd669f8131fb39c623e1b',
+            '7adf7ff9080cc650b5291bf3fb98271de0272599088778b7b00995706e7b5cab14f013ece0158596d7bd9022321955c8784dd8db3d7c38dee496c01c9bdc4bd91c',
         ]
 
-    def test_from_seedphrase(self):
+    def test_key_from_seedphrase(self):
+        """
+        Create key from seedphrase and index.
+        """
         for i in range(len(self._keys)):
             key = EthereumKey.from_seedphrase(self._seedphrase, i)
             self.assertEqual(key.address(binary=False), self._addresses[i])
 
-    def test_from_bytes(self):
+    def test_key_from_bytes(self):
+        """
+        Create key from raw bytes.
+        """
         for i in range(len(self._keys)):
             key_raw = a2b_hex(self._keys[i][2:])
             key = EthereumKey.from_bytes(key_raw)
             self.assertEqual(key.address(binary=False), self._addresses[i])
             self.assertEqual(key._key.key, key_raw)
 
-    @inlineCallbacks
-    def test_sign_typed_data(self):
+    def test_sign_typed_data_pesu_manual(self):
+        """
+        Test using py_eth_sig_utils by doing individual steps / manually.
+        """
         key_raw = a2b_hex(self._keys[0][2:])
 
-        # 1. py_eth_sig_utils: test by doing individual steps / manually
-        data = self._eip_data_objects[0]
+        for i in range(len(self._eip_data_objects)):
+            data = self._eip_data_objects[i]
 
-        # encode typed data dict and return message hash
-        msg_hash = encode_typed_data(data)
-        self.assertEqual(msg_hash, a2b_hex('e7e354cc11e83970374ab27c6a37282139ee7b531d7d5e291532c842e44035b4'))
+            # encode typed data dict and return message hash
+            msg_hash = encode_typed_data(data)
+            self.assertEqual(msg_hash, a2b_hex(self._eip_data_obj_hashes[i]))
 
-        # sign message hash with private key
-        signature_vrs = ecsign(msg_hash, key_raw)
-        self.assertEqual(signature_vrs, (27, 26144801574096978964301126643765838249150105757723589274956631127014141376315, 9140535639818377710828404916067108362243171873197203693677839588603381703230))
+            # sign message hash with private key
+            signature_vrs = ecsign(msg_hash, key_raw)
 
-        # concatenate signature components into byte string
-        signature = v_r_s_to_signature(*signature_vrs)
+            # concatenate signature components into byte string
+            signature = v_r_s_to_signature(*signature_vrs)
 
-        # ECDSA signatures in Ethereum consist of three parameters: v, r and s.
-        # The signature is always 65-bytes in length.
-        #     r = first 32 bytes of signature
-        #     s = second 32 bytes of signature
-        #     v = final 1 byte of signature
-        self.assertEqual(len(signature), 65)
-        self.assertEqual(signature, a2b_hex('39cd6eec124908a9da2e42ff1e93baf97ad8a08865d60f5f00cdd0c233bcb73b14355c1e286d630be6f012c485f11b684adc6725fc010dd669f8131fb39c623e1b'))
+            # ECDSA signatures in Ethereum consist of three parameters: v, r and s.
+            # The signature is always 65-bytes in length.
+            #     r = first 32 bytes of signature
+            #     s = second 32 bytes of signature
+            #     v = final 1 byte of signature
+            self.assertEqual(len(signature), 65)
+            self.assertEqual(signature, a2b_hex(self._eip_data_obj_signatures[i]))
 
-        # 2. py_eth_sig_utils: test using high level function
+    def test_sign_typed_data_pesu_highlevel(self):
+        """
+        Test using py_eth_sig_utils with high level functions.
+        """
+        key_raw = a2b_hex(self._keys[0][2:])
+        for i in range(len(self._eip_data_objects)):
+            data = self._eip_data_objects[i]
 
-        signature_vrs_2 = sign_typed_data(data, key_raw)
+            signature_vrs = sign_typed_data(data, key_raw)
+            signature = v_r_s_to_signature(*signature_vrs)
 
-        self.assertEqual(signature_vrs_2, signature_vrs)
+            self.assertEqual(len(signature), 65)
+            self.assertEqual(signature, a2b_hex(self._eip_data_obj_signatures[i]))
 
-        # 3. EthereumKey: test using autobahn async function
+    @inlineCallbacks
+    def test_sign_typed_data_ab_async(self):
+        """
+        Test using autobahn with async functions.
+        """
+        key_raw = a2b_hex(self._keys[0][2:])
+        for i in range(len(self._eip_data_objects)):
+            data = self._eip_data_objects[i]
 
-        key = EthereumKey.from_bytes(key_raw)
-        signature_3 = yield key.sign_typed_data(data)
-        self.assertEqual(signature_3, signature)
+            key = EthereumKey.from_bytes(key_raw)
+            signature = yield key.sign_typed_data(data)
 
-    def test_verify_typed_data(self):
-        pass
+            self.assertEqual(signature, a2b_hex(self._eip_data_obj_signatures[i]))
+
+    def test_verify_typed_data_pesu_highlevel(self):
+        """
+        Test using py_eth_sig_utils with high level functions.
+        """
+        for i in range(len(self._eip_data_objects)):
+            data = self._eip_data_objects[i]
+            signature = a2b_hex(self._eip_data_obj_signatures[i])
+            signature_vrs = signature_to_v_r_s(signature)
+            address = recover_typed_data(data, *signature_vrs)
+            self.assertEqual(address, self._addresses[0])
+
+    # def test_verify_typed_data_pesu_manual(self):
+    #     pass
+    #
+    # def test_verify_typed_data_ab_async(self):
+    #     pass
