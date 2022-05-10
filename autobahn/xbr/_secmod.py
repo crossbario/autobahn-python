@@ -24,10 +24,16 @@
 #
 ###############################################################################
 
+import txaio
+
 from typing import Optional, Union, Dict, Any
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
+
+from py_eth_sig_utils.eip712 import encode_typed_data
+from py_eth_sig_utils.utils import ecsign
+from py_eth_sig_utils.signing import v_r_s_to_signature
 
 from autobahn.wamp.interfaces import ISecurityModule, IEthereumKey
 from autobahn.xbr._mnemonic import mnemonic_to_private_key
@@ -110,7 +116,23 @@ class EthereumKey(object):
         """
         Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.sign_typed_data`.
         """
-        raise NotImplementedError()
+        try:
+            # encode typed data dict and return message hash
+            msg_hash = encode_typed_data(data)
+
+            # ECDSA signatures in Ethereum consist of three parameters: v, r and s.
+            # The signature is always 65-bytes in length.
+            #     r = first 32 bytes of signature
+            #     s = second 32 bytes of signature
+            #     v = final 1 byte of signature
+            signature_vrs = ecsign(msg_hash, self._key.key)
+
+            # concatenate signature components into byte string
+            signature = v_r_s_to_signature(*signature_vrs)
+        except Exception as e:
+            return txaio.create_future_error(e)
+        else:
+            return txaio.create_future_success(signature)
 
     def verify_typed_data(self, data: Dict[str, Any], signature: bytes) -> bool:
         """
