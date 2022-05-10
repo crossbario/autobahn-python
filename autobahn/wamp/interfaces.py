@@ -866,13 +866,14 @@ class IEthereumKey(ISigningKey):
         """
 
     @abc.abstractmethod
-    def verify_typed_data(self, data: Dict[str, Any], signature: bytes) -> bool:
+    def verify_typed_data(self, data: Dict[str, Any], signature: bytes, signer_address: Union[str, bytes]) -> bool:
         """
         Verify the given typed data according to `EIP712 <https://eips.ethereum.org/EIPS/eip-712>`_
         to be signed by this key.
 
         :param data: The data to be signed. This must follow EIP712.
         :param signature: The signature to be verified.
+        :param signer_address: Address against which the signature is verified.
 
         :return: Returns ``True`` if the signature over the data matches this key.
         """

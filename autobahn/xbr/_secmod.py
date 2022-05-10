@@ -32,8 +32,8 @@ from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
 
 from py_eth_sig_utils.eip712 import encode_typed_data
-from py_eth_sig_utils.utils import ecsign
-from py_eth_sig_utils.signing import v_r_s_to_signature
+from py_eth_sig_utils.utils import ecsign, ecrecover_to_pub, checksum_encode, sha3
+from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
 
 from autobahn.wamp.interfaces import ISecurityModule, IEthereumKey
 from autobahn.xbr._mnemonic import mnemonic_to_private_key
@@ -46,11 +46,17 @@ class EthereumKey(object):
     Base class to implement :class:`autobahn.wamp.interfaces.IEthereumKey`.
     """
 
-    def __init__(self, key: LocalAccount, can_sign: bool, security_module: Optional[ISecurityModule] = None,
+    def __init__(self, key_or_address: Union[LocalAccount, str, bytes], can_sign: bool, security_module: Optional[ISecurityModule] = None,
                  key_id: Optional[str] = None) -> None:
-
-        # https://eth-account.readthedocs.io/en/latest/eth_account.html#eth_account.account.Account
-        self._key = key
+        if can_sign:
+            # https://eth-account.readthedocs.io/en/latest/eth_account.html#eth_account.account.Account
+            assert type(key_or_address) == LocalAccount
+            self._key = key_or_address
+            self._address = key_or_address.address
+        else:
+            assert type(key_or_address) in (str, bytes)
+            self._key = None
+            self._address = key_or_address
         self._can_sign = can_sign
         self._security_module = security_module
         self._key_id = key_id
@@ -88,29 +94,26 @@ class EthereumKey(object):
         """
         return self._can_sign
 
+    def address(self, binary: bool = False) -> Union[str, bytes]:
+        """
+        Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.address`.
+        """
+        # FIXME: implement "binary"
+        return self._address
+
     def sign(self, data: bytes) -> bytes:
         """
         Implements :meth:`autobahn.wamp.interfaces.ISigningKey.sign`.
         """
-        if not self._can_sign:
-            raise Exception("a signing key required to sign")
-
-        if type(data) != bytes:
-            raise Exception("data to be signed must be binary")
-
+        # FIXME: implement signing of raw data
         raise NotImplementedError()
 
     def recover(self, data: bytes, signature: bytes) -> bytes:
         """
         Implements :meth:`autobahn.wamp.interfaces.ISigningKey.recover`.
         """
+        # FIXME: implement signing address recovery from signature of raw data
         raise NotImplementedError()
-
-    def address(self, binary: bool = False) -> Union[str, bytes]:
-        """
-        Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.address`.
-        """
-        return self._key.address
 
     def sign_typed_data(self, data: Dict[str, Any]) -> bytes:
         """
@@ -134,16 +137,35 @@ class EthereumKey(object):
         else:
             return txaio.create_future_success(signature)
 
-    def verify_typed_data(self, data: Dict[str, Any], signature: bytes, signer_address: Union[str, bytes]) -> bool:
+    def verify_typed_data(self, data: Dict[str, Any], signature: bytes) -> bool:
         """
         Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.verify_typed_data`.
         """
-        return txaio.create_future_error(NotImplementedError())
+        try:
+            msg_hash = encode_typed_data(data)
+            signature_vrs = signature_to_v_r_s(signature)
+            public_key = ecrecover_to_pub(msg_hash, *signature_vrs)
+            address_bytes = sha3(public_key)[-20:]
+            address = checksum_encode(address_bytes)
+        except Exception as e:
+            return txaio.create_future_error(e)
+        else:
+            return txaio.create_future_success(address == self._address)
+
+    @classmethod
+    def from_address(cls, address: Union[str, bytes]) -> 'EthereumKey':
+        """
+        Create a public key from an address, which can be used to verify signatures.
+
+        :param key: The Ethereum private key seed (32 octets).
+        :return: New instance of :class:`EthereumKey`
+        """
+        return EthereumKey(key_or_address=address, can_sign=False)
 
     @classmethod
     def from_bytes(cls, key: bytes) -> 'EthereumKey':
         """
-        Create from a private key seed.
+        Create a private key from seed bytes, which can be used to sign and create signatures.
 
         :param key: The Ethereum private key seed (32 octets).
         :return: New instance of :class:`EthereumKey`
@@ -155,13 +177,13 @@ class EthereumKey(object):
             raise ValueError("invalid seed length {} (expected 32)".format(len(key)))
 
         account: LocalAccount = Account.from_key(key)
-
-        return EthereumKey(key=account, can_sign=True)
+        return EthereumKey(key_or_address=account, can_sign=True)
 
     @classmethod
     def from_seedphrase(cls, seedphrase: str, index: int = 0) -> 'EthereumKey':
         """
-        Create an account from the given BIP-39 mnemonic seed phrase.
+        Create a private key from the given BIP-39 mnemonic seed phrase and index,
+        which can be used to sign and create signatures.
 
         :param seedphrase: The BIP-39 seedphrase ("Mnemonic") from which to derive the account.
         :param index: The account index in account hierarchy defined by the seedphrase.
@@ -175,8 +197,7 @@ class EthereumKey(object):
         assert len(key) == 32
 
         account: LocalAccount = Account.from_key(key)
-
-        return EthereumKey(key=account, can_sign=True)
+        return EthereumKey(key_or_address=account, can_sign=True)
 
 
 IEthereumKey.register(EthereumKey)

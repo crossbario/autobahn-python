@@ -182,12 +182,10 @@ class TestEthereumKey(TestCase):
         Test using autobahn with async functions.
         """
         key_raw = a2b_hex(self._keys[0][2:])
+        key = EthereumKey.from_bytes(key_raw)
         for i in range(len(self._eip_data_objects)):
             data = self._eip_data_objects[i]
-
-            key = EthereumKey.from_bytes(key_raw)
             signature = yield key.sign_typed_data(data)
-
             self.assertEqual(signature, a2b_hex(self._eip_data_obj_signatures[i]))
 
     def test_verify_typed_data_pesu_manual(self):
@@ -223,19 +221,14 @@ class TestEthereumKey(TestCase):
 
             self.assertEqual(address, self._addresses[0])
 
-    @skipIf(True, 'Implement me!')
     @inlineCallbacks
     def test_verify_typed_data_ab_async(self):
         """
         Test using autobahn with async functions.
         """
-        key_raw = a2b_hex(self._keys[0][2:])
+        key = EthereumKey.from_address(self._addresses[0])
         for i in range(len(self._eip_data_objects)):
             data = self._eip_data_objects[i]
             signature = a2b_hex(self._eip_data_obj_signatures[i])
-            signer_address = self._addresses[0]
-
-            key = EthereumKey.from_bytes(key_raw)
-            sig_valid = yield key.verify_typed_data(data, signature, signer_address)
-
+            sig_valid = yield key.verify_typed_data(data, signature)
             self.assertTrue(sig_valid)
