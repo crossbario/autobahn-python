@@ -134,11 +134,11 @@ class EthereumKey(object):
         else:
             return txaio.create_future_success(signature)
 
-    def verify_typed_data(self, data: Dict[str, Any], signature: bytes) -> bool:
+    def verify_typed_data(self, data: Dict[str, Any], signature: bytes, signer_address: Union[str, bytes]) -> bool:
         """
         Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.verify_typed_data`.
         """
-        raise NotImplementedError()
+        return txaio.create_future_error(NotImplementedError())
 
     @classmethod
     def from_bytes(cls, key: bytes) -> 'EthereumKey':

@@ -34,7 +34,7 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.trial.unittest import TestCase
 
 from py_eth_sig_utils.eip712 import encode_typed_data
-from py_eth_sig_utils.utils import ecsign
+from py_eth_sig_utils.utils import ecsign, ecrecover_to_pub, checksum_encode, sha3
 from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
 from py_eth_sig_utils.signing import sign_typed_data, recover_typed_data
 
@@ -190,19 +190,52 @@ class TestEthereumKey(TestCase):
 
             self.assertEqual(signature, a2b_hex(self._eip_data_obj_signatures[i]))
 
+    def test_verify_typed_data_pesu_manual(self):
+        """
+        Test using py_eth_sig_utils by doing individual steps / manually.
+        """
+        for i in range(len(self._eip_data_objects)):
+            data = self._eip_data_objects[i]
+
+            # encode typed data dict and return message hash
+            msg_hash = encode_typed_data(data)
+
+            signature = a2b_hex(self._eip_data_obj_signatures[i])
+            signature_vrs = signature_to_v_r_s(signature)
+
+            public_key = ecrecover_to_pub(msg_hash, *signature_vrs)
+            address_bytes = sha3(public_key)[-20:]
+            address = checksum_encode(address_bytes)
+
+            self.assertEqual(address, self._addresses[0])
+
     def test_verify_typed_data_pesu_highlevel(self):
         """
         Test using py_eth_sig_utils with high level functions.
         """
         for i in range(len(self._eip_data_objects)):
             data = self._eip_data_objects[i]
+
             signature = a2b_hex(self._eip_data_obj_signatures[i])
             signature_vrs = signature_to_v_r_s(signature)
+
             address = recover_typed_data(data, *signature_vrs)
+
             self.assertEqual(address, self._addresses[0])
 
-    # def test_verify_typed_data_pesu_manual(self):
-    #     pass
-    #
-    # def test_verify_typed_data_ab_async(self):
-    #     pass
+    @skipIf(True, 'Implement me!')
+    @inlineCallbacks
+    def test_verify_typed_data_ab_async(self):
+        """
+        Test using autobahn with async functions.
+        """
+        key_raw = a2b_hex(self._keys[0][2:])
+        for i in range(len(self._eip_data_objects)):
+            data = self._eip_data_objects[i]
+            signature = a2b_hex(self._eip_data_obj_signatures[i])
+            signer_address = self._addresses[0]
+
+            key = EthereumKey.from_bytes(key_raw)
+            sig_valid = yield key.verify_typed_data(data, signature, signer_address)
+
+            self.assertTrue(sig_valid)
