@@ -71,6 +71,7 @@ try:
         FbsAttribute, FbsField, FbsRepository  # noqa
     from autobahn.xbr._wallet import stretch_argon2_secret, expand_argon2_secret, pkm_from_argon2_secret  # noqa
     from autobahn.xbr._frealm import FederatedRealm, Seeder  # noqa
+    from autobahn.xbr._secmod import EthereumKey  # noqa
 
     HAS_XBR = True
 
@@ -392,6 +393,7 @@ try:
 
         'FederatedRealm',
         'Seeder',
+        'EthereumKey',
     )
 
 except (ImportError, FileNotFoundError) as e:

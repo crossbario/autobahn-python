@@ -436,9 +436,9 @@ if HAS_CRYPTOSIGN:
         Base class to implement :class:`autobahn.wamp.interfaces.ISigningKey`.
         """
 
-        def __init__(self, signer, can_sign: bool, security_module: Optional[ISecurityModule] = None,
+        def __init__(self, key, can_sign: bool, security_module: Optional[ISecurityModule] = None,
                      key_id: Optional[str] = None) -> None:
-            self._key = signer
+            self._key = key
             self._can_sign = can_sign
             self._security_module = security_module
             self._key_id = key_id
