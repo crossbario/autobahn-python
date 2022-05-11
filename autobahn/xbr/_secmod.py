@@ -23,10 +23,11 @@
 # THE SOFTWARE.
 #
 ###############################################################################
+import os
 
 import txaio
 
-from typing import Optional, Union, Dict, Any
+from typing import Optional, Union, Dict, Any, List
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
@@ -35,10 +36,11 @@ from py_eth_sig_utils.eip712 import encode_typed_data
 from py_eth_sig_utils.utils import ecsign, ecrecover_to_pub, checksum_encode, sha3
 from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
 
-from autobahn.wamp.interfaces import ISecurityModule, IEthereumKey
+from autobahn.wamp.interfaces import ISecurityModule, IEthereumKey, ISigningKey
 from autobahn.xbr._mnemonic import mnemonic_to_private_key
+from autobahn.wamp.cryptosign import SigningKey
 
-__all__ = ('EthereumKey', )
+__all__ = ('EthereumKey', 'SecurityModuleMemory', )
 
 
 class EthereumKey(object):
@@ -46,7 +48,8 @@ class EthereumKey(object):
     Base class to implement :class:`autobahn.wamp.interfaces.IEthereumKey`.
     """
 
-    def __init__(self, key_or_address: Union[LocalAccount, str, bytes], can_sign: bool, security_module: Optional[ISecurityModule] = None,
+    def __init__(self, key_or_address: Union[LocalAccount, str, bytes], can_sign: bool,
+                 security_module: Optional[ISecurityModule] = None,
                  key_id: Optional[str] = None) -> None:
         if can_sign:
             # https://eth-account.readthedocs.io/en/latest/eth_account.html#eth_account.account.Account
@@ -201,3 +204,47 @@ class EthereumKey(object):
 
 
 IEthereumKey.register(EthereumKey)
+
+
+class SecurityModuleMemory(object):
+    """
+    """
+    def __init__(self, keys: List[ISigningKey]):
+        self._keys = keys
+
+    def __len__(self):
+        return len(self._keys)
+
+    def __iter__(self):
+        yield from self._keys
+
+    def __getitem__(self, key_no: int):
+        if key_no in range(len(self._keys)):
+            return self._keys[key_no]
+        else:
+            raise IndexError()
+
+    @classmethod
+    def from_seedphrase(cls, seedphrase: str, num_client_keys: int = 1,
+                        num_delegate_keys: int = 1) -> 'SecurityModuleMemory':
+        """
+
+        :param seedphrase:
+        :param num_client_keys:
+        :param num_delegate_keys:
+        :return:
+        """
+        keys: List[ISigningKey] = []
+        for i in range(num_delegate_keys):
+            key = EthereumKey.from_seedphrase(seedphrase, i)
+            keys.append(key)
+        for i in range(num_client_keys):
+            # FIXME
+            # key = SigningKey.from_seedphrase(seedphrase, i)
+            key = SigningKey.from_key_bytes(os.urandom(32))
+            keys.append(key)
+        sm = SecurityModuleMemory(keys=keys)
+        return sm
+
+
+ISecurityModule.register(SecurityModuleMemory)

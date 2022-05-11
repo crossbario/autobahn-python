@@ -42,6 +42,9 @@ from autobahn.xbr import HAS_XBR
 from autobahn.xbr import make_w3, EthereumKey
 from autobahn.xbr._eip712_member_register import _create_eip712_member_register
 from autobahn.xbr._eip712_market_create import _create_eip712_market_create
+from autobahn.xbr._secmod import SecurityModuleMemory
+from autobahn.wamp.cryptosign import SigningKey
+
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
@@ -53,7 +56,7 @@ IS_CPY_310 = sys.version_info.minor == 10
 @skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
 @skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
 @skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
-class TestEthereumKey(TestCase):
+class TestSecurityModule(TestCase):
 
     def setUp(self):
         self._gw_config = {
@@ -232,3 +235,13 @@ class TestEthereumKey(TestCase):
             signature = a2b_hex(self._eip_data_obj_signatures[i])
             sig_valid = yield key.verify_typed_data(data, signature)
             self.assertTrue(sig_valid)
+
+    def test_secmod_ctor(self):
+        sm = SecurityModuleMemory.from_seedphrase(self._seedphrase, 5, 5)
+        self.assertEqual(len(sm), 10)
+
+        for i, key in enumerate(sm):
+            self.assertTrue(isinstance(key, EthereumKey) or isinstance(key, SigningKey))
+
+            key_ = sm[i]
+            self.assertEqual(key_, key)
