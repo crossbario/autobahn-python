@@ -227,6 +227,12 @@ class WebSocketServerProtocolTests(unittest.TestCase):
         self.assertEqual(self.transport._written, b"")
         self.assertEqual(self.protocol.state, self.protocol.STATE_OPEN)
 
+    def test_interpolate_server_status_template(self):
+        from autobahn.websocket.protocol import _SERVER_STATUS_TEMPLATE
+        s = _SERVER_STATUS_TEMPLATE.format(None, '0.0.0')
+        self.assertEqual(type(s), str)
+        self.assertTrue(len(s) > 0)
+
 
 if os.environ.get('USE_TWISTED', False):
     class TwistedProtocolTests(unittest.TestCase):
@@ -270,3 +276,6 @@ if os.environ.get('USE_TWISTED', False):
             # that here
             self.protocol._connectionLost(txaio.create_failure(RuntimeError("testing")))
             self.assertTrue(self.protocol.openHandshakeTimeoutCall is None)
+
+        def test_send_server_status(self):
+            self.protocol.sendServerStatus()
