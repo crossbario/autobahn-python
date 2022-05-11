@@ -994,7 +994,7 @@ class ISecurityModule(abc.ABC):
         """
         Create a new public-private asymmetric key pair, stored within the security module.
 
-        :param key_type: Type of key to generate, e.g. ``ed25519`` or ``eth``.
+        :param key_type: Type of key to generate, e.g. ``"cryptosign"`` or ``"ethereum"``.
 
         :return: ID of new key.
         """

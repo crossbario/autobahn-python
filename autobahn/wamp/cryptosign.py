@@ -476,9 +476,9 @@ if HAS_CRYPTOSIGN:
             """
             Implements :meth:`autobahn.wamp.interfaces.IKey.key_type`.
             """
-            return 'ed25519'
+            return 'cryptosign'
 
-        @util.public
+        @property
         def can_sign(self) -> bool:
             """
             Implements :meth:`autobahn.wamp.interfaces.IKey.can_sign`.

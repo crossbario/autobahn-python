@@ -87,7 +87,7 @@ class EthereumKey(object):
         """
         Implements :meth:`autobahn.wamp.interfaces.IKey.key_type`.
         """
-        return 'eth'
+        return 'ethereum'
 
     def public_key(self, binary: bool = False) -> Union[str, bytes]:
         """
@@ -95,6 +95,7 @@ class EthereumKey(object):
         """
         raise NotImplementedError()
 
+    @property
     def can_sign(self) -> bool:
         """
         Implements :meth:`autobahn.wamp.interfaces.IKey.can_sign`.
@@ -214,9 +215,9 @@ class SecurityModuleMemory(object):
     """
     A transient, memory-based implementation of :class:`ISecurityModule`.
     """
-    def __init__(self, keys: List[IKey]):
+    def __init__(self, keys: Optional[List[IKey]] = None):
         self._mutex = Lock()
-        self._keys = keys
+        self._keys = keys or []
         self._is_open = False
         self._is_locked = True
         self._counters = {}
@@ -300,14 +301,20 @@ class SecurityModuleMemory(object):
 
     def create_key(self, key_type: str) -> int:
         key_no = len(self._keys)
-        if key_type == 'ed25519':
-            key = CryptosignKey(nacl.signing.SigningKey(os.urandom(32)))
-        elif key_type == 'eth':
-            key = EthereumKey(os.urandom(32), True, security_module=self, key_no=key_no)
+        if key_type == 'cryptosign':
+            key = CryptosignKey(key=nacl.signing.SigningKey(os.urandom(32)),
+                                can_sign=True,
+                                security_module=self,
+                                key_no=key_no)
+        elif key_type == 'ethereum':
+            key = EthereumKey(key_or_address=Account.from_key(os.urandom(32)),
+                              can_sign=True,
+                              security_module=self,
+                              key_no=key_no)
         else:
             raise ValueError('invalid key_type "{}"'.format(key_type))
         self._keys.append(key)
-        return key_no
+        return txaio.create_future_success(key_no)
 
     def delete_key(self, key_no: int):
         pass

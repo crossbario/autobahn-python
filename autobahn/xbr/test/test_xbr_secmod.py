@@ -255,6 +255,34 @@ class TestSecurityModule(TestCase):
             self.assertEqual(key_, key)
 
     @inlineCallbacks
+    def test_secmod_create_key(self):
+        sm = SecurityModuleMemory()
+        self.assertEqual(len(sm), 0)
+
+        for i in range(3):
+            idx = yield sm.create_key('ethereum')
+            self.assertEqual(idx, i * 2)
+            self.assertEqual(len(sm), i * 2 + 1)
+            key = sm[idx]
+            self.assertTrue(isinstance(key, EthereumKey))
+            self.assertEqual(key.security_module, sm)
+            self.assertEqual(key.key_no, i * 2)
+            self.assertEqual(key.key_type, 'ethereum')
+            self.assertEqual(key.can_sign, True)
+
+            idx = yield sm.create_key('cryptosign')
+            self.assertEqual(idx, i * 2 + 1)
+            self.assertEqual(len(sm), i * 2 + 2)
+            key = sm[idx]
+            self.assertTrue(isinstance(key, CryptosignKey))
+            self.assertEqual(key.security_module, sm)
+            self.assertEqual(key.key_no, i * 2 + 1)
+            self.assertEqual(key.key_type, 'cryptosign')
+            self.assertEqual(key.can_sign, True)
+
+        self.assertEqual(len(sm), 6)
+
+    @inlineCallbacks
     def test_secmod_counters(self):
         """
         This tests:
