@@ -2499,16 +2499,16 @@ _SERVER_STATUS_TEMPLATE = """<!DOCTYPE html>
    <head>
       {}
       <style>
-         body {
+         body {{
             color: #fff;
             background-color: #027eae;
             font-family: "Segoe UI", "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 16px;
-         }
+         }}
 
-         a, a:visited, a:hover {
+         a, a:visited, a:hover {{
             color: #fff;
-         }
+         }}
       </style>
    </head>
    <body>
