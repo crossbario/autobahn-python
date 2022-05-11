@@ -25,7 +25,7 @@
 ###############################################################################
 
 
-from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN, SigningKey
+from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN, CryptosignKey
 
 from twisted.internet.defer import inlineCallbacks, returnValue
 
@@ -45,7 +45,7 @@ if HAS_CRYPTOSIGN:
         HAS_CRYPTOSIGN_SSHAGENT = False
     else:
         HAS_CRYPTOSIGN_SSHAGENT = True
-        __all__.append('SSHAgentSigningKey')
+        __all__.append('SSHAgentCryptosignKey')
 
 
 if HAS_CRYPTOSIGN_SSHAGENT:
@@ -54,7 +54,7 @@ if HAS_CRYPTOSIGN_SSHAGENT:
     from nacl import signing
     from autobahn.wamp.cryptosign import _read_ssh_ed25519_pubkey, _unpack, _pack
 
-    class SSHAgentSigningKey(SigningKey):
+    class SSHAgentCryptosignKey(CryptosignKey):
         """
         A WAMP-cryptosign signing key that is a proxy to a private Ed25510 key
         actually held in SSH agent.
@@ -65,7 +65,7 @@ if HAS_CRYPTOSIGN_SSHAGENT:
         """
 
         def __init__(self, key, comment=None, reactor=None):
-            SigningKey.__init__(self, key, comment)
+            CryptosignKey.__init__(self, key, comment)
             if not reactor:
                 from twisted.internet import reactor
             self._reactor = reactor

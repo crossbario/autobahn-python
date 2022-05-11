@@ -173,8 +173,8 @@ class AuthCryptoSign(object):
                     "Must provide '{}' for cryptosign".format(key)
                 )
 
-        from autobahn.wamp.cryptosign import SigningKey
-        self._privkey = SigningKey.from_key_bytes(
+        from autobahn.wamp.cryptosign import CryptosignKey
+        self._privkey = CryptosignKey.from_key_bytes(
             binascii.a2b_hex(kw['privkey'])
         )
 

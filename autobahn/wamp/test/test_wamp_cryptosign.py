@@ -44,7 +44,7 @@ from autobahn.wamp import types
 from autobahn.wamp.auth import create_authenticator
 
 if HAS_CRYPTOSIGN:
-    from autobahn.wamp.cryptosign import SigningKey
+    from autobahn.wamp.cryptosign import CryptosignKey
     from nacl.encoding import HexEncoder
 
 import tempfile
@@ -84,7 +84,7 @@ testvectors = [
 class TestAuth(unittest.TestCase):
 
     def setUp(self):
-        self.key = SigningKey.from_ssh_data(keybody)
+        self.key = CryptosignKey.from_ssh_data(keybody)
         self.privkey_hex = self.key._key.encode(encoder=HexEncoder)
 
         # all tests here fake the use of channel_id_type='tls-unique' with the following channel_id
@@ -123,7 +123,7 @@ class TestAuth(unittest.TestCase):
         session._transport.transport_details = self.transport_details
 
         for testvec in testvectors:
-            priv_key = SigningKey.from_key_bytes(binascii.a2b_hex(testvec['priv_key']))
+            priv_key = CryptosignKey.from_key_bytes(binascii.a2b_hex(testvec['priv_key']))
             challenge = types.Challenge("ticket", dict(challenge=testvec['challenge']))
             f_signed = priv_key.sign_challenge(session, challenge, channel_id_type='tls-unique')
 
@@ -180,7 +180,7 @@ class TestKey(unittest.TestCase):
             fp.write(keybody)
             fp.seek(0)
 
-            key = SigningKey.from_ssh_key(fp.name)
+            key = CryptosignKey.from_ssh_key(fp.name)
             self.assertEqual(key.public_key(), '1adfc8bfe1d35616e64dffbd900096f23b066f914c8c2ffbb66f6075b96e116d')
 
     def test_pubkey(self):
@@ -188,6 +188,6 @@ class TestKey(unittest.TestCase):
             fp.write(pubkey)
             fp.seek(0)
 
-            key = SigningKey.from_ssh_key(fp.name)
-            self.assertEqual(key.public_key(), '9569de18c7c0843212569dcddf2615c7f46125dc9b2292dea30b07b56a4d02a6')
-            self.assertEqual(key.comment(), 'someuser@example.com')
+            key = CryptosignKey.from_ssh_key(fp.name)
+            self.assertEqual(key.public_key(binary=False), '9569de18c7c0843212569dcddf2615c7f46125dc9b2292dea30b07b56a4d02a6')
+            self.assertEqual(key.comment, 'someuser@example.com')

@@ -43,8 +43,8 @@ __all__ = (
     'ITransportHandler',
     'ISession',
     'IAuthenticator',
-    'ISigningKey',
-    'IEd25519Key',
+    'IKey',
+    'ICryptosignKey',
     'IEthereumKey',
     'ISecurityModule',
     'IPayloadCodec',
@@ -704,7 +704,7 @@ class IAuthenticator(abc.ABC):
 
 
 @public
-class ISigningKey(abc.ABC):
+class IKey(abc.ABC):
     """
     Interface to an asymmetric verification key, e.g. a WAMP-Cryptosign client or server authentication
     public key (with Ed25519), or a WAMP-XBR data transaction signature public key or address (with Ethereum).
@@ -726,7 +726,7 @@ class ISigningKey(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def key_id(self) -> Optional[str]:
+    def key_no(self) -> Optional[int]:
         """
         When this key is hosted by a security module, return an identifier
         to refer to this key within the security module.
@@ -791,7 +791,7 @@ class ISigningKey(abc.ABC):
 
 
 @public
-class IEd25519Key(ISigningKey):
+class ICryptosignKey(IKey):
     """
     Interface to a WAMP-Cryptosign client authentication (or server verification) key.
     """
@@ -837,7 +837,7 @@ class IEd25519Key(ISigningKey):
 
 
 @public
-class IEthereumKey(ISigningKey):
+class IEthereumKey(IKey):
     """
     Interface to an Ethereum signing (or transaction verification) key, used for WAMP-XBR transaction
     signing (or verification).
@@ -905,6 +905,38 @@ class ISecurityModule(abc.ABC):
     """
 
     @abc.abstractmethod
+    def __len__(self) -> int:
+        """
+        Get number of key pairs currently stored within the security module.
+
+        :return: Current number of keys stored in security module.
+        """
+
+    # FIXME: the following works on CPy 3.9+, but fails on CPy 3.7 and PyPy 3.8
+    #   AttributeError: type object 'Iterator' has no attribute '__class_getitem__'
+    #   See also:
+    #       - https://docs.python.org/3/library/abc.html#abc.ABCMeta.__subclasshook__
+    #       - https://docs.python.org/3/library/stdtypes.html#container.__iter__
+    #
+    # @abc.abstractmethod
+    # def __iter__(self) -> Iterator[Union[ICryptosignKey, IEthereumKey]]:
+    #     """
+    #     Return an iterator object over all keys accessible in this security module.
+    #
+    #     :return:
+    #     """
+
+    @abc.abstractmethod
+    def __getitem__(self, key_no: int) -> Union[ICryptosignKey, IEthereumKey]:
+        """
+        Get a key from the security module given the key number.
+
+        :param key_no: Number of key to get.
+
+        :return: The key, either a :class:`ICryptosignKey` or :class:`IEthereumKey` instance.
+        """
+
+    @abc.abstractmethod
     def open(self):
         """
         Open this security module. This method (always) runs asynchronously.
@@ -916,6 +948,7 @@ class ISecurityModule(abc.ABC):
         Close this security module. This method (always) runs asynchronously.
         """
 
+    @property
     @abc.abstractmethod
     def is_open(self) -> bool:
         """
@@ -925,6 +958,7 @@ class ISecurityModule(abc.ABC):
         :return: Flag indicating whether the security module is currently opened.
         """
 
+    @property
     @abc.abstractmethod
     def can_lock(self) -> bool:
         """
@@ -934,6 +968,7 @@ class ISecurityModule(abc.ABC):
         :return: Flag indicating whether the security module can be locked/unlocked at all.
         """
 
+    @property
     @abc.abstractmethod
     def is_locked(self) -> bool:
         """
@@ -955,40 +990,7 @@ class ISecurityModule(abc.ABC):
         """
 
     @abc.abstractmethod
-    def random(self, octets: int) -> bytes:
-        """
-        Generate random bytes within the security module.
-
-        :param octets: Number of bytes (octets) to generate.
-
-        :return: Random bytes, generated within the security module, e.g. in a HW RNG.
-        """
-
-    @abc.abstractmethod
-    def current(self, counter_id: str) -> int:
-        """
-        Return current value of the given persistent counter.
-
-        :param counter_id: The ID of the counter to access.
-
-        :return: Current value of counter, or ``0`` to indicate the counter does not
-            exists (was never incremented).
-        """
-
-    @abc.abstractmethod
-    def next(self, counter_id: str) -> int:
-        """
-        Increment the given persistent counter and return the new value.
-
-        :param counter_id:
-
-        :param counter_id: The ID of the counter to access.
-
-        :return: New value of counter, e.g. ``1`` once a counter was first incremented.
-        """
-
-    @abc.abstractmethod
-    def create(self, key_type: str) -> str:
+    def create_key(self, key_type: str) -> int:
         """
         Create a new public-private asymmetric key pair, stored within the security module.
 
@@ -998,54 +1000,42 @@ class ISecurityModule(abc.ABC):
         """
 
     @abc.abstractmethod
-    def delete(self, key_id: str):
+    def delete_key(self, key_no: int):
         """
         Delete an existing key pair stored within the security module.
 
-        :param key_id: ID of key to delete.
+        :param key_no: ID of key to delete.
         """
 
     @abc.abstractmethod
-    def __len__(self) -> int:
+    def get_random(self, octets: int) -> bytes:
         """
-        Get number of key pairs currently stored within the security module.
+        Generate random bytes within the security module.
 
-        :return: Current number of persistent keys.
-        """
+        :param octets: Number of bytes (octets) to generate.
 
-    # FIXME: the following works on CPy 3.9+, but fails on CPy 3.7 and PyPy 3.8
-    #   AttributeError: type object 'Iterator' has no attribute '__class_getitem__'
-    #   See also:
-    #       - https://docs.python.org/3/library/abc.html#abc.ABCMeta.__subclasshook__
-    #       - https://docs.python.org/3/library/stdtypes.html#container.__iter__
-    #
-    # @abc.abstractmethod
-    # def __iter__(self) -> Iterator[str]:
-    #     """
-    #     Return an iterator object over all key accessible in this security module.
-    #
-    #     :return:
-    #     """
-
-    @abc.abstractmethod
-    def __contains__(self, key_id: str) -> bool:
-        """
-        Check if the security module, acting as a key container, contains a persistent
-        key with the given ID.
-
-        :param key_id: ID of key to check.
-
-        :return: ``True`` if a key with given ID exists.
+        :return: Random bytes, generated within the security module, e.g. in a HW RNG.
         """
 
     @abc.abstractmethod
-    def __getitem__(self, key_id: str) -> Union[IEd25519Key, IEthereumKey]:
+    def get_counter(self, counter_no: int) -> int:
         """
-        Get a key from the security module given the key ID.
+        Return current value of the given persistent counter.
 
-        :param key_id: ID of key to get.
+        :param counter_no: Counter to access.
 
-        :return: The key, either a :class:`IEd25519Key` or :class:`IEthereumKey` instance.
+        :return: Current value of counter, or ``0`` to indicate the counter does not
+            exist (was never incremented).
+        """
+
+    @abc.abstractmethod
+    def increment_counter(self, counter_no: int) -> int:
+        """
+        Increment the given persistent counter and return the new value.
+
+        :param counter_no: Counter to increment and access.
+
+        :return: New value of counter, e.g. ``1`` once a counter was first incremented.
         """
 
 

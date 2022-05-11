@@ -31,7 +31,7 @@ from typing import Callable, Optional, Union
 import txaio
 
 from autobahn import util
-from autobahn.wamp.interfaces import ISecurityModule, IEd25519Key, ISession
+from autobahn.wamp.interfaces import ISecurityModule, ICryptosignKey, ISession
 from autobahn.wamp.types import Challenge
 
 __all__ = [
@@ -46,7 +46,7 @@ except ImportError:
     HAS_CRYPTOSIGN = False
 else:
     HAS_CRYPTOSIGN = True
-    __all__.append('SigningKey')
+    __all__.append('CryptosignKey')
 
 
 def _unpack(keydata):
@@ -346,7 +346,7 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
     verify_key.verify(message, sig)
 
 
-# SigningKey from
+# CryptosignKey from
 #   - raw byte string or file with raw bytes
 #   - SSH private key string or key file
 #   - SSH agent proxy
@@ -431,50 +431,64 @@ if HAS_CRYPTOSIGN:
 
         return d2
 
-    class SigningKeyBase(object):
+    @util.public
+    class CryptosignKey(object):
         """
-        Base class to implement :class:`autobahn.wamp.interfaces.ISigningKey`.
+        A cryptosign private key for signing, and hence usable for authentication or a
+        public key usable for verification (but can't be used for signing).
         """
 
         def __init__(self, key, can_sign: bool, security_module: Optional[ISecurityModule] = None,
-                     key_id: Optional[str] = None) -> None:
+                     key_no: Optional[int] = None, comment: Optional[str] = None) -> None:
+            if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
+                raise Exception("invalid type {} for key".format(type(key)))
+
+            assert (can_sign and isinstance(key, signing.SigningKey)) or (not can_sign and isinstance(key, signing.VerifyKey))
             self._key = key
             self._can_sign = can_sign
             self._security_module = security_module
-            self._key_id = key_id
+            self._key_no = key_no
+            self._comment = comment
 
         @property
         def security_module(self) -> Optional['ISecurityModule']:
             """
-            Implements :meth:`autobahn.wamp.interfaces.ISigningKey.security_module`.
+            Implements :meth:`autobahn.wamp.interfaces.IKey.security_module`.
             """
             return self._security_module
 
         @property
-        def key_id(self) -> Optional[str]:
+        def key_no(self) -> Optional[int]:
             """
-            Implements :meth:`autobahn.wamp.interfaces.ISigningKey.key_id`.
+            Implements :meth:`autobahn.wamp.interfaces.IKey.key_no`.
             """
-            return self._key_id
+            return self._key_no
+
+        @property
+        def comment(self) -> Optional[str]:
+            """
+            Implements :meth:`autobahn.wamp.interfaces.IKey.comment`.
+            """
+            return self._comment
 
         @property
         def key_type(self) -> str:
             """
-            Implements :meth:`autobahn.wamp.interfaces.ISigningKey.key_type`.
+            Implements :meth:`autobahn.wamp.interfaces.IKey.key_type`.
             """
             return 'ed25519'
 
         @util.public
         def can_sign(self) -> bool:
             """
-            Implements :meth:`autobahn.wamp.interfaces.ISigningKey.can_sign`.
+            Implements :meth:`autobahn.wamp.interfaces.IKey.can_sign`.
             """
             return self._can_sign
 
         @util.public
         def sign(self, data: bytes) -> bytes:
             """
-            Implements :meth:`autobahn.wamp.interfaces.ISigningKey.sign`.
+            Implements :meth:`autobahn.wamp.interfaces.IKey.sign`.
             """
             if not self._can_sign:
                 raise Exception("a signing key required to sign")
@@ -494,7 +508,7 @@ if HAS_CRYPTOSIGN:
         def sign_challenge(self, session: ISession, challenge: Challenge,
                            channel_id_type: Optional[str] = None) -> bytes:
             """
-            Implements :meth:`autobahn.wamp.interfaces.IEd25519Key.sign_challenge`.
+            Implements :meth:`autobahn.wamp.interfaces.ICryptosignKey.sign_challenge`.
             """
             # get the TLS channel ID of the underlying TLS connection
             if channel_id_type in session._transport.transport_details.channel_id:
@@ -506,46 +520,6 @@ if HAS_CRYPTOSIGN:
             data = format_challenge(challenge, channel_id, channel_id_type)
 
             return sign_challenge(data, self.sign)
-
-    @util.public
-    class SigningKey(SigningKeyBase):
-        """
-        A cryptosign private key for signing, and hence usable for authentication or a
-        public key usable for verification (but can't be used for signing).
-        """
-
-        def __init__(self, key, comment=None):
-            """
-
-            :param key: A Ed25519 private signing key or Ed25519 public verification key.
-            :type key: instance of :class:`nacl.signing.VerifyKey`
-                or instance of :class:`nacl.signing.SigningKey`
-            """
-            if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
-                raise Exception("invalid type {} for key".format(type(key)))
-
-            if not (comment is None or type(comment) == str):
-                raise Exception("invalid type {} for comment".format(type(comment)))
-
-            self._key = key
-            self._comment = comment
-            can_sign = isinstance(key, signing.SigningKey)
-
-            super().__init__(key, can_sign)
-
-        def __str__(self):
-            comment = '"{}"'.format(self.comment()) if self.comment() else None
-            return 'Key(can_sign={}, comment={}, public_key={})'.format(self.can_sign(), comment, self.public_key())
-
-        @util.public
-        def comment(self):
-            """
-            Get the key comment (if any).
-
-            :returns: The comment (if any) from the key.
-            :rtype: str or None
-            """
-            return self._comment
 
         @util.public
         def public_key(self, binary: bool = False) -> Union[str, bytes]:
@@ -567,7 +541,7 @@ if HAS_CRYPTOSIGN:
 
         @util.public
         @classmethod
-        def from_key_bytes(cls, keydata: bytes, comment: Optional[str] = None) -> 'SigningKey':
+        def from_key_bytes(cls, keydata: bytes, comment: Optional[str] = None) -> 'CryptosignKey':
             if not (comment is None or type(comment) == str):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
@@ -578,11 +552,11 @@ if HAS_CRYPTOSIGN:
                 raise ValueError("invalid key length {} (expected 32)".format(len(keydata)))
 
             key = signing.SigningKey(keydata)
-            return cls(key, comment)
+            return cls(key=key, can_sign=True, comment=comment)
 
         @util.public
         @classmethod
-        def from_raw_key(cls, filename: str, comment: Optional[str] = None) -> 'SigningKey':
+        def from_raw_key(cls, filename: str, comment: Optional[str] = None) -> 'CryptosignKey':
             """
             Load an Ed25519 (private) signing key (actually, the seed for the key) from a raw file of 32 bytes length.
             This can be any random byte sequence, such as generated from Python code like
@@ -611,7 +585,7 @@ if HAS_CRYPTOSIGN:
 
         @util.public
         @classmethod
-        def from_ssh_key(cls, filename: str) -> 'SigningKey':
+        def from_ssh_key(cls, filename: str) -> 'CryptosignKey':
             """
             Load an Ed25519 key from a SSH key file. The key file can be a (private) signing
             key (from a SSH private key file) or a (public) verification key (from a SSH
@@ -624,7 +598,7 @@ if HAS_CRYPTOSIGN:
 
         @util.public
         @classmethod
-        def from_ssh_data(cls, keydata: str) -> 'SigningKey':
+        def from_ssh_data(cls, keydata: str) -> 'CryptosignKey':
             """
             Load an Ed25519 key from SSH key file. The key file can be a (private) signing
             key (from a SSH private key file) or a (public) verification key (from a SSH
@@ -635,11 +609,13 @@ if HAS_CRYPTOSIGN:
                 # OpenSSH private key
                 keydata, comment = _read_ssh_ed25519_privkey(keydata)
                 key = signing.SigningKey(keydata, encoder=encoding.RawEncoder)
+                can_sign = True
             else:
                 # OpenSSH public key
                 keydata, comment = _read_ssh_ed25519_pubkey(keydata)
                 key = signing.VerifyKey(keydata)
+                can_sign = False
 
-            return cls(key, comment)
+            return cls(key=key, can_sign=can_sign, comment=comment)
 
-    IEd25519Key.register(SigningKey)
+    ICryptosignKey.register(CryptosignKey)

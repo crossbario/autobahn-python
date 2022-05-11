@@ -34,7 +34,7 @@ from ens import ENS
 from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.internet.threads import deferToThread
 
-from autobahn.wamp.interfaces import IEd25519Key, IEthereumKey
+from autobahn.wamp.interfaces import ICryptosignKey, IEthereumKey
 from autobahn.wamp.message import identity_realm_name_category
 from autobahn.xbr import make_w3
 
@@ -159,7 +159,7 @@ class Seeder(object):
 
     @inlineCallbacks
     def create_authextra(self,
-                         client_key: IEd25519Key,
+                         client_key: ICryptosignKey,
                          delegate_key: IEthereumKey,
                          bandwidth_requested: int,
                          channel_id: Optional[bytes] = None,

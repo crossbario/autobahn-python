@@ -26,6 +26,7 @@
 
 import os
 import sys
+from random import randint
 from binascii import a2b_hex
 # from binascii import b2a_hex
 from unittest import skipIf
@@ -43,7 +44,7 @@ from autobahn.xbr import make_w3, EthereumKey
 from autobahn.xbr._eip712_member_register import _create_eip712_member_register
 from autobahn.xbr._eip712_market_create import _create_eip712_market_create
 from autobahn.xbr._secmod import SecurityModuleMemory
-from autobahn.wamp.cryptosign import SigningKey
+from autobahn.wamp.cryptosign import CryptosignKey
 
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
@@ -236,12 +237,49 @@ class TestSecurityModule(TestCase):
             sig_valid = yield key.verify_typed_data(data, signature)
             self.assertTrue(sig_valid)
 
-    def test_secmod_ctor(self):
+    def test_secmod_iterable(self):
+        """
+        This tests:
+
+        * :meth:`SecurityModuleMemory.from_seedphrase`
+        * :meth:`SecurityModuleMemory.__len__`
+        * :meth:`SecurityModuleMemory.__iter__`
+        * :meth:`SecurityModuleMemory.__getitem__`
+        """
         sm = SecurityModuleMemory.from_seedphrase(self._seedphrase, 5, 5)
         self.assertEqual(len(sm), 10)
 
         for i, key in enumerate(sm):
-            self.assertTrue(isinstance(key, EthereumKey) or isinstance(key, SigningKey))
-
+            self.assertTrue(isinstance(key, EthereumKey) or isinstance(key, CryptosignKey))
             key_ = sm[i]
             self.assertEqual(key_, key)
+
+    @inlineCallbacks
+    def test_secmod_counters(self):
+        """
+        This tests:
+
+        * :meth:`SecurityModuleMemory.__init__`
+        * :meth:`SecurityModuleMemory.get_counter`
+        * :meth:`SecurityModuleMemory.increment_counter`
+        """
+        sm = SecurityModuleMemory([])
+
+        # counters are indexed beginning with 0
+        counter = 0
+
+        # initially, no counters exist, and hence value must be 0
+        value = yield sm.get_counter(counter)
+        self.assertEqual(value, 0)
+
+        yield sm.get_counter(randint(0, 100))
+        self.assertEqual(value, 0)
+
+        # once incremented, counters exist
+        for counter in range(10):
+            for i in range(100):
+                value = yield sm.increment_counter(counter)
+                self.assertEqual(value, i + 1)
+
+                value = yield sm.get_counter(counter)
+                self.assertEqual(value, i + 1)

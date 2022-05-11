@@ -23,11 +23,15 @@
 # THE SOFTWARE.
 #
 ###############################################################################
+
 import os
+from threading import Lock
 
 import txaio
 
 from typing import Optional, Union, Dict, Any, List
+
+import nacl
 
 from eth_account.account import Account
 from eth_account.signers.local import LocalAccount
@@ -36,9 +40,9 @@ from py_eth_sig_utils.eip712 import encode_typed_data
 from py_eth_sig_utils.utils import ecsign, ecrecover_to_pub, checksum_encode, sha3
 from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
 
-from autobahn.wamp.interfaces import ISecurityModule, IEthereumKey, ISigningKey
+from autobahn.wamp.interfaces import ISecurityModule, IEthereumKey, IKey
 from autobahn.xbr._mnemonic import mnemonic_to_private_key
-from autobahn.wamp.cryptosign import SigningKey
+from autobahn.wamp.cryptosign import CryptosignKey
 
 __all__ = ('EthereumKey', 'SecurityModuleMemory', )
 
@@ -50,7 +54,7 @@ class EthereumKey(object):
 
     def __init__(self, key_or_address: Union[LocalAccount, str, bytes], can_sign: bool,
                  security_module: Optional[ISecurityModule] = None,
-                 key_id: Optional[str] = None) -> None:
+                 key_no: Optional[int] = None) -> None:
         if can_sign:
             # https://eth-account.readthedocs.io/en/latest/eth_account.html#eth_account.account.Account
             assert type(key_or_address) == LocalAccount
@@ -62,38 +66,38 @@ class EthereumKey(object):
             self._address = key_or_address
         self._can_sign = can_sign
         self._security_module = security_module
-        self._key_id = key_id
+        self._key_no = key_no
 
     @property
     def security_module(self) -> Optional['ISecurityModule']:
         """
-        Implements :meth:`autobahn.wamp.interfaces.ISigningKey.security_module`.
+        Implements :meth:`autobahn.wamp.interfaces.IKey.security_module`.
         """
         return self._security_module
 
     @property
-    def key_id(self) -> Optional[str]:
+    def key_no(self) -> Optional[int]:
         """
-        Implements :meth:`autobahn.wamp.interfaces.ISigningKey.key_id`.
+        Implements :meth:`autobahn.wamp.interfaces.IKey.key_no`.
         """
-        return self._key_id
+        return self._key_no
 
     @property
     def key_type(self) -> str:
         """
-        Implements :meth:`autobahn.wamp.interfaces.ISigningKey.key_type`.
+        Implements :meth:`autobahn.wamp.interfaces.IKey.key_type`.
         """
         return 'eth'
 
     def public_key(self, binary: bool = False) -> Union[str, bytes]:
         """
-        Implements :meth:`autobahn.wamp.interfaces.ISigningKey.public_key`.
+        Implements :meth:`autobahn.wamp.interfaces.IKey.public_key`.
         """
         raise NotImplementedError()
 
     def can_sign(self) -> bool:
         """
-        Implements :meth:`autobahn.wamp.interfaces.ISigningKey.can_sign`.
+        Implements :meth:`autobahn.wamp.interfaces.IKey.can_sign`.
         """
         return self._can_sign
 
@@ -106,14 +110,14 @@ class EthereumKey(object):
 
     def sign(self, data: bytes) -> bytes:
         """
-        Implements :meth:`autobahn.wamp.interfaces.ISigningKey.sign`.
+        Implements :meth:`autobahn.wamp.interfaces.IKey.sign`.
         """
         # FIXME: implement signing of raw data
         raise NotImplementedError()
 
     def recover(self, data: bytes, signature: bytes) -> bytes:
         """
-        Implements :meth:`autobahn.wamp.interfaces.ISigningKey.recover`.
+        Implements :meth:`autobahn.wamp.interfaces.IKey.recover`.
         """
         # FIXME: implement signing address recovery from signature of raw data
         raise NotImplementedError()
@@ -208,21 +212,133 @@ IEthereumKey.register(EthereumKey)
 
 class SecurityModuleMemory(object):
     """
+    A transient, memory-based implementation of :class:`ISecurityModule`.
     """
-    def __init__(self, keys: List[ISigningKey]):
+    def __init__(self, keys: List[IKey]):
+        self._mutex = Lock()
         self._keys = keys
+        self._is_open = False
+        self._is_locked = True
+        self._counters = {}
 
     def __len__(self):
+        """
+        Implements :meth:`ISecurityModule.__len__`
+        """
         return len(self._keys)
 
     def __iter__(self):
+        """
+        Implements :meth:`ISecurityModule.__iter__`
+        """
         yield from self._keys
 
     def __getitem__(self, key_no: int):
+        """
+        Implements :meth:`ISecurityModule.__getitem__`
+        """
         if key_no in range(len(self._keys)):
             return self._keys[key_no]
         else:
             raise IndexError()
+
+    def open(self):
+        """
+        Implements :meth:`ISecurityModule.open`
+        """
+        assert not self._is_open
+        self._is_open = True
+        return txaio.create_future_success(None)
+
+    def close(self):
+        """
+        Implements :meth:`ISecurityModule.close`
+        """
+        assert self._is_open
+        self._is_open = False
+        self._is_locked = True
+        return txaio.create_future_success(None)
+
+    @property
+    def is_open(self) -> bool:
+        """
+        Implements :meth:`ISecurityModule.is_open`
+        """
+        return self._is_open
+
+    @property
+    def can_lock(self) -> bool:
+        """
+        Implements :meth:`ISecurityModule.can_lock`
+        """
+        return True
+
+    @property
+    def is_locked(self) -> bool:
+        """
+        Implements :meth:`ISecurityModule.is_locked`
+        """
+        return self._is_locked
+
+    def lock(self):
+        """
+        Implements :meth:`ISecurityModule.lock`
+        """
+        assert self._is_open
+        assert not self._is_locked
+        self._is_locked = True
+        return txaio.create_future_success(None)
+
+    def unlock(self):
+        """
+        Implements :meth:`ISecurityModule.unlock`
+        """
+        assert self._is_open
+        assert self._is_locked
+        self._is_locked = False
+        return txaio.create_future_success(None)
+
+    def create_key(self, key_type: str) -> int:
+        key_no = len(self._keys)
+        if key_type == 'ed25519':
+            key = CryptosignKey(nacl.signing.SigningKey(os.urandom(32)))
+        elif key_type == 'eth':
+            key = EthereumKey(os.urandom(32), True, security_module=self, key_no=key_no)
+        else:
+            raise ValueError('invalid key_type "{}"'.format(key_type))
+        self._keys.append(key)
+        return key_no
+
+    def delete_key(self, key_no: int):
+        pass
+
+    def get_random(self, octets: int) -> bytes:
+        """
+        Implements :meth:`ISecurityModule.get_random`
+        """
+        data = os.urandom(octets)
+        return txaio.create_future_success(data)
+
+    def get_counter(self, counter_no: int) -> int:
+        """
+        Implements :meth:`ISecurityModule.get_counter`
+        """
+        self._mutex.acquire()
+        res = self._counters.get(counter_no, 0)
+        self._mutex.release()
+        return txaio.create_future_success(res)
+
+    def increment_counter(self, counter_no: int) -> int:
+        """
+        Implements :meth:`ISecurityModule.increment_counter`
+        """
+        self._mutex.acquire()
+        if counter_no not in self._counters:
+            self._counters[counter_no] = 0
+        self._counters[counter_no] += 1
+        res = self._counters[counter_no]
+        self._mutex.release()
+        return txaio.create_future_success(res)
 
     @classmethod
     def from_seedphrase(cls, seedphrase: str, num_client_keys: int = 1,
@@ -234,14 +350,14 @@ class SecurityModuleMemory(object):
         :param num_delegate_keys:
         :return:
         """
-        keys: List[ISigningKey] = []
+        keys: List[IKey] = []
         for i in range(num_delegate_keys):
             key = EthereumKey.from_seedphrase(seedphrase, i)
             keys.append(key)
         for i in range(num_client_keys):
             # FIXME
-            # key = SigningKey.from_seedphrase(seedphrase, i)
-            key = SigningKey.from_key_bytes(os.urandom(32))
+            # key = CryptosignKey.from_seedphrase(seedphrase, i)
+            key = CryptosignKey.from_key_bytes(os.urandom(32))
             keys.append(key)
         sm = SecurityModuleMemory(keys=keys)
         return sm
