@@ -912,6 +912,14 @@ class ISecurityModule(abc.ABC):
         :return: Current number of keys stored in security module.
         """
 
+    @abc.abstractmethod
+    def __contains__(self, key_no: int) -> bool:
+        """
+
+        :param key_no:
+        :return:
+        """
+
     # FIXME: the following works on CPy 3.9+, but fails on CPy 3.7 and PyPy 3.8
     #   AttributeError: type object 'Iterator' has no attribute '__class_getitem__'
     #   See also:
@@ -934,6 +942,23 @@ class ISecurityModule(abc.ABC):
         :param key_no: Number of key to get.
 
         :return: The key, either a :class:`ICryptosignKey` or :class:`IEthereumKey` instance.
+        """
+
+    @abc.abstractmethod
+    def __setitem__(self, key_no: int, key: Union[ICryptosignKey, IEthereumKey]) -> None:
+        """
+
+        :param key_no:
+        :param key:
+        :return:
+        """
+
+    @abc.abstractmethod
+    def __delitem__(self, key_no: int) -> None:
+        """
+
+        :param key_no:
+        :return:
         """
 
     @abc.abstractmethod

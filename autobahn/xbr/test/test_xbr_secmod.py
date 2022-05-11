@@ -26,7 +26,7 @@
 
 import os
 import sys
-from random import randint
+from random import randint, random
 from binascii import a2b_hex
 # from binascii import b2a_hex
 from unittest import skipIf
@@ -249,13 +249,18 @@ class TestSecurityModule(TestCase):
         sm = SecurityModuleMemory.from_seedphrase(self._seedphrase, 5, 5)
         self.assertEqual(len(sm), 10)
 
-        for i, key in enumerate(sm):
+        for i, key in sm.items():
             self.assertTrue(isinstance(key, EthereumKey) or isinstance(key, CryptosignKey))
             key_ = sm[i]
             self.assertEqual(key_, key)
 
     @inlineCallbacks
     def test_secmod_create_key(self):
+        """
+        This tests:
+
+        * :meth:`SecurityModuleMemory.create_key`
+        """
         sm = SecurityModuleMemory()
         self.assertEqual(len(sm), 0)
 
@@ -281,6 +286,35 @@ class TestSecurityModule(TestCase):
             self.assertEqual(key.can_sign, True)
 
         self.assertEqual(len(sm), 6)
+
+    @inlineCallbacks
+    def test_secmod_delete_key(self):
+        """
+        This tests:
+
+        * :meth:`SecurityModuleMemory.create_key`
+        * :meth:`SecurityModuleMemory.delete_key`
+        """
+        sm = SecurityModuleMemory()
+        self.assertEqual(len(sm), 0)
+
+        n = 10
+        keys = []
+
+        for i in range(n):
+            if random() > .5:
+                yield sm.create_key('ethereum')
+            else:
+                yield sm.create_key('cryptosign')
+            key = sm[i]
+            keys.append(key)
+        self.assertEqual(len(sm), 10)
+
+        for i in range(n):
+            self.assertTrue(i in sm)
+            yield sm.delete_key(i)
+            self.assertFalse(i in sm)
+            self.assertEqual(len(sm), n - i - 1)
 
     @inlineCallbacks
     def test_secmod_counters(self):

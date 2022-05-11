@@ -25,12 +25,11 @@
 ###############################################################################
 
 import os
+from collections.abc import MutableMapping
+from typing import Optional, Union, Dict, Any, List, Iterator
 from threading import Lock
 
 import txaio
-
-from typing import Optional, Union, Dict, Any, List
-
 import nacl
 
 from eth_account.account import Account
@@ -211,35 +210,55 @@ class EthereumKey(object):
 IEthereumKey.register(EthereumKey)
 
 
-class SecurityModuleMemory(object):
+class SecurityModuleMemory(MutableMapping):
     """
     A transient, memory-based implementation of :class:`ISecurityModule`.
     """
-    def __init__(self, keys: Optional[List[IKey]] = None):
+
+    def __init__(self, keys: Optional[List[Union[CryptosignKey, EthereumKey]]] = None):
         self._mutex = Lock()
-        self._keys = keys or []
         self._is_open = False
         self._is_locked = True
-        self._counters = {}
+        self._keys: Dict[int, Union[CryptosignKey, EthereumKey]] = {}
+        self._counters: Dict[int, int] = {}
+        if keys:
+            for i, key in enumerate(keys):
+                self._keys[i] = key
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Implements :meth:`ISecurityModule.__len__`
         """
         return len(self._keys)
 
-    def __iter__(self):
+    def __contains__(self, key_no: int) -> bool:
+        return key_no in self._keys
+
+    def __iter__(self) -> Iterator[int]:
         """
         Implements :meth:`ISecurityModule.__iter__`
         """
         yield from self._keys
 
-    def __getitem__(self, key_no: int):
+    def __getitem__(self, key_no: int) -> Union[CryptosignKey, EthereumKey]:
         """
         Implements :meth:`ISecurityModule.__getitem__`
         """
-        if key_no in range(len(self._keys)):
+        if key_no in self._keys:
             return self._keys[key_no]
+        else:
+            raise IndexError('key_no {} not found'.format(key_no))
+
+    def __setitem__(self, key_no: int, key: Union[CryptosignKey, EthereumKey]) -> None:
+        assert key_no >= 0
+        if key_no in self._keys:
+            # FIXME
+            pass
+        self._keys[key_no] = key
+
+    def __delitem__(self, key_no: int) -> None:
+        if key_no in self._keys:
+            del self._keys[key_no]
         else:
             raise IndexError()
 
@@ -313,11 +332,15 @@ class SecurityModuleMemory(object):
                               key_no=key_no)
         else:
             raise ValueError('invalid key_type "{}"'.format(key_type))
-        self._keys.append(key)
+        self._keys[key_no] = key
         return txaio.create_future_success(key_no)
 
     def delete_key(self, key_no: int):
-        pass
+        if key_no in self._keys:
+            del self._keys[key_no]
+            return txaio.create_future_success(key_no)
+        else:
+            return txaio.create_future_success(None)
 
     def get_random(self, octets: int) -> bytes:
         """
