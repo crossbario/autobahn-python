@@ -401,22 +401,34 @@ class SecurityModuleMemory(MutableMapping):
         return txaio.create_future_success(res)
 
     @classmethod
-    def from_seedphrase(cls, seedphrase: str, num_client_keys: int = 1,
-                        num_delegate_keys: int = 1) -> 'SecurityModuleMemory':
+    def from_seedphrase(cls, seedphrase: str, num_eth_keys: int = 1,
+                        num_cs_keys: int = 1) -> 'SecurityModuleMemory':
         """
+        Create a new memory-backed security module with
 
-        :param seedphrase:
-        :param num_client_keys:
-        :param num_delegate_keys:
-        :return:
+        1. ``num_eth_keys`` keys of type :class:`EthereumKey`, followed by
+        2. ``num_cs_keys`` keys of type :class:`CryptosignKey`
+
+        computed from a (common) BIP44 seedphrase.
+
+        :param seedphrase: BIP44 seedphrase to use.
+        :param num_eth_keys: Number of Ethereum keys to derive.
+        :param num_cs_keys: Number of Cryptosign keys to derive.
+        :return: New memory-backed security module instance.
         """
         keys: List[Union[EthereumKey, CryptosignKey]] = []
-        for i in range(num_delegate_keys):
+
+        # first, add num_eth_keys EthereumKey(s), numbering starting at 0
+        for i in range(num_eth_keys):
             key = EthereumKey.from_seedphrase(seedphrase, i)
             keys.append(key)
-        for i in range(num_client_keys):
-            key: CryptosignKey.from_seedphrase(seedphrase, i)
+
+        # second, add num_cs_keys CryptosignKey(s), numbering starting at num_eth_keys (!)
+        for i in range(num_cs_keys):
+            key = CryptosignKey.from_seedphrase(seedphrase, i + num_eth_keys)
             keys.append(key)
+
+        # initialize security module from collected keys
         sm = SecurityModuleMemory(keys=keys)
         return sm
 

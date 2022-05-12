@@ -401,7 +401,16 @@ class TestSecurityModule(TestCase):
 
         sm = SecurityModuleMemory.from_seedphrase(seedphrase)
         yield sm.open()
-
         self.assertEqual(len(sm), 2)
-        self.assertTrue(isinstance(sm[0], EthereumKey))
-        self.assertTrue(isinstance(sm[1], CryptosignKey))
+        self.assertTrue(isinstance(sm[0], EthereumKey), 'unexpected type {} at index 0'.format(type(sm[0])))
+        self.assertTrue(isinstance(sm[1], CryptosignKey), 'unexpected type {} at index 1'.format(type(sm[1])))
+        yield sm.close()
+
+        sm = SecurityModuleMemory.from_seedphrase(seedphrase, num_eth_keys=5, num_cs_keys=5)
+        yield sm.open()
+        self.assertEqual(len(sm), 10)
+        for i in range(5):
+            self.assertTrue(isinstance(sm[i], EthereumKey))
+        for i in range(5, 10):
+            self.assertTrue(isinstance(sm[i], CryptosignKey))
+        yield sm.close()
