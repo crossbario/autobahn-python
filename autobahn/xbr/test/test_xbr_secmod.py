@@ -256,7 +256,8 @@ class TestSecurityModule(TestCase):
         self.assertEqual(len(sm), 10)
 
         for i, key in sm.items():
-            self.assertTrue(isinstance(key, EthereumKey) or isinstance(key, CryptosignKey))
+            self.assertTrue(isinstance(key, EthereumKey) or isinstance(key, CryptosignKey),
+                            'unexpected type {} returned in security module'.format(type(key)))
             key_ = sm[i]
             self.assertEqual(key_, key)
 
@@ -392,3 +393,15 @@ class TestSecurityModule(TestCase):
         for i in range(5):
             pub_key = keys[i].public_key(binary=False)
             self.assertEqual(pub_key, pubs_keys[i])
+
+    @inlineCallbacks
+    def test_secmod_from_seedphrase(self):
+        # seedphrase to compute keys from
+        seedphrase = "myth like bonus scare over problem client lizard pioneer submit female collect"
+
+        sm = SecurityModuleMemory.from_seedphrase(seedphrase)
+        yield sm.open()
+
+        self.assertEqual(len(sm), 2)
+        self.assertTrue(isinstance(sm[0], EthereumKey))
+        self.assertTrue(isinstance(sm[1], CryptosignKey))

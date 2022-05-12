@@ -48,6 +48,8 @@ else:
     HAS_CRYPTOSIGN = True
     __all__.append('CryptosignKey')
 
+from autobahn.xbr import HAS_XBR
+
 
 def _unpack(keydata):
     """
@@ -616,4 +618,35 @@ if HAS_CRYPTOSIGN:
 
             return cls(key=key, can_sign=can_sign, comment=comment)
 
+        @classmethod
+        def from_seedphrase(cls, seedphrase: str, index: int = 0) -> 'CryptosignKey':
+            """
+            Create a private key from the given BIP-39 mnemonic seed phrase and index,
+            which can be used to sign and create signatures.
+
+            :param seedphrase: The BIP-39 seedphrase ("Mnemonic") from which to derive the account.
+            :param index: The account index in account hierarchy defined by the seedphrase.
+            :return: New instance of :class:`EthereumKey`
+            """
+            if HAS_XBR:
+                from autobahn.xbr import mnemonic_to_private_key
+            else:
+                raise RuntimeError('package autobahn[xbr] not installed')
+
+            # BIP44 path for WAMP
+            # https://github.com/wamp-proto/wamp-proto/issues/401
+            # https://github.com/satoshilabs/slips/pull/1322
+            derivation_path = "m/44'/655'/0'/0/{}".format(index)
+
+            key_raw = mnemonic_to_private_key(seedphrase, derivation_path)
+            assert type(key_raw) == bytes
+            assert len(key_raw) == 32
+
+            # create WAMP-Cryptosign key object from raw bytes
+            key = cls.from_bytes(key_raw)
+
+            return key
+
     ICryptosignKey.register(CryptosignKey)
+
+    __all__.extend(['CryptosignKey', 'format_challenge', 'sign_challenge'])

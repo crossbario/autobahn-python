@@ -39,7 +39,7 @@ from py_eth_sig_utils.eip712 import encode_typed_data
 from py_eth_sig_utils.utils import ecsign, ecrecover_to_pub, checksum_encode, sha3
 from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
 
-from autobahn.wamp.interfaces import ISecurityModule, IEthereumKey, IKey
+from autobahn.wamp.interfaces import ISecurityModule, IEthereumKey
 from autobahn.xbr._mnemonic import mnemonic_to_private_key
 from autobahn.wamp.cryptosign import CryptosignKey
 
@@ -410,14 +410,12 @@ class SecurityModuleMemory(MutableMapping):
         :param num_delegate_keys:
         :return:
         """
-        keys: List[IKey] = []
+        keys: List[Union[EthereumKey, CryptosignKey]] = []
         for i in range(num_delegate_keys):
             key = EthereumKey.from_seedphrase(seedphrase, i)
             keys.append(key)
         for i in range(num_client_keys):
-            # FIXME
-            # key = CryptosignKey.from_seedphrase(seedphrase, i)
-            key = CryptosignKey.from_bytes(os.urandom(32))
+            key: CryptosignKey.from_seedphrase(seedphrase, i)
             keys.append(key)
         sm = SecurityModuleMemory(keys=keys)
         return sm
