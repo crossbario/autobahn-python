@@ -29,6 +29,7 @@ import hashlib
 import binascii
 import unittest
 from unittest.mock import Mock
+from typing import List
 
 import txaio
 
@@ -39,13 +40,18 @@ elif os.environ.get('USE_ASYNCIO', None):
 else:
     raise RuntimeError('need either USE_TWISTED=1 or USE_ASYNCIO=1')
 
-from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN
 from autobahn.wamp import types
 from autobahn.wamp.auth import create_authenticator
+from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN
+from autobahn.xbr import HAS_XBR
 
 if HAS_CRYPTOSIGN:
     from autobahn.wamp.cryptosign import CryptosignKey
     from nacl.encoding import HexEncoder
+
+if HAS_XBR:
+    from autobahn.xbr import mnemonic_to_private_key
+
 
 import tempfile
 
@@ -191,3 +197,42 @@ class TestKey(unittest.TestCase):
             key = CryptosignKey.from_ssh_file(fp.name)
             self.assertEqual(key.public_key(binary=False), '9569de18c7c0843212569dcddf2615c7f46125dc9b2292dea30b07b56a4d02a6')
             self.assertEqual(key.comment, 'someuser@example.com')
+
+
+if HAS_XBR:
+    class TestCryptosignKey(unittest.TestCase):
+        def test_seedphrase(self):
+            # seedphrase to compute keys from
+            seedphrase = "myth like bonus scare over problem client lizard pioneer submit female collect"
+
+            # pubkeys we expect
+            pubs_keys: List[str] = [
+                '30b2e1af1406c5f5254ddc456a045808796d13417f3b56500b0321a908cd89ca',
+                '262b6812802deac81dd2be53d69cb32a05eb9296265e9698f02772867ede002f',
+                '2d2ae42f8927b6c20fe4463151c3468367852c370a3b7db73ef10f97ce262739',
+                'fab0eab3e14b24288b816dd590f21f90700a96306648cb2a031c7451dc5ee616',
+                '1ce310832e5acb0359516400a881cf41d94ca60d9a529ce48a1b5f857cde0aa8',
+            ]
+
+            # create keys from seedphrase
+            keys: List[CryptosignKey] = []
+            for i in range(5):
+
+                # BIP44 path for WAMP
+                # https://github.com/wamp-proto/wamp-proto/issues/401
+                # https://github.com/satoshilabs/slips/pull/1322
+                derivation_path = "m/44'/655'/0'/0/{}".format(i)
+
+                # compute private key from WAMP-Cryptosign from seedphrase and BIP44 path
+                key_raw = mnemonic_to_private_key(seedphrase, derivation_path)
+                assert type(key_raw) == bytes
+                assert len(key_raw) == 32
+
+                # create WAMP-Cryptosign key object from raw bytes
+                key = CryptosignKey.from_bytes(key_raw)
+                keys.append(key)
+
+            # check public keys we expect
+            for i in range(5):
+                pub_key = keys[i].public_key(binary=False)
+                self.assertEqual(pub_key, pubs_keys[i])
