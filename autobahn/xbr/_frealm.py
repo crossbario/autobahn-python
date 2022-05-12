@@ -96,6 +96,19 @@ class Seeder(object):
                                delegate: bytes,
                                seeder: bytes,
                                bandwidth: int):
+        channel_binding = channel_binding or ''
+        channel_id = channel_id or b''
+        assert chain_id
+        assert verifying_contract
+        assert channel_binding is not None
+        assert channel_id is not None
+        assert block_no
+        assert challenge
+        assert pubkey
+        assert realm
+        assert delegate
+        assert bandwidth
+
         data = {
             'types': {
                 'EIP712Domain': [
@@ -108,7 +121,7 @@ class Seeder(object):
                         'type': 'string'
                     },
                 ],
-                'EIP712CatalogCreate': [
+                'EIP712SeederConnect': [
                     {
                         'name': 'chainId',
                         'type': 'uint256'
@@ -118,28 +131,44 @@ class Seeder(object):
                         'type': 'address'
                     },
                     {
-                        'name': 'member',
-                        'type': 'address'
+                        'name': 'channel_binding',
+                        'type': 'string'
                     },
                     {
-                        'name': 'created',
+                        'name': 'channel_id',
+                        'type': 'bytes32'
+                    },
+                    {
+                        'name': 'block_no',
                         'type': 'uint256'
                     },
                     {
-                        'name': 'catalogId',
-                        'type': 'bytes16'
+                        'name': 'challenge',
+                        'type': 'bytes32'
                     },
                     {
-                        'name': 'terms',
-                        'type': 'string'
+                        'name': 'pubkey',
+                        'type': 'bytes32'
                     },
                     {
-                        'name': 'meta',
-                        'type': 'string'
+                        'name': 'realm',
+                        'type': 'address'
+                    },
+                    {
+                        'name': 'delegate',
+                        'type': 'address'
+                    },
+                    {
+                        'name': 'seeder',
+                        'type': 'address'
+                    },
+                    {
+                        'name': 'bandwidth',
+                        'type': 'uint32'
                     },
                 ]
             },
-            'primaryType': 'EIP712CatalogCreate',
+            'primaryType': 'EIP712SeederConnect',
             'domain': {
                 'name': 'XBR',
                 'version': '1',
@@ -147,11 +176,15 @@ class Seeder(object):
             'message': {
                 'chainId': chain_id,
                 'verifyingContract': verifying_contract,
-                'member': None,
-                'created': None,
-                'catalogId': None,
-                'terms': None,
-                'meta': None or '',
+                'channel_binding': channel_binding,
+                'channel_id': channel_id,
+                'block_no': block_no,
+                'challenge': challenge,
+                'pubkey': pubkey,
+                'realm': realm,
+                'delegate': delegate,
+                'seeder': seeder,
+                'bandwidth': bandwidth,
             }
         }
 
@@ -174,7 +207,8 @@ class Seeder(object):
         :return:
         """
         chain_id = 1
-        verifying_contract = b'\0' * 20
+        # FIXME
+        verifying_contract = b'\x01' * 20
         block_no = 1
         challenge = os.urandom(32)
         eip712_data = Seeder._create_eip712_connect(chain_id=chain_id,
@@ -184,9 +218,13 @@ class Seeder(object):
                                                     block_no=block_no,
                                                     challenge=challenge,
                                                     pubkey=client_key.public_key(binary=True),
-                                                    realm=self._frealm.address(binary=True),
+                                                    # FIXME
+                                                    # realm=self._frealm.address(binary=True),
+                                                    realm=b'\x02' * 20,
                                                     delegate=delegate_key.address(binary=False),
-                                                    seeder=self._operator,
+                                                    # FIXME
+                                                    # seeder=self._operator,
+                                                    seeder=b'\x03' * 20,
                                                     bandwidth=bandwidth_requested)
         signature = yield delegate_key.sign_typed_data(eip712_data)
         authextra = {
@@ -203,7 +241,8 @@ class Seeder(object):
             'channel_id': channel_id,
 
             # address
-            'realm': self._frealm.address(binary=False),
+            # FIXME
+            'realm': '7f' * 20,
 
             # int
             'chain_id': chain_id,
