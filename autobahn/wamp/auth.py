@@ -174,7 +174,7 @@ class AuthCryptoSign(object):
                 )
 
         from autobahn.wamp.cryptosign import CryptosignKey
-        self._privkey = CryptosignKey.from_key_bytes(
+        self._privkey = CryptosignKey.from_bytes(
             binascii.a2b_hex(kw['privkey'])
         )
 

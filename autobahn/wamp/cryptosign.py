@@ -541,22 +541,22 @@ if HAS_CRYPTOSIGN:
 
         @util.public
         @classmethod
-        def from_key_bytes(cls, keydata: bytes, comment: Optional[str] = None) -> 'CryptosignKey':
+        def from_bytes(cls, key_data: bytes, comment: Optional[str] = None) -> 'CryptosignKey':
             if not (comment is None or type(comment) == str):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
-            if type(keydata) != bytes:
-                raise ValueError("invalid key type {} (expected binary)".format(type(keydata)))
+            if type(key_data) != bytes:
+                raise ValueError("invalid key type {} (expected binary)".format(type(key_data)))
 
-            if len(keydata) != 32:
-                raise ValueError("invalid key length {} (expected 32)".format(len(keydata)))
+            if len(key_data) != 32:
+                raise ValueError("invalid key length {} (expected 32)".format(len(key_data)))
 
-            key = signing.SigningKey(keydata)
+            key = signing.SigningKey(key_data)
             return cls(key=key, can_sign=True, comment=comment)
 
         @util.public
         @classmethod
-        def from_raw_key(cls, filename: str, comment: Optional[str] = None) -> 'CryptosignKey':
+        def from_file(cls, filename: str, comment: Optional[str] = None) -> 'CryptosignKey':
             """
             Load an Ed25519 (private) signing key (actually, the seed for the key) from a raw file of 32 bytes length.
             This can be any random byte sequence, such as generated from Python code like
@@ -568,10 +568,8 @@ if HAS_CRYPTOSIGN:
                 dd if=/dev/urandom of=client02.key bs=1 count=32
 
             :param filename: Filename of the key.
-            :type filename: str
             :param comment: Comment for key (optional).
-            :type comment: str or None
-            """
+           """
             if not (comment is None or type(comment) == str):
                 raise Exception("invalid type {} for comment".format(type(comment)))
 
@@ -579,13 +577,13 @@ if HAS_CRYPTOSIGN:
                 raise Exception("invalid type {} for filename".format(filename))
 
             with open(filename, 'rb') as f:
-                keydata = f.read()
+                key_data = f.read()
 
-            return cls.from_key_bytes(keydata, comment=comment)
+            return cls.from_bytes(key_data, comment=comment)
 
         @util.public
         @classmethod
-        def from_ssh_key(cls, filename: str) -> 'CryptosignKey':
+        def from_ssh_file(cls, filename: str) -> 'CryptosignKey':
             """
             Load an Ed25519 key from a SSH key file. The key file can be a (private) signing
             key (from a SSH private key file) or a (public) verification key (from a SSH
@@ -593,27 +591,27 @@ if HAS_CRYPTOSIGN:
             """
 
             with open(filename, 'rb') as f:
-                keydata = f.read().decode('utf-8').strip()
-            return cls.from_ssh_data(keydata)
+                key_data = f.read().decode('utf-8').strip()
+            return cls.from_ssh_bytes(key_data)
 
         @util.public
         @classmethod
-        def from_ssh_data(cls, keydata: str) -> 'CryptosignKey':
+        def from_ssh_bytes(cls, key_data: str) -> 'CryptosignKey':
             """
             Load an Ed25519 key from SSH key file. The key file can be a (private) signing
             key (from a SSH private key file) or a (public) verification key (from a SSH
             public key file). A private key file must be passphrase-less.
             """
             SSH_BEGIN = '-----BEGIN OPENSSH PRIVATE KEY-----'
-            if keydata.startswith(SSH_BEGIN):
+            if key_data.startswith(SSH_BEGIN):
                 # OpenSSH private key
-                keydata, comment = _read_ssh_ed25519_privkey(keydata)
-                key = signing.SigningKey(keydata, encoder=encoding.RawEncoder)
+                key_data, comment = _read_ssh_ed25519_privkey(key_data)
+                key = signing.SigningKey(key_data, encoder=encoding.RawEncoder)
                 can_sign = True
             else:
                 # OpenSSH public key
-                keydata, comment = _read_ssh_ed25519_pubkey(keydata)
-                key = signing.VerifyKey(keydata)
+                key_data, comment = _read_ssh_ed25519_pubkey(key_data)
+                key = signing.VerifyKey(key_data)
                 can_sign = False
 
             return cls(key=key, can_sign=can_sign, comment=comment)

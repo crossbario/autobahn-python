@@ -127,8 +127,7 @@ class EthereumKey(object):
         Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.sign_typed_data`.
         """
         if self._security_module:
-            assert (self._security_module.is_open and
-                    not self._security_module.is_locked), 'security module must be open and unlocked'
+            assert self._security_module.is_open and not self._security_module.is_locked, 'security module must be open and unlocked'
         try:
             # encode typed data dict and return message hash
             msg_hash = encode_typed_data(data)
@@ -152,8 +151,7 @@ class EthereumKey(object):
         Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.verify_typed_data`.
         """
         if self._security_module:
-            assert (self._security_module.is_open and
-                    not self._security_module.is_locked), 'security module must be open and unlocked'
+            assert self._security_module.is_open and not self._security_module.is_locked, 'security module must be open and unlocked'
         try:
             msg_hash = encode_typed_data(data)
             signature_vrs = signature_to_v_r_s(signature)
@@ -419,7 +417,7 @@ class SecurityModuleMemory(MutableMapping):
         for i in range(num_client_keys):
             # FIXME
             # key = CryptosignKey.from_seedphrase(seedphrase, i)
-            key = CryptosignKey.from_key_bytes(os.urandom(32))
+            key = CryptosignKey.from_bytes(os.urandom(32))
             keys.append(key)
         sm = SecurityModuleMemory(keys=keys)
         return sm
