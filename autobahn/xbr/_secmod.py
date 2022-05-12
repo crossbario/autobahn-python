@@ -126,6 +126,9 @@ class EthereumKey(object):
         """
         Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.sign_typed_data`.
         """
+        if self._security_module:
+            assert (self._security_module.is_open and
+                    not self._security_module.is_locked), 'security module must be open and unlocked'
         try:
             # encode typed data dict and return message hash
             msg_hash = encode_typed_data(data)
@@ -148,6 +151,9 @@ class EthereumKey(object):
         """
         Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.verify_typed_data`.
         """
+        if self._security_module:
+            assert (self._security_module.is_open and
+                    not self._security_module.is_locked), 'security module must be open and unlocked'
         try:
             msg_hash = encode_typed_data(data)
             signature_vrs = signature_to_v_r_s(signature)
@@ -164,7 +170,7 @@ class EthereumKey(object):
         """
         Create a public key from an address, which can be used to verify signatures.
 
-        :param key: The Ethereum private key seed (32 octets).
+        :param address: The Ethereum address (20 octets).
         :return: New instance of :class:`EthereumKey`
         """
         return EthereumKey(key_or_address=address, can_sign=False)
@@ -229,27 +235,37 @@ class SecurityModuleMemory(MutableMapping):
         """
         Implements :meth:`ISecurityModule.__len__`
         """
+        assert self._is_open, 'security module not open'
+
         return len(self._keys)
 
     def __contains__(self, key_no: int) -> bool:
+        assert self._is_open, 'security module not open'
+
         return key_no in self._keys
 
     def __iter__(self) -> Iterator[int]:
         """
         Implements :meth:`ISecurityModule.__iter__`
         """
+        assert self._is_open, 'security module not open'
+
         yield from self._keys
 
     def __getitem__(self, key_no: int) -> Union[CryptosignKey, EthereumKey]:
         """
         Implements :meth:`ISecurityModule.__getitem__`
         """
+        assert self._is_open, 'security module not open'
+
         if key_no in self._keys:
             return self._keys[key_no]
         else:
             raise IndexError('key_no {} not found'.format(key_no))
 
     def __setitem__(self, key_no: int, key: Union[CryptosignKey, EthereumKey]) -> None:
+        assert self._is_open, 'security module not open'
+
         assert key_no >= 0
         if key_no in self._keys:
             # FIXME
@@ -257,6 +273,8 @@ class SecurityModuleMemory(MutableMapping):
         self._keys[key_no] = key
 
     def __delitem__(self, key_no: int) -> None:
+        assert self._is_open, 'security module not open'
+
         if key_no in self._keys:
             del self._keys[key_no]
         else:
@@ -266,7 +284,8 @@ class SecurityModuleMemory(MutableMapping):
         """
         Implements :meth:`ISecurityModule.open`
         """
-        assert not self._is_open
+        assert not self._is_open, 'security module already open'
+
         self._is_open = True
         return txaio.create_future_success(None)
 
@@ -274,7 +293,8 @@ class SecurityModuleMemory(MutableMapping):
         """
         Implements :meth:`ISecurityModule.close`
         """
-        assert self._is_open
+        assert self._is_open, 'security module not open'
+
         self._is_open = False
         self._is_locked = True
         return txaio.create_future_success(None)
@@ -304,8 +324,9 @@ class SecurityModuleMemory(MutableMapping):
         """
         Implements :meth:`ISecurityModule.lock`
         """
-        assert self._is_open
+        assert self._is_open, 'security module not open'
         assert not self._is_locked
+
         self._is_locked = True
         return txaio.create_future_success(None)
 
@@ -313,12 +334,15 @@ class SecurityModuleMemory(MutableMapping):
         """
         Implements :meth:`ISecurityModule.unlock`
         """
-        assert self._is_open
+        assert self._is_open, 'security module not open'
         assert self._is_locked
+
         self._is_locked = False
         return txaio.create_future_success(None)
 
     def create_key(self, key_type: str) -> int:
+        assert self._is_open, 'security module not open'
+
         key_no = len(self._keys)
         if key_type == 'cryptosign':
             key = CryptosignKey(key=nacl.signing.SigningKey(os.urandom(32)),
@@ -336,6 +360,8 @@ class SecurityModuleMemory(MutableMapping):
         return txaio.create_future_success(key_no)
 
     def delete_key(self, key_no: int):
+        assert self._is_open, 'security module not open'
+
         if key_no in self._keys:
             del self._keys[key_no]
             return txaio.create_future_success(key_no)
@@ -346,6 +372,8 @@ class SecurityModuleMemory(MutableMapping):
         """
         Implements :meth:`ISecurityModule.get_random`
         """
+        assert self._is_open, 'security module not open'
+
         data = os.urandom(octets)
         return txaio.create_future_success(data)
 
@@ -353,6 +381,8 @@ class SecurityModuleMemory(MutableMapping):
         """
         Implements :meth:`ISecurityModule.get_counter`
         """
+        assert self._is_open, 'security module not open'
+
         self._mutex.acquire()
         res = self._counters.get(counter_no, 0)
         self._mutex.release()
@@ -362,6 +392,8 @@ class SecurityModuleMemory(MutableMapping):
         """
         Implements :meth:`ISecurityModule.increment_counter`
         """
+        assert self._is_open, 'security module not open'
+
         self._mutex.acquire()
         if counter_no not in self._counters:
             self._counters[counter_no] = 0

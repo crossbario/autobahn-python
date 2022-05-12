@@ -237,6 +237,7 @@ class TestSecurityModule(TestCase):
             sig_valid = yield key.verify_typed_data(data, signature)
             self.assertTrue(sig_valid)
 
+    @inlineCallbacks
     def test_secmod_iterable(self):
         """
         This tests:
@@ -247,6 +248,8 @@ class TestSecurityModule(TestCase):
         * :meth:`SecurityModuleMemory.__getitem__`
         """
         sm = SecurityModuleMemory.from_seedphrase(self._seedphrase, 5, 5)
+        yield sm.open()
+
         self.assertEqual(len(sm), 10)
 
         for i, key in sm.items():
@@ -262,6 +265,8 @@ class TestSecurityModule(TestCase):
         * :meth:`SecurityModuleMemory.create_key`
         """
         sm = SecurityModuleMemory()
+        yield sm.open()
+
         self.assertEqual(len(sm), 0)
 
         for i in range(3):
@@ -296,6 +301,8 @@ class TestSecurityModule(TestCase):
         * :meth:`SecurityModuleMemory.delete_key`
         """
         sm = SecurityModuleMemory()
+        yield sm.open()
+
         self.assertEqual(len(sm), 0)
 
         n = 10
@@ -325,7 +332,8 @@ class TestSecurityModule(TestCase):
         * :meth:`SecurityModuleMemory.get_counter`
         * :meth:`SecurityModuleMemory.increment_counter`
         """
-        sm = SecurityModuleMemory([])
+        sm = SecurityModuleMemory()
+        yield sm.open()
 
         # counters are indexed beginning with 0
         counter = 0
