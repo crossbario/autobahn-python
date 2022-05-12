@@ -28,7 +28,7 @@ import os
 import sys
 from random import randint, random
 from binascii import a2b_hex
-# from binascii import b2a_hex
+from typing import List
 from unittest import skipIf
 
 from twisted.internet.defer import inlineCallbacks
@@ -39,12 +39,15 @@ from py_eth_sig_utils.utils import ecsign, ecrecover_to_pub, checksum_encode, sh
 from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
 from py_eth_sig_utils.signing import sign_typed_data, recover_typed_data
 
+from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN
 from autobahn.xbr import HAS_XBR
-from autobahn.xbr import make_w3, EthereumKey
-from autobahn.xbr._eip712_member_register import _create_eip712_member_register
-from autobahn.xbr._eip712_market_create import _create_eip712_market_create
-from autobahn.xbr._secmod import SecurityModuleMemory
-from autobahn.wamp.cryptosign import CryptosignKey
+
+if HAS_XBR and HAS_CRYPTOSIGN:
+    from autobahn.xbr import make_w3, EthereumKey, mnemonic_to_private_key
+    from autobahn.xbr._eip712_member_register import _create_eip712_member_register
+    from autobahn.xbr._eip712_market_create import _create_eip712_market_create
+    from autobahn.xbr._secmod import SecurityModuleMemory
+    from autobahn.wamp.cryptosign import CryptosignKey
 
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
@@ -56,7 +59,7 @@ IS_CPY_310 = sys.version_info.minor == 10
 
 @skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
 @skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
-@skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
+@skipIf(not (HAS_XBR and HAS_CRYPTOSIGN), 'package autobahn[encryption,xbr] not installed')
 class TestSecurityModule(TestCase):
 
     def setUp(self):
@@ -118,7 +121,7 @@ class TestSecurityModule(TestCase):
             '236660f4cc04df21289538bf15e83d5bd2858b9dad27022d6b83fc3374ce887d5789e1d40126823abf7ccef04d06e4a1717e6b6a00cbfacf5cc2e7b2e4cb384e1c',
         ]
 
-    def test_key_from_seedphrase(self):
+    def test_ethereum_key_from_seedphrase(self):
         """
         Create key from seedphrase and index.
         """
@@ -126,7 +129,7 @@ class TestSecurityModule(TestCase):
             key = EthereumKey.from_seedphrase(self._seedphrase, i)
             self.assertEqual(key.address(binary=False), self._addresses[i])
 
-    def test_key_from_bytes(self):
+    def test_ethereum_key_from_bytes(self):
         """
         Create key from raw bytes.
         """
@@ -136,7 +139,7 @@ class TestSecurityModule(TestCase):
             self.assertEqual(key.address(binary=False), self._addresses[i])
             self.assertEqual(key._key.key, key_raw)
 
-    def test_sign_typed_data_pesu_manual(self):
+    def test_ethereum_sign_typed_data_pesu_manual(self):
         """
         Test using py_eth_sig_utils by doing individual steps / manually.
         """
@@ -165,7 +168,7 @@ class TestSecurityModule(TestCase):
             self.assertEqual(len(signature), 65)
             self.assertEqual(signature, a2b_hex(self._eip_data_obj_signatures[i]))
 
-    def test_sign_typed_data_pesu_highlevel(self):
+    def test_ethereum_sign_typed_data_pesu_highlevel(self):
         """
         Test using py_eth_sig_utils with high level functions.
         """
@@ -181,7 +184,7 @@ class TestSecurityModule(TestCase):
             self.assertEqual(signature, a2b_hex(self._eip_data_obj_signatures[i]))
 
     @inlineCallbacks
-    def test_sign_typed_data_ab_async(self):
+    def test_ethereum_sign_typed_data_ab_async(self):
         """
         Test using autobahn with async functions.
         """
@@ -192,7 +195,7 @@ class TestSecurityModule(TestCase):
             signature = yield key.sign_typed_data(data)
             self.assertEqual(signature, a2b_hex(self._eip_data_obj_signatures[i]))
 
-    def test_verify_typed_data_pesu_manual(self):
+    def test_ethereum_verify_typed_data_pesu_manual(self):
         """
         Test using py_eth_sig_utils by doing individual steps / manually.
         """
@@ -211,7 +214,7 @@ class TestSecurityModule(TestCase):
 
             self.assertEqual(address, self._addresses[0])
 
-    def test_verify_typed_data_pesu_highlevel(self):
+    def test_ethereum_verify_typed_data_pesu_highlevel(self):
         """
         Test using py_eth_sig_utils with high level functions.
         """
@@ -226,7 +229,7 @@ class TestSecurityModule(TestCase):
             self.assertEqual(address, self._addresses[0])
 
     @inlineCallbacks
-    def test_verify_typed_data_ab_async(self):
+    def test_ethereum_verify_typed_data_ab_async(self):
         """
         Test using autobahn with async functions.
         """
@@ -353,3 +356,39 @@ class TestSecurityModule(TestCase):
 
                 value = yield sm.get_counter(counter)
                 self.assertEqual(value, i + 1)
+
+    def test_cryptosign_key_from_seedphrase(self):
+        # seedphrase to compute keys from
+        seedphrase = "myth like bonus scare over problem client lizard pioneer submit female collect"
+
+        # pubkeys we expect
+        pubs_keys: List[str] = [
+            '30b2e1af1406c5f5254ddc456a045808796d13417f3b56500b0321a908cd89ca',
+            '262b6812802deac81dd2be53d69cb32a05eb9296265e9698f02772867ede002f',
+            '2d2ae42f8927b6c20fe4463151c3468367852c370a3b7db73ef10f97ce262739',
+            'fab0eab3e14b24288b816dd590f21f90700a96306648cb2a031c7451dc5ee616',
+            '1ce310832e5acb0359516400a881cf41d94ca60d9a529ce48a1b5f857cde0aa8',
+        ]
+
+        # create keys from seedphrase
+        keys: List[CryptosignKey] = []
+        for i in range(5):
+
+            # BIP44 path for WAMP
+            # https://github.com/wamp-proto/wamp-proto/issues/401
+            # https://github.com/satoshilabs/slips/pull/1322
+            derivation_path = "m/44'/655'/0'/0/{}".format(i)
+
+            # compute private key from WAMP-Cryptosign from seedphrase and BIP44 path
+            key_raw = mnemonic_to_private_key(seedphrase, derivation_path)
+            assert type(key_raw) == bytes
+            assert len(key_raw) == 32
+
+            # create WAMP-Cryptosign key object from raw bytes
+            key = CryptosignKey.from_bytes(key_raw)
+            keys.append(key)
+
+        # check public keys we expect
+        for i in range(5):
+            pub_key = keys[i].public_key(binary=False)
+            self.assertEqual(pub_key, pubs_keys[i])

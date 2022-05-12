@@ -41,6 +41,11 @@ BIP32_SEED_MODIFIER = b'Bitcoin seed'
 # https://github.com/ethereum/EIPs/issues/84#issuecomment-528213145
 LEDGER_ETH_DERIVATION_PATH = "m/44'/60'/0'/0"
 
+__all__ = [
+    'mnemonic_to_bip39seed',
+    'mnemonic_to_private_key',
+]
+
 
 def mnemonic_to_bip39seed(mnemonic, passphrase):
     """ BIP39 seed from a mnemonic key.
