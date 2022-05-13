@@ -141,6 +141,12 @@ class TestFederatedRealm(TestCase):
 
         self.assertEqual(authextra.get('pubkey', None), client_key.public_key(binary=False))
 
+        # print(authextra)
+
+        self.assertTrue('signature' in authextra)
+        self.assertTrue(type(authextra['signature']) == str)
+        self.assertEqual(len(authextra['signature']), 65 * 2)
+
 # @skipIf(not os.environ.get('WAMP_ROUTER_URLS', None), 'WAMP_ROUTER_URLS not defined')
 # @skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
 # @skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')

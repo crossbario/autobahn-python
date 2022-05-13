@@ -25,6 +25,7 @@
 ###############################################################################
 
 import os
+from binascii import b2a_hex
 from typing import Optional, Dict, Any, List
 
 import web3
@@ -260,7 +261,7 @@ class Seeder(object):
             'bandwidth': bandwidth_requested,
 
             # string: Eth signature by delegate_key over EIP712 typed data as above
-            'signature': signature,
+            'signature': b2a_hex(signature).decode(),
         }
         return authextra
 

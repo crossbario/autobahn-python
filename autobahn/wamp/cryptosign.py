@@ -48,8 +48,6 @@ else:
     HAS_CRYPTOSIGN = True
     __all__.append('CryptosignKey')
 
-from autobahn.xbr import HAS_XBR
-
 
 def _unpack(keydata):
     """
@@ -628,10 +626,10 @@ if HAS_CRYPTOSIGN:
             :param index: The account index in account hierarchy defined by the seedphrase.
             :return: New instance of :class:`EthereumKey`
             """
-            if HAS_XBR:
-                from autobahn.xbr import mnemonic_to_private_key
-            else:
-                raise RuntimeError('package autobahn[xbr] not installed')
+            try:
+                from autobahn.xbr._mnemonic import mnemonic_to_private_key
+            except ImportError as e:
+                raise RuntimeError('package autobahn[xbr] not installed ("{}")'.format(e))
 
             # BIP44 path for WAMP
             # https://github.com/wamp-proto/wamp-proto/issues/401
