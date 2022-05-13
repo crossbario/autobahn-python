@@ -71,8 +71,8 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         # asyncio networking framework entry point, called by asyncio
         # when the connection is established (either a client or a server)
-        self.log.info('{func}(transport={transport})', func=hltype(self.connection_made),
-                      transport=transport)
+        self.log.debug('{func}(transport={transport})', func=hltype(self.connection_made),
+                       transport=transport)
 
         self.transport = transport
 
@@ -212,7 +212,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
     def _onConnect(self, response):
         res = self.onConnect(response)
-        self.log.info('{func}: {res}', func=hltype(self._onConnect), res=res)
+        self.log.debug('{func}: {res}', func=hltype(self._onConnect), res=res)
         if yields(res):
             asyncio.ensure_future(res)
 

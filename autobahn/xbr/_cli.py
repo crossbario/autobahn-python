@@ -108,11 +108,11 @@ class Client(ApplicationSession):
         if profile and profile.cskey:
             assert type(profile.cskey) == bytes and len(profile.cskey) == 32
             self._cskey_raw = profile.cskey
-            self._key = cryptosign.SigningKey.from_key_bytes(self._cskey_raw)
+            self._key = cryptosign.CryptosignKey.from_bytes(self._cskey_raw)
             self.log.info('WAMP-Cryptosign keys with public key {public_key} loaded', public_key=self._key.public_key)
         else:
             self._cskey_raw = os.urandom(32)
-            self._key = cryptosign.SigningKey.from_key_bytes(self._cskey_raw)
+            self._key = cryptosign.CryptosignKey.from_bytes(self._cskey_raw)
             self.log.info('WAMP-Cryptosign keys initialized randomly')
 
         if profile and profile.ethkey:

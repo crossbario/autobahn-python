@@ -173,8 +173,8 @@ class AuthCryptoSign(object):
                     "Must provide '{}' for cryptosign".format(key)
                 )
 
-        from autobahn.wamp.cryptosign import SigningKey
-        self._privkey = SigningKey.from_key_bytes(
+        from autobahn.wamp.cryptosign import CryptosignKey
+        self._privkey = CryptosignKey.from_bytes(
             binascii.a2b_hex(kw['privkey'])
         )
 
@@ -187,6 +187,8 @@ class AuthCryptoSign(object):
         else:
             kw['authextra'] = kw.get('authextra', dict())
             kw['authextra']['pubkey'] = self._privkey.public_key()
+
+        self._channel_binding = kw.get('authextra', dict()).get('channel_binding', None)
         self._args = kw
 
     @property
@@ -194,7 +196,7 @@ class AuthCryptoSign(object):
         return self._args.get('authextra', dict())
 
     def on_challenge(self, session, challenge):
-        return self._privkey.sign_challenge(session, challenge)
+        return self._privkey.sign_challenge(session, challenge, channel_id_type=self._channel_binding)
 
     def on_welcome(self, msg, authextra):
         return None

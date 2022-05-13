@@ -24,13 +24,18 @@
 #
 ###############################################################################
 
+import os
+from binascii import b2a_hex
 from typing import Optional, Dict, Any, List
 
 import web3
-from ens import ENS
-from twisted.internet.threads import deferToThread
 from web3.contract import Contract
+from ens import ENS
 
+from twisted.internet.defer import Deferred, inlineCallbacks
+from twisted.internet.threads import deferToThread
+
+from autobahn.wamp.interfaces import ICryptosignKey, IEthereumKey
 from autobahn.wamp.message import identity_realm_name_category
 from autobahn.xbr import make_w3
 
@@ -79,6 +84,186 @@ class Seeder(object):
         self._endpoint: Optional[str] = endpoint
         self._bandwidth_requested: Optional[str] = bandwidth_requested
         self._bandwidth_offered: Optional[str] = bandwidth_offered
+
+    @staticmethod
+    def _create_eip712_connect(chain_id: int,
+                               verifying_contract: bytes,
+                               channel_binding: str,
+                               channel_id: bytes,
+                               block_no: int,
+                               challenge: bytes,
+                               pubkey: bytes,
+                               realm: bytes,
+                               delegate: bytes,
+                               seeder: bytes,
+                               bandwidth: int):
+        channel_binding = channel_binding or ''
+        channel_id = channel_id or b''
+        assert chain_id
+        assert verifying_contract
+        assert channel_binding is not None
+        assert channel_id is not None
+        assert block_no
+        assert challenge
+        assert pubkey
+        assert realm
+        assert delegate
+        assert bandwidth
+
+        data = {
+            'types': {
+                'EIP712Domain': [
+                    {
+                        'name': 'name',
+                        'type': 'string'
+                    },
+                    {
+                        'name': 'version',
+                        'type': 'string'
+                    },
+                ],
+                'EIP712SeederConnect': [
+                    {
+                        'name': 'chainId',
+                        'type': 'uint256'
+                    },
+                    {
+                        'name': 'verifyingContract',
+                        'type': 'address'
+                    },
+                    {
+                        'name': 'channel_binding',
+                        'type': 'string'
+                    },
+                    {
+                        'name': 'channel_id',
+                        'type': 'bytes32'
+                    },
+                    {
+                        'name': 'block_no',
+                        'type': 'uint256'
+                    },
+                    {
+                        'name': 'challenge',
+                        'type': 'bytes32'
+                    },
+                    {
+                        'name': 'pubkey',
+                        'type': 'bytes32'
+                    },
+                    {
+                        'name': 'realm',
+                        'type': 'address'
+                    },
+                    {
+                        'name': 'delegate',
+                        'type': 'address'
+                    },
+                    {
+                        'name': 'seeder',
+                        'type': 'address'
+                    },
+                    {
+                        'name': 'bandwidth',
+                        'type': 'uint32'
+                    },
+                ]
+            },
+            'primaryType': 'EIP712SeederConnect',
+            'domain': {
+                'name': 'XBR',
+                'version': '1',
+            },
+            'message': {
+                'chainId': chain_id,
+                'verifyingContract': verifying_contract,
+                'channel_binding': channel_binding,
+                'channel_id': channel_id,
+                'block_no': block_no,
+                'challenge': challenge,
+                'pubkey': pubkey,
+                'realm': realm,
+                'delegate': delegate,
+                'seeder': seeder,
+                'bandwidth': bandwidth,
+            }
+        }
+
+        return data
+
+    @inlineCallbacks
+    def create_authextra(self,
+                         client_key: ICryptosignKey,
+                         delegate_key: IEthereumKey,
+                         bandwidth_requested: int,
+                         channel_id: Optional[bytes] = None,
+                         channel_binding: Optional[str] = None) -> Deferred:
+        """
+
+        :param client_key:
+        :param delegate_key:
+        :param bandwidth_requested:
+        :param channel_id:
+        :param channel_binding:
+        :return:
+        """
+        chain_id = 1
+        # FIXME
+        verifying_contract = b'\x01' * 20
+        block_no = 1
+        challenge = os.urandom(32)
+        eip712_data = Seeder._create_eip712_connect(chain_id=chain_id,
+                                                    verifying_contract=verifying_contract,
+                                                    channel_binding=channel_binding,
+                                                    channel_id=channel_id,
+                                                    block_no=block_no,
+                                                    challenge=challenge,
+                                                    pubkey=client_key.public_key(binary=True),
+                                                    # FIXME
+                                                    # realm=self._frealm.address(binary=True),
+                                                    realm=b'\x02' * 20,
+                                                    delegate=delegate_key.address(binary=False),
+                                                    # FIXME
+                                                    # seeder=self._operator,
+                                                    seeder=b'\x03' * 20,
+                                                    bandwidth=bandwidth_requested)
+        signature = yield delegate_key.sign_typed_data(eip712_data)
+        authextra = {
+            # string
+            'pubkey': client_key.public_key(binary=False),
+
+            # string
+            'challenge': challenge,
+
+            # string
+            'channel_binding': channel_binding,
+
+            # string
+            'channel_id': channel_id,
+
+            # address
+            # FIXME
+            'realm': '7f' * 20,
+
+            # int
+            'chain_id': chain_id,
+
+            # int
+            'block_no': block_no,
+
+            # address
+            'delegate': delegate_key.address(binary=False),
+
+            # address
+            'seeder': self._operator,
+
+            # int: requested bandwidth in kbps
+            'bandwidth': bandwidth_requested,
+
+            # string: Eth signature by delegate_key over EIP712 typed data as above
+            'signature': b2a_hex(signature).decode(),
+        }
+        return authextra
 
     @property
     def frealm(self) -> 'FederatedRealm':

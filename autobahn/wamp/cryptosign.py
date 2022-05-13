@@ -31,7 +31,7 @@ from typing import Callable, Optional, Union
 import txaio
 
 from autobahn import util
-from autobahn.wamp.interfaces import IEd25519Key, ISession
+from autobahn.wamp.interfaces import ISecurityModule, ICryptosignKey, ISession
 from autobahn.wamp.types import Challenge
 
 __all__ = [
@@ -41,11 +41,12 @@ __all__ = [
 try:
     # try to import everything we need for WAMP-cryptosign
     from nacl import encoding, signing, bindings
+    from nacl.signing import SignedMessage
 except ImportError:
     HAS_CRYPTOSIGN = False
 else:
     HAS_CRYPTOSIGN = True
-    __all__.append('SigningKey')
+    __all__.append('CryptosignKey')
 
 
 def _unpack(keydata):
@@ -345,7 +346,7 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
     verify_key.verify(message, sig)
 
 
-# SigningKey from
+# CryptosignKey from
 #   - raw byte string or file with raw bytes
 #   - SSH private key string or key file
 #   - SSH agent proxy
@@ -430,33 +431,86 @@ if HAS_CRYPTOSIGN:
 
         return d2
 
-    class SigningKeyBase(object):
+    @util.public
+    class CryptosignKey(object):
+        """
+        A cryptosign private key for signing, and hence usable for authentication or a
+        public key usable for verification (but can't be used for signing).
+        """
 
-        def __init__(self, signer, can_sign: bool) -> None:
+        def __init__(self, key, can_sign: bool, security_module: Optional[ISecurityModule] = None,
+                     key_no: Optional[int] = None, comment: Optional[str] = None) -> None:
+            if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
+                raise Exception("invalid type {} for key".format(type(key)))
+
+            assert (can_sign and isinstance(key, signing.SigningKey)) or (not can_sign and isinstance(key, signing.VerifyKey))
+            self._key = key
             self._can_sign = can_sign
-            self._key = signer
+            self._security_module = security_module
+            self._key_no = key_no
+            self._comment = comment
 
-        @util.public
-        def can_sign(self):
+        @property
+        def security_module(self) -> Optional['ISecurityModule']:
             """
-            Check if the key can be used to sign.
+            Implements :meth:`autobahn.wamp.interfaces.IKey.security_module`.
+            """
+            return self._security_module
 
-            :returns: `True`, iff the key can sign.
-            :rtype: bool
+        @property
+        def key_no(self) -> Optional[int]:
+            """
+            Implements :meth:`autobahn.wamp.interfaces.IKey.key_no`.
+            """
+            return self._key_no
+
+        @property
+        def comment(self) -> Optional[str]:
+            """
+            Implements :meth:`autobahn.wamp.interfaces.IKey.comment`.
+            """
+            return self._comment
+
+        @property
+        def key_type(self) -> str:
+            """
+            Implements :meth:`autobahn.wamp.interfaces.IKey.key_type`.
+            """
+            return 'cryptosign'
+
+        @property
+        def can_sign(self) -> bool:
+            """
+            Implements :meth:`autobahn.wamp.interfaces.IKey.can_sign`.
             """
             return self._can_sign
 
         @util.public
-        def sign_challenge(self, session: ISession, challenge: Challenge, channel_id_type: Optional[str] = None) -> bytes:
+        def sign(self, data: bytes) -> bytes:
             """
-            Sign WAMP-cryptosign challenge.
+            Implements :meth:`autobahn.wamp.interfaces.IKey.sign`.
+            """
+            if not self._can_sign:
+                raise Exception("a signing key required to sign")
 
-            :param session: The authenticating WAMP session.
-            :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
-            :returns: A Deferred/Future that resolves to the computed signature.
+            if type(data) != bytes:
+                raise Exception("data to be signed must be binary")
+
+            sig: SignedMessage = self._key.sign(data)
+
+            # we only return the actual signature! if we return "sig",
+            # it gets coerced into the concatenation of message + signature
+            # not sure which order, but we don't want that. we only want
+            # the signature
+            return txaio.create_future_success(sig.signature)
+
+        @util.public
+        def sign_challenge(self, session: ISession, challenge: Challenge,
+                           channel_id_type: Optional[str] = None) -> bytes:
+            """
+            Implements :meth:`autobahn.wamp.interfaces.ICryptosignKey.sign_challenge`.
             """
             # get the TLS channel ID of the underlying TLS connection
-            channel_id_type = 'tls-unique'
             if channel_id_type in session._transport.transport_details.channel_id:
                 channel_id = session._transport.transport_details.channel_id.get(channel_id_type, None)
             else:
@@ -466,71 +520,6 @@ if HAS_CRYPTOSIGN:
             data = format_challenge(challenge, channel_id, channel_id_type)
 
             return sign_challenge(data, self.sign)
-
-        @util.public
-        def sign(self, data: bytes) -> bytes:
-            """
-            Sign some data.
-
-            :param data: The data to be signed.
-            :type data: bytes
-
-            :returns: The signature.
-            :rtype: bytes
-            """
-            if not self._can_sign:
-                raise Exception("a signing key required to sign")
-
-            if type(data) != bytes:
-                raise Exception("data to be signed must be binary")
-
-            # sig is a nacl.signing.SignedMessage
-            sig = self._key.sign(data)
-
-            # we only return the actual signature! if we return "sig",
-            # it gets coerced into the concatenation of message + signature
-            # not sure which order, but we don't want that. we only want
-            # the signature
-            return txaio.create_future_success(sig.signature)
-
-    @util.public
-    class SigningKey(SigningKeyBase):
-        """
-        A cryptosign private key for signing, and hence usable for authentication or a
-        public key usable for verification (but can't be used for signing).
-        """
-
-        def __init__(self, key, comment=None):
-            """
-
-            :param key: A Ed25519 private signing key or a Ed25519 public verification key.
-            :type key: instance of nacl.signing.VerifyKey or instance of nacl.signing.SigningKey
-            """
-            if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
-                raise Exception("invalid type {} for key".format(type(key)))
-
-            if not (comment is None or type(comment) == str):
-                raise Exception("invalid type {} for comment".format(type(comment)))
-
-            self._key = key
-            self._comment = comment
-            can_sign = isinstance(key, signing.SigningKey)
-
-            super().__init__(key, can_sign)
-
-        def __str__(self):
-            comment = '"{}"'.format(self.comment()) if self.comment() else None
-            return 'Key(can_sign={}, comment={}, public_key={})'.format(self.can_sign(), comment, self.public_key())
-
-        @util.public
-        def comment(self):
-            """
-            Get the key comment (if any).
-
-            :returns: The comment (if any) from the key.
-            :rtype: str or None
-            """
-            return self._comment
 
         @util.public
         def public_key(self, binary: bool = False) -> Union[str, bytes]:
@@ -552,22 +541,22 @@ if HAS_CRYPTOSIGN:
 
         @util.public
         @classmethod
-        def from_key_bytes(cls, keydata: str, comment: Optional[str] = None) -> 'SigningKey':
+        def from_bytes(cls, key_data: bytes, comment: Optional[str] = None) -> 'CryptosignKey':
             if not (comment is None or type(comment) == str):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
-            if type(keydata) != bytes:
-                raise ValueError("invalid key type {} (expected binary)".format(type(keydata)))
+            if type(key_data) != bytes:
+                raise ValueError("invalid key type {} (expected binary)".format(type(key_data)))
 
-            if len(keydata) != 32:
-                raise ValueError("invalid key length {} (expected 32)".format(len(keydata)))
+            if len(key_data) != 32:
+                raise ValueError("invalid key length {} (expected 32)".format(len(key_data)))
 
-            key = signing.SigningKey(keydata)
-            return cls(key, comment)
+            key = signing.SigningKey(key_data)
+            return cls(key=key, can_sign=True, comment=comment)
 
         @util.public
         @classmethod
-        def from_raw_key(cls, filename: str, comment: Optional[str] = None) -> 'SigningKey':
+        def from_file(cls, filename: str, comment: Optional[str] = None) -> 'CryptosignKey':
             """
             Load an Ed25519 (private) signing key (actually, the seed for the key) from a raw file of 32 bytes length.
             This can be any random byte sequence, such as generated from Python code like
@@ -579,10 +568,8 @@ if HAS_CRYPTOSIGN:
                 dd if=/dev/urandom of=client02.key bs=1 count=32
 
             :param filename: Filename of the key.
-            :type filename: str
             :param comment: Comment for key (optional).
-            :type comment: str or None
-            """
+           """
             if not (comment is None or type(comment) == str):
                 raise Exception("invalid type {} for comment".format(type(comment)))
 
@@ -590,13 +577,13 @@ if HAS_CRYPTOSIGN:
                 raise Exception("invalid type {} for filename".format(filename))
 
             with open(filename, 'rb') as f:
-                keydata = f.read()
+                key_data = f.read()
 
-            return cls.from_key_bytes(keydata, comment=comment)
+            return cls.from_bytes(key_data, comment=comment)
 
         @util.public
         @classmethod
-        def from_ssh_key(cls, filename: str) -> 'SigningKey':
+        def from_ssh_file(cls, filename: str) -> 'CryptosignKey':
             """
             Load an Ed25519 key from a SSH key file. The key file can be a (private) signing
             key (from a SSH private key file) or a (public) verification key (from a SSH
@@ -604,27 +591,60 @@ if HAS_CRYPTOSIGN:
             """
 
             with open(filename, 'rb') as f:
-                keydata = f.read().decode('utf-8').strip()
-            return cls.from_ssh_data(keydata)
+                key_data = f.read().decode('utf-8').strip()
+            return cls.from_ssh_bytes(key_data)
 
         @util.public
         @classmethod
-        def from_ssh_data(cls, keydata: str) -> 'SigningKey':
+        def from_ssh_bytes(cls, key_data: str) -> 'CryptosignKey':
             """
             Load an Ed25519 key from SSH key file. The key file can be a (private) signing
             key (from a SSH private key file) or a (public) verification key (from a SSH
             public key file). A private key file must be passphrase-less.
             """
             SSH_BEGIN = '-----BEGIN OPENSSH PRIVATE KEY-----'
-            if keydata.startswith(SSH_BEGIN):
+            if key_data.startswith(SSH_BEGIN):
                 # OpenSSH private key
-                keydata, comment = _read_ssh_ed25519_privkey(keydata)
-                key = signing.SigningKey(keydata, encoder=encoding.RawEncoder)
+                key_data, comment = _read_ssh_ed25519_privkey(key_data)
+                key = signing.SigningKey(key_data, encoder=encoding.RawEncoder)
+                can_sign = True
             else:
                 # OpenSSH public key
-                keydata, comment = _read_ssh_ed25519_pubkey(keydata)
-                key = signing.VerifyKey(keydata)
+                key_data, comment = _read_ssh_ed25519_pubkey(key_data)
+                key = signing.VerifyKey(key_data)
+                can_sign = False
 
-            return cls(key, comment)
+            return cls(key=key, can_sign=can_sign, comment=comment)
 
-    IEd25519Key.register(SigningKey)
+        @classmethod
+        def from_seedphrase(cls, seedphrase: str, index: int = 0) -> 'CryptosignKey':
+            """
+            Create a private key from the given BIP-39 mnemonic seed phrase and index,
+            which can be used to sign and create signatures.
+
+            :param seedphrase: The BIP-39 seedphrase ("Mnemonic") from which to derive the account.
+            :param index: The account index in account hierarchy defined by the seedphrase.
+            :return: New instance of :class:`EthereumKey`
+            """
+            try:
+                from autobahn.xbr._mnemonic import mnemonic_to_private_key
+            except ImportError as e:
+                raise RuntimeError('package autobahn[xbr] not installed ("{}")'.format(e))
+
+            # BIP44 path for WAMP
+            # https://github.com/wamp-proto/wamp-proto/issues/401
+            # https://github.com/satoshilabs/slips/pull/1322
+            derivation_path = "m/44'/655'/0'/0/{}".format(index)
+
+            key_raw = mnemonic_to_private_key(seedphrase, derivation_path)
+            assert type(key_raw) == bytes
+            assert len(key_raw) == 32
+
+            # create WAMP-Cryptosign key object from raw bytes
+            key = cls.from_bytes(key_raw)
+
+            return key
+
+    ICryptosignKey.register(CryptosignKey)
+
+    __all__.extend(['CryptosignKey', 'format_challenge', 'sign_challenge'])

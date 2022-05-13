@@ -10,6 +10,8 @@ from autobahn.xbr import HAS_XBR
 if HAS_XBR:
     from autobahn.xbr._frealm import Seeder, FederatedRealm
 
+from autobahn.xbr._secmod import SecurityModuleMemory, EthereumKey
+from autobahn.wamp.cryptosign import CryptosignKey
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
@@ -92,6 +94,58 @@ class TestFederatedRealm(TestCase):
         self.assertEqual(transports, ['wss://frealm1.example.com/ws', 'wss://fr1.foobar.org/ws',
                                       'wss://public-frealm1.pierre.fr:443'])
 
+    @inlineCallbacks
+    def test_frealm_secmod(self):
+        name = 'wamp-proto.eth'
+        seedphrase = "myth like bonus scare over problem client lizard pioneer submit female collect"
+
+        sm = SecurityModuleMemory.from_seedphrase(seedphrase)
+        yield sm.open()
+        self.assertEqual(len(sm), 2)
+        self.assertTrue(isinstance(sm[0], EthereumKey), 'unexpected type {} at index 0'.format(type(sm[0])))
+        self.assertTrue(isinstance(sm[1], CryptosignKey), 'unexpected type {} at index 1'.format(type(sm[1])))
+
+        fr = FederatedRealm(name, self.gw_config)
+
+        # FIXME
+        fr._seeders = [
+            Seeder(frealm=fr,
+                   endpoint='wss://frealm1.example.com/ws',
+                   label='Example Inc.',
+                   operator='0xf5fb56886f033855C1a36F651E927551749361bC',
+                   country='US'),
+            Seeder(frealm=fr,
+                   endpoint='wss://fr1.foobar.org/ws',
+                   label='Foobar Foundation',
+                   operator='0xe59C7418403CF1D973485B36660728a5f4A8fF9c',
+                   country='DE'),
+            Seeder(frealm=fr,
+                   endpoint='wss://public-frealm1.pierre.fr:443',
+                   label='Pierre PP',
+                   operator='0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
+                   country='FR'),
+        ]
+
+        yield fr.initialize()
+        self.assertEqual(fr.status, 'RUNNING')
+        self.assertEqual(fr.address, '0x66267d0b1114cFae80C37942177a846d666b114a')
+        self.assertEqual(len(fr.seeders), 3)
+
+        delegate_key = sm[0]
+        client_key = sm[1]
+        authextra = yield fr.seeders[0].create_authextra(client_key=client_key,
+                                                         delegate_key=delegate_key,
+                                                         bandwidth_requested=512,
+                                                         channel_id=None,
+                                                         channel_binding=None)
+
+        self.assertEqual(authextra.get('pubkey', None), client_key.public_key(binary=False))
+
+        # print(authextra)
+
+        self.assertTrue('signature' in authextra)
+        self.assertTrue(type(authextra['signature']) == str)
+        self.assertEqual(len(authextra['signature']), 65 * 2)
 
 # @skipIf(not os.environ.get('WAMP_ROUTER_URLS', None), 'WAMP_ROUTER_URLS not defined')
 # @skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
