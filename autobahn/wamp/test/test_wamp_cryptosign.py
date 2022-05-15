@@ -212,3 +212,28 @@ class TestAuthExtra(unittest.TestCase):
                 'bandwidth': 200
             }
         })
+
+    def test_parse(self):
+        data_original = {
+            'pubkey': '9019a424b040859c108edee02e64c1dcb32b253686d7b5db56c306e9bdb2fe7e',
+            'challenge': 'fe81c84e94a75a357c259d6b37361e43966a45f57dff181bb61b2f91a0f4ac88',
+            'channel_binding': 'tls-unique',
+            'channel_id': '2e642bf991f48ece9133a0a32d15550921dda12bfebfbc941571d4b2960540bc',
+            'reservation': {
+                'chain_id': 999,
+                'block_no': 123456789,
+                'realm': '0x163D58cE482560B7826b4612f40aa2A7d53310C4',
+                'delegate': '0x72b3486d38E9f49215b487CeAaDF27D6acf22115',
+                'seeder': '0x52d66f36A7927cF9612e1b40bD6549d08E0513Ff',
+                'bandwidth': 200
+            },
+            'signature': '747763c69394270603f64af5be3f8256a14b41ff51027e583ee81db9f1f15a01cc8e55218a76139f26dbaaa78d8a537d80d248b3fc6245ecf4602cc5fbb0f6452e',
+        }
+        ae1 = CryptosignAuthextra.parse(data_original)
+        data_marshalled = ae1.marshal()
+
+        # FIXME:
+        for k in ['realm', 'delegate', 'seeder']:
+            data_original['reservation'][k] = data_original['reservation'][k].lower()
+
+        self.assertEqual(data_marshalled, data_original)

@@ -830,56 +830,86 @@ if HAS_CRYPTOSIGN:
 
             pubkey = data.get('pubkey', None)
             if pubkey is not None:
-                if type(pubkey) != 'str':
+                if type(pubkey) != str:
                     raise ValueError('invalid type {} for pubkey'.format(type(pubkey)))
                 if len(pubkey) != 32 * 2:
                     raise ValueError('invalid length {} of pubkey'.format(len(pubkey)))
                 obj._pubkey = a2b_hex(pubkey)
 
-            admission = data.get('admission', None)
-            if admission is not None:
-                if type(admission) != {}:
-                    raise ValueError('invalid type {} for admission'.format(type(admission)))
+            challenge = data.get('challenge', None)
+            if challenge is not None:
+                if type(challenge) != str:
+                    raise ValueError('invalid type {} for challenge'.format(type(challenge)))
+                if len(challenge) != 32 * 2:
+                    raise ValueError('invalid length {} of challenge'.format(len(challenge)))
+                obj._challenge = a2b_hex(challenge)
 
-                chain_id = admission.get('chain_id', None)
-                if type(chain_id) != int:
-                    raise ValueError('invalid type {} for admission.chain_id - expected an integer'.format(type(chain_id)))
-                obj._chain_id = chain_id
+            channel_binding = data.get('channel_binding', None)
+            if channel_binding is not None:
+                if type(channel_binding) != str:
+                    raise ValueError('invalid type {} for channel_binding'.format(type(channel_binding)))
+                if channel_binding not in ['tls-unique']:
+                    raise ValueError('invalid value "{}" for channel_binding'.format(channel_binding))
+                obj._channel_binding = channel_binding
 
-                block_no = admission.get('block_no', None)
-                if type(block_no) != int:
-                    raise ValueError('invalid type {} for admission.block_no - expected an integer'.format(type(block_no)))
-                obj._block_no = block_no
+            channel_id = data.get('channel_id', None)
+            if channel_id is not None:
+                if type(channel_id) != str:
+                    raise ValueError('invalid type {} for channel_id'.format(type(channel_id)))
+                if len(channel_id) != 32 * 2:
+                    raise ValueError('invalid length {} of channel_id'.format(len(channel_id)))
+                obj._channel_id = a2b_hex(channel_id)
 
-                realm = admission.get('realm', None)
-                if type(realm) != str:
-                    raise ValueError('invalid type {} for admission.realm - expected a string'.format(type(realm)))
-                if not _URI_PAT_REALM_NAME_ETH.match(realm):
-                    raise ValueError('invalid value "{}" for admission.realm - expected an Ethereum address'.format(type(realm)))
-                obj._realm = realm
+            reservation = data.get('reservation', None)
+            if reservation is not None:
+                if type(reservation) != dict:
+                    raise ValueError('invalid type {} for reservation'.format(type(reservation)))
 
-                delegate = admission.get('delegate', None)
-                if type(delegate) != str:
-                    raise ValueError('invalid type {} for admission.delegate - expected a string'.format(type(delegate)))
-                if not _URI_PAT_REALM_NAME_ETH.match(delegate):
-                    raise ValueError('invalid value "{}" for admission.delegate - expected an Ethereum address'.format(type(delegate)))
-                obj._delegate = delegate
+                chain_id = reservation.get('chain_id', None)
+                if chain_id is not None:
+                    if type(chain_id) != int:
+                        raise ValueError('invalid type {} for reservation.chain_id - expected an integer'.format(type(chain_id)))
+                    obj._chain_id = chain_id
 
-                seeder = admission.get('seeder', None)
-                if type(seeder) != str:
-                    raise ValueError('invalid type {} for admission.seeder - expected a string'.format(type(seeder)))
-                if not _URI_PAT_REALM_NAME_ETH.match(seeder):
-                    raise ValueError('invalid value "{}" for admission.seeder - expected an Ethereum address'.format(type(seeder)))
-                obj._seeder = seeder
+                block_no = reservation.get('block_no', None)
+                if block_no is not None:
+                    if type(block_no) != int:
+                        raise ValueError('invalid type {} for reservation.block_no - expected an integer'.format(type(block_no)))
+                    obj._block_no = block_no
 
-                bandwidth = admission.get('bandwidth', None)
-                if type(bandwidth) != int:
-                    raise ValueError('invalid type {} for admission.bandwidth - expected an integer'.format(type(bandwidth)))
-                obj._bandwidth = bandwidth
+                realm = reservation.get('realm', None)
+                if realm is not None:
+                    if type(realm) != str:
+                        raise ValueError('invalid type {} for reservation.realm - expected a string'.format(type(realm)))
+                    if not _URI_PAT_REALM_NAME_ETH.match(realm):
+                        raise ValueError('invalid value "{}" for reservation.realm - expected an Ethereum address'.format(type(realm)))
+                    obj._realm = a2b_hex(realm[2:])
+
+                delegate = reservation.get('delegate', None)
+                if delegate is not None:
+                    if type(delegate) != str:
+                        raise ValueError('invalid type {} for reservation.delegate - expected a string'.format(type(delegate)))
+                    if not _URI_PAT_REALM_NAME_ETH.match(delegate):
+                        raise ValueError('invalid value "{}" for reservation.delegate - expected an Ethereum address'.format(type(delegate)))
+                    obj._delegate = a2b_hex(delegate[2:])
+
+                seeder = reservation.get('seeder', None)
+                if seeder is not None:
+                    if type(seeder) != str:
+                        raise ValueError('invalid type {} for reservation.seeder - expected a string'.format(type(seeder)))
+                    if not _URI_PAT_REALM_NAME_ETH.match(seeder):
+                        raise ValueError('invalid value "{}" for reservation.seeder - expected an Ethereum address'.format(type(seeder)))
+                    obj._seeder = a2b_hex(seeder[2:])
+
+                bandwidth = reservation.get('bandwidth', None)
+                if bandwidth is not None:
+                    if type(bandwidth) != int:
+                        raise ValueError('invalid type {} for reservation.bandwidth - expected an integer'.format(type(bandwidth)))
+                    obj._bandwidth = bandwidth
 
             signature = data.get('signature', None)
             if signature is not None:
-                if type(signature) != 'str':
+                if type(signature) != str:
                     raise ValueError('invalid type {} for signature'.format(type(signature)))
                 if len(signature) != 65 * 2:
                     raise ValueError('invalid length {} of signature'.format(len(signature)))
@@ -893,11 +923,11 @@ if HAS_CRYPTOSIGN:
                 res['pubkey'] = b2a_hex(self._pubkey).decode()
 
             if self._challenge is not None:
-                res['challenge'] = self._challenge
+                res['challenge'] = b2a_hex(self._challenge).decode()
             if self._channel_binding is not None:
                 res['channel_binding'] = self._channel_binding
             if self._channel_id is not None:
-                res['channel_id'] = self._channel_id
+                res['channel_id'] = b2a_hex(self._channel_id).decode()
 
             reservation = {}
             if self._chain_id is not None:
@@ -905,18 +935,18 @@ if HAS_CRYPTOSIGN:
             if self._block_no is not None:
                 reservation['block_no'] = self._block_no
             if self._realm is not None:
-                reservation['realm'] = self._realm
+                reservation['realm'] = '0x' + b2a_hex(self._realm).decode()
             if self._delegate is not None:
-                reservation['delegate'] = self._delegate
+                reservation['delegate'] = '0x' + b2a_hex(self._delegate).decode()
             if self._seeder is not None:
-                reservation['seeder'] = self._seeder
+                reservation['seeder'] = '0x' + b2a_hex(self._seeder).decode()
             if self._bandwidth is not None:
                 reservation['bandwidth'] = self._bandwidth
             if reservation:
                 res['reservation'] = reservation
 
             if self._trustroot is not None:
-                res['trustroot'] = self._trustroot
+                res['trustroot'] = b2a_hex(self._trustroot).decode()
             if self._signature is not None:
                 res['signature'] = b2a_hex(self._signature).decode()
 
