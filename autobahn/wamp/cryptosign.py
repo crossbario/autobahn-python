@@ -510,6 +510,9 @@ if HAS_CRYPTOSIGN:
             """
             Implements :meth:`autobahn.wamp.interfaces.ICryptosignKey.sign_challenge`.
             """
+            assert challenge.method in ['cryptosign', 'cryptosign-proxy'], \
+                'unexpected cryptosign challenge with method "{}"'.format(challenge.method)
+
             # get the TLS channel ID of the underlying TLS connection
             if channel_id_type in session._transport.transport_details.channel_id:
                 channel_id = session._transport.transport_details.channel_id.get(channel_id_type, None)

@@ -101,7 +101,7 @@ class TestAuth(unittest.TestCase):
         session = Mock()
         session._transport.transport_details = self.transport_details
 
-        challenge = types.Challenge("ticket", dict(challenge="ff" * 32))
+        challenge = types.Challenge("cryptosign", dict(challenge="ff" * 32))
         f_signed = self.key.sign_challenge(session, challenge, channel_id_type='tls-unique')
 
         def success(signed):
@@ -125,7 +125,7 @@ class TestAuth(unittest.TestCase):
 
         for testvec in testvectors:
             priv_key = CryptosignKey.from_bytes(binascii.a2b_hex(testvec['priv_key']))
-            challenge = types.Challenge("ticket", dict(challenge=testvec['challenge']))
+            challenge = types.Challenge("cryptosign", dict(challenge=testvec['challenge']))
             f_signed = priv_key.sign_challenge(session, challenge, channel_id_type='tls-unique')
 
             def success(signed):
