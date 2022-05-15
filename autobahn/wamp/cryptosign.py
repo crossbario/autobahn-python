@@ -25,14 +25,16 @@
 ###############################################################################
 
 import binascii
+from binascii import a2b_hex, b2a_hex
 import struct
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, Dict, Any
 
 import txaio
 
 from autobahn import util
 from autobahn.wamp.interfaces import ISecurityModule, ICryptosignKey, ISession
 from autobahn.wamp.types import Challenge
+from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
 
 __all__ = [
     'HAS_CRYPTOSIGN',
@@ -650,4 +652,274 @@ if HAS_CRYPTOSIGN:
 
     ICryptosignKey.register(CryptosignKey)
 
-    __all__.extend(['CryptosignKey', 'format_challenge', 'sign_challenge'])
+    class CryptosignAuthextra(object):
+        """
+        WAMP-Cryptosign authextra object.
+        """
+        __slots__ = [
+            '_pubkey',
+            '_trustroot',
+            '_challenge',
+            '_channel_binding',
+            '_channel_id',
+            '_realm',
+            '_chain_id',
+            '_block_no',
+            '_delegate',
+            '_seeder',
+            '_bandwidth',
+            '_signature',
+        ]
+
+        def __init__(self,
+                     pubkey: Optional[bytes] = None,
+                     trustroot: Optional[bytes] = None,
+                     challenge: Optional[bytes] = None,
+                     channel_binding: Optional[str] = None,
+                     channel_id: Optional[bytes] = None,
+                     realm: Optional[bytes] = None,
+                     chain_id: Optional[int] = None,
+                     block_no: Optional[int] = None,
+                     delegate: Optional[bytes] = None,
+                     seeder: Optional[bytes] = None,
+                     bandwidth: Optional[int] = None,
+                     signature: Optional[bytes] = None,
+                     ):
+            if pubkey:
+                assert len(pubkey) == 32
+            if trustroot:
+                assert len(trustroot) == 20
+            if challenge:
+                assert len(challenge) == 32
+            if channel_binding:
+                assert channel_binding in ['tls-unique']
+            if channel_id:
+                assert len(channel_id) == 32
+            if realm:
+                assert len(realm) == 20
+            if delegate:
+                assert len(delegate) == 20
+            if seeder:
+                assert len(seeder) == 20
+            if signature:
+                assert len(signature) == 65
+            self._pubkey = pubkey
+            self._trustroot = trustroot
+            self._challenge = challenge
+            self._channel_binding = channel_binding
+            self._channel_id = channel_id
+            self._realm = realm
+            self._chain_id = chain_id
+            self._block_no = block_no
+            self._delegate = delegate
+            self._seeder = seeder
+            self._bandwidth = bandwidth
+            self._signature = signature
+
+        @property
+        def pubkey(self) -> Optional[bytes]:
+            return self._pubkey
+
+        @pubkey.setter
+        def pubkey(self, value: Optional[bytes]):
+            assert value is None or len(value) == 20
+            self._pubkey = value
+
+        @property
+        def trustroot(self) -> Optional[bytes]:
+            return self._trustroot
+
+        @trustroot.setter
+        def trustroot(self, value: Optional[bytes]):
+            assert value is None or len(value) == 20
+            self._trustroot = value
+
+        @property
+        def challenge(self) -> Optional[bytes]:
+            return self._challenge
+
+        @challenge.setter
+        def challenge(self, value: Optional[bytes]):
+            assert value is None or len(value) == 32
+            self._challenge = value
+
+        @property
+        def channel_binding(self) -> Optional[str]:
+            return self._channel_binding
+
+        @channel_binding.setter
+        def channel_binding(self, value: Optional[str]):
+            assert value is None or value in ['tls-unique']
+            self._channel_binding = value
+
+        @property
+        def channel_id(self) -> Optional[bytes]:
+            return self._channel_id
+
+        @channel_id.setter
+        def channel_id(self, value: Optional[bytes]):
+            assert value is None or len(value) == 32
+            self._channel_id = value
+
+        @property
+        def realm(self) -> Optional[bytes]:
+            return self._realm
+
+        @realm.setter
+        def realm(self, value: Optional[bytes]):
+            assert value is None or len(value) == 20
+            self._realm = value
+
+        @property
+        def chain_id(self) -> Optional[int]:
+            return self._chain_id
+
+        @chain_id.setter
+        def chain_id(self, value: Optional[int]):
+            assert value is None or value > 0
+            self._chain_id = value
+
+        @property
+        def block_no(self) -> Optional[int]:
+            return self._block_no
+
+        @block_no.setter
+        def block_no(self, value: Optional[int]):
+            assert value is None or value > 0
+            self._block_no = value
+
+        @property
+        def delegate(self) -> Optional[bytes]:
+            return self._delegate
+
+        @delegate.setter
+        def delegate(self, value: Optional[bytes]):
+            assert value is None or len(value) == 20
+            self._delegate = value
+
+        @property
+        def seeder(self) -> Optional[bytes]:
+            return self._seeder
+
+        @seeder.setter
+        def seeder(self, value: Optional[bytes]):
+            assert value is None or len(value) == 20
+            self._seeder = value
+
+        @property
+        def bandwidth(self) -> Optional[int]:
+            return self._bandwidth
+
+        @bandwidth.setter
+        def bandwidth(self, value: Optional[int]):
+            assert value is None or value > 0
+            self._bandwidth = value
+
+        @property
+        def signature(self) -> Optional[bytes]:
+            return self._signature
+
+        @signature.setter
+        def signature(self, value: Optional[bytes]):
+            assert value is None or len(value) == 65
+            self._signature = value
+
+        @staticmethod
+        def parse(data: Dict[str, Any]) -> 'CryptosignAuthextra':
+            obj = CryptosignAuthextra()
+
+            pubkey = data.get('pubkey', None)
+            if pubkey is not None:
+                if type(pubkey) != 'str':
+                    raise ValueError('invalid type {} for pubkey'.format(type(pubkey)))
+                if len(pubkey) != 32 * 2:
+                    raise ValueError('invalid length {} of pubkey'.format(len(pubkey)))
+                obj._pubkey = a2b_hex(pubkey)
+
+            admission = data.get('admission', None)
+            if admission is not None:
+                if type(admission) != {}:
+                    raise ValueError('invalid type {} for admission'.format(type(admission)))
+
+                chain_id = admission.get('chain_id', None)
+                if type(chain_id) != int:
+                    raise ValueError('invalid type {} for admission.chain_id - expected an integer'.format(type(chain_id)))
+                obj._chain_id = chain_id
+
+                block_no = admission.get('block_no', None)
+                if type(block_no) != int:
+                    raise ValueError('invalid type {} for admission.block_no - expected an integer'.format(type(block_no)))
+                obj._block_no = block_no
+
+                realm = admission.get('realm', None)
+                if type(realm) != str:
+                    raise ValueError('invalid type {} for admission.realm - expected a string'.format(type(realm)))
+                if not _URI_PAT_REALM_NAME_ETH.match(realm):
+                    raise ValueError('invalid value "{}" for admission.realm - expected an Ethereum address'.format(type(realm)))
+                obj._realm = realm
+
+                delegate = admission.get('delegate', None)
+                if type(delegate) != str:
+                    raise ValueError('invalid type {} for admission.delegate - expected a string'.format(type(delegate)))
+                if not _URI_PAT_REALM_NAME_ETH.match(delegate):
+                    raise ValueError('invalid value "{}" for admission.delegate - expected an Ethereum address'.format(type(delegate)))
+                obj._delegate = delegate
+
+                seeder = admission.get('seeder', None)
+                if type(seeder) != str:
+                    raise ValueError('invalid type {} for admission.seeder - expected a string'.format(type(seeder)))
+                if not _URI_PAT_REALM_NAME_ETH.match(seeder):
+                    raise ValueError('invalid value "{}" for admission.seeder - expected an Ethereum address'.format(type(seeder)))
+                obj._seeder = seeder
+
+                bandwidth = admission.get('bandwidth', None)
+                if type(bandwidth) != int:
+                    raise ValueError('invalid type {} for admission.bandwidth - expected an integer'.format(type(bandwidth)))
+                obj._bandwidth = bandwidth
+
+            signature = data.get('signature', None)
+            if signature is not None:
+                if type(signature) != 'str':
+                    raise ValueError('invalid type {} for signature'.format(type(signature)))
+                if len(signature) != 65 * 2:
+                    raise ValueError('invalid length {} of signature'.format(len(signature)))
+                obj._signature = a2b_hex(signature)
+
+            return obj
+
+        def marshal(self) -> Dict[str, Any]:
+            res = {}
+            if self._pubkey is not None:
+                res['pubkey'] = b2a_hex(self._pubkey).decode()
+
+            if self._challenge is not None:
+                res['challenge'] = self._challenge
+            if self._channel_binding is not None:
+                res['channel_binding'] = self._channel_binding
+            if self._channel_id is not None:
+                res['channel_id'] = self._channel_id
+
+            reservation = {}
+            if self._chain_id is not None:
+                reservation['chain_id'] = self._chain_id
+            if self._block_no is not None:
+                reservation['block_no'] = self._block_no
+            if self._realm is not None:
+                reservation['realm'] = self._realm
+            if self._delegate is not None:
+                reservation['delegate'] = self._delegate
+            if self._seeder is not None:
+                reservation['seeder'] = self._seeder
+            if self._bandwidth is not None:
+                reservation['bandwidth'] = self._bandwidth
+            if reservation:
+                res['reservation'] = reservation
+
+            if self._trustroot is not None:
+                res['trustroot'] = self._trustroot
+            if self._signature is not None:
+                res['signature'] = b2a_hex(self._signature).decode()
+
+            return res
+
+    __all__.extend(['CryptosignKey', 'format_challenge', 'sign_challenge', 'CryptosignAuthextra'])

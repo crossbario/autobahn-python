@@ -41,7 +41,7 @@ else:
 
 from autobahn.wamp import types
 from autobahn.wamp.auth import create_authenticator
-from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN
+from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN, CryptosignAuthextra
 
 if HAS_CRYPTOSIGN:
     from autobahn.wamp.cryptosign import CryptosignKey
@@ -192,3 +192,23 @@ class TestKey(unittest.TestCase):
             key = CryptosignKey.from_ssh_file(fp.name)
             self.assertEqual(key.public_key(binary=False), '9569de18c7c0843212569dcddf2615c7f46125dc9b2292dea30b07b56a4d02a6')
             self.assertEqual(key.comment, 'someuser@example.com')
+
+
+class TestAuthExtra(unittest.TestCase):
+    def test_default_ctor(self):
+        ae = CryptosignAuthextra()
+        self.assertEqual(ae.marshal(), {})
+
+    def test_ctor(self):
+        ae1 = CryptosignAuthextra(pubkey=b'\xff' * 32)
+        self.assertEqual(ae1.marshal(), {
+            'pubkey': 'ff' * 32
+        })
+
+        ae1 = CryptosignAuthextra(pubkey=b'\xff' * 32, bandwidth=200)
+        self.assertEqual(ae1.marshal(), {
+            'pubkey': 'ff' * 32,
+            'reservation': {
+                'bandwidth': 200
+            }
+        })
