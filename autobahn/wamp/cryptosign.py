@@ -860,6 +860,14 @@ if HAS_CRYPTOSIGN:
                     raise ValueError('invalid length {} of channel_id'.format(len(channel_id)))
                 obj._channel_id = a2b_hex(channel_id)
 
+            trustroot = data.get('trustroot', None)
+            if trustroot is not None:
+                if type(trustroot) != str:
+                    raise ValueError('invalid type {} for trustroot - expected a string'.format(type(trustroot)))
+                if not _URI_PAT_REALM_NAME_ETH.match(trustroot):
+                    raise ValueError('invalid value "{}" for trustroot - expected an Ethereum address'.format(type(delegate)))
+                obj._trustroot = a2b_hex(trustroot[2:])
+
             reservation = data.get('reservation', None)
             if reservation is not None:
                 if type(reservation) != dict:
@@ -919,6 +927,9 @@ if HAS_CRYPTOSIGN:
 
         def marshal(self) -> Dict[str, Any]:
             res = {}
+
+            # FIXME: marshal check-summed eth addresses
+
             if self._pubkey is not None:
                 res['pubkey'] = b2a_hex(self._pubkey).decode()
 
@@ -928,6 +939,9 @@ if HAS_CRYPTOSIGN:
                 res['channel_binding'] = self._channel_binding
             if self._channel_id is not None:
                 res['channel_id'] = b2a_hex(self._channel_id).decode()
+
+            if self._trustroot is not None:
+                res['trustroot'] = '0x' + b2a_hex(self._trustroot).decode()
 
             reservation = {}
             if self._chain_id is not None:
@@ -945,8 +959,6 @@ if HAS_CRYPTOSIGN:
             if reservation:
                 res['reservation'] = reservation
 
-            if self._trustroot is not None:
-                res['trustroot'] = b2a_hex(self._trustroot).decode()
             if self._signature is not None:
                 res['signature'] = b2a_hex(self._signature).decode()
 

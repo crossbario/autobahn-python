@@ -219,6 +219,7 @@ class TestAuthExtra(unittest.TestCase):
             'challenge': 'fe81c84e94a75a357c259d6b37361e43966a45f57dff181bb61b2f91a0f4ac88',
             'channel_binding': 'tls-unique',
             'channel_id': '2e642bf991f48ece9133a0a32d15550921dda12bfebfbc941571d4b2960540bc',
+            'trustroot': '0xe78ea2fE1533D4beD9A10d91934e109A130D0ad8',
             'reservation': {
                 'chain_id': 999,
                 'block_no': 123456789,
@@ -232,7 +233,8 @@ class TestAuthExtra(unittest.TestCase):
         ae1 = CryptosignAuthextra.parse(data_original)
         data_marshalled = ae1.marshal()
 
-        # FIXME:
+        # FIXME: marshal check-summed eth addresses
+        data_original['trustroot'] = data_original['trustroot'].lower()
         for k in ['realm', 'delegate', 'seeder']:
             data_original['reservation'][k] = data_original['reservation'][k].lower()
 
