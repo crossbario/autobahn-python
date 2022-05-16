@@ -865,7 +865,7 @@ if HAS_CRYPTOSIGN:
                 if type(trustroot) != str:
                     raise ValueError('invalid type {} for trustroot - expected a string'.format(type(trustroot)))
                 if not _URI_PAT_REALM_NAME_ETH.match(trustroot):
-                    raise ValueError('invalid value "{}" for trustroot - expected an Ethereum address'.format(type(delegate)))
+                    raise ValueError('invalid value "{}" for trustroot - expected an Ethereum address'.format(type(trustroot)))
                 obj._trustroot = a2b_hex(trustroot[2:])
 
             reservation = data.get('reservation', None)

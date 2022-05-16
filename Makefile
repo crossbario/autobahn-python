@@ -128,6 +128,9 @@ upload_exe:
 	aws cloudfront create-invalidation \
 		--distribution-id E2QIG9LNGCJSP9 --paths "/xbrnetwork/linux-amd64/*"
 
+mypy:
+	mypy --install-types --non-interactive autobahn
+
 # WEB3_INFURA_PROJECT_ID must be defined for this
 test_infura:
 	time -f "%e" python -c "from web3.auto.infura import w3; print(w3.isConnected())"
