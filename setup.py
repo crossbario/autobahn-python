@@ -92,7 +92,7 @@ extras_require_encryption = [
     'service_identity>=18.1.0',     # MIT license
     'pynacl>=1.4.0',                # Apache license
     'pytrie>=0.4.0',                # BSD license
-    'pyqrcode>=1.2.1'               # BSD license
+    'qrcode>=7.3.1',                # BSD license
 ]
 
 # Support for WAMP-SCRAM authentication

@@ -476,17 +476,15 @@ def qrcode_from_totp(secret, label, issuer):
         raise Exception('label must be of type unicode, not {}'.format(type(label)))
 
     try:
-        import pyqrcode
+        import qrcode
+        import qrcode.image.svg
     except ImportError:
-        raise Exception('pyqrcode not installed')
+        raise Exception('qrcode not installed')
 
-    import io
-    buffer = io.BytesIO()
-
-    data = pyqrcode.create('otpauth://totp/{}?secret={}&issuer={}'.format(label, secret, issuer))
-    data.svg(buffer, omithw=True)
-
-    return buffer.getvalue()
+    return qrcode.make(
+        'otpauth://totp/{}?secret={}&issuer={}'.format(label, secret, issuer),
+        box_size=3,
+        image_factory=qrcode.image.svg.SvgImage).to_string()
 
 
 @public
