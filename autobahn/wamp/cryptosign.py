@@ -295,24 +295,26 @@ def _qrcode_from_signify_ed25519_pubkey(pubkey_file, mode='text'):
     """
     assert(mode in ['text', 'svg'])
 
-    import pyqrcode
+    import qrcode
 
     with open(pubkey_file) as f:
         pubkey = f.read().splitlines()[1]
 
-        qr = pyqrcode.create(pubkey, error='L', mode='binary')
+        qr = qrcode.QRCode(box_size=3,
+                           error_correction=qrcode.ERROR_CORRECT_L)
+        qr.add_data(pubkey)
 
         if mode == 'text':
-            return qr.terminal()
-
-        elif mode == 'svg':
             import io
-            data_buffer = io.BytesIO()
 
-            qr.svg(data_buffer, omithw=True)
+            with io.StringIO() as data_buffer:
+                qr.print_ascii(out=data_buffer, invert=True)
+                return data_buffer.getvalue()
+        elif mode == 'svg':
+            import qrcode.image.svg
 
-            return data_buffer.getvalue()
-
+            image = qr.make_image(image_factory=qrcode.image.svg.SvgImage)
+            return image.to_string()
         else:
             raise Exception('logic error')
 
