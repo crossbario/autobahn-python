@@ -53,7 +53,7 @@ extras_require_twisted = [
 if CPY and sys.platform != 'win32':
     # wsaccel does not provide wheels: https://github.com/methane/wsaccel/issues/12
     extras_require_accelerate = [
-        "wsaccel>=0.6.3"            # Apache 2.0
+        # "wsaccel>=0.6.3"            # Apache 2.0
     ]
 else:
     extras_require_accelerate = []

@@ -425,10 +425,13 @@ def parse_fields(repository, obj, objs_lst=None):
         field_id = int(fbs_field.Id())
         fbs_field_type = fbs_field.Type()
 
+        # print(field_id, fbs_field_type, fbs_field_type.Index())
+
         _objtype = None
         if fbs_field_type.Index() >= 0:
-            _obj = objs_lst[fbs_field_type.Index()]
-            _objtype = _obj.name
+            if len(objs_lst) > fbs_field_type.Index():
+                _obj = objs_lst[fbs_field_type.Index()]
+                _objtype = _obj.name
 
         field_type = FbsType(repository=repository,
                              basetype=fbs_field_type.BaseType(),
@@ -1162,16 +1165,22 @@ class FbsRepository(object):
         return self._services
 
     def load(self, dirname) -> object:
-        if not os.path.isdir(dirname):
-            raise RuntimeError('cannot open schema directory {}'.format(dirname))
-
         found = []
-        for path in Path(dirname).rglob('*.bfbs'):
-            fn = os.path.abspath(os.path.join(dirname, path.name))
+        if os.path.isdir(dirname):
+            for path in Path(dirname).rglob('*.bfbs'):
+                fn = os.path.abspath(os.path.join(dirname, path.name))
+                if fn not in self._schemata:
+                    found.append(fn)
+                else:
+                    print('duplicate schema: {} already loaded'.format(fn))
+        elif os.path.isfile(dirname):
+            fn = os.path.abspath(dirname)
             if fn not in self._schemata:
                 found.append(fn)
             else:
                 print('duplicate schema: {} already loaded'.format(fn))
+        else:
+            raise RuntimeError('cannot open schema directory {}'.format(dirname))
 
         # iterate over all schema files found
         for fn in found:

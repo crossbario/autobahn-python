@@ -673,16 +673,23 @@ if HAS_CRYPTOSIGN:
 
         def __init__(self,
                      pubkey: Optional[bytes] = None,
-                     trustroot: Optional[bytes] = None,
                      challenge: Optional[bytes] = None,
                      channel_binding: Optional[str] = None,
                      channel_id: Optional[bytes] = None,
+
+                     # domain address, certificates are verified against owner of the domain
+                     trustroot: Optional[bytes] = None,
+
+                     # FIXME: add delegate address
+                     # FIXME: add certificates
+                     # FIXME: remove reservation
                      realm: Optional[bytes] = None,
                      chain_id: Optional[int] = None,
                      block_no: Optional[int] = None,
                      delegate: Optional[bytes] = None,
                      seeder: Optional[bytes] = None,
                      bandwidth: Optional[int] = None,
+
                      signature: Optional[bytes] = None,
                      ):
             if pubkey:

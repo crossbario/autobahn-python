@@ -51,7 +51,7 @@ from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_
 from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_DOMAIN_ADDR_SRC, \
     XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC
 
-from autobahn.xbr import FbsSchema, FbsRepository
+from autobahn.xbr import FbsRepository
 
 import uuid
 import binascii
@@ -994,21 +994,22 @@ def _main():
         print_version()
 
     elif args.command == 'describe-schema':
-        schema = FbsSchema.load(args.schema)
-        obj = schema.marshal()
-        data = json.dumps(obj,
-                          separators=(',', ':'),
-                          ensure_ascii=False,
-                          sort_keys=False, )
-        print('json data generated ({} bytes)'.format(len(data)))
-        for svc_key, svc in schema.services.items():
-            print('API "{}"'.format(svc_key))
+        repo = FbsRepository(render_to_basemodule=args.basemodule)
+        repo.load(args.schema)
+
+        print('\nEnums:\n{}'.format(pformat(sorted(repo.enums.keys()))))
+        print('\nStructs and Tables:\n{}'.format(pformat(sorted(repo.objs.keys()))))
+        print('\nServices:\n{}'.format(pformat(sorted(repo.services.keys()))))
+
+        for svc_key, svc in repo.services.items():
+            print('\n   {}:'.format(hlval(svc_key, color="blue")))
             for uri in sorted(svc.calls.keys()):
                 ep = svc.calls[uri]
                 ep_type = ep.attrs['type']
-                print('   {:<10} {:<26}: {}'.format(ep_type, ep.name, ep.docs))
-        for obj_name, obj in schema.objs.items():
-            print(obj_name)
+                ep_color = {'topic': 'green', 'procedure': 'yellow'}.get(ep_type, 'white')
+                print('      {:<24} {:<50} {}'.format(hlval(ep_type, color=ep_color), hlval(ep.name), ep.docs))
+        # for obj_name, obj in repo.objs.items():
+        #    print(obj_name)
 
     # generate code from WAMP IDL FlatBuffers schema files
     #
