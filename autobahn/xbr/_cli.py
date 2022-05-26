@@ -1003,11 +1003,11 @@ def _main():
 
         for svc_key, svc in repo.services.items():
             print('\n   {}:'.format(hlval(svc_key, color="blue")))
-            for uri in sorted(svc.calls.keys()):
+            for uri in svc.calls.keys():
                 ep = svc.calls[uri]
                 ep_type = ep.attrs['type']
                 ep_color = {'topic': 'green', 'procedure': 'yellow'}.get(ep_type, 'white')
-                print('      {:<24} {:<50} {}'.format(hlval(ep_type, color=ep_color), hlval(ep.name), ep.docs))
+                print('      {:<24} {:<60} {}'.format(hlval(ep_type, color=ep_color), hlval('eth.wamp.' + ep.name), ep.docs))
         # for obj_name, obj in repo.objs.items():
         #    print(obj_name)
 
@@ -1075,7 +1075,7 @@ def _main():
                 # render template into python code section
                 if args.language == 'python':
                     # render obj|enum|service.py.jinja2 template
-                    tmpl = env.get_template('{}.py.jinja2'.format(category))
+                    tmpl = env.get_template('py-autobahn/{}.py.jinja2'.format(category))
                     code = tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType,
                                        render_imports=is_first,
                                        is_first_by_category=is_first_by_category,
@@ -1083,7 +1083,7 @@ def _main():
                     code = FormatCode(code)[0]
 
                     # render test_obj|enum|service.py.jinja2 template
-                    test_tmpl = env.get_template('test_{}.py.jinja2'.format(category))
+                    test_tmpl = env.get_template('py-autobahn/test_{}.py.jinja2'.format(category))
                     test_code = test_tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType,
                                                  render_imports=is_first,
                                                  is_first_by_category=is_first_by_category,
@@ -1092,6 +1092,15 @@ def _main():
                         test_code = FormatCode(test_code)[0]
                     except Exception as e:
                         print('error during formatting code:\n{}\n{}'.format(test_code, e))
+
+                elif args.language == 'eip712':
+                    # render obj|enum|service-eip712.sol.jinja2 template
+                    tmpl = env.get_template('so-eip712/{}-eip712.sol.jinja2'.format(category))
+                    code = tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType,
+                                       render_imports=is_first,
+                                       is_first_by_category=is_first_by_category,
+                                       render_to_basemodule=args.basemodule)
+                    code = FormatCode(code)[0]
 
                 elif args.language == 'json':
                     code = json.dumps(metadata.marshal(),
@@ -1148,7 +1157,7 @@ def _main():
 
                     _modulename = '.'.join(code_file_dir[:i + 1])[1:]
                     _imports = namespaces[_modulename]
-                    tmpl = env.get_template('module.py.jinja2')
+                    tmpl = env.get_template('py-autobahn/module.py.jinja2')
                     init_code = tmpl.render(repo=repo, modulename=_modulename, imports=_imports,
                                             render_to_basemodule=args.basemodule)
                     data = init_code.encode('utf8')

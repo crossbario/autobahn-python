@@ -406,9 +406,10 @@ def parse_docs(obj):
     for j in range(obj.DocumentationLength()):
         doc_line = obj.Documentation(j)
         if doc_line:
-            doc_line = doc_line.decode('utf8')
+            doc_line = doc_line.decode('utf8').strip()
             docs.append(doc_line)
-    docs = '\n'.join(docs).strip()
+    # docs = '\n'.join(docs).strip()
+    docs = ' '.join(docs).strip()
     return docs
 
 
