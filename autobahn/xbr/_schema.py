@@ -227,25 +227,33 @@ class FbsType(object):
 
         :return:
         """
+        if self._basetype == FbsType.Obj:
+            if self._objtype is None:
+                self._objtype = self._schema.objs_by_id[self._index].name
+                print('filled in missing objtype "{}" for type index {} in object {}'.format(self._objtype, self._index, self))
         return self._objtype
 
-    def map(self, language: str, attrs: Optional[Dict] = None, required: Optional[bool] = True) -> str:
+    def map(self, language: str, attrs: Optional[Dict] = None, required: Optional[bool] = True,
+            objtype_as_string: bool = False) -> str:
         """
 
         :param language:
+        :param attrs:
+        :param required:
+        :param objtype_as_string:
         :return:
         """
         if language == 'python':
             _mapped_type = None
 
             if self.basetype == FbsType.Vector:
-                # vectors of uint8 are mapped to byte strings ..
+                # vectors of uint8 are mapped to byte strings
                 if self.element == FbsType.UByte:
                     if attrs and 'uuid' in attrs:
                         _mapped_type = 'uuid.UUID'
                     else:
                         _mapped_type = 'bytes'
-                # .. whereas all other vectors are mapped to lists of the same element type
+                # whereas all other vectors are mapped to list of the same element type
                 else:
                     if self.objtype:
                         # FIXME
@@ -258,8 +266,6 @@ class FbsType(object):
                 if self.objtype:
                     # FIXME
                     _mapped_type = self.objtype.split('.')[-1]
-                    print('1' * 100, self, self.objtype, _mapped_type)
-                    _mapped_type = 'FIXME1'
                     # _mapped_type = '{}.{}'.format(self._repository.render_to_basemodule, self.objtype)
                 else:
                     _mapped_type = 'List[{}]'.format(FbsType.FBS2PY[self.element])
@@ -274,10 +280,19 @@ class FbsType(object):
             else:
                 raise NotImplementedError('FIXME: implement mapping of FlatBuffers type "{}" to Python in {}'.format(self.basetype, self.map))
 
-            if required:
-                return _mapped_type
+            if objtype_as_string and self.basetype == FbsType.Obj:
+                # for object types, use 'TYPE' rather than TYPE so that the type reference
+                # does not depend on type declaration order within a single file
+                # https://peps.python.org/pep-0484/#forward-references
+                if required:
+                    return "'{}'".format(_mapped_type)
+                else:
+                    return "Optional['{}']".format(_mapped_type)
             else:
-                return 'Optional[{}]'.format(_mapped_type)
+                if required:
+                    return '{}'.format(_mapped_type)
+                else:
+                    return 'Optional[{}]'.format(_mapped_type)
         else:
             raise RuntimeError('cannot map FlatBuffers type to target language "{}" in {}'.format(language, self.map))
 

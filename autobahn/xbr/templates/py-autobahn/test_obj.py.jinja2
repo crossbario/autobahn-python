@@ -32,7 +32,7 @@ _SERIALIZERS = [
 ]
 
 {% endif %}
-from .{{ metadata.module_relimport }} import {{ metadata.classname }}
+from {{ metadata.module_relimport }} import {{ metadata.classname }}
 
 
 def fill_{{ metadata.classname }}(obj: {{ metadata.classname }}):
