@@ -25,28 +25,28 @@ class {{ metadata.classname }}(object):
     """
     {{ metadata.docs }}
     """
-    __slots__ = ['_tab', {% for field_name in metadata.fields_by_id %}'_{{ metadata.fields[field_name].name }}', {% endfor %}]
+    __slots__ = ['_tab', {% for field in metadata.fields_by_id %}'_{{ field.name }}', {% endfor %}]
 
     def __init__(self):
         # the underlying FlatBuffers vtable
         self._tab = None
 
-        {% for field_name in metadata.fields_by_id %}
-        # {{ metadata.fields[field_name]['docs'] }}
-        self._{{ metadata.fields[field_name].name }} = None
+        {% for field in metadata.fields_by_id %}
+        # {{ field.docs }}
+        self._{{ field.name }} = None
 
         {% endfor %}
 
-    {% for field_name in metadata.fields_by_id %}
+    {% for field in metadata.fields_by_id %}
     @property
-    def {{ metadata.fields[field_name].name }}(self) -> {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}:
+    def {{ field.name }}(self) -> {{ field.type.map('python', field.attrs, True) }}:
         """
-        {{ metadata.fields[field_name]['docs'] }}
+        {{ field.docs }}
         """
-        if self._{{ metadata.fields[field_name].name }} is None and self._tab:
-            o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset({{ metadata.fields[field_name].offset }}))
+        if self._{{ field.name }} is None and self._tab:
+            o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset({{ field.offset }}))
 
-            {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
+            {% if field.type.map('python', field.attrs, True) == 'str' %}
             # access type "string" attribute:
             value = ''
             if o != 0:
@@ -54,7 +54,7 @@ class {{ metadata.classname }}(object):
                 if _value is not None:
                     value = _value.decode('utf8')
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
+            {% elif field.type.map('python', field.attrs, True) == 'bytes' %}
             # access type "bytes" attribute:
             value = b''
             if o != 0:
@@ -64,15 +64,15 @@ class {{ metadata.classname }}(object):
                 if _value is not None:
                     value = _value
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'float', 'double'] %}
+            {% elif field.type.map('python', field.attrs, True) in ['int', 'float', 'double'] %}
             # access type "int|float|double" attribute:
             value = 0
             if o != 0:
-                _value = self._tab.Get(flatbuffers.number_types.{{ FbsType.FBS2FLAGS[metadata.fields[field_name].type.basetype] }}, o + self._tab.Pos)
+                _value = self._tab.Get(flatbuffers.number_types.{{ FbsType.FBS2FLAGS[field.type.basetype] }}, o + self._tab.Pos)
                 if _value is not None:
                     value = _value
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
+            {% elif field.type.map('python', field.attrs, True) == 'bool' %}
             # access type "bool" attribute:
             value = False
             if o != 0:
@@ -80,7 +80,7 @@ class {{ metadata.classname }}(object):
                 if _value is not None:
                     value = _value
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+            {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
             # access type "uuid.UUID" attribute:
             value = uuid.UUID(bytes=b'\x00' * 16)
             if o != 0:
@@ -90,7 +90,7 @@ class {{ metadata.classname }}(object):
                 if _value is not None:
                     value = uuid.UUID(bytes=bytes(_value))
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+            {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
             # access type "np.datetime64" attribute:
             value = np.datetime64(0, 'ns')
             if o != 0:
@@ -98,7 +98,7 @@ class {{ metadata.classname }}(object):
                 if value is not None:
                     value = np.datetime64(_value, 'ns')
 
-            {% elif metadata.fields[field_name].type.basetype == FbsType.Vector %}
+            {% elif field.type.basetype == FbsType.Vector %}
             # access type "Vector" attribute:
             value = []
             if o != 0:
@@ -107,65 +107,66 @@ class {{ metadata.classname }}(object):
                 for j in range(_len):
                     _off = _start_off + flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
                     _off = self._tab.Indirect(_off)
-                    {% if metadata.fields[field_name].type.element == FbsType.Obj %}
-                    _value = {{ metadata.fields[field_name].type.objtype.split('.')[-1] }}.cast(self._tab.Bytes, _off)
+                    {% if field.type.element == FbsType.Obj %}
+                    _value = {{ field.type.objtype.split('.')[-1] }}.cast(self._tab.Bytes, _off)
                     {% else %}
                     # FIXME [8]
                     {% endif %}
                     value.append(_value)
 
-            {% elif metadata.fields[field_name].type.basetype == FbsType.Obj %}
+            {% elif field.type.basetype == FbsType.Obj %}
             # access type "Object" attribute:
 
-            {% if metadata.fields[field_name].type.objtype %}
-            value = {{ metadata.fields[field_name].type.objtype.split('.')[-1] }}()
+            {% if field.type.objtype %}
+            value = {{ field.type.objtype.split('.')[-1] }}()
             if o != 0:
                 _off = self._tab.Indirect(o + self._tab.Pos)
-                value = {{ metadata.fields[field_name].type.objtype.split('.')[-1] }}.cast(self._tab.Bytes, _off)
+                value = {{ field.type.objtype.split('.')[-1] }}.cast(self._tab.Bytes, _off)
             {% else %}
+            # FIXME [9]: objtype of field "{{ field.name }}" is None
             value = ''
             {% endif %}
 
             {% else %}
             # FIXME [5]
-            raise NotImplementedError('implement processing [5] of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            raise NotImplementedError('implement processing [5] of FlatBuffers type "{}"'.format({{ field.type.map('python', field.attrs, True) }}))
             {% endif %}
             assert value is not None
-            self._{{ metadata.fields[field_name].name }} = value
-        return self._{{ metadata.fields[field_name].name }}
+            self._{{ field.name }} = value
+        return self._{{ field.name }}
 
-    @{{ metadata.fields[field_name].name }}.setter
-    def {{ metadata.fields[field_name].name }}(self, value: Optional[{{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}]):
+    @{{ field.name }}.setter
+    def {{ field.name }}(self, value: Optional[{{ field.type.map('python', field.attrs, True) }}]):
         if value is not None:
-            self._{{ metadata.fields[field_name].name }} = value
+            self._{{ field.name }} = value
         else:
-            {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
+            {% if field.type.map('python', field.attrs, True) == 'str' %}
             # set default value on type "string" attribute:
-            self._{{ metadata.fields[field_name].name }} = ''
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
+            self._{{ field.name }} = ''
+            {% elif field.type.map('python', field.attrs, True) == 'bytes' %}
             # set default value on type "bytes" attribute:
-            self._{{ metadata.fields[field_name].name }} = b''
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'float', 'double'] %}
+            self._{{ field.name }} = b''
+            {% elif field.type.map('python', field.attrs, True) in ['int', 'float', 'double'] %}
             # set default value on type "int|float|double" attribute:
-            self._{{ metadata.fields[field_name].name }} = 0
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
+            self._{{ field.name }} = 0
+            {% elif field.type.map('python', field.attrs, True) == 'bool' %}
             # set default value on type "bool" attribute:
-            self._{{ metadata.fields[field_name].name }} = False
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
+            self._{{ field.name }} = False
+            {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
             # set default value on type "uuid.UUID" attribute:
-            self._{{ metadata.fields[field_name].name }} = uuid.UUID(bytes=b'\x00' * 16)
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
+            self._{{ field.name }} = uuid.UUID(bytes=b'\x00' * 16)
+            {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
             # set default value on type "np.datetime64" attribute:
-            self._{{ metadata.fields[field_name].name }} = np.datetime64(0, 'ns')
+            self._{{ field.name }} = np.datetime64(0, 'ns')
             # set default value on type "List" attribute:
-            {% elif metadata.fields[field_name].type.basetype == FbsType.Vector %}
-            self._{{ metadata.fields[field_name].name }} = []
+            {% elif field.type.basetype == FbsType.Vector %}
+            self._{{ field.name }} = []
             # set default value on type "Object" attribute:
-            {% elif metadata.fields[field_name].type.basetype == FbsType.Obj %}
-            self._{{ metadata.fields[field_name].name }} = {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}()
+            {% elif field.type.basetype == FbsType.Obj %}
+            self._{{ field.name }} = {{ field.type.map('python', field.attrs, True) }}()
             {% else %}
             # FIXME [6]
-            raise NotImplementedError('implement processing [2] of FlatBuffers type "{}", basetype {}'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}, {{ metadata.fields[field_name].type.basetype }}))
+            raise NotImplementedError('implement processing [2] of FlatBuffers type "{}", basetype {}'.format({{ field.type.map('python', field.attrs, True) }}, {{ field.type.basetype }}))
             {% endif %}
 
     {% endfor %}
@@ -179,64 +180,65 @@ class {{ metadata.classname }}(object):
 
         :returns: Typed object of this class.
         """
-        for key in data.keys():
-            assert key in {{ metadata.fields_by_id }}
+        # FIXME
+        # for key in data.keys():
+        #     assert key in {{ metadata.fields.keys() }}
         obj = {{ metadata.classname }}()
-        {% for field_name in metadata.fields_by_id %}
-        if '{{ field_name }}' in data:
-            {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
-            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == str), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
-            obj.{{ metadata.fields[field_name].name }} = data['{{ field_name }}']
+        {% for field in metadata.fields_by_id %}
+        if '{{ field.name }}' in data:
+            {% if field.type.map('python', field.attrs, True) == 'str' %}
+            assert (data['{{ field.name }}'] is None or type(data['{{ field.name }}']) == str), '{} has wrong type {}'.format('{{ field.name }}', type(data['{{ field.name }}']))
+            obj.{{ field.name }} = data['{{ field.name }}']
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
-            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == bytes), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
-            obj.{{ metadata.fields[field_name].name }} = data['{{ field_name }}']
+            {% elif field.type.map('python', field.attrs, True) == 'bytes' %}
+            assert (data['{{ field.name }}'] is None or type(data['{{ field.name }}']) == bytes), '{} has wrong type {}'.format('{{ field.name }}', type(data['{{ field.name }}']))
+            obj.{{ field.name }} = data['{{ field.name }}']
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'int' %}
-            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == int), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
-            obj.{{ metadata.fields[field_name].name }} = data['{{ field_name }}']
+            {% elif field.type.map('python', field.attrs, True) == 'int' %}
+            assert (data['{{ field.name }}'] is None or type(data['{{ field.name }}']) == int), '{} has wrong type {}'.format('{{ field.name }}', type(data['{{ field.name }}']))
+            obj.{{ field.name }} = data['{{ field.name }}']
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'float' %}
-            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == float), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
-            obj.{{ metadata.fields[field_name].name }} = data['{{ field_name }}']
+            {% elif field.type.map('python', field.attrs, True) == 'float' %}
+            assert (data['{{ field.name }}'] is None or type(data['{{ field.name }}']) == float), '{} has wrong type {}'.format('{{ field.name }}', type(data['{{ field.name }}']))
+            obj.{{ field.name }} = data['{{ field.name }}']
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
-            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == bool), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
-            obj.{{ metadata.fields[field_name].name }} = data['{{ field_name }}']
+            {% elif field.type.map('python', field.attrs, True) == 'bool' %}
+            assert (data['{{ field.name }}'] is None or type(data['{{ field.name }}']) == bool), '{} has wrong type {}'.format('{{ field.name }}', type(data['{{ field.name }}']))
+            obj.{{ field.name }} = data['{{ field.name }}']
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
-            assert (data['{{ field_name }}'] is None or (type(data['{{ field_name }}']) == bytes and len(data['{{ field_name }}']) == 16)), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
-            if data['{{ field_name }}'] is not None:
-                obj.{{ metadata.fields[field_name].name }} = uuid.UUID(bytes=data['{{ field_name }}'])
+            {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
+            assert (data['{{ field.name }}'] is None or (type(data['{{ field.name }}']) == bytes and len(data['{{ field.name }}']) == 16)), '{} has wrong type {}'.format('{{ field.name }}', type(data['{{ field.name }}']))
+            if data['{{ field.name }}'] is not None:
+                obj.{{ field.name }} = uuid.UUID(bytes=data['{{ field.name }}'])
             else:
-                obj.{{ metadata.fields[field_name].name }} = None
+                obj.{{ field.name }} = None
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
-            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == int), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
-            if data['{{ field_name }}'] is not None:
-                obj.{{ metadata.fields[field_name].name }} = np.datetime64(data['{{ field_name }}'], 'ns')
+            {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
+            assert (data['{{ field.name }}'] is None or type(data['{{ field.name }}']) == int), '{} has wrong type {}'.format('{{ field.name }}', type(data['{{ field.name }}']))
+            if data['{{ field.name }}'] is not None:
+                obj.{{ field.name }} = np.datetime64(data['{{ field.name }}'], 'ns')
             else:
-                obj.{{ metadata.fields[field_name].name }} = np.datetime64(0, 'ns')
+                obj.{{ field.name }} = np.datetime64(0, 'ns')
 
-            {% elif metadata.fields[field_name].type.basetype == FbsType.Vector %}
-            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == list), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
+            {% elif field.type.basetype == FbsType.Vector %}
+            assert (data['{{ field.name }}'] is None or type(data['{{ field.name }}']) == list), '{} has wrong type {}'.format('{{ field.name }}', type(data['{{ field.name }}']))
             _value = []
-            for v in data['{{ field_name }}']:
-            {% if metadata.fields[field_name].type.element == FbsType.Obj %}
-                _value.append({{ metadata.fields[field_name].type.objtype.split('.')[-1] }}.parse(v))
+            for v in data['{{ field.name }}']:
+            {% if field.type.element == FbsType.Obj %}
+                _value.append({{ field.type.objtype.split('.')[-1] }}.parse(v))
             {% else %}
                 _value.append(v)
             {% endif %}
-            obj.{{ metadata.fields[field_name].name }} = _value
+            obj.{{ field.name }} = _value
 
-            {% elif metadata.fields[field_name].type.basetype == FbsType.Obj %}
-            assert (data['{{ field_name }}'] is None or type(data['{{ field_name }}']) == dict), '{} has wrong type {}'.format('{{ field_name }}', type(data['{{ field_name }}']))
-            _value = {{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}.parse(data['{{ field_name }}'])
-            obj.{{ metadata.fields[field_name].name }} = _value
+            {% elif field.type.basetype == FbsType.Obj %}
+            assert (data['{{ field.name }}'] is None or type(data['{{ field.name }}']) == dict), '{} has wrong type {}'.format('{{ field.name }}', type(data['{{ field.name }}']))
+            _value = {{ field.type.map('python', field.attrs, True) }}.parse(data['{{ field.name }}'])
+            obj.{{ field.name }} = _value
 
             {% else %}
             # FIXME [3]
-            raise NotImplementedError('implement processing [3] of FlatBuffers type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+            raise NotImplementedError('implement processing [3] of FlatBuffers type "{}"'.format({{ field.type.map('python', field.attrs, True) }}))
             {% endif %}
         {% endfor %}
         return obj
@@ -248,29 +250,29 @@ class {{ metadata.classname }}(object):
         :returns: Generic object that can be serialized to bytes using e.g. ``cbor2.dumps``.
         """
         obj = {
-            {% for field_name in metadata.fields_by_id %}
+            {% for field in metadata.fields_by_id %}
 
-            {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes', 'int', 'long', 'float', 'double', 'bool'] %}
-            '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }},
+            {% if field.type.map('python', field.attrs, True) in ['str', 'bytes', 'int', 'long', 'float', 'double', 'bool'] %}
+            '{{ field.name }}': self.{{ field.name }},
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
-            '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }}.bytes if self.{{ metadata.fields[field_name].name }} is not None else None,
+            {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
+            '{{ field.name }}': self.{{ field.name }}.bytes if self.{{ field.name }} is not None else None,
 
-            {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
-            '{{ metadata.fields[field_name].name }}': int(self.{{ metadata.fields[field_name].name }}) if self.{{ metadata.fields[field_name].name }} is not None else None,
+            {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
+            '{{ field.name }}': int(self.{{ field.name }}) if self.{{ field.name }} is not None else None,
 
-            {% elif metadata.fields[field_name].type.basetype == FbsType.Vector %}
-            {% if metadata.fields[field_name].type.element == FbsType.Obj %}
-            '{{ metadata.fields[field_name].name }}': [o.marshal() for o in self.{{ metadata.fields[field_name].name }}] if self.{{ metadata.fields[field_name].name }} is not None else None,
+            {% elif field.type.basetype == FbsType.Vector %}
+            {% if field.type.element == FbsType.Obj %}
+            '{{ field.name }}': [o.marshal() for o in self.{{ field.name }}] if self.{{ field.name }} is not None else None,
             {% else %}
-            '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }},
+            '{{ field.name }}': self.{{ field.name }},
             {% endif %}
 
-            {% elif metadata.fields[field_name].type.basetype == FbsType.Obj %}
-            '{{ metadata.fields[field_name].name }}': self.{{ metadata.fields[field_name].name }}.marshal() if self.{{ metadata.fields[field_name].name }} is not None else None,
+            {% elif field.type.basetype == FbsType.Obj %}
+            '{{ field.name }}': self.{{ field.name }}.marshal() if self.{{ field.name }} is not None else None,
 
             {% else %}
-            # FIXME [4]: implement processing [4] of FlatBuffers type "{{ metadata.fields[field_name].type | string }}" (Python type "{{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}")
+            # FIXME [4]: implement processing [4] of FlatBuffers type "{{ field.type | string }}" (Python type "{{ field.type.map('python', field.attrs, True) }}")
             {% endif %}
             {% endfor %}
         }
@@ -307,15 +309,15 @@ class {{ metadata.classname }}(object):
             returns ``builder.EndObject()``.
         """
         # first, write all string|bytes|etc typed attribute values (in order) to the buffer
-        {% for field_name in metadata.fields_by_id %}
-        {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes'] %}
-        _{{ field_name }} = self.{{ field_name }}
-        if _{{ field_name }}:
-            _{{ field_name }} = builder.CreateString(_{{ field_name }})
-        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
-        _{{ field_name }} = self.{{ field_name }}.bytes if self.{{ field_name }} else None
-        if _{{ field_name }}:
-            _{{ field_name }} = builder.CreateString(_{{ field_name }})
+        {% for field in metadata.fields_by_id %}
+        {% if field.type.map('python', field.attrs, True) in ['str', 'bytes'] %}
+        _{{ field.name }} = self.{{ field.name }}
+        if _{{ field.name }}:
+            _{{ field.name }} = builder.CreateString(_{{ field.name }})
+        {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
+        _{{ field.name }} = self.{{ field.name }}.bytes if self.{{ field.name }} else None
+        if _{{ field.name }}:
+            _{{ field.name }} = builder.CreateString(_{{ field.name }})
         {% else %}
         {% endif %}
         {% endfor %}
@@ -323,23 +325,23 @@ class {{ metadata.classname }}(object):
         # order) to the buffer
         builder.StartObject({{ metadata.fields_by_id|length }})
 
-        {% for field_name in metadata.fields_by_id %}
+        {% for field in metadata.fields_by_id %}
 
-        {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['str', 'bytes', 'uuid.UUID'] %}
-        if _{{ field_name }}:
-            builder.PrependUOffsetTRelativeSlot({{ metadata.fields[field_name].id }}, flatbuffers.number_types.UOffsetTFlags.py_type(_{{ field_name }}), 0)
+        {% if field.type.map('python', field.attrs, True) in ['str', 'bytes', 'uuid.UUID'] %}
+        if _{{ field.name }}:
+            builder.PrependUOffsetTRelativeSlot({{ field.id }}, flatbuffers.number_types.UOffsetTFlags.py_type(_{{ field.name }}), 0)
 
-        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
-        if self.{{ field_name }}:
-            builder.PrependUint64Slot({{ metadata.fields[field_name].id }}, int(self.{{ field_name }}), 0)
+        {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
+        if self.{{ field.name }}:
+            builder.PrependUint64Slot({{ field.id }}, int(self.{{ field.name }}), 0)
 
-        {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['bool', 'int', 'float'] %}
-        if self.{{ field_name }}:
-            builder.{{ FbsType.FBS2PREPEND[metadata.fields[field_name].type.basetype] }}({{ metadata.fields[field_name].id }}, self.{{ field_name }}, 0)
+        {% elif field.type.map('python', field.attrs, True) in ['bool', 'int', 'float'] %}
+        if self.{{ field.name }}:
+            builder.{{ FbsType.FBS2PREPEND[field.type.basetype] }}({{ field.id }}, self.{{ field.name }}, 0)
 
         {% else %}
         # FIXME [1]
-        # raise NotImplementedError('implement builder [1] for type "{}"'.format({{ metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) }}))
+        # raise NotImplementedError('implement builder [1] for type "{}"'.format({{ field.type.map('python', field.attrs, True) }}))
 
         {% endif %}
         {% endfor %}

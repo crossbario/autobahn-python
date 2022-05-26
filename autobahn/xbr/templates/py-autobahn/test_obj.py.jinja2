@@ -40,25 +40,25 @@ def fill_{{ metadata.classname }}(obj: {{ metadata.classname }}):
     # class has no fields
     pass
     {% else %}
-    {% for field_name in metadata.fields_by_id %}
-    {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
-    obj.{{ metadata.fields[field_name].name }} = util.generate_activation_code()
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
-    obj.{{ metadata.fields[field_name].name }} = os.urandom(32)
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'long'] %}
+    {% for field in metadata.fields_by_id %}
+    {% if field.type.map('python', field.attrs, True) == 'str' %}
+    obj.{{ field.name }} = util.generate_activation_code()
+    {% elif field.type.map('python', field.attrs, True) == 'bytes' %}
+    obj.{{ field.name }} = os.urandom(32)
+    {% elif field.type.map('python', field.attrs, True) in ['int', 'long'] %}
     # FIXME: enum vs int
-    # obj.{{ metadata.fields[field_name].name }} = random.randint(0, 2**31 - 1)
-    obj.{{ metadata.fields[field_name].name }} = random.randint(0, 3)
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['float', 'double'] %}
-    obj.{{ metadata.fields[field_name].name }} = random.random()
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
-    obj.{{ metadata.fields[field_name].name }} = random.random() > 0.5
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
-    obj.{{ metadata.fields[field_name].name }} = uuid.uuid4()
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
-    obj.{{ metadata.fields[field_name].name }} = np.datetime64(time_ns(), 'ns')
+    # obj.{{ field.name }} = random.randint(0, 2**31 - 1)
+    obj.{{ field.name }} = random.randint(0, 3)
+    {% elif field.type.map('python', field.attrs, True) in ['float', 'double'] %}
+    obj.{{ field.name }} = random.random()
+    {% elif field.type.map('python', field.attrs, True) == 'bool' %}
+    obj.{{ field.name }} = random.random() > 0.5
+    {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
+    obj.{{ field.name }} = uuid.uuid4()
+    {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
+    obj.{{ field.name }} = np.datetime64(time_ns(), 'ns')
     {% else %}
-    obj.{{ metadata.fields[field_name].name }} = None
+    obj.{{ field.name }} = None
     {% endif %}
     {% endfor %}
     {% endif %}
@@ -69,8 +69,8 @@ def fill_{{ metadata.classname }}_empty(obj: {{ metadata.classname }}):
     # class has no fields
     pass
     {% else %}
-    {% for field_name in metadata.fields_by_id %}
-    obj.{{ metadata.fields[field_name].name }} = None
+    {% for field in metadata.fields_by_id %}
+    obj.{{ field.name }} = None
     {% endfor %}
     {% endif %}
 
@@ -94,8 +94,8 @@ def test_{{ metadata.classname }}_roundtrip({{ metadata.classname }}_obj, builde
     # create python object from bytes (flatbuffes)
     _obj: {{ metadata.classname }} = {{ metadata.classname }}_obj.cast(data)
 
-    {% for field_name in metadata.fields_by_id %}
-    assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
+    {% for field in metadata.fields_by_id %}
+    assert _obj.{{ field.name }} == {{ metadata.classname }}_obj.{{ field.name }}
     {% endfor %}
 
 
@@ -104,23 +104,23 @@ def test_{{ metadata.classname }}_empty(builder):
     fill_{{ metadata.classname }}_empty(empty_obj)
 
     # check the object was initialized correctly
-    {% for field_name in metadata.fields_by_id %}
-    {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
-    assert empty_obj.{{ metadata.fields[field_name].name }} == ''
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
-    assert empty_obj.{{ metadata.fields[field_name].name }} == b''
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'long'] %}
-    assert empty_obj.{{ metadata.fields[field_name].name }} == 0
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['float', 'double'] %}
-    assert empty_obj.{{ metadata.fields[field_name].name }} == 0.0
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
-    assert empty_obj.{{ metadata.fields[field_name].name }} is False
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
-    assert empty_obj.{{ metadata.fields[field_name].name }} == uuid.UUID(bytes=b'\0'*16)
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
-    assert empty_obj.{{ metadata.fields[field_name].name }} == np.datetime64(0, 'ns')
+    {% for field in metadata.fields_by_id %}
+    {% if field.type.map('python', field.attrs, True) == 'str' %}
+    assert empty_obj.{{ field.name }} == ''
+    {% elif field.type.map('python', field.attrs, True) == 'bytes' %}
+    assert empty_obj.{{ field.name }} == b''
+    {% elif field.type.map('python', field.attrs, True) in ['int', 'long'] %}
+    assert empty_obj.{{ field.name }} == 0
+    {% elif field.type.map('python', field.attrs, True) in ['float', 'double'] %}
+    assert empty_obj.{{ field.name }} == 0.0
+    {% elif field.type.map('python', field.attrs, True) == 'bool' %}
+    assert empty_obj.{{ field.name }} is False
+    {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
+    assert empty_obj.{{ field.name }} == uuid.UUID(bytes=b'\0'*16)
+    {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
+    assert empty_obj.{{ field.name }} == np.datetime64(0, 'ns')
     {% else %}
-    assert empty_obj.{{ metadata.fields[field_name].name }} is None
+    assert empty_obj.{{ field.name }} is None
     {% endif %}
     {% endfor %}
 
@@ -135,23 +135,23 @@ def test_{{ metadata.classname }}_empty(builder):
     # create python object from bytes (flatbuffes)
     _obj: {{ metadata.classname }} = {{ metadata.classname }}.cast(data)
 
-    {% for field_name in metadata.fields_by_id %}
-    {% if metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'str' %}
-    assert _obj.{{ metadata.fields[field_name].name }} == ''
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bytes' %}
-    assert _obj.{{ metadata.fields[field_name].name }} == b''
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['int', 'long'] %}
-    assert _obj.{{ metadata.fields[field_name].name }} == 0
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) in ['float', 'double'] %}
-    assert _obj.{{ metadata.fields[field_name].name }} == 0.0
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'bool' %}
-    assert _obj.{{ metadata.fields[field_name].name }} is False
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'uuid.UUID' %}
-    assert _obj.{{ metadata.fields[field_name].name }} == uuid.UUID(bytes=b'\0'*16)
-    {% elif metadata.fields[field_name].type.map('python', metadata.fields[field_name].attrs, True) == 'np.datetime64' %}
-    assert _obj.{{ metadata.fields[field_name].name }} == np.datetime64(0, 'ns')
+    {% for field in metadata.fields_by_id %}
+    {% if field.type.map('python', field.attrs, True) == 'str' %}
+    assert _obj.{{ field.name }} == ''
+    {% elif field.type.map('python', field.attrs, True) == 'bytes' %}
+    assert _obj.{{ field.name }} == b''
+    {% elif field.type.map('python', field.attrs, True) in ['int', 'long'] %}
+    assert _obj.{{ field.name }} == 0
+    {% elif field.type.map('python', field.attrs, True) in ['float', 'double'] %}
+    assert _obj.{{ field.name }} == 0.0
+    {% elif field.type.map('python', field.attrs, True) == 'bool' %}
+    assert _obj.{{ field.name }} is False
+    {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
+    assert _obj.{{ field.name }} == uuid.UUID(bytes=b'\0'*16)
+    {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
+    assert _obj.{{ field.name }} == np.datetime64(0, 'ns')
     {% else %}
-    assert _obj.{{ metadata.fields[field_name].name }} is None
+    assert _obj.{{ field.name }} is None
     {% endif %}
     {% endfor %}
 
@@ -164,8 +164,8 @@ def test_{{ metadata.classname }}_roundtrip_perf({{ metadata.classname }}_obj, b
 
     def loop():
         _obj: {{ metadata.classname }} = {{ metadata.classname }}.cast(data)
-        {% for field_name in metadata.fields_by_id %}
-        assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
+        {% for field in metadata.fields_by_id %}
+        assert _obj.{{ field.name }} == {{ metadata.classname }}_obj.{{ field.name }}
         {% endfor %}
         scratch['value'] += 1
 
@@ -190,8 +190,8 @@ def test_{{ metadata.classname }}_roundtrip_perf({{ metadata.classname }}_obj, b
 def test_{{ metadata.classname }}_marshal_parse({{ metadata.classname }}_obj, builder):
     obj = {{ metadata.classname }}_obj.marshal()
     _obj = {{ metadata.classname }}_obj.parse(obj)
-    {% for field_name in metadata.fields_by_id %}
-    assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
+    {% for field in metadata.fields_by_id %}
+    assert _obj.{{ field.name }} == {{ metadata.classname }}_obj.{{ field.name }}
     {% endfor %}
 
 
@@ -201,8 +201,8 @@ def test_{{ metadata.classname }}_marshal_cbor_parse({{ metadata.classname }}_ob
     print('serialized {} to {} bytes (cbor)'.format({{ metadata.classname }}, len(data)))
     _obj_raw = cbor2.loads(data)
     _obj = {{ metadata.classname }}_obj.parse(_obj_raw)
-    {% for field_name in metadata.fields_by_id %}
-    assert _obj.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
+    {% for field in metadata.fields_by_id %}
+    assert _obj.{{ field.name }} == {{ metadata.classname }}_obj.{{ field.name }}
     {% endfor %}
 
 
@@ -214,6 +214,6 @@ def test_{{ metadata.classname }}_ab_serializer_roundtrip({{ metadata.classname 
         msg2 = ser.unserialize(data)[0]
         obj2 = {{ metadata.classname }}.parse(msg2)
 
-        {% for field_name in metadata.fields_by_id %}
-        assert obj2.{{ metadata.fields[field_name].name }} == {{ metadata.classname }}_obj.{{ metadata.fields[field_name].name }}
+        {% for field in metadata.fields_by_id %}
+        assert obj2.{{ field.name }} == {{ metadata.classname }}_obj.{{ field.name }}
         {% endfor %}
