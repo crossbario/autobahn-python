@@ -27,6 +27,7 @@
 import os
 import sys
 import json
+import textwrap
 import pkg_resources
 from pprint import pprint
 
@@ -34,7 +35,7 @@ from jinja2 import Environment, FileSystemLoader
 
 # FIXME
 # https://github.com/google/yapf#example-as-a-module
-# from yapf.yapflib.yapf_api import FormatCode
+from yapf.yapflib.yapf_api import FormatCode
 
 from autobahn import xbr
 from autobahn import __version__
@@ -998,24 +999,41 @@ def _main():
         repo = FbsRepository(render_to_basemodule=args.basemodule)
         repo.load(args.schema)
 
-        print('\nEnums:\n{}'.format(pformat(sorted(repo.enums.keys()))))
-        print('\nStructs and Tables:\n{}'.format(pformat(sorted(repo.objs.keys()))))
-        print('\nServices:\n{}'.format(pformat(sorted(repo.services.keys()))))
+        # print('\nEnums:\n{}'.format(pformat(sorted(repo.enums.keys()))))
+        # print('\nStructs and Tables:\n{}'.format(pformat(sorted(repo.objs.keys()))))
+        # print('\nServices:\n{}'.format(pformat(sorted(repo.services.keys()))))
+        print()
 
         for svc_key, svc in repo.services.items():
-            print('\n   {}:'.format(hlval(svc_key, color="blue")))
+            print('   Interface {} {}'.format(hlval(svc_key, color="blue"), '=' * (92 - len(svc_key))))
             for uri in svc.calls.keys():
                 print()
                 ep: FbsRPCCall = svc.calls[uri]
                 ep_type = ep.attrs['type']
                 ep_color = {'topic': 'green', 'procedure': 'yellow'}.get(ep_type, 'white')
-                print('      {:<24} {:<60} {}'.format(hlval(ep_type, color=ep_color), hlval('eth.wamp.' + ep.name), ep.docs))
-                print('          ({}) -> {}'.format(hlval(ep.request.name), ep.response.name))
-                for field in ep.request.fields_by_id:
-                    if field.type.basetype == FbsType.Obj:
-                        print('              {:<40} {}'.format(hlval(field.name, color='blue'), field.docs))
-                    else:
-                        print('              {:<40} {}'.format(hlval(field.name), field.docs))
+                print('      {} {} ({}) -> {}'.format(hlval(ep_type, color=ep_color),
+                                                      hlval('eth.wamp.' + ep.name),
+                                                      hlval(ep.request.name.split('.')[-1], color='blue', bold=False),
+                                                      hlval(ep.response.name.split('.')[-1], color='blue', bold=False)))
+                print()
+                print(textwrap.fill(ep.docs,
+                                    width=90,
+                                    initial_indent='          ',
+                                    subsequent_indent='          ',
+                                    expand_tabs=True,
+                                    replace_whitespace=True,
+                                    fix_sentence_endings=False,
+                                    break_long_words=True,
+                                    drop_whitespace=True,
+                                    break_on_hyphens=True,
+                                    tabsize=4))
+                print('      ' + '.' * 100)
+
+                # for field in ep.request.fields_by_id:
+                #     if field.type.basetype == FbsType.Obj:
+                #         print('              {:<40} {}'.format(hlval(field.name, color='blue'), field.docs))
+                #     else:
+                #         print('              {:<40} {}'.format(hlval(field.name), field.docs))
         # for obj_name, obj in repo.objs.items():
         #    print(obj_name)
 
@@ -1098,12 +1116,6 @@ def _main():
                                                  render_imports=is_first,
                                                  is_first_by_category=is_first_by_category,
                                                  render_to_basemodule=args.basemodule)
-                    try:
-                        # FIXME
-                        # test_code = FormatCode(test_code)[0]
-                        pass
-                    except Exception as e:
-                        print('error during formatting code:\n{}\n{}'.format(test_code, e))
 
                 elif args.language == 'eip712':
                     # render obj|enum|service-eip712.sol.jinja2 template
@@ -1227,6 +1239,10 @@ def _main():
             if test_code_file_name:
                 test_code_sections = test_code_modules[code_file]
                 test_code = '\n\n\n'.join(test_code_sections)
+                try:
+                    test_code = FormatCode(test_code)[0]
+                except Exception as e:
+                    print('error during formatting code: {}'.format(e))
                 data = test_code.encode('utf8')
 
                 fn = os.path.join(*(code_file_dir + [test_code_file_name]))
@@ -1235,7 +1251,7 @@ def _main():
                 if fn not in initialized and os.path.exists(fn):
                     os.remove(fn)
                     with open(fn, 'wb') as fd:
-                        fd.write('# Copyright (c) ...'.encode('utf8'))
+                        fd.write('# Copyright (c) ...\n'.encode('utf8'))
                     initialized.add(fn)
 
                 with open(fn, 'ab') as fd:

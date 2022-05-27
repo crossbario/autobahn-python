@@ -1160,6 +1160,7 @@ class FbsSchema(object):
                 enum_value_value = fbs_enum_value.Value()
                 enum_value_docs = parse_docs(fbs_enum_value)
                 enum_value = FbsEnumValue(repository=repository,
+                                          schema=schema,
                                           name=enum_value_name,
                                           value=enum_value_value,
                                           docs=enum_value_docs)

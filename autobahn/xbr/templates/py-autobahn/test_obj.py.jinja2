@@ -1,4 +1,5 @@
 {% if render_imports %}
+
 import os
 import random
 import timeit
@@ -91,7 +92,7 @@ def test_{{ metadata.classname }}_roundtrip({{ metadata.classname }}_obj, builde
     # check length of serialized object data
     print('{} serialized object length = {} bytes'.format('{{ metadata.classname }}', len(data)))
 
-    # create python object from bytes (flatbuffes)
+    # create python object from bytes (flatbuffers)
     _obj: {{ metadata.classname }} = {{ metadata.classname }}_obj.cast(data)
 
     {% for field in metadata.fields_by_id %}
@@ -132,7 +133,7 @@ def test_{{ metadata.classname }}_empty(builder):
     # check length of serialized object data
     print('{} serialized object length = {} bytes'.format('{{ metadata.classname }}', len(data)))
 
-    # create python object from bytes (flatbuffes)
+    # create python object from bytes (flatbuffers)
     _obj: {{ metadata.classname }} = {{ metadata.classname }}.cast(data)
 
     {% for field in metadata.fields_by_id %}
@@ -169,13 +170,13 @@ def test_{{ metadata.classname }}_roundtrip_perf({{ metadata.classname }}_obj, b
         {% endfor %}
         scratch['value'] += 1
 
-    N = 7
-    M = 20000
+    loop_n = 7
+    loop_m = 20000
     samples = []
     print('measuring:')
-    for i in range(N):
-        secs = timeit.timeit(loop, number=M)
-        ops = round(float(M) / secs, 1)
+    for i in range(loop_n):
+        secs = timeit.timeit(loop, number=loop_m)
+        ops = round(float(loop_m) / secs, 1)
         samples.append(ops)
         print('{} objects/sec performance'.format(ops))
 
