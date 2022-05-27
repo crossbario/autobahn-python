@@ -71,7 +71,7 @@ class {{ metadata.classname }}(object):
 
     {% for call_name in metadata.calls_by_id %}
     {% if metadata.calls[call_name].attrs['type'] == 'topic' %}
-    async def publish_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, options: Optional[PublishOptions] = None) -> Optional[Publication]:
+    async def publish_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python', required=False, objtype_as_string=True) }}, options: Optional[PublishOptions] = None) -> Optional[Publication]:
         """
         As an **interface provider**, publish event:
 
@@ -99,7 +99,7 @@ class {{ metadata.classname }}(object):
                 pub = None
         return pub
 
-    def receive_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, details: Optional[EventDetails] = None):
+    def receive_{{ call_name }}(self, evt: {{ repo.objs[metadata.calls[call_name].request.name].map('python', required=False, objtype_as_string=True) }}, details: Optional[EventDetails] = None):
         """
         As an **interface consumer**, receive event:
 
@@ -116,7 +116,7 @@ class {{ metadata.classname }}(object):
 
     {% for call_name in metadata.calls_by_id %}
     {% if metadata.calls[call_name].attrs['type'] == 'procedure' %}
-    async def call_{{ call_name }}(self, req: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, options: Optional[CallOptions] = None) -> {{ repo.objs[metadata.calls[call_name].response.name].map('python') }}:
+    async def call_{{ call_name }}(self, req: {{ repo.objs[metadata.calls[call_name].request.name].map('python', required=False, objtype_as_string=True) }}, options: Optional[CallOptions] = None) -> {{ repo.objs[metadata.calls[call_name].response.name].map('python', required=False, objtype_as_string=True) }}:
         """
         As an **interface consumer**, call procedure:
 
@@ -136,7 +136,7 @@ class {{ metadata.classname }}(object):
             result = await self._x_session.call(procedure, payload, options=options)
         return result
 
-    def invoke_{{ call_name }}(self, req: {{ repo.objs[metadata.calls[call_name].request.name].map('python') }}, details: Optional[CallDetails] = None) -> {{ repo.objs[metadata.calls[call_name].response.name].map('python') }}:
+    def invoke_{{ call_name }}(self, req: {{ repo.objs[metadata.calls[call_name].request.name].map('python', required=False, objtype_as_string=True) }}, details: Optional[CallDetails] = None) -> {{ repo.objs[metadata.calls[call_name].response.name].map('python', required=False, objtype_as_string=True) }}:
         """
         As an **interface provider**, process call invocation:
 

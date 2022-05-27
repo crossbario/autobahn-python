@@ -25,10 +25,16 @@
 ###############################################################################
 
 import os
+import json
 import pprint
+from pprint import pformat
 import hashlib
 from typing import Dict, List, Optional
 from pathlib import Path
+
+# FIXME
+# https://github.com/google/yapf#example-as-a-module
+from yapf.yapflib.yapf_api import FormatCode
 
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
@@ -278,7 +284,8 @@ class FbsType(object):
                     _mapped_type = FbsType.FBS2PY[self.basetype]
 
             else:
-                raise NotImplementedError('FIXME: implement mapping of FlatBuffers type "{}" to Python in {}'.format(self.basetype, self.map))
+                raise NotImplementedError(
+                    'FIXME: implement mapping of FlatBuffers type "{}" to Python in {}'.format(self.basetype, self.map))
 
             if objtype_as_string and self.basetype == FbsType.Obj:
                 # for object types, use 'TYPE' rather than TYPE so that the type reference
@@ -479,9 +486,13 @@ def parse_fields(repository, schema, obj, objs_lst=None):
                          required=fbs_field.Required(),
                          attrs=parse_attr(fbs_field),
                          docs=parse_docs(fbs_field))
-        assert field_name not in fields_by_name, 'field "{}" with id "{}" already in fields {}'.format(field_name, field_id, sorted(fields_by_name.keys()))
+        assert field_name not in fields_by_name, 'field "{}" with id "{}" already in fields {}'.format(field_name,
+                                                                                                       field_id,
+                                                                                                       sorted(fields_by_name.keys()))
         fields_by_name[field_name] = field
-        assert field_id not in fields_by_id, 'field "{}" with id " {}" already in fields {}'.format(field_name, field_id, sorted(fields_by_id.keys()))
+        assert field_id not in fields_by_id, 'field "{}" with id " {}" already in fields {}'.format(field_name,
+                                                                                                    field_id,
+                                                                                                    sorted(fields_by_id.keys()))
         fields_by_id.append(field)
     return fields_by_name, fields_by_id
 
@@ -553,9 +564,11 @@ def parse_calls(repository, schema, svc_obj, objs_lst=None):
                           docs=call_docs,
                           attrs=call_attrs)
 
-        assert call_name not in calls, 'call "{}" with id "{}" already in calls {}'.format(call_name, call_id, sorted(calls.keys()))
+        assert call_name not in calls, 'call "{}" with id "{}" already in calls {}'.format(call_name, call_id,
+                                                                                           sorted(calls.keys()))
         calls[call_name] = call
-        assert call_id not in calls_by_id, 'call "{}" with id " {}" already in calls {}'.format(call_name, call_id, sorted(calls.keys()))
+        assert call_id not in calls_by_id, 'call "{}" with id " {}" already in calls {}'.format(call_name, call_id,
+                                                                                                sorted(calls.keys()))
         calls_by_id[call_id] = call_name
 
     res = []
@@ -588,10 +601,22 @@ class FbsObject(object):
         self._attrs = attrs
         self._docs = docs
 
-    def map(self, language: str) -> str:
+    def map(self, language: str, required: Optional[bool] = True, objtype_as_string: bool = False) -> str:
         if language == 'python':
             klass = self._name.split('.')[-1]
-            return klass
+            if objtype_as_string:
+                # for object types, use 'TYPE' rather than TYPE so that the type reference
+                # does not depend on type declaration order within a single file
+                # https://peps.python.org/pep-0484/#forward-references
+                if required:
+                    return "'{}'".format(klass)
+                else:
+                    return "Optional['{}']".format(klass)
+            else:
+                if required:
+                    return '{}'.format(klass)
+                else:
+                    return 'Optional[{}]'.format(klass)
         else:
             raise NotImplementedError()
 
@@ -884,6 +909,7 @@ class FbsEnum(object):
     """
     FlatBuffers enum type.
     """
+
     def __init__(self,
                  repository: 'FbsRepository',
                  schema: 'FbsSchema',
@@ -960,6 +986,7 @@ class FbsEnum(object):
 class FbsSchema(object):
     """
     """
+
     def __init__(self,
                  repository: 'FbsRepository',
                  file_name: str,
@@ -1230,19 +1257,12 @@ class FbsRepository(object):
     https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
     """
 
-    def __init__(self, render_to_basemodule):
-        self._render_to_basemodule = render_to_basemodule
-
-        self._schemata = {}
-
-        # Dict[str, FbsObject]
-        self._objs = {}
-
-        # Dict[str, FbsEnum]
-        self._enums = {}
-
-        # Dict[str, FbsService]
-        self._services = {}
+    def __init__(self, basemodule: str):
+        self._basemodule = basemodule
+        self._schemata: Dict[str, FbsSchema] = {}
+        self._objs: Dict[str, FbsObject] = {}
+        self._enums: Dict[str, FbsEnum] = {}
+        self._services: Dict[str, FbsService] = {}
 
     def summary(self, keys=False):
         if keys:
@@ -1261,8 +1281,8 @@ class FbsRepository(object):
             }
 
     @property
-    def render_to_basemodule(self):
-        return self._render_to_basemodule
+    def basemodule(self):
+        return self._basemodule
 
     @property
     def objs(self):
@@ -1309,22 +1329,233 @@ class FbsRepository(object):
             # add enum types to repository by name
             for enum in schema.enums.values():
                 if enum.name in self._enums:
-                    print('duplicate enum for name "{}"'.format(enum.name))
+                    print('skipping duplicate enum type for name "{}"'.format(enum.name))
                 else:
                     self._enums[enum.name] = enum
 
             # add object types
             for obj in schema.objs.values():
                 if obj.name in self._objs:
-                    print('duplicate object for name "{}"'.format(obj.name))
+                    print('skipping duplicate object (table/struct) type for name "{}"'.format(obj.name))
                 else:
                     self._objs[obj.name] = obj
 
             # add service definitions ("APIs")
             for svc in schema.services.values():
                 if svc.name in self._services:
-                    print('duplicate service for name "{}"'.format(svc.name))
+                    print('skipping duplicate service type for name "{}"'.format(svc.name))
                 else:
                     self._services[svc.name] = svc
 
             self._schemata[fn] = schema
+
+    def render(self, jinja2_env, output_dir, output_lang):
+        """
+
+        :param jinja2_env:
+        :param output_dir:
+        :param output_lang:
+        :return:
+        """
+        # type categories in schemata in the repository
+        #
+        work = {
+            'obj': self.objs.values(),
+            'enum': self.enums.values(),
+            'service': self.services.values(),
+        }
+
+        # collect code sections by module
+        #
+        code_modules = {}
+        test_code_modules = {}
+        is_first_by_category_modules = {}
+
+        for category, values in work.items():
+            # generate and collect code for all FlatBuffers items in the given category
+            # and defined in schemata previously loaded int
+
+            for item in values:
+                # metadata = item.marshal()
+                # pprint(item.marshal())
+                metadata = item
+
+                # com.example.device.HomeDeviceVendor => com.example.device
+                modulename = '.'.join(metadata.name.split('.')[0:-1])
+                metadata.modulename = modulename
+
+                # com.example.device.HomeDeviceVendor => HomeDeviceVendor
+                metadata.classname = metadata.name.split('.')[-1].strip()
+
+                # com.example.device => device
+                metadata.module_relimport = modulename.split('.')[-1]
+
+                is_first = modulename not in code_modules
+                is_first_by_category = (modulename, category) not in is_first_by_category_modules
+
+                if is_first_by_category:
+                    is_first_by_category_modules[(modulename, category)] = True
+
+                # render template into python code section
+                if output_lang == 'python':
+                    # render obj|enum|service.py.jinja2 template
+                    tmpl = jinja2_env.get_template('py-autobahn/{}.py.jinja2'.format(category))
+                    code = tmpl.render(repo=self, metadata=metadata, FbsType=FbsType,
+                                       render_imports=is_first,
+                                       is_first_by_category=is_first_by_category,
+                                       render_to_basemodule=self.basemodule)
+
+                    # FIXME
+                    # code = FormatCode(code)[0]
+
+                    # render test_obj|enum|service.py.jinja2 template
+                    test_tmpl = jinja2_env.get_template('py-autobahn/test_{}.py.jinja2'.format(category))
+                    test_code = test_tmpl.render(repo=self, metadata=metadata, FbsType=FbsType,
+                                                 render_imports=is_first,
+                                                 is_first_by_category=is_first_by_category,
+                                                 render_to_basemodule=self.basemodule)
+
+                elif output_lang == 'eip712':
+                    # render obj|enum|service-eip712.sol.jinja2 template
+                    tmpl = jinja2_env.get_template('so-eip712/{}-eip712.sol.jinja2'.format(category))
+                    code = tmpl.render(repo=self, metadata=metadata, FbsType=FbsType,
+                                       render_imports=is_first,
+                                       is_first_by_category=is_first_by_category,
+                                       render_to_basemodule=self.basemodule)
+
+                    # FIXME
+                    # code = FormatCode(code)[0]
+
+                    test_tmpl = None
+                    test_code = None
+
+                elif output_lang == 'json':
+                    code = json.dumps(metadata.marshal(),
+                                      separators=(', ', ': '),
+                                      ensure_ascii=False,
+                                      indent=4,
+                                      sort_keys=True)
+                    test_code = None
+                else:
+                    raise RuntimeError('invalid language "{}" for code generation'.format(output_lang))
+
+                # collect code sections per-module
+                if modulename not in code_modules:
+                    code_modules[modulename] = []
+                    test_code_modules[modulename] = []
+                code_modules[modulename].append(code)
+                if test_code:
+                    test_code_modules[modulename].append(test_code)
+                else:
+                    test_code_modules[modulename].append(None)
+
+        # ['', 'com.example.bla.blub', 'com.example.doo']
+        namespaces = {}
+        for code_file in code_modules.keys():
+            name_parts = code_file.split('.')
+            for i in range(len(name_parts)):
+                pn = name_parts[i]
+                ns = '.'.join(name_parts[:i])
+                if ns not in namespaces:
+                    namespaces[ns] = []
+                if pn and pn not in namespaces[ns]:
+                    namespaces[ns].append(pn)
+
+        print('Namespaces:\n{}\n'.format(pformat(namespaces)))
+
+        # write out code modules
+        #
+        i = 0
+        initialized = set()
+        for code_file, code_sections in code_modules.items():
+            code = '\n\n\n'.join(code_sections)
+            if code_file:
+                code_file_dir = [''] + code_file.split('.')[0:-1]
+            else:
+                code_file_dir = ['']
+
+            # FIXME: cleanup this mess
+            for i in range(len(code_file_dir)):
+                d = os.path.join(output_dir, *(code_file_dir[:i + 1]))
+                if not os.path.isdir(d):
+                    os.mkdir(d)
+                if output_lang == 'python':
+                    fn = os.path.join(d, '__init__.py')
+
+                    _modulename = '.'.join(code_file_dir[:i + 1])[1:]
+                    _imports = namespaces[_modulename]
+                    tmpl = jinja2_env.get_template('py-autobahn/module.py.jinja2')
+                    init_code = tmpl.render(repo=self, modulename=_modulename, imports=_imports,
+                                            render_to_basemodule=self.basemodule)
+                    data = init_code.encode('utf8')
+
+                    if not os.path.exists(fn):
+                        with open(fn, 'wb') as f:
+                            f.write(data)
+                        print('Ok, rendered "module.py.jinja2" in {} bytes to "{}"'.format(len(data), fn))
+                        initialized.add(fn)
+                    else:
+                        with open(fn, 'ab') as f:
+                            f.write(data)
+
+            if output_lang == 'python':
+                if code_file:
+                    code_file_name = '{}.py'.format(code_file.split('.')[-1])
+                    test_code_file_name = 'test_{}.py'.format(code_file.split('.')[-1])
+                else:
+                    code_file_name = '__init__.py'
+                    test_code_file_name = None
+            elif output_lang == 'json':
+                if code_file:
+                    code_file_name = '{}.json'.format(code_file.split('.')[-1])
+                else:
+                    code_file_name = 'init.json'
+                test_code_file_name = None
+            else:
+                code_file_name = None
+                test_code_file_name = None
+
+            # write out code modules
+            #
+            if code_file_name:
+                data = code.encode('utf8')
+
+                fn = os.path.join(*(code_file_dir + [code_file_name]))
+                fn = os.path.join(output_dir, fn)
+
+                # FIXME
+                # if fn not in initialized and os.path.exists(fn):
+                #     os.remove(fn)
+                #     with open(fn, 'wb') as fd:
+                #         fd.write('# Generated by Autobahn v{}\n'.format(__version__).encode('utf8'))
+                #     initialized.add(fn)
+
+                with open(fn, 'ab') as fd:
+                    fd.write(data)
+
+                print('Ok, written {} bytes to {}'.format(len(data), fn))
+
+            # write out unit test code modules
+            #
+            if test_code_file_name:
+                test_code_sections = test_code_modules[code_file]
+                test_code = '\n\n\n'.join(test_code_sections)
+                try:
+                    test_code = FormatCode(test_code)[0]
+                except Exception as e:
+                    print('error during formatting code: {}'.format(e))
+                data = test_code.encode('utf8')
+
+                fn = os.path.join(*(code_file_dir + [test_code_file_name]))
+                fn = os.path.join(output_dir, fn)
+
+                if fn not in initialized and os.path.exists(fn):
+                    os.remove(fn)
+                    with open(fn, 'wb') as fd:
+                        fd.write('# Copyright (c) ...\n'.encode('utf8'))
+                    initialized.add(fn)
+
+                with open(fn, 'ab') as fd:
+                    fd.write(data)
+
+                print('Ok, written {} bytes to {}'.format(len(data), fn))

@@ -26,20 +26,14 @@
 
 import os
 import sys
-import json
 import textwrap
 import pkg_resources
-from pprint import pprint
 
 from jinja2 import Environment, FileSystemLoader
 
-# FIXME
-# https://github.com/google/yapf#example-as-a-module
-from yapf.yapflib.yapf_api import FormatCode
-
 from autobahn import xbr
 from autobahn import __version__
-from autobahn.xbr import FbsType, FbsRPCCall
+from autobahn.xbr import FbsRPCCall
 
 
 if not xbr.HAS_XBR:
@@ -996,7 +990,7 @@ def _main():
         print_version()
 
     elif args.command == 'describe-schema':
-        repo = FbsRepository(render_to_basemodule=args.basemodule)
+        repo = FbsRepository(basemodule=args.basemodule)
         repo.load(args.schema)
 
         # print('\nEnums:\n{}'.format(pformat(sorted(repo.enums.keys()))))
@@ -1042,11 +1036,11 @@ def _main():
     elif args.command == 'codegen-schema':
 
         # load repository from flatbuffers schema files
-        repo = FbsRepository(render_to_basemodule=args.basemodule)
+        repo = FbsRepository(basemodule=args.basemodule)
         repo.load(args.schema)
 
         # print repository summary
-        pprint(repo.summary(keys=True))
+        # pprint(repo.summary(keys=True))
 
         # folder with jinja2 templates for python code sections
         templates = pkg_resources.resource_filename('autobahn', 'xbr/templates')
@@ -1059,205 +1053,9 @@ def _main():
         if not os.path.isdir(args.output):
             os.mkdir(args.output)
 
-        # type categories in schemata in the repository
-        #
-        work = {
-            'obj': repo.objs.values(),
-            'enum': repo.enums.values(),
-            'service': repo.services.values(),
-        }
+        # render python source code files
+        repo.render(env, args.output, 'python')
 
-        # collect code sections by module
-        #
-        code_modules = {}
-        test_code_modules = {}
-        is_first_by_category_modules = {}
-
-        for category, values in work.items():
-            # generate and collect code for all FlatBuffers items in the given category
-            # and defined in schemata previously loaded int
-
-            for item in values:
-                # metadata = item.marshal()
-                # pprint(item.marshal())
-                metadata = item
-
-                # com.example.device.HomeDeviceVendor => com.example.device
-                modulename = '.'.join(metadata.name.split('.')[0:-1])
-                metadata.modulename = modulename
-
-                # com.example.device.HomeDeviceVendor => HomeDeviceVendor
-                metadata.classname = metadata.name.split('.')[-1].strip()
-
-                # com.example.device => device
-                metadata.module_relimport = modulename.split('.')[-1]
-
-                is_first = modulename not in code_modules
-                is_first_by_category = (modulename, category) not in is_first_by_category_modules
-
-                if is_first_by_category:
-                    is_first_by_category_modules[(modulename, category)] = True
-
-                # render template into python code section
-                if args.language == 'python':
-                    # render obj|enum|service.py.jinja2 template
-                    tmpl = env.get_template('py-autobahn/{}.py.jinja2'.format(category))
-                    code = tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType,
-                                       render_imports=is_first,
-                                       is_first_by_category=is_first_by_category,
-                                       render_to_basemodule=args.basemodule)
-
-                    # FIXME
-                    # code = FormatCode(code)[0]
-
-                    # render test_obj|enum|service.py.jinja2 template
-                    test_tmpl = env.get_template('py-autobahn/test_{}.py.jinja2'.format(category))
-                    test_code = test_tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType,
-                                                 render_imports=is_first,
-                                                 is_first_by_category=is_first_by_category,
-                                                 render_to_basemodule=args.basemodule)
-
-                elif args.language == 'eip712':
-                    # render obj|enum|service-eip712.sol.jinja2 template
-                    tmpl = env.get_template('so-eip712/{}-eip712.sol.jinja2'.format(category))
-                    code = tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType,
-                                       render_imports=is_first,
-                                       is_first_by_category=is_first_by_category,
-                                       render_to_basemodule=args.basemodule)
-
-                    # FIXME
-                    # code = FormatCode(code)[0]
-
-                elif args.language == 'json':
-                    code = json.dumps(metadata.marshal(),
-                                      separators=(', ', ': '),
-                                      ensure_ascii=False,
-                                      indent=4,
-                                      sort_keys=True)
-                    test_code = None
-                else:
-                    raise RuntimeError('invalid language "{}" for code generation'.format(args.languages))
-
-                # collect code sections per-module
-                if modulename not in code_modules:
-                    code_modules[modulename] = []
-                    test_code_modules[modulename] = []
-                code_modules[modulename].append(code)
-                if test_code:
-                    test_code_modules[modulename].append(test_code)
-                else:
-                    test_code_modules[modulename].append(None)
-
-        # ['', 'com.example.bla.blub', 'com.example.doo']
-        namespaces = {}
-        for code_file in code_modules.keys():
-            name_parts = code_file.split('.')
-            for i in range(len(name_parts)):
-                pn = name_parts[i]
-                ns = '.'.join(name_parts[:i])
-                if ns not in namespaces:
-                    namespaces[ns] = []
-                if pn and pn not in namespaces[ns]:
-                    namespaces[ns].append(pn)
-
-        print('Namespaces:\n{}\n'.format(pformat(namespaces)))
-
-        # write out code modules
-        #
-        i = 0
-        initialized = set()
-        for code_file, code_sections in code_modules.items():
-            code = '\n\n\n'.join(code_sections)
-            if code_file:
-                code_file_dir = [''] + code_file.split('.')[0:-1]
-            else:
-                code_file_dir = ['']
-
-            # FIXME: cleanup this mess
-            for i in range(len(code_file_dir)):
-                d = os.path.join(args.output, *(code_file_dir[:i + 1]))
-                if not os.path.isdir(d):
-                    os.mkdir(d)
-                if args.language == 'python':
-                    fn = os.path.join(d, '__init__.py')
-
-                    _modulename = '.'.join(code_file_dir[:i + 1])[1:]
-                    _imports = namespaces[_modulename]
-                    tmpl = env.get_template('py-autobahn/module.py.jinja2')
-                    init_code = tmpl.render(repo=repo, modulename=_modulename, imports=_imports,
-                                            render_to_basemodule=args.basemodule)
-                    data = init_code.encode('utf8')
-
-                    if not os.path.exists(fn):
-                        with open(fn, 'wb') as f:
-                            f.write(data)
-                        print('Ok, rendered "module.py.jinja2" in {} bytes to "{}"'.format(len(data), fn))
-                        initialized.add(fn)
-                    else:
-                        with open(fn, 'ab') as f:
-                            f.write(data)
-
-            if args.language == 'python':
-                if code_file:
-                    code_file_name = '{}.py'.format(code_file.split('.')[-1])
-                    test_code_file_name = 'test_{}.py'.format(code_file.split('.')[-1])
-                else:
-                    code_file_name = '__init__.py'
-                    test_code_file_name = None
-            elif args.language == 'json':
-                if code_file:
-                    code_file_name = '{}.json'.format(code_file.split('.')[-1])
-                else:
-                    code_file_name = 'init.json'
-                test_code_file_name = None
-            else:
-                code_file_name = None
-                test_code_file_name = None
-
-            # write out code modules
-            #
-            if code_file_name:
-                data = code.encode('utf8')
-
-                fn = os.path.join(*(code_file_dir + [code_file_name]))
-                fn = os.path.join(args.output, fn)
-
-                # FIXME
-                # if fn not in initialized and os.path.exists(fn):
-                #     os.remove(fn)
-                #     with open(fn, 'wb') as fd:
-                #         fd.write('# Generated by Autobahn v{}\n'.format(__version__).encode('utf8'))
-                #     initialized.add(fn)
-
-                with open(fn, 'ab') as fd:
-                    fd.write(data)
-
-                print('Ok, written {} bytes to {}'.format(len(data), fn))
-
-            # write out unit test code modules
-            #
-            if test_code_file_name:
-                test_code_sections = test_code_modules[code_file]
-                test_code = '\n\n\n'.join(test_code_sections)
-                try:
-                    test_code = FormatCode(test_code)[0]
-                except Exception as e:
-                    print('error during formatting code: {}'.format(e))
-                data = test_code.encode('utf8')
-
-                fn = os.path.join(*(code_file_dir + [test_code_file_name]))
-                fn = os.path.join(args.output, fn)
-
-                if fn not in initialized and os.path.exists(fn):
-                    os.remove(fn)
-                    with open(fn, 'wb') as fd:
-                        fd.write('# Copyright (c) ...\n'.encode('utf8'))
-                    initialized.add(fn)
-
-                with open(fn, 'ab') as fd:
-                    fd.write(data)
-
-                print('Ok, written {} bytes to {}'.format(len(data), fn))
     else:
         if args.command is None or args.command == 'noop':
             print('no command given. select from: {}'.format(', '.join(_COMMANDS)))
