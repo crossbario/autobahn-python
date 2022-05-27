@@ -24,13 +24,13 @@ class {{ metadata.classname }}(object):
     """
     __slots__ = ['_tab', {% for field in metadata.fields_by_id %}'_{{ field.name }}', {% endfor %}]
 
-    def __init__(self):
+    def __init__(self, {% for field in metadata.fields_by_id %}{{ field.name }} = None, {% endfor %}):
         # the underlying FlatBuffers vtable
         self._tab = None
 
         {% for field in metadata.fields_by_id %}
         # {{ field.docs }}
-        self._{{ field.name }} = None
+        self._{{ field.name }} = {{ field.name }}
 
         {% endfor %}
 

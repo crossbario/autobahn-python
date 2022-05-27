@@ -230,7 +230,7 @@ class FbsType(object):
         if self._basetype == FbsType.Obj:
             if self._objtype is None:
                 self._objtype = self._schema.objs_by_id[self._index].name
-                print('filled in missing objtype "{}" for type index {} in object {}'.format(self._objtype, self._index, self))
+                # print('filled in missing objtype "{}" for type index {} in object {}'.format(self._objtype, self._index, self))
         return self._objtype
 
     def map(self, language: str, attrs: Optional[Dict] = None, required: Optional[bool] = True,
@@ -454,17 +454,12 @@ def parse_fields(repository, schema, obj, objs_lst=None):
         field_id = int(fbs_field.Id())
         fbs_field_type = fbs_field.Type()
 
-        # print(field_id, fbs_field_type, fbs_field_type.Index())
         # FIXME
         _objtype = None
         if fbs_field_type.Index() >= 0:
-            print('2' * 100, field_name, obj, objs_lst, fbs_field_type, len(objs_lst), fbs_field_type.Index())
             if len(objs_lst) > fbs_field_type.Index():
                 _obj = objs_lst[fbs_field_type.Index()]
                 _objtype = _obj.name
-                print('3' * 100, _objtype)
-
-        print('4' * 100, field_name, field_id, _objtype)
 
         field_type = FbsType(repository=repository,
                              schema=schema,
@@ -678,7 +673,7 @@ class FbsObject(object):
         obj_attrs = parse_attr(fbs_obj)
 
         fields_by_name, fields_by_id = parse_fields(repository, schema, fbs_obj, objs_lst=objs_lst)
-        print('ok, parsed fields in object "{}": {}'.format(obj_name, fields_by_name))
+        # print('ok, parsed fields in object "{}": {}'.format(obj_name, fields_by_name))
         obj = FbsObject(repository=repository,
                         schema=schema,
                         name=obj_name,
@@ -1194,9 +1189,7 @@ class FbsSchema(object):
             assert obj.name not in objs
             objs[obj.name] = obj
             objs_by_id.append(obj)
-            print('*' * 100)
             print('ok, processed schema object "{}"'.format(obj.name))
-            print('*' * 100)
         schema._objs = objs
         schema._objs_by_id = objs_by_id
 
@@ -1212,7 +1205,7 @@ class FbsSchema(object):
 
             docs = parse_docs(svc_obj)
             attrs = parse_attr(svc_obj)
-            calls, calls_by_id = parse_calls(repository, svc_obj, objs_lst=objs_by_id)
+            calls, calls_by_id = parse_calls(repository, schema, svc_obj, objs_lst=objs_by_id)
 
             service = FbsService(repository=repository,
                                  schema=schema,

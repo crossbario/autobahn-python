@@ -32,12 +32,13 @@ from pprint import pprint
 
 from jinja2 import Environment, FileSystemLoader
 
+# FIXME
 # https://github.com/google/yapf#example-as-a-module
-from yapf.yapflib.yapf_api import FormatCode
+# from yapf.yapflib.yapf_api import FormatCode
 
 from autobahn import xbr
 from autobahn import __version__
-from autobahn.xbr import FbsType
+from autobahn.xbr import FbsType, FbsRPCCall
 
 
 if not xbr.HAS_XBR:
@@ -1004,10 +1005,17 @@ def _main():
         for svc_key, svc in repo.services.items():
             print('\n   {}:'.format(hlval(svc_key, color="blue")))
             for uri in svc.calls.keys():
-                ep = svc.calls[uri]
+                print()
+                ep: FbsRPCCall = svc.calls[uri]
                 ep_type = ep.attrs['type']
                 ep_color = {'topic': 'green', 'procedure': 'yellow'}.get(ep_type, 'white')
                 print('      {:<24} {:<60} {}'.format(hlval(ep_type, color=ep_color), hlval('eth.wamp.' + ep.name), ep.docs))
+                print('          ({}) -> {}'.format(hlval(ep.request.name), ep.response.name))
+                for field in ep.request.fields_by_id:
+                    if field.type.basetype == FbsType.Obj:
+                        print('              {:<40} {}'.format(hlval(field.name, color='blue'), field.docs))
+                    else:
+                        print('              {:<40} {}'.format(hlval(field.name), field.docs))
         # for obj_name, obj in repo.objs.items():
         #    print(obj_name)
 
@@ -1080,7 +1088,9 @@ def _main():
                                        render_imports=is_first,
                                        is_first_by_category=is_first_by_category,
                                        render_to_basemodule=args.basemodule)
-                    code = FormatCode(code)[0]
+
+                    # FIXME
+                    # code = FormatCode(code)[0]
 
                     # render test_obj|enum|service.py.jinja2 template
                     test_tmpl = env.get_template('py-autobahn/test_{}.py.jinja2'.format(category))
@@ -1089,7 +1099,9 @@ def _main():
                                                  is_first_by_category=is_first_by_category,
                                                  render_to_basemodule=args.basemodule)
                     try:
-                        test_code = FormatCode(test_code)[0]
+                        # FIXME
+                        # test_code = FormatCode(test_code)[0]
+                        pass
                     except Exception as e:
                         print('error during formatting code:\n{}\n{}'.format(test_code, e))
 
@@ -1100,7 +1112,9 @@ def _main():
                                        render_imports=is_first,
                                        is_first_by_category=is_first_by_category,
                                        render_to_basemodule=args.basemodule)
-                    code = FormatCode(code)[0]
+
+                    # FIXME
+                    # code = FormatCode(code)[0]
 
                 elif args.language == 'json':
                     code = json.dumps(metadata.marshal(),
