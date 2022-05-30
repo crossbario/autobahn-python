@@ -515,6 +515,9 @@ def parse_calls(repository, schema, svc_obj, objs_lst=None):
         call_req_name = fbs_call_req.Name()
         if call_req_name:
             call_req_name = call_req_name.decode('utf8')
+        call_req_declaration_file = fbs_call_req.DeclarationFile()
+        if call_req_declaration_file:
+            call_req_declaration_file = call_req_declaration_file.decode('utf8')
         call_req_is_struct = fbs_call_req.IsStruct()
         call_req_min_align = fbs_call_req.Minalign()
         call_req_bytesize = fbs_call_req.Bytesize()
@@ -523,6 +526,7 @@ def parse_calls(repository, schema, svc_obj, objs_lst=None):
         call_req_fields, call_fields_by_id = parse_fields(repository, schema, fbs_call_req, objs_lst=objs_lst)
         call_req = FbsObject(repository=repository,
                              schema=schema,
+                             declaration_file=call_req_declaration_file,
                              name=call_req_name,
                              fields=call_req_fields,
                              fields_by_id=call_fields_by_id,
@@ -536,6 +540,9 @@ def parse_calls(repository, schema, svc_obj, objs_lst=None):
         call_resp_name = fbs_call_resp.Name()
         if call_resp_name:
             call_resp_name = call_resp_name.decode('utf8')
+        call_resp_declaration_file = fbs_call_resp.DeclarationFile()
+        if call_resp_declaration_file:
+            call_resp_declaration_file = call_resp_declaration_file.decode('utf8')
         call_resp_is_struct = fbs_call_resp.IsStruct()
         call_resp_min_align = fbs_call_resp.Minalign()
         call_resp_bytesize = fbs_call_resp.Bytesize()
@@ -544,6 +551,7 @@ def parse_calls(repository, schema, svc_obj, objs_lst=None):
         call_resp_fields, call_resp_fields_by_id = parse_fields(repository, schema, fbs_call_resp, objs_lst=objs_lst)
         call_resp = FbsObject(repository=repository,
                               schema=schema,
+                              declaration_file=call_resp_declaration_file,
                               name=call_resp_name,
                               fields=call_resp_fields,
                               fields_by_id=call_resp_fields_by_id,
@@ -582,6 +590,7 @@ class FbsObject(object):
     def __init__(self,
                  repository: 'FbsRepository',
                  schema: 'FbsSchema',
+                 declaration_file: str,
                  name: str,
                  fields: Dict[str, FbsField],
                  fields_by_id: List[FbsField],
@@ -592,6 +601,7 @@ class FbsObject(object):
                  docs: str):
         self._repository = repository
         self._schema = schema
+        self._declaration_file = declaration_file
         self._name = name
         self._fields = fields
         self._fields_by_id = fields_by_id
@@ -637,6 +647,10 @@ class FbsObject(object):
         return self._schema
 
     @property
+    def declaration_file(self):
+        return self._declaration_file
+
+    @property
     def name(self):
         return self._name
 
@@ -674,6 +688,7 @@ class FbsObject(object):
     def marshal(self):
         obj = {
             'name': self._name,
+            'declaration_file': self._declaration_file,
             'fields': {},
             'is_struct': self._is_struct,
             'min_align': self._min_align,
@@ -694,6 +709,9 @@ class FbsObject(object):
         obj_name = fbs_obj.Name()
         if obj_name:
             obj_name = obj_name.decode('utf8')
+        obj_declaration_file = fbs_obj.DeclarationFile()
+        if obj_declaration_file:
+            obj_declaration_file = obj_declaration_file.decode('utf8')
         obj_docs = parse_docs(fbs_obj)
         obj_attrs = parse_attr(fbs_obj)
 
@@ -701,6 +719,7 @@ class FbsObject(object):
         # print('ok, parsed fields in object "{}": {}'.format(obj_name, fields_by_name))
         obj = FbsObject(repository=repository,
                         schema=schema,
+                        declaration_file=obj_declaration_file,
                         name=obj_name,
                         fields=fields_by_name,
                         fields_by_id=fields_by_id,
@@ -784,6 +803,7 @@ class FbsService(object):
     def __init__(self,
                  repository: 'FbsRepository',
                  schema: 'FbsSchema',
+                 declaration_file: str,
                  name: str,
                  calls: Dict[str, FbsRPCCall],
                  calls_by_id: List[FbsRPCCall],
@@ -791,6 +811,7 @@ class FbsService(object):
                  docs: str):
         self._repository = repository
         self._schema = schema
+        self._declaration_file = declaration_file
         self._name = name
         self._calls = calls
         self._calls_by_id = calls_by_id
@@ -804,6 +825,10 @@ class FbsService(object):
     @property
     def schema(self):
         return self._schema
+
+    @property
+    def declaration_file(self):
+        return self._declaration_file
 
     @property
     def name(self):
@@ -831,6 +856,7 @@ class FbsService(object):
     def marshal(self):
         obj = {
             'name': self._name,
+            'declaration_file': self._declaration_file,
             'calls': {},
             'attrs': {},
             'docs': self._docs,
@@ -913,6 +939,7 @@ class FbsEnum(object):
     def __init__(self,
                  repository: 'FbsRepository',
                  schema: 'FbsSchema',
+                 declaration_file: str,
                  name: str,
                  values: Dict[str, FbsEnumValue],
                  is_union: bool,
@@ -921,6 +948,7 @@ class FbsEnum(object):
                  docs: str):
         self._repository = repository
         self._schema = schema
+        self._declaration_file = declaration_file
         self._name = name
         self._values = values
         self._is_union = is_union
@@ -937,6 +965,10 @@ class FbsEnum(object):
     @property
     def schema(self):
         return self._schema
+
+    @property
+    def declaration_file(self):
+        return self._declaration_file
 
     @property
     def name(self):
@@ -994,6 +1026,7 @@ class FbsSchema(object):
                  file_size: int,
                  file_ident: str,
                  file_ext: str,
+                 fbs_files: List[Dict[str, str]],
                  root_table: FbsObject,
                  root: _Schema,
                  objs: Optional[Dict[str, FbsObject]] = None,
@@ -1010,6 +1043,7 @@ class FbsSchema(object):
         :param file_size:
         :param file_ident:
         :param file_ext:
+        :param fbs_files:
         :param root_table:
         :param root:
         :param objs:
@@ -1025,6 +1059,7 @@ class FbsSchema(object):
         self._file_size = file_size
         self._file_ident = file_ident
         self._file_ext = file_ext
+        self._fbs_files = fbs_files
         self._root_table = root_table
         self._root = root
         self._objs = objs
@@ -1057,6 +1092,10 @@ class FbsSchema(object):
     @property
     def file_ext(self):
         return self._file_ext
+
+    @property
+    def fbs_files(self):
+        return self._fbs_files
 
     @property
     def root_table(self):
@@ -1103,6 +1142,7 @@ class FbsSchema(object):
                 'ident': self._file_ident,
                 'ext': self._file_ext,
                 'name': os.path.basename(self._file_name) if self._file_name else None,
+                'files': self._fbs_files,
                 'sha256': self._file_sha256,
                 'size': self._file_size,
                 'objects': len(self._objs),
@@ -1139,7 +1179,7 @@ class FbsSchema(object):
             data = fd.read()
         m = hashlib.sha256()
         m.update(data)
-        print('processing schema file "{}" ({} bytes, SHA256 0x{}) ..'.format(filename, len(data), m.hexdigest()))
+        print('loading schema file "{}" ({} bytes, SHA256 0x{})'.format(filename, len(data), m.hexdigest()))
 
         # get root object in Flatbuffers reflection schema
         # see: https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
@@ -1153,6 +1193,26 @@ class FbsSchema(object):
         if file_ext is not None:
             file_ext = file_ext.decode('utf8')
 
+        fbs_files = []
+        for i in range(root.FbsFilesLength()):
+            # zlmdb.flatbuffers.reflection.SchemaFile.SchemaFile
+            schema_file = root.FbsFiles(i)
+            schema_file_filename = schema_file.Filename()
+            if schema_file_filename:
+                schema_file_filename = schema_file_filename.decode('utf8')
+            schema_file_included_filenames = []
+            for j in range(schema_file.IncludedFilenamesLength()):
+                included_filename = schema_file.IncludedFilenames(j)
+                if included_filename:
+                    included_filename = included_filename.decode('utf8')
+                schema_file_included_filenames.append(included_filename)
+            fbs_files.append(
+                {
+                    'filename': schema_file_filename,
+                    'included_filenames': schema_file_included_filenames,
+                }
+            )
+
         root_table = root.RootTable()
         if root_table is not None:
             root_table = FbsObject.parse(repository, root_table)
@@ -1163,6 +1223,7 @@ class FbsSchema(object):
                            file_sha256=m.hexdigest(),
                            file_ident=file_ident,
                            file_ext=file_ext,
+                           fbs_files=fbs_files,
                            root_table=root_table,
                            root=root)
 
@@ -1175,6 +1236,10 @@ class FbsSchema(object):
             enum_name = fbs_enum.Name()
             if enum_name:
                 enum_name = enum_name.decode('utf8')
+
+            enum_declaration_file = fbs_enum.DeclarationFile()
+            if enum_declaration_file:
+                enum_declaration_file = enum_declaration_file.decode('utf8')
 
             enum_underlying_type = fbs_enum.UnderlyingType()
 
@@ -1196,6 +1261,7 @@ class FbsSchema(object):
 
             enum = FbsEnum(repository=repository,
                            schema=schema,
+                           declaration_file=enum_declaration_file,
                            name=enum_name,
                            values=enum_values,
                            is_union=fbs_enum.IsUnion(),
@@ -1217,7 +1283,7 @@ class FbsSchema(object):
             assert obj.name not in objs
             objs[obj.name] = obj
             objs_by_id.append(obj)
-            print('ok, processed schema object "{}"'.format(obj.name))
+            # print('ok, processed schema object "{}"'.format(obj.name))
         schema._objs = objs
         schema._objs_by_id = objs_by_id
 
@@ -1231,12 +1297,17 @@ class FbsSchema(object):
             if svc_name:
                 svc_name = svc_name.decode('utf8')
 
+            svc_declaration_file = svc_obj.DeclarationFile()
+            if svc_declaration_file:
+                svc_declaration_file = svc_declaration_file.decode('utf8')
+
             docs = parse_docs(svc_obj)
             attrs = parse_attr(svc_obj)
             calls, calls_by_id = parse_calls(repository, schema, svc_obj, objs_lst=objs_by_id)
 
             service = FbsService(repository=repository,
                                  schema=schema,
+                                 declaration_file=svc_declaration_file,
                                  name=svc_name,
                                  calls=calls,
                                  calls_by_id=calls_by_id,
@@ -1318,6 +1389,17 @@ class FbsRepository(object):
                 load_from_filenames.append(filename)
             else:
                 print('duplicate schema file skipped ("{}" already loaded)'.format(filename))
+        elif ',' in filename:
+            for filename_single in filename.split(','):
+                filename_single = os.path.expanduser(filename_single)
+                # filename_single = os.path.expandvars(filename_single)
+                if os.path.isfile(filename_single):
+                    if filename_single not in self._schemata:
+                        load_from_filenames.append(filename_single)
+                    else:
+                        print('duplicate schema file skipped ("{}" already loaded)'.format(filename_single))
+                else:
+                    raise RuntimeError('"{}" in list is not a file'.format(filename_single))
         else:
             raise RuntimeError('cannot open schema file or directory: "{}"'.format(filename))
 
@@ -1518,6 +1600,10 @@ class FbsRepository(object):
             # write out code modules
             #
             if code_file_name:
+                try:
+                    code = FormatCode(code)[0]
+                except Exception as e:
+                    print('error during formatting code: {}'.format(e))
                 data = code.encode('utf8')
 
                 fn = os.path.join(*(code_file_dir + [code_file_name]))

@@ -33,8 +33,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from autobahn import xbr
 from autobahn import __version__
-from autobahn.xbr import FbsRPCCall
-
+from autobahn.xbr import FbsRPCCall, FbsType
 
 if not xbr.HAS_XBR:
     print("\nYou must install the [xbr] extra to use xbrnetwork")
@@ -64,6 +63,7 @@ import cbor2
 import numpy as np
 
 import txaio
+
 txaio.use_twisted()
 
 from twisted.internet import reactor
@@ -129,8 +129,11 @@ class Client(ApplicationSession):
         :param profile:
         :return:
         """
-        assert type(profile.ethkey) == bytes, 'set_ethkey_from_profile::profile invalid type "{}" - must be bytes'.format(type(profile.ethkey))
-        assert len(profile.ethkey) == 32, 'set_ethkey_from_profile::profile invalid length {} - must be 32'.format(len(profile.ethkey))
+        assert type(
+            profile.ethkey) == bytes, 'set_ethkey_from_profile::profile invalid type "{}" - must be bytes'.format(
+            type(profile.ethkey))
+        assert len(profile.ethkey) == 32, 'set_ethkey_from_profile::profile invalid length {} - must be 32'.format(
+            len(profile.ethkey))
         self._ethkey_raw = profile.ethkey
         self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
         self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
@@ -161,12 +164,13 @@ class Client(ApplicationSession):
             raise RuntimeError('unable to process authentication method {}'.format(challenge.method))
 
     async def onJoin(self, details):
-        self.log.info('Ok, client joined on realm "{realm}" [session={session}, authid="{authid}", authrole="{authrole}"]',
-                      realm=hlid(details.realm),
-                      session=hlid(details.session),
-                      authid=hlid(details.authid),
-                      authrole=hlid(details.authrole),
-                      details=details)
+        self.log.info(
+            'Ok, client joined on realm "{realm}" [session={session}, authid="{authid}", authrole="{authrole}"]',
+            realm=hlid(details.realm),
+            session=hlid(details.session),
+            authid=hlid(details.authid),
+            authrole=hlid(details.authrole),
+            details=details)
         if 'ready' in self.config.extra:
             txaio.resolve(self.config.extra['ready'], (self, details))
 
@@ -358,11 +362,12 @@ class Client(ApplicationSession):
             actor_level = actor['level']
             actor_balance_eth = web3.Web3.fromWei(unpack_uint256(actor['balance']['eth']), 'ether')
             actor_balance_xbr = web3.Web3.fromWei(unpack_uint256(actor['balance']['xbr']), 'ether')
-            self.log.info('Found member with address {member_adr} (member level {member_level}, balances: {member_balance_eth} ETH, {member_balance_xbr} XBR)',
-                          member_adr=hlid(actor_adr),
-                          member_level=hlval(actor_level),
-                          member_balance_eth=hlval(actor_balance_eth),
-                          member_balance_xbr=hlval(actor_balance_xbr))
+            self.log.info(
+                'Found member with address {member_adr} (member level {member_level}, balances: {member_balance_eth} ETH, {member_balance_xbr} XBR)',
+                member_adr=hlid(actor_adr),
+                member_level=hlval(actor_level),
+                member_balance_eth=hlval(actor_balance_eth),
+                member_balance_xbr=hlval(actor_balance_xbr))
 
             if market_oid:
                 market_oids = [market_oid.bytes]
@@ -378,8 +383,10 @@ class Client(ApplicationSession):
                         actor['timestamp'] = np.datetime64(actor['timestamp'], 'ns')
                         actor['joined'] = unpack_uint256(actor['joined']) if actor['joined'] else None
                         actor['market'] = uuid.UUID(bytes=actor['market'])
-                        actor['security'] = web3.Web3.fromWei(unpack_uint256(actor['security']), 'ether') if actor['security'] else None
-                        actor['signature'] = '0x' + binascii.b2a_hex(actor['signature']).decode() if actor['signature'] else None
+                        actor['security'] = web3.Web3.fromWei(unpack_uint256(actor['security']), 'ether') if actor[
+                            'security'] else None
+                        actor['signature'] = '0x' + binascii.b2a_hex(actor['signature']).decode() if actor[
+                            'signature'] else None
                         actor['tid'] = '0x' + binascii.b2a_hex(actor['tid']).decode() if actor['tid'] else None
 
                         actor_type = actor['actor_type']
@@ -681,8 +688,9 @@ class Client(ApplicationSession):
         request_verified = await self.call('xbr.network.verify_join_market', vaction_oid.bytes, vaction_code)
         market_oid = request_verified['market_oid']
         actor_type = request_verified['actor_type']
-        self.log.info('SUCCESS! XBR market joined: member_oid={member_oid}, market_oid={market_oid}, actor_type={actor_type}',
-                      member_oid=member_oid, market_oid=market_oid, actor_type=actor_type)
+        self.log.info(
+            'SUCCESS! XBR market joined: member_oid={member_oid}, market_oid={market_oid}, actor_type={actor_type}',
+            member_oid=member_oid, market_oid=market_oid, actor_type=actor_type)
 
     async def _do_get_active_payment_channel(self, market_oid, delegate_adr):
         channel = await self.call('xbr.marketmaker.get_active_payment_channel', delegate_adr)
@@ -993,20 +1001,115 @@ def _main():
         repo = FbsRepository(basemodule=args.basemodule)
         repo.load(args.schema)
 
-        # print('\nEnums:\n{}'.format(pformat(sorted(repo.enums.keys()))))
-        # print('\nStructs and Tables:\n{}'.format(pformat(sorted(repo.objs.keys()))))
-        # print('\nServices:\n{}'.format(pformat(sorted(repo.services.keys()))))
+        # print repository summary
+        total_count = len(repo.objs) + len(repo.enums) + len(repo.services)
+        print('ok, loaded {} types ({} structs and tables, {} enums and {} service interfaces)'.format(
+            hlval(total_count),
+            hlval(len(repo.objs)),
+            hlval(len(repo.enums)),
+            hlval(len(repo.services))))
         print()
 
+        brown = (160, 110, 50)
+        # steel_blue = (70, 130, 180)
+        orange = (255, 127, 36)
+
+        for obj_key, obj in repo.objs.items():
+            prefix_uri = obj.attrs.get('uri', args.basemodule)
+            obj_name = obj_key.split('.')[-1]
+            obj_kind = 'Struct' if obj.is_struct else 'Table'
+            obj_color = 'blue' if obj.is_struct else brown
+            print('   {} {} {}\n'.format(obj_kind, hlval(obj_name, color=obj_color), '=' * (120 - len(obj_name))))
+            if prefix_uri:
+                print('    Type URI:  {}.{}'.format(hlval(prefix_uri), hlval(obj_name)))
+            else:
+                print('    Type URI:  {}'.format(hlval(obj_name)))
+            print()
+            print(textwrap.fill(obj.docs,
+                                width=100,
+                                initial_indent='    ',
+                                subsequent_indent='    ',
+                                expand_tabs=True,
+                                replace_whitespace=True,
+                                fix_sentence_endings=False,
+                                break_long_words=True,
+                                drop_whitespace=True,
+                                break_on_hyphens=True,
+                                tabsize=4))
+            print()
+            for field in obj.fields_by_id:
+                docs = textwrap.wrap(field.docs,
+                                     width=60,
+                                     initial_indent='',
+                                     subsequent_indent='',
+                                     expand_tabs=True,
+                                     replace_whitespace=True,
+                                     fix_sentence_endings=False,
+                                     break_long_words=True,
+                                     drop_whitespace=True,
+                                     break_on_hyphens=True,
+                                     tabsize=4)
+                if field.type.basetype == FbsType.Obj:
+                    type_desc_str = field.type.objtype.split('.')[-1]
+                    if repo.objs[field.type.objtype].is_struct:
+                        type_desc = hlval(type_desc_str, color='blue')
+                    else:
+                        type_desc = hlval(type_desc_str, color=brown)
+                elif field.type.basetype == FbsType.Vector:
+                    type_desc_str = 'Vector[{}]'.format(FbsType.FBS2STR[field.type.element])
+                    type_desc = hlval(type_desc_str, color='white')
+                else:
+                    type_desc_str = FbsType.FBS2STR[field.type.basetype]
+                    type_desc = hlval(type_desc_str, color='white')
+
+                if field.attrs:
+                    attrs_text_str = '(' + ', '.join(field.attrs.keys()) + ')'
+                    attrs_text = hlval(attrs_text_str, color='yellow')
+                    type_text_str = ' '.join([type_desc_str, attrs_text_str])
+                    type_text = ' '.join([type_desc, attrs_text])
+                else:
+                    type_text_str = type_desc_str
+                    type_text = type_desc
+
+                # print('>>', len(type_text_str), len(type_text))
+
+                print('    {:<40} {} {}'.format(hlval(field.name),
+                                                type_text + ' ' * (34 - len(type_text_str)),
+                                                docs[0] if docs else ''))
+                for line in docs[1:]:
+                    print(' ' * 67 + line)
+            print()
+
         for svc_key, svc in repo.services.items():
-            print('   Interface {} {}'.format(hlval(svc_key, color="blue"), '=' * (92 - len(svc_key))))
+            prefix_uri = svc.attrs.get('uri', args.basemodule)
+            ifx_uuid = svc.attrs.get('uuid', None)
+            ifc_name = svc_key.split('.')[-1]
+            print('   Interface {} {}\n'.format(hlval(ifc_name, color=orange), '=' * (92 - len(ifc_name))))
+            print('    Interface UUID:  {}'.format(hlval(ifx_uuid)))
+            print('    Interface URIs:  {}.({}|{})'.format(hlval(prefix_uri), hlval('procedure', color='yellow'),
+                                                           hlval('topic', color='green')))
+            print()
+            print(textwrap.fill(svc.docs,
+                                width=100,
+                                initial_indent='    ',
+                                subsequent_indent='    ',
+                                expand_tabs=True,
+                                replace_whitespace=True,
+                                fix_sentence_endings=False,
+                                break_long_words=True,
+                                drop_whitespace=True,
+                                break_on_hyphens=True,
+                                tabsize=4))
             for uri in svc.calls.keys():
                 print()
                 ep: FbsRPCCall = svc.calls[uri]
                 ep_type = ep.attrs['type']
                 ep_color = {'topic': 'green', 'procedure': 'yellow'}.get(ep_type, 'white')
+                # uri_long = '{}.{}'.format(hlval(prefix_uri, color=(127, 127, 127)),
+                #                           hlval(ep.attrs.get('uri', ep.name), color='white'))
+                uri_short = '{}'.format(hlval(ep.attrs.get('uri', ep.name), color=(255, 255, 255)))
                 print('      {} {} ({}) -> {}'.format(hlval(ep_type, color=ep_color),
-                                                      hlval('eth.wamp.' + ep.name),
+                                                      uri_short,
                                                       hlval(ep.request.name.split('.')[-1], color='blue', bold=False),
                                                       hlval(ep.response.name.split('.')[-1], color='blue', bold=False)))
                 print()
@@ -1021,13 +1124,14 @@ def _main():
                                     drop_whitespace=True,
                                     break_on_hyphens=True,
                                     tabsize=4))
-                print('      ' + '.' * 100)
+                # print('      ' + '.' * 100)
+            print()
 
-                # for field in ep.request.fields_by_id:
-                #     if field.type.basetype == FbsType.Obj:
-                #         print('              {:<40} {}'.format(hlval(field.name, color='blue'), field.docs))
-                #     else:
-                #         print('              {:<40} {}'.format(hlval(field.name), field.docs))
+            # for field in ep.request.fields_by_id:
+            #     if field.type.basetype == FbsType.Obj:
+            #         print('              {:<40} {}'.format(hlval(field.name, color='blue'), field.docs))
+            #     else:
+            #         print('              {:<40} {}'.format(hlval(field.name), field.docs))
         # for obj_name, obj in repo.objs.items():
         #    print(obj_name)
 
@@ -1040,7 +1144,7 @@ def _main():
         repo.load(args.schema)
 
         # print repository summary
-        # pprint(repo.summary(keys=True))
+        print(repo.summary(keys=True))
 
         # folder with jinja2 templates for python code sections
         templates = pkg_resources.resource_filename('autobahn', 'xbr/templates')
@@ -1104,11 +1208,13 @@ def _main():
             'delegate': binascii.a2b_hex(args.delegate[2:]) if args.delegate else None,
             'amount': args.amount or 0,
         }
-        runner = ApplicationRunner(url=profile.network_url, realm=profile.network_realm, extra=extra, serializers=[CBORSerializer()])
+        runner = ApplicationRunner(url=profile.network_url, realm=profile.network_realm, extra=extra,
+                                   serializers=[CBORSerializer()])
 
         try:
             log.info('Connecting to "{url}" {realm} ..',
-                     url=hlval(profile.network_url), realm=('at realm "' + hlval(profile.network_realm) + '"' if profile.network_realm else ''))
+                     url=hlval(profile.network_url),
+                     realm=('at realm "' + hlval(profile.network_realm) + '"' if profile.network_realm else ''))
             runner.run(Client, auto_reconnect=False)
         except Exception as e:
             print(e)
