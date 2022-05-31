@@ -28,6 +28,7 @@ import os
 import json
 import pprint
 from pprint import pformat
+import textwrap
 import hashlib
 from typing import Dict, List, Optional
 from pathlib import Path
@@ -35,6 +36,8 @@ from pathlib import Path
 # FIXME
 # https://github.com/google/yapf#example-as-a-module
 from yapf.yapflib.yapf_api import FormatCode
+
+from autobahn.util import hlval
 
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
@@ -1335,25 +1338,13 @@ class FbsRepository(object):
         self._enums: Dict[str, FbsEnum] = {}
         self._services: Dict[str, FbsService] = {}
 
-    def summary(self, keys=False):
-        if keys:
-            return {
-                'schemata': sorted(self._schemata.keys()),
-                'objs': sorted(self._objs.keys()),
-                'enums': sorted(self._enums.keys()),
-                'services': sorted(self._services.keys()),
-            }
-        else:
-            return {
-                'schemata': len(self._schemata),
-                'objs': len(self._objs),
-                'enums': len(self._enums),
-                'services': len(self._services),
-            }
-
     @property
     def basemodule(self):
         return self._basemodule
+
+    @property
+    def schemata(self):
+        return self._schemata
 
     @property
     def objs(self):
@@ -1430,6 +1421,150 @@ class FbsRepository(object):
                     self._services[svc.name] = svc
 
             self._schemata[fn] = schema
+
+    def summary(self, keys=False):
+        if keys:
+            return {
+                'schemata': sorted(self._schemata.keys()),
+                'objs': sorted(self._objs.keys()),
+                'enums': sorted(self._enums.keys()),
+                'services': sorted(self._services.keys()),
+            }
+        else:
+            return {
+                'schemata': len(self._schemata),
+                'objs': len(self._objs),
+                'enums': len(self._enums),
+                'services': len(self._services),
+            }
+
+    def print_summary(self):
+        # brown = (160, 110, 50)
+        # brown = (133, 51, 51)
+        brown = (51, 133, 255)
+        # steel_blue = (70, 130, 180)
+        orange = (255, 127, 36)
+        # deep_pink = (255, 20, 147)
+        # light_pink = (255, 102, 204)
+        # pink = (204, 82, 163)
+        pink = (127, 127, 127)
+
+        for obj_key, obj in self.objs.items():
+            prefix_uri = obj.attrs.get('uri', self._basemodule)
+            obj_name = obj_key.split('.')[-1]
+            obj_color = 'blue' if obj.is_struct else brown
+            obj_label = '{} {}'.format('Struct' if obj.is_struct else 'Table', obj_name)
+            print('{}\n'.format(hlval('   {} {} {}'.format('====', obj_label, '=' * (118 - len(obj_label))),
+                                      color=obj_color)))
+            # print('   {} {} {}\n'.format(obj_kind, hlval(obj_name, color=obj_color), '=' * (120 - len(obj_name))))
+
+            if prefix_uri:
+                print('    Type URI:  {}.{}'.format(hlval(prefix_uri), hlval(obj_name)))
+            else:
+                print('    Type URI:  {}'.format(hlval(obj_name)))
+            print()
+            print(textwrap.fill(obj.docs,
+                                width=100,
+                                initial_indent='    ',
+                                subsequent_indent='    ',
+                                expand_tabs=True,
+                                replace_whitespace=True,
+                                fix_sentence_endings=False,
+                                break_long_words=True,
+                                drop_whitespace=True,
+                                break_on_hyphens=True,
+                                tabsize=4))
+            print()
+            for field in obj.fields_by_id:
+                docs = textwrap.wrap(field.docs,
+                                     width=70,
+                                     initial_indent='',
+                                     subsequent_indent='',
+                                     expand_tabs=True,
+                                     replace_whitespace=True,
+                                     fix_sentence_endings=False,
+                                     break_long_words=True,
+                                     drop_whitespace=True,
+                                     break_on_hyphens=True,
+                                     tabsize=4)
+                if field.type.basetype == FbsType.Obj:
+                    type_desc_str = field.type.objtype.split('.')[-1]
+                    if self.objs[field.type.objtype].is_struct:
+                        type_desc = hlval(type_desc_str, color='blue')
+                    else:
+                        type_desc = hlval(type_desc_str, color=brown)
+                elif field.type.basetype == FbsType.Vector:
+                    type_desc_str = 'Vector[{}]'.format(FbsType.FBS2STR[field.type.element])
+                    type_desc = hlval(type_desc_str, color='white')
+                else:
+                    type_desc_str = FbsType.FBS2STR[field.type.basetype]
+                    type_desc = hlval(type_desc_str, color='white')
+
+                if field.attrs:
+                    attrs_text_str = '(' + ', '.join(field.attrs.keys()) + ')'
+                    attrs_text = hlval(attrs_text_str, color=pink)
+                    type_text_str = ' '.join([type_desc_str, attrs_text_str])
+                    type_text = ' '.join([type_desc, attrs_text])
+                else:
+                    type_text_str = type_desc_str
+                    type_text = type_desc
+
+                # print('>>', len(type_text_str), len(type_text))
+
+                print('    {:<30} {} {}'.format(hlval(field.name),
+                                                type_text + ' ' * (34 - len(type_text_str)),
+                                                docs[0] if docs else ''))
+                for line in docs[1:]:
+                    print(' ' * 57 + line)
+            print()
+
+        for svc_key, svc in self.services.items():
+            prefix_uri = svc.attrs.get('uri', self._basemodule)
+            ifx_uuid = svc.attrs.get('uuid', None)
+            ifc_name = svc_key.split('.')[-1]
+            ifc_label = 'Interface {}'.format(ifc_name)
+            print('{}\n'.format(hlval('   {} {} {}'.format('====', ifc_label, '=' * (118 - len(ifc_label))),
+                                      color='yellow')))
+            print('    Interface UUID:  {}'.format(hlval(ifx_uuid)))
+            print('    Interface URIs:  {}.({}|{})'.format(hlval(prefix_uri), hlval('procedure', color=orange),
+                                                           hlval('topic', color='green')))
+            print()
+            print(textwrap.fill(svc.docs,
+                                width=100,
+                                initial_indent='    ',
+                                subsequent_indent='    ',
+                                expand_tabs=True,
+                                replace_whitespace=True,
+                                fix_sentence_endings=False,
+                                break_long_words=True,
+                                drop_whitespace=True,
+                                break_on_hyphens=True,
+                                tabsize=4))
+            for uri in svc.calls.keys():
+                print()
+                ep: FbsRPCCall = svc.calls[uri]
+                ep_type = ep.attrs['type']
+                ep_color = {'topic': 'green', 'procedure': orange}.get(ep_type, 'white')
+                # uri_long = '{}.{}'.format(hlval(prefix_uri, color=(127, 127, 127)),
+                #                           hlval(ep.attrs.get('uri', ep.name), color='white'))
+                uri_short = '{}'.format(hlval(ep.attrs.get('uri', ep.name), color=(255, 255, 255)))
+                print('      {} {} ({}) -> {}'.format(hlval(ep_type, color=ep_color),
+                                                      uri_short,
+                                                      hlval(ep.request.name.split('.')[-1], color='blue', bold=False),
+                                                      hlval(ep.response.name.split('.')[-1], color='blue', bold=False)))
+                print()
+                print(textwrap.fill(ep.docs,
+                                    width=90,
+                                    initial_indent='          ',
+                                    subsequent_indent='          ',
+                                    expand_tabs=True,
+                                    replace_whitespace=True,
+                                    fix_sentence_endings=False,
+                                    break_long_words=True,
+                                    drop_whitespace=True,
+                                    break_on_hyphens=True,
+                                    tabsize=4))
+            print()
 
     def render(self, jinja2_env, output_dir, output_lang):
         """
