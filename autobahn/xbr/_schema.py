@@ -1358,6 +1358,14 @@ class FbsRepository(object):
     def services(self):
         return self._services
 
+    @staticmethod
+    def from_archive(filename: str) -> 'FbsRepository':
+        pass
+
+    @staticmethod
+    def from_address(address: str) -> 'FbsRepository':
+        pass
+
     def load(self, filename: str):
         """
         Load and add all schemata from Flatbuffers binary schema files (`*.bfbs`)

@@ -167,6 +167,11 @@ class Pattern(object):
             options = None
 
         components = uri.split('.')
+
+        _URI_COMP_CHARS = r'[^\s\.#]+'
+        # _URI_COMP_CHARS = r'[\da-z_]+'
+        # _URI_COMP_CHARS = r'[a-z0-9][a-z0-9_\-]*'
+
         pl = []
         nc = {}
         group_count = 0
@@ -175,26 +180,25 @@ class Pattern(object):
 
             match = Pattern._URI_NAMED_CONVERTED_COMPONENT.match(component)
             if match:
-                ctype = match.groups()[1]
-                if ctype not in ['string', 'int', 'suffix']:
-                    raise Exception("invalid URI")
+                name, comp_type = match.groups()
+                if comp_type not in ['str', 'string', 'int', 'suffix']:
+                    raise TypeError("invalid URI")
 
-                if ctype == 'suffix' and i != len(components) - 1:
-                    raise Exception("invalid URI")
+                if comp_type == 'suffix' and i != len(components) - 1:
+                    raise TypeError("invalid URI")
 
-                name = match.groups()[0]
                 if name in nc:
-                    raise Exception("invalid URI")
+                    raise TypeError("invalid URI")
 
-                if ctype in ['string', 'suffix']:
+                if comp_type in ['str', 'string', 'suffix']:
                     nc[name] = str
-                elif ctype == 'int':
+                elif comp_type == 'int':
                     nc[name] = int
                 else:
                     # should not arrive here
-                    raise Exception("logic error")
+                    raise TypeError("logic error")
 
-                pl.append("(?P<{0}>[a-z0-9_]+)".format(name))
+                pl.append("(?P<{}>{})".format(name, _URI_COMP_CHARS))
                 group_count += 1
                 continue
 
@@ -202,10 +206,10 @@ class Pattern(object):
             if match:
                 name = match.groups()[0]
                 if name in nc:
-                    raise Exception("invalid URI")
+                    raise TypeError("invalid URI")
 
                 nc[name] = str
-                pl.append("(?P<{0}>[a-z0-9_]+)".format(name))
+                pl.append("(?P<{}>{})".format(name, _URI_COMP_CHARS))
                 group_count += 1
                 continue
 
@@ -216,11 +220,11 @@ class Pattern(object):
 
             if component == '':
                 group_count += 1
-                pl.append(r"([a-z0-9][a-z0-9_\-]*)")
+                pl.append(r"({})".format(_URI_COMP_CHARS))
                 nc[group_count] = str
                 continue
 
-            raise Exception("invalid URI")
+            raise TypeError("invalid URI")
 
         if nc:
             # URI pattern
@@ -294,7 +298,7 @@ class Pattern(object):
                     kwargs[key] = val
                 return args, kwargs
             else:
-                raise Exception("no match")
+                raise ValueError('no match')
 
     @public
     def is_endpoint(self):
