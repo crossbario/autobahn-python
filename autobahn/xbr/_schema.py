@@ -23,22 +23,20 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-
-import os
 import json
+import os
 import pprint
-from pprint import pformat
-import textwrap
 import hashlib
-from typing import Dict, List, Optional
+import textwrap
 from pathlib import Path
+from pprint import pformat
+from typing import Dict, List, Optional
 
 # FIXME
 # https://github.com/google/yapf#example-as-a-module
 from yapf.yapflib.yapf_api import FormatCode
 
 from autobahn.util import hlval
-
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
 
@@ -181,7 +179,7 @@ class FbsType(object):
     }
 
     def __init__(self,
-                 repository: 'FbsRepository',
+                 repository: 'Catalog',
                  schema: 'FbsSchema',
                  basetype: int,
                  element: int,
@@ -329,7 +327,7 @@ class FbsAttribute(object):
 
 class FbsField(object):
     def __init__(self,
-                 repository: 'FbsRepository',
+                 repository: 'Catalog',
                  schema: 'FbsSchema',
                  name: str,
                  type: FbsType,
@@ -591,7 +589,7 @@ def parse_calls(repository, schema, svc_obj, objs_lst=None):
 
 class FbsObject(object):
     def __init__(self,
-                 repository: 'FbsRepository',
+                 repository: 'Catalog',
                  schema: 'FbsSchema',
                  declaration_file: str,
                  name: str,
@@ -736,7 +734,7 @@ class FbsObject(object):
 
 class FbsRPCCall(object):
     def __init__(self,
-                 repository: 'FbsRepository',
+                 repository: 'Catalog',
                  schema: 'FbsSchema',
                  name: str,
                  id: int,
@@ -804,7 +802,7 @@ class FbsRPCCall(object):
 
 class FbsService(object):
     def __init__(self,
-                 repository: 'FbsRepository',
+                 repository: 'Catalog',
                  schema: 'FbsSchema',
                  declaration_file: str,
                  name: str,
@@ -875,7 +873,7 @@ class FbsService(object):
 
 class FbsEnumValue(object):
     def __init__(self,
-                 repository: 'FbsRepository',
+                 repository: 'Catalog',
                  schema: 'FbsSchema',
                  name,
                  value,
@@ -940,7 +938,7 @@ class FbsEnum(object):
     """
 
     def __init__(self,
-                 repository: 'FbsRepository',
+                 repository: 'Catalog',
                  schema: 'FbsSchema',
                  declaration_file: str,
                  name: str,
@@ -1023,7 +1021,7 @@ class FbsSchema(object):
     """
 
     def __init__(self,
-                 repository: 'FbsRepository',
+                 repository: 'Catalog',
                  file_name: str,
                  file_sha256: str,
                  file_size: int,
@@ -1325,8 +1323,11 @@ class FbsSchema(object):
         return schema
 
 
-class FbsRepository(object):
+class Catalog(object):
     """
+    crossbar.interfaces.IRealmInventory
+      - add: Catalog[]
+        - load: FbsSchema[]
 
     https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
     """
@@ -1337,6 +1338,16 @@ class FbsRepository(object):
         self._objs: Dict[str, FbsObject] = {}
         self._enums: Dict[str, FbsEnum] = {}
         self._services: Dict[str, FbsService] = {}
+
+    @staticmethod
+    def from_archive(filename: str) -> 'Catalog':
+        catalog = Catalog()
+        return catalog
+
+    @staticmethod
+    def from_address(address: str) -> 'Catalog':
+        catalog = Catalog()
+        return catalog
 
     @property
     def basemodule(self):
@@ -1357,14 +1368,6 @@ class FbsRepository(object):
     @property
     def services(self):
         return self._services
-
-    @staticmethod
-    def from_archive(filename: str) -> 'FbsRepository':
-        pass
-
-    @staticmethod
-    def from_address(address: str) -> 'FbsRepository':
-        pass
 
     def load(self, filename: str):
         """
