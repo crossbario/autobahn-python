@@ -44,7 +44,7 @@ from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_
 from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_DOMAIN_ADDR_SRC, \
     XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC
 
-from autobahn.xbr import Catalog
+from autobahn.xbr import FbsRepository
 
 import uuid
 import binascii
@@ -997,7 +997,7 @@ def _main():
 
     # describe schema in WAMP IDL FlatBuffers schema files
     elif args.command == 'describe-schema':
-        repo = Catalog(basemodule=args.basemodule)
+        repo = FbsRepository(basemodule=args.basemodule)
         repo.load(args.schema)
 
         total_count = len(repo.objs) + len(repo.enums) + len(repo.services)
@@ -1014,7 +1014,7 @@ def _main():
     elif args.command == 'codegen-schema':
 
         # load repository from flatbuffers schema files
-        repo = Catalog(basemodule=args.basemodule)
+        repo = FbsRepository(basemodule=args.basemodule)
         repo.load(args.schema)
 
         # print repository summary

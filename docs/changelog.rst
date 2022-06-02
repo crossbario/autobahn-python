@@ -5,9 +5,23 @@
 Changelog
 =========
 
-22.5.1.dev1
+22.5.1.dev2
 -----------
 
+* new: WAMP Flatbuffers IDL and schema processing (experimental)
+* new: WAMP-cryptosign trustroot (experimental)
+* new: add wrapper type for CryptosignAuthextra
+* fix: stricted type checking of Challenge; fix cryposign unit test;
+* new: more test coverage
+* fix: reduce log noise
+* fix: forward channel_binding selected in Component client
+* new: expand ISigningKey to provide security_module/key_id (if used)
+* fix: Component cryptosign test
+* fix: add type hints; fix channel_binding
+* new: work on federated realms and secmods
+* new: rename to and work on a.w.CryptosignKey
+* new: add bip44 for cryptosign test
+* fix: remove all txaio.make_logger refs from generic code (#1564)
 * new: initial support for federated WAMP realms via a.x.FederatedRealm/Seeder
 * new: moved utility functions and unit tests for WAMP realm name checking from Crossbar.io
 * new: allow list of URLs for transports in a.t.component.Component

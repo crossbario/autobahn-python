@@ -179,7 +179,7 @@ class FbsType(object):
     }
 
     def __init__(self,
-                 repository: 'Catalog',
+                 repository: 'FbsRepository',
                  schema: 'FbsSchema',
                  basetype: int,
                  element: int,
@@ -327,7 +327,7 @@ class FbsAttribute(object):
 
 class FbsField(object):
     def __init__(self,
-                 repository: 'Catalog',
+                 repository: 'FbsRepository',
                  schema: 'FbsSchema',
                  name: str,
                  type: FbsType,
@@ -589,7 +589,7 @@ def parse_calls(repository, schema, svc_obj, objs_lst=None):
 
 class FbsObject(object):
     def __init__(self,
-                 repository: 'Catalog',
+                 repository: 'FbsRepository',
                  schema: 'FbsSchema',
                  declaration_file: str,
                  name: str,
@@ -734,7 +734,7 @@ class FbsObject(object):
 
 class FbsRPCCall(object):
     def __init__(self,
-                 repository: 'Catalog',
+                 repository: 'FbsRepository',
                  schema: 'FbsSchema',
                  name: str,
                  id: int,
@@ -802,7 +802,7 @@ class FbsRPCCall(object):
 
 class FbsService(object):
     def __init__(self,
-                 repository: 'Catalog',
+                 repository: 'FbsRepository',
                  schema: 'FbsSchema',
                  declaration_file: str,
                  name: str,
@@ -873,7 +873,7 @@ class FbsService(object):
 
 class FbsEnumValue(object):
     def __init__(self,
-                 repository: 'Catalog',
+                 repository: 'FbsRepository',
                  schema: 'FbsSchema',
                  name,
                  value,
@@ -938,7 +938,7 @@ class FbsEnum(object):
     """
 
     def __init__(self,
-                 repository: 'Catalog',
+                 repository: 'FbsRepository',
                  schema: 'FbsSchema',
                  declaration_file: str,
                  name: str,
@@ -1021,7 +1021,7 @@ class FbsSchema(object):
     """
 
     def __init__(self,
-                 repository: 'Catalog',
+                 repository: 'FbsRepository',
                  file_name: str,
                  file_sha256: str,
                  file_size: int,
@@ -1323,10 +1323,10 @@ class FbsSchema(object):
         return schema
 
 
-class Catalog(object):
+class FbsRepository(object):
     """
     crossbar.interfaces.IRealmInventory
-      - add: Catalog[]
+      - add: FbsRepository[]
         - load: FbsSchema[]
 
     https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
@@ -1340,13 +1340,13 @@ class Catalog(object):
         self._services: Dict[str, FbsService] = {}
 
     @staticmethod
-    def from_archive(filename: str) -> 'Catalog':
-        catalog = Catalog()
+    def from_archive(filename: str) -> 'FbsRepository':
+        catalog = FbsRepository()
         return catalog
 
     @staticmethod
-    def from_address(address: str) -> 'Catalog':
-        catalog = Catalog()
+    def from_address(address: str) -> 'FbsRepository':
+        catalog = FbsRepository()
         return catalog
 
     @property

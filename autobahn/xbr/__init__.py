@@ -68,7 +68,7 @@ try:
     from autobahn.xbr._buyer import SimpleBuyer  # noqa
     from autobahn.xbr._config import load_or_create_profile, UserConfig, Profile  # noqa
     from autobahn.xbr._schema import FbsSchema, FbsObject, FbsType, FbsRPCCall, FbsEnum, FbsService, FbsEnumValue, \
-    FbsAttribute, FbsField, Catalog  # noqa
+    FbsAttribute, FbsField, FbsRepository  # noqa
     from autobahn.xbr._wallet import stretch_argon2_secret, expand_argon2_secret, pkm_from_argon2_secret  # noqa
 
     HAS_XBR = True
