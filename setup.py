@@ -53,7 +53,7 @@ extras_require_twisted = [
 if CPY and sys.platform != 'win32':
     # wsaccel does not provide wheels: https://github.com/methane/wsaccel/issues/12
     extras_require_accelerate = [
-        "wsaccel>=0.6.3"            # Apache 2.0
+        # "wsaccel>=0.6.3"            # Apache 2.0
     ]
 else:
     extras_require_accelerate = []
@@ -198,7 +198,10 @@ if 'AUTOBAHN_STRIP_XBR' in os.environ:
 else:
     extras_require_all += extras_require_xbr
     packages += xbr_packages
-    package_data['xbr'] = ['./xbr/templates/*.py.jinja2']
+    package_data['xbr'] = [
+        './xbr/templates/py-autobahn/*.py.jinja2',
+        './xbr/templates/sol-eip712/*.sol.jinja2',
+    ]
     entry_points['console_scripts'] += ["xbrnetwork = autobahn.xbr._cli:_main"]
     entry_points['console_scripts'] += ["xbrnetwork-ui = autobahn.xbr._gui:_main"]
 

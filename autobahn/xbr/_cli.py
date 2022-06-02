@@ -26,19 +26,12 @@
 
 import os
 import sys
-import json
 import pkg_resources
-from pprint import pprint
 
 from jinja2 import Environment, FileSystemLoader
 
-# https://github.com/google/yapf#example-as-a-module
-from yapf.yapflib.yapf_api import FormatCode
-
 from autobahn import xbr
 from autobahn import __version__
-from autobahn.xbr import FbsType
-
 
 if not xbr.HAS_XBR:
     print("\nYou must install the [xbr] extra to use xbrnetwork")
@@ -51,7 +44,7 @@ from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR, XBR_DEBUG_NETWORK_ADDR, XBR_
 from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_DOMAIN_ADDR_SRC, \
     XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC
 
-from autobahn.xbr import FbsSchema, FbsRepository
+from autobahn.xbr import FbsRepository
 
 import uuid
 import binascii
@@ -68,6 +61,7 @@ import cbor2
 import numpy as np
 
 import txaio
+
 txaio.use_twisted()
 
 from twisted.internet import reactor
@@ -133,8 +127,11 @@ class Client(ApplicationSession):
         :param profile:
         :return:
         """
-        assert type(profile.ethkey) == bytes, 'set_ethkey_from_profile::profile invalid type "{}" - must be bytes'.format(type(profile.ethkey))
-        assert len(profile.ethkey) == 32, 'set_ethkey_from_profile::profile invalid length {} - must be 32'.format(len(profile.ethkey))
+        assert type(
+            profile.ethkey) == bytes, 'set_ethkey_from_profile::profile invalid type "{}" - must be bytes'.format(
+            type(profile.ethkey))
+        assert len(profile.ethkey) == 32, 'set_ethkey_from_profile::profile invalid length {} - must be 32'.format(
+            len(profile.ethkey))
         self._ethkey_raw = profile.ethkey
         self._ethkey = eth_keys.keys.PrivateKey(self._ethkey_raw)
         self._ethadr = web3.Web3.toChecksumAddress(self._ethkey.public_key.to_canonical_address())
@@ -165,12 +162,13 @@ class Client(ApplicationSession):
             raise RuntimeError('unable to process authentication method {}'.format(challenge.method))
 
     async def onJoin(self, details):
-        self.log.info('Ok, client joined on realm "{realm}" [session={session}, authid="{authid}", authrole="{authrole}"]',
-                      realm=hlid(details.realm),
-                      session=hlid(details.session),
-                      authid=hlid(details.authid),
-                      authrole=hlid(details.authrole),
-                      details=details)
+        self.log.info(
+            'Ok, client joined on realm "{realm}" [session={session}, authid="{authid}", authrole="{authrole}"]',
+            realm=hlid(details.realm),
+            session=hlid(details.session),
+            authid=hlid(details.authid),
+            authrole=hlid(details.authrole),
+            details=details)
         if 'ready' in self.config.extra:
             txaio.resolve(self.config.extra['ready'], (self, details))
 
@@ -362,11 +360,12 @@ class Client(ApplicationSession):
             actor_level = actor['level']
             actor_balance_eth = web3.Web3.fromWei(unpack_uint256(actor['balance']['eth']), 'ether')
             actor_balance_xbr = web3.Web3.fromWei(unpack_uint256(actor['balance']['xbr']), 'ether')
-            self.log.info('Found member with address {member_adr} (member level {member_level}, balances: {member_balance_eth} ETH, {member_balance_xbr} XBR)',
-                          member_adr=hlid(actor_adr),
-                          member_level=hlval(actor_level),
-                          member_balance_eth=hlval(actor_balance_eth),
-                          member_balance_xbr=hlval(actor_balance_xbr))
+            self.log.info(
+                'Found member with address {member_adr} (member level {member_level}, balances: {member_balance_eth} ETH, {member_balance_xbr} XBR)',
+                member_adr=hlid(actor_adr),
+                member_level=hlval(actor_level),
+                member_balance_eth=hlval(actor_balance_eth),
+                member_balance_xbr=hlval(actor_balance_xbr))
 
             if market_oid:
                 market_oids = [market_oid.bytes]
@@ -382,8 +381,10 @@ class Client(ApplicationSession):
                         actor['timestamp'] = np.datetime64(actor['timestamp'], 'ns')
                         actor['joined'] = unpack_uint256(actor['joined']) if actor['joined'] else None
                         actor['market'] = uuid.UUID(bytes=actor['market'])
-                        actor['security'] = web3.Web3.fromWei(unpack_uint256(actor['security']), 'ether') if actor['security'] else None
-                        actor['signature'] = '0x' + binascii.b2a_hex(actor['signature']).decode() if actor['signature'] else None
+                        actor['security'] = web3.Web3.fromWei(unpack_uint256(actor['security']), 'ether') if actor[
+                            'security'] else None
+                        actor['signature'] = '0x' + binascii.b2a_hex(actor['signature']).decode() if actor[
+                            'signature'] else None
                         actor['tid'] = '0x' + binascii.b2a_hex(actor['tid']).decode() if actor['tid'] else None
 
                         actor_type = actor['actor_type']
@@ -685,8 +686,9 @@ class Client(ApplicationSession):
         request_verified = await self.call('xbr.network.verify_join_market', vaction_oid.bytes, vaction_code)
         market_oid = request_verified['market_oid']
         actor_type = request_verified['actor_type']
-        self.log.info('SUCCESS! XBR market joined: member_oid={member_oid}, market_oid={market_oid}, actor_type={actor_type}',
-                      member_oid=member_oid, market_oid=market_oid, actor_type=actor_type)
+        self.log.info(
+            'SUCCESS! XBR market joined: member_oid={member_oid}, market_oid={market_oid}, actor_type={actor_type}',
+            member_oid=member_oid, market_oid=market_oid, actor_type=actor_type)
 
     async def _do_get_active_payment_channel(self, market_oid, delegate_adr):
         channel = await self.call('xbr.marketmaker.get_active_payment_channel', delegate_adr)
@@ -993,33 +995,30 @@ def _main():
     if args.command == 'version':
         print_version()
 
+    # describe schema in WAMP IDL FlatBuffers schema files
     elif args.command == 'describe-schema':
-        schema = FbsSchema.load(args.schema)
-        obj = schema.marshal()
-        data = json.dumps(obj,
-                          separators=(',', ':'),
-                          ensure_ascii=False,
-                          sort_keys=False, )
-        print('json data generated ({} bytes)'.format(len(data)))
-        for svc_key, svc in schema.services.items():
-            print('API "{}"'.format(svc_key))
-            for uri in sorted(svc.calls.keys()):
-                ep = svc.calls[uri]
-                ep_type = ep.attrs['type']
-                print('   {:<10} {:<26}: {}'.format(ep_type, ep.name, ep.docs))
-        for obj_name, obj in schema.objs.items():
-            print(obj_name)
+        repo = FbsRepository(basemodule=args.basemodule)
+        repo.load(args.schema)
+
+        total_count = len(repo.objs) + len(repo.enums) + len(repo.services)
+        print('ok, loaded {} types ({} structs and tables, {} enums and {} service interfaces)'.format(
+            hlval(total_count),
+            hlval(len(repo.objs)),
+            hlval(len(repo.enums)),
+            hlval(len(repo.services))))
+        print()
+
+        repo.print_summary()
 
     # generate code from WAMP IDL FlatBuffers schema files
-    #
     elif args.command == 'codegen-schema':
 
         # load repository from flatbuffers schema files
-        repo = FbsRepository(render_to_basemodule=args.basemodule)
+        repo = FbsRepository(basemodule=args.basemodule)
         repo.load(args.schema)
 
         # print repository summary
-        pprint(repo.summary(keys=True))
+        print(repo.summary(keys=True))
 
         # folder with jinja2 templates for python code sections
         templates = pkg_resources.resource_filename('autobahn', 'xbr/templates')
@@ -1032,192 +1031,9 @@ def _main():
         if not os.path.isdir(args.output):
             os.mkdir(args.output)
 
-        # type categories in schemata in the repository
-        #
-        work = {
-            'obj': repo.objs.values(),
-            'enum': repo.enums.values(),
-            'service': repo.services.values(),
-        }
+        # render python source code files
+        repo.render(env, args.output, 'python')
 
-        # collect code sections by module
-        #
-        code_modules = {}
-        test_code_modules = {}
-        is_first_by_category_modules = {}
-
-        for category, values in work.items():
-            # generate and collect code for all FlatBuffers items in the given category
-            # and defined in schemata previously loaded int
-
-            for item in values:
-                # metadata = item.marshal()
-                # pprint(item.marshal())
-                metadata = item
-
-                # com.example.device.HomeDeviceVendor => com.example.device
-                modulename = '.'.join(metadata.name.split('.')[0:-1])
-                metadata.modulename = modulename
-
-                # com.example.device.HomeDeviceVendor => HomeDeviceVendor
-                metadata.classname = metadata.name.split('.')[-1].strip()
-
-                # com.example.device => device
-                metadata.module_relimport = modulename.split('.')[-1]
-
-                is_first = modulename not in code_modules
-                is_first_by_category = (modulename, category) not in is_first_by_category_modules
-
-                if is_first_by_category:
-                    is_first_by_category_modules[(modulename, category)] = True
-
-                # render template into python code section
-                if args.language == 'python':
-                    # render obj|enum|service.py.jinja2 template
-                    tmpl = env.get_template('{}.py.jinja2'.format(category))
-                    code = tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType,
-                                       render_imports=is_first,
-                                       is_first_by_category=is_first_by_category,
-                                       render_to_basemodule=args.basemodule)
-                    code = FormatCode(code)[0]
-
-                    # render test_obj|enum|service.py.jinja2 template
-                    test_tmpl = env.get_template('test_{}.py.jinja2'.format(category))
-                    test_code = test_tmpl.render(repo=repo, metadata=metadata, FbsType=FbsType,
-                                                 render_imports=is_first,
-                                                 is_first_by_category=is_first_by_category,
-                                                 render_to_basemodule=args.basemodule)
-                    try:
-                        test_code = FormatCode(test_code)[0]
-                    except Exception as e:
-                        print('error during formatting code:\n{}\n{}'.format(test_code, e))
-
-                elif args.language == 'json':
-                    code = json.dumps(metadata.marshal(),
-                                      separators=(', ', ': '),
-                                      ensure_ascii=False,
-                                      indent=4,
-                                      sort_keys=True)
-                    test_code = None
-                else:
-                    raise RuntimeError('invalid language "{}" for code generation'.format(args.languages))
-
-                # collect code sections per-module
-                if modulename not in code_modules:
-                    code_modules[modulename] = []
-                    test_code_modules[modulename] = []
-                code_modules[modulename].append(code)
-                if test_code:
-                    test_code_modules[modulename].append(test_code)
-                else:
-                    test_code_modules[modulename].append(None)
-
-        # ['', 'com.example.bla.blub', 'com.example.doo']
-        namespaces = {}
-        for code_file in code_modules.keys():
-            name_parts = code_file.split('.')
-            for i in range(len(name_parts)):
-                pn = name_parts[i]
-                ns = '.'.join(name_parts[:i])
-                if ns not in namespaces:
-                    namespaces[ns] = []
-                if pn and pn not in namespaces[ns]:
-                    namespaces[ns].append(pn)
-
-        print('Namespaces:\n{}\n'.format(pformat(namespaces)))
-
-        # write out code modules
-        #
-        i = 0
-        initialized = set()
-        for code_file, code_sections in code_modules.items():
-            code = '\n\n\n'.join(code_sections)
-            if code_file:
-                code_file_dir = [''] + code_file.split('.')[0:-1]
-            else:
-                code_file_dir = ['']
-
-            # FIXME: cleanup this mess
-            for i in range(len(code_file_dir)):
-                d = os.path.join(args.output, *(code_file_dir[:i + 1]))
-                if not os.path.isdir(d):
-                    os.mkdir(d)
-                if args.language == 'python':
-                    fn = os.path.join(d, '__init__.py')
-
-                    _modulename = '.'.join(code_file_dir[:i + 1])[1:]
-                    _imports = namespaces[_modulename]
-                    tmpl = env.get_template('module.py.jinja2')
-                    init_code = tmpl.render(repo=repo, modulename=_modulename, imports=_imports,
-                                            render_to_basemodule=args.basemodule)
-                    data = init_code.encode('utf8')
-
-                    if not os.path.exists(fn):
-                        with open(fn, 'wb') as f:
-                            f.write(data)
-                        print('Ok, rendered "module.py.jinja2" in {} bytes to "{}"'.format(len(data), fn))
-                        initialized.add(fn)
-                    else:
-                        with open(fn, 'ab') as f:
-                            f.write(data)
-
-            if args.language == 'python':
-                if code_file:
-                    code_file_name = '{}.py'.format(code_file.split('.')[-1])
-                    test_code_file_name = 'test_{}.py'.format(code_file.split('.')[-1])
-                else:
-                    code_file_name = '__init__.py'
-                    test_code_file_name = None
-            elif args.language == 'json':
-                if code_file:
-                    code_file_name = '{}.json'.format(code_file.split('.')[-1])
-                else:
-                    code_file_name = 'init.json'
-                test_code_file_name = None
-            else:
-                code_file_name = None
-                test_code_file_name = None
-
-            # write out code modules
-            #
-            if code_file_name:
-                data = code.encode('utf8')
-
-                fn = os.path.join(*(code_file_dir + [code_file_name]))
-                fn = os.path.join(args.output, fn)
-
-                # FIXME
-                # if fn not in initialized and os.path.exists(fn):
-                #     os.remove(fn)
-                #     with open(fn, 'wb') as fd:
-                #         fd.write('# Generated by Autobahn v{}\n'.format(__version__).encode('utf8'))
-                #     initialized.add(fn)
-
-                with open(fn, 'ab') as fd:
-                    fd.write(data)
-
-                print('Ok, written {} bytes to {}'.format(len(data), fn))
-
-            # write out unit test code modules
-            #
-            if test_code_file_name:
-                test_code_sections = test_code_modules[code_file]
-                test_code = '\n\n\n'.join(test_code_sections)
-                data = test_code.encode('utf8')
-
-                fn = os.path.join(*(code_file_dir + [test_code_file_name]))
-                fn = os.path.join(args.output, fn)
-
-                if fn not in initialized and os.path.exists(fn):
-                    os.remove(fn)
-                    with open(fn, 'wb') as fd:
-                        fd.write('# Copyright (c) ...'.encode('utf8'))
-                    initialized.add(fn)
-
-                with open(fn, 'ab') as fd:
-                    fd.write(data)
-
-                print('Ok, written {} bytes to {}'.format(len(data), fn))
     else:
         if args.command is None or args.command == 'noop':
             print('no command given. select from: {}'.format(', '.join(_COMMANDS)))
@@ -1266,11 +1082,13 @@ def _main():
             'delegate': binascii.a2b_hex(args.delegate[2:]) if args.delegate else None,
             'amount': args.amount or 0,
         }
-        runner = ApplicationRunner(url=profile.network_url, realm=profile.network_realm, extra=extra, serializers=[CBORSerializer()])
+        runner = ApplicationRunner(url=profile.network_url, realm=profile.network_realm, extra=extra,
+                                   serializers=[CBORSerializer()])
 
         try:
             log.info('Connecting to "{url}" {realm} ..',
-                     url=hlval(profile.network_url), realm=('at realm "' + hlval(profile.network_realm) + '"' if profile.network_realm else ''))
+                     url=hlval(profile.network_url),
+                     realm=('at realm "' + hlval(profile.network_realm) + '"' if profile.network_realm else ''))
             runner.run(Client, auto_reconnect=False)
         except Exception as e:
             print(e)

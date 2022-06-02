@@ -1,0 +1,220 @@
+{% if render_imports %}
+
+import os
+import random
+import timeit
+import uuid
+import cbor2
+
+import txaio
+txaio.use_twisted()  # noqa
+
+from autobahn import util
+from autobahn.wamp.serializer import JsonObjectSerializer, MsgPackObjectSerializer, \
+    CBORObjectSerializer, UBJSONObjectSerializer
+
+import flatbuffers
+import pytest
+import numpy as np
+from txaio import time_ns
+
+
+@pytest.fixture(scope='function')
+def builder():
+    _builder = flatbuffers.Builder(0)
+    return _builder
+
+
+_SERIALIZERS = [
+    JsonObjectSerializer(),
+    MsgPackObjectSerializer(),
+    CBORObjectSerializer(),
+    UBJSONObjectSerializer(),
+]
+
+{% endif %}
+from {{ metadata.module_relimport }} import {{ metadata.classname }}
+
+
+def fill_{{ metadata.classname }}(obj: {{ metadata.classname }}):
+    {% if metadata.fields_by_id|length == 0 %}
+    # class has no fields
+    pass
+    {% else %}
+    {% for field in metadata.fields_by_id %}
+    {% if field.type.map('python', field.attrs, True) == 'str' %}
+    obj.{{ field.name }} = util.generate_activation_code()
+    {% elif field.type.map('python', field.attrs, True) == 'bytes' %}
+    obj.{{ field.name }} = os.urandom(32)
+    {% elif field.type.map('python', field.attrs, True) in ['int', 'long'] %}
+    # FIXME: enum vs int
+    # obj.{{ field.name }} = random.randint(0, 2**31 - 1)
+    obj.{{ field.name }} = random.randint(0, 3)
+    {% elif field.type.map('python', field.attrs, True) in ['float', 'double'] %}
+    obj.{{ field.name }} = random.random()
+    {% elif field.type.map('python', field.attrs, True) == 'bool' %}
+    obj.{{ field.name }} = random.random() > 0.5
+    {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
+    obj.{{ field.name }} = uuid.uuid4()
+    {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
+    obj.{{ field.name }} = np.datetime64(time_ns(), 'ns')
+    {% else %}
+    obj.{{ field.name }} = None
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+
+
+def fill_{{ metadata.classname }}_empty(obj: {{ metadata.classname }}):
+    {% if metadata.fields_by_id|length == 0 %}
+    # class has no fields
+    pass
+    {% else %}
+    {% for field in metadata.fields_by_id %}
+    obj.{{ field.name }} = None
+    {% endfor %}
+    {% endif %}
+
+
+@pytest.fixture(scope='function')
+def {{ metadata.classname }}_obj():
+    _obj: {{ metadata.classname }} = {{ metadata.classname }}()
+    fill_{{ metadata.classname }}(_obj)
+    return _obj
+
+
+def test_{{ metadata.classname }}_roundtrip({{ metadata.classname }}_obj, builder):
+    # serialize to bytes (flatbuffers) from python object
+    obj = {{ metadata.classname }}_obj.build(builder)
+    builder.Finish(obj)
+    data = builder.Output()
+
+    # check length of serialized object data
+    print('{} serialized object length = {} bytes'.format('{{ metadata.classname }}', len(data)))
+
+    # create python object from bytes (flatbuffers)
+    _obj: {{ metadata.classname }} = {{ metadata.classname }}_obj.cast(data)
+
+    {% for field in metadata.fields_by_id %}
+    assert _obj.{{ field.name }} == {{ metadata.classname }}_obj.{{ field.name }}
+    {% endfor %}
+
+
+def test_{{ metadata.classname }}_empty(builder):
+    empty_obj = {{ metadata.classname }}()
+    fill_{{ metadata.classname }}_empty(empty_obj)
+
+    # check the object was initialized correctly
+    {% for field in metadata.fields_by_id %}
+    {% if field.type.map('python', field.attrs, True) == 'str' %}
+    assert empty_obj.{{ field.name }} == ''
+    {% elif field.type.map('python', field.attrs, True) == 'bytes' %}
+    assert empty_obj.{{ field.name }} == b''
+    {% elif field.type.map('python', field.attrs, True) in ['int', 'long'] %}
+    assert empty_obj.{{ field.name }} == 0
+    {% elif field.type.map('python', field.attrs, True) in ['float', 'double'] %}
+    assert empty_obj.{{ field.name }} == 0.0
+    {% elif field.type.map('python', field.attrs, True) == 'bool' %}
+    assert empty_obj.{{ field.name }} is False
+    {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
+    assert empty_obj.{{ field.name }} == uuid.UUID(bytes=b'\0'*16)
+    {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
+    assert empty_obj.{{ field.name }} == np.datetime64(0, 'ns')
+    {% else %}
+    assert empty_obj.{{ field.name }} is None
+    {% endif %}
+    {% endfor %}
+
+    # serialize to bytes (flatbuffers) from python object
+    obj = empty_obj.build(builder)
+    builder.Finish(obj)
+    data = builder.Output()
+
+    # check length of serialized object data
+    print('{} serialized object length = {} bytes'.format('{{ metadata.classname }}', len(data)))
+
+    # create python object from bytes (flatbuffers)
+    _obj: {{ metadata.classname }} = {{ metadata.classname }}.cast(data)
+
+    {% for field in metadata.fields_by_id %}
+    {% if field.type.map('python', field.attrs, True) == 'str' %}
+    assert _obj.{{ field.name }} == ''
+    {% elif field.type.map('python', field.attrs, True) == 'bytes' %}
+    assert _obj.{{ field.name }} == b''
+    {% elif field.type.map('python', field.attrs, True) in ['int', 'long'] %}
+    assert _obj.{{ field.name }} == 0
+    {% elif field.type.map('python', field.attrs, True) in ['float', 'double'] %}
+    assert _obj.{{ field.name }} == 0.0
+    {% elif field.type.map('python', field.attrs, True) == 'bool' %}
+    assert _obj.{{ field.name }} is False
+    {% elif field.type.map('python', field.attrs, True) == 'uuid.UUID' %}
+    assert _obj.{{ field.name }} == uuid.UUID(bytes=b'\0'*16)
+    {% elif field.type.map('python', field.attrs, True) == 'np.datetime64' %}
+    assert _obj.{{ field.name }} == np.datetime64(0, 'ns')
+    {% else %}
+    assert _obj.{{ field.name }} is None
+    {% endif %}
+    {% endfor %}
+
+
+def test_{{ metadata.classname }}_roundtrip_perf({{ metadata.classname }}_obj, builder):
+    obj = {{ metadata.classname }}_obj.build(builder)
+    builder.Finish(obj)
+    data = builder.Output()
+    scratch = {'value': 0}
+
+    def loop():
+        _obj: {{ metadata.classname }} = {{ metadata.classname }}.cast(data)
+        {% for field in metadata.fields_by_id %}
+        assert _obj.{{ field.name }} == {{ metadata.classname }}_obj.{{ field.name }}
+        {% endfor %}
+        scratch['value'] += 1
+
+    loop_n = 7
+    loop_m = 20000
+    samples = []
+    print('measuring:')
+    for i in range(loop_n):
+        secs = timeit.timeit(loop, number=loop_m)
+        ops = round(float(loop_m) / secs, 1)
+        samples.append(ops)
+        print('{} objects/sec performance'.format(ops))
+
+    samples = sorted(samples)
+    ops50 = samples[int(len(samples) / 2)]
+    print('RESULT: {} objects/sec median performance'.format(ops50))
+
+    assert ops50 > 1000
+    print(scratch['value'])
+
+
+def test_{{ metadata.classname }}_marshal_parse({{ metadata.classname }}_obj, builder):
+    obj = {{ metadata.classname }}_obj.marshal()
+    _obj = {{ metadata.classname }}_obj.parse(obj)
+    {% for field in metadata.fields_by_id %}
+    assert _obj.{{ field.name }} == {{ metadata.classname }}_obj.{{ field.name }}
+    {% endfor %}
+
+
+def test_{{ metadata.classname }}_marshal_cbor_parse({{ metadata.classname }}_obj, builder):
+    obj = {{ metadata.classname }}_obj.marshal()
+    data = cbor2.dumps(obj)
+    print('serialized {} to {} bytes (cbor)'.format({{ metadata.classname }}, len(data)))
+    _obj_raw = cbor2.loads(data)
+    _obj = {{ metadata.classname }}_obj.parse(_obj_raw)
+    {% for field in metadata.fields_by_id %}
+    assert _obj.{{ field.name }} == {{ metadata.classname }}_obj.{{ field.name }}
+    {% endfor %}
+
+
+def test_{{ metadata.classname }}_ab_serializer_roundtrip({{ metadata.classname }}_obj, builder):
+    obj = {{ metadata.classname }}_obj.marshal()
+    for ser in _SERIALIZERS:
+        data = ser.serialize(obj)
+        print('serialized {} to {} bytes ({})'.format({{ metadata.classname }}, len(data), ser.NAME))
+        msg2 = ser.unserialize(data)[0]
+        obj2 = {{ metadata.classname }}.parse(msg2)
+
+        {% for field in metadata.fields_by_id %}
+        assert obj2.{{ field.name }} == {{ metadata.classname }}_obj.{{ field.name }}
+        {% endfor %}

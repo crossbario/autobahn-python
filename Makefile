@@ -128,6 +128,9 @@ upload_exe:
 	aws cloudfront create-invalidation \
 		--distribution-id E2QIG9LNGCJSP9 --paths "/xbrnetwork/linux-amd64/*"
 
+mypy:
+	mypy --install-types --non-interactive autobahn
+
 # WEB3_INFURA_PROJECT_ID must be defined for this
 test_infura:
 	time -f "%e" python -c "from web3.auto.infura import w3; print(w3.isConnected())"
@@ -253,7 +256,8 @@ test_cs1:
 	USE_ASYNCIO=1 python -m pytest -s -v autobahn/wamp/test/test_cryptosign.py
 
 test1:
-	USE_TWISTED=1 trial autobahn.wamp.test.test_auth
+	USE_TWISTED=1 trial autobahn.wamp.test.test_wamp_uri_pattern
+#	USE_TWISTED=1 trial autobahn.wamp.test.test_auth
 #	USE_TWISTED=1 python -m pytest -s -v autobahn/wamp/test/test_auth.py
 #	USE_TWISTED=1 python -m pytest -s -v autobahn/wamp/test/test_router.py
 #	USE_ASYNCIO=1 python -m pytest -s -v autobahn/wamp/test/test_router.py

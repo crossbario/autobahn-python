@@ -60,27 +60,31 @@ class TestUris(unittest.TestCase):
                 ("com.myapp.aaa.update", None),
                 ("com.myapp..update", None),
                 ("com.myapp.0.delete", None),
-            ]
-            ),
+            ]),
             ("com.myapp.<product:string>.update", [
                 ("com.myapp.box.update", {'product': 'box'}),
                 ("com.myapp.123456.update", {'product': '123456'}),
                 ("com.myapp..update", None),
-            ]
-            ),
+            ]),
             ("com.myapp.<product>.update", [
                 ("com.myapp.0.update", {'product': '0'}),
                 ("com.myapp.abc.update", {'product': 'abc'}),
                 ("com.myapp..update", None),
-            ]
-            ),
+            ]),
             ("com.myapp.<category:string>.<subcategory:string>.list", [
                 ("com.myapp.cosmetic.shampoo.list", {'category': 'cosmetic', 'subcategory': 'shampoo'}),
                 ("com.myapp...list", None),
                 ("com.myapp.cosmetic..list", None),
                 ("com.myapp..shampoo.list", None),
-            ]
-            )
+            ]),
+            ("eth.pydefi.tradeclock.<clock_oid:str>.get_clock_info", [
+                ("eth.pydefi.tradeclock.ba3b1e9f-3006-4eae-ae88-cf5896b36342.get_clock_info",
+                 {"clock_oid": "ba3b1e9f-3006-4eae-ae88-cf5896b36342"}),
+            ]),
+            ("eth.wamp.network.catalog.<catalog_adr:str>.owner", [
+                ("eth.wamp.network.catalog.0xAA8Cc377db31a354137d8Bb86D0E38495dbD5266.owner",
+                 {"catalog_adr": "0xAA8Cc377db31a354137d8Bb86D0E38495dbD5266"}),
+            ]),
         ]
         for test in tests:
             pat = Pattern(test[0], Pattern.URI_TARGET_ENDPOINT)
@@ -97,7 +101,6 @@ class TestUris(unittest.TestCase):
 class TestDecorators(unittest.TestCase):
 
     def test_decorate_endpoint(self):
-
         @wamp.register("com.calculator.square")
         def square(_):
             """Do nothing."""
@@ -162,6 +165,7 @@ class TestDecorators(unittest.TestCase):
                        RegisterOptions(match="wildcard", details_arg="details"))
         def something(dynamic=None, details=None):
             """ Do nothing. """
+
         self.assertTrue(hasattr(something, '_wampuris'))
         self.assertTrue(type(something._wampuris) == list)
         self.assertEqual(len(something._wampuris), 1)
@@ -176,7 +180,6 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(something._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
     def test_decorate_handler(self):
-
         @wamp.subscribe("com.myapp.on_shutdown")
         def on_shutdown():
             """Do nothing."""
@@ -238,7 +241,6 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(on_event._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
     def test_decorate_exception(self):
-
         @wamp.error("com.myapp.error")
         class AppError(Exception):
             """Do nothing."""
@@ -282,7 +284,6 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(ObjectInactiveError._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
     def test_match_decorated_endpoint(self):
-
         @wamp.register("com.calculator.square")
         def square(x):
             return x
@@ -307,7 +308,6 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(update(**kwargs), ("product", 123456, "foobar"))
 
     def test_match_decorated_handler(self):
-
         @wamp.subscribe("com.myapp.on_shutdown")
         def on_shutdown():
             pass
@@ -332,7 +332,6 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(on_update(**kwargs), ("product", 123456, "foobar"))
 
     def test_match_decorated_exception(self):
-
         @wamp.error("com.myapp.error")
         class AppError(Exception):
 
@@ -340,8 +339,7 @@ class TestDecorators(unittest.TestCase):
                 Exception.__init__(self, msg)
 
             def __eq__(self, other):
-                return self.__class__ == other.__class__ and \
-                    self.args == other.args
+                return self.__class__ == other.__class__ and self.args == other.args
 
         args, kwargs = AppError._wampuris[0].match("com.myapp.error")
         # noinspection PyArgumentList
@@ -355,9 +353,7 @@ class TestDecorators(unittest.TestCase):
                 self.product = product
 
             def __eq__(self, other):
-                return self.__class__ == other.__class__ and \
-                    self.args == other.args and \
-                    self.product == other.product
+                return self.__class__ == other.__class__ and self.args == other.args and self.product == other.product
 
         args, kwargs = ProductInactiveError._wampuris[0].match("com.myapp.product.123456.product_inactive")
         self.assertEqual(ProductInactiveError("fuck", **kwargs), ProductInactiveError("fuck", 123456))
@@ -371,10 +367,8 @@ class TestDecorators(unittest.TestCase):
                 self.product = product
 
             def __eq__(self, other):
-                return self.__class__ == other.__class__ and \
-                    self.args == other.args and \
-                    self.category == other.category and \
-                    self.product == other.product
+                return self.__class__ == other.__class__ and self.args == other.args and \
+                    self.category == other.category and self.product == other.product
 
         args, kwargs = ObjectInactiveError._wampuris[0].match("com.myapp.product.123456.inactive")
         self.assertEqual(ObjectInactiveError("fuck", **kwargs), ObjectInactiveError("fuck", "product", 123456))
@@ -384,6 +378,7 @@ class KwException(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args)
         self.kwargs = kwargs
+
 
 # what if the WAMP error message received
 # contains args/kwargs that cannot be
@@ -404,11 +399,11 @@ class MockSession(object):
 
     def define(self, exception, error=None):
         if error is None:
-            assert(hasattr(exception, '_wampuris'))
+            assert (hasattr(exception, '_wampuris'))
             self._ecls_to_uri_pat[exception] = exception._wampuris
             self._uri_to_ecls[exception._wampuris[0].uri()] = exception
         else:
-            assert(not hasattr(exception, '_wampuris'))
+            assert (not hasattr(exception, '_wampuris'))
             self._ecls_to_uri_pat[exception] = [Pattern(error, Pattern.URI_TARGET_HANDLER)]
             self._uri_to_ecls[error] = exception
 
