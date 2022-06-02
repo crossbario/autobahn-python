@@ -5,8 +5,8 @@
 Changelog
 =========
 
-22.5.1.dev2
------------
+22.5.1
+------
 
 * new: WAMP Flatbuffers IDL and schema processing (experimental)
 * new: WAMP-cryptosign trustroot (experimental)
