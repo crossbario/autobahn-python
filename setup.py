@@ -172,6 +172,7 @@ packages = [
     'autobahn.asyncio',
     'autobahn.twisted',
     'autobahn.twisted.test',
+    'autobahn.twisted.testing',
     'autobahn.nvx',
     'autobahn.nvx.test',
     'twisted.plugins',
