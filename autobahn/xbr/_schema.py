@@ -1349,9 +1349,9 @@ class FbsRepository(object):
 
     https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
     """
-    log = txaio.make_logger()
 
     def __init__(self, basemodule: str):
+        self.log = txaio.make_logger()
         self._basemodule = basemodule
         self._schemata: Dict[str, FbsSchema] = {}
         self._objs: Dict[str, FbsObject] = {}
