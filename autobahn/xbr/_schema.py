@@ -25,12 +25,14 @@
 ###############################################################################
 import json
 import os
+import io
 import pprint
 import hashlib
 import textwrap
+from typing import Union
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, IO
 
 # FIXME
 # https://github.com/google/yapf#example-as-a-module
@@ -1167,17 +1169,22 @@ class FbsSchema(object):
         return obj
 
     @staticmethod
-    def load(repository, filename) -> 'FbsSchema':
+    def load(repository: 'FbsRepository',
+             sfile: Union[str, io.RawIOBase, IO[bytes]],
+             filename: Optional[str] = None) -> 'FbsSchema':
         """
 
         :param repository:
+        :param sfile:
         :param filename:
         :return:
         """
-        if not os.path.isfile(filename):
-            raise RuntimeError('cannot open schema file {}'.format(filename))
-        with open(filename, 'rb') as fd:
-            data = fd.read()
+        data: bytes
+        if type(sfile) == str and os.path.isfile(sfile):
+            with open(sfile, 'rb') as fd:
+                data = fd.read()
+        else:
+            data = sfile.read()
         m = hashlib.sha256()
         m.update(data)
         print('loading schema file "{}" ({} bytes, SHA256 0x{})'.format(filename, len(data), m.hexdigest()))
@@ -1325,7 +1332,7 @@ class FbsSchema(object):
 
 class FbsRepository(object):
     """
-    crossbar.interfaces.IRealmInventory
+    crossbar.interfaces.IInventory
       - add: FbsRepository[]
         - load: FbsSchema[]
 
@@ -1350,24 +1357,27 @@ class FbsRepository(object):
         return catalog
 
     @property
-    def basemodule(self):
+    def basemodule(self) -> str:
         return self._basemodule
 
     @property
-    def schemata(self):
+    def schemata(self) -> Dict[str, FbsSchema]:
         return self._schemata
 
     @property
-    def objs(self):
+    def objs(self) -> Dict[str, FbsObject]:
         return self._objs
 
     @property
-    def enums(self):
+    def enums(self) -> Dict[str, FbsEnum]:
         return self._enums
 
     @property
-    def services(self):
+    def services(self) -> Dict[str, FbsService]:
         return self._services
+
+    def total_count(self):
+        return len(self._objs) + len(self._enums) + len(self._services)
 
     def load(self, filename: str):
         """
