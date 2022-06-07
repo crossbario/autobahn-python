@@ -32,13 +32,16 @@ import textwrap
 from typing import Union
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional, IO, Any
+from typing import Dict, List, Optional, IO, Any, Tuple
 
 # FIXME
 # https://github.com/google/yapf#example-as-a-module
 from yapf.yapflib.yapf_api import FormatCode
 
-from autobahn.util import hlval
+import txaio
+from autobahn.wamp.exception import InvalidPayload
+from autobahn.util import hlval, hltype
+
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
 
@@ -1195,7 +1198,7 @@ class FbsSchema(object):
             data = sfile.read()
         m = hashlib.sha256()
         m.update(data)
-        print('loading schema file "{}" ({} bytes, SHA256 0x{})'.format(filename, len(data), m.hexdigest()))
+        # print('loading schema file "{}" ({} bytes, SHA256 0x{})'.format(filename, len(data), m.hexdigest()))
 
         # get root object in Flatbuffers reflection schema
         # see: https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
@@ -1346,6 +1349,7 @@ class FbsRepository(object):
 
     https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
     """
+    log = txaio.make_logger()
 
     def __init__(self, basemodule: str):
         self._basemodule = basemodule
@@ -1388,7 +1392,7 @@ class FbsRepository(object):
     def total_count(self):
         return len(self._objs) + len(self._enums) + len(self._services)
 
-    def load(self, filename: str):
+    def load(self, filename: str) -> Tuple[int, int]:
         """
         Load and add all schemata from Flatbuffers binary schema files (`*.bfbs`)
         found in the given directory. Alternatively, a path to a single schema file
@@ -1397,6 +1401,7 @@ class FbsRepository(object):
         :param filename: Filesystem path of a directory or single file from which to
             load and add Flatbuffers schemata.
         """
+        file_dups = 0
         load_from_filenames = []
         if os.path.isdir(filename):
             for path in Path(filename).rglob('*.bfbs'):
@@ -1404,12 +1409,14 @@ class FbsRepository(object):
                 if fn not in self._schemata:
                     load_from_filenames.append(fn)
                 else:
-                    print('duplicate schema file skipped ("{}" already loaded)'.format(fn))
+                    # print('duplicate schema file skipped ("{}" already loaded)'.format(fn))
+                    file_dups += 1
         elif os.path.isfile(filename):
             if filename not in self._schemata:
                 load_from_filenames.append(filename)
             else:
-                print('duplicate schema file skipped ("{}" already loaded)'.format(filename))
+                # print('duplicate schema file skipped ("{}" already loaded)'.format(filename))
+                file_dups += 1
         elif ',' in filename:
             for filename_single in filename.split(','):
                 filename_single = os.path.expanduser(filename_single)
@@ -1424,6 +1431,10 @@ class FbsRepository(object):
         else:
             raise RuntimeError('cannot open schema file or directory: "{}"'.format(filename))
 
+        enum_dups = 0
+        obj_dups = 0
+        svc_dups = 0
+
         # iterate over all schema files found
         for fn in load_from_filenames:
             # load this schema file
@@ -1432,25 +1443,31 @@ class FbsRepository(object):
             # add enum types to repository by name
             for enum in schema.enums.values():
                 if enum.name in self._enums:
-                    print('skipping duplicate enum type for name "{}"'.format(enum.name))
+                    # print('skipping duplicate enum type for name "{}"'.format(enum.name))
+                    enum_dups += 1
                 else:
                     self._enums[enum.name] = enum
 
             # add object types
             for obj in schema.objs.values():
                 if obj.name in self._objs:
-                    print('skipping duplicate object (table/struct) type for name "{}"'.format(obj.name))
+                    # print('skipping duplicate object (table/struct) type for name "{}"'.format(obj.name))
+                    obj_dups += 1
                 else:
                     self._objs[obj.name] = obj
 
             # add service definitions ("APIs")
             for svc in schema.services.values():
                 if svc.name in self._services:
-                    print('skipping duplicate service type for name "{}"'.format(svc.name))
+                    # print('skipping duplicate service type for name "{}"'.format(svc.name))
+                    svc_dups += 1
                 else:
                     self._services[svc.name] = svc
 
             self._schemata[fn] = schema
+
+        type_dups = enum_dups + obj_dups + svc_dups
+        return file_dups, type_dups
 
     def summary(self, keys=False):
         if keys:
@@ -1810,3 +1827,80 @@ class FbsRepository(object):
                     fd.write(data)
 
                 print('Ok, written {} bytes to {}'.format(len(data), fn))
+
+    def validate(self, args, kwargs, vt_args, vt_kwargs):
+        """
+
+        :param args:
+        :param kwargs:
+        :param vt_args:
+        :param vt_kwargs:
+        :return:
+        """
+        # validate positional arguments
+        #
+        if len(args) != len(vt_args):
+            msg = 'validation error: invalid args length (got {args_len}, expected {vt_args_len})'.format(
+                args_len=len(args), vt_args_len=len(vt_args))
+            self.log.warn('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
+            raise InvalidPayload(msg)
+
+        for vt_arg_idx, vt_arg in enumerate(vt_args):
+            self.log.info('{func} validate {vt_arg_idx} using validation type {vt_arg}',
+                          func=hltype(self.validate),
+                          vt_arg_idx=hlval('args[{}]'.format(vt_arg_idx), color='yellow'),
+                          vt_arg=hlval(vt_arg, color='yellow'))
+            if vt_arg in self.objs:
+                vt: FbsObject = self.objs[vt_arg]
+                if not vt.is_struct:
+                    if type(args[vt_arg_idx]) != dict:
+                        msg = 'validation error: invalid arg type, {vt_arg_idx} has type {arg_type}, not dict'.format(
+                            vt_arg_idx='args[{}]'.format(vt_arg_idx), arg_type=type(args[vt_arg_idx]))
+                        self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
+                        raise InvalidPayload(msg)
+                else:
+                    self.log.info(
+                        '{func} validation type {vt_arg} found in repo, but is a struct, '
+                        'not a table type',
+                        func=hltype(self.validate),
+                        vt_arg=hlval(vt_arg, color='red'))
+            else:
+                self.log.info('{func} validation type {vt_arg} not found in repo (within keys {vt_keys})',
+                              func=hltype(self.validate),
+                              vt_arg=hlval(vt_arg, color='red'),
+                              vt_keys=list(self.objs.keys()))
+
+        # validate keyword arguments
+        #
+        if len(kwargs) != len(vt_kwargs):
+            msg = 'validation error: invalid kwargs length (got {kwargs_len}, expected {vt_kwargs})'.format(
+                kwargs_len=len(kwargs), vt_kwargs=len(vt_kwargs))
+            self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
+            raise InvalidPayload(msg)
+
+        for vt_kwarg_key, vt_kwarg in vt_kwargs.items():
+            self.log.info('{func} validate {vt_kwarg_key} using validation type {vt_kwarg}',
+                          func=hltype(self.validate),
+                          vt_kwarg_key=hlval('kwargs[{}]'.format(vt_kwarg_key), color='yellow'),
+                          vt_kwarg=hlval(vt_kwarg, color='yellow'))
+            if vt_kwarg in self.objs:
+                vt: FbsObject = self.objs[vt_kwarg]
+                if not vt.is_struct:
+                    if type(kwargs[vt_kwarg_key]) != dict:
+                        msg = 'validation error: invalid arg type, {vt_kwarg_key} has type {kwarg_type}, not dict'.format(
+                            vt_kwarg_key='kwargs[{}]'.format(vt_kwarg_key), kwarg_type=type(kwargs[vt_kwarg_key]))
+                        self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
+                        raise InvalidPayload(msg)
+                else:
+                    self.log.info(
+                        '{func} validation type {vt_kwarg} found in repo, but is a struct, '
+                        'not a table type',
+                        func=hltype(self.validate),
+                        vt_kwarg=hlval(vt_kwarg, color='red'))
+            else:
+                self.log.info('{func} validation type {vt_kwarg} not found in repo (within keys {vt_keys})',
+                              func=hltype(self.validate),
+                              vt_kwarg=hlval(vt_kwarg, color='red'),
+                              vt_keys=list(self.objs.keys()))
+
+        self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval('validation success!', color='green'))

@@ -146,6 +146,9 @@ test_xbr_cli:
 	xbrnetwork get-actor
 	xbrnetwork get-actor --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3
 
+test_xbr_schema:
+	USE_TWISTED=1 trial autobahn.xbr.test.test_xbr_schema
+
 test_mnemonic:
 	# python -m pytest -rsx autobahn/xbr/test/test_mnemonic.py
 	USE_TWISTED=1 trial autobahn.xbr.test
