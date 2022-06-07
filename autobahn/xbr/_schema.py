@@ -32,7 +32,7 @@ import textwrap
 from typing import Union
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional, IO
+from typing import Dict, List, Optional, IO, Any
 
 # FIXME
 # https://github.com/google/yapf#example-as-a-module
@@ -49,6 +49,8 @@ class FbsType(object):
 
     See: https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
     """
+
+    __slots__ = ('_repository', '_schema', '_basetype', '_element', '_index', '_objtype')
 
     # no type
     None_ = _BaseType.None_
@@ -195,15 +197,15 @@ class FbsType(object):
         self._objtype = objtype
 
     @property
-    def repository(self):
+    def repository(self) -> 'FbsRepository':
         return self._repository
 
     @property
-    def schema(self):
+    def schema(self) -> 'FbsSchema':
         return self._schema
 
     @property
-    def basetype(self):
+    def basetype(self) -> int:
         """
         Flatbuffers base type.
 
@@ -212,7 +214,7 @@ class FbsType(object):
         return self._basetype
 
     @property
-    def element(self):
+    def element(self) -> int:
         """
         Only if basetype == Vector or basetype == Array.
 
@@ -221,7 +223,7 @@ class FbsType(object):
         return self._element
 
     @property
-    def index(self):
+    def index(self) -> int:
         """
         If basetype == Object, index into "objects".
 
@@ -230,7 +232,7 @@ class FbsType(object):
         return self._index
 
     @property
-    def objtype(self):
+    def objtype(self) -> Optional[str]:
         """
         If basetype == Object, fully qualified object type name.
 
@@ -306,10 +308,10 @@ class FbsType(object):
         else:
             raise RuntimeError('cannot map FlatBuffers type to target language "{}" in {}'.format(language, self.map))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
-    def marshal(self):
+    def marshal(self) -> Dict[str, Any]:
         obj = {
             'basetype': self.FBS2STR.get(self._basetype, None),
             'element': self.FBS2STR.get(self._element, None),
@@ -328,6 +330,9 @@ class FbsAttribute(object):
 
 
 class FbsField(object):
+    __slots__ = ('_repository', '_schema', '_name', '_type', '_id', '_offset', '_default_int',
+                 '_default_real', '_deprecated', '_required', '_attrs', '_docs')
+
     def __init__(self,
                  repository: 'FbsRepository',
                  schema: 'FbsSchema',
@@ -355,57 +360,57 @@ class FbsField(object):
         self._docs = docs
 
     @property
-    def repository(self):
+    def repository(self) -> 'FbsRepository':
         return self._repository
 
     @property
-    def schema(self):
+    def schema(self) -> 'FbsSchema':
         return self._schema
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def type(self):
+    def type(self) -> FbsType:
         return self._type
 
     @property
-    def id(self):
+    def id(self) -> int:
         return self._id
 
     @property
-    def offset(self):
+    def offset(self) -> int:
         return self._offset
 
     @property
-    def default_int(self):
+    def default_int(self) -> int:
         return self._default_int
 
     @property
-    def default_real(self):
+    def default_real(self) -> float:
         return self._default_real
 
     @property
-    def deprecated(self):
+    def deprecated(self) -> bool:
         return self._deprecated
 
     @property
-    def required(self):
+    def required(self) -> bool:
         return self._required
 
     @property
-    def attrs(self):
+    def attrs(self) -> Dict[str, FbsAttribute]:
         return self._attrs
 
     @property
-    def docs(self):
+    def docs(self) -> str:
         return self._docs
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
-    def marshal(self):
+    def marshal(self) -> Dict[str, Any]:
         obj = {
             'name': self._name,
             'type': self._type.marshal() if self._type else None,
@@ -590,6 +595,9 @@ def parse_calls(repository, schema, svc_obj, objs_lst=None):
 
 
 class FbsObject(object):
+    __slots__ = ('_repository', '_schema', '_declaration_file', '_name', '_fields', '_fields_by_id',
+                 '_is_struct', '_min_align', '_bytesize', '_attrs', '_docs')
+
     def __init__(self,
                  repository: 'FbsRepository',
                  schema: 'FbsSchema',
@@ -642,53 +650,53 @@ class FbsObject(object):
             raise NotImplementedError()
 
     @property
-    def repository(self):
+    def repository(self) -> 'FbsRepository':
         return self._repository
 
     @property
-    def schema(self):
+    def schema(self) -> 'FbsSchema':
         return self._schema
 
     @property
-    def declaration_file(self):
+    def declaration_file(self) -> str:
         return self._declaration_file
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def fields(self):
+    def fields(self) -> Dict[str, FbsField]:
         return self._fields
 
     @property
-    def fields_by_id(self):
+    def fields_by_id(self) -> List[FbsField]:
         return self._fields_by_id
 
     @property
-    def is_struct(self):
+    def is_struct(self) -> bool:
         return self._is_struct
 
     @property
-    def min_align(self):
+    def min_align(self) -> int:
         return self._min_align
 
     @property
-    def bytesize(self):
+    def bytesize(self) -> int:
         return self._bytesize
 
     @property
-    def attrs(self):
+    def attrs(self) -> Dict[str, FbsAttribute]:
         return self._attrs
 
     @property
-    def docs(self):
+    def docs(self) -> str:
         return self._docs
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
-    def marshal(self):
+    def marshal(self) -> Dict[str, Any]:
         obj = {
             'name': self._name,
             'declaration_file': self._declaration_file,
@@ -1361,7 +1369,7 @@ class FbsRepository(object):
         return self._basemodule
 
     @property
-    def schemata(self) -> Dict[str, FbsSchema]:
+    def schemas(self) -> Dict[str, FbsSchema]:
         return self._schemata
 
     @property
@@ -1376,6 +1384,7 @@ class FbsRepository(object):
     def services(self) -> Dict[str, FbsService]:
         return self._services
 
+    @property
     def total_count(self):
         return len(self._objs) + len(self._enums) + len(self._services)
 
