@@ -44,21 +44,18 @@ from autobahn.util import hlval, hltype
 
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
+from zlmdb.flatbuffers.reflection.Field import Field
 
 
 class FbsType(object):
     """
     Flatbuffers type.
 
-    See: https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
+    See: https://github.com/google/flatbuffers/blob/11a19887053534c43f73e74786b46a615ecbf28e/reflection/reflection.fbs#L33
     """
 
     __slots__ = ('_repository', '_schema', '_basetype', '_element', '_index', '_objtype')
 
-    # no type
-    None_ = _BaseType.None_
-
-    # ???
     UType = _BaseType.UType
 
     # scalar types
@@ -98,7 +95,6 @@ class FbsType(object):
                         _BaseType.Union]
 
     FBS2PY = {
-        _BaseType.None_: 'type(None)',
         _BaseType.UType: 'int',
         _BaseType.Bool: 'bool',
         _BaseType.Byte: 'bytes',
@@ -146,7 +142,6 @@ class FbsType(object):
     }
 
     FBS2STR = {
-        _BaseType.None_: 'None',
         _BaseType.UType: 'UType',
         _BaseType.Bool: 'Bool',
         _BaseType.Byte: 'Byte',
@@ -166,7 +161,6 @@ class FbsType(object):
     }
 
     STR2FBS = {
-        'None': _BaseType.None_,
         'UType': _BaseType.UType,
         'Bool': _BaseType.Bool,
         'Byte': _BaseType.Byte,
@@ -229,6 +223,8 @@ class FbsType(object):
     def index(self) -> int:
         """
         If basetype == Object, index into "objects".
+        If base_type == Union, UnionType, or integral derived from an enum, index into "enums".
+        If base_type == Vector && element == Union or UnionType.
 
         :return:
         """
@@ -242,6 +238,8 @@ class FbsType(object):
         :return:
         """
         if self._basetype == FbsType.Obj:
+            # lazy-resolve of object type index to object type name. this is important (!)
+            # to decouple from loading order of type objects
             if self._objtype is None:
                 self._objtype = self._schema.objs_by_id[self._index].name
                 # print('filled in missing objtype "{}" for type index {} in object {}'.format(self._objtype, self._index, self))
@@ -315,11 +313,12 @@ class FbsType(object):
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
     def marshal(self) -> Dict[str, Any]:
+        # important: use properties, not private object attribute access (!)
         obj = {
-            'basetype': self.FBS2STR.get(self._basetype, None),
-            'element': self.FBS2STR.get(self._element, None),
-            'index': self._index,
-            'objtype': self._objtype,
+            'basetype': self.FBS2STR.get(self.basetype, None),
+            'element': self.FBS2STR.get(self.element, None),
+            'index': self.index,
+            'objtype': self.objtype,
         }
         return obj
 
@@ -463,7 +462,7 @@ def parse_fields(repository, schema, obj, objs_lst=None):
     fields_by_name = {}
     fields_by_id = []
     for j in range(obj.FieldsLength()):
-        fbs_field = obj.Fields(j)
+        fbs_field: Field = obj.Fields(j)
 
         field_name = fbs_field.Name()
         if field_name:
@@ -472,12 +471,15 @@ def parse_fields(repository, schema, obj, objs_lst=None):
         field_id = int(fbs_field.Id())
         fbs_field_type = fbs_field.Type()
 
-        # FIXME
+        # we use lazy-resolve for this property
         _objtype = None
-        if fbs_field_type.Index() >= 0:
-            if len(objs_lst) > fbs_field_type.Index():
-                _obj = objs_lst[fbs_field_type.Index()]
-                _objtype = _obj.name
+
+        # # FIXME
+        # _objtype = None
+        # if fbs_field_type.Index() >= 0:
+        #     if len(objs_lst) > fbs_field_type.Index():
+        #         _obj = objs_lst[fbs_field_type.Index()]
+        #         _objtype = _obj.name
 
         field_type = FbsType(repository=repository,
                              schema=schema,
@@ -1858,17 +1860,25 @@ class FbsRepository(object):
                             vt_arg_idx='args[{}]'.format(vt_arg_idx), arg_type=type(args[vt_arg_idx]))
                         self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
                         raise InvalidPayload(msg)
+                    for field in vt.fields_by_id:
+                        if field.name in args[vt_arg_idx]:
+                            print('ok')
+                        elif field.required:
+                            print('missing required field {}'.format(field.name))
+                            raise InvalidPayload('missing required field {}'.format(field.name))
                 else:
-                    self.log.info(
+                    self.log.warn(
                         '{func} validation type {vt_arg} found in repo, but is a struct, '
                         'not a table type',
                         func=hltype(self.validate),
                         vt_arg=hlval(vt_arg, color='red'))
+                    assert False
             else:
-                self.log.info('{func} validation type {vt_arg} not found in repo (within keys {vt_keys})',
+                self.log.warn('{func} validation type {vt_arg} not found in repo (within keys {vt_keys})',
                               func=hltype(self.validate),
                               vt_arg=hlval(vt_arg, color='red'),
                               vt_keys=list(self.objs.keys()))
+                assert False, 'validation type "{}" not found'.format(vt_arg)
 
         # validate keyword arguments
         #

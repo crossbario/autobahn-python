@@ -17,8 +17,11 @@ class TestFbsRepository(unittest.TestCase):
         self.repo = FbsRepository('autobahn')
         self.repo.load(self.archive)
 
-    def test_from_config(self):
+    def test_from_archive(self):
         self.assertEqual(self.repo.total_count, 49)
+
+        self.assertTrue('uint160_t' in self.repo.objs)
+        self.assertIsInstance(self.repo.objs['uint160_t'], FbsObject)
 
         self.assertTrue('trading.ClockTick' in self.repo.objs)
         self.assertIsInstance(self.repo.objs['trading.ClockTick'], FbsObject)
@@ -28,6 +31,9 @@ class TestFbsRepository(unittest.TestCase):
 
     def test_validate(self):
         try:
-            self.repo.validate(args=[1], kwargs={}, vt_args=['uint32'], vt_kwargs={})
+            self.repo.validate(args=[{'value2': '0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047'}],
+                               kwargs={},
+                               vt_args=['Address'],
+                               vt_kwargs={})
         except Exception as exc:
-            self.assertTrue(False, f'Inventory.validate() raised an exception {exc}')
+            self.assertTrue(False, f'Inventory.validate() raised an exception: {exc}')
