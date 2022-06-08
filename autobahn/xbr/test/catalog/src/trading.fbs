@@ -612,7 +612,7 @@ table Period
 /// Write me.
 rpc_service ILimitOrderBookReader(type: "interface",
                                   uuid: "0f9ee229-520d-4cea-88c9-e8e428da5660",
-                                  uri: "eth.pydefi.lobreader.<uuid:reader>")
+                                  wrn: "eth.pydefi.lobreader.<uuid:reader>")
 {
     /// Write me.
     get_reader_info (Void): ReaderInfoSigned (type: "procedure");
@@ -622,19 +622,19 @@ rpc_service ILimitOrderBookReader(type: "interface",
 
     /// Write me.
     get_exchange_info (Void): ExchangeInfoSigned (type: "procedure",
-                                                  uri: "exchange.<uuid:exchanged>.get_exchange");
+                                                  wrn: "exchange.<uuid:exchanged>.get_exchange");
 
     /// Write me.
     list_books (Void): Oids (type: "procedure",
-                             uri: "exchange.<uuid:exchange>.list_books");
+                             wrn: "exchange.<uuid:exchange>.list_books");
 
     /// Write me.
     get_book_info (Oid): OrderbookInfoSigned (type: "procedure",
-                                              uri: "exchange.<uuid:exchange>.book.<uid:book>.get_book_info");
+                                              wrn: "exchange.<uuid:exchange>.book.<uid:book>.get_book_info");
 
     /// Write me.
     on_book_update (OrderbookUpdateSigned): Void (type: "topic",
-                                                  uri: "exchange.<uuid:exchange>.book.<uid:book>.on_book_update",
+                                                  wrn: "exchange.<uuid:exchange>.book.<uid:book>.on_book_update",
                                                   options: "transaction_hash");
 }
 
@@ -642,13 +642,13 @@ rpc_service ILimitOrderBookReader(type: "interface",
 /// Interface for signed trading clock.
 rpc_service ITradingClock(type: "interface",
                           uuid: "81256d9b-1e0a-434c-aa75-9cc0dfe8e1ea",
-                          uri: "eth.pydefi.clock.<uuid:clock>")
+                          wrn: "eth.pydefi.clock.<uuid:clock>")
 {
     /// Write me.
-    get_clock_address (Void): Address (type: "procedure");
+    get_clock_address (Void): EthAddress (type: "procedure");
 
     /// Write me.
-    on_clock_tick (ClockTickSigned): Void (type: "topic", uri: "on_clock_tick.<int:warp_level>");
+    on_clock_tick (ClockTickSigned): Void (type: "topic", wrn: "on_clock_tick.<int:warp_level>");
 }
 
 
@@ -656,35 +656,35 @@ rpc_service ITradingClock(type: "interface",
 /// order book level-II updates published by one or more order book readers.
 rpc_service ILimitOrderBookReplica(type: "interface",
                                    uuid: "6563cfac-498c-47cd-9ff1-24cbd0bdc6e5",
-                                   uri: "eth.pydefi.replica.<uuid:replica>")
+                                   wrn: "eth.pydefi.replica.<uuid:replica>")
 {
     /// Write me.
-    get_replica_info (Void): Address (type: "procedure");
+    get_replica_info (Void): EthAddress (type: "procedure");
 
     /// Write me.
     list_books (Void): Oids (type: "procedure");
 
     /// Write me.
-    get_book_info (Void): MarketSigned (type: "procedure", uri: "book.<uuid:book>.get_book_info");
+    get_book_info (Void): MarketSigned (type: "procedure", wrn: "book.<uuid:book>.get_book_info");
 
     /// Write me.
-    get_price (Void): PriceSigned (type: "procedure", uri: "book.<uuid:book>.get_price");
+    get_price (Void): PriceSigned (type: "procedure", wrn: "book.<uuid:book>.get_price");
 
     /// Write me.
-    on_price_tick (PriceSigned): Void (type: "topic", uri: "book.<uuid:book>.on_price_tick.<int:warp_level>");
+    on_price_tick (PriceSigned): Void (type: "topic", wrn: "book.<uuid:book>.on_price_tick.<int:warp_level>");
 
     /// Write me.
-    get_price_history (Period): Orderbook (type: "procedure", uri: "book.<uuid:book>.get_price_history");
+    get_price_history (Period): Orderbook (type: "procedure", wrn: "book.<uuid:book>.get_price_history");
 
     /// Write me.
-    on_candle_tick (PriceSigned): Void (type: "topic", uri: "book.<uuid:book>.on_candle_tick.<int:warp_level>");
+    on_candle_tick (PriceSigned): Void (type: "topic", wrn: "book.<uuid:book>.on_candle_tick.<int:warp_level>");
 
     /// Write me.
-    get_candle_history (Period): Candle (type: "procedure", uri: "book.<uuid:book>.get_candle_history");
+    get_candle_history (Period): Candle (type: "procedure", wrn: "book.<uuid:book>.get_candle_history");
 
     /// Write me.
-    compute_volume_between_prices (PriceInterval): VolumeSigned (type: "procedure", uri: "book.<uuid:book>.compute_volume_between_prices");
+    compute_volume_between_prices (PriceInterval): VolumeSigned (type: "procedure", wrn: "book.<uuid:book>.compute_volume_between_prices");
 
     /// Write me.
-    estimate_price_for_volume (Volume): PriceSigned (type: "procedure", uri: "book.<uuid:book>.estimate_price_for_volume");
+    estimate_price_for_volume (Volume): PriceSigned (type: "procedure", wrn: "book.<uuid:book>.estimate_price_for_volume");
 }

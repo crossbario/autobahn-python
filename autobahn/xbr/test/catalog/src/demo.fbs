@@ -11,8 +11,51 @@ include "wamp.fbs";
 namespace demo;
 
 
+/// Test enumeration A.
+enum TestEnumA: uint8
+{
+    /// Value is unset ("null").
+    NONE = 0,
+
+    /// Option A1.
+    A1 = 1,
+
+    /// Option A2.
+    A2 = 2,
+}
+
+
+/// Test enumeration B.
+enum TestEnumB: uint32
+{
+    /// Value is unset ("null").
+    NONE = 0,
+
+    /// Option B1.
+    B1 = 1,
+
+    /// Option B1.
+    B2 = 2,
+
+    /// Option B1.
+    B3 = 1000,
+
+    /// Option B1.
+    B4 = 1001,
+
+    /// Option B1.
+    B5 = 16777216,
+
+    /// Option B1.
+    B6 = 16777217,
+
+    /// Option B1.
+    B7 = 4294967295,
+}
+
+
 /// Test struct A
-struct StructA
+struct TestStructS1
 {
     /// Test field 1
     field1: int32;
@@ -28,27 +71,175 @@ struct StructA
 }
 
 
-/// Test table A
-table TableA
+/// Test table A with all scalar types, and no attributes.
+table TestTableA
 {
     /// Test column 1
-    column1: int32;
+    column1: bool;
 
     /// Test column 2
-    column2: uint64;
+    column2: byte;
 
     /// Test column 3
-    column3: uint64 (timestamp, readonly);
+    column3: ubyte;
 
     /// Test column 4
-    column4: uint160_t (ethadr);
+    column4: short;
 
     /// Test column 5
-    column5: string;
+    column5: ushort;
+
+    /// Test column 6
+    column6: int;
+
+    /// Test column 7
+    column7: uint;
+
+    /// Test column 8
+    column8: float;
+
+    /// Test column 9
+    column9: long;
+
+    /// Test column 10
+    column10: ulong;
+
+    /// Test column 11
+    column11: double;
+}
+
+
+/// Test table B with strings and binaries, with and without attributes.
+table TestTableB
+{
+    /// Test column 1
+    column1: string;
+
+    /// Test column 2
+    column2: string (wrn);
+
+    /// Test column 3
+    column3: string (url);
+
+    /// Test column 4
+    column4: string (multihash);
+
+    /// Test column 5
+    column5: [ubyte];
 
     /// Test column 6
     column6: [uint8];
 
     /// Test column 7
-    column7: StructA;
+    column7: [uint8] (cbor);
+
+    /// Test column 8
+    column8: [uint8] (ethsig);
+}
+
+
+/// Test table C with integers, with and without attributes.
+table TestTableC
+{
+    /// Test column 1
+    column1: uint64;
+
+    /// Test column 2
+    column2: uint64 (wid);
+
+    /// Test column 3
+    column3: uint64 (timestamp);
+}
+
+
+/// Test table D
+table TestTableD
+{
+    /// Test column 1
+    column1: [uint64] (ndarray);
+
+    /// Test column 2
+    column2: [uint32] (ndarray);
+
+    /// Test column 3
+    column3: [uint8] (ndarray);
+
+    /// Test column 4
+    column4: [double] (ndarray);
+
+    /// Test column 5
+    column5: [float] (ndarray);
+
+    /// Test column 6
+    column6: [uint64] (wid, ndarray);
+
+    /// Test column 7
+    column7: [uint64] (timestamp, ndarray);
+}
+
+
+/// Test table E
+table TestTableE
+{
+    /// Test column 7
+    column18: TestEnumA;
+
+    /// Test column 7
+    column19: TestEnumB;
+
+    /// Test column 7
+    column17: TestStructS1;
+}
+
+
+/// Test table F
+table TestTableF
+{
+    /// Test column 1
+    column1: string (kwarg);
+
+    /// Test column 2
+    column2: uint32 (kwarg);
+
+    /// Test column 3
+    column3: uint32 (arg);
+
+    /// Test column 4
+    column4: uint64 (arg, timestamp);
+
+    /// Test column 5
+    column5: string (arg);
+
+    /// Test column 6
+    column6: string (arg, wrn);
+
+    /// Test column 7
+    column7: uint160_t (arg, ethadr);
+
+    /// Test column 8
+    column8: TestEnumA (arg);
+
+    /// Test column 9
+    column9: uint32 (kwarg);
+
+    /// Test column 10
+    column10: uint64 (kwarg, timestamp);
+
+    /// Test column 111
+    column11: string (kwarg);
+
+    /// Test column 12
+    column12: string (kwarg, wrn);
+
+    /// Test column 13
+    column13: uint160_t (kwarg, ethadr);
+
+    /// Test column 14
+    column14: TestEnumA (kwarg);
+
+    /// Test column 15
+    column15: string (arg);
+
+    /// Test column 16
+    column16: uint32 (arg);
 }
