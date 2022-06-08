@@ -1,0 +1,172 @@
+/// Meta type attribute.
+attribute type;
+
+/// Meta options attribute.
+attribute options;
+
+/// The field or value is read-only.
+attribute readonly;
+
+/// References other object (foreign key in RDBMS)
+attribute references;
+
+/// At most one record can have this value at any point in time (unique constraint in RDBMS)
+attribute unique;
+
+
+/// Ethereum value (256 bit binary).
+attribute uint256;
+
+/// Unsigned integer value (64 bit binary).
+attribute uint64;
+
+/// Multihash string (eg IPFS), see https://github.com/multiformats/multihash.
+attribute multihash;
+
+/// CBOR-serialized object or value.
+attribute cbor;
+
+/// UUID (128 bit binary).
+attribute uuid;
+
+/// SHA-256 hash value (256 bit binary).
+attribute sha256;
+
+/// Timestamp: ns since Unix epoch (1970/1/1 UTC) (64 bit unsigned int).
+attribute timestamp;
+
+/// A NumPy one dimensional (`ndim=1`) `numpy.ndarray` container of items of the same type and size (`dtype.kind in ['b', 'i', 'u', 'f']`).
+attribute ndarray;
+
+
+/// WAMP URI (fully qualified or URI pattern)
+attribute uri;
+
+/// WAMP URI component, must match `^[a-z0-9][a-z0-9_\-]*$`.
+attribute uricomponent;
+
+/// Ethereum block number (256 bit binary).
+attribute ethblock;
+
+/// Ethereum address (160 bit binary).
+attribute ethadr;
+
+/// Ethereum (Keccak-256) hash (256 bit binary). See https://github.com/ethereum/wiki/wiki/Ethash.
+attribute ethhash;
+
+/// Ethereum (off-chain EIP712) signature (65 bytes).
+attribute ethsig;
+
+
+/// Object reference.
+struct oid_t
+{
+    msb: uint64;
+    lsb: uint64;
+}
+
+
+/// Object version reference.
+struct ObjRef
+{
+    /// OID of the referenced object: 128 bit with UUID.
+    oid: oid_t;
+
+    /// Version of the referenced object, starting with 1, and incremented
+    // by 1 on each object modification.
+    version: uint32;
+}
+
+
+/// A key-value pair with string keys & values.
+table KeyValue
+{
+    /// UTF8 encoded key of KV pair.
+    key: string (required, key);
+
+    /// UTF8 encoded value of KV pair.
+    value: string;
+}
+
+
+/// An unsigned integer with 256 bits.
+struct uint256_t {
+    /// Least significand 64 bits.
+    q0: uint64;
+
+    /// 2nd significand 64 bits.
+    q1: uint64;
+
+    /// 3rd significand 64 bits.
+    q2: uint64;
+
+    /// Most significand 64 bits.
+    q3: uint64;
+}
+
+
+/// An unsigned integer with 160 bits.
+struct uint160_t {
+    /// Least significand 32 bits.
+    w0: uint32;
+
+    /// 2nd significand 32 bits.
+    w1: uint32;
+
+    /// 3rd significand 32 bits.
+    w2: uint32;
+
+    /// 4th significand 32 bits.
+    w3: uint32;
+
+    /// Most significand 32 bits.
+    w4: uint32;
+}
+
+
+/// An unsigned integer with 128 bits.
+struct uint128_t {
+    /// Least significand 64 bits.
+    q0: uint64;
+
+    /// Most significand 64 bits.
+    q1: uint64;
+}
+
+
+/// The void type containing no value at all.
+table Void
+{
+}
+
+
+/// A single object UUID.
+table Oid
+{
+    /// Object UUID.
+    value: uint128_t (uuid);
+}
+
+
+/// A list of object UUIDs
+table Oids
+{
+    /// List of object UUIDs.
+    value: [uint128_t] (uuid);
+}
+
+
+/// A single Ethereum address.
+table Address
+{
+    /// The address binary value.
+    value: uint160_t (ethadr);
+}
+
+
+/// A list of Ethereum addresses.
+table Addresses
+{
+    /// List of addresses.
+    value: [uint160_t] (ethadr);
+}

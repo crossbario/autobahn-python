@@ -1862,10 +1862,14 @@ class FbsRepository(object):
                         raise InvalidPayload(msg)
                     for field in vt.fields_by_id:
                         if field.name in args[vt_arg_idx]:
-                            print('ok')
+                            # print('ok')
+                            pass
                         elif field.required:
                             print('missing required field {}'.format(field.name))
-                            raise InvalidPayload('missing required field {}'.format(field.name))
+                            raise InvalidPayload('missing required field "{}"'.format(field.name))
+                    for key in args[vt_arg_idx]:
+                        if key not in vt.fields:
+                            raise InvalidPayload('unexpected key "{}" for field "{}"'.format(key, vt.name))
                 else:
                     self.log.warn(
                         '{func} validation type {vt_arg} found in repo, but is a struct, '

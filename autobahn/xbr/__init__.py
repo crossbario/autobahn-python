@@ -377,6 +377,7 @@ try:
         'IBuyer',
         'IDelegate',
 
+        'FbsRepository',
         'FbsSchema',
         'FbsService',
         'FbsType',

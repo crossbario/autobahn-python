@@ -1,0 +1,690 @@
+include "wamp.fbs";
+
+namespace trading;
+
+
+/// Time period, eg to aggregate transaction data within.
+enum PeriodDuration: uint8
+{
+    /// Value is unset ("null"). value ("null").
+    NONE = 0,
+
+    /// Virtual period "now" (0 seconds).
+    NOW = 1,
+
+    /// Virtual period of one block on a blockchain network (~12 seconds on Ethereum mainnet).
+    BLOCK = 2,
+
+    /// Time period of 100 ms.
+    MS_100 = 3,
+
+    /// Time period of 250 ms.
+    MS_250 = 4,
+
+    /// Time period of 500 ms.
+    MS_500 = 5,
+
+    /// Time period of one second.
+    SECOND = 6,
+
+    /// Time period of 5 seconds (5 seconds).
+    SECONDS_5 = 7,
+
+    /// Time period of 15 seconds (15 seconds).
+    SECONDS_15 = 8,
+
+    /// Time period of one minute (60 seconds).
+    MINUTE = 9,
+
+    /// Time period of 5 minutes (300 seconds).
+    MINUTES_5 = 10,
+
+    /// Time period of 5 minutes (600 seconds).
+    MINUTES_10 = 11,
+
+    /// Time period of 15 minutes (900 seconds).
+    MINUTES_15 = 12,
+
+    /// Time period of 15 minutes (1800 seconds).
+    MINUTES_30 = 13,
+
+    /// Time period of one hour (3600 seconds).
+    HOUR = 14,
+
+    /// Time period of one hour (7200 seconds).
+    HOURS_2 = 15,
+
+    /// Time period of four hours (14400 seconds).
+    HOURS_4 = 16,
+
+    /// Time period of six hours (21600 seconds).
+    HOURS_6 = 17,
+
+    /// Time period of eight hours (28800 seconds).
+    HOURS_8 = 18,
+
+    /// Time period of eight hours (43200 seconds).
+    HOURS_12 = 19,
+
+    /// Time period of one day (86400 seconds).
+    DAY = 20,
+
+    /// Time period of one week (7 * 86400 seconds).
+    WEEK = 21,
+
+    /// Time period of one month (30 * 86400 seconds).
+    MONTH = 22,
+
+    /// Time period of one quarter (3 * 30 * 86400 seconds).
+    QUARTER = 23,
+
+    /// Time period of one year (12 * 30 * 86400 seconds).
+    YEAR = 24
+}
+
+
+/// Crypto exchange main categories. "Exchange" is a public crypto exchange available on Ethereum mainnet.
+enum ExchangeCategory: uint8
+{
+    /// Value is unset ("null").
+    NONE = 0,
+
+    /// Public centralized crypto exchange.
+    CENTRALIZED = 1,
+
+    /// Public decentralized (and permissionless) crypto exchange.
+    DECENTRALIZED = 2,
+}
+
+
+/// Type of market for cryptocurrency pair, e.g. PERP (for a perpetual future market pair) or SPOT (for spot market pair).
+enum MarketType: uint8
+{
+    /// Value is unset ("null").
+    NONE = 0,
+
+    /// Spot market trading pair.
+    SPOT = 1,
+
+    /// Perpetual future market trading pair.
+    PERP = 2,
+}
+
+
+/// Long/Buy or Short/Sell trade in a cryptocurrency pair.
+enum TradeSide: uint8
+{
+    /// Value is unset ("null").
+    NONE = 0,
+
+    /// Long/Buy trade or order.
+    BUY = 1,
+
+    /// Short/Sell trade or order.
+    SELL = 2,
+}
+
+
+/// Order types for cryptocurrency pairs in markets.
+enum OrderType: uint8
+{
+    /// Value is unset ("null").
+    NONE = 0,
+
+    /// Market order (must be FOK or IOC).
+    MARKET = 1,
+
+    /// Limit order.
+    LIMIT = 2,
+
+    /// Stop limit order.
+    STOP = 3,
+
+    /// Trailing stop limit order.
+    TRAILING_STOP = 4,
+
+    /// Trailing stop limit order.
+    TAKE_PROFIT = 5,
+
+    /// Indicates the account was liquidated (fills only).
+    LIQUIDATED = 6,
+
+    /// Indicates the account took over a liquidated account (fills only).
+    LIQUIDATION = 7,
+}
+
+
+/// Cryptocurrency pairs BASE/QUOTE, specifically perpetual futures on pairs of crypto tokens BASE and QUOTE, abstracted from specific exchanges.
+table Pair
+{
+    /// Database object ID. [primary key]
+    oid: [uint8] (uuid);
+
+    /// Database transaction time (epoch time in ns) of insert or last update.
+    modified: uint64 (timestamp);
+
+    /// Cryptocurrency pair, e.g. "ETH/USDC Perp" for perpetual future on "ETH" (base) in "USDC" (quote).
+    name: string;
+
+    /// Name of the based currency bought in the pair, e.g. "ETH" for a "ETH/USDC" perpetual future (first currency in a currency pair). Base currency always has a value of 1.
+    base: string;
+
+    /// Name of the quote currency sold in the pair, e.g. "USDC" for a "ETH/USDC" perpetual future (second currency in a currency pair).
+    quote: string;
+
+    /// Object extra information for flexible use by application.
+    extra: [uint8] (cbor);
+}
+
+
+/// Cryptocurrency exchanges, abstracted from specific different EVM networks / endpoints operated by exchanges.
+table Exchange
+{
+    /// Database object ID. [primary key]
+    oid: [uint8] (uuid);
+
+    /// Database transaction time (epoch time in ns) of insert or last update.
+    modified: uint64 (timestamp);
+
+    /// Exchange name for display purposes.
+    name: string;
+
+    /// Exchange main category.
+    category: ExchangeCategory;
+
+    /// Country of legal and regulatory domicile of exchange (``ISO 3166-1 alpha-2`` code).
+    domicile: string;
+
+    /// HTTP URL of official trading app of exchange.
+    url: string;
+
+    /// Object extra information for flexible use by application.
+    extra: [uint8] (cbor);
+}
+
+
+/// Concrete (operating) crypto exchange networks (endpoints) on specific exchanges.
+table Endpoint
+{
+    /// Database object ID of network via endpoint on exchange. [primary key]
+    oid: [uint8] (uuid);
+
+    /// Database object ID of exchange. [foreign key]
+    exchange_oid: [uint8] (uuid);
+
+    /// Database object ID of network. [foreign key]
+    network_oid: [uint8] (uuid);
+
+    /// Database transaction time (epoch time in ns) of insert or last update.
+    modified: uint64 (timestamp);
+
+    /// Unique name to identify the network on the exchange.
+    name: string;
+
+    /// HTTP/REST API endpoint URL exposed by the exchange (if applicable).
+    api_rest: string;
+
+    /// WebSocket API endpoint URL exposed by the exchange (if applicable).
+    api_websocket: string;
+
+    /// Object extra information for flexible use by application.
+    extra: [uint8] (cbor);
+}
+
+
+/// Cryptocurrency markets (pairs tradeable) on specific exchange network.
+table Market
+{
+    /// Database object ID of trading pair. [primary key]
+    oid: [uint8] (uuid);
+
+    /// Database object ID of exchange network via which this pair is trading. [foreign key]
+    endpoint_oid: [uint8] (uuid);
+
+    /// Database object ID of cryptocurrency pair that is traded. [foreign key]
+    pair_oid: [uint8] (uuid);
+
+    /// Type of market of this cryptocurrency trading pair.
+    market_type: MarketType;
+
+    /// Address of the base currency token on exchange network.
+    pair_base_adr: [uint8] (ethadr);
+
+    /// Address of the quote currency token on exchange network.
+    pair_quote_adr: [uint8] (ethadr);
+
+    /// Database transaction time (epoch time in ns) of insert or last update.
+    modified: uint64 (timestamp);
+
+    /// Unique name to identify the market (trading pair) on the exchange network.
+    name: string;
+
+    /// Enable streaming (live) replication of trade data for this trading pair from the exchange network.
+    replicate_live: bool;
+
+    /// Start time of replicated trades (epoch time in ns) or ``null`` to disable replication of historical (non-live) data.
+    replicate_start: uint64 (timestamp);
+
+    /// Object extra information for flexible use by application.
+    extra: [uint8] (cbor);
+}
+
+
+/// Market ticks ("Level 1 Market Data") as published by the exchange for markets.
+table MarketTick
+{
+    /// Database object ID of the market this tick was received for. [primary key]
+    market_oid: [uint8] (uuid);
+
+    /// Transaction time (epoch time in ns) on the exchange (that is, as sent by the exchange in the data!). [primary key]
+    txn_ts: uint64 (timestamp);
+
+    /// Time (epoch time in ns) at which the tick was received (host walltime).
+    received_ts: uint64 (timestamp);
+
+    /// Current Index price of trading pair on the market.
+    index_price: double;
+
+    /// Current Oracle price of trading pair on the market.
+    oracle_price: double;
+
+    /// Current open interest of trading pair on the market.
+    open_interest: double;
+
+    /// Best bid price (if any bid exists) for the tick in the market.
+    bid_price: double;
+
+    /// Volume posted at best bid price (if any bid exists) for the tick in the market.
+    bid_quantity: double;
+
+    /// Best ask price (if any ask exists) for the tick in the market.
+    ask_price: double;
+
+    /// Volume posted at best ask price (if any ask exists) for the tick in the market.
+    ask_quantity: double;
+
+    /// Price in last trade (if any ask exists) for the tick in the market.
+    last_price: double;
+
+    /// Volume in last trade (if any ask exists) for the tick in the market.
+    last_quantity: double;
+}
+
+
+/// Order book updates (Level II Market Data) sent by the exchange in a live feed.
+table OrderbookUpdate
+{
+    /// Time (epoch time in number of months after 1970) at which the order book update was received (host walltime). [primary key]
+    received_month: uint16;
+
+    /// Database object ID of the market this tick was received for. [primary key]
+    market_oid: [uint8] (uuid);
+
+    /// Time (epoch time in ns) at which the order book update was received (host walltime). [primary key]
+    received_ts: uint64 (timestamp);
+
+    /// Transaction time (epoch time in ns) on the exchange (that is, as sent by the exchange in the data!).
+    txn_ts: uint64 (timestamp);
+
+    /// Asks (updates) ordered ascending by price.
+    asks_price: [double];
+
+    /// Quantity (interest) at respective ask price.
+    asks_quantity: [double];
+
+    /// Last update sequence number at respective ask price.
+    asks_seq: [uint64];
+
+    /// Bids (updates) ordered descending by price.
+    bids_price: [double];
+
+    /// Quantity (interest) at respective bid price.
+    bids_quantity: [double];
+
+    /// Last update sequence number at respective bid price.
+    bids_seq: [uint64];
+
+    /// Optional additional information sent by the exchange for this order book update.
+    extra: [uint8] (cbor);
+}
+
+
+/// Current and history of order book (Level II Market Data) as resulting from applying all updates sent by the exchange in a live feed.
+table Orderbook
+{
+    /// Period to which the orderbook record applies for, using PeriodDuration.NOW for the current orderbook (within the current yet unfinished period). [primary key]
+    period_dur: PeriodDuration;
+
+    /// Database object ID of the market this orderbook applies for, e.g. "ETH-USD-PERP on dYdX". [primary key]
+    market_oid: [uint8] (uuid);
+
+    /// Last update for current orderbook or start time of period for order book history (epoch time in ns). [primary key]
+    start_ts: uint64 (timestamp);
+
+    /// ASKS (aka "offers") from LIMIT orders (valid and unfilled at the END of the respective period) for base asset ordered ascending by price in QUOTE ticks of asset. MARKET orders to BUY the base asset are hitting the best asks and paid by the aggressor in quote asset.
+    asks_price: [uint32] (ndarray);
+
+    /// Quantity (interest) at respective ASK price in steps of BASE asset. The elements in the array are ordered identically and correspond to the ask prices.
+    asks_size: [uint32] (ndarray);
+
+    /// BIDS from LIMIT orders (valid and unfilled at the END of the respective period) for base asset ordered descending by price in QUOTE ticks of asset. MARKET orders to SELL the base asset are hitting the best bids and are paid for to the aggressor in quote asset.
+    bids_price: [uint32] (ndarray);
+
+    /// Quantity (interest) at respective BID price in steps of BASE asset. The elements in the array are ordered identically and correspond to the bid prices.
+    bids_size: [uint32] (ndarray);
+
+    /// BUYS from MARKET orders of base asset for QUOTE asset within the respective period. These have hit the best ASKS from limit orders.
+    buys_price: [uint32] (ndarray);
+
+    /// Quantity bought at respective BUY price in steps of BASE asset. The elements in the array are ordered identically and correspond to the buy prices.
+    buys_size: [uint32] (ndarray);
+
+    /// SELLS from MARKET orders of base asset for QUOTE asset within the respective period. These have hit the best BIDS from limit orders.
+    sells_price: [uint32] (ndarray);
+
+    /// Quantity sold at respective SELL price in steps of BASE asset. The elements in the array are ordered identically and correspond to the sell prices.
+    sells_size: [uint32] (ndarray);
+}
+
+
+table Liquiditypool
+{
+}
+
+
+table LiquiditypoolUpdate
+{
+}
+
+
+/// Trades executed on exchanges. Primary key is ``(market_oid, txn_ts, oid)``.
+table Trade
+{
+    /// Database object ID of the market this trade was executed in. [primary key, foreign key]
+    market_oid: [uint8] (uuid);
+
+    /// Time (epoch time in ns) at which the trade was executed on the exchange (that is, as sent by the exchange in the data!). [primary key]
+    txn_ts: uint64 (timestamp);
+
+    /// Database object ID of this trade. [primary key]
+    oid: [uint8] (uuid);
+
+    /// Side of trade (long/buy or short/sell).
+    side: TradeSide;
+
+    /// Volume of assets exchanged in the trade.
+    volume: double;
+
+    /// Price at which the trade was executed.
+    price: double;
+
+    /// Time (epoch time in ns) at which the trade was received (host walltime).
+    received_ts: uint64 (timestamp);
+
+    /// Unique ID of trade (message item) on exchange (depending on exchange, this might be synthetically constructed).
+    received_id: string;
+}
+
+
+/// Trades of assets on exchanges aggregated to periods. Primary key is ``(period_dur, start_ts, market_oid)``.
+table Candle
+{
+    /// Period over which trades are aggregated. [primary key]
+    period_dur: PeriodDuration;
+
+    /// Start time of period (epoch time in ns). [primary key]
+    start_ts: uint64 (timestamp);
+
+    /// Database object ID of the market this tick was received for. [primary key]
+    market_oid: [uint8] (uuid);
+
+    /// Database transaction time (epoch time in ns) of insert or last update.
+    modified: uint64 (timestamp);
+
+    /// Total number of trades within the period.
+    quantity: double;
+
+    /// Total volume in trades within the period.
+    volume: double;
+
+    /// Opening price of trading pair for first trade within period.
+    price_open: double;
+
+    /// Closing price of trading pair for last trade within period.
+    price_close: double;
+
+    /// Minimum price of trading pair for any trade within period.
+    price_min: double;
+
+    /// Maximum price of trading pair for any trade within period.
+    price_max: double;
+
+    /// Average price of trading pair in all trades within period.
+    price_avg: double;
+
+    /// Variance of price of trading pair in all trades within period.
+    price_var: double;
+
+    /// Average of volume weighted price of trading pair in all trades within period.
+    price_avg_volw: double;
+
+    /// Variance of volume weighted price of trading pair in all trades within period.
+    price_var_volw: double;
+}
+
+
+table TradingAccount
+{
+}
+
+
+table Strategy
+{
+}
+
+
+table Signal
+{
+}
+
+
+table Order
+{
+}
+
+
+enum ClockMode: uint8
+{
+    /// Value is unset ("null").
+    NONE = 0,
+
+    /// Real-time clock mode.
+    REALTIME = 1,
+
+    /// Backtesting clock mode.
+    BACKTEST = 2
+}
+
+
+struct ClockTick
+{
+    address: uint160_t (ethadr);
+
+    mode: ClockMode;
+
+    block: uint256_t (ethblock);
+
+    sweep_no: uint32;
+
+    tick_period: uint32;
+
+    world_period: uint32;
+
+    clock_ts: uint64 (timestamp);
+
+    next_tick: uint32;
+
+    tick_ts: uint64 (timestamp);
+
+    world_ts: uint64 (timestamp);
+}
+
+
+table ClockTickSigned
+{
+    tick: ClockTick;
+
+    signature: [uint8] (ethsig);
+}
+
+
+table RequestTimeSigned
+{
+    consumer: uint160_t (ethadr);
+
+    clock: uint160_t (ethadr);
+
+    block: uint256_t (ethblock);
+
+    signature: [uint8] (ethsig);
+}
+
+
+table TimeSigned
+{
+    consumer: uint160_t (ethadr);
+
+    tick: ClockTick;
+
+    signature: [uint8] (ethsig);
+}
+
+table PriceSigned
+{
+}
+
+table PriceInterval
+{
+}
+
+table Volume
+{
+}
+
+table VolumeSigned
+{
+}
+
+table OrderbookUpdateSigned
+{
+}
+
+table ReaderInfoSigned
+{
+}
+
+table ExchangeInfoSigned
+{
+}
+
+table OrderbookInfoSigned
+{
+}
+
+table MarketSigned
+{
+}
+
+table Period
+{
+    /// Period to which the orderbook record applies for, using PeriodDuration.NOW for the current orderbook (within the current yet unfinished period). [primary key]
+    period_dur: PeriodDuration;
+
+    /// Last update for current orderbook or start time of period for order book history (epoch time in ns). [primary key]
+    start_ts: uint64 (timestamp);
+
+    limit: uint32;
+}
+
+// eth.wamp.reservation.<ethadr:reservation_adr>.
+
+
+/// Write me.
+rpc_service ILimitOrderBookReader(type: "interface",
+                                  uuid: "0f9ee229-520d-4cea-88c9-e8e428da5660",
+                                  uri: "eth.pydefi.lobreader.<uuid:reader>")
+{
+    /// Write me.
+    get_reader_info (Void): ReaderInfoSigned (type: "procedure");
+
+    /// Write me.
+    list_exchanges (Void): Oids (type: "procedure");
+
+    /// Write me.
+    get_exchange_info (Void): ExchangeInfoSigned (type: "procedure",
+                                                  uri: "exchange.<uuid:exchanged>.get_exchange");
+
+    /// Write me.
+    list_books (Void): Oids (type: "procedure",
+                             uri: "exchange.<uuid:exchange>.list_books");
+
+    /// Write me.
+    get_book_info (Oid): OrderbookInfoSigned (type: "procedure",
+                                              uri: "exchange.<uuid:exchange>.book.<uid:book>.get_book_info");
+
+    /// Write me.
+    on_book_update (OrderbookUpdateSigned): Void (type: "topic",
+                                                  uri: "exchange.<uuid:exchange>.book.<uid:book>.on_book_update",
+                                                  options: "transaction_hash");
+}
+
+
+/// Interface for signed trading clock.
+rpc_service ITradingClock(type: "interface",
+                          uuid: "81256d9b-1e0a-434c-aa75-9cc0dfe8e1ea",
+                          uri: "eth.pydefi.clock.<uuid:clock>")
+{
+    /// Write me.
+    get_clock_address (Void): Address (type: "procedure");
+
+    /// Write me.
+    on_clock_tick (ClockTickSigned): Void (type: "topic", uri: "on_clock_tick.<int:warp_level>");
+}
+
+
+/// Provides access to a persistent real-time replica of a limit order book maintained from
+/// order book level-II updates published by one or more order book readers.
+rpc_service ILimitOrderBookReplica(type: "interface",
+                                   uuid: "6563cfac-498c-47cd-9ff1-24cbd0bdc6e5",
+                                   uri: "eth.pydefi.replica.<uuid:replica>")
+{
+    /// Write me.
+    get_replica_info (Void): Address (type: "procedure");
+
+    /// Write me.
+    list_books (Void): Oids (type: "procedure");
+
+    /// Write me.
+    get_book_info (Void): MarketSigned (type: "procedure", uri: "book.<uuid:book>.get_book_info");
+
+    /// Write me.
+    get_price (Void): PriceSigned (type: "procedure", uri: "book.<uuid:book>.get_price");
+
+    /// Write me.
+    on_price_tick (PriceSigned): Void (type: "topic", uri: "book.<uuid:book>.on_price_tick.<int:warp_level>");
+
+    /// Write me.
+    get_price_history (Period): Orderbook (type: "procedure", uri: "book.<uuid:book>.get_price_history");
+
+    /// Write me.
+    on_candle_tick (PriceSigned): Void (type: "topic", uri: "book.<uuid:book>.on_candle_tick.<int:warp_level>");
+
+    /// Write me.
+    get_candle_history (Period): Candle (type: "procedure", uri: "book.<uuid:book>.get_candle_history");
+
+    /// Write me.
+    compute_volume_between_prices (PriceInterval): VolumeSigned (type: "procedure", uri: "book.<uuid:book>.compute_volume_between_prices");
+
+    /// Write me.
+    estimate_price_for_volume (Volume): PriceSigned (type: "procedure", uri: "book.<uuid:book>.estimate_price_for_volume");
+}

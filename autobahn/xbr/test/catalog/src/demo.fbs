@@ -1,0 +1,54 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (C) typedef int GmbH and contributors.
+//  All rights reserved. Licensed under the MIT open-source license.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+include "wamp.fbs";
+
+
+namespace demo;
+
+
+/// Test struct A
+struct StructA
+{
+    /// Test field 1
+    field1: int32;
+
+    /// Test field 2
+    field2: uint64;
+
+    /// Test field 3
+    field3: uint64 (timestamp, readonly);
+
+    /// Test field 4
+    field4: uint160_t (ethadr);
+}
+
+
+/// Test table A
+table TableA
+{
+    /// Test column 1
+    column1: int32;
+
+    /// Test column 2
+    column2: uint64;
+
+    /// Test column 3
+    column3: uint64 (timestamp, readonly);
+
+    /// Test column 4
+    column4: uint160_t (ethadr);
+
+    /// Test column 5
+    column5: string;
+
+    /// Test column 6
+    column6: [uint8];
+
+    /// Test column 7
+    column7: StructA;
+}
