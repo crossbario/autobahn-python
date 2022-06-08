@@ -1,7 +1,5 @@
 import os
 import copy
-import struct
-from binascii import a2b_hex
 from random import randint, random
 import txaio
 
@@ -13,7 +11,7 @@ else:
     txaio.use_asyncio()
 
 from autobahn.xbr._util import pack_ethadr, unpack_ethadr
-from autobahn.xbr import FbsService, FbsObject, FbsRepository
+from autobahn.xbr import FbsObject, FbsRepository
 from autobahn.wamp.exception import InvalidPayload
 
 
@@ -21,7 +19,13 @@ class TestPackEthAdr(unittest.TestCase):
     def test_roundtrip(self):
         original_value = '0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047'
         packed_value = pack_ethadr(original_value)
+
         self.assertIsInstance(packed_value, dict)
+        self.assertIn('value', packed_value)
+        self.assertIsInstance(packed_value['value'], dict)
+        for i in range(5):
+            self.assertIn('w{}'.format(i), packed_value['value'])
+            self.assertTrue(type(packed_value['value']['w{}'.format(i)]) == int)
 
         unpacked_value = unpack_ethadr(packed_value, return_str=True)
         self.assertEqual(unpacked_value, original_value)
@@ -29,7 +33,6 @@ class TestPackEthAdr(unittest.TestCase):
 
 class TestFbsBase(unittest.TestCase):
     def setUp(self):
-        # self.archive = os.path.join(os.path.dirname(__file__), 'catalog', 'schema', 'trading.bfbs')
         self.archive = os.path.join(os.path.dirname(__file__), 'catalog', 'schema', 'demo.bfbs')
         self.repo = FbsRepository('autobahn')
         self.repo.load(self.archive)
@@ -38,10 +41,10 @@ class TestFbsBase(unittest.TestCase):
 class TestFbsRepository(TestFbsBase):
 
     def test_create_from_archive(self):
-        # self.assertEqual(self.repo.total_count, 48)
-
         self.assertTrue('uint160_t' in self.repo.objs)
         self.assertIsInstance(self.repo.objs['uint160_t'], FbsObject)
+
+        # self.assertEqual(self.repo.total_count, 48)
 
         # self.assertTrue('trading.ClockTick' in self.repo.objs)
         # self.assertIsInstance(self.repo.objs['trading.ClockTick'], FbsObject)
@@ -52,20 +55,30 @@ class TestFbsRepository(TestFbsBase):
 
 class TestFbsValidateEthAddress(TestFbsBase):
 
-    def test_validate_EthAddress_valid(self):
-        data = a2b_hex('0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047'[2:])
-        w = []
-        for i in range(5):
-            w.append(struct.unpack('<I', data[0 + i * 4:4 + i * 4])[0])
-        valid_value = {
-            'value': {
-                'x0': w[0],
-                'x1': w[1],
-                'x2': w[2],
-                'x3': w[3],
-                'x4': w[4],
+    def test_validate_EthAddress_zero(self):
+
+        for valid_value in [
+            pack_ethadr('0x0000000000000000000000000000000000000000'),
+            {
+                'value': {
+                    'w0': 0,
+                    'w1': 0,
+                    'w2': 0,
+                    'w3': 0,
+                    'w4': 0,
+                }
             }
-        }
+        ]:
+            try:
+                self.repo.validate(args=[valid_value],
+                                   kwargs={},
+                                   vt_args=['EthAddress'],
+                                   vt_kwargs={})
+            except Exception as exc:
+                self.assertTrue(False, f'Inventory.validate() raised an exception: {exc}')
+
+    def test_validate_EthAddress_valid(self):
+        valid_value = pack_ethadr('0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047')
 
         try:
             self.repo.validate(args=[valid_value],
@@ -76,18 +89,18 @@ class TestFbsValidateEthAddress(TestFbsBase):
             self.assertTrue(False, f'Inventory.validate() raised an exception: {exc}')
 
     def test_validate_EthAddress_invalid(self):
-        valid_adr = '0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047'
+        valid_value = pack_ethadr('0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047')
 
         self.assertRaisesRegex(InvalidPayload, 'invalid args length', self.repo.validate,
                                [], {},
                                ['EthAddress'], {})
 
         self.assertRaisesRegex(InvalidPayload, 'invalid kwargs length', self.repo.validate,
-                               [{'value': valid_adr}], {'unexpected_kwarg': 23},
+                               [{'value': valid_value}], {'unexpected_kwarg': 23},
                                ['EthAddress'], {})
 
         self.assertRaisesRegex(InvalidPayload, 'unexpected key', self.repo.validate,
-                               [{'invalid_key': valid_adr}], {},
+                               [{'invalid_key': valid_value}], {},
                                ['EthAddress'], {})
 
 
@@ -133,7 +146,8 @@ class TestFbsValidateKeyValue(TestFbsBase):
 class TestFbsValidateVoid(TestFbsBase):
 
     def test_validate_Void_valid(self):
-        valid_adr = '0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047'
+        valid_adr = pack_ethadr('0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047')
+
         try:
             self.repo.validate(args=[],
                                kwargs={},
@@ -185,7 +199,7 @@ class TestFbsValidateVoid(TestFbsBase):
             self.assertTrue(False, f'Inventory.validate() raised an exception: {exc}')
 
     def test_validate_Void_invalid(self):
-        valid_adr = '0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047'
+        valid_adr = pack_ethadr('0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047')
 
         self.assertRaisesRegex(InvalidPayload, 'invalid args length', self.repo.validate,
                                [23], {},
@@ -215,8 +229,8 @@ class TestFbsValidateTestTableA(TestFbsBase):
             'column1': True,
             'column2': randint(-127, -1),
             'column3': randint(1, 255),
-            'column4': randint(-2**15, -1),
-            'column5': randint(1, 2**16-1),
+            'column4': randint(-2 ** 15, -1),
+            'column5': randint(1, 2 ** 16 - 1),
             'column6': randint(-2 ** 31, -1),
             'column7': randint(1, 2 ** 32 - 1),
             'column8': randint(-2 ** 63, -1),
@@ -238,8 +252,8 @@ class TestFbsValidateTestTableA(TestFbsBase):
             'column1': True,
             'column2': randint(-127, -1),
             'column3': randint(1, 255),
-            'column4': randint(-2**15, -1),
-            'column5': randint(1, 2**16-1),
+            'column4': randint(-2 ** 15, -1),
+            'column5': randint(1, 2 ** 16 - 1),
             'column6': randint(-2 ** 31, -1),
             'column7': randint(1, 2 ** 32 - 1),
             'column8': randint(-2 ** 63, -1),

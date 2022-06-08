@@ -1886,7 +1886,7 @@ class FbsRepository(object):
                     for field in vt.fields_by_id:
                         if field.name in args[arg_idx]:
                             value = args[arg_idx][field.name]
-                            print('check', value, field)
+                            # print('check', value, field)
                             if field.type.basetype in FbsType.FBS2PY_TYPE:
                                 expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
                                 if type(value) != expected_type:
