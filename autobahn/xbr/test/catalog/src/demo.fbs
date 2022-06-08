@@ -96,13 +96,13 @@ table TestTableA
     column7: uint;
 
     /// Test column 8
-    column8: float;
+    column8: long;
 
     /// Test column 9
-    column9: long;
+    column9: ulong;
 
     /// Test column 10
-    column10: ulong;
+    column10: float;
 
     /// Test column 11
     column11: double;

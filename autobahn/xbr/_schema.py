@@ -113,6 +113,25 @@ class FbsType(object):
         _BaseType.Union: 'Union',
     }
 
+    FBS2PY_TYPE = {
+        _BaseType.UType: int,
+        _BaseType.Bool: bool,
+        _BaseType.Byte: int,
+        _BaseType.UByte: int,
+        _BaseType.Short: int,
+        _BaseType.UShort: int,
+        _BaseType.Int: int,
+        _BaseType.UInt: int,
+        _BaseType.Long: int,
+        _BaseType.ULong: int,
+        _BaseType.Float: float,
+        _BaseType.Double: float,
+        _BaseType.String: str,
+        _BaseType.Vector: list,
+        _BaseType.Obj: dict,
+        # _BaseType.Union: 'Union',
+    }
+
     FBS2FLAGS = {
         _BaseType.Bool: 'BoolFlags',
         _BaseType.Byte: 'Int8Flags',
@@ -1866,8 +1885,14 @@ class FbsRepository(object):
                         raise InvalidPayload(msg)
                     for field in vt.fields_by_id:
                         if field.name in args[arg_idx]:
-                            # print('ok')
-                            pass
+                            value = args[arg_idx][field.name]
+                            print('check', value, field)
+                            if field.type.basetype in FbsType.FBS2PY_TYPE:
+                                expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
+                                if type(value) != expected_type:
+                                    raise InvalidPayload('invalid type {} for field "{}" (expected {})'.format(type(value), field.name, expected_type))
+                            else:
+                                print('FIXME: unprocessed field type {}'.format(FbsType.FBS2STR(field.type.basetype)))
                         elif field.required:
                             # print('missing required field {}'.format(field.name))
                             raise InvalidPayload('missing required field "{}"'.format(field.name))

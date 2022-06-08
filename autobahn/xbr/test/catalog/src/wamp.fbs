@@ -79,6 +79,7 @@ elements. Arrays are currently only supported in a struct.
 /// An unsigned integer with 256 bits.
 struct uint256_t {
 
+    // Arrays are currently only supported in a struct.
     w: [uint32:8];
 
     // /// Least significand 32 bits.
