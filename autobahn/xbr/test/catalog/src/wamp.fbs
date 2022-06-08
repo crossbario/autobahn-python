@@ -17,8 +17,8 @@ attribute unique;
 /// Ethereum value (256 bit binary).
 attribute uint256;
 
-/// Unsigned integer value (64 bit binary).
-attribute uint64;
+/// Unsigned integer value (128 bit binary).
+attribute uint128;
 
 /// Multihash string (eg IPFS), see https://github.com/multiformats/multihash.
 attribute multihash;
