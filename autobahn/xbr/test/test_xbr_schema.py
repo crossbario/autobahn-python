@@ -93,6 +93,7 @@ class TestFbsRepository(unittest.TestCase):
                                ['KeyValue'], {})
 
     def test_validate_void_valid(self):
+        valid_adr = '0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047'
         try:
             self.repo.validate(args=[],
                                kwargs={},
@@ -102,10 +103,42 @@ class TestFbsRepository(unittest.TestCase):
                                kwargs={},
                                vt_args=['Void'],
                                vt_kwargs={})
+
+            self.repo.validate(args=[{'value': valid_adr}],
+                               kwargs={},
+                               vt_args=['Void', 'Address'],
+                               vt_kwargs={})
+            self.repo.validate(args=[{'value': valid_adr}],
+                               kwargs={},
+                               vt_args=['Address', 'Void'],
+                               vt_kwargs={})
+            self.repo.validate(args=[{'value': valid_adr}],
+                               kwargs={},
+                               vt_args=['Void', 'Address', 'Void'],
+                               vt_kwargs={})
+            self.repo.validate(args=[{'value': valid_adr}, {'value': valid_adr}],
+                               kwargs={},
+                               vt_args=['Void', 'Address', 'Address'],
+                               vt_kwargs={})
+            self.repo.validate(args=[{'value': valid_adr}, {'value': valid_adr}],
+                               kwargs={},
+                               vt_args=['Address', 'Void', 'Address'],
+                               vt_kwargs={})
+
+            self.repo.validate(args=[],
+                               kwargs={},
+                               vt_args=[],
+                               vt_kwargs={'something': 'Void'})
+            self.repo.validate(args=[],
+                               kwargs={'owner': {'value': valid_adr}},
+                               vt_args=[],
+                               vt_kwargs={'something': 'Void', 'owner': 'Address'})
         except Exception as exc:
             self.assertTrue(False, f'Inventory.validate() raised an exception: {exc}')
 
     def test_validate_void_invalid(self):
+        valid_adr = '0xecdb40C2B34f3bA162C413CC53BA3ca99ff8A047'
+
         self.assertRaisesRegex(InvalidPayload, 'invalid args length', self.repo.validate,
                                [23], {},
                                ['Void'], {})
@@ -121,3 +154,7 @@ class TestFbsRepository(unittest.TestCase):
         self.assertRaisesRegex(InvalidPayload, 'invalid kwargs length', self.repo.validate,
                                [], {'unexpected_kwarg': 23},
                                ['Void'], {})
+
+        self.assertRaisesRegex(InvalidPayload, 'invalid args length', self.repo.validate,
+                               [{'value': valid_adr}], {},
+                               ['Address', 'Void', 'Address'], {})

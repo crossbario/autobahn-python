@@ -1848,7 +1848,6 @@ class FbsRepository(object):
             self.log.warn('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
             raise InvalidPayload(msg)
 
-        # FIXME: handle Void
         arg_idx = 0
         for vt_arg_idx, vt_arg in enumerate(vt_args):
             self.log.info('{func} validate {vt_arg_idx} using validation type {vt_arg}',
@@ -1856,7 +1855,7 @@ class FbsRepository(object):
                           vt_arg_idx=hlval('args[{}]'.format(vt_arg_idx), color='yellow'),
                           vt_arg=hlval(vt_arg, color='yellow'))
             if vt_arg == 'Void':
-                pass
+                continue
             elif vt_arg in self.objs:
                 vt: FbsObject = self.objs[vt_arg]
                 if not vt.is_struct:
@@ -1893,9 +1892,7 @@ class FbsRepository(object):
 
         # validate keyword arguments
         #
-        # FIXME:
-        # kwargs_len_expected = len(vt_kwargs) - vt_kwargs.count('Void')
-        kwargs_len_expected = len(vt_kwargs)
+        kwargs_len_expected = len(vt_kwargs) - len([x for x in vt_kwargs.values() if x == 'Void'])
         if len(kwargs) != kwargs_len_expected:
             msg = 'validation error: invalid kwargs length (got {kwargs_len}, expected {vt_kwargs})'.format(
                 kwargs_len=len(kwargs), vt_kwargs=kwargs_len_expected)
@@ -1908,13 +1905,19 @@ class FbsRepository(object):
                           func=hltype(self.validate),
                           vt_kwarg_key=hlval('kwargs[{}]'.format(vt_kwarg_key), color='yellow'),
                           vt_kwarg=hlval(vt_kwarg, color='yellow'))
-            if vt_kwarg in self.objs:
+            if vt_kwarg == 'Void':
+                continue
+            elif vt_kwarg in self.objs:
                 vt: FbsObject = self.objs[vt_kwarg]
                 if not vt.is_struct:
-                    if type(kwargs[vt_kwarg_key]) != dict:
-                        msg = 'validation error: invalid arg type, {vt_kwarg_key} has type {kwarg_type}, not dict'.format(
-                            vt_kwarg_key='kwargs[{}]'.format(vt_kwarg_key), kwarg_type=type(kwargs[vt_kwarg_key]))
-                        self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
+                    if vt_kwarg_key in kwargs:
+                        if type(kwargs[vt_kwarg_key]) != dict:
+                            msg = 'validation error: invalid kwarg type, {vt_kwarg_key} has type {kwarg_type}, not dict'.format(
+                                vt_kwarg_key='kwargs[{}]'.format(vt_kwarg_key), kwarg_type=type(kwargs[vt_kwarg_key]))
+                            self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
+                            raise InvalidPayload(msg)
+                    else:
+                        msg = 'validation error: missing key {vt_kwarg_key}'.format(vt_kwarg_key='kwargs[{}]'.format(vt_kwarg_key))
                         raise InvalidPayload(msg)
                 else:
                     self.log.info(
@@ -1927,5 +1930,6 @@ class FbsRepository(object):
                               func=hltype(self.validate),
                               vt_kwarg=hlval(vt_kwarg, color='red'),
                               vt_keys=list(self.objs.keys()))
+                assert False, 'validation type "{}" not found'.format(vt_kwarg)
 
         self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval('validation success!', color='green'))
