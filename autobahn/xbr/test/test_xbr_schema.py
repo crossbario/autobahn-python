@@ -98,11 +98,15 @@ class TestFbsValidateEthAddress(TestFbsBase):
                                ['EthAddress'], {})
 
         self.assertRaisesRegex(InvalidPayload, 'invalid kwargs length', self.repo.validate,
-                               [{'value': valid_value}], {'unexpected_kwarg': 23},
+                               [valid_value], {'unexpected_kwarg': 23},
                                ['EthAddress'], {})
 
         self.assertRaisesRegex(InvalidPayload, 'unexpected key', self.repo.validate,
-                               [{'invalid_key': valid_value}], {},
+                               [{'value': valid_value['value'], 'invalid_key': 23}], {},
+                               ['EthAddress'], {})
+
+        self.assertRaisesRegex(InvalidPayload, 'unexpected key', self.repo.validate,
+                               [{**valid_value, **{'invalid_key': 23}}], {},
                                ['EthAddress'], {})
 
 

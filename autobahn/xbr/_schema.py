@@ -1893,7 +1893,7 @@ class FbsRepository(object):
                             else:
                                 print('FIXME: unprocessed field type {}'.format(FbsType.FBS2STR(field.type.basetype)))
                         else:
-                            if field.required or 'arg' in field.attrs:
+                            if field.required or 'arg' in field.attrs or 'kwarg' not in field.attrs:
                                 raise InvalidPayload('missing required field "{}"'.format(field.name))
                     for key in args[arg_idx]:
                         if key not in vt.fields:

@@ -148,6 +148,7 @@ test_xbr_cli:
 
 test_xbr_schema:
 	USE_TWISTED=1 trial autobahn.xbr.test.test_xbr_schema
+	USE_ASYNCIO=1 pytest autobahn/xbr/test/test_xbr_schema.py
 
 test_mnemonic:
 	# python -m pytest -rsx autobahn/xbr/test/test_mnemonic.py
