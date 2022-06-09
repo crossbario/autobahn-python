@@ -1,5 +1,6 @@
 import os
 import copy
+import pkg_resources
 from random import randint, random
 import txaio
 
@@ -33,7 +34,8 @@ class TestPackEthAdr(unittest.TestCase):
 
 class TestFbsBase(unittest.TestCase):
     def setUp(self):
-        self.archive = os.path.join(os.path.dirname(__file__), 'catalog', 'schema', 'demo.bfbs')
+        # self.archive = os.path.join(os.path.dirname(__file__), 'catalog', 'schema', 'demo.bfbs')
+        self.archive = pkg_resources.resource_filename('autobahn', 'xbr/test/catalog/schema/demo.bfbs')
         self.repo = FbsRepository('autobahn')
         self.repo.load(self.archive)
 
@@ -266,6 +268,7 @@ class TestFbsValidateTestTableA(TestFbsBase):
             'column11': 2.0 + random(),
         }
 
+        # mandatory field with wrong type
         for i in range(len(valid_value)):
             # copy valid value, and set one column to a value of wrong type
             invalid_value = copy.copy(valid_value)
@@ -279,6 +282,7 @@ class TestFbsValidateTestTableA(TestFbsBase):
                                    [invalid_value], {},
                                    ['demo.TestTableA'], {})
 
+        # mandatory field with wrong type `None`
         if True:
             for i in range(len(valid_value)):
                 # copy valid value, and set one column to a value of wrong type
@@ -293,6 +297,7 @@ class TestFbsValidateTestTableA(TestFbsBase):
                                        [invalid_value], {},
                                        ['demo.TestTableA'], {})
 
+        # mandatory field missing
         if True:
             for i in range(len(valid_value)):
                 # copy valid value, and set one column to a value of wrong type
