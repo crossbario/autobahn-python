@@ -75,37 +75,37 @@ struct TestStructS1
 table TestTableA
 {
     /// Test column 1
-    column1: bool;
+    column1: bool (arg);
 
     /// Test column 2
-    column2: byte;
+    column2: byte (arg);
 
     /// Test column 3
-    column3: ubyte;
+    column3: ubyte (arg);
 
     /// Test column 4
-    column4: short;
+    column4: short (arg);
 
     /// Test column 5
-    column5: ushort;
+    column5: ushort (arg);
 
     /// Test column 6
-    column6: int;
+    column6: int (arg);
 
     /// Test column 7
-    column7: uint;
+    column7: uint (arg);
 
     /// Test column 8
-    column8: long;
+    column8: long (arg);
 
     /// Test column 9
-    column9: ulong;
+    column9: ulong (arg);
 
     /// Test column 10
-    column10: float;
+    column10: float (arg);
 
     /// Test column 11
-    column11: double;
+    column11: double (arg);
 }
 
 

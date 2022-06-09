@@ -109,7 +109,7 @@ class TestFbsValidateKeyValue(TestFbsBase):
     def test_validate_KeyValue_valid(self):
         valid_value = {
             'key': 'foo',
-            'value': 23,
+            'value': '23',
         }
 
         try:
@@ -123,7 +123,7 @@ class TestFbsValidateKeyValue(TestFbsBase):
     def test_validate_KeyValue_invalid(self):
         valid_value = {
             'key': 'foo',
-            'value': 23,
+            'value': '23',
         }
 
         self.assertRaisesRegex(InvalidPayload, 'invalid args length', self.repo.validate,
@@ -131,15 +131,19 @@ class TestFbsValidateKeyValue(TestFbsBase):
                                ['KeyValue'], {})
 
         self.assertRaisesRegex(InvalidPayload, 'invalid kwargs length', self.repo.validate,
-                               [valid_value], {'unexpected_kwarg': 23},
+                               [valid_value], {'unexpected_kwarg': '23'},
+                               ['KeyValue'], {})
+
+        self.assertRaisesRegex(InvalidPayload, 'invalid type', self.repo.validate,
+                               [{'key': 'foo', 'value': 23}], {},
                                ['KeyValue'], {})
 
         self.assertRaisesRegex(InvalidPayload, 'unexpected key', self.repo.validate,
-                               [{'key': 'foo', 'value': 23, 'invalid_key': 666}], {},
+                               [{'key': 'foo', 'value': '23', 'invalid_key': '666'}], {},
                                ['KeyValue'], {})
 
         self.assertRaisesRegex(InvalidPayload, 'missing required field "key"', self.repo.validate,
-                               [{'value': 23, 'invalid_key': 666}], {},
+                               [{'value': '23', 'invalid_key': '666'}], {},
                                ['KeyValue'], {})
 
 
@@ -275,28 +279,30 @@ class TestFbsValidateTestTableA(TestFbsBase):
                                    [invalid_value], {},
                                    ['demo.TestTableA'], {})
 
-        for i in range(len(valid_value)):
-            # copy valid value, and set one column to a value of wrong type
-            invalid_value = copy.copy(valid_value)
-            if i == 0:
-                # first column should be bool, so make it invalid with an int value
-                invalid_value['column1'] = None
-            else:
-                # all other columns are something different from bool, so make it invalid with a bool value
-                invalid_value['column{}'.format(i + 1)] = None
-            self.assertRaisesRegex(InvalidPayload, 'invalid type', self.repo.validate,
-                                   [invalid_value], {},
-                                   ['demo.TestTableA'], {})
+        if True:
+            for i in range(len(valid_value)):
+                # copy valid value, and set one column to a value of wrong type
+                invalid_value = copy.copy(valid_value)
+                if i == 0:
+                    # first column should be bool, so make it invalid with an int value
+                    invalid_value['column1'] = None
+                else:
+                    # all other columns are something different from bool, so make it invalid with a bool value
+                    invalid_value['column{}'.format(i + 1)] = None
+                self.assertRaisesRegex(InvalidPayload, 'invalid type', self.repo.validate,
+                                       [invalid_value], {},
+                                       ['demo.TestTableA'], {})
 
-        for i in range(len(valid_value)):
-            # copy valid value, and set one column to a value of wrong type
-            invalid_value = copy.copy(valid_value)
-            if i == 0:
-                # first column should be bool, so make it invalid with an int value
-                del invalid_value['column1']
-            else:
-                # all other columns are something different from bool, so make it invalid with a bool value
-                del invalid_value['column{}'.format(i + 1)]
-            self.assertRaisesRegex(InvalidPayload, 'invalid type', self.repo.validate,
-                                   [invalid_value], {},
-                                   ['demo.TestTableA'], {})
+        if True:
+            for i in range(len(valid_value)):
+                # copy valid value, and set one column to a value of wrong type
+                invalid_value = copy.copy(valid_value)
+                if i == 0:
+                    # first column should be bool, so make it invalid with an int value
+                    del invalid_value['column1']
+                else:
+                    # all other columns are something different from bool, so make it invalid with a bool value
+                    del invalid_value['column{}'.format(i + 1)]
+                self.assertRaisesRegex(InvalidPayload, 'missing required field', self.repo.validate,
+                                       [invalid_value], {},
+                                       ['demo.TestTableA'], {})

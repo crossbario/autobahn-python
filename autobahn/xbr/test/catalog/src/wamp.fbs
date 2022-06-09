@@ -16,6 +16,7 @@ attribute options;
 /// A NumPy one dimensional (`ndim=1`) `numpy.ndarray` container of items of the same type and size (`dtype.kind in ['b', 'i', 'u', 'f']`).
 attribute ndarray;
 
+/// (works around "error: only non-scalar fields in tables may be 'required'")
 attribute arg;
 
 attribute kwarg;

@@ -1886,16 +1886,15 @@ class FbsRepository(object):
                     for field in vt.fields_by_id:
                         if field.name in args[arg_idx]:
                             value = args[arg_idx][field.name]
-                            # print('check', value, field)
                             if field.type.basetype in FbsType.FBS2PY_TYPE:
                                 expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
                                 if type(value) != expected_type:
                                     raise InvalidPayload('invalid type {} for field "{}" (expected {})'.format(type(value), field.name, expected_type))
                             else:
                                 print('FIXME: unprocessed field type {}'.format(FbsType.FBS2STR(field.type.basetype)))
-                        elif field.required:
-                            # print('missing required field {}'.format(field.name))
-                            raise InvalidPayload('missing required field "{}"'.format(field.name))
+                        else:
+                            if field.required or 'arg' in field.attrs:
+                                raise InvalidPayload('missing required field "{}"'.format(field.name))
                     for key in args[arg_idx]:
                         if key not in vt.fields:
                             raise InvalidPayload('unexpected key "{}" for field "{}"'.format(key, vt.name))
