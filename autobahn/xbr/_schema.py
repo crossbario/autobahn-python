@@ -1545,7 +1545,7 @@ class FbsRepository(object):
         pink = (127, 127, 127)
 
         for obj_key, obj in self.objs.items():
-            prefix_uri = obj.attrs.get('uri', self._basemodule)
+            prefix_uri = obj.attrs.get('wampuri', self._basemodule)
             obj_name = obj_key.split('.')[-1]
             obj_color = 'blue' if obj.is_struct else brown
             obj_label = '{} {}'.format('Struct' if obj.is_struct else 'Table', obj_name)
@@ -1614,7 +1614,7 @@ class FbsRepository(object):
             print()
 
         for svc_key, svc in self.services.items():
-            prefix_uri = svc.attrs.get('uri', self._basemodule)
+            prefix_uri = svc.attrs.get('wampuri', self._basemodule)
             ifx_uuid = svc.attrs.get('uuid', None)
             ifc_name = svc_key.split('.')[-1]
             ifc_label = 'Interface {}'.format(ifc_name)
@@ -1641,8 +1641,8 @@ class FbsRepository(object):
                 ep_type = ep.attrs['type']
                 ep_color = {'topic': 'green', 'procedure': orange}.get(ep_type, 'white')
                 # uri_long = '{}.{}'.format(hlval(prefix_uri, color=(127, 127, 127)),
-                #                           hlval(ep.attrs.get('uri', ep.name), color='white'))
-                uri_short = '{}'.format(hlval(ep.attrs.get('uri', ep.name), color=(255, 255, 255)))
+                #                           hlval(ep.attrs.get('wampuri', ep.name), color='white'))
+                uri_short = '{}'.format(hlval(ep.attrs.get('wampuri', ep.name), color=(255, 255, 255)))
                 print('      {} {} ({}) -> {}'.format(hlval(ep_type, color=ep_color),
                                                       uri_short,
                                                       hlval(ep.request.name.split('.')[-1], color='blue', bold=False),
@@ -1915,8 +1915,11 @@ class FbsRepository(object):
                             value = args[arg_idx][field.name]
                             if field.type.basetype in FbsType.FBS2PY_TYPE:
                                 expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
-                                if type(value) != expected_type:
-                                    raise InvalidPayload('invalid type {} for field "{}" (expected {})'.format(type(value), field.name, expected_type))
+
+                                # FIXME: invalid type <class 'bytes'> for field "market_oid" (expected <class 'list'>)
+                                if expected_type != list:
+                                    if type(value) != expected_type:
+                                        raise InvalidPayload('invalid type {} for field "{}" (expected {})'.format(type(value), field.name, expected_type))
                             else:
                                 print('FIXME: unprocessed field type {}'.format(FbsType.FBS2STR(field.type.basetype)))
                         else:

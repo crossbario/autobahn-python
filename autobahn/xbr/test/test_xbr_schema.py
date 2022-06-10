@@ -70,7 +70,7 @@ class TestFbsRepository(TestFbsBase):
         schema: FbsSchema = self.repo.schemas[schema_fn]
 
         # get call from service defined in schema
-        call: FbsRPCCall = schema.services['testsvc1.ITestService1'].calls['run_test']
+        call: FbsRPCCall = schema.services['testsvc1.ITestService1'].calls['run_something1']
 
         # for each of the call request and call response type names ...
         call_type: FbsObject

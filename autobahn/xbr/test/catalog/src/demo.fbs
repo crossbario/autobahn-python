@@ -116,7 +116,7 @@ table TestTableB
     column1: string;
 
     /// Test column 2
-    column2: string (wrn);
+    column2: string (wampuri);
 
     /// Test column 3
     column3: string (url);
@@ -145,7 +145,7 @@ table TestTableC
     column1: uint64;
 
     /// Test column 2
-    column2: uint64 (wid);
+    column2: uint64 (wampid);
 
     /// Test column 3
     column3: uint64 (timestamp);
@@ -171,7 +171,7 @@ table TestTableD
     column5: [float] (ndarray);
 
     /// Test column 6
-    column6: [uint64] (wid, ndarray);
+    column6: [uint64] (wampid, ndarray);
 
     /// Test column 7
     column7: [uint64] (timestamp, ndarray);
@@ -211,7 +211,7 @@ table TestTableF
     column5: string (arg);
 
     /// Test column 6
-    column6: string (arg, wrn);
+    column6: string (arg, wampuri);
 
     /// Test column 7
     column7: uint160_t (arg, ethadr);
@@ -229,7 +229,7 @@ table TestTableF
     column11: string (kwarg);
 
     /// Test column 12
-    column12: string (kwarg, wrn);
+    column12: string (kwarg, wampuri);
 
     /// Test column 13
     column13: uint160_t (kwarg, ethadr);
@@ -380,13 +380,14 @@ table ClockTickSigned
 /// Interface for signed trading clock.
 rpc_service ITradingClock(type: "interface",
                           uuid: "15a72fbf-3800-46ae-8fcd-ae0590e59ead",
-                          wrn: "eth.wamp-proto.demo.clock.<uuid:clock>")
+                          wampuri: "eth.wamp-proto.demo.clock.<uuid:clock>")
 {
     /// Write me.
     get_clock_address (Void): EthAddress (type: "procedure");
 
     /// Write me.
-    on_clock_tick (ClockTickSigned): Void (type: "topic", wrn: "on_clock_tick.<int:warp_level>");
+    on_clock_tick (ClockTickSigned): Void (type: "topic",
+                                           wampuri: "on_clock_tick.<int:warp_level>");
 
     // FIXME: "error: rpc request and response types must be tables"
     // https://github.com/google/flatbuffers/blob/11a19887053534c43f73e74786b46a615ecbf28e/src/idl_parser.cpp#L2658

@@ -14,26 +14,33 @@
 // table, it cannot be the root of a FlatBuffer by itself.
 // https://google.github.io/flatbuffers/flatbuffers_guide_writing_schema.html
 
-attribute arg;
-attribute kwarg;
-attribute type;
-attribute uuid;
-attribute timestamp;
-attribute ethadr;
-attribute wrn;
+// attribute arg;
+// attribute kwarg;
+// attribute type;
+// attribute wampuri;
 
-struct uint160_t {
-    w0: uint32;
-    w1: uint32;
-    w2: uint32;
-    w3: uint32;
-    w4: uint32;
-}
+// attribute uuid;
+// attribute timestamp;
+// attribute ethadr;
+
+// struct uint160_t {
+//     w0: uint32;
+//     w1: uint32;
+//     w2: uint32;
+//     w3: uint32;
+//     w4: uint32;
+// }
+
+// table Void
+// {
+// }
+
+include "wamp.fbs";
 
 namespace testsvc1;
 
 
-table TestRequestArgument (type: "request")
+table TestRequest1 (type: "request")
 {
     column1: string (arg);
     column2: uint32 (arg);
@@ -41,13 +48,14 @@ table TestRequestArgument (type: "request")
     column4: uint160_t (kwarg, ethadr);
 }
 
-table TestRequestProgress (type: "progressive-request")
+table TestRequestProgress1 (type: "progressive-request")
 {
     column1: string (arg);
     column2: uint32 (kwarg);
 }
 
-table TestResponseResult (type: "result")
+
+table TestResponse1 (type: "result")
 {
     column1: string (arg);
     column2: uint32 (arg);
@@ -55,7 +63,7 @@ table TestResponseResult (type: "result")
     column4: uint160_t (kwarg, ethadr);
 }
 
-table TestResponseProgress (type: "progressive-result")
+table TestResponseProgress1 (type: "progressive-result")
 {
     column1: string (arg);
     column2: uint32 (kwarg);
@@ -76,30 +84,56 @@ table TestResponseError2 (type: "error")
 }
 
 union TestRequestAny {
-    TestRequestArgument,
-    TestRequestProgress,
+    TestRequest1,
+    TestRequestProgress1,
 }
 
 union TestResponseAny {
-    TestResponseResult,
-    TestResponseProgress,
+    TestResponse1,
+    TestResponseProgress1,
     TestResponseError1,
     TestResponseError2
 }
 
 table TestRequest (type: "multi-result") {
     msg: TestRequestAny;
-
-    // msg_type:
 }
 
 table TestResponse (type: "multi-result") {
     msg: TestResponseAny;
 }
 
+table TestEvent1 {
+    column1: string (arg);
+    column2: string (arg);
+    column3: uint32 (kwarg);
+}
+
+table TestEvent2 {
+    column1: uint64 (arg);
+    column2: [ubyte] (arg);
+}
+
+union TestEventAny {
+    TestEvent1,
+    TestEvent2
+}
+
+table TestEvent (type: "multi-result") {
+    msg: TestEventAny;
+}
+
+
+/// Test WAMP interface for service 1.
 rpc_service ITestService1(type: "interface",
                           uuid: "bf469db0-efea-425b-8de4-24b5770e6241",
-                          wrn: "eth.wamp-proto.provider.<uuid:provider>.testsvc1")
+                          wampuri: "eth.wamp-proto.provider.<uuid:provider>.testsvc1")
 {
-    run_test (TestRequest): TestResponse (type: "procedure", wrn: "run_test.<string:component>");
+    run_something1 (TestRequest1): TestResponse1 (type: "procedure");
+
+    on_something1 (TestEvent1): Void (type: "topic");
+
+    run_something2 (TestRequest): TestResponse (type: "procedure");
+
+    on_something2 (TestEvent): Void (type: "topic");
 }

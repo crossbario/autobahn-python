@@ -27,17 +27,42 @@ attribute kwarg;
 /// Timestamp: ns since Unix epoch (1970/1/1 UTC) (64 bit unsigned int).
 attribute timestamp;
 
-/// WAMP ID (integers [1, 2^53]), see https://wamp-proto.org/_static/gen/wamp_latest.html#ids
-attribute wid;
+
+/// WAMP ID, that is an integer ``[1, 2^53]``, see https://wamp-proto.org/_static/gen/wamp_latest.html#ids
+attribute wampid;
+
+/// WAMP URI component (aka "name"), loose rules (minimum required to combine to dotted URIs), must match regular expression ``^[^\s\.#]+$``.
+attribute wampname;
+
+/// WAMP URI component (aka "name"), strict rules (can be used as identifier in most languages), must match regular expression ``^[\da-z_]+$``.
+attribute wampname_s;
+
+/// WAMP URI, loose rules, no empty URI components (aka "concrete or fully qualified URI"), must match regular expression ``^([^\s\.#]+\.)*([^\s\.#]+)$``.
+attribute wampuri;
+
+/// WAMP URI, strict rules, no empty URI components, must match regular expression ``^([\da-z_]+\.)*([\da-z_]+)$``.
+attribute wampuri_s;
+
+/// WAMP URI or URI (prefix or wildcard) pattern, loose rules (minimum required to combine to dotted URIs), must match regular expression ``^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$``.
+attribute wampuri_p;
+
+/// WAMP URI or URI (prefix or wildcard) pattern, strict rules (can be used as identifier in most languages), must match regular expression ``^(([\da-z_]+\.)|\.)*([\da-z_]+)?$``.
+attribute wampuri_sp;
+
+/// WAMP URI or URI prefix pattern, loose rules (minimum required to combine to dotted URIs), must match regular expression ``^([^\s\.#]+\.)*([^\s\.#]*)$``.
+attribute wampuri_pp;
+
+/// WAMP URI or URI prefix pattern, strict rules (can be used as identifier in most languages), must match regular expression ``^([\da-z_]+\.)*([\da-z_]*)$``.
+attribute wampuri_spp;
 
 
 ///////////// Attributes supported for strings
 
-/// WAMP resource name or resource name pattern for identifying WAMP resource like
+/// WAMP URI resource name or resource name pattern for identifying WAMP resource like
 /// procedures and topics. WAMP resource names are hierarchically structured consisting
 /// of a sequence of path segments separated by dots, e.g. `com.example.add2` or
 /// `com.example.public.`.
-attribute wrn;
+attribute wampuri;
 
 /// A URL locating a Web resource, see https://url.spec.whatwg.org/.
 attribute url;
@@ -162,57 +187,95 @@ table Void
 table KeyValue
 {
     /// UTF8 encoded key of KV pair.
-    key: string (required, key);
+    key: string (required, key, arg);
 
     /// UTF8 encoded value of KV pair.
-    value: string;
+    value: string (arg);
 }
 
 /// A single WAMP ID.
-table Wid
+table WampId
 {
     /// WAMP ID (integers [1, 2^53]), see https://wamp-proto.org/_static/gen/wamp_latest.html#ids
-    value: uint64 (wid);
+    value: uint64 (arg, wampid);
 }
 
 /// A list of WAMP IDs.
-table Wids
+table WampIds
 {
     /// List of WAMP IDs.
-    value: [uint64] (wid);
+    value: [uint64] (arg, wampid);
+}
+
+/// A single WAMP resource name (URI).
+table WampUri
+{
+    /// WAMP resource name (URI), such as ``realm1`` or ``com.example.add2``,
+    /// or a name pattern, such as ``com.example.`` or ``com.example.<myapp:str>.get_info``.
+    /// Must match regular expression ``^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$``.
+    value: string (arg, wampuri);
+}
+
+/// A list of WAMP resource names (URIs).
+table WampUris
+{
+    /// List of WAMP resource names (URIs).
+    value: [string] (arg, wampuri);
+}
+
+/// A single WAMP URI component.
+table WampName
+{
+    /// WAMP URI component, such as ``realm1``, ``intel-nuci7-14875`` or ``11bf2dd0-432e-460e-9df0-55d497fa1cd1``.
+    /// Must match regular expression ``^[^\s\.#]+$``.
+    value: string (arg, wampname);
+}
+
+/// A list of WAMP URI components.
+table WampNames
+{
+    /// List of WAMP URI components.
+    value: [string] (arg, wampname);
 }
 
 /// A single object UUID.
 table Oid
 {
     /// Object UUID.
-    value: uint128_t (uuid);
+    value: uint128_t (arg, uuid);
 }
 
 /// A list of object UUIDs
 table Oids
 {
     /// List of object UUIDs.
-    value: [uint128_t] (uuid);
+    value: [uint128_t] (arg, uuid);
 }
 
 /// A single Ethereum address.
 table EthAddress
 {
     /// The address binary value.
-    value: uint160_t (ethadr);
+    value: uint160_t (arg, ethadr);
 }
 
 /// A list of Ethereum addresses.
 table EthAddresses
 {
     /// List of addresses.
-    value: [uint160_t] (ethadr);
+    value: [uint160_t] (arg, ethadr);
 }
 
-/// An unsigned integer, wrapped as a table.
+/// A single unsigned integer, wrapped as a table.
 table Uint
 {
     /// Unsigned integer value.
-    value: uint64;
+    value: uint64 (arg);
+}
+
+/// A list of unsigned integers, wrapped as a table.
+table Uints
+{
+    /// List of unsigned integer values.
+    value: [uint64] (arg);
 }
