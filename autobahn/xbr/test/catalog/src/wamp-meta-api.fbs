@@ -113,7 +113,8 @@ table SubscriptionRemoveSubscriber
 }
 
 rpc_service IWampMeta(type: "interface",
-                      uuid: "88711231-3d95-44bc-9464-58d871dd7fd7")
+                      uuid: "88711231-3d95-44bc-9464-58d871dd7fd7",
+                      wrn: "wamp")
 {
     /// Get list of session IDs of sessions currently joined on the router.
     session_list (SessionRolesFilter): Wids (type: "procedure", wrn: "wamp.session.list");
