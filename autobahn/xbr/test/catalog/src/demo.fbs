@@ -243,3 +243,158 @@ table TestTableF
     /// Test column 16
     column16: uint32 (arg);
 }
+
+
+table TestRequestArgument (type: "request")
+{
+    /// Test column 1
+    column1: string (arg);
+
+    /// Test column 2
+    column2: uint32 (arg);
+
+    /// Test column 3
+    column3: uint64 (kwarg, timestamp);
+
+    /// Test column 4
+    column4: uint160_t (kwarg, ethadr);
+}
+
+table TestRequestProgress (type: "progressive-request")
+{
+    /// Test column 1
+    column1: string (arg);
+
+    /// Test column 2
+    column2: uint32 (kwarg);
+}
+
+table TestResponseResult (type: "result")
+{
+    /// Test column 1
+    column1: string (arg);
+
+    /// Test column 2
+    column2: uint32 (arg);
+
+    /// Test column 3
+    column3: uint64 (kwarg, timestamp);
+
+    /// Test column 4
+    column4: uint160_t (kwarg, ethadr);
+}
+
+table TestResponseProgress (type: "progressive-result")
+{
+    /// Test column 1
+    column1: string (arg);
+
+    /// Test column 2
+    column2: uint32 (kwarg);
+}
+
+table TestResponseError1 (type: "error")
+{
+    /// Test column 1
+    column1: string (arg);
+
+    /// Test column 2
+    column2: uint32 (kwarg);
+}
+
+table TestResponseError2 (type: "error")
+{
+    /// Test column 1
+    column1: string (arg);
+
+    /// Test column 2
+    column2: uint32 (kwarg);
+}
+
+union TestRequestAny {
+    TestRequestArgument,
+    TestRequestProgress,
+}
+
+union TestResponseAny {
+    TestResponseResult,
+    TestResponseProgress,
+    TestResponseError1,
+    TestResponseError2
+}
+
+table TestRequest {
+    value: TestRequestAny;
+}
+
+table TestResponse {
+    value: TestResponseAny;
+}
+
+
+enum ClockMode: uint8
+{
+    /// Value is unset ("null").
+    NONE = 0,
+
+    /// Real-time clock mode.
+    REALTIME = 1,
+
+    /// Backtesting clock mode.
+    BACKTEST = 2
+}
+
+
+struct ClockTick
+{
+    address: uint160_t (ethadr);
+
+    mode: ClockMode;
+
+    block: uint256_t (ethblock);
+
+    sweep_no: uint32;
+
+    tick_period: uint32;
+
+    world_period: uint32;
+
+    clock_ts: uint64 (timestamp);
+
+    next_tick: uint32;
+
+    tick_ts: uint64 (timestamp);
+
+    world_ts: uint64 (timestamp);
+}
+
+
+table ClockTickSigned
+{
+    tick: ClockTick;
+
+    signature: [uint8] (ethsig);
+}
+
+
+/// Interface for signed trading clock.
+rpc_service ITradingClock(type: "interface",
+                          uuid: "15a72fbf-3800-46ae-8fcd-ae0590e59ead",
+                          wrn: "eth.wamp-proto.demo.clock.<uuid:clock>")
+{
+    /// Write me.
+    get_clock_address (Void): EthAddress (type: "procedure");
+
+    /// Write me.
+    on_clock_tick (ClockTickSigned): Void (type: "topic", wrn: "on_clock_tick.<int:warp_level>");
+
+    // FIXME: "error: rpc request and response types must be tables"
+    // https://github.com/google/flatbuffers/blob/11a19887053534c43f73e74786b46a615ecbf28e/src/idl_parser.cpp#L2658
+    //
+    // Unions are a good way to be able to send multiple message types as a FlatBuffer.
+    // Note that because a union field is really two fields, it must always be part of a
+    // table, it cannot be the root of a FlatBuffer by itself.
+    // https://google.github.io/flatbuffers/flatbuffers_guide_writing_schema.html
+
+    run_test (TestRequest): TestResponse (type: "procedure");
+}

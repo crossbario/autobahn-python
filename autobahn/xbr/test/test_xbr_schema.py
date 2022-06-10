@@ -12,7 +12,7 @@ else:
     txaio.use_asyncio()
 
 from autobahn.xbr._util import pack_ethadr, unpack_ethadr
-from autobahn.xbr import FbsObject, FbsRepository
+from autobahn.xbr import FbsType, FbsObject, FbsService, FbsRPCCall, FbsRepository, FbsSchema, FbsField, FbsEnum, FbsEnumValue
 from autobahn.wamp.exception import InvalidPayload
 
 
@@ -34,25 +34,96 @@ class TestPackEthAdr(unittest.TestCase):
 
 class TestFbsBase(unittest.TestCase):
     def setUp(self):
-        # self.archive = os.path.join(os.path.dirname(__file__), 'catalog', 'schema', 'demo.bfbs')
-        self.archive = pkg_resources.resource_filename('autobahn', 'xbr/test/catalog/schema/demo.bfbs')
         self.repo = FbsRepository('autobahn')
-        self.repo.load(self.archive)
+        self.archives = []
+        for fbs_file in ['demo.bfbs', 'trading.bfbs', 'testsvc1.bfbs']:
+            archive = pkg_resources.resource_filename('autobahn', 'xbr/test/catalog/schema/{}'.format(fbs_file))
+            self.repo.load(archive)
+            self.archives.append(archive)
 
 
 class TestFbsRepository(TestFbsBase):
 
     def test_create_from_archive(self):
-        self.assertTrue('uint160_t' in self.repo.objs)
+        self.assertIn('uint160_t', self.repo.objs)
         self.assertIsInstance(self.repo.objs['uint160_t'], FbsObject)
 
-        # self.assertEqual(self.repo.total_count, 48)
+        # self.assertEqual(self.repo.total_count, 69)
 
-        # self.assertTrue('trading.ClockTick' in self.repo.objs)
-        # self.assertIsInstance(self.repo.objs['trading.ClockTick'], FbsObject)
-        #
-        # self.assertTrue('trading.ITradingClock' in self.repo.services)
-        # self.assertIsInstance(self.repo.services['trading.ITradingClock'], FbsService)
+        self.assertIn('trading.ClockTick', self.repo.objs)
+        self.assertIsInstance(self.repo.objs['trading.ClockTick'], FbsObject)
+
+        self.assertIn('trading.ITradingClock', self.repo.services)
+        self.assertIsInstance(self.repo.services['trading.ITradingClock'], FbsService)
+
+        self.assertIn('testsvc1.TestRequest', self.repo.objs)
+        self.assertIsInstance(self.repo.objs['testsvc1.TestRequest'], FbsObject)
+        self.assertIn('testsvc1.TestResponse', self.repo.objs)
+        self.assertIsInstance(self.repo.objs['testsvc1.TestResponse'], FbsObject)
+        self.assertIn('testsvc1.ITestService1', self.repo.services)
+        self.assertIsInstance(self.repo.services['testsvc1.ITestService1'], FbsService)
+
+    def test_loaded_schema(self):
+        schema_fn = '/home/oberstet/scm/crossbario/autobahn-python/autobahn/xbr/test/catalog/schema/testsvc1.bfbs'
+
+        # get reflection schema loaded
+        schema: FbsSchema = self.repo.schemas[schema_fn]
+
+        # get call from service defined in schema
+        call: FbsRPCCall = schema.services['testsvc1.ITestService1'].calls['run_test']
+
+        # for each of the call request and call response type names ...
+        call_type: FbsObject
+        for call_type in [schema.objs[call.request.name], schema.objs[call.response.name]]:
+
+            # ... iterate over all fields
+            field: FbsField
+            for field in call_type.fields_by_id:
+                # we only need to process the "_type" fields auto-added for Union types
+                if field.type.basetype == FbsType.UType:
+                    assert field.name.endswith('_type')
+
+                    # get the enum storing the Union
+                    call_type_enum: FbsEnum = schema.enums_by_id[field.type.index]
+                    assert call_type_enum.is_union
+
+                    # get all enum values, which store Union types
+                    union_type_value: FbsEnumValue
+                    for union_type_value in call_type_enum.values:
+                        if union_type_value != 'NONE':
+                            # resolve union type value names in same namespace as containing union type [???]
+                            if '.' in call_type_enum.name:
+                                namespace = call_type_enum.name.split('.')[0]
+                                union_type_qn = '{}.{}'.format(namespace, union_type_value)
+                            else:
+                                union_type_qn = union_type_value
+                            # get type object for Union type by fully qualified name
+                            union_type = schema.objs[union_type_qn]
+                            print(union_type)
+
+        # print(self.repo.objs['testsvc1.TestRequest'])
+        # print(self.repo.enums['testsvc1.TestRequestAny'])
+        # print(self.repo.objs['testsvc1.TestRequestArgument'])
+        # print(self.repo.objs['testsvc1.TestRequestProgress'])
+        # print()
+
+        # print(self.repo.objs['testsvc1.TestResponse'])
+        # print(self.repo.enums['testsvc1.TestResponseAny'])
+        # print(self.repo.objs['testsvc1.TestResponseResult'])
+        # print(self.repo.objs['testsvc1.TestResponseProgress'])
+        # print(self.repo.objs['testsvc1.TestResponseError1'])
+        # print(self.repo.objs['testsvc1.TestResponseError2'])
+        # print()
+
+        # svc1 = self.repo.services['testsvc1.ITestService1']
+        # for key in svc1.calls.keys():
+        #     ep: FbsRPCCall = svc1.calls[key]
+        #     print(ep)
+
+        # svc2 = self.repo.services['trading.ITradingClock']
+        # for key in svc2.calls.keys():
+        #     ep: FbsRPCCall = svc2.calls[key]
+        #     print(ep)
 
 
 class TestFbsValidateEthAddress(TestFbsBase):

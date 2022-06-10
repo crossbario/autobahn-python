@@ -909,7 +909,8 @@ class FbsEnumValue(object):
     def __init__(self,
                  repository: 'FbsRepository',
                  schema: 'FbsSchema',
-                 name,
+                 name: str,
+                 id: int,
                  value,
                  docs):
         """
@@ -922,6 +923,7 @@ class FbsEnumValue(object):
         self._repository = repository
         self._schema = schema
         self._name = name
+        self._id = id
         self._value = value
         self._attrs = {}
         self._docs = docs
@@ -937,6 +939,10 @@ class FbsEnumValue(object):
     @property
     def name(self):
         return self._name
+
+    @property
+    def id(self):
+        return self._id
 
     @property
     def value(self):
@@ -955,6 +961,7 @@ class FbsEnumValue(object):
 
     def marshal(self):
         obj = {
+            'id': self._id,
             'name': self._name,
             'attrs': self._attrs,
             'docs': self._docs,
@@ -969,6 +976,8 @@ class FbsEnumValue(object):
 class FbsEnum(object):
     """
     FlatBuffers enum type.
+
+    See https://github.com/google/flatbuffers/blob/11a19887053534c43f73e74786b46a615ecbf28e/reflection/reflection.fbs#L61
     """
 
     def __init__(self,
@@ -976,7 +985,9 @@ class FbsEnum(object):
                  schema: 'FbsSchema',
                  declaration_file: str,
                  name: str,
+                 id: int,
                  values: Dict[str, FbsEnumValue],
+                 values_by_id: List[FbsEnumValue],
                  is_union: bool,
                  underlying_type: int,
                  attrs: Dict[str, FbsAttribute],
@@ -985,7 +996,9 @@ class FbsEnum(object):
         self._schema = schema
         self._declaration_file = declaration_file
         self._name = name
+        self._id = id
         self._values = values
+        self._values_by_id = values_by_id
         self._is_union = is_union
 
         # zlmdb.flatbuffers.reflection.Type.Type
@@ -1010,8 +1023,16 @@ class FbsEnum(object):
         return self._name
 
     @property
+    def id(self):
+        return self._id
+
+    @property
     def values(self):
         return self._values
+
+    @property
+    def values_by_id(self):
+        return self._values_by_id
 
     @property
     def is_union(self):
@@ -1035,6 +1056,7 @@ class FbsEnum(object):
     def marshal(self):
         obj = {
             'name': self._name,
+            'id': self._id,
             'values': {},
             'is_union': self._is_union,
             'underlying_type': FbsType.FBS2STR.get(self._underlying_type, None),
@@ -1284,6 +1306,7 @@ class FbsSchema(object):
             enum_underlying_type = fbs_enum.UnderlyingType()
 
             enum_values = {}
+            enum_values_by_id = []
             for j in range(fbs_enum.ValuesLength()):
                 fbs_enum_value = fbs_enum.Values(j)
                 enum_value_name = fbs_enum_value.Name()
@@ -1294,16 +1317,20 @@ class FbsSchema(object):
                 enum_value = FbsEnumValue(repository=repository,
                                           schema=schema,
                                           name=enum_value_name,
+                                          id=j,
                                           value=enum_value_value,
                                           docs=enum_value_docs)
                 assert enum_value_name not in enum_values
                 enum_values[enum_value_name] = enum_value
+                enum_values_by_id.append(enum_value)
 
             enum = FbsEnum(repository=repository,
                            schema=schema,
                            declaration_file=enum_declaration_file,
                            name=enum_name,
+                           id=i,
                            values=enum_values,
+                           values_by_id=enum_values_by_id,
                            is_union=fbs_enum.IsUnion(),
                            underlying_type=enum_underlying_type,
                            attrs=parse_attr(fbs_enum),
