@@ -125,6 +125,15 @@ rpc_service IWampMeta(type: "interface",
     /// Get details for given session.
     session_get (SessionIdFilter): SessionInfo (type: "procedure", wrn: "wamp.session.count");
 
+    /// A new session has joined the realm.
+    session_on_join (Void): Void (type: "topic", wrn: "wamp.session.on_join");
+
+    /// FIXME.
+    session_on_leave (Void): Void (type: "topic", wrn: "wamp.session.on_leave");
+
+    /// FIXME.
+    session_on_stats (Void): Void (type: "topic", wrn: "wamp.session.on_stats");
+
     /// Add a testament to the current session.
     session_add_testament (AddTestament): Wid (type: "procedure", wrn: "wamp.session.add_testament");
 
@@ -140,11 +149,35 @@ rpc_service IWampMeta(type: "interface",
     /// Forcefully kill all sessions with given authrole.
     session_kill_by_authrole (SessionKillByAuthrole): Wids (type: "procedure", wrn: "wamp.session.kill_by_authrole");
 
-    /// Forcefully remove callee from registration.
+    /// Forcefully remove callee from a registration.
     registration_remove_callee (RegistrationRemoveCallee): Void (type: "procedure", wrn: "wamp.registration.remove_callee");
+
+    /// A first callee was registered for a registration, and the registration was created in the first place.
+    registration_on_create (Void): Void (type: "topic", wrn: "wamp.registration.on_create");
+
+    /// A callee was registered for a registration.
+    registration_on_register (Void): Void (type: "topic", wrn: "wamp.registration.on_register");
+
+    /// A callee was unregistered from a registration.
+    registration_on_unregister (Void): Void (type: "topic", wrn: "wamp.registration.on_unregister");
+
+    /// The last callee was unregistered from a registration, and the registration was deleted.
+    registration_on_delete (Void): Void (type: "topic", wrn: "wamp.registration.on_delete");
 
     /// Forcefully remove subscriber from subscription.
     subscription_remove_subscriber (SubscriptionRemoveSubscriber): Void (type: "procedure", wrn: "wamp.subscription.remove_subscriber");
+
+    /// A first subscriber was subscribed to a subscription, and the subscription was created in the first place.
+    subscription_on_create (Void): Void (type: "topic", wrn: "wamp.subscription.on_create");
+
+    /// A subscriber was subscribed to a subscription.
+    subscription_on_subscribe (Void): Void (type: "topic", wrn: "wamp.subscription.on_subscribe");
+
+    /// A subscriber was unsubscribed from a subscription.
+    subscription_on_unsubscribe (Void): Void (type: "topic", wrn: "wamp.subscription.on_unsubscribe");
+
+    /// The last subscriber was unsubscribed from a subscription, and the subscription was deleted.
+    subscription_on_delete (Void): Void (type: "topic", wrn: "wamp.subscription.on_delete");
 
     /// Get registration details.
     registration_get (Void): Void (type: "procedure", wrn: "wamp.registration.get");
