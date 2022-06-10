@@ -1,0 +1,186 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright (C) typedef int GmbH and contributors.
+//  All rights reserved. Licensed under the MIT open-source license.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+include "wamp.fbs";
+
+
+namespace wamp;
+
+
+table SessionRolesFilter (type: "request")
+{
+    /// The WAMP session authroles to filter for.
+    filter_authroles: [string] (arg, wrn);
+}
+
+table SessionIdFilter (type: "request")
+{
+    /// The WAMP session ID to filter for.
+    session_id: uint64 (arg, wid);
+}
+
+table SessionInfo
+{
+}
+
+table AddTestament
+{
+    /// The topic to publish the testament to.
+    topic: string (arg, wrn);
+
+    /// A list of arguments for the publish.
+    args: [uint8] (arg, cbor);
+
+    /// A dict of keyword arguments for the publish.
+    kwargs: [uint8] (arg, cbor);
+
+    /// The publish options for the publish.
+    publish_options: KeyValue (kwarg);
+
+    /// The scope of the testament, either "detached" or "destroyed".
+    scope: string (kwarg);
+}
+
+table FlushTestaments
+{
+    scope: string (arg);
+}
+
+table SessionKill
+{
+    /// The WAMP session ID of the session to kill.
+    session_id: uint64 (arg, wid);
+
+    /// A reason URI provided to the killed session.
+    reason: string (kwarg, wrn);
+
+    /// A message provided to the killed session.
+    message: string (kwarg);
+}
+
+table SessionKillByAuthid
+{
+    /// The WAMP authid of the sessions to kill.
+    authid: uint64 (arg, wid);
+
+    /// A reason URI provided to the killed session(s).
+    reason: string (kwarg, wrn);
+
+    /// A message provided to the killed session(s).
+    message: string (kwarg);
+}
+
+table SessionKillByAuthrole
+{
+    /// The WAMP authrole of the sessions to kill.
+    authrole: string (arg, wrn);
+
+    /// A reason URI provided to the killed session(s).
+    reason: string (kwarg, wrn);
+
+    /// A message provided to the killed session(s).
+    message: string (kwarg);
+}
+
+
+table RegistrationRemoveCallee
+{
+    /// The ID of the registration to remove the callee from.
+    registration_id: uint64 (arg, wid);
+
+    /// The WAMP session ID of the callee to remove.
+    callee_id: uint64 (arg, wid);
+
+    // FIXME.
+    reason: string (wrn);
+}
+
+
+table SubscriptionRemoveSubscriber
+{
+    /// The ID of the subscription to remove the subscriber from.
+    subscription_id: uint64 (arg, wid);
+
+    /// The WAMP session ID of the subscriber to remove.
+    subscriber_id: uint64 (arg, wid);
+
+    // FIXME.
+    reason: string (wrn);
+}
+
+rpc_service IWampMeta(type: "interface",
+                      uuid: "88711231-3d95-44bc-9464-58d871dd7fd7")
+{
+    /// Get list of session IDs of sessions currently joined on the router.
+    session_list (SessionRolesFilter): Wids (type: "procedure", wrn: "wamp.session.list");
+
+    /// Count sessions currently joined on the router.
+    session_count (SessionRolesFilter): Uint (type: "procedure", wrn: "wamp.session.count");
+
+    /// Get details for given session.
+    session_get (SessionIdFilter): SessionInfo (type: "procedure", wrn: "wamp.session.count");
+
+    /// Add a testament to the current session.
+    session_add_testament (AddTestament): Wid (type: "procedure", wrn: "wamp.session.add_testament");
+
+    /// Flush the testaments of a given scope for the calling session.
+    session_flush_testaments (FlushTestaments): Uint (type: "procedure", wrn: "wamp.session.flush_testaments");
+
+    /// Forcefully kill a session.
+    session_kill (SessionKill): Void (type: "procedure", wrn: "wamp.session.kill");
+
+    /// Forcefully kill all sessions with given authid.
+    session_kill_by_authid (SessionKillByAuthid): Wids (type: "procedure", wrn: "wamp.session.kill_by_authid");
+
+    /// Forcefully kill all sessions with given authrole.
+    session_kill_by_authrole (SessionKillByAuthrole): Wids (type: "procedure", wrn: "wamp.session.kill_by_authrole");
+
+    /// Forcefully remove callee from registration.
+    registration_remove_callee (RegistrationRemoveCallee): Void (type: "procedure", wrn: "wamp.registration.remove_callee");
+
+    /// Forcefully remove subscriber from subscription.
+    subscription_remove_subscriber (SubscriptionRemoveSubscriber): Void (type: "procedure", wrn: "wamp.subscription.remove_subscriber");
+
+    /// Get registration details.
+    registration_get (Void): Void (type: "procedure", wrn: "wamp.registration.get");
+
+    /// Get subscription details.
+    subscription_get (Void): Void (type: "procedure", wrn: "wamp.subscription.get");
+
+    /// List current registrations.
+    registration_list (Void): Void (type: "procedure", wrn: "wamp.registration.list");
+
+    /// List current subscriptions.
+    subscription_list (Void): Void (type: "procedure", wrn: "wamp.subscription.list");
+
+    /// Given a procedure URI, return the registration best matching the procedure.
+    registration_match (Void): Void (type: "procedure", wrn: "wamp.registration.match");
+
+    /// Given a topic URI, returns all subscriptions matching the topic.
+    subscription_match (Void): Void (type: "procedure", wrn: "wamp.subscription.match");
+
+    /// Given a procedure URI (and options), return the registration (if any) managing the procedure.
+    registration_lookup (Void): Void (type: "procedure", wrn: "wamp.registration.lookup");
+
+    /// Given a topic URI (and options), return the subscription (if any) managing the topic.
+    subscription_lookup (Void): Void (type: "procedure", wrn: "wamp.subscription.lookup");
+
+    /// Retrieve list of callees (WAMP session IDs) registered on (attached to) a registration.
+    registration_list_callees (Void): Void (type: "procedure", wrn: "wamp.registration.list_callees");
+
+    /// Retrieve list of subscribers (WAMP session IDs) subscribed on (attached to) a subscription.
+    subscription_list_subscribers (Void): Void (type: "procedure", wrn: "wamp.subscription.list_subscribers");
+
+    /// Retrieve number of callees registered on (attached to) a registration.
+    registration_count_callees (Void): Void (type: "procedure", wrn: "wamp.registration.count_callees");
+
+    /// Retrieve number of subscribers subscribed on (attached to) a subscription.
+    subscription_count_subscribers (Void): Void (type: "procedure", wrn: "wamp.subscription.count_subscribers");
+
+    /// Return history of events for given subscription.
+    subscription_get_events (Void): Void (type: "procedure", wrn: "wamp.subscription.get_events");
+}

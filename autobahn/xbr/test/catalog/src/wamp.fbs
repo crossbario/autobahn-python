@@ -81,31 +81,32 @@ elements. Arrays are currently only supported in a struct.
 struct uint256_t {
 
     // Arrays are currently only supported in a struct.
-    w: [uint32:8];
+    // FIXME: type_desc_str = FbsType.FBS2STR[field.type.basetype] KeyError: 17
+    // w: [uint32:8];
 
-    // /// Least significand 32 bits.
-    // w0: uint32;
+    /// Least significand 32 bits.
+    w0: uint32;
 
-    // /// 2nd significand 32 bits.
-    // w1: uint32;
+    /// 2nd significand 32 bits.
+    w1: uint32;
 
-    // /// 3rd significand 32 bits.
-    // w2: uint32;
+    /// 3rd significand 32 bits.
+    w2: uint32;
 
-    // /// 4th significand 32 bits.
-    // w3: uint32;
+    /// 4th significand 32 bits.
+    w3: uint32;
 
-    // /// 5th significand 32 bits.
-    // w4: uint32;
+    /// 5th significand 32 bits.
+    w4: uint32;
 
-    // /// 6th significand 32 bits.
-    // w5: uint32;
+    /// 6th significand 32 bits.
+    w5: uint32;
 
-    // /// 7th significand 32 bits.
-    // w6: uint32;
+    /// 7th significand 32 bits.
+    w6: uint32;
 
-    // /// Most significand 32 bits.
-    // w7: uint32;
+    /// Most significand 32 bits.
+    w7: uint32;
 }
 
 /// An unsigned integer with 160 bits.
@@ -167,6 +168,20 @@ table KeyValue
     value: string;
 }
 
+/// A single WAMP ID.
+table Wid
+{
+    /// WAMP ID (integers [1, 2^53]), see https://wamp-proto.org/_static/gen/wamp_latest.html#ids
+    value: uint64 (wid);
+}
+
+/// A list of WAMP IDs.
+table Wids
+{
+    /// List of WAMP IDs.
+    value: [uint64] (wid);
+}
+
 /// A single object UUID.
 table Oid
 {
@@ -193,4 +208,11 @@ table EthAddresses
 {
     /// List of addresses.
     value: [uint160_t] (ethadr);
+}
+
+/// An unsigned integer, wrapped as a table.
+table Uint
+{
+    /// Unsigned integer value.
+    value: uint64;
 }
