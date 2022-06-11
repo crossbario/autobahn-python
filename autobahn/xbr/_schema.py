@@ -520,11 +520,13 @@ def parse_fields(repository, schema, obj, objs_lst=None):
                          docs=parse_docs(fbs_field))
         assert field_name not in fields_by_name, 'field "{}" with id "{}" already in fields {}'.format(field_name,
                                                                                                        field_id,
-                                                                                                       sorted(fields_by_name.keys()))
+                                                                                                       sorted(
+                                                                                                           fields_by_name.keys()))
         fields_by_name[field_name] = field
         assert field_id not in fields_by_id, 'field "{}" with id " {}" already in fields {}'.format(field_name,
                                                                                                     field_id,
-                                                                                                    sorted(fields_by_id.keys()))
+                                                                                                    sorted(
+                                                                                                        fields_by_id.keys()))
         fields_by_id.append(field)
     return fields_by_name, fields_by_id
 
@@ -1919,15 +1921,24 @@ class FbsRepository(object):
                                 # FIXME: invalid type <class 'bytes'> for field "market_oid" (expected <class 'list'>)
                                 if expected_type != list:
                                     if type(value) != expected_type:
-                                        raise InvalidPayload('invalid type {} for field "{}" (expected {})'.format(type(value), field.name, expected_type))
+                                        msg = 'invalid type {} for field "{}" (expected {})'.format(type(value),
+                                                                                                    field.name,
+                                                                                                    expected_type)
+                                        self.log.info('{func} {msg}', func=hltype(self.validate),
+                                                      msg=hlval(msg, color='red'))
+                                        raise InvalidPayload(msg)
                             else:
                                 print('FIXME: unprocessed field type {}'.format(FbsType.FBS2STR(field.type.basetype)))
                         else:
                             if field.required or 'arg' in field.attrs or 'kwarg' not in field.attrs:
-                                raise InvalidPayload('missing required field "{}"'.format(field.name))
+                                msg = 'missing required field "{}"'.format(field.name)
+                                self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
+                                raise InvalidPayload(msg)
                     for key in args[arg_idx]:
                         if key not in vt.fields:
-                            raise InvalidPayload('unexpected key "{}" for field "{}"'.format(key, vt.name))
+                            msg = 'unexpected key "{}" for field "{}"'.format(key, vt.name)
+                            self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
+                            raise InvalidPayload(msg)
                 else:
                     self.log.warn(
                         '{func} validation type {vt_arg} found in repo, but is a struct, '
@@ -1966,12 +1977,15 @@ class FbsRepository(object):
                 if not vt.is_struct:
                     if vt_kwarg_key in kwargs:
                         if type(kwargs[vt_kwarg_key]) != dict:
-                            msg = 'validation error: invalid kwarg type, {vt_kwarg_key} has type {kwarg_type}, not dict'.format(
-                                vt_kwarg_key='kwargs[{}]'.format(vt_kwarg_key), kwarg_type=type(kwargs[vt_kwarg_key]))
+                            msg = 'validation error: invalid kwarg type, {vt_kwarg_key} has type {kwarg_type}, ' \
+                                  'not dict'.format(vt_kwarg_key='kwargs[{}]'.format(vt_kwarg_key),
+                                                    kwarg_type=type(kwargs[vt_kwarg_key]))
                             self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
                             raise InvalidPayload(msg)
                     else:
-                        msg = 'validation error: missing key {vt_kwarg_key}'.format(vt_kwarg_key='kwargs[{}]'.format(vt_kwarg_key))
+                        msg = 'validation error: missing key {vt_kwarg_key}'.format(
+                            vt_kwarg_key='kwargs[{}]'.format(vt_kwarg_key))
+                        self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
                         raise InvalidPayload(msg)
                 else:
                     self.log.info(
