@@ -1632,10 +1632,16 @@ class ApplicationSession(BaseSession):
             return txaio.create_future_success(scount)
 
     @public
-    def call(self, procedure: str, *args: Optional[List[Any]], **kwargs: Optional[Dict[str, Any]]) -> \
-            Union[Any, CallResult]:
+    def call(self, procedure: str, *args, **kwargs) -> Union[Any, CallResult]:
         """
         Implements :meth:`autobahn.wamp.interfaces.ICaller.call`
+
+        .. note::
+
+            Regarding type hints for ``*args`` and ``**kwargs``, doesn't work as we
+            can receive any Python types as list items or dict values, and because
+            of what is discussed here
+            https://adamj.eu/tech/2021/05/11/python-type-hints-args-and-kwargs/
         """
         assert(type(procedure) == str)
         assert(args is None or type(args) in (list, tuple))

@@ -1878,9 +1878,47 @@ class FbsRepository(object):
 
                 print('Ok, written {} bytes to {}'.format(len(data), fn))
 
-    def validate(self, args, kwargs, vt_args, vt_kwargs):
+    def validate(self, validation_type, args, kwargs):
         """
 
+        :param validation_type:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        if validation_type not in self.objs:
+            raise RuntimeError('validation type "{}" not found in inventory'.format(self.objs))
+        vt: FbsObject = self.objs[validation_type]
+
+        args_idx = 0
+        kwargs_keys = set(kwargs.keys() if kwargs else [])
+        for field in vt.fields_by_id:
+            if field.required or 'arg' in field.attrs or 'kwarg' not in field.attrs:
+                if args_idx >= len(args):
+                    raise InvalidPayload('validation error: missing positional argument "{}" in type "{}"'.format(field.name, vt.name))
+                # FIXME: validate args[args_idx] value vs field type
+                value = args[args_idx]
+                if field.type.basetype in FbsType.FBS2PY_TYPE:
+                    expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
+                    # FIXME: invalid type <class 'bytes'> for field "market_oid" (expected <class 'list'>)
+                    if expected_type != list:
+                        if type(value) != expected_type:
+                            raise InvalidPayload('invalid type {} for field "{}" (expected {})'.format(type(value), field.name, expected_type))
+                args_idx += 1
+            elif 'kwarg' in field.attrs:
+                if field.name in kwargs_keys:
+                    value = kwargs[field.name]
+                    print('3'*100, field.name, value)
+                    kwargs_keys.discard(field.name)
+
+        if len(args) > args_idx:
+            raise InvalidPayload('validation error: {} unexpected additional positional argument(s) in type "{}"'.format(len(args) - args_idx, vt.name))
+
+        if kwargs_keys:
+            raise InvalidPayload('validation error: {} unexpected additional keyword argument(s) {} in type "{}"'.format(len(kwargs_keys), list(kwargs_keys), vt.name))
+
+    def validate_old(self, args, kwargs, vt_args, vt_kwargs):
+        """
         :param args:
         :param kwargs:
         :param vt_args:
