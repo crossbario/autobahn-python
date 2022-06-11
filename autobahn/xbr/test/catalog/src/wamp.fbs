@@ -183,7 +183,7 @@ table Void
 {
 }
 
-/// A key-value pair with string keys & values.
+/// A key-value pair with (string typed keys and values).
 table KeyValue
 {
     /// UTF8 encoded key of KV pair.
@@ -191,6 +191,13 @@ table KeyValue
 
     /// UTF8 encoded value of KV pair.
     value: string (arg);
+}
+
+/// A list of key-value pairs (with string typed keys and values).
+table KeyValues
+{
+    /// List of key-value pairs.
+    value: [KeyValue] (arg);
 }
 
 /// A single WAMP ID.

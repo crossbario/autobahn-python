@@ -478,8 +478,21 @@ def parse_docs(obj):
 
 
 def parse_fields(repository, schema, obj, objs_lst=None):
+
+    # table Object {  // Used for both tables and structs.
+    # ...
+    #     fields:[Field] (required);  // Sorted.
+    # ...
+    # }
+    # https://github.com/google/flatbuffers/blob/11a19887053534c43f73e74786b46a615ecbf28e/reflection/reflection.fbs#L91
+
     fields_by_name = {}
-    fields_by_id = []
+
+    # the type index of a field is stored in ``fbs_field.Id()``, whereas the index of the field
+    # within the list of fields is different (!) because that list is alphabetically sorted (!).
+    # thus, we need to fill this map to recover the type index ordered list of fields
+    field_id_to_name = {}
+
     for j in range(obj.FieldsLength()):
         fbs_field: Field = obj.Fields(j)
 
@@ -488,6 +501,13 @@ def parse_fields(repository, schema, obj, objs_lst=None):
             field_name = field_name.decode('utf8')
 
         field_id = int(fbs_field.Id())
+
+        # IMPORTANT: this is NOT true, since j is according to sort-by-name
+        # assert field_id == j
+
+        # instead, maintain this map to recover sort-by-position order later
+        field_id_to_name[field_id] = field_name
+
         fbs_field_type = fbs_field.Type()
 
         # we use lazy-resolve for this property
@@ -520,14 +540,14 @@ def parse_fields(repository, schema, obj, objs_lst=None):
                          docs=parse_docs(fbs_field))
         assert field_name not in fields_by_name, 'field "{}" with id "{}" already in fields {}'.format(field_name,
                                                                                                        field_id,
-                                                                                                       sorted(
-                                                                                                           fields_by_name.keys()))
+                                                                                                       sorted(fields_by_name.keys()))
         fields_by_name[field_name] = field
-        assert field_id not in fields_by_id, 'field "{}" with id " {}" already in fields {}'.format(field_name,
-                                                                                                    field_id,
-                                                                                                    sorted(
-                                                                                                        fields_by_id.keys()))
-        fields_by_id.append(field)
+
+    # recover the type index ordered list of fields
+    fields_by_id = []
+    for i in range(len(fields_by_name)):
+        fields_by_id.append(fields_by_name[field_id_to_name[i]])
+
     return fields_by_name, fields_by_id
 
 
@@ -1886,36 +1906,58 @@ class FbsRepository(object):
         :param kwargs:
         :return:
         """
+        if validation_type is None:
+            return
         if validation_type not in self.objs:
             raise RuntimeError('validation type "{}" not found in inventory'.format(self.objs))
         vt: FbsObject = self.objs[validation_type]
 
         args_idx = 0
         kwargs_keys = set(kwargs.keys() if kwargs else [])
+        # print('ooo', kwargs_keys)
+
         for field in vt.fields_by_id:
             if field.required or 'arg' in field.attrs or 'kwarg' not in field.attrs:
                 if args_idx >= len(args):
-                    raise InvalidPayload('validation error: missing positional argument "{}" in type "{}"'.format(field.name, vt.name))
+                    raise InvalidPayload('missing positional argument "{}" in type "{}"'.format(field.name, vt.name))
                 # FIXME: validate args[args_idx] value vs field type
                 value = args[args_idx]
-                if field.type.basetype in FbsType.FBS2PY_TYPE:
+
+                # {'basetype': 'Obj', 'element': None, 'index': 34, 'objtype': 'uint160_t'}
+                if field.type.basetype == FbsType.Obj:
+                    print('FIXME-003-Obj')
+                elif field.type.basetype == FbsType.Union:
+                    print('FIXME-003-Union')
+                elif field.type.basetype == FbsType.Vector:
+                    print('FIXME-003-Vector')
+                elif field.type.basetype in FbsType.FBS2PY_TYPE:
                     expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
+                    # print('+' * 10, field.name, field.type, expected_type, value)
                     # FIXME: invalid type <class 'bytes'> for field "market_oid" (expected <class 'list'>)
                     if expected_type != list:
                         if type(value) != expected_type:
-                            raise InvalidPayload('invalid type {} for field "{}" (expected {})'.format(type(value), field.name, expected_type))
+                            raise InvalidPayload('invalid positional argument type {} (expected {}) for field "{}" in type "{}"'.format(type(value), expected_type, field.name, vt.name))
+                    else:
+                        print('FIXME-002')
+                else:
+                    print('FIXME-001')
                 args_idx += 1
             elif 'kwarg' in field.attrs:
                 if field.name in kwargs_keys:
                     value = kwargs[field.name]
-                    print('3'*100, field.name, value)
+                    # FIXME: validate value vs field type
+                    print('FIXME-003')
                     kwargs_keys.discard(field.name)
+            else:
+                assert False, 'should not arrive here'
+
+        # print('ooo', kwargs_keys)
 
         if len(args) > args_idx:
-            raise InvalidPayload('validation error: {} unexpected additional positional argument(s) in type "{}"'.format(len(args) - args_idx, vt.name))
+            raise InvalidPayload('{} unexpected positional arguments in type "{}"'.format(len(args) - args_idx, vt.name))
 
         if kwargs_keys:
-            raise InvalidPayload('validation error: {} unexpected additional keyword argument(s) {} in type "{}"'.format(len(kwargs_keys), list(kwargs_keys), vt.name))
+            raise InvalidPayload('{} unexpected keyword arguments {} in type "{}"'.format(len(kwargs_keys), list(kwargs_keys), vt.name))
 
     def validate_old(self, args, kwargs, vt_args, vt_kwargs):
         """
