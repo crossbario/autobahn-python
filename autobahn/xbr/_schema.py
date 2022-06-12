@@ -1899,15 +1899,89 @@ class FbsRepository(object):
                 print('Ok, written {} bytes to {}'.format(len(data), fn))
 
     def validate_obj(self, validation_type: str, value: Any):
+        # print('validate_obj', validation_type)
         if validation_type is None:
+            # any value validates against the None validation type
             return
         if validation_type not in self.objs:
             raise RuntimeError('validation type "{}" not found in inventory'.format(self.objs))
 
         # the Flatbuffers table type from the realm's type inventory against which we
         # will validate the WAMP args/kwargs application payload
-        # vt: FbsObject = self.objs[validation_type]
+        vt: FbsObject = self.objs[validation_type]
+
         # print('validate_obj', validation_type, value, vt)
+        # print('\n"validate_obj"', validation_type, type(value))
+
+        if type(value) == dict:
+            vt_kwargs = set(vt.fields.keys())
+
+            for k, v in value.items():
+                if k not in vt.fields:
+                    raise InvalidPayload('unexpected argument "{}" in value of validation type "{}"'.format(k, vt.name))
+                vt_kwargs.discard(k)
+
+                field = vt.fields[k]
+
+                # validate object-typed field, eg "uint160_t"
+                if field.type.basetype == FbsType.Obj:
+                    self.validate_obj(field.type.objtype, v)
+
+                elif field.type.basetype == FbsType.Union:
+                    pass
+                    print('FIXME-003-Union')
+
+                elif field.type.basetype == FbsType.Vector:
+                    pass
+                    print('FIXME-003-Vector')
+
+                # validate scalar type
+                elif field.type.basetype in FbsType.FBS2PY_TYPE:
+                    expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
+                    if type(v) != expected_type:
+                        raise InvalidPayload('invalid type {} (expected {}) for field "{}" in validation type "{}"'.format(type(v), expected_type, field.name, vt.name))
+                else:
+                    print('FIXME-001')
+
+            if vt.is_struct and vt_kwargs:
+                raise InvalidPayload('missing argument(s) {} in validation type "{}"'.format(list(vt_kwargs), vt.name))
+
+        elif type(value) == list:
+            if not vt.is_struct:
+                raise InvalidPayload('invalid type {} for (non-struct) validation type "{}"'.format(type(value), vt.name))
+            idx = 0
+            for field in vt.fields_by_id:
+                # consume the next positional argument from input
+                if idx >= len(value):
+                    raise InvalidPayload('missing argument "{}" in type "{}"'.format(field.name, vt.name))
+                v = value[idx]
+                idx += 1
+
+                # validate object-typed field, eg "uint160_t"
+                if field.type.basetype == FbsType.Obj:
+                    self.validate_obj(field.type.objtype, v)
+
+                elif field.type.basetype == FbsType.Union:
+                    pass
+                    print('FIXME-003-Union')
+
+                elif field.type.basetype == FbsType.Vector:
+                    pass
+                    print('FIXME-003-Vector')
+
+                # validate scalar type
+                elif field.type.basetype in FbsType.FBS2PY_TYPE:
+                    expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
+                    if type(v) != expected_type:
+                        raise InvalidPayload('invalid type {} (expected {}) for field "{}" in type "{}"'.format(type(v), expected_type, field.name, vt.name))
+                else:
+                    print('FIXME-001')
+
+            if len(value) > idx:
+                raise InvalidPayload('unexpected argument(s) in validation type "{}"'.format(vt.name))
+
+        else:
+            raise InvalidPayload('invalid type {} for value of validation type "{}"'.format(type(value), vt.name))
 
     def validate(self, validation_type: str, args: List[Any], kwargs: Dict[str, Any]):
         """
@@ -1925,7 +1999,7 @@ class FbsRepository(object):
         if validation_type is None:
             return
         if validation_type not in self.objs:
-            raise RuntimeError('validation type "{}" not found in inventory'.format(self.objs))
+            raise RuntimeError('validation type "{}" not found in inventory (among {} types)'.format(validation_type, len(self.objs)))
 
         # the Flatbuffers table type from the realm's type inventory against which we
         # will validate the WAMP args/kwargs application payload
@@ -1955,11 +2029,11 @@ class FbsRepository(object):
 
                 elif field.type.basetype == FbsType.Union:
                     pass
-                    # print('FIXME-003-Union')
+                    print('FIXME-003-Union')
 
                 elif field.type.basetype == FbsType.Vector:
                     pass
-                    # print('FIXME-003-Vector')
+                    print('FIXME-003-Vector')
 
                 # validate scalar type
                 elif field.type.basetype in FbsType.FBS2PY_TYPE:

@@ -49,6 +49,13 @@ table RealmConfig
     roles: [RoleConfig];
 }
 
+table StartRealm
+{
+    realm_id: string (wampname);
+    realm_config: RealmConfig;
+    // realm_config: [ubyte] (flexbuffer);
+}
+
 /// Realm information (also see :class:`crossbar.worker.types.RouterRealm`).
 table RoleInfo (arg)
 {
@@ -58,12 +65,6 @@ table RoleInfo (arg)
     roles: [string] (wampname);
     has_router: bool;
     has_service_session: bool;
-}
-
-table StartRealm
-{
-    realm_id: string (arg, wampname);
-    realm_config: [ubyte] (arg, flexbuffer);
 }
 
 table RealmStats
