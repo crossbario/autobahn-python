@@ -135,7 +135,7 @@ struct uint256_t {
 }
 
 /// An unsigned integer with 160 bits.
-struct uint160_t {
+struct uint160_t (arg) {
     /// Least significand 32 bits.
     w0: uint32;
 

@@ -14,6 +14,41 @@ table RealmInfo
 {
 }
 
+struct PermissionAllow
+{
+    call: bool;
+    register: bool;
+    publish: bool;
+    subscribe: bool;
+}
+
+struct PermissionDisclose
+{
+    caller: bool;
+    publisher: bool;
+}
+
+table RolePermission
+{
+    uri: string (wampuri_p);
+    match: string;
+    allow: PermissionAllow;
+    disclose: PermissionDisclose;
+    cache: bool;
+}
+
+table RoleConfig
+{
+    name: string (wampname);
+    permissions: [RolePermission];
+}
+
+table RealmConfig
+{
+    name: string (wampname);
+    roles: [RoleConfig];
+}
+
 /// Realm information (also see :class:`crossbar.worker.types.RouterRealm`).
 table RoleInfo (arg)
 {

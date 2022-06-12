@@ -39,6 +39,15 @@ include "wamp.fbs";
 
 namespace testsvc1;
 
+struct TestData1
+{
+    // structs may contain only scalar or struct fields
+    // attribute1: string (arg);
+    attribute1: bool (arg);
+    attribute2: uint32 (arg);
+    attribute3: uint64 (kwarg, timestamp);
+    attribute4: uint160_t (kwarg, ethadr);
+}
 
 table TestRequest1 (type: "request")
 {
@@ -46,6 +55,7 @@ table TestRequest1 (type: "request")
     column2: uint32 (arg);
     column3: uint64 (kwarg, timestamp);
     column4: uint160_t (kwarg, ethadr);
+    column5: TestData1;
 }
 
 table TestRequestProgress1 (type: "progressive-request")

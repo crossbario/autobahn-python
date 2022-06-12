@@ -137,15 +137,16 @@ def pack_ethadr(value: Union[bytes, str]) -> Dict[str, Any]:
     w = []
     for i in range(5):
         w.append(struct.unpack('<I', value_bytes[0 + i * 4:4 + i * 4])[0])
-    packed_value = {
-        'value': {
-            'w0': w[0],
-            'w1': w[1],
-            'w2': w[2],
-            'w3': w[3],
-            'w4': w[4],
-        }
-    }
+    packed_value = w
+    # packed_value = {
+    #     'value': {
+    #         'w0': w[0],
+    #         'w1': w[1],
+    #         'w2': w[2],
+    #         'w3': w[3],
+    #         'w4': w[4],
+    #     }
+    # }
     return packed_value
 
 

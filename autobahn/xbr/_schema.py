@@ -1898,50 +1898,78 @@ class FbsRepository(object):
 
                 print('Ok, written {} bytes to {}'.format(len(data), fn))
 
-    def validate(self, validation_type, args, kwargs):
-        """
+    def validate_obj(self, validation_type: str, value: Any):
+        if validation_type is None:
+            return
+        if validation_type not in self.objs:
+            raise RuntimeError('validation type "{}" not found in inventory'.format(self.objs))
 
-        :param validation_type:
-        :param args:
-        :param kwargs:
-        :return:
+        # the Flatbuffers table type from the realm's type inventory against which we
+        # will validate the WAMP args/kwargs application payload
+        # vt: FbsObject = self.objs[validation_type]
+        # print('validate_obj', validation_type, value, vt)
+
+    def validate(self, validation_type: str, args: List[Any], kwargs: Dict[str, Any]):
+        """
+        Validate the WAMP application payload provided in positional argument in ``args``
+        and in keyword-based arguments in ``kwargs`` against the FlatBuffers table
+        type ``validation_type`` from this repository.
+
+        If the application payload does not validate against the provided type,
+        an :class:`autobahn.wamp.exception.InvalidPayload` is raised.
+
+        :param validation_type: Flatbuffers type (fully qualified) against to validate application payload.
+        :param args: The application payload WAMP positional arguments.
+        :param kwargs: The application payload WAMP keyword-based arguments.
         """
         if validation_type is None:
             return
         if validation_type not in self.objs:
             raise RuntimeError('validation type "{}" not found in inventory'.format(self.objs))
+
+        # the Flatbuffers table type from the realm's type inventory against which we
+        # will validate the WAMP args/kwargs application payload
         vt: FbsObject = self.objs[validation_type]
 
+        # we use this to index and consume positional args from the input
         args_idx = 0
-        kwargs_keys = set(kwargs.keys() if kwargs else [])
-        # print('ooo', kwargs_keys)
 
+        # we use this to track any kwargs not consumed while processing the validation type.
+        # and names left in this set after processing the validation type in full is an error ("unexpected kwargs")
+        kwargs_keys = set(kwargs.keys() if kwargs else [])
+
+        # iterate over all fields of validation type in field index order (!)
         for field in vt.fields_by_id:
+
+            # field is a WAMP positional argument, that is one that needs to map to the next arg from args
             if field.required or 'arg' in field.attrs or 'kwarg' not in field.attrs:
+                # consume the next positional argument from input
                 if args_idx >= len(args):
                     raise InvalidPayload('missing positional argument "{}" in type "{}"'.format(field.name, vt.name))
-                # FIXME: validate args[args_idx] value vs field type
                 value = args[args_idx]
+                args_idx += 1
 
-                # {'basetype': 'Obj', 'element': None, 'index': 34, 'objtype': 'uint160_t'}
+                # validate object-typed field, eg "uint160_t"
                 if field.type.basetype == FbsType.Obj:
-                    print('FIXME-003-Obj')
+                    self.validate_obj(field.type.objtype, value)
+
                 elif field.type.basetype == FbsType.Union:
-                    print('FIXME-003-Union')
+                    pass
+                    # print('FIXME-003-Union')
+
                 elif field.type.basetype == FbsType.Vector:
-                    print('FIXME-003-Vector')
+                    pass
+                    # print('FIXME-003-Vector')
+
+                # validate scalar type
                 elif field.type.basetype in FbsType.FBS2PY_TYPE:
                     expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
-                    # print('+' * 10, field.name, field.type, expected_type, value)
-                    # FIXME: invalid type <class 'bytes'> for field "market_oid" (expected <class 'list'>)
-                    if expected_type != list:
-                        if type(value) != expected_type:
-                            raise InvalidPayload('invalid positional argument type {} (expected {}) for field "{}" in type "{}"'.format(type(value), expected_type, field.name, vt.name))
-                    else:
-                        print('FIXME-002')
+                    if type(value) != expected_type:
+                        raise InvalidPayload('invalid positional argument type {} (expected {}) for field "{}" in type "{}"'.format(type(value), expected_type, field.name, vt.name))
                 else:
                     print('FIXME-001')
-                args_idx += 1
+
+            # field is a WAMP keyword argument, that is one that needs to map into kwargs
             elif 'kwarg' in field.attrs:
                 if field.name in kwargs_keys:
                     value = kwargs[field.name]
