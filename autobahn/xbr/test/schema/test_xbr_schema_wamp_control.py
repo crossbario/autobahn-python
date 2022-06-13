@@ -1,8 +1,6 @@
 import os
 import copy
 import pkg_resources
-from binascii import a2b_hex
-from random import randint, random
 import txaio
 
 if 'USE_TWISTED' in os.environ and os.environ['USE_TWISTED']:
@@ -14,9 +12,7 @@ else:
 
     txaio.use_asyncio()
 
-from autobahn.xbr._util import pack_ethadr, unpack_ethadr
-from autobahn.xbr import FbsType, FbsObject, FbsService, FbsRPCCall, FbsRepository, FbsSchema, FbsField, FbsEnum, \
-    FbsEnumValue
+from autobahn.xbr import FbsRepository
 from autobahn.wamp.exception import InvalidPayload
 
 

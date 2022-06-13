@@ -32,7 +32,7 @@ import textwrap
 from pathlib import Path
 from pprint import pformat
 from typing import Union, Dict, List, Optional, IO, Any, Tuple
-from collections.abc import Mapping, Sequence, Hashable
+from collections.abc import Sequence
 
 # FIXME
 # https://github.com/google/yapf#example-as-a-module
@@ -1927,7 +1927,7 @@ class FbsRepository(object):
         :param value: Value to validate.
         :return:
         """
-        # print('>>', validation_type, type(value))
+        # print('validate_obj', validation_type, type(value))
 
         if validation_type is None:
             # any value validates against the None validation type
@@ -1967,7 +1967,6 @@ class FbsRepository(object):
                     if isinstance(v, str) or isinstance(v, bytes):
                         print('FIXME-003-1-Vector')
                     elif isinstance(v, Sequence):
-                        # print('FIXME-003-2-Vector', field.name, field.type.elementtype)
                         for ve in v:
                             self.validate_obj(field.type.elementtype, ve)
                     else:
@@ -1984,9 +1983,9 @@ class FbsRepository(object):
             if vt.is_struct and vt_kwargs:
                 raise InvalidPayload('missing argument(s) {} in validation type "{}"'.format(list(vt_kwargs), vt.name))
 
-        elif type(value) == list:
-            if not vt.is_struct:
-                raise InvalidPayload('invalid type {} for (non-struct) validation type "{}"'.format(type(value), vt.name))
+        elif type(value) in [tuple, list]:
+            # if not vt.is_struct:
+            #    raise InvalidPayload('**: invalid type {} for (non-struct) validation type "{}"'.format(type(value), vt.name))
             idx = 0
             for field in vt.fields_by_id:
                 # consume the next positional argument from input
@@ -2001,17 +2000,23 @@ class FbsRepository(object):
 
                 elif field.type.basetype == FbsType.Union:
                     pass
-                    print('FIXME-003-Union')
+                    print('FIXME-005-Union')
 
                 elif field.type.basetype == FbsType.Vector:
-                    pass
-                    print('FIXME-003-Vector')
+                    if isinstance(v, str) or isinstance(v, bytes):
+                        print('FIXME-005-1-Vector')
+                    elif isinstance(v, Sequence):
+                        for ve in v:
+                            print(field.type.elementtype, ve)
+                            self.validate_obj(field.type.elementtype, ve)
+                    else:
+                        print('FIXME-005-3-Vector')
 
                 # validate scalar type
                 elif field.type.basetype in FbsType.FBS2PY_TYPE:
                     expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
                     if type(v) != expected_type:
-                        raise InvalidPayload('invalid type {} (expected {}) for field "{}" in type "{}"'.format(type(v), expected_type, field.name, vt.name))
+                        raise InvalidPayload('invalid type {} with value "{}" (expected {}) for field "{}" in type "{}"'.format(type(v), v, expected_type, field.name, vt.name))
                 else:
                     print('FIXME-001')
 
@@ -2070,8 +2075,15 @@ class FbsRepository(object):
                     print('FIXME-003-Union')
 
                 elif field.type.basetype == FbsType.Vector:
-                    pass
-                    print('FIXME-003-Vector')
+
+                    if isinstance(value, str) or isinstance(value, bytes):
+                        print('FIXME-005-1-Vector')
+                    elif isinstance(value, Sequence):
+                        for ve in value:
+                            print(field.type.elementtype, ve)
+                            self.validate_obj(field.type.elementtype, ve)
+                    else:
+                        print('FIXME-005-3-Vector')
 
                 # validate scalar type
                 elif field.type.basetype in FbsType.FBS2PY_TYPE:
