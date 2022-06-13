@@ -26,8 +26,9 @@ distclean: clean
 compile:
 	flatc -o $(FBS_OUTPUT) --binary --schema --bfbs-comments --bfbs-builtins $(FBS_FILES)
 
+# demo.bfbs  testsvc1.bfbs  wamp-auth.bfbs  wamp.bfbs  wamp-control.bfbs  wamp-meta.bfbs
 describe:
-	xbrnetwork describe-schema --schema $(FBS_OUTPUT)
+	xbrnetwork describe-schema --schema $(FBS_OUTPUT)/demo.bfbs
 
 # IMPORTANT: note the use of "-X" and stripzip to preserve privacy and support repeatable builds
 build: compile
