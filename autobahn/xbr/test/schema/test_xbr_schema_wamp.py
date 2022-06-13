@@ -71,7 +71,7 @@ class TestFbsBase(unittest.TestCase):
     def setUp(self):
         self.repo = FbsRepository('autobahn')
         self.archives = []
-        for fbs_file in ['wamp.bfbs']:
+        for fbs_file in ['wamp.bfbs', 'testsvc1.bfbs']:
             archive = pkg_resources.resource_filename('autobahn', 'xbr/test/catalog/schema/{}'.format(fbs_file))
             self.repo.load(archive)
             self.archives.append(archive)
@@ -85,15 +85,6 @@ class TestFbsRepository(TestFbsBase):
     def test_create_from_archive(self):
         self.assertIn('uint160_t', self.repo.objs)
         self.assertIsInstance(self.repo.objs['uint160_t'], FbsObject)
-
-        # self.assertEqual(self.repo.total_count, 69)
-
-        self.assertIn('trading.ClockTick', self.repo.objs)
-        self.assertIsInstance(self.repo.objs['trading.ClockTick'], FbsObject)
-
-        self.assertIn('trading.ITradingClock', self.repo.services)
-        self.assertIsInstance(self.repo.services['trading.ITradingClock'], FbsService)
-
         self.assertIn('testsvc1.TestRequest', self.repo.objs)
         self.assertIsInstance(self.repo.objs['testsvc1.TestRequest'], FbsObject)
         self.assertIn('testsvc1.TestResponse', self.repo.objs)
