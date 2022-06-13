@@ -29,10 +29,10 @@ import io
 import pprint
 import hashlib
 import textwrap
-from typing import Union
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional, IO, Any, Tuple
+from typing import Union, Dict, List, Optional, IO, Any, Tuple
+from collections.abc import Mapping, Sequence, Hashable
 
 # FIXME
 # https://github.com/google/yapf#example-as-a-module
@@ -54,7 +54,7 @@ class FbsType(object):
     See: https://github.com/google/flatbuffers/blob/11a19887053534c43f73e74786b46a615ecbf28e/reflection/reflection.fbs#L33
     """
 
-    __slots__ = ('_repository', '_schema', '_basetype', '_element', '_index', '_objtype')
+    __slots__ = ('_repository', '_schema', '_basetype', '_element', '_index', '_objtype', '_elementtype')
 
     UType = _BaseType.UType
 
@@ -204,11 +204,13 @@ class FbsType(object):
                  basetype: int,
                  element: int,
                  index: int,
-                 objtype: Optional[str] = None):
+                 objtype: Optional[str] = None,
+                 elementtype: Optional[str] = None):
         self._repository = repository
         self._schema = schema
         self._basetype = basetype
         self._element = element
+        self._elementtype = elementtype
         self._index = index
         self._objtype = objtype
 
@@ -232,7 +234,7 @@ class FbsType(object):
     @property
     def element(self) -> int:
         """
-        Only if basetype == Vector or basetype == Array.
+        Only if basetype == Vector
 
         :return:
         """
@@ -250,18 +252,34 @@ class FbsType(object):
         return self._index
 
     @property
+    def elementtype(self) -> Optional[str]:
+        """
+        If basetype == Vector, fully qualified element type name.
+
+        :return:
+        """
+        # lazy-resolve of element type index to element type name. this is important (!)
+        # to decouple from loading order of type objects
+        if self._basetype == FbsType.Vector and self._elementtype is None:
+            if self._element == FbsType.Obj:
+                self._elementtype = self._schema.objs_by_id[self._index].name
+                # print('filled in missing elementtype "{}" for element type index {} in vector'.format(self._elementtype, self._index))
+            else:
+                assert False, 'FIXME'
+        return self._elementtype
+
+    @property
     def objtype(self) -> Optional[str]:
         """
         If basetype == Object, fully qualified object type name.
 
         :return:
         """
-        if self._basetype == FbsType.Obj:
-            # lazy-resolve of object type index to object type name. this is important (!)
-            # to decouple from loading order of type objects
-            if self._objtype is None:
-                self._objtype = self._schema.objs_by_id[self._index].name
-                # print('filled in missing objtype "{}" for type index {} in object {}'.format(self._objtype, self._index, self))
+        # lazy-resolve of object type index to object type name. this is important (!)
+        # to decouple from loading order of type objects
+        if self._basetype == FbsType.Obj and self._objtype is None:
+            self._objtype = self._schema.objs_by_id[self._index].name
+            # print('filled in missing objtype "{}" for object type index {} in object'.format(self._objtype, self._index))
         return self._objtype
 
     def map(self, language: str, attrs: Optional[Dict] = None, required: Optional[bool] = True,
@@ -1898,20 +1916,34 @@ class FbsRepository(object):
 
                 print('Ok, written {} bytes to {}'.format(len(data), fn))
 
-    def validate_obj(self, validation_type: str, value: Any):
-        # print('validate_obj', validation_type)
+    def validate_obj(self, validation_type: Optional[str], value: Optional[Any]):
+        """
+        Validate value against the validation type given.
+
+        If the application payload does not validate against the provided type,
+        an :class:`autobahn.wamp.exception.InvalidPayload` is raised.
+
+        :param validation_type: Flatbuffers type (fully qualified) against to validate application payload.
+        :param value: Value to validate.
+        :return:
+        """
+        # print('>>', validation_type, type(value))
+
         if validation_type is None:
             # any value validates against the None validation type
             return
-        if validation_type not in self.objs:
+
+        if validation_type in []:
+            pass
+        elif validation_type not in self.objs:
             raise RuntimeError('validation type "{}" not found in inventory'.format(self.objs))
+
+        if type(value) in [str, bytes, int, float, bool]:
+            pass
 
         # the Flatbuffers table type from the realm's type inventory against which we
         # will validate the WAMP args/kwargs application payload
         vt: FbsObject = self.objs[validation_type]
-
-        # print('validate_obj', validation_type, value, vt)
-        # print('\n"validate_obj"', validation_type, type(value))
 
         if type(value) == dict:
             vt_kwargs = set(vt.fields.keys())
@@ -1932,11 +1964,17 @@ class FbsRepository(object):
                     print('FIXME-003-Union')
 
                 elif field.type.basetype == FbsType.Vector:
-                    pass
-                    print('FIXME-003-Vector')
+                    if isinstance(v, str) or isinstance(v, bytes):
+                        print('FIXME-003-1-Vector')
+                    elif isinstance(v, Sequence):
+                        # print('FIXME-003-2-Vector', field.name, field.type.elementtype)
+                        for ve in v:
+                            self.validate_obj(field.type.elementtype, ve)
+                    else:
+                        print('FIXME-003-3-Vector')
 
                 # validate scalar type
-                elif field.type.basetype in FbsType.FBS2PY_TYPE:
+                elif field.type.basetype in FbsType.SCALAR_TYPES:
                     expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
                     if type(v) != expected_type:
                         raise InvalidPayload('invalid type {} (expected {}) for field "{}" in validation type "{}"'.format(type(v), expected_type, field.name, vt.name))
