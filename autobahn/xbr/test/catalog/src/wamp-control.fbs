@@ -10,10 +10,6 @@ include "wamp.fbs";
 namespace wamp;
 
 
-table RealmInfo
-{
-}
-
 struct PermissionAllow
 {
     call: bool;
@@ -39,6 +35,7 @@ table RolePermission
 
 table RoleConfig
 {
+    // FIXME: add "id: string (wampname);"
     name: string (wampname);
     permissions: [RolePermission];
 }
@@ -56,15 +53,24 @@ table StartRealm
     // realm_config: [ubyte] (flexbuffer);
 }
 
+
 /// Realm information (also see :class:`crossbar.worker.types.RouterRealm`).
-table RoleInfo (arg)
+table RealmInfo
 {
     id: string (wampname);
-    config: [ubyte] (flexbuffer);
+    config: RealmConfig;
+    // config: [ubyte] (flexbuffer);
     created: string (wampname);
-    roles: [string] (wampname);
+    roles: [RoleConfig];
     has_router: bool;
     has_service_session: bool;
+}
+
+/// Role information (also see :class:`crossbar.worker.types.RouterRealmRole`).
+table RoleInfo
+{
+    id: string (wampname);
+    config: RoleConfig;
 }
 
 table RealmStats

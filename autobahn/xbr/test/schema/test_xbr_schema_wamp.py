@@ -277,7 +277,8 @@ class TestFbsValidateKeyValue(TestFbsBase):
             'value': []
         }
         for i in range(10):
-            valid_value['value'].append(['key{}'.format(i), 'value{}'.format(i)])
+            # valid_value['value'].append(['key{}'.format(i), 'value{}'.format(i)])
+            valid_value['value'].append({'key': 'key{}'.format(i), 'value': 'value{}'.format(i)})
         try:
             self.repo.validate_obj('KeyValues', valid_value)
         except Exception as exc:
@@ -286,12 +287,10 @@ class TestFbsValidateKeyValue(TestFbsBase):
     def test_validate_KeyValues_invalid(self):
         tests = [
             (None, 'invalid type'),
-            ([], 'missing argument'),
+            ([], 'invalid type'),
             ({'invalid_key': 'something'}, 'unexpected argument'),
-            # FIXME
-            # ({'value': None}, 'missing argument'),
-            # ({'value': {}}, 'missing argument'),
-            # ({'value': []}, 'missing argument'),
+            ({'value': None}, 'invalid type'),
+            ({'value': {}}, 'invalid type'),
         ]
         for value, expected_regex in tests:
             self.assertRaisesRegex(InvalidPayload, expected_regex,

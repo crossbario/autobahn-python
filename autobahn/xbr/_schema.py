@@ -1430,9 +1430,9 @@ class FbsSchema(object):
 
 
 def validate_scalar(field, value: Optional[Any]):
-    print('validate scalar "{}" for type {} (attrs={})'.format(field.name,
-                                                               FbsType.FBS2STR[field.type.basetype],
-                                                               field.attrs))
+    # print('validate scalar "{}" for type {} (attrs={})'.format(field.name,
+    #                                                            FbsType.FBS2STR[field.type.basetype],
+    #                                                            field.attrs))
     if field.type.basetype in FbsType.FBS2PY_TYPE:
         expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
         if type(value) != expected_type:
@@ -1977,7 +1977,8 @@ class FbsRepository(object):
                         for ve in v:
                             self.validate_obj(field.type.elementtype, ve)
                     else:
-                        print('FIXME-003-3-Vector')
+                        raise InvalidPayload('invalid type {} for value (expected Vector/List/Tuple) '
+                                             'of validation type "{}"'.format(type(v), vt.name))
 
                 else:
                     validate_scalar(field, v)
@@ -1986,8 +1987,10 @@ class FbsRepository(object):
                 raise InvalidPayload('missing argument(s) {} in validation type "{}"'.format(list(vt_kwargs), vt.name))
 
         elif type(value) in [tuple, list]:
-            # if not vt.is_struct:
-            #    raise InvalidPayload('**: invalid type {} for (non-struct) validation type "{}"'.format(type(value), vt.name))
+            # FIXME: KeyValues
+            if not vt.is_struct:
+                raise InvalidPayload('**: invalid type {} for (non-struct) validation type "{}"'.format(type(value), vt.name))
+
             idx = 0
             for field in vt.fields_by_id:
                 # consume the next positional argument from input
@@ -2058,7 +2061,7 @@ class FbsRepository(object):
             # field is a WAMP positional argument, that is one that needs to map to the next arg from args
             if field.required or 'arg' in field.attrs or 'kwarg' not in field.attrs:
                 # consume the next positional argument from input
-                if args_idx >= len(args):
+                if args is None or args_idx >= len(args):
                     raise InvalidPayload('missing positional argument "{}" in type "{}"'.format(field.name, vt.name))
                 value = args[args_idx]
                 args_idx += 1

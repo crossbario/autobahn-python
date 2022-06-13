@@ -154,54 +154,66 @@ class TestFbsValidateRoleConfig(TestFbsBase):
         #                        'wamp.RealmConfig', config)
 
 
-if False:
-    class TestFbsValidateRealmConfig(TestFbsBase):
-        def setUp(self):
-            super().setUp()
-            self.realm_config1 = {
-                "name": "realm1",
-                "roles": [{
-                    "name": "anonymous",
-                    "permissions": [{
-                        "uri": "",
-                        "match": "prefix",
-                        "allow": {
-                            "call": True,
-                            "register": True,
-                            "publish": True,
-                            "subscribe": True
-                        },
-                        "disclose": {
-                            "caller": True,
-                            "publisher": True
-                        },
-                        "cache": True
-                    }]
+class TestFbsValidateRealmConfig(TestFbsBase):
+    def setUp(self):
+        super().setUp()
+        self.realm_config1 = {
+            "name": "realm1",
+            "roles": [{
+                "name": "anonymous",
+                "permissions": [{
+                    "uri": "",
+                    "match": "prefix",
+                    "allow": {
+                        "call": True,
+                        "register": True,
+                        "publish": True,
+                        "subscribe": True
+                    },
+                    "disclose": {
+                        "caller": True,
+                        "publisher": True
+                    },
+                    "cache": True
                 }]
-            }
+            }]
+        }
 
-        def test_RealmConfig_valid(self):
-            try:
-                self.repo.validate_obj('wamp.RealmConfig', self.realm_config1)
-            except Exception as exc:
-                self.assertTrue(False, f'Inventory.validate() raised an exception: {exc}')
+    def test_RealmConfig_valid(self):
+        try:
+            self.repo.validate_obj('wamp.RealmConfig', self.realm_config1)
+        except Exception as exc:
+            self.assertTrue(False, f'Inventory.validate() raised an exception: {exc}')
 
-        def test_RealmConfig_invalid(self):
-            config = copy.copy(self.realm_config1)
-            config['name'] = 666
-            self.assertRaisesRegex(InvalidPayload, 'invalid type', self.repo.validate_obj,
-                                   'wamp.RealmConfig', config)
+    def test_RealmConfig_invalid(self):
+        config = copy.copy(self.realm_config1)
+        config['name'] = 666
+        self.assertRaisesRegex(InvalidPayload, 'invalid type', self.repo.validate_obj,
+                               'wamp.RealmConfig', config)
 
-            # config = copy.copy(self.realm_config1)
-            # del config['roles']
-            # config['foobar'] = 666
-            # self.assertRaisesRegex(InvalidPayload, 'missing positional argument', self.repo.validate_obj,
-            #                        'wamp.RealmConfig', config)
+    def test_start_router_realm_valid(self):
+        valid_args = ['realm023', self.realm_config1]
+        try:
+            self.repo.validate('wamp.StartRealm', args=valid_args, kwargs={})
+        except Exception as exc:
+            self.assertTrue(False, f'Inventory.validate() raised an exception: {exc}')
 
-        def test_start_router_realm_valid(self):
-            valid_args = ['realm023', self.realm_config1]
-            # valid_args = ['realm023', 23]
-            try:
-                self.repo.validate('wamp.StartRealm', args=valid_args, kwargs={})
-            except Exception as exc:
-                self.assertTrue(False, f'Inventory.validate() raised an exception: {exc}')
+    def test_start_router_realm_invalid(self):
+        tests = [
+            (None, None, 'missing positional argument'),
+            (None, {}, 'missing positional argument'),
+            (['realm023', {}], {'bogus': 666}, 'unexpected keyword arguments'),
+            ([], None, 'missing positional argument'),
+            (['realm023'], None, 'missing positional argument'),
+            (['realm023', None], None, 'invalid type'),
+            (['realm023', 666], None, 'invalid type'),
+            (['realm023', {'name': 'realm1', 'bogus': []}], None, 'unexpected argument'),
+            (['realm023', {'name': 666}], None, 'invalid type'),
+            (['realm023', {'name': 'realm1', 'roles': 666}], None, 'invalid type'),
+            (['realm023', {'name': 'realm1', 'roles': None}], None, 'invalid type'),
+            (['realm023', {'name': 'realm1', 'roles': {}}], None, 'invalid type'),
+            (['realm023', {'name': 'realm1', 'roles': [{'name': 666}]}], None, 'invalid type'),
+        ]
+        for args, kwargs, expected_regex in tests:
+            self.assertRaisesRegex(InvalidPayload, expected_regex,
+                                   self.repo.validate, 'wamp.StartRealm', args=args, kwargs=kwargs)
