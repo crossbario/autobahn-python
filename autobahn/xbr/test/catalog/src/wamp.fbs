@@ -1,0 +1,288 @@
+/// The field or value is read-only.
+attribute readonly;
+
+/// References other object (foreign key in RDBMS)
+attribute references;
+
+/// At most one record can have this value at any point in time (unique constraint in RDBMS)
+attribute unique;
+
+/// Meta type attribute.
+attribute type;
+
+/// Meta options attribute.
+attribute options;
+
+/// A NumPy one dimensional (`ndim=1`) `numpy.ndarray` container of items of the same type and size (`dtype.kind in ['b', 'i', 'u', 'f']`).
+attribute ndarray;
+
+/// (works around "error: only non-scalar fields in tables may be 'required'")
+attribute arg;
+
+attribute kwarg;
+
+
+///////////// Attributes supported for integers
+
+/// Timestamp: ns since Unix epoch (1970/1/1 UTC) (64 bit unsigned int).
+attribute timestamp;
+
+
+/// WAMP ID, that is an integer ``[1, 2^53]``, see https://wamp-proto.org/_static/gen/wamp_latest.html#ids
+attribute wampid;
+
+/// WAMP URI component (aka "name"), loose rules (minimum required to combine to dotted URIs), must match regular expression ``^[^\s\.#]+$``.
+attribute wampname;
+
+/// WAMP URI component (aka "name"), strict rules (can be used as identifier in most languages), must match regular expression ``^[\da-z_]+$``.
+attribute wampname_s;
+
+/// WAMP URI, loose rules, no empty URI components (aka "concrete or fully qualified URI"), must match regular expression ``^([^\s\.#]+\.)*([^\s\.#]+)$``.
+attribute wampuri;
+
+/// WAMP URI, strict rules, no empty URI components, must match regular expression ``^([\da-z_]+\.)*([\da-z_]+)$``.
+attribute wampuri_s;
+
+/// WAMP URI or URI (prefix or wildcard) pattern, loose rules (minimum required to combine to dotted URIs), must match regular expression ``^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$``.
+attribute wampuri_p;
+
+/// WAMP URI or URI (prefix or wildcard) pattern, strict rules (can be used as identifier in most languages), must match regular expression ``^(([\da-z_]+\.)|\.)*([\da-z_]+)?$``.
+attribute wampuri_sp;
+
+/// WAMP URI or URI prefix pattern, loose rules (minimum required to combine to dotted URIs), must match regular expression ``^([^\s\.#]+\.)*([^\s\.#]*)$``.
+attribute wampuri_pp;
+
+/// WAMP URI or URI prefix pattern, strict rules (can be used as identifier in most languages), must match regular expression ``^([\da-z_]+\.)*([\da-z_]*)$``.
+attribute wampuri_spp;
+
+
+///////////// Attributes supported for strings
+
+/// WAMP URI resource name or resource name pattern for identifying WAMP resource like
+/// procedures and topics. WAMP resource names are hierarchically structured consisting
+/// of a sequence of path segments separated by dots, e.g. `com.example.add2` or
+/// `com.example.public.`.
+attribute wampuri;
+
+/// A URL locating a Web resource, see https://url.spec.whatwg.org/.
+attribute url;
+
+/// Multihash string (eg IPFS), see https://github.com/multiformats/multihash.
+attribute multihash;
+
+
+///////////// Attributes supported for byte strings (`[uint8]`)
+
+/// CBOR-serialized object or value.
+attribute cbor;
+
+/// Ethereum (off-chain EIP712) signature (65 bytes).
+attribute ethsig;
+
+
+///////////// Attributes supported for large integers
+
+/// UUID (128 bit binary).
+attribute uuid;
+
+/// Ethereum address (160 bit binary).
+attribute ethadr;
+
+/// Ethereum value (256 bit binary).
+attribute ethval;
+
+/// Ethereum block number (256 bit binary).
+attribute ethblock;
+
+/// Ethereum (Keccak-256) hash (256 bit binary). See https://github.com/ethereum/wiki/wiki/Ethash.
+attribute ethhash;
+
+/*
+Arrays are a convenience short-hand for a fixed-length collection of
+elements. Arrays are currently only supported in a struct.
+ */
+
+/// An unsigned integer with 256 bits.
+struct uint256_t {
+
+    // Arrays are currently only supported in a struct.
+    // FIXME: type_desc_str = FbsType.FBS2STR[field.type.basetype] KeyError: 17
+    // w: [uint32:8];
+
+    /// Least significand 32 bits.
+    w0: uint32;
+
+    /// 2nd significand 32 bits.
+    w1: uint32;
+
+    /// 3rd significand 32 bits.
+    w2: uint32;
+
+    /// 4th significand 32 bits.
+    w3: uint32;
+
+    /// 5th significand 32 bits.
+    w4: uint32;
+
+    /// 6th significand 32 bits.
+    w5: uint32;
+
+    /// 7th significand 32 bits.
+    w6: uint32;
+
+    /// Most significand 32 bits.
+    w7: uint32;
+}
+
+/// An unsigned integer with 160 bits.
+struct uint160_t (arg) {
+    /// Least significand 32 bits.
+    w0: uint32;
+
+    /// 2nd significand 32 bits.
+    w1: uint32;
+
+    /// 3rd significand 32 bits.
+    w2: uint32;
+
+    /// 4th significand 32 bits.
+    w3: uint32;
+
+    /// Most significand 32 bits.
+    w4: uint32;
+}
+
+/// An unsigned integer with 128 bits.
+struct uint128_t {
+    /// Least significand 32 bits.
+    w0: uint32;
+
+    /// 2nd significand 32 bits.
+    w1: uint32;
+
+    /// 3rd significand 32 bits.
+    w2: uint32;
+
+    /// Most significand 32 bits.
+    w3: uint32;
+}
+
+/// Object version reference.
+struct objref_t
+{
+    /// OID of the referenced object: 128 bit with UUID.
+    oid: uint128_t (uuid);
+
+    /// Version of the referenced object, starting with 1, and incremented
+    // by 1 on each object modification.
+    version: uint32;
+}
+
+/// The void type containing no value at all.
+table Void
+{
+}
+
+/// A key-value pair with (string typed keys and values).
+table KeyValue
+{
+    /// UTF8 encoded key of KV pair.
+    key: string (required, key, arg);
+
+    /// UTF8 encoded value of KV pair.
+    value: string (arg);
+}
+
+/// A list of key-value pairs (with string typed keys and values).
+table KeyValues
+{
+    /// List of key-value pairs.
+    value: [KeyValue] (arg);
+}
+
+/// A single WAMP ID.
+table WampId
+{
+    /// WAMP ID (integers [1, 2^53]), see https://wamp-proto.org/_static/gen/wamp_latest.html#ids
+    value: uint64 (arg, wampid);
+}
+
+/// A list of WAMP IDs.
+table WampIds
+{
+    /// List of WAMP IDs.
+    value: [uint64] (arg, wampid);
+}
+
+/// A single WAMP resource name (URI).
+table WampUri
+{
+    /// WAMP resource name (URI), such as ``realm1`` or ``com.example.add2``,
+    /// or a name pattern, such as ``com.example.`` or ``com.example.<myapp:str>.get_info``.
+    /// Must match regular expression ``^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$``.
+    value: string (arg, wampuri);
+}
+
+/// A list of WAMP resource names (URIs).
+table WampUris
+{
+    /// List of WAMP resource names (URIs).
+    value: [string] (arg, wampuri);
+}
+
+/// A single WAMP URI component.
+table WampName
+{
+    /// WAMP URI component, such as ``realm1``, ``intel-nuci7-14875`` or ``11bf2dd0-432e-460e-9df0-55d497fa1cd1``.
+    /// Must match regular expression ``^[^\s\.#]+$``.
+    value: string (arg, wampname);
+}
+
+/// A list of WAMP URI components.
+table WampNames
+{
+    /// List of WAMP URI components.
+    value: [string] (arg, wampname);
+}
+
+/// A single object UUID.
+table Oid
+{
+    /// Object UUID.
+    value: uint128_t (arg, uuid);
+}
+
+/// A list of object UUIDs
+table Oids
+{
+    /// List of object UUIDs.
+    value: [uint128_t] (arg, uuid);
+}
+
+/// A single Ethereum address.
+table EthAddress
+{
+    /// The address binary value.
+    value: uint160_t (arg, ethadr);
+}
+
+/// A list of Ethereum addresses.
+table EthAddresses
+{
+    /// List of addresses.
+    value: [uint160_t] (arg, ethadr);
+}
+
+/// A single unsigned integer, wrapped as a table.
+table Uint
+{
+    /// Unsigned integer value.
+    value: uint64 (arg);
+}
+
+/// A list of unsigned integers, wrapped as a table.
+table Uints
+{
+    /// List of unsigned integer values.
+    value: [uint64] (arg);
+}

@@ -41,7 +41,7 @@ upload: clean
 		s3://fabric-deploy/autobahn/
 
 # cleanup everything
-clean: clean_docs
+clean: clean_docs clean_catalog
 	-rm -f ./*.so
 	-rm -rf ./docs/build
 	-rm -rf ./.cache
@@ -66,6 +66,12 @@ clean: clean_docs
 
 	# Learn to love the shell! http://unix.stackexchange.com/a/115869/52500
 	-find . \( -name "*__pycache__" -type d \) -prune -exec rm -rf {} +
+
+clean_catalog:
+	cd ./autobahn/xbr/test/catalog && make clean
+
+rebuild_catalog:
+	cd ./autobahn/xbr/test/catalog && make distclean && make build
 
 # publish to PyPI
 publish: clean
@@ -145,6 +151,10 @@ test_xbr_cli:
 	xbrnetwork get-market --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3
 	xbrnetwork get-actor
 	xbrnetwork get-actor --market=1388ddf6-fe36-4201-b1aa-cb7e36b4cfb3
+
+test_xbr_schema:
+	USE_TWISTED=1 trial autobahn.xbr.test.schema
+	USE_ASYNCIO=1 pytest autobahn/xbr/test/schema
 
 test_mnemonic:
 	# python -m pytest -rsx autobahn/xbr/test/test_mnemonic.py

@@ -25,33 +25,37 @@
 ###############################################################################
 import json
 import os
+import io
 import pprint
 import hashlib
 import textwrap
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional
+from typing import Union, Dict, List, Optional, IO, Any, Tuple
+from collections.abc import Sequence
 
 # FIXME
 # https://github.com/google/yapf#example-as-a-module
 from yapf.yapflib.yapf_api import FormatCode
 
+import txaio
+from autobahn.wamp.exception import InvalidPayload
 from autobahn.util import hlval
+
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
+from zlmdb.flatbuffers.reflection.Field import Field
 
 
 class FbsType(object):
     """
     Flatbuffers type.
 
-    See: https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
+    See: https://github.com/google/flatbuffers/blob/11a19887053534c43f73e74786b46a615ecbf28e/reflection/reflection.fbs#L33
     """
 
-    # no type
-    None_ = _BaseType.None_
+    __slots__ = ('_repository', '_schema', '_basetype', '_element', '_index', '_objtype', '_elementtype')
 
-    # ???
     UType = _BaseType.UType
 
     # scalar types
@@ -91,7 +95,6 @@ class FbsType(object):
                         _BaseType.Union]
 
     FBS2PY = {
-        _BaseType.None_: 'type(None)',
         _BaseType.UType: 'int',
         _BaseType.Bool: 'bool',
         _BaseType.Byte: 'bytes',
@@ -108,6 +111,25 @@ class FbsType(object):
         _BaseType.Vector: 'List',
         _BaseType.Obj: 'object',
         _BaseType.Union: 'Union',
+    }
+
+    FBS2PY_TYPE = {
+        _BaseType.UType: int,
+        _BaseType.Bool: bool,
+        _BaseType.Byte: int,
+        _BaseType.UByte: int,
+        _BaseType.Short: int,
+        _BaseType.UShort: int,
+        _BaseType.Int: int,
+        _BaseType.UInt: int,
+        _BaseType.Long: int,
+        _BaseType.ULong: int,
+        _BaseType.Float: float,
+        _BaseType.Double: float,
+        _BaseType.String: str,
+        _BaseType.Vector: list,
+        _BaseType.Obj: dict,
+        # _BaseType.Union: 'Union',
     }
 
     FBS2FLAGS = {
@@ -139,7 +161,6 @@ class FbsType(object):
     }
 
     FBS2STR = {
-        _BaseType.None_: 'None',
         _BaseType.UType: 'UType',
         _BaseType.Bool: 'Bool',
         _BaseType.Byte: 'Byte',
@@ -159,7 +180,6 @@ class FbsType(object):
     }
 
     STR2FBS = {
-        'None': _BaseType.None_,
         'UType': _BaseType.UType,
         'Bool': _BaseType.Bool,
         'Byte': _BaseType.Byte,
@@ -184,24 +204,26 @@ class FbsType(object):
                  basetype: int,
                  element: int,
                  index: int,
-                 objtype: Optional[str] = None):
+                 objtype: Optional[str] = None,
+                 elementtype: Optional[str] = None):
         self._repository = repository
         self._schema = schema
         self._basetype = basetype
         self._element = element
+        self._elementtype = elementtype
         self._index = index
         self._objtype = objtype
 
     @property
-    def repository(self):
+    def repository(self) -> 'FbsRepository':
         return self._repository
 
     @property
-    def schema(self):
+    def schema(self) -> 'FbsSchema':
         return self._schema
 
     @property
-    def basetype(self):
+    def basetype(self) -> int:
         """
         Flatbuffers base type.
 
@@ -210,34 +232,54 @@ class FbsType(object):
         return self._basetype
 
     @property
-    def element(self):
+    def element(self) -> int:
         """
-        Only if basetype == Vector or basetype == Array.
+        Only if basetype == Vector
 
         :return:
         """
         return self._element
 
     @property
-    def index(self):
+    def index(self) -> int:
         """
         If basetype == Object, index into "objects".
+        If base_type == Union, UnionType, or integral derived from an enum, index into "enums".
+        If base_type == Vector && element == Union or UnionType.
 
         :return:
         """
         return self._index
 
     @property
-    def objtype(self):
+    def elementtype(self) -> Optional[str]:
+        """
+        If basetype == Vector, fully qualified element type name.
+
+        :return:
+        """
+        # lazy-resolve of element type index to element type name. this is important (!)
+        # to decouple from loading order of type objects
+        if self._basetype == FbsType.Vector and self._elementtype is None:
+            if self._element == FbsType.Obj:
+                self._elementtype = self._schema.objs_by_id[self._index].name
+                # print('filled in missing elementtype "{}" for element type index {} in vector'.format(self._elementtype, self._index))
+            else:
+                assert False, 'FIXME'
+        return self._elementtype
+
+    @property
+    def objtype(self) -> Optional[str]:
         """
         If basetype == Object, fully qualified object type name.
 
         :return:
         """
-        if self._basetype == FbsType.Obj:
-            if self._objtype is None:
-                self._objtype = self._schema.objs_by_id[self._index].name
-                # print('filled in missing objtype "{}" for type index {} in object {}'.format(self._objtype, self._index, self))
+        # lazy-resolve of object type index to object type name. this is important (!)
+        # to decouple from loading order of type objects
+        if self._basetype == FbsType.Obj and self._objtype is None:
+            self._objtype = self._schema.objs_by_id[self._index].name
+            # print('filled in missing objtype "{}" for object type index {} in object'.format(self._objtype, self._index))
         return self._objtype
 
     def map(self, language: str, attrs: Optional[Dict] = None, required: Optional[bool] = True,
@@ -304,15 +346,16 @@ class FbsType(object):
         else:
             raise RuntimeError('cannot map FlatBuffers type to target language "{}" in {}'.format(language, self.map))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
-    def marshal(self):
+    def marshal(self) -> Dict[str, Any]:
+        # important: use properties, not private object attribute access (!)
         obj = {
-            'basetype': self.FBS2STR.get(self._basetype, None),
-            'element': self.FBS2STR.get(self._element, None),
-            'index': self._index,
-            'objtype': self._objtype,
+            'basetype': self.FBS2STR.get(self.basetype, None),
+            'element': self.FBS2STR.get(self.element, None),
+            'index': self.index,
+            'objtype': self.objtype,
         }
         return obj
 
@@ -326,6 +369,9 @@ class FbsAttribute(object):
 
 
 class FbsField(object):
+    __slots__ = ('_repository', '_schema', '_name', '_type', '_id', '_offset', '_default_int',
+                 '_default_real', '_deprecated', '_required', '_attrs', '_docs')
+
     def __init__(self,
                  repository: 'FbsRepository',
                  schema: 'FbsSchema',
@@ -353,57 +399,57 @@ class FbsField(object):
         self._docs = docs
 
     @property
-    def repository(self):
+    def repository(self) -> 'FbsRepository':
         return self._repository
 
     @property
-    def schema(self):
+    def schema(self) -> 'FbsSchema':
         return self._schema
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def type(self):
+    def type(self) -> FbsType:
         return self._type
 
     @property
-    def id(self):
+    def id(self) -> int:
         return self._id
 
     @property
-    def offset(self):
+    def offset(self) -> int:
         return self._offset
 
     @property
-    def default_int(self):
+    def default_int(self) -> int:
         return self._default_int
 
     @property
-    def default_real(self):
+    def default_real(self) -> float:
         return self._default_real
 
     @property
-    def deprecated(self):
+    def deprecated(self) -> bool:
         return self._deprecated
 
     @property
-    def required(self):
+    def required(self) -> bool:
         return self._required
 
     @property
-    def attrs(self):
+    def attrs(self) -> Dict[str, FbsAttribute]:
         return self._attrs
 
     @property
-    def docs(self):
+    def docs(self) -> str:
         return self._docs
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
-    def marshal(self):
+    def marshal(self) -> Dict[str, Any]:
         obj = {
             'name': self._name,
             'type': self._type.marshal() if self._type else None,
@@ -450,24 +496,47 @@ def parse_docs(obj):
 
 
 def parse_fields(repository, schema, obj, objs_lst=None):
+
+    # table Object {  // Used for both tables and structs.
+    # ...
+    #     fields:[Field] (required);  // Sorted.
+    # ...
+    # }
+    # https://github.com/google/flatbuffers/blob/11a19887053534c43f73e74786b46a615ecbf28e/reflection/reflection.fbs#L91
+
     fields_by_name = {}
-    fields_by_id = []
+
+    # the type index of a field is stored in ``fbs_field.Id()``, whereas the index of the field
+    # within the list of fields is different (!) because that list is alphabetically sorted (!).
+    # thus, we need to fill this map to recover the type index ordered list of fields
+    field_id_to_name = {}
+
     for j in range(obj.FieldsLength()):
-        fbs_field = obj.Fields(j)
+        fbs_field: Field = obj.Fields(j)
 
         field_name = fbs_field.Name()
         if field_name:
             field_name = field_name.decode('utf8')
 
         field_id = int(fbs_field.Id())
+
+        # IMPORTANT: this is NOT true, since j is according to sort-by-name
+        # assert field_id == j
+
+        # instead, maintain this map to recover sort-by-position order later
+        field_id_to_name[field_id] = field_name
+
         fbs_field_type = fbs_field.Type()
 
-        # FIXME
+        # we use lazy-resolve for this property
         _objtype = None
-        if fbs_field_type.Index() >= 0:
-            if len(objs_lst) > fbs_field_type.Index():
-                _obj = objs_lst[fbs_field_type.Index()]
-                _objtype = _obj.name
+
+        # # FIXME
+        # _objtype = None
+        # if fbs_field_type.Index() >= 0:
+        #     if len(objs_lst) > fbs_field_type.Index():
+        #         _obj = objs_lst[fbs_field_type.Index()]
+        #         _objtype = _obj.name
 
         field_type = FbsType(repository=repository,
                              schema=schema,
@@ -491,10 +560,12 @@ def parse_fields(repository, schema, obj, objs_lst=None):
                                                                                                        field_id,
                                                                                                        sorted(fields_by_name.keys()))
         fields_by_name[field_name] = field
-        assert field_id not in fields_by_id, 'field "{}" with id " {}" already in fields {}'.format(field_name,
-                                                                                                    field_id,
-                                                                                                    sorted(fields_by_id.keys()))
-        fields_by_id.append(field)
+
+    # recover the type index ordered list of fields
+    fields_by_id = []
+    for i in range(len(fields_by_name)):
+        fields_by_id.append(fields_by_name[field_id_to_name[i]])
+
     return fields_by_name, fields_by_id
 
 
@@ -588,6 +659,9 @@ def parse_calls(repository, schema, svc_obj, objs_lst=None):
 
 
 class FbsObject(object):
+    __slots__ = ('_repository', '_schema', '_declaration_file', '_name', '_fields', '_fields_by_id',
+                 '_is_struct', '_min_align', '_bytesize', '_attrs', '_docs')
+
     def __init__(self,
                  repository: 'FbsRepository',
                  schema: 'FbsSchema',
@@ -640,53 +714,53 @@ class FbsObject(object):
             raise NotImplementedError()
 
     @property
-    def repository(self):
+    def repository(self) -> 'FbsRepository':
         return self._repository
 
     @property
-    def schema(self):
+    def schema(self) -> 'FbsSchema':
         return self._schema
 
     @property
-    def declaration_file(self):
+    def declaration_file(self) -> str:
         return self._declaration_file
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def fields(self):
+    def fields(self) -> Dict[str, FbsField]:
         return self._fields
 
     @property
-    def fields_by_id(self):
+    def fields_by_id(self) -> List[FbsField]:
         return self._fields_by_id
 
     @property
-    def is_struct(self):
+    def is_struct(self) -> bool:
         return self._is_struct
 
     @property
-    def min_align(self):
+    def min_align(self) -> int:
         return self._min_align
 
     @property
-    def bytesize(self):
+    def bytesize(self) -> int:
         return self._bytesize
 
     @property
-    def attrs(self):
+    def attrs(self) -> Dict[str, FbsAttribute]:
         return self._attrs
 
     @property
-    def docs(self):
+    def docs(self) -> str:
         return self._docs
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '\n{}\n'.format(pprint.pformat(self.marshal()))
 
-    def marshal(self):
+    def marshal(self) -> Dict[str, Any]:
         obj = {
             'name': self._name,
             'declaration_file': self._declaration_file,
@@ -875,7 +949,8 @@ class FbsEnumValue(object):
     def __init__(self,
                  repository: 'FbsRepository',
                  schema: 'FbsSchema',
-                 name,
+                 name: str,
+                 id: int,
                  value,
                  docs):
         """
@@ -888,6 +963,7 @@ class FbsEnumValue(object):
         self._repository = repository
         self._schema = schema
         self._name = name
+        self._id = id
         self._value = value
         self._attrs = {}
         self._docs = docs
@@ -903,6 +979,10 @@ class FbsEnumValue(object):
     @property
     def name(self):
         return self._name
+
+    @property
+    def id(self):
+        return self._id
 
     @property
     def value(self):
@@ -921,6 +1001,7 @@ class FbsEnumValue(object):
 
     def marshal(self):
         obj = {
+            'id': self._id,
             'name': self._name,
             'attrs': self._attrs,
             'docs': self._docs,
@@ -935,6 +1016,8 @@ class FbsEnumValue(object):
 class FbsEnum(object):
     """
     FlatBuffers enum type.
+
+    See https://github.com/google/flatbuffers/blob/11a19887053534c43f73e74786b46a615ecbf28e/reflection/reflection.fbs#L61
     """
 
     def __init__(self,
@@ -942,7 +1025,9 @@ class FbsEnum(object):
                  schema: 'FbsSchema',
                  declaration_file: str,
                  name: str,
+                 id: int,
                  values: Dict[str, FbsEnumValue],
+                 values_by_id: List[FbsEnumValue],
                  is_union: bool,
                  underlying_type: int,
                  attrs: Dict[str, FbsAttribute],
@@ -951,7 +1036,9 @@ class FbsEnum(object):
         self._schema = schema
         self._declaration_file = declaration_file
         self._name = name
+        self._id = id
         self._values = values
+        self._values_by_id = values_by_id
         self._is_union = is_union
 
         # zlmdb.flatbuffers.reflection.Type.Type
@@ -976,8 +1063,16 @@ class FbsEnum(object):
         return self._name
 
     @property
+    def id(self):
+        return self._id
+
+    @property
     def values(self):
         return self._values
+
+    @property
+    def values_by_id(self):
+        return self._values_by_id
 
     @property
     def is_union(self):
@@ -1001,6 +1096,7 @@ class FbsEnum(object):
     def marshal(self):
         obj = {
             'name': self._name,
+            'id': self._id,
             'values': {},
             'is_union': self._is_union,
             'underlying_type': FbsType.FBS2STR.get(self._underlying_type, None),
@@ -1167,20 +1263,25 @@ class FbsSchema(object):
         return obj
 
     @staticmethod
-    def load(repository, filename) -> 'FbsSchema':
+    def load(repository: 'FbsRepository',
+             sfile: Union[str, io.RawIOBase, IO[bytes]],
+             filename: Optional[str] = None) -> 'FbsSchema':
         """
 
         :param repository:
+        :param sfile:
         :param filename:
         :return:
         """
-        if not os.path.isfile(filename):
-            raise RuntimeError('cannot open schema file {}'.format(filename))
-        with open(filename, 'rb') as fd:
-            data = fd.read()
+        data: bytes
+        if type(sfile) == str and os.path.isfile(sfile):
+            with open(sfile, 'rb') as fd:
+                data = fd.read()
+        else:
+            data = sfile.read()
         m = hashlib.sha256()
         m.update(data)
-        print('loading schema file "{}" ({} bytes, SHA256 0x{})'.format(filename, len(data), m.hexdigest()))
+        # print('loading schema file "{}" ({} bytes, SHA256 0x{})'.format(filename, len(data), m.hexdigest()))
 
         # get root object in Flatbuffers reflection schema
         # see: https://github.com/google/flatbuffers/blob/master/reflection/reflection.fbs
@@ -1245,6 +1346,7 @@ class FbsSchema(object):
             enum_underlying_type = fbs_enum.UnderlyingType()
 
             enum_values = {}
+            enum_values_by_id = []
             for j in range(fbs_enum.ValuesLength()):
                 fbs_enum_value = fbs_enum.Values(j)
                 enum_value_name = fbs_enum_value.Name()
@@ -1255,16 +1357,20 @@ class FbsSchema(object):
                 enum_value = FbsEnumValue(repository=repository,
                                           schema=schema,
                                           name=enum_value_name,
+                                          id=j,
                                           value=enum_value_value,
                                           docs=enum_value_docs)
                 assert enum_value_name not in enum_values
                 enum_values[enum_value_name] = enum_value
+                enum_values_by_id.append(enum_value)
 
             enum = FbsEnum(repository=repository,
                            schema=schema,
                            declaration_file=enum_declaration_file,
                            name=enum_name,
+                           id=i,
                            values=enum_values,
+                           values_by_id=enum_values_by_id,
                            is_union=fbs_enum.IsUnion(),
                            underlying_type=enum_underlying_type,
                            attrs=parse_attr(fbs_enum),
@@ -1323,9 +1429,21 @@ class FbsSchema(object):
         return schema
 
 
+def validate_scalar(field, value: Optional[Any]):
+    # print('validate scalar "{}" for type {} (attrs={})'.format(field.name,
+    #                                                            FbsType.FBS2STR[field.type.basetype],
+    #                                                            field.attrs))
+    if field.type.basetype in FbsType.FBS2PY_TYPE:
+        expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
+        if type(value) != expected_type:
+            raise InvalidPayload('invalid type {} for value, expected {}'.format(type(value), expected_type))
+    else:
+        assert False, 'FIXME'
+
+
 class FbsRepository(object):
     """
-    crossbar.interfaces.IRealmInventory
+    crossbar.interfaces.IInventory
       - add: FbsRepository[]
         - load: FbsSchema[]
 
@@ -1333,6 +1451,7 @@ class FbsRepository(object):
     """
 
     def __init__(self, basemodule: str):
+        self.log = txaio.make_logger()
         self._basemodule = basemodule
         self._schemata: Dict[str, FbsSchema] = {}
         self._objs: Dict[str, FbsObject] = {}
@@ -1350,26 +1469,30 @@ class FbsRepository(object):
         return catalog
 
     @property
-    def basemodule(self):
+    def basemodule(self) -> str:
         return self._basemodule
 
     @property
-    def schemata(self):
+    def schemas(self) -> Dict[str, FbsSchema]:
         return self._schemata
 
     @property
-    def objs(self):
+    def objs(self) -> Dict[str, FbsObject]:
         return self._objs
 
     @property
-    def enums(self):
+    def enums(self) -> Dict[str, FbsEnum]:
         return self._enums
 
     @property
-    def services(self):
+    def services(self) -> Dict[str, FbsService]:
         return self._services
 
-    def load(self, filename: str):
+    @property
+    def total_count(self):
+        return len(self._objs) + len(self._enums) + len(self._services)
+
+    def load(self, filename: str) -> Tuple[int, int]:
         """
         Load and add all schemata from Flatbuffers binary schema files (`*.bfbs`)
         found in the given directory. Alternatively, a path to a single schema file
@@ -1378,6 +1501,7 @@ class FbsRepository(object):
         :param filename: Filesystem path of a directory or single file from which to
             load and add Flatbuffers schemata.
         """
+        file_dups = 0
         load_from_filenames = []
         if os.path.isdir(filename):
             for path in Path(filename).rglob('*.bfbs'):
@@ -1385,12 +1509,14 @@ class FbsRepository(object):
                 if fn not in self._schemata:
                     load_from_filenames.append(fn)
                 else:
-                    print('duplicate schema file skipped ("{}" already loaded)'.format(fn))
+                    # print('duplicate schema file skipped ("{}" already loaded)'.format(fn))
+                    file_dups += 1
         elif os.path.isfile(filename):
             if filename not in self._schemata:
                 load_from_filenames.append(filename)
             else:
-                print('duplicate schema file skipped ("{}" already loaded)'.format(filename))
+                # print('duplicate schema file skipped ("{}" already loaded)'.format(filename))
+                file_dups += 1
         elif ',' in filename:
             for filename_single in filename.split(','):
                 filename_single = os.path.expanduser(filename_single)
@@ -1405,6 +1531,10 @@ class FbsRepository(object):
         else:
             raise RuntimeError('cannot open schema file or directory: "{}"'.format(filename))
 
+        enum_dups = 0
+        obj_dups = 0
+        svc_dups = 0
+
         # iterate over all schema files found
         for fn in load_from_filenames:
             # load this schema file
@@ -1413,25 +1543,31 @@ class FbsRepository(object):
             # add enum types to repository by name
             for enum in schema.enums.values():
                 if enum.name in self._enums:
-                    print('skipping duplicate enum type for name "{}"'.format(enum.name))
+                    # print('skipping duplicate enum type for name "{}"'.format(enum.name))
+                    enum_dups += 1
                 else:
                     self._enums[enum.name] = enum
 
             # add object types
             for obj in schema.objs.values():
                 if obj.name in self._objs:
-                    print('skipping duplicate object (table/struct) type for name "{}"'.format(obj.name))
+                    # print('skipping duplicate object (table/struct) type for name "{}"'.format(obj.name))
+                    obj_dups += 1
                 else:
                     self._objs[obj.name] = obj
 
             # add service definitions ("APIs")
             for svc in schema.services.values():
                 if svc.name in self._services:
-                    print('skipping duplicate service type for name "{}"'.format(svc.name))
+                    # print('skipping duplicate service type for name "{}"'.format(svc.name))
+                    svc_dups += 1
                 else:
                     self._services[svc.name] = svc
 
             self._schemata[fn] = schema
+
+        type_dups = enum_dups + obj_dups + svc_dups
+        return file_dups, type_dups
 
     def summary(self, keys=False):
         if keys:
@@ -1461,7 +1597,7 @@ class FbsRepository(object):
         pink = (127, 127, 127)
 
         for obj_key, obj in self.objs.items():
-            prefix_uri = obj.attrs.get('uri', self._basemodule)
+            prefix_uri = obj.attrs.get('wampuri', self._basemodule)
             obj_name = obj_key.split('.')[-1]
             obj_color = 'blue' if obj.is_struct else brown
             obj_label = '{} {}'.format('Struct' if obj.is_struct else 'Table', obj_name)
@@ -1530,7 +1666,7 @@ class FbsRepository(object):
             print()
 
         for svc_key, svc in self.services.items():
-            prefix_uri = svc.attrs.get('uri', self._basemodule)
+            prefix_uri = svc.attrs.get('wampuri', self._basemodule)
             ifx_uuid = svc.attrs.get('uuid', None)
             ifc_name = svc_key.split('.')[-1]
             ifc_label = 'Interface {}'.format(ifc_name)
@@ -1557,8 +1693,8 @@ class FbsRepository(object):
                 ep_type = ep.attrs['type']
                 ep_color = {'topic': 'green', 'procedure': orange}.get(ep_type, 'white')
                 # uri_long = '{}.{}'.format(hlval(prefix_uri, color=(127, 127, 127)),
-                #                           hlval(ep.attrs.get('uri', ep.name), color='white'))
-                uri_short = '{}'.format(hlval(ep.attrs.get('uri', ep.name), color=(255, 255, 255)))
+                #                           hlval(ep.attrs.get('wampuri', ep.name), color='white'))
+                uri_short = '{}'.format(hlval(ep.attrs.get('wampuri', ep.name), color=(255, 255, 255)))
                 print('      {} {} ({}) -> {}'.format(hlval(ep_type, color=ep_color),
                                                       uri_short,
                                                       hlval(ep.request.name.split('.')[-1], color='blue', bold=False),
@@ -1791,3 +1927,179 @@ class FbsRepository(object):
                     fd.write(data)
 
                 print('Ok, written {} bytes to {}'.format(len(data), fn))
+
+    def validate_obj(self, validation_type: Optional[str], value: Optional[Any]):
+        """
+        Validate value against the validation type given.
+
+        If the application payload does not validate against the provided type,
+        an :class:`autobahn.wamp.exception.InvalidPayload` is raised.
+
+        :param validation_type: Flatbuffers type (fully qualified) against to validate application payload.
+        :param value: Value to validate.
+        :return:
+        """
+        # print('validate_obj', validation_type, type(value))
+
+        if validation_type is None:
+            # any value validates against the None validation type
+            return
+
+        if validation_type not in self.objs:
+            raise RuntimeError('validation type "{}" not found in inventory'.format(self.objs))
+
+        # the Flatbuffers table type from the realm's type inventory against which we
+        # will validate the WAMP args/kwargs application payload
+        vt: FbsObject = self.objs[validation_type]
+
+        if type(value) == dict:
+            vt_kwargs = set(vt.fields.keys())
+
+            for k, v in value.items():
+                if k not in vt.fields:
+                    raise InvalidPayload('unexpected argument "{}" in value of validation type "{}"'.format(k, vt.name))
+                vt_kwargs.discard(k)
+
+                field = vt.fields[k]
+
+                # validate object-typed field, eg "uint160_t"
+                if field.type.basetype == FbsType.Obj:
+                    self.validate_obj(field.type.objtype, v)
+
+                elif field.type.basetype == FbsType.Union:
+                    pass
+                    print('FIXME-003-Union')
+
+                elif field.type.basetype == FbsType.Vector:
+                    if isinstance(v, str) or isinstance(v, bytes):
+                        print('FIXME-003-1-Vector')
+                    elif isinstance(v, Sequence):
+                        for ve in v:
+                            self.validate_obj(field.type.elementtype, ve)
+                    else:
+                        raise InvalidPayload('invalid type {} for value (expected Vector/List/Tuple) '
+                                             'of validation type "{}"'.format(type(v), vt.name))
+
+                else:
+                    validate_scalar(field, v)
+
+            if vt.is_struct and vt_kwargs:
+                raise InvalidPayload('missing argument(s) {} in validation type "{}"'.format(list(vt_kwargs), vt.name))
+
+        elif type(value) in [tuple, list]:
+            # FIXME: KeyValues
+            if not vt.is_struct:
+                raise InvalidPayload('**: invalid type {} for (non-struct) validation type "{}"'.format(type(value), vt.name))
+
+            idx = 0
+            for field in vt.fields_by_id:
+                # consume the next positional argument from input
+                if idx >= len(value):
+                    raise InvalidPayload('missing argument "{}" in type "{}"'.format(field.name, vt.name))
+                v = value[idx]
+                idx += 1
+
+                # validate object-typed field, eg "uint160_t"
+                if field.type.basetype == FbsType.Obj:
+                    self.validate_obj(field.type.objtype, v)
+
+                elif field.type.basetype == FbsType.Union:
+                    pass
+                    print('FIXME-005-Union')
+
+                elif field.type.basetype == FbsType.Vector:
+                    if isinstance(v, str) or isinstance(v, bytes):
+                        print('FIXME-005-1-Vector')
+                    elif isinstance(v, Sequence):
+                        for ve in v:
+                            print(field.type.elementtype, ve)
+                            self.validate_obj(field.type.elementtype, ve)
+                    else:
+                        print('FIXME-005-3-Vector')
+
+                else:
+                    validate_scalar(field, v)
+
+            if len(value) > idx:
+                raise InvalidPayload('unexpected argument(s) in validation type "{}"'.format(vt.name))
+
+        else:
+            raise InvalidPayload('invalid type {} for value of validation type "{}"'.format(type(value), vt.name))
+
+    def validate(self, validation_type: str, args: List[Any], kwargs: Dict[str, Any]):
+        """
+        Validate the WAMP application payload provided in positional argument in ``args``
+        and in keyword-based arguments in ``kwargs`` against the FlatBuffers table
+        type ``validation_type`` from this repository.
+
+        If the application payload does not validate against the provided type,
+        an :class:`autobahn.wamp.exception.InvalidPayload` is raised.
+
+        :param validation_type: Flatbuffers type (fully qualified) against to validate application payload.
+        :param args: The application payload WAMP positional arguments.
+        :param kwargs: The application payload WAMP keyword-based arguments.
+        """
+        if validation_type is None:
+            return
+        if validation_type not in self.objs:
+            raise RuntimeError('validation type "{}" not found in inventory (among {} types)'.format(validation_type, len(self.objs)))
+
+        # the Flatbuffers table type from the realm's type inventory against which we
+        # will validate the WAMP args/kwargs application payload
+        vt: FbsObject = self.objs[validation_type]
+
+        # we use this to index and consume positional args from the input
+        args_idx = 0
+
+        # we use this to track any kwargs not consumed while processing the validation type.
+        # and names left in this set after processing the validation type in full is an error ("unexpected kwargs")
+        kwargs_keys = set(kwargs.keys() if kwargs else [])
+
+        # iterate over all fields of validation type in field index order (!)
+        for field in vt.fields_by_id:
+
+            # field is a WAMP positional argument, that is one that needs to map to the next arg from args
+            if field.required or 'arg' in field.attrs or 'kwarg' not in field.attrs:
+                # consume the next positional argument from input
+                if args is None or args_idx >= len(args):
+                    raise InvalidPayload('missing positional argument "{}" in type "{}"'.format(field.name, vt.name))
+                value = args[args_idx]
+                args_idx += 1
+
+                # validate object-typed field, eg "uint160_t"
+                if field.type.basetype == FbsType.Obj:
+                    self.validate_obj(field.type.objtype, value)
+
+                elif field.type.basetype == FbsType.Union:
+                    pass
+                    print('FIXME-003-Union')
+
+                elif field.type.basetype == FbsType.Vector:
+
+                    if isinstance(value, str) or isinstance(value, bytes):
+                        print('FIXME-005-1-Vector')
+                    elif isinstance(value, Sequence):
+                        for ve in value:
+                            print(field.type.elementtype, ve)
+                            self.validate_obj(field.type.elementtype, ve)
+                    else:
+                        print('FIXME-005-3-Vector')
+
+                else:
+                    validate_scalar(field, value)
+
+            # field is a WAMP keyword argument, that is one that needs to map into kwargs
+            elif 'kwarg' in field.attrs:
+                if field.name in kwargs_keys:
+                    value = kwargs[field.name]
+                    # FIXME: validate value vs field type
+                    print('FIXME-003')
+                    kwargs_keys.discard(field.name)
+            else:
+                assert False, 'should not arrive here'
+
+        if len(args) > args_idx:
+            raise InvalidPayload('{} unexpected positional arguments in type "{}"'.format(len(args) - args_idx, vt.name))
+
+        if kwargs_keys:
+            raise InvalidPayload('{} unexpected keyword arguments {} in type "{}"'.format(len(kwargs_keys), list(kwargs_keys), vt.name))
