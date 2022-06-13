@@ -19,6 +19,10 @@ clean:
 	@mkdir -p $(BUILD_DIR)/img
 	find $(BUILD_DIR)
 
+distclean: clean
+	rm -rf $(FBS_OUTPUT)
+	mkdir $(FBS_OUTPUT)
+
 compile:
 	flatc -o $(FBS_OUTPUT) --binary --schema --bfbs-comments --bfbs-builtins $(FBS_FILES)
 

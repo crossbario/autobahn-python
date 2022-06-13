@@ -71,7 +71,7 @@ class TestFbsBase(unittest.TestCase):
     def setUp(self):
         self.repo = FbsRepository('autobahn')
         self.archives = []
-        for fbs_file in ['demo.bfbs', 'trading.bfbs', 'testsvc1.bfbs', 'wamp-control.bfbs']:
+        for fbs_file in ['wamp.bfbs']:
             archive = pkg_resources.resource_filename('autobahn', 'xbr/test/catalog/schema/{}'.format(fbs_file))
             self.repo.load(archive)
             self.archives.append(archive)
