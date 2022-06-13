@@ -1430,6 +1430,9 @@ class FbsSchema(object):
 
 
 def validate_scalar(field, value: Optional[Any]):
+    print('validate scalar "{}" for type {} (attrs={})'.format(field.name,
+                                                               FbsType.FBS2STR[field.type.basetype],
+                                                               field.attrs))
     if field.type.basetype in FbsType.FBS2PY_TYPE:
         expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
         if type(value) != expected_type:
@@ -1976,13 +1979,8 @@ class FbsRepository(object):
                     else:
                         print('FIXME-003-3-Vector')
 
-                # validate scalar type
-                elif field.type.basetype in FbsType.SCALAR_TYPES:
-                    expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
-                    if type(v) != expected_type:
-                        raise InvalidPayload('invalid type {} (expected {}) for field "{}" in validation type "{}"'.format(type(v), expected_type, field.name, vt.name))
                 else:
-                    print('FIXME-001')
+                    validate_scalar(field, v)
 
             if vt.is_struct and vt_kwargs:
                 raise InvalidPayload('missing argument(s) {} in validation type "{}"'.format(list(vt_kwargs), vt.name))
@@ -2096,8 +2094,6 @@ class FbsRepository(object):
                     kwargs_keys.discard(field.name)
             else:
                 assert False, 'should not arrive here'
-
-        # print('ooo', kwargs_keys)
 
         if len(args) > args_idx:
             raise InvalidPayload('{} unexpected positional arguments in type "{}"'.format(len(args) - args_idx, vt.name))
