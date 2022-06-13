@@ -78,7 +78,7 @@ class TestFbsValidateTestTableA(TestFbsBase):
             else:
                 # all other columns are something different from bool, so make it invalid with a bool value
                 invalid_args[i] = True
-            self.assertRaisesRegex(InvalidPayload, 'invalid positional argument type', self.repo.validate,
+            self.assertRaisesRegex(InvalidPayload, 'invalid type', self.repo.validate,
                                    'demo.TestTableA', invalid_args, {})
 
         # mandatory field with wrong type `None`
@@ -87,7 +87,7 @@ class TestFbsValidateTestTableA(TestFbsBase):
                 # copy valid value, and set one column to a value of wrong type
                 invalid_args = copy.copy(valid_args)
                 invalid_args[i] = None
-                self.assertRaisesRegex(InvalidPayload, 'invalid positional argument type', self.repo.validate,
+                self.assertRaisesRegex(InvalidPayload, 'invalid type', self.repo.validate,
                                        'demo.TestTableA', invalid_args, {})
 
         # mandatory field missing

@@ -261,7 +261,7 @@ class TestFbsValidateKeyValue(TestFbsBase):
         self.assertRaisesRegex(InvalidPayload, 'unexpected keyword arguments', self.repo.validate,
                                'KeyValue', ['foo', '23'], {'unexpected_kwarg': '23'})
 
-        self.assertRaisesRegex(InvalidPayload, 'invalid positional argument type', self.repo.validate,
+        self.assertRaisesRegex(InvalidPayload, 'invalid type', self.repo.validate,
                                'KeyValue', ['foo', 23], {})
 
     def test_validate_KeyValues_valid(self):

@@ -40,7 +40,7 @@ from yapf.yapflib.yapf_api import FormatCode
 
 import txaio
 from autobahn.wamp.exception import InvalidPayload
-from autobahn.util import hlval, hltype
+from autobahn.util import hlval
 
 from zlmdb.flatbuffers.reflection.Schema import Schema as _Schema
 from zlmdb.flatbuffers.reflection.BaseType import BaseType as _BaseType
@@ -1429,6 +1429,15 @@ class FbsSchema(object):
         return schema
 
 
+def validate_scalar(field, value: Optional[Any]):
+    if field.type.basetype in FbsType.FBS2PY_TYPE:
+        expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
+        if type(value) != expected_type:
+            raise InvalidPayload('invalid type {} for value, expected {}'.format(type(value), expected_type))
+    else:
+        assert False, 'FIXME'
+
+
 class FbsRepository(object):
     """
     crossbar.interfaces.IInventory
@@ -1933,13 +1942,8 @@ class FbsRepository(object):
             # any value validates against the None validation type
             return
 
-        if validation_type in []:
-            pass
-        elif validation_type not in self.objs:
+        if validation_type not in self.objs:
             raise RuntimeError('validation type "{}" not found in inventory'.format(self.objs))
-
-        if type(value) in [str, bytes, int, float, bool]:
-            pass
 
         # the Flatbuffers table type from the realm's type inventory against which we
         # will validate the WAMP args/kwargs application payload
@@ -2012,13 +2016,8 @@ class FbsRepository(object):
                     else:
                         print('FIXME-005-3-Vector')
 
-                # validate scalar type
-                elif field.type.basetype in FbsType.FBS2PY_TYPE:
-                    expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
-                    if type(v) != expected_type:
-                        raise InvalidPayload('invalid type {} with value "{}" (expected {}) for field "{}" in type "{}"'.format(type(v), v, expected_type, field.name, vt.name))
                 else:
-                    print('FIXME-001')
+                    validate_scalar(field, v)
 
             if len(value) > idx:
                 raise InvalidPayload('unexpected argument(s) in validation type "{}"'.format(vt.name))
@@ -2085,13 +2084,8 @@ class FbsRepository(object):
                     else:
                         print('FIXME-005-3-Vector')
 
-                # validate scalar type
-                elif field.type.basetype in FbsType.FBS2PY_TYPE:
-                    expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
-                    if type(value) != expected_type:
-                        raise InvalidPayload('invalid positional argument type {} (expected {}) for field "{}" in type "{}"'.format(type(value), expected_type, field.name, vt.name))
                 else:
-                    print('FIXME-001')
+                    validate_scalar(field, value)
 
             # field is a WAMP keyword argument, that is one that needs to map into kwargs
             elif 'kwarg' in field.attrs:
@@ -2110,126 +2104,3 @@ class FbsRepository(object):
 
         if kwargs_keys:
             raise InvalidPayload('{} unexpected keyword arguments {} in type "{}"'.format(len(kwargs_keys), list(kwargs_keys), vt.name))
-
-    def validate_old(self, args, kwargs, vt_args, vt_kwargs):
-        """
-        :param args:
-        :param kwargs:
-        :param vt_args:
-        :param vt_kwargs:
-        :return:
-        """
-        # validate positional arguments
-        #
-        args_len_expected = len(vt_args) - vt_args.count('Void')
-        if len(args) != args_len_expected:
-            msg = 'validation error: invalid args length (got {args_len}, expected {vt_args_len})'.format(
-                args_len=len(args), vt_args_len=args_len_expected)
-            self.log.warn('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
-            raise InvalidPayload(msg)
-
-        arg_idx = 0
-        for vt_arg_idx, vt_arg in enumerate(vt_args):
-            self.log.info('{func} validate {vt_arg_idx} using validation type {vt_arg}',
-                          func=hltype(self.validate),
-                          vt_arg_idx=hlval('args[{}]'.format(vt_arg_idx), color='yellow'),
-                          vt_arg=hlval(vt_arg, color='yellow'))
-            if vt_arg == 'Void':
-                continue
-            elif vt_arg in self.objs:
-                vt: FbsObject = self.objs[vt_arg]
-                if not vt.is_struct:
-                    if type(args[arg_idx]) != dict:
-                        msg = 'validation error: invalid arg type, {vt_arg_idx} has type {arg_type}, not dict'.format(
-                            vt_arg_idx='args[{}]'.format(arg_idx), arg_type=type(args[arg_idx]))
-                        self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
-                        raise InvalidPayload(msg)
-                    for field in vt.fields_by_id:
-                        if field.name in args[arg_idx]:
-                            value = args[arg_idx][field.name]
-                            if field.type.basetype in FbsType.FBS2PY_TYPE:
-                                expected_type = FbsType.FBS2PY_TYPE[field.type.basetype]
-
-                                # FIXME: invalid type <class 'bytes'> for field "market_oid" (expected <class 'list'>)
-                                if expected_type != list:
-                                    if type(value) != expected_type:
-                                        msg = 'invalid type {} for field "{}" (expected {})'.format(type(value),
-                                                                                                    field.name,
-                                                                                                    expected_type)
-                                        self.log.info('{func} {msg}', func=hltype(self.validate),
-                                                      msg=hlval(msg, color='red'))
-                                        raise InvalidPayload(msg)
-                            else:
-                                print('FIXME: unprocessed field type {}'.format(FbsType.FBS2STR(field.type.basetype)))
-                        else:
-                            if field.required or 'arg' in field.attrs or 'kwarg' not in field.attrs:
-                                msg = 'missing required field "{}"'.format(field.name)
-                                self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
-                                raise InvalidPayload(msg)
-                    for key in args[arg_idx]:
-                        if key not in vt.fields:
-                            msg = 'unexpected key "{}" for field "{}"'.format(key, vt.name)
-                            self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
-                            raise InvalidPayload(msg)
-                else:
-                    self.log.warn(
-                        '{func} validation type {vt_arg} found in repo, but is a struct, '
-                        'not a table type',
-                        func=hltype(self.validate),
-                        vt_arg=hlval(vt_arg, color='red'))
-                    assert False
-            else:
-                self.log.warn('{func} validation type {vt_arg} not found in repo (within keys {vt_keys})',
-                              func=hltype(self.validate),
-                              vt_arg=hlval(vt_arg, color='red'),
-                              vt_keys=list(self.objs.keys()))
-                assert False, 'validation type "{}" not found'.format(vt_arg)
-
-            arg_idx += 1
-
-        # validate keyword arguments
-        #
-        kwargs_len_expected = len(vt_kwargs) - len([x for x in vt_kwargs.values() if x == 'Void'])
-        if len(kwargs) != kwargs_len_expected:
-            msg = 'validation error: invalid kwargs length (got {kwargs_len}, expected {vt_kwargs})'.format(
-                kwargs_len=len(kwargs), vt_kwargs=kwargs_len_expected)
-            self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
-            raise InvalidPayload(msg)
-
-        # FIXME: handle Void
-        for vt_kwarg_key, vt_kwarg in vt_kwargs.items():
-            self.log.info('{func} validate {vt_kwarg_key} using validation type {vt_kwarg}',
-                          func=hltype(self.validate),
-                          vt_kwarg_key=hlval('kwargs[{}]'.format(vt_kwarg_key), color='yellow'),
-                          vt_kwarg=hlval(vt_kwarg, color='yellow'))
-            if vt_kwarg == 'Void':
-                continue
-            elif vt_kwarg in self.objs:
-                vt: FbsObject = self.objs[vt_kwarg]
-                if not vt.is_struct:
-                    if vt_kwarg_key in kwargs:
-                        if type(kwargs[vt_kwarg_key]) != dict:
-                            msg = 'validation error: invalid kwarg type, {vt_kwarg_key} has type {kwarg_type}, ' \
-                                  'not dict'.format(vt_kwarg_key='kwargs[{}]'.format(vt_kwarg_key),
-                                                    kwarg_type=type(kwargs[vt_kwarg_key]))
-                            self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
-                            raise InvalidPayload(msg)
-                    else:
-                        msg = 'validation error: missing key {vt_kwarg_key}'.format(
-                            vt_kwarg_key='kwargs[{}]'.format(vt_kwarg_key))
-                        self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval(msg, color='red'))
-                        raise InvalidPayload(msg)
-                else:
-                    self.log.info(
-                        '{func} validation type {vt_kwarg} found in repo, but is a struct, '
-                        'not a table type',
-                        func=hltype(self.validate),
-                        vt_kwarg=hlval(vt_kwarg, color='red'))
-            else:
-                self.log.info('{func} validation type {vt_kwarg} not found in repo (within keys {vt_keys})',
-                              func=hltype(self.validate),
-                              vt_kwarg=hlval(vt_kwarg, color='red'),
-                              vt_keys=list(self.objs.keys()))
-                assert False, 'validation type "{}" not found'.format(vt_kwarg)
-
-        self.log.info('{func} {msg}', func=hltype(self.validate), msg=hlval('validation success!', color='green'))
