@@ -9,9 +9,8 @@ from twisted.internet.defer import inlineCallbacks
 from autobahn.xbr import HAS_XBR
 if HAS_XBR:
     from autobahn.xbr._frealm import Seeder, FederatedRealm
-
-from autobahn.xbr._secmod import SecurityModuleMemory, EthereumKey
-from autobahn.wamp.cryptosign import CryptosignKey
+    from autobahn.xbr._secmod import SecurityModuleMemory, EthereumKey
+    from autobahn.wamp.cryptosign import CryptosignKey
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
