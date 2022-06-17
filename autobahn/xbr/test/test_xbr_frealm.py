@@ -23,7 +23,7 @@ IS_CPY_310 = sys.version_info.minor == 10
 
 @skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
 @skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
-@skipIf(not (HAS_XBR and HAS_CRYPTOSIGN), 'package autobahn[xbr] not installed')
+@skipIf(not (HAS_XBR and HAS_CRYPTOSIGN), 'package autobahn[encryption,xbr] not installed')
 class TestFederatedRealm(TestCase):
 
     gw_config = {
