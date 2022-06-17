@@ -14,10 +14,10 @@ else:
     txaio.use_asyncio()
 
 from autobahn.xbr import HAS_XBR
+from autobahn.wamp.exception import InvalidPayload
 
 if HAS_XBR:
     from autobahn.xbr import FbsRepository
-    from autobahn.wamp.exception import InvalidPayload
 
 
 @skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
