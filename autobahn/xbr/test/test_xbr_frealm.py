@@ -7,11 +7,12 @@ from twisted.trial.unittest import TestCase
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.xbr import HAS_XBR
-if HAS_XBR:
-    from autobahn.xbr._frealm import Seeder, FederatedRealm
+from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN
 
-from autobahn.xbr._secmod import SecurityModuleMemory, EthereumKey
-from autobahn.wamp.cryptosign import CryptosignKey
+if HAS_XBR and HAS_CRYPTOSIGN:
+    from autobahn.xbr._frealm import Seeder, FederatedRealm
+    from autobahn.xbr._secmod import SecurityModuleMemory, EthereumKey
+    from autobahn.wamp.cryptosign import CryptosignKey
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
@@ -22,7 +23,7 @@ IS_CPY_310 = sys.version_info.minor == 10
 
 @skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
 @skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
-@skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
+@skipIf(not (HAS_XBR and HAS_CRYPTOSIGN), 'package autobahn[encryption,xbr] not installed')
 class TestFederatedRealm(TestCase):
 
     gw_config = {

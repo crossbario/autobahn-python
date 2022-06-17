@@ -34,15 +34,15 @@ from unittest import skipIf
 from twisted.internet.defer import inlineCallbacks
 from twisted.trial.unittest import TestCase
 
-from py_eth_sig_utils.eip712 import encode_typed_data
-from py_eth_sig_utils.utils import ecsign, ecrecover_to_pub, checksum_encode, sha3
-from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
-from py_eth_sig_utils.signing import sign_typed_data, recover_typed_data
-
 from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN
 from autobahn.xbr import HAS_XBR
 
 if HAS_XBR and HAS_CRYPTOSIGN:
+    from py_eth_sig_utils.eip712 import encode_typed_data
+    from py_eth_sig_utils.utils import ecsign, ecrecover_to_pub, checksum_encode, sha3
+    from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
+    from py_eth_sig_utils.signing import sign_typed_data, recover_typed_data
+
     from autobahn.xbr import make_w3, EthereumKey, mnemonic_to_private_key
     from autobahn.xbr._eip712_member_register import _create_eip712_member_register
     from autobahn.xbr._eip712_market_create import _create_eip712_market_create

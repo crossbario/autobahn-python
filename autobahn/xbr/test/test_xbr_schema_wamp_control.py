@@ -2,6 +2,7 @@ import os
 import copy
 import pkg_resources
 import txaio
+from unittest import skipIf
 
 if 'USE_TWISTED' in os.environ and os.environ['USE_TWISTED']:
     from twisted.trial import unittest
@@ -12,10 +13,14 @@ else:
 
     txaio.use_asyncio()
 
-from autobahn.xbr import FbsRepository
+from autobahn.xbr import HAS_XBR
 from autobahn.wamp.exception import InvalidPayload
 
+if HAS_XBR:
+    from autobahn.xbr import FbsRepository
 
+
+@skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')
 class TestFbsBase(unittest.TestCase):
     """
     FlatBuffers tests base class, loads test schemas.
