@@ -45,23 +45,18 @@ class Goodbye(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def Start(builder): builder.StartObject(3)
-def GoodbyeStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
-def GoodbyeAddReason(builder, reason):
-    """This method is deprecated. Please switch to AddReason."""
-    return AddReason(builder, reason)
-def AddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
-def GoodbyeAddMessage(builder, message):
-    """This method is deprecated. Please switch to AddMessage."""
-    return AddMessage(builder, message)
-def AddResumable(builder, resumable): builder.PrependBoolSlot(2, resumable, 0)
-def GoodbyeAddResumable(builder, resumable):
-    """This method is deprecated. Please switch to AddResumable."""
-    return AddResumable(builder, resumable)
-def End(builder): return builder.EndObject()
-def GoodbyeEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def GoodbyeStart(builder): builder.StartObject(3)
+def Start(builder):
+    return GoodbyeStart(builder)
+def GoodbyeAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def AddReason(builder, reason):
+    return GoodbyeAddReason(builder, reason)
+def GoodbyeAddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
+def AddMessage(builder, message):
+    return GoodbyeAddMessage(builder, message)
+def GoodbyeAddResumable(builder, resumable): builder.PrependBoolSlot(2, resumable, 0)
+def AddResumable(builder, resumable):
+    return GoodbyeAddResumable(builder, resumable)
+def GoodbyeEnd(builder): return builder.EndObject()
+def End(builder):
+    return GoodbyeEnd(builder)

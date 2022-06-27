@@ -24,11 +24,9 @@ class AuthCryptosignWelcome(object):
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
-def Start(builder): builder.StartObject(0)
-def AuthCryptosignWelcomeStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def End(builder): return builder.EndObject()
-def AuthCryptosignWelcomeEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def AuthCryptosignWelcomeStart(builder): builder.StartObject(0)
+def Start(builder):
+    return AuthCryptosignWelcomeStart(builder)
+def AuthCryptosignWelcomeEnd(builder): return builder.EndObject()
+def End(builder):
+    return AuthCryptosignWelcomeEnd(builder)

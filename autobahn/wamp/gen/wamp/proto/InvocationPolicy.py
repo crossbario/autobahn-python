@@ -8,4 +8,3 @@ class InvocationPolicy(object):
     LAST = 2
     ROUNDROBIN = 3
     RANDOM = 4
-

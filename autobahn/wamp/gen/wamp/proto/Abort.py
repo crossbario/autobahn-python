@@ -38,19 +38,15 @@ class Abort(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(2)
-def AbortStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
-def AbortAddReason(builder, reason):
-    """This method is deprecated. Please switch to AddReason."""
-    return AddReason(builder, reason)
-def AddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
-def AbortAddMessage(builder, message):
-    """This method is deprecated. Please switch to AddMessage."""
-    return AddMessage(builder, message)
-def End(builder): return builder.EndObject()
-def AbortEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def AbortStart(builder): builder.StartObject(2)
+def Start(builder):
+    return AbortStart(builder)
+def AbortAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def AddReason(builder, reason):
+    return AbortAddReason(builder, reason)
+def AbortAddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
+def AddMessage(builder, message):
+    return AbortAddMessage(builder, message)
+def AbortEnd(builder): return builder.EndObject()
+def End(builder):
+    return AbortEnd(builder)

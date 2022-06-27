@@ -66,35 +66,27 @@ class Register(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def Start(builder): builder.StartObject(6)
-def RegisterStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def RegisterAddRequest(builder, request):
-    """This method is deprecated. Please switch to AddRequest."""
-    return AddRequest(builder, request)
-def AddProcedure(builder, procedure): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(procedure), 0)
-def RegisterAddProcedure(builder, procedure):
-    """This method is deprecated. Please switch to AddProcedure."""
-    return AddProcedure(builder, procedure)
-def AddMatch(builder, match): builder.PrependUint8Slot(2, match, 0)
-def RegisterAddMatch(builder, match):
-    """This method is deprecated. Please switch to AddMatch."""
-    return AddMatch(builder, match)
-def AddInvoke(builder, invoke): builder.PrependUint8Slot(3, invoke, 0)
-def RegisterAddInvoke(builder, invoke):
-    """This method is deprecated. Please switch to AddInvoke."""
-    return AddInvoke(builder, invoke)
-def AddConcurrency(builder, concurrency): builder.PrependUint16Slot(4, concurrency, 0)
-def RegisterAddConcurrency(builder, concurrency):
-    """This method is deprecated. Please switch to AddConcurrency."""
-    return AddConcurrency(builder, concurrency)
-def AddForceReregister(builder, forceReregister): builder.PrependBoolSlot(5, forceReregister, 0)
-def RegisterAddForceReregister(builder, forceReregister):
-    """This method is deprecated. Please switch to AddForceReregister."""
-    return AddForceReregister(builder, forceReregister)
-def End(builder): return builder.EndObject()
-def RegisterEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def RegisterStart(builder): builder.StartObject(6)
+def Start(builder):
+    return RegisterStart(builder)
+def RegisterAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def AddRequest(builder, request):
+    return RegisterAddRequest(builder, request)
+def RegisterAddProcedure(builder, procedure): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(procedure), 0)
+def AddProcedure(builder, procedure):
+    return RegisterAddProcedure(builder, procedure)
+def RegisterAddMatch(builder, match): builder.PrependUint8Slot(2, match, 0)
+def AddMatch(builder, match):
+    return RegisterAddMatch(builder, match)
+def RegisterAddInvoke(builder, invoke): builder.PrependUint8Slot(3, invoke, 0)
+def AddInvoke(builder, invoke):
+    return RegisterAddInvoke(builder, invoke)
+def RegisterAddConcurrency(builder, concurrency): builder.PrependUint16Slot(4, concurrency, 0)
+def AddConcurrency(builder, concurrency):
+    return RegisterAddConcurrency(builder, concurrency)
+def RegisterAddForceReregister(builder, forceReregister): builder.PrependBoolSlot(5, forceReregister, 0)
+def AddForceReregister(builder, forceReregister):
+    return RegisterAddForceReregister(builder, forceReregister)
+def RegisterEnd(builder): return builder.EndObject()
+def End(builder):
+    return RegisterEnd(builder)

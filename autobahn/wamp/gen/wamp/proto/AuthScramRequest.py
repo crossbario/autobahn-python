@@ -38,19 +38,15 @@ class AuthScramRequest(object):
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
-def Start(builder): builder.StartObject(2)
-def AuthScramRequestStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddNonce(builder, nonce): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(nonce), 0)
-def AuthScramRequestAddNonce(builder, nonce):
-    """This method is deprecated. Please switch to AddNonce."""
-    return AddNonce(builder, nonce)
-def AddChannelBinding(builder, channelBinding): builder.PrependUint8Slot(1, channelBinding, 0)
-def AuthScramRequestAddChannelBinding(builder, channelBinding):
-    """This method is deprecated. Please switch to AddChannelBinding."""
-    return AddChannelBinding(builder, channelBinding)
-def End(builder): return builder.EndObject()
-def AuthScramRequestEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def AuthScramRequestStart(builder): builder.StartObject(2)
+def Start(builder):
+    return AuthScramRequestStart(builder)
+def AuthScramRequestAddNonce(builder, nonce): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(nonce), 0)
+def AddNonce(builder, nonce):
+    return AuthScramRequestAddNonce(builder, nonce)
+def AuthScramRequestAddChannelBinding(builder, channelBinding): builder.PrependUint8Slot(1, channelBinding, 0)
+def AddChannelBinding(builder, channelBinding):
+    return AuthScramRequestAddChannelBinding(builder, channelBinding)
+def AuthScramRequestEnd(builder): return builder.EndObject()
+def End(builder):
+    return AuthScramRequestEnd(builder)

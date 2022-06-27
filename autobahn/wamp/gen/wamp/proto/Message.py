@@ -41,19 +41,15 @@ class Message(object):
             return obj
         return None
 
-def Start(builder): builder.StartObject(2)
-def MessageStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddMsgType(builder, msgType): builder.PrependUint8Slot(0, msgType, 0)
-def MessageAddMsgType(builder, msgType):
-    """This method is deprecated. Please switch to AddMsgType."""
-    return AddMsgType(builder, msgType)
-def AddMsg(builder, msg): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(msg), 0)
-def MessageAddMsg(builder, msg):
-    """This method is deprecated. Please switch to AddMsg."""
-    return AddMsg(builder, msg)
-def End(builder): return builder.EndObject()
-def MessageEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def MessageStart(builder): builder.StartObject(2)
+def Start(builder):
+    return MessageStart(builder)
+def MessageAddMsgType(builder, msgType): builder.PrependUint8Slot(0, msgType, 0)
+def AddMsgType(builder, msgType):
+    return MessageAddMsgType(builder, msgType)
+def MessageAddMsg(builder, msg): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(msg), 0)
+def AddMsg(builder, msg):
+    return MessageAddMsg(builder, msg)
+def MessageEnd(builder): return builder.EndObject()
+def End(builder):
+    return MessageEnd(builder)

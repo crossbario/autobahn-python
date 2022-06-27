@@ -94,51 +94,39 @@ class CalleeFeatures(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def Start(builder): builder.StartObject(10)
-def CalleeFeaturesStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddCallerIdentification(builder, callerIdentification): builder.PrependBoolSlot(0, callerIdentification, 0)
-def CalleeFeaturesAddCallerIdentification(builder, callerIdentification):
-    """This method is deprecated. Please switch to AddCallerIdentification."""
-    return AddCallerIdentification(builder, callerIdentification)
-def AddCallTrustlevels(builder, callTrustlevels): builder.PrependBoolSlot(1, callTrustlevels, 0)
-def CalleeFeaturesAddCallTrustlevels(builder, callTrustlevels):
-    """This method is deprecated. Please switch to AddCallTrustlevels."""
-    return AddCallTrustlevels(builder, callTrustlevels)
-def AddCallTimeout(builder, callTimeout): builder.PrependBoolSlot(2, callTimeout, 0)
-def CalleeFeaturesAddCallTimeout(builder, callTimeout):
-    """This method is deprecated. Please switch to AddCallTimeout."""
-    return AddCallTimeout(builder, callTimeout)
-def AddCallCanceling(builder, callCanceling): builder.PrependBoolSlot(3, callCanceling, 0)
-def CalleeFeaturesAddCallCanceling(builder, callCanceling):
-    """This method is deprecated. Please switch to AddCallCanceling."""
-    return AddCallCanceling(builder, callCanceling)
-def AddProgressiveCallResults(builder, progressiveCallResults): builder.PrependBoolSlot(4, progressiveCallResults, 0)
-def CalleeFeaturesAddProgressiveCallResults(builder, progressiveCallResults):
-    """This method is deprecated. Please switch to AddProgressiveCallResults."""
-    return AddProgressiveCallResults(builder, progressiveCallResults)
-def AddRegistrationRevocation(builder, registrationRevocation): builder.PrependBoolSlot(5, registrationRevocation, 0)
-def CalleeFeaturesAddRegistrationRevocation(builder, registrationRevocation):
-    """This method is deprecated. Please switch to AddRegistrationRevocation."""
-    return AddRegistrationRevocation(builder, registrationRevocation)
-def AddPatternBasedRegistration(builder, patternBasedRegistration): builder.PrependBoolSlot(6, patternBasedRegistration, 0)
-def CalleeFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration):
-    """This method is deprecated. Please switch to AddPatternBasedRegistration."""
-    return AddPatternBasedRegistration(builder, patternBasedRegistration)
-def AddSharedRegistration(builder, sharedRegistration): builder.PrependBoolSlot(7, sharedRegistration, 0)
-def CalleeFeaturesAddSharedRegistration(builder, sharedRegistration):
-    """This method is deprecated. Please switch to AddSharedRegistration."""
-    return AddSharedRegistration(builder, sharedRegistration)
-def AddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(8, payloadTransparency, 0)
-def CalleeFeaturesAddPayloadTransparency(builder, payloadTransparency):
-    """This method is deprecated. Please switch to AddPayloadTransparency."""
-    return AddPayloadTransparency(builder, payloadTransparency)
-def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(9, payloadEncryptionCryptobox, 0)
-def CalleeFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    """This method is deprecated. Please switch to AddPayloadEncryptionCryptobox."""
-    return AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
-def End(builder): return builder.EndObject()
-def CalleeFeaturesEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def CalleeFeaturesStart(builder): builder.StartObject(10)
+def Start(builder):
+    return CalleeFeaturesStart(builder)
+def CalleeFeaturesAddCallerIdentification(builder, callerIdentification): builder.PrependBoolSlot(0, callerIdentification, 0)
+def AddCallerIdentification(builder, callerIdentification):
+    return CalleeFeaturesAddCallerIdentification(builder, callerIdentification)
+def CalleeFeaturesAddCallTrustlevels(builder, callTrustlevels): builder.PrependBoolSlot(1, callTrustlevels, 0)
+def AddCallTrustlevels(builder, callTrustlevels):
+    return CalleeFeaturesAddCallTrustlevels(builder, callTrustlevels)
+def CalleeFeaturesAddCallTimeout(builder, callTimeout): builder.PrependBoolSlot(2, callTimeout, 0)
+def AddCallTimeout(builder, callTimeout):
+    return CalleeFeaturesAddCallTimeout(builder, callTimeout)
+def CalleeFeaturesAddCallCanceling(builder, callCanceling): builder.PrependBoolSlot(3, callCanceling, 0)
+def AddCallCanceling(builder, callCanceling):
+    return CalleeFeaturesAddCallCanceling(builder, callCanceling)
+def CalleeFeaturesAddProgressiveCallResults(builder, progressiveCallResults): builder.PrependBoolSlot(4, progressiveCallResults, 0)
+def AddProgressiveCallResults(builder, progressiveCallResults):
+    return CalleeFeaturesAddProgressiveCallResults(builder, progressiveCallResults)
+def CalleeFeaturesAddRegistrationRevocation(builder, registrationRevocation): builder.PrependBoolSlot(5, registrationRevocation, 0)
+def AddRegistrationRevocation(builder, registrationRevocation):
+    return CalleeFeaturesAddRegistrationRevocation(builder, registrationRevocation)
+def CalleeFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration): builder.PrependBoolSlot(6, patternBasedRegistration, 0)
+def AddPatternBasedRegistration(builder, patternBasedRegistration):
+    return CalleeFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration)
+def CalleeFeaturesAddSharedRegistration(builder, sharedRegistration): builder.PrependBoolSlot(7, sharedRegistration, 0)
+def AddSharedRegistration(builder, sharedRegistration):
+    return CalleeFeaturesAddSharedRegistration(builder, sharedRegistration)
+def CalleeFeaturesAddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(8, payloadTransparency, 0)
+def AddPayloadTransparency(builder, payloadTransparency):
+    return CalleeFeaturesAddPayloadTransparency(builder, payloadTransparency)
+def CalleeFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(9, payloadEncryptionCryptobox, 0)
+def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
+    return CalleeFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
+def CalleeFeaturesEnd(builder): return builder.EndObject()
+def End(builder):
+    return CalleeFeaturesEnd(builder)

@@ -45,23 +45,18 @@ class Unregistered(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(3)
-def UnregisteredStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def UnregisteredAddRequest(builder, request):
-    """This method is deprecated. Please switch to AddRequest."""
-    return AddRequest(builder, request)
-def AddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
-def UnregisteredAddRegistration(builder, registration):
-    """This method is deprecated. Please switch to AddRegistration."""
-    return AddRegistration(builder, registration)
-def AddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
-def UnregisteredAddReason(builder, reason):
-    """This method is deprecated. Please switch to AddReason."""
-    return AddReason(builder, reason)
-def End(builder): return builder.EndObject()
-def UnregisteredEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def UnregisteredStart(builder): builder.StartObject(3)
+def Start(builder):
+    return UnregisteredStart(builder)
+def UnregisteredAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def AddRequest(builder, request):
+    return UnregisteredAddRequest(builder, request)
+def UnregisteredAddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
+def AddRegistration(builder, registration):
+    return UnregisteredAddRegistration(builder, registration)
+def UnregisteredAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def AddReason(builder, reason):
+    return UnregisteredAddReason(builder, reason)
+def UnregisteredEnd(builder): return builder.EndObject()
+def End(builder):
+    return UnregisteredEnd(builder)

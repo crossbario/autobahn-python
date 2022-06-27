@@ -52,27 +52,21 @@ class AuthCraChallenge(object):
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 32
 
-def Start(builder): builder.StartObject(4)
-def AuthCraChallengeStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddChallenge(builder, challenge): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(challenge), 0)
-def AuthCraChallengeAddChallenge(builder, challenge):
-    """This method is deprecated. Please switch to AddChallenge."""
-    return AddChallenge(builder, challenge)
-def AddSalt(builder, salt): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(salt), 0)
-def AuthCraChallengeAddSalt(builder, salt):
-    """This method is deprecated. Please switch to AddSalt."""
-    return AddSalt(builder, salt)
-def AddIterations(builder, iterations): builder.PrependUint32Slot(2, iterations, 1000)
-def AuthCraChallengeAddIterations(builder, iterations):
-    """This method is deprecated. Please switch to AddIterations."""
-    return AddIterations(builder, iterations)
-def AddKeylen(builder, keylen): builder.PrependUint8Slot(3, keylen, 32)
-def AuthCraChallengeAddKeylen(builder, keylen):
-    """This method is deprecated. Please switch to AddKeylen."""
-    return AddKeylen(builder, keylen)
-def End(builder): return builder.EndObject()
-def AuthCraChallengeEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def AuthCraChallengeStart(builder): builder.StartObject(4)
+def Start(builder):
+    return AuthCraChallengeStart(builder)
+def AuthCraChallengeAddChallenge(builder, challenge): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(challenge), 0)
+def AddChallenge(builder, challenge):
+    return AuthCraChallengeAddChallenge(builder, challenge)
+def AuthCraChallengeAddSalt(builder, salt): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(salt), 0)
+def AddSalt(builder, salt):
+    return AuthCraChallengeAddSalt(builder, salt)
+def AuthCraChallengeAddIterations(builder, iterations): builder.PrependUint32Slot(2, iterations, 1000)
+def AddIterations(builder, iterations):
+    return AuthCraChallengeAddIterations(builder, iterations)
+def AuthCraChallengeAddKeylen(builder, keylen): builder.PrependUint8Slot(3, keylen, 32)
+def AddKeylen(builder, keylen):
+    return AuthCraChallengeAddKeylen(builder, keylen)
+def AuthCraChallengeEnd(builder): return builder.EndObject()
+def End(builder):
+    return AuthCraChallengeEnd(builder)

@@ -115,63 +115,48 @@ class DealerFeatures(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def Start(builder): builder.StartObject(13)
-def DealerFeaturesStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddCallerIdentification(builder, callerIdentification): builder.PrependBoolSlot(0, callerIdentification, 0)
-def DealerFeaturesAddCallerIdentification(builder, callerIdentification):
-    """This method is deprecated. Please switch to AddCallerIdentification."""
-    return AddCallerIdentification(builder, callerIdentification)
-def AddCallTrustlevels(builder, callTrustlevels): builder.PrependBoolSlot(1, callTrustlevels, 0)
-def DealerFeaturesAddCallTrustlevels(builder, callTrustlevels):
-    """This method is deprecated. Please switch to AddCallTrustlevels."""
-    return AddCallTrustlevels(builder, callTrustlevels)
-def AddCallTimeout(builder, callTimeout): builder.PrependBoolSlot(2, callTimeout, 0)
-def DealerFeaturesAddCallTimeout(builder, callTimeout):
-    """This method is deprecated. Please switch to AddCallTimeout."""
-    return AddCallTimeout(builder, callTimeout)
-def AddCallCanceling(builder, callCanceling): builder.PrependBoolSlot(3, callCanceling, 0)
-def DealerFeaturesAddCallCanceling(builder, callCanceling):
-    """This method is deprecated. Please switch to AddCallCanceling."""
-    return AddCallCanceling(builder, callCanceling)
-def AddProgressiveCallResults(builder, progressiveCallResults): builder.PrependBoolSlot(4, progressiveCallResults, 0)
-def DealerFeaturesAddProgressiveCallResults(builder, progressiveCallResults):
-    """This method is deprecated. Please switch to AddProgressiveCallResults."""
-    return AddProgressiveCallResults(builder, progressiveCallResults)
-def AddRegistrationRevocation(builder, registrationRevocation): builder.PrependBoolSlot(5, registrationRevocation, 0)
-def DealerFeaturesAddRegistrationRevocation(builder, registrationRevocation):
-    """This method is deprecated. Please switch to AddRegistrationRevocation."""
-    return AddRegistrationRevocation(builder, registrationRevocation)
-def AddPatternBasedRegistration(builder, patternBasedRegistration): builder.PrependBoolSlot(6, patternBasedRegistration, 0)
-def DealerFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration):
-    """This method is deprecated. Please switch to AddPatternBasedRegistration."""
-    return AddPatternBasedRegistration(builder, patternBasedRegistration)
-def AddSharedRegistration(builder, sharedRegistration): builder.PrependBoolSlot(7, sharedRegistration, 0)
-def DealerFeaturesAddSharedRegistration(builder, sharedRegistration):
-    """This method is deprecated. Please switch to AddSharedRegistration."""
-    return AddSharedRegistration(builder, sharedRegistration)
-def AddSessionMetaApi(builder, sessionMetaApi): builder.PrependBoolSlot(8, sessionMetaApi, 0)
-def DealerFeaturesAddSessionMetaApi(builder, sessionMetaApi):
-    """This method is deprecated. Please switch to AddSessionMetaApi."""
-    return AddSessionMetaApi(builder, sessionMetaApi)
-def AddRegistrationMetaApi(builder, registrationMetaApi): builder.PrependBoolSlot(9, registrationMetaApi, 0)
-def DealerFeaturesAddRegistrationMetaApi(builder, registrationMetaApi):
-    """This method is deprecated. Please switch to AddRegistrationMetaApi."""
-    return AddRegistrationMetaApi(builder, registrationMetaApi)
-def AddTestamentMetaApi(builder, testamentMetaApi): builder.PrependBoolSlot(10, testamentMetaApi, 0)
-def DealerFeaturesAddTestamentMetaApi(builder, testamentMetaApi):
-    """This method is deprecated. Please switch to AddTestamentMetaApi."""
-    return AddTestamentMetaApi(builder, testamentMetaApi)
-def AddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(11, payloadTransparency, 0)
-def DealerFeaturesAddPayloadTransparency(builder, payloadTransparency):
-    """This method is deprecated. Please switch to AddPayloadTransparency."""
-    return AddPayloadTransparency(builder, payloadTransparency)
-def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(12, payloadEncryptionCryptobox, 0)
-def DealerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    """This method is deprecated. Please switch to AddPayloadEncryptionCryptobox."""
-    return AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
-def End(builder): return builder.EndObject()
-def DealerFeaturesEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def DealerFeaturesStart(builder): builder.StartObject(13)
+def Start(builder):
+    return DealerFeaturesStart(builder)
+def DealerFeaturesAddCallerIdentification(builder, callerIdentification): builder.PrependBoolSlot(0, callerIdentification, 0)
+def AddCallerIdentification(builder, callerIdentification):
+    return DealerFeaturesAddCallerIdentification(builder, callerIdentification)
+def DealerFeaturesAddCallTrustlevels(builder, callTrustlevels): builder.PrependBoolSlot(1, callTrustlevels, 0)
+def AddCallTrustlevels(builder, callTrustlevels):
+    return DealerFeaturesAddCallTrustlevels(builder, callTrustlevels)
+def DealerFeaturesAddCallTimeout(builder, callTimeout): builder.PrependBoolSlot(2, callTimeout, 0)
+def AddCallTimeout(builder, callTimeout):
+    return DealerFeaturesAddCallTimeout(builder, callTimeout)
+def DealerFeaturesAddCallCanceling(builder, callCanceling): builder.PrependBoolSlot(3, callCanceling, 0)
+def AddCallCanceling(builder, callCanceling):
+    return DealerFeaturesAddCallCanceling(builder, callCanceling)
+def DealerFeaturesAddProgressiveCallResults(builder, progressiveCallResults): builder.PrependBoolSlot(4, progressiveCallResults, 0)
+def AddProgressiveCallResults(builder, progressiveCallResults):
+    return DealerFeaturesAddProgressiveCallResults(builder, progressiveCallResults)
+def DealerFeaturesAddRegistrationRevocation(builder, registrationRevocation): builder.PrependBoolSlot(5, registrationRevocation, 0)
+def AddRegistrationRevocation(builder, registrationRevocation):
+    return DealerFeaturesAddRegistrationRevocation(builder, registrationRevocation)
+def DealerFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration): builder.PrependBoolSlot(6, patternBasedRegistration, 0)
+def AddPatternBasedRegistration(builder, patternBasedRegistration):
+    return DealerFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration)
+def DealerFeaturesAddSharedRegistration(builder, sharedRegistration): builder.PrependBoolSlot(7, sharedRegistration, 0)
+def AddSharedRegistration(builder, sharedRegistration):
+    return DealerFeaturesAddSharedRegistration(builder, sharedRegistration)
+def DealerFeaturesAddSessionMetaApi(builder, sessionMetaApi): builder.PrependBoolSlot(8, sessionMetaApi, 0)
+def AddSessionMetaApi(builder, sessionMetaApi):
+    return DealerFeaturesAddSessionMetaApi(builder, sessionMetaApi)
+def DealerFeaturesAddRegistrationMetaApi(builder, registrationMetaApi): builder.PrependBoolSlot(9, registrationMetaApi, 0)
+def AddRegistrationMetaApi(builder, registrationMetaApi):
+    return DealerFeaturesAddRegistrationMetaApi(builder, registrationMetaApi)
+def DealerFeaturesAddTestamentMetaApi(builder, testamentMetaApi): builder.PrependBoolSlot(10, testamentMetaApi, 0)
+def AddTestamentMetaApi(builder, testamentMetaApi):
+    return DealerFeaturesAddTestamentMetaApi(builder, testamentMetaApi)
+def DealerFeaturesAddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(11, payloadTransparency, 0)
+def AddPayloadTransparency(builder, payloadTransparency):
+    return DealerFeaturesAddPayloadTransparency(builder, payloadTransparency)
+def DealerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(12, payloadEncryptionCryptobox, 0)
+def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
+    return DealerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
+def DealerFeaturesEnd(builder): return builder.EndObject()
+def End(builder):
+    return DealerFeaturesEnd(builder)

@@ -38,19 +38,15 @@ class Unsubscribe(object):
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def Start(builder): builder.StartObject(2)
-def UnsubscribeStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def UnsubscribeAddRequest(builder, request):
-    """This method is deprecated. Please switch to AddRequest."""
-    return AddRequest(builder, request)
-def AddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
-def UnsubscribeAddSubscription(builder, subscription):
-    """This method is deprecated. Please switch to AddSubscription."""
-    return AddSubscription(builder, subscription)
-def End(builder): return builder.EndObject()
-def UnsubscribeEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def UnsubscribeStart(builder): builder.StartObject(2)
+def Start(builder):
+    return UnsubscribeStart(builder)
+def UnsubscribeAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def AddRequest(builder, request):
+    return UnsubscribeAddRequest(builder, request)
+def UnsubscribeAddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
+def AddSubscription(builder, subscription):
+    return UnsubscribeAddSubscription(builder, subscription)
+def UnsubscribeEnd(builder): return builder.EndObject()
+def End(builder):
+    return UnsubscribeEnd(builder)

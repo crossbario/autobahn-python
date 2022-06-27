@@ -1658,8 +1658,8 @@ class FbsRepository(object):
 
                 # print('>>', len(type_text_str), len(type_text))
 
-                print('    {:<30} {} {}'.format(hlval(field.name),
-                                                type_text + ' ' * (34 - len(type_text_str)),
+                print('    {:<36} {} {}'.format(hlval(field.name),
+                                                type_text + ' ' * (28 - len(type_text_str)),
                                                 docs[0] if docs else ''))
                 for line in docs[1:]:
                     print(' ' * 57 + line)

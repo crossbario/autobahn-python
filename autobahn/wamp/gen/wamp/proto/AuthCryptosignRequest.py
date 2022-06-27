@@ -38,19 +38,15 @@ class AuthCryptosignRequest(object):
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
-def Start(builder): builder.StartObject(2)
-def AuthCryptosignRequestStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddPubkey(builder, pubkey): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(pubkey), 0)
-def AuthCryptosignRequestAddPubkey(builder, pubkey):
-    """This method is deprecated. Please switch to AddPubkey."""
-    return AddPubkey(builder, pubkey)
-def AddChannelBinding(builder, channelBinding): builder.PrependUint8Slot(1, channelBinding, 0)
-def AuthCryptosignRequestAddChannelBinding(builder, channelBinding):
-    """This method is deprecated. Please switch to AddChannelBinding."""
-    return AddChannelBinding(builder, channelBinding)
-def End(builder): return builder.EndObject()
-def AuthCryptosignRequestEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def AuthCryptosignRequestStart(builder): builder.StartObject(2)
+def Start(builder):
+    return AuthCryptosignRequestStart(builder)
+def AuthCryptosignRequestAddPubkey(builder, pubkey): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(pubkey), 0)
+def AddPubkey(builder, pubkey):
+    return AuthCryptosignRequestAddPubkey(builder, pubkey)
+def AuthCryptosignRequestAddChannelBinding(builder, channelBinding): builder.PrependUint8Slot(1, channelBinding, 0)
+def AddChannelBinding(builder, channelBinding):
+    return AuthCryptosignRequestAddChannelBinding(builder, channelBinding)
+def AuthCryptosignRequestEnd(builder): return builder.EndObject()
+def End(builder):
+    return AuthCryptosignRequestEnd(builder)

@@ -8,4 +8,3 @@ class AuthFactor(object):
     AuthCraRequest = 2
     AuthScramRequest = 3
     AuthCryptosignRequest = 4
-

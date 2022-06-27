@@ -68,27 +68,21 @@ class ClientRoles(object):
             return obj
         return None
 
-def Start(builder): builder.StartObject(4)
-def ClientRolesStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddPublisher(builder, publisher): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(publisher), 0)
-def ClientRolesAddPublisher(builder, publisher):
-    """This method is deprecated. Please switch to AddPublisher."""
-    return AddPublisher(builder, publisher)
-def AddSubscriber(builder, subscriber): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(subscriber), 0)
-def ClientRolesAddSubscriber(builder, subscriber):
-    """This method is deprecated. Please switch to AddSubscriber."""
-    return AddSubscriber(builder, subscriber)
-def AddCaller(builder, caller): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(caller), 0)
-def ClientRolesAddCaller(builder, caller):
-    """This method is deprecated. Please switch to AddCaller."""
-    return AddCaller(builder, caller)
-def AddCallee(builder, callee): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(callee), 0)
-def ClientRolesAddCallee(builder, callee):
-    """This method is deprecated. Please switch to AddCallee."""
-    return AddCallee(builder, callee)
-def End(builder): return builder.EndObject()
-def ClientRolesEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def ClientRolesStart(builder): builder.StartObject(4)
+def Start(builder):
+    return ClientRolesStart(builder)
+def ClientRolesAddPublisher(builder, publisher): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(publisher), 0)
+def AddPublisher(builder, publisher):
+    return ClientRolesAddPublisher(builder, publisher)
+def ClientRolesAddSubscriber(builder, subscriber): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(subscriber), 0)
+def AddSubscriber(builder, subscriber):
+    return ClientRolesAddSubscriber(builder, subscriber)
+def ClientRolesAddCaller(builder, caller): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(caller), 0)
+def AddCaller(builder, caller):
+    return ClientRolesAddCaller(builder, caller)
+def ClientRolesAddCallee(builder, callee): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(callee), 0)
+def AddCallee(builder, callee):
+    return ClientRolesAddCallee(builder, callee)
+def ClientRolesEnd(builder): return builder.EndObject()
+def End(builder):
+    return ClientRolesEnd(builder)

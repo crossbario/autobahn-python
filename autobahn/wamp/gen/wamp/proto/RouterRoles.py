@@ -46,19 +46,15 @@ class RouterRoles(object):
             return obj
         return None
 
-def Start(builder): builder.StartObject(2)
-def RouterRolesStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddBroker(builder, broker): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(broker), 0)
-def RouterRolesAddBroker(builder, broker):
-    """This method is deprecated. Please switch to AddBroker."""
-    return AddBroker(builder, broker)
-def AddDealer(builder, dealer): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(dealer), 0)
-def RouterRolesAddDealer(builder, dealer):
-    """This method is deprecated. Please switch to AddDealer."""
-    return AddDealer(builder, dealer)
-def End(builder): return builder.EndObject()
-def RouterRolesEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def RouterRolesStart(builder): builder.StartObject(2)
+def Start(builder):
+    return RouterRolesStart(builder)
+def RouterRolesAddBroker(builder, broker): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(broker), 0)
+def AddBroker(builder, broker):
+    return RouterRolesAddBroker(builder, broker)
+def RouterRolesAddDealer(builder, dealer): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(dealer), 0)
+def AddDealer(builder, dealer):
+    return RouterRolesAddDealer(builder, dealer)
+def RouterRolesEnd(builder): return builder.EndObject()
+def End(builder):
+    return RouterRolesEnd(builder)

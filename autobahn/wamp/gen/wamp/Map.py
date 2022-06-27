@@ -38,19 +38,15 @@ class Map(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(2)
-def MapStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddKey(builder, key): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(key), 0)
-def MapAddKey(builder, key):
-    """This method is deprecated. Please switch to AddKey."""
-    return AddKey(builder, key)
-def AddValue(builder, value): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(value), 0)
-def MapAddValue(builder, value):
-    """This method is deprecated. Please switch to AddValue."""
-    return AddValue(builder, value)
-def End(builder): return builder.EndObject()
-def MapEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def MapStart(builder): builder.StartObject(2)
+def Start(builder):
+    return MapStart(builder)
+def MapAddKey(builder, key): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(key), 0)
+def AddKey(builder, key):
+    return MapAddKey(builder, key)
+def MapAddValue(builder, value): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(value), 0)
+def AddValue(builder, value):
+    return MapAddValue(builder, value)
+def MapEnd(builder): return builder.EndObject()
+def End(builder):
+    return MapEnd(builder)
