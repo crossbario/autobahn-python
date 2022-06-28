@@ -2026,7 +2026,7 @@ class FbsRepository(object):
         else:
             raise InvalidPayload('invalid type {} for value of validation type "{}"'.format(type(value), vt.name))
 
-    def validate(self, validation_type: str, args: List[Any], kwargs: Dict[str, Any]) -> FbsObject:
+    def validate(self, validation_type: str, args: List[Any], kwargs: Dict[str, Any]) -> Optional[FbsObject]:
         """
         Validate the WAMP application payload provided in positional argument in ``args``
         and in keyword-based arguments in ``kwargs`` against the FlatBuffers table
@@ -2041,9 +2041,12 @@ class FbsRepository(object):
         :return: The validation type object from this repository (reference in ``validation_type``)
             which has been used for validation.
         """
+        # any value validates against the None validation type
+        if validation_type is None:
+            return None
+
         if validation_type not in self.objs:
-            raise RuntimeError('validation type "{}" not found in inventory (among {} types)'.format(validation_type,
-                                                                                                     len(self.objs)))
+            raise RuntimeError('validation type "{}" not found in inventory (among {} types)'.format(validation_type, len(self.objs)))
 
         # the Flatbuffers table type from the realm's type inventory against which we
         # will validate the WAMP args/kwargs application payload
