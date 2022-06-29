@@ -63,23 +63,94 @@ pubkey = '''ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJVp3hjHwIQyEladzd8mFcf0YSXcmyKS
 '''
 
 # test valid vectors for WAMP-cryptosign signature testing
-testvectors = [
+test_vectors_1 = [
+    # _WITHOUT_ channel_id
     {
+        'channel_id': None,
         'priv_key': '4d57d97a68f555696620a6d849c0ce582568518d729eb753dc7c732de2804510',
-        'challenge': 'ff' * 32,
+        'challenge': 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+        'signature': 'b32675b221f08593213737bef8240e7c15228b07028e19595294678c90d11c0cae80a357331bfc5cc9fb71081464e6e75013517c2cf067ad566a6b7b728e5d03ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+    },
+    {
+        'channel_id': None,
+        'priv_key': 'd511fe78e23934b3dadb52fcd022974b80bd92bccc7c5cf404e46cc0a8a2f5cd',
+        'challenge': 'b26c1f87c13fc1da14997f1b5a71995dff8fbe0a62fae8473c7bdbd05bfb607d',
+        'signature': 'd4209ad10d5aff6bfbc009d7e924795de138a63515efc7afc6b01b7fe5201372190374886a70207b042294af5bd64ce725cd8dceb344e6d11c09d1aaaf4d660fb26c1f87c13fc1da14997f1b5a71995dff8fbe0a62fae8473c7bdbd05bfb607d'
+    },
+    {
+        'channel_id': None,
+        'priv_key': '6e1fde9cf9e2359a87420b65a87dc0c66136e66945196ba2475990d8a0c3a25b',
+        'challenge': 'b05e6b8ad4d69abf74aa3be3c0ee40ae07d66e1895b9ab09285a2f1192d562d2',
+        'signature': '7beb282184baadd08f166f16dd683b39cab53816ed81e6955def951cb2ddad1ec184e206746fd82bda075af03711d3d5658fc84a76196b0fa8d1ebc92ef9f30bb05e6b8ad4d69abf74aa3be3c0ee40ae07d66e1895b9ab09285a2f1192d562d2'
+    },
+
+    # _WITH_ channel_id
+    {
+        'channel_id': '62e935ae755f3d48f80d4d59f6121358c435722a67e859cc0caa8b539027f2ff',
+        'priv_key': '4d57d97a68f555696620a6d849c0ce582568518d729eb753dc7c732de2804510',
+        'challenge': 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
         'signature': '9b6f41540c9b95b4b7b281c3042fa9c54cef43c842d62ea3fd6030fcb66e70b3e80d49d44c29d1635da9348d02ec93f3ed1ef227dfb59a07b580095c2b82f80f9d16ca518aa0c2b707f2b2a609edeca73bca8dd59817a633f35574ac6fd80d00'
     },
     {
+        'channel_id': '62e935ae755f3d48f80d4d59f6121358c435722a67e859cc0caa8b539027f2ff',
         'priv_key': 'd511fe78e23934b3dadb52fcd022974b80bd92bccc7c5cf404e46cc0a8a2f5cd',
         'challenge': 'b26c1f87c13fc1da14997f1b5a71995dff8fbe0a62fae8473c7bdbd05bfb607d',
         'signature': '305aaa3ac25e98f651427688b3fc43fe7d8a68a7ec1d7d61c61517c519bd4a427c3015599d83ca28b4c652333920223844ef0725eb5dc2febfd6af7677b73f01d0852a29b460fc92ec943242ac638a053bbacc200512b18b30d15083cbdc9282'
     },
     {
+        'channel_id': '62e935ae755f3d48f80d4d59f6121358c435722a67e859cc0caa8b539027f2ff',
         'priv_key': '6e1fde9cf9e2359a87420b65a87dc0c66136e66945196ba2475990d8a0c3a25b',
         'challenge': 'b05e6b8ad4d69abf74aa3be3c0ee40ae07d66e1895b9ab09285a2f1192d562d2',
         'signature': 'ee3c7644fd8070532bc1fde3d70d742267da545d8c8f03e63bda63f1ad4214f4d2c4bfdb4eb9526def42deeb7e31602a6ff99eba893e0a4ad4d45892ca75e608d2b75e24a189a7f78ca776ba36fc53f6c3e31c32f251f2c524f0a44202f2902d'
-    }
+    },
 ]
+
+
+class TestSigVectors(unittest.TestCase):
+
+    def test_vectors(self):
+        session = Mock()
+
+        for testvec in test_vectors_1:
+            # setup fake transport details including fake channel_id
+            if testvec['channel_id']:
+                channel_id = binascii.a2b_hex(testvec['channel_id'])
+                channel_id_type = 'tls-unique'
+                session._transport.transport_details = types.TransportDetails(channel_id={'tls-unique': channel_id})
+            else:
+                channel_id = None
+                channel_id_type = None
+                session._transport.transport_details = types.TransportDetails(channel_id=None)
+
+            # private signing key (the seed for it)
+            priv_key = CryptosignKey.from_bytes(binascii.a2b_hex(testvec['priv_key']))
+
+            # the fake challenge we've received
+            challenge = types.Challenge("cryptosign", dict(challenge=testvec['challenge']))
+
+            # ok, now sign the challenge
+            f_signed = priv_key.sign_challenge(session, challenge, channel_id_type=channel_id_type)
+
+            def success(signed):
+                # the signature returned is a Hex encoded string
+                self.assertTrue(type(signed) == str)
+
+                # we return the concatenation of the signature and the message signed (96 bytes)
+                self.assertEqual(
+                    192,
+                    len(signed),
+                )
+
+                # must match the expected value in our test vector
+                self.assertEqual(
+                    testvec['signature'],
+                    signed,
+                )
+
+            def failed(err):
+                self.fail(str(err))
+
+            txaio.add_callbacks(f_signed, success, failed)
 
 
 class TestAuth(unittest.TestCase):
@@ -91,7 +162,10 @@ class TestAuth(unittest.TestCase):
         # all tests here fake the use of channel_id_type='tls-unique' with the following channel_id
         m = hashlib.sha256()
         m.update("some TLS message".encode())
+
+        # 62e935ae755f3d48f80d4d59f6121358c435722a67e859cc0caa8b539027f2ff
         channel_id = m.digest()
+
         self.transport_details = types.TransportDetails(channel_id={'tls-unique': channel_id})
 
     def test_public_key(self):
@@ -118,30 +192,6 @@ class TestAuth(unittest.TestCase):
             self.fail(str(err))
 
         txaio.add_callbacks(f_signed, success, failed)
-
-    def test_testvectors(self):
-        session = Mock()
-        session._transport.transport_details = self.transport_details
-
-        for testvec in testvectors:
-            priv_key = CryptosignKey.from_bytes(binascii.a2b_hex(testvec['priv_key']))
-            challenge = types.Challenge("cryptosign", dict(challenge=testvec['challenge']))
-            f_signed = priv_key.sign_challenge(session, challenge, channel_id_type='tls-unique')
-
-            def success(signed):
-                self.assertEqual(
-                    192,
-                    len(signed),
-                )
-                self.assertEqual(
-                    testvec['signature'],
-                    signed,
-                )
-
-            def failed(err):
-                self.fail(str(err))
-
-            txaio.add_callbacks(f_signed, success, failed)
 
     def test_authenticator(self):
         authenticator = create_authenticator(

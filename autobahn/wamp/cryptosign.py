@@ -518,7 +518,7 @@ if HAS_CRYPTOSIGN:
                 'unexpected cryptosign challenge with method "{}"'.format(challenge.method)
 
             # get the TLS channel ID of the underlying TLS connection
-            if channel_id_type in session._transport.transport_details.channel_id:
+            if channel_id_type and channel_id_type in session._transport.transport_details.channel_id:
                 channel_id = session._transport.transport_details.channel_id.get(channel_id_type, None)
             else:
                 channel_id_type = None
