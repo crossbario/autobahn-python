@@ -10,4 +10,3 @@ class Serializer(object):
     UBJSON = 4
     OPAQUE = 5
     FLATBUFFERS = 6
-

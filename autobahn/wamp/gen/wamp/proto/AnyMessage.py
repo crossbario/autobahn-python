@@ -30,4 +30,3 @@ class AnyMessage(object):
     Invocation = 24
     Interrupt = 25
     Yield = 26
-

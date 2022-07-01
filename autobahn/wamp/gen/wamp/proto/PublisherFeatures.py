@@ -66,35 +66,27 @@ class PublisherFeatures(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def Start(builder): builder.StartObject(6)
-def PublisherFeaturesStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddPublisherIdentification(builder, publisherIdentification): builder.PrependBoolSlot(0, publisherIdentification, 0)
-def PublisherFeaturesAddPublisherIdentification(builder, publisherIdentification):
-    """This method is deprecated. Please switch to AddPublisherIdentification."""
-    return AddPublisherIdentification(builder, publisherIdentification)
-def AddPublisherExclusion(builder, publisherExclusion): builder.PrependBoolSlot(1, publisherExclusion, 0)
-def PublisherFeaturesAddPublisherExclusion(builder, publisherExclusion):
-    """This method is deprecated. Please switch to AddPublisherExclusion."""
-    return AddPublisherExclusion(builder, publisherExclusion)
-def AddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing): builder.PrependBoolSlot(2, subscriberBlackwhiteListing, 0)
-def PublisherFeaturesAddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing):
-    """This method is deprecated. Please switch to AddSubscriberBlackwhiteListing."""
-    return AddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing)
-def AddAcknowledgeEventReceived(builder, acknowledgeEventReceived): builder.PrependBoolSlot(3, acknowledgeEventReceived, 0)
-def PublisherFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceived):
-    """This method is deprecated. Please switch to AddAcknowledgeEventReceived."""
-    return AddAcknowledgeEventReceived(builder, acknowledgeEventReceived)
-def AddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(4, payloadTransparency, 0)
-def PublisherFeaturesAddPayloadTransparency(builder, payloadTransparency):
-    """This method is deprecated. Please switch to AddPayloadTransparency."""
-    return AddPayloadTransparency(builder, payloadTransparency)
-def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(5, payloadEncryptionCryptobox, 0)
-def PublisherFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    """This method is deprecated. Please switch to AddPayloadEncryptionCryptobox."""
-    return AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
-def End(builder): return builder.EndObject()
-def PublisherFeaturesEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def PublisherFeaturesStart(builder): builder.StartObject(6)
+def Start(builder):
+    return PublisherFeaturesStart(builder)
+def PublisherFeaturesAddPublisherIdentification(builder, publisherIdentification): builder.PrependBoolSlot(0, publisherIdentification, 0)
+def AddPublisherIdentification(builder, publisherIdentification):
+    return PublisherFeaturesAddPublisherIdentification(builder, publisherIdentification)
+def PublisherFeaturesAddPublisherExclusion(builder, publisherExclusion): builder.PrependBoolSlot(1, publisherExclusion, 0)
+def AddPublisherExclusion(builder, publisherExclusion):
+    return PublisherFeaturesAddPublisherExclusion(builder, publisherExclusion)
+def PublisherFeaturesAddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing): builder.PrependBoolSlot(2, subscriberBlackwhiteListing, 0)
+def AddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing):
+    return PublisherFeaturesAddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing)
+def PublisherFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceived): builder.PrependBoolSlot(3, acknowledgeEventReceived, 0)
+def AddAcknowledgeEventReceived(builder, acknowledgeEventReceived):
+    return PublisherFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceived)
+def PublisherFeaturesAddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(4, payloadTransparency, 0)
+def AddPayloadTransparency(builder, payloadTransparency):
+    return PublisherFeaturesAddPayloadTransparency(builder, payloadTransparency)
+def PublisherFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(5, payloadEncryptionCryptobox, 0)
+def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
+    return PublisherFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
+def PublisherFeaturesEnd(builder): return builder.EndObject()
+def End(builder):
+    return PublisherFeaturesEnd(builder)

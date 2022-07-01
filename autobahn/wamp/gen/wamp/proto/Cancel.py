@@ -62,27 +62,21 @@ class Cancel(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         return o == 0
 
-def Start(builder): builder.StartObject(3)
-def CancelStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def CancelAddRequest(builder, request):
-    """This method is deprecated. Please switch to AddRequest."""
-    return AddRequest(builder, request)
-def AddMode(builder, mode): builder.PrependUint8Slot(1, mode, 0)
-def CancelAddMode(builder, mode):
-    """This method is deprecated. Please switch to AddMode."""
-    return AddMode(builder, mode)
-def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
-def CancelAddForwardFor(builder, forwardFor):
-    """This method is deprecated. Please switch to AddForwardFor."""
-    return AddForwardFor(builder, forwardFor)
-def StartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
-def CancelStartForwardForVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartForwardForVector(builder, numElems)
-def End(builder): return builder.EndObject()
-def CancelEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def CancelStart(builder): builder.StartObject(3)
+def Start(builder):
+    return CancelStart(builder)
+def CancelAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def AddRequest(builder, request):
+    return CancelAddRequest(builder, request)
+def CancelAddMode(builder, mode): builder.PrependUint8Slot(1, mode, 0)
+def AddMode(builder, mode):
+    return CancelAddMode(builder, mode)
+def CancelAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def AddForwardFor(builder, forwardFor):
+    return CancelAddForwardFor(builder, forwardFor)
+def CancelStartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+def StartForwardForVector(builder, numElems):
+    return CancelStartForwardForVector(builder, numElems)
+def CancelEnd(builder): return builder.EndObject()
+def End(builder):
+    return CancelEnd(builder)

@@ -33,6 +33,13 @@ table RolePermission
     cache: bool;
 }
 
+table AuthorizationResponse
+{
+    allow: PermissionAllow;
+    disclose: PermissionDisclose;
+    cache: bool;
+}
+
 table RoleConfig
 {
     // FIXME: add "id: string (wampname);"

@@ -80,43 +80,33 @@ class SubscriberFeatures(object):
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def Start(builder): builder.StartObject(8)
-def SubscriberFeaturesStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddPublisherIdentification(builder, publisherIdentification): builder.PrependBoolSlot(0, publisherIdentification, 0)
-def SubscriberFeaturesAddPublisherIdentification(builder, publisherIdentification):
-    """This method is deprecated. Please switch to AddPublisherIdentification."""
-    return AddPublisherIdentification(builder, publisherIdentification)
-def AddPatternBasedSubscription(builder, patternBasedSubscription): builder.PrependBoolSlot(1, patternBasedSubscription, 0)
-def SubscriberFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription):
-    """This method is deprecated. Please switch to AddPatternBasedSubscription."""
-    return AddPatternBasedSubscription(builder, patternBasedSubscription)
-def AddPublicationTrustlevels(builder, publicationTrustlevels): builder.PrependBoolSlot(2, publicationTrustlevels, 0)
-def SubscriberFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels):
-    """This method is deprecated. Please switch to AddPublicationTrustlevels."""
-    return AddPublicationTrustlevels(builder, publicationTrustlevels)
-def AddSubscriptionRevocation(builder, subscriptionRevocation): builder.PrependBoolSlot(3, subscriptionRevocation, 0)
-def SubscriberFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation):
-    """This method is deprecated. Please switch to AddSubscriptionRevocation."""
-    return AddSubscriptionRevocation(builder, subscriptionRevocation)
-def AddEventHistory(builder, eventHistory): builder.PrependBoolSlot(4, eventHistory, 0)
-def SubscriberFeaturesAddEventHistory(builder, eventHistory):
-    """This method is deprecated. Please switch to AddEventHistory."""
-    return AddEventHistory(builder, eventHistory)
-def AddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived): builder.PrependBoolSlot(5, acknowledgeSubscriberReceived, 0)
-def SubscriberFeaturesAddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived):
-    """This method is deprecated. Please switch to AddAcknowledgeSubscriberReceived."""
-    return AddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived)
-def AddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(6, payloadTransparency, 0)
-def SubscriberFeaturesAddPayloadTransparency(builder, payloadTransparency):
-    """This method is deprecated. Please switch to AddPayloadTransparency."""
-    return AddPayloadTransparency(builder, payloadTransparency)
-def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(7, payloadEncryptionCryptobox, 0)
-def SubscriberFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    """This method is deprecated. Please switch to AddPayloadEncryptionCryptobox."""
-    return AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
-def End(builder): return builder.EndObject()
-def SubscriberFeaturesEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def SubscriberFeaturesStart(builder): builder.StartObject(8)
+def Start(builder):
+    return SubscriberFeaturesStart(builder)
+def SubscriberFeaturesAddPublisherIdentification(builder, publisherIdentification): builder.PrependBoolSlot(0, publisherIdentification, 0)
+def AddPublisherIdentification(builder, publisherIdentification):
+    return SubscriberFeaturesAddPublisherIdentification(builder, publisherIdentification)
+def SubscriberFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription): builder.PrependBoolSlot(1, patternBasedSubscription, 0)
+def AddPatternBasedSubscription(builder, patternBasedSubscription):
+    return SubscriberFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription)
+def SubscriberFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels): builder.PrependBoolSlot(2, publicationTrustlevels, 0)
+def AddPublicationTrustlevels(builder, publicationTrustlevels):
+    return SubscriberFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels)
+def SubscriberFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation): builder.PrependBoolSlot(3, subscriptionRevocation, 0)
+def AddSubscriptionRevocation(builder, subscriptionRevocation):
+    return SubscriberFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation)
+def SubscriberFeaturesAddEventHistory(builder, eventHistory): builder.PrependBoolSlot(4, eventHistory, 0)
+def AddEventHistory(builder, eventHistory):
+    return SubscriberFeaturesAddEventHistory(builder, eventHistory)
+def SubscriberFeaturesAddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived): builder.PrependBoolSlot(5, acknowledgeSubscriberReceived, 0)
+def AddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived):
+    return SubscriberFeaturesAddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived)
+def SubscriberFeaturesAddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(6, payloadTransparency, 0)
+def AddPayloadTransparency(builder, payloadTransparency):
+    return SubscriberFeaturesAddPayloadTransparency(builder, payloadTransparency)
+def SubscriberFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(7, payloadEncryptionCryptobox, 0)
+def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
+    return SubscriberFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
+def SubscriberFeaturesEnd(builder): return builder.EndObject()
+def End(builder):
+    return SubscriberFeaturesEnd(builder)

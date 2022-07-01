@@ -38,19 +38,15 @@ class Unregister(object):
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def Start(builder): builder.StartObject(2)
-def UnregisterStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def UnregisterAddRequest(builder, request):
-    """This method is deprecated. Please switch to AddRequest."""
-    return AddRequest(builder, request)
-def AddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
-def UnregisterAddRegistration(builder, registration):
-    """This method is deprecated. Please switch to AddRegistration."""
-    return AddRegistration(builder, registration)
-def End(builder): return builder.EndObject()
-def UnregisterEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def UnregisterStart(builder): builder.StartObject(2)
+def Start(builder):
+    return UnregisterStart(builder)
+def UnregisterAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def AddRequest(builder, request):
+    return UnregisterAddRequest(builder, request)
+def UnregisterAddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
+def AddRegistration(builder, registration):
+    return UnregisterAddRegistration(builder, registration)
+def UnregisterEnd(builder): return builder.EndObject()
+def End(builder):
+    return UnregisterEnd(builder)

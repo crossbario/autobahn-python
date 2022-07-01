@@ -6,4 +6,3 @@ class CancelMode(object):
     SKIP = 0
     ABORT = 1
     KILL = 2
-

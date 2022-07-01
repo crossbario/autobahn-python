@@ -30,4 +30,3 @@ class MessageType(object):
     INVOCATION = 68
     INTERRUPT = 69
     YIELD = 70
-

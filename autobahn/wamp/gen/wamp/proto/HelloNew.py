@@ -135,67 +135,51 @@ class HelloNew(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(14)
-def HelloNewStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddRoles(builder, roles): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(roles), 0)
-def HelloNewAddRoles(builder, roles):
-    """This method is deprecated. Please switch to AddRoles."""
-    return AddRoles(builder, roles)
-def AddRealm(builder, realm): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(realm), 0)
-def HelloNewAddRealm(builder, realm):
-    """This method is deprecated. Please switch to AddRealm."""
-    return AddRealm(builder, realm)
-def AddAuthid(builder, authid): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(authid), 0)
-def HelloNewAddAuthid(builder, authid):
-    """This method is deprecated. Please switch to AddAuthid."""
-    return AddAuthid(builder, authid)
-def AddAuthrole(builder, authrole): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(authrole), 0)
-def HelloNewAddAuthrole(builder, authrole):
-    """This method is deprecated. Please switch to AddAuthrole."""
-    return AddAuthrole(builder, authrole)
-def AddAuthmode(builder, authmode): builder.PrependUint8Slot(4, authmode, 0)
-def HelloNewAddAuthmode(builder, authmode):
-    """This method is deprecated. Please switch to AddAuthmode."""
-    return AddAuthmode(builder, authmode)
-def AddAuthfactor1Type(builder, authfactor1Type): builder.PrependUint8Slot(5, authfactor1Type, 0)
-def HelloNewAddAuthfactor1Type(builder, authfactor1Type):
-    """This method is deprecated. Please switch to AddAuthfactor1Type."""
-    return AddAuthfactor1Type(builder, authfactor1Type)
-def AddAuthfactor1(builder, authfactor1): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor1), 0)
-def HelloNewAddAuthfactor1(builder, authfactor1):
-    """This method is deprecated. Please switch to AddAuthfactor1."""
-    return AddAuthfactor1(builder, authfactor1)
-def AddAuthfactor2Type(builder, authfactor2Type): builder.PrependUint8Slot(7, authfactor2Type, 0)
-def HelloNewAddAuthfactor2Type(builder, authfactor2Type):
-    """This method is deprecated. Please switch to AddAuthfactor2Type."""
-    return AddAuthfactor2Type(builder, authfactor2Type)
-def AddAuthfactor2(builder, authfactor2): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor2), 0)
-def HelloNewAddAuthfactor2(builder, authfactor2):
-    """This method is deprecated. Please switch to AddAuthfactor2."""
-    return AddAuthfactor2(builder, authfactor2)
-def AddAuthfactor3Type(builder, authfactor3Type): builder.PrependUint8Slot(9, authfactor3Type, 0)
-def HelloNewAddAuthfactor3Type(builder, authfactor3Type):
-    """This method is deprecated. Please switch to AddAuthfactor3Type."""
-    return AddAuthfactor3Type(builder, authfactor3Type)
-def AddAuthfactor3(builder, authfactor3): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor3), 0)
-def HelloNewAddAuthfactor3(builder, authfactor3):
-    """This method is deprecated. Please switch to AddAuthfactor3."""
-    return AddAuthfactor3(builder, authfactor3)
-def AddResumable(builder, resumable): builder.PrependBoolSlot(11, resumable, 0)
-def HelloNewAddResumable(builder, resumable):
-    """This method is deprecated. Please switch to AddResumable."""
-    return AddResumable(builder, resumable)
-def AddResumeSession(builder, resumeSession): builder.PrependUint64Slot(12, resumeSession, 0)
-def HelloNewAddResumeSession(builder, resumeSession):
-    """This method is deprecated. Please switch to AddResumeSession."""
-    return AddResumeSession(builder, resumeSession)
-def AddResumeToken(builder, resumeToken): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(resumeToken), 0)
-def HelloNewAddResumeToken(builder, resumeToken):
-    """This method is deprecated. Please switch to AddResumeToken."""
-    return AddResumeToken(builder, resumeToken)
-def End(builder): return builder.EndObject()
-def HelloNewEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def HelloNewStart(builder): builder.StartObject(14)
+def Start(builder):
+    return HelloNewStart(builder)
+def HelloNewAddRoles(builder, roles): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(roles), 0)
+def AddRoles(builder, roles):
+    return HelloNewAddRoles(builder, roles)
+def HelloNewAddRealm(builder, realm): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(realm), 0)
+def AddRealm(builder, realm):
+    return HelloNewAddRealm(builder, realm)
+def HelloNewAddAuthid(builder, authid): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(authid), 0)
+def AddAuthid(builder, authid):
+    return HelloNewAddAuthid(builder, authid)
+def HelloNewAddAuthrole(builder, authrole): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(authrole), 0)
+def AddAuthrole(builder, authrole):
+    return HelloNewAddAuthrole(builder, authrole)
+def HelloNewAddAuthmode(builder, authmode): builder.PrependUint8Slot(4, authmode, 0)
+def AddAuthmode(builder, authmode):
+    return HelloNewAddAuthmode(builder, authmode)
+def HelloNewAddAuthfactor1Type(builder, authfactor1Type): builder.PrependUint8Slot(5, authfactor1Type, 0)
+def AddAuthfactor1Type(builder, authfactor1Type):
+    return HelloNewAddAuthfactor1Type(builder, authfactor1Type)
+def HelloNewAddAuthfactor1(builder, authfactor1): builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor1), 0)
+def AddAuthfactor1(builder, authfactor1):
+    return HelloNewAddAuthfactor1(builder, authfactor1)
+def HelloNewAddAuthfactor2Type(builder, authfactor2Type): builder.PrependUint8Slot(7, authfactor2Type, 0)
+def AddAuthfactor2Type(builder, authfactor2Type):
+    return HelloNewAddAuthfactor2Type(builder, authfactor2Type)
+def HelloNewAddAuthfactor2(builder, authfactor2): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor2), 0)
+def AddAuthfactor2(builder, authfactor2):
+    return HelloNewAddAuthfactor2(builder, authfactor2)
+def HelloNewAddAuthfactor3Type(builder, authfactor3Type): builder.PrependUint8Slot(9, authfactor3Type, 0)
+def AddAuthfactor3Type(builder, authfactor3Type):
+    return HelloNewAddAuthfactor3Type(builder, authfactor3Type)
+def HelloNewAddAuthfactor3(builder, authfactor3): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor3), 0)
+def AddAuthfactor3(builder, authfactor3):
+    return HelloNewAddAuthfactor3(builder, authfactor3)
+def HelloNewAddResumable(builder, resumable): builder.PrependBoolSlot(11, resumable, 0)
+def AddResumable(builder, resumable):
+    return HelloNewAddResumable(builder, resumable)
+def HelloNewAddResumeSession(builder, resumeSession): builder.PrependUint64Slot(12, resumeSession, 0)
+def AddResumeSession(builder, resumeSession):
+    return HelloNewAddResumeSession(builder, resumeSession)
+def HelloNewAddResumeToken(builder, resumeToken): builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(resumeToken), 0)
+def AddResumeToken(builder, resumeToken):
+    return HelloNewAddResumeToken(builder, resumeToken)
+def HelloNewEnd(builder): return builder.EndObject()
+def End(builder):
+    return HelloNewEnd(builder)

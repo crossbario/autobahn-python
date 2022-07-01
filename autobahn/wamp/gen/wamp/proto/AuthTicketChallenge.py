@@ -24,11 +24,9 @@ class AuthTicketChallenge(object):
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
-def Start(builder): builder.StartObject(0)
-def AuthTicketChallengeStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def End(builder): return builder.EndObject()
-def AuthTicketChallengeEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def AuthTicketChallengeStart(builder): builder.StartObject(0)
+def Start(builder):
+    return AuthTicketChallengeStart(builder)
+def AuthTicketChallengeEnd(builder): return builder.EndObject()
+def End(builder):
+    return AuthTicketChallengeEnd(builder)

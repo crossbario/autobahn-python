@@ -31,15 +31,12 @@ class AuthCryptosignChallenge(object):
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
-def Start(builder): builder.StartObject(1)
-def AuthCryptosignChallengeStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddChannelBinding(builder, channelBinding): builder.PrependUint8Slot(0, channelBinding, 0)
-def AuthCryptosignChallengeAddChannelBinding(builder, channelBinding):
-    """This method is deprecated. Please switch to AddChannelBinding."""
-    return AddChannelBinding(builder, channelBinding)
-def End(builder): return builder.EndObject()
-def AuthCryptosignChallengeEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def AuthCryptosignChallengeStart(builder): builder.StartObject(1)
+def Start(builder):
+    return AuthCryptosignChallengeStart(builder)
+def AuthCryptosignChallengeAddChannelBinding(builder, channelBinding): builder.PrependUint8Slot(0, channelBinding, 0)
+def AddChannelBinding(builder, channelBinding):
+    return AuthCryptosignChallengeAddChannelBinding(builder, channelBinding)
+def AuthCryptosignChallengeEnd(builder): return builder.EndObject()
+def End(builder):
+    return AuthCryptosignChallengeEnd(builder)

@@ -65,7 +65,7 @@ table SessionKill
 table SessionKillByAuthid
 {
     /// The WAMP authid of the sessions to kill.
-    authid: uint64 (arg, wampid);
+    authid: string (wampuri);
 
     /// A reason URI provided to the killed session(s).
     reason: string (kwarg, wampuri);
@@ -221,4 +221,17 @@ rpc_service IWampMeta(type: "interface",
 
     /// Return history of events for given subscription.
     subscription_get_events (Void): Void (type: "procedure", wampuri: "wamp.subscription.get_events");
+
+    /// Reflection API.
+    interface_list (Void): Void (type: "procedure", wampuri: "wamp.interface.list");
+
+    interface_get (Void): Void (type: "procedure", wampuri: "wamp.interface.get");
+
+    interface_match_procedure (Void): Void (type: "procedure", wampuri: "wamp.interface.match_procedure");
+
+    interface_match_topic (Void): Void (type: "procedure", wampuri: "wamp.interface.match_topic");
+
+    type_list (Void): Void (type: "procedure", wampuri: "wamp.type.list");
+
+    type_get (Void): Void (type: "procedure", wampuri: "wamp.type.get");
 }

@@ -45,23 +45,18 @@ class Unsubscribed(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(3)
-def UnsubscribedStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def UnsubscribedAddRequest(builder, request):
-    """This method is deprecated. Please switch to AddRequest."""
-    return AddRequest(builder, request)
-def AddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
-def UnsubscribedAddSubscription(builder, subscription):
-    """This method is deprecated. Please switch to AddSubscription."""
-    return AddSubscription(builder, subscription)
-def AddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
-def UnsubscribedAddReason(builder, reason):
-    """This method is deprecated. Please switch to AddReason."""
-    return AddReason(builder, reason)
-def End(builder): return builder.EndObject()
-def UnsubscribedEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def UnsubscribedStart(builder): builder.StartObject(3)
+def Start(builder):
+    return UnsubscribedStart(builder)
+def UnsubscribedAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def AddRequest(builder, request):
+    return UnsubscribedAddRequest(builder, request)
+def UnsubscribedAddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
+def AddSubscription(builder, subscription):
+    return UnsubscribedAddSubscription(builder, subscription)
+def UnsubscribedAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def AddReason(builder, reason):
+    return UnsubscribedAddReason(builder, reason)
+def UnsubscribedEnd(builder): return builder.EndObject()
+def End(builder):
+    return UnsubscribedEnd(builder)

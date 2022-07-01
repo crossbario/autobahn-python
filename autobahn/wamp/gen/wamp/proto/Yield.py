@@ -151,63 +151,48 @@ class Yield(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         return o == 0
 
-def Start(builder): builder.StartObject(10)
-def YieldStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def YieldAddRequest(builder, request):
-    """This method is deprecated. Please switch to AddRequest."""
-    return AddRequest(builder, request)
-def AddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
-def YieldAddPayload(builder, payload):
-    """This method is deprecated. Please switch to AddPayload."""
-    return AddPayload(builder, payload)
-def StartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def YieldStartPayloadVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartPayloadVector(builder, numElems)
-def AddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(2, encAlgo, 0)
-def YieldAddEncAlgo(builder, encAlgo):
-    """This method is deprecated. Please switch to AddEncAlgo."""
-    return AddEncAlgo(builder, encAlgo)
-def AddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(3, encSerializer, 0)
-def YieldAddEncSerializer(builder, encSerializer):
-    """This method is deprecated. Please switch to AddEncSerializer."""
-    return AddEncSerializer(builder, encSerializer)
-def AddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
-def YieldAddEncKey(builder, encKey):
-    """This method is deprecated. Please switch to AddEncKey."""
-    return AddEncKey(builder, encKey)
-def StartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
-def YieldStartEncKeyVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartEncKeyVector(builder, numElems)
-def AddProgress(builder, progress): builder.PrependBoolSlot(5, progress, 0)
-def YieldAddProgress(builder, progress):
-    """This method is deprecated. Please switch to AddProgress."""
-    return AddProgress(builder, progress)
-def AddCallee(builder, callee): builder.PrependUint64Slot(6, callee, 0)
-def YieldAddCallee(builder, callee):
-    """This method is deprecated. Please switch to AddCallee."""
-    return AddCallee(builder, callee)
-def AddCalleeAuthid(builder, calleeAuthid): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthid), 0)
-def YieldAddCalleeAuthid(builder, calleeAuthid):
-    """This method is deprecated. Please switch to AddCalleeAuthid."""
-    return AddCalleeAuthid(builder, calleeAuthid)
-def AddCalleeAuthrole(builder, calleeAuthrole): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthrole), 0)
-def YieldAddCalleeAuthrole(builder, calleeAuthrole):
-    """This method is deprecated. Please switch to AddCalleeAuthrole."""
-    return AddCalleeAuthrole(builder, calleeAuthrole)
-def AddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
-def YieldAddForwardFor(builder, forwardFor):
-    """This method is deprecated. Please switch to AddForwardFor."""
-    return AddForwardFor(builder, forwardFor)
-def StartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
-def YieldStartForwardForVector(builder, numElems):
-    """This method is deprecated. Please switch to Start."""
-    return StartForwardForVector(builder, numElems)
-def End(builder): return builder.EndObject()
-def YieldEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def YieldStart(builder): builder.StartObject(10)
+def Start(builder):
+    return YieldStart(builder)
+def YieldAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def AddRequest(builder, request):
+    return YieldAddRequest(builder, request)
+def YieldAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+def AddPayload(builder, payload):
+    return YieldAddPayload(builder, payload)
+def YieldStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def StartPayloadVector(builder, numElems):
+    return YieldStartPayloadVector(builder, numElems)
+def YieldAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(2, encAlgo, 0)
+def AddEncAlgo(builder, encAlgo):
+    return YieldAddEncAlgo(builder, encAlgo)
+def YieldAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(3, encSerializer, 0)
+def AddEncSerializer(builder, encSerializer):
+    return YieldAddEncSerializer(builder, encSerializer)
+def YieldAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+def AddEncKey(builder, encKey):
+    return YieldAddEncKey(builder, encKey)
+def YieldStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+def StartEncKeyVector(builder, numElems):
+    return YieldStartEncKeyVector(builder, numElems)
+def YieldAddProgress(builder, progress): builder.PrependBoolSlot(5, progress, 0)
+def AddProgress(builder, progress):
+    return YieldAddProgress(builder, progress)
+def YieldAddCallee(builder, callee): builder.PrependUint64Slot(6, callee, 0)
+def AddCallee(builder, callee):
+    return YieldAddCallee(builder, callee)
+def YieldAddCalleeAuthid(builder, calleeAuthid): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthid), 0)
+def AddCalleeAuthid(builder, calleeAuthid):
+    return YieldAddCalleeAuthid(builder, calleeAuthid)
+def YieldAddCalleeAuthrole(builder, calleeAuthrole): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthrole), 0)
+def AddCalleeAuthrole(builder, calleeAuthrole):
+    return YieldAddCalleeAuthrole(builder, calleeAuthrole)
+def YieldAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def AddForwardFor(builder, forwardFor):
+    return YieldAddForwardFor(builder, forwardFor)
+def YieldStartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+def StartForwardForVector(builder, numElems):
+    return YieldStartForwardForVector(builder, numElems)
+def YieldEnd(builder): return builder.EndObject()
+def End(builder):
+    return YieldEnd(builder)

@@ -38,19 +38,15 @@ class Published(object):
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def Start(builder): builder.StartObject(2)
-def PublishedStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
-def PublishedAddRequest(builder, request):
-    """This method is deprecated. Please switch to AddRequest."""
-    return AddRequest(builder, request)
-def AddPublication(builder, publication): builder.PrependUint64Slot(1, publication, 0)
-def PublishedAddPublication(builder, publication):
-    """This method is deprecated. Please switch to AddPublication."""
-    return AddPublication(builder, publication)
-def End(builder): return builder.EndObject()
-def PublishedEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def PublishedStart(builder): builder.StartObject(2)
+def Start(builder):
+    return PublishedStart(builder)
+def PublishedAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def AddRequest(builder, request):
+    return PublishedAddRequest(builder, request)
+def PublishedAddPublication(builder, publication): builder.PrependUint64Slot(1, publication, 0)
+def AddPublication(builder, publication):
+    return PublishedAddPublication(builder, publication)
+def PublishedEnd(builder): return builder.EndObject()
+def End(builder):
+    return PublishedEnd(builder)

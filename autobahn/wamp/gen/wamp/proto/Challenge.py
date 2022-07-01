@@ -42,19 +42,15 @@ class Challenge(object):
             return obj
         return None
 
-def Start(builder): builder.StartObject(2)
-def ChallengeStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddMethod(builder, method): builder.PrependUint8Slot(0, method, 0)
-def ChallengeAddMethod(builder, method):
-    """This method is deprecated. Please switch to AddMethod."""
-    return AddMethod(builder, method)
-def AddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
-def ChallengeAddExtra(builder, extra):
-    """This method is deprecated. Please switch to AddExtra."""
-    return AddExtra(builder, extra)
-def End(builder): return builder.EndObject()
-def ChallengeEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def ChallengeStart(builder): builder.StartObject(2)
+def Start(builder):
+    return ChallengeStart(builder)
+def ChallengeAddMethod(builder, method): builder.PrependUint8Slot(0, method, 0)
+def AddMethod(builder, method):
+    return ChallengeAddMethod(builder, method)
+def ChallengeAddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
+def AddExtra(builder, extra):
+    return ChallengeAddExtra(builder, extra)
+def ChallengeEnd(builder): return builder.EndObject()
+def End(builder):
+    return ChallengeEnd(builder)

@@ -31,15 +31,12 @@ class AuthScramWelcome(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def Start(builder): builder.StartObject(1)
-def AuthScramWelcomeStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddVerifier(builder, verifier): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(verifier), 0)
-def AuthScramWelcomeAddVerifier(builder, verifier):
-    """This method is deprecated. Please switch to AddVerifier."""
-    return AddVerifier(builder, verifier)
-def End(builder): return builder.EndObject()
-def AuthScramWelcomeEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def AuthScramWelcomeStart(builder): builder.StartObject(1)
+def Start(builder):
+    return AuthScramWelcomeStart(builder)
+def AuthScramWelcomeAddVerifier(builder, verifier): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(verifier), 0)
+def AddVerifier(builder, verifier):
+    return AuthScramWelcomeAddVerifier(builder, verifier)
+def AuthScramWelcomeEnd(builder): return builder.EndObject()
+def End(builder):
+    return AuthScramWelcomeEnd(builder)

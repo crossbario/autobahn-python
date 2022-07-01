@@ -42,19 +42,15 @@ class Authenticate(object):
             return obj
         return None
 
-def Start(builder): builder.StartObject(2)
-def AuthenticateStart(builder):
-    """This method is deprecated. Please switch to Start."""
-    return Start(builder)
-def AddSignature(builder, signature): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(signature), 0)
-def AuthenticateAddSignature(builder, signature):
-    """This method is deprecated. Please switch to AddSignature."""
-    return AddSignature(builder, signature)
-def AddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
-def AuthenticateAddExtra(builder, extra):
-    """This method is deprecated. Please switch to AddExtra."""
-    return AddExtra(builder, extra)
-def End(builder): return builder.EndObject()
-def AuthenticateEnd(builder):
-    """This method is deprecated. Please switch to End."""
-    return End(builder)
+def AuthenticateStart(builder): builder.StartObject(2)
+def Start(builder):
+    return AuthenticateStart(builder)
+def AuthenticateAddSignature(builder, signature): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(signature), 0)
+def AddSignature(builder, signature):
+    return AuthenticateAddSignature(builder, signature)
+def AuthenticateAddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
+def AddExtra(builder, extra):
+    return AuthenticateAddExtra(builder, extra)
+def AuthenticateEnd(builder): return builder.EndObject()
+def End(builder):
+    return AuthenticateEnd(builder)
