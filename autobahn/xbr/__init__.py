@@ -75,7 +75,7 @@ try:
 
     from autobahn.xbr._frealm import FederatedRealm, Seeder  # noqa
     from autobahn.xbr._secmod import EthereumKey  # noqa
-    from autobahn.xbr._userkey import UserKey
+    from autobahn.xbr._userkey import UserKey  # noqa
 
     if not hasattr(abi, 'collapse_type'):
 

@@ -39,14 +39,8 @@ from nacl.encoding import HexEncoder
 from eth_keys import KeyAPI
 from eth_keys.backends import NativeECCBackend
 
-import txaio
-
-txaio.use_twisted()  # noqa
-
 from autobahn.util import utcnow
 from autobahn.wamp import cryptosign
-
-from crossbar.shell.util import style_ok, style_error
 
 if 'USER' in os.environ:
     _DEFAULT_EMAIL_ADDRESS = '{}@{}'.format(os.environ['USER'], socket.getfqdn())
@@ -67,7 +61,7 @@ class EmailAddress(click.ParamType):
     def convert(self, value, param, ctx):
         if re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", value):
             return value
-        self.fail(style_error('invalid email address "{}"'.format(value)))
+        self.fail('invalid email address "{}"'.format(value))
 
 
 def _user_id(yes_to_all=False):
@@ -75,7 +69,7 @@ def _user_id(yes_to_all=False):
         return _DEFAULT_EMAIL_ADDRESS
     while True:
         value = click.prompt('Please enter your email address', type=EmailAddress(), default=_DEFAULT_EMAIL_ADDRESS)
-        if click.confirm('We will send an activation code to {}, ok?'.format(style_ok(value)), default=True):
+        if click.confirm('We will send an activation code to "{}", ok?'.format(value), default=True):
             break
     return value
 
@@ -224,10 +218,7 @@ class UserKey(object):
                 msg = 'Crossbar.io user public key\n\n'
                 _write_user_key(pubkey_path, pub_tags, msg)
 
-                click.echo('Re-created user public key from private key: {}'.format(style_ok(pubkey_path)))
-
-            # click.echo('User public key loaded: {}'.format(style_ok(pubkey_path)))
-            # click.echo('User private key loaded: {}'.format(style_ok(privkey_path)))
+                click.echo('Re-created user public key from private key: {}'.format(pubkey_path))
 
         else:
             # user private key does not yet exist: generate one
@@ -264,19 +255,18 @@ class UserKey(object):
             _write_user_key(privkey_path, tags, msg)
             os.chmod(privkey_path, 384)
 
-            click.echo('New user public key generated: {}'.format(style_ok(pubkey_path)))
-            click.echo('New user private key generated ({}): {}'.format(style_error('keep this safe!'),
-                                                                        style_ok(privkey_path)))
+            click.echo('New user public key generated: {}'.format(pubkey_path))
+            click.echo('New user private key generated ({}): {}'.format('keep this safe!', privkey_path))
 
         # fix file permissions on node public/private key files
         # note: we use decimals instead of octals as octal literals have changed between Py2/3
         if os.stat(pubkey_path).st_mode & 511 != 420:  # 420 (decimal) == 0644 (octal)
             os.chmod(pubkey_path, 420)
-            click.echo(style_error('File permissions on user public key fixed!'))
+            click.echo('File permissions on user public key fixed!')
 
         if os.stat(privkey_path).st_mode & 511 != 384:  # 384 (decimal) == 0600 (octal)
             os.chmod(privkey_path, 384)
-            click.echo(style_error('File permissions on user private key fixed!'))
+            click.echo('File permissions on user private key fixed!')
 
         # load keys into object
         self._creator = creator
