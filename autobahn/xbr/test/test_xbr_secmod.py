@@ -26,6 +26,7 @@
 
 import os
 import sys
+import pkg_resources
 from random import randint, random
 from binascii import a2b_hex
 from typing import List
@@ -413,4 +414,25 @@ class TestSecurityModule(TestCase):
             self.assertTrue(isinstance(sm[i], EthereumKey))
         for i in range(5, 10):
             self.assertTrue(isinstance(sm[i], CryptosignKey))
+        yield sm.close()
+
+    @inlineCallbacks
+    def test_secmod_from_config(self):
+        config = pkg_resources.resource_filename('autobahn', 'xbr/test/profile/config.ini')
+
+        sm = SecurityModuleMemory.from_config(config)
+        yield sm.open()
+        self.assertEqual(len(sm), 2)
+
+        self.assertTrue(isinstance(sm[0], EthereumKey), 'unexpected type {} at index 0'.format(type(sm[0])))
+        self.assertTrue(isinstance(sm[1], CryptosignKey), 'unexpected type {} at index 1'.format(type(sm[1])))
+
+        key1: EthereumKey = sm[0]
+        key2: CryptosignKey = sm[1]
+
+        # public-key-ed25519: 15cfa4acef5cc312e0b9ba77634849d0a8c6222a546f90eb5123667935d2f561
+        # public-adr-eth: 0xe59C7418403CF1D973485B36660728a5f4A8fF9c
+        self.assertEqual(key1.address(binary=False), '0xe59C7418403CF1D973485B36660728a5f4A8fF9c')
+        self.assertEqual(key2.public_key(binary=False), '15cfa4acef5cc312e0b9ba77634849d0a8c6222a546f90eb5123667935d2f561')
+
         yield sm.close()

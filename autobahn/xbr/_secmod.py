@@ -23,8 +23,9 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-
+import binascii
 import os
+import configparser
 from collections.abc import MutableMapping
 from typing import Optional, Union, Dict, Any, List, Iterator
 from threading import Lock
@@ -41,6 +42,7 @@ from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
 
 from autobahn.wamp.interfaces import ISecurityModule, IEthereumKey
 from autobahn.xbr._mnemonic import mnemonic_to_private_key
+from autobahn.xbr._userkey import _parse_user_key_file
 from autobahn.wamp.cryptosign import CryptosignKey
 
 __all__ = ('EthereumKey', 'SecurityModuleMemory', )
@@ -427,6 +429,48 @@ class SecurityModuleMemory(MutableMapping):
         for i in range(num_cs_keys):
             key = CryptosignKey.from_seedphrase(seedphrase, i + num_eth_keys)
             keys.append(key)
+
+        # initialize security module from collected keys
+        sm = SecurityModuleMemory(keys=keys)
+        return sm
+
+    @classmethod
+    def from_config(cls, config: str, profile: str = 'default') -> 'SecurityModuleMemory':
+        """
+        Create a new memory-backed security module with keys referred from a profile in
+        the given configuration file.
+
+        :param config: Path (relative or absolute) to an INI configuration file.
+        :param profile: Name of the profile within the given INI configuration file.
+        :return: New memory-backed security module instance.
+        """
+        keys: List[Union[EthereumKey, CryptosignKey]] = []
+
+        cfg = configparser.ConfigParser()
+        cfg.read(config)
+
+        if not cfg.has_section(profile):
+            raise RuntimeError('profile "{}" not found in configuration file "{}"'.format(profile, config))
+
+        if not cfg.has_option(profile, 'privkey'):
+            raise RuntimeError('missing option "privkey" in profile "{}" of configuration file "{}"'.format(profile, config))
+
+        privkey = os.path.join(os.path.dirname(config), cfg.get(profile, 'privkey'))
+        if not os.path.exists(privkey) or not os.path.isfile(privkey):
+            raise RuntimeError('privkey "{}" is not a file in profile "{}" of configuration file "{}"'.format(privkey, profile, config))
+
+        # now load the private key file - this returns a dict which should include:
+        # private-key-eth: 6b08b6e186bd2a3b9b2f36e6ece3f8031fe788ab3dc4a1cfd3a489ea387c496b
+        # private-key-ed25519: 20e8c05d0ede9506462bb049c4843032b18e8e75b314583d0c8d8a4942f9be40
+        data = _parse_user_key_file(privkey)
+
+        # first, add Ethereum key
+        privkey_eth_hex = data.get('private-key-eth', None)
+        keys.append(EthereumKey.from_bytes(binascii.a2b_hex(privkey_eth_hex)))
+
+        # second, add Cryptosign key
+        privkey_ed25519_hex = data.get('private-key-ed25519', None)
+        keys.append(CryptosignKey.from_bytes(binascii.a2b_hex(privkey_ed25519_hex)))
 
         # initialize security module from collected keys
         sm = SecurityModuleMemory(keys=keys)
