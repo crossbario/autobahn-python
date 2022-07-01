@@ -5,6 +5,18 @@
 Changelog
 =========
 
+22.6.1
+------
+
+* new: add SecurityModuleMemory.from_config
+* new: moved UserKey from crossbar to autobahn
+* fix: more WAMP-Cryptosign unit tests
+* new: experimental WAMP API catalog support
+* new: regenerate FlatBuffers WAMP messages
+* fix: allow tests to pass without XBR dependencies (#1580)
+* new: Flatbuffers IDL based WAMP payload validation (#1576)
+* fix: restore autobahn.twisted.testing to distribution (#1578)
+
 22.5.1
 ------
 
