@@ -497,10 +497,14 @@ class SecurityModuleMemory(MutableMapping):
 
         # first, add Ethereum key
         privkey_eth_hex = data.get('private-key-eth', None)
+        if privkey_eth_hex is None:
+            raise RuntimeError('"private-key-eth" not found in keyfile {}'.format(keyfile))
         keys.append(EthereumKey.from_bytes(binascii.a2b_hex(privkey_eth_hex)))
 
         # second, add Cryptosign key
         privkey_ed25519_hex = data.get('private-key-ed25519', None)
+        if privkey_ed25519_hex is None:
+            raise RuntimeError('"private-key-ed25519" not found in keyfile {}'.format(keyfile))
         keys.append(CryptosignKey.from_bytes(binascii.a2b_hex(privkey_ed25519_hex)))
 
         # initialize security module from collected keys
