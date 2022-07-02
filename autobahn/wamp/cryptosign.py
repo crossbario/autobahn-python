@@ -32,7 +32,7 @@ from typing import Callable, Optional, Union, Dict, Any
 import txaio
 
 from autobahn import util
-from autobahn.wamp.interfaces import ISecurityModule, ICryptosignKey, ISession
+from autobahn.wamp.interfaces import ISecurityModule, ICryptosignKey
 from autobahn.wamp.types import Challenge
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
 
@@ -361,7 +361,7 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
 
 if HAS_CRYPTOSIGN:
 
-    def format_challenge(challenge: Challenge, channel_id_raw: Optional[bytes], channel_id_type: Optional[str]) -> bytes:
+    def _format_challenge(challenge: Challenge, channel_id_raw: Optional[bytes], channel_id_type: Optional[str]) -> bytes:
         """
         Format the challenge based on provided parameters
 
@@ -405,7 +405,7 @@ if HAS_CRYPTOSIGN:
 
         return data
 
-    def sign_challenge(data: bytes, signer_func: Callable) -> bytes:
+    def _sign_challenge(data: bytes, signer_func: Callable) -> bytes:
         """
         Sign the provided data using the provided signer.
 
@@ -509,7 +509,7 @@ if HAS_CRYPTOSIGN:
             return txaio.create_future_success(sig.signature)
 
         @util.public
-        def sign_challenge(self, session: ISession, challenge: Challenge,
+        def sign_challenge(self, challenge: Challenge, channel_id: Optional[bytes] = None,
                            channel_id_type: Optional[str] = None) -> bytes:
             """
             Implements :meth:`autobahn.wamp.interfaces.ICryptosignKey.sign_challenge`.
@@ -517,16 +517,9 @@ if HAS_CRYPTOSIGN:
             assert challenge.method in ['cryptosign', 'cryptosign-proxy'], \
                 'unexpected cryptosign challenge with method "{}"'.format(challenge.method)
 
-            # get the TLS channel ID of the underlying TLS connection
-            if channel_id_type and channel_id_type in session._transport.transport_details.channel_id:
-                channel_id = session._transport.transport_details.channel_id.get(channel_id_type, None)
-            else:
-                channel_id_type = None
-                channel_id = None
+            data = _format_challenge(challenge, channel_id, channel_id_type)
 
-            data = format_challenge(challenge, channel_id, channel_id_type)
-
-            return sign_challenge(data, self.sign)
+            return _sign_challenge(data, self.sign)
 
         @util.public
         def public_key(self, binary: bool = False) -> Union[str, bytes]:

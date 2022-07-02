@@ -476,5 +476,40 @@ class SecurityModuleMemory(MutableMapping):
         sm = SecurityModuleMemory(keys=keys)
         return sm
 
+    @classmethod
+    def from_keyfile(cls, keyfile: str) -> 'SecurityModuleMemory':
+        """
+        Create a new memory-backed security module with keys referred from a profile in
+        the given configuration file.
+
+        :param keyfile: Path (relative or absolute) to a private keys file.
+        :return: New memory-backed security module instance.
+        """
+        keys: List[Union[EthereumKey, CryptosignKey]] = []
+
+        if not os.path.exists(keyfile) or not os.path.isfile(keyfile):
+            raise RuntimeError('keyfile "{}" is not a file'.format(keyfile))
+
+        # now load the private key file - this returns a dict which should include:
+        # private-key-eth: 6b08b6e186bd2a3b9b2f36e6ece3f8031fe788ab3dc4a1cfd3a489ea387c496b
+        # private-key-ed25519: 20e8c05d0ede9506462bb049c4843032b18e8e75b314583d0c8d8a4942f9be40
+        data = _parse_user_key_file(keyfile)
+
+        # first, add Ethereum key
+        privkey_eth_hex = data.get('private-key-eth', None)
+        if privkey_eth_hex is None:
+            raise RuntimeError('"private-key-eth" not found in keyfile {}'.format(keyfile))
+        keys.append(EthereumKey.from_bytes(binascii.a2b_hex(privkey_eth_hex)))
+
+        # second, add Cryptosign key
+        privkey_ed25519_hex = data.get('private-key-ed25519', None)
+        if privkey_ed25519_hex is None:
+            raise RuntimeError('"private-key-ed25519" not found in keyfile {}'.format(keyfile))
+        keys.append(CryptosignKey.from_bytes(binascii.a2b_hex(privkey_ed25519_hex)))
+
+        # initialize security module from collected keys
+        sm = SecurityModuleMemory(keys=keys)
+        return sm
+
 
 ISecurityModule.register(SecurityModuleMemory)

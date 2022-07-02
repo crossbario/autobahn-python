@@ -129,7 +129,9 @@ class TestSigVectors(unittest.TestCase):
             challenge = types.Challenge("cryptosign", dict(challenge=testvec['challenge']))
 
             # ok, now sign the challenge
-            f_signed = private_key.sign_challenge(session, challenge, channel_id_type=channel_id_type)
+            f_signed = private_key.sign_challenge(challenge,
+                                                  channel_id=channel_id,
+                                                  channel_id_type=channel_id_type)
 
             def success(signed):
                 # the signature returned is a Hex encoded string
@@ -176,7 +178,9 @@ class TestAuth(unittest.TestCase):
         session._transport.transport_details = self.transport_details
 
         challenge = types.Challenge("cryptosign", dict(challenge="ff" * 32))
-        f_signed = self.key.sign_challenge(session, challenge, channel_id_type='tls-unique')
+        f_signed = self.key.sign_challenge(challenge,
+                                           channel_id=self.transport_details.channel_id['tls-unique'],
+                                           channel_id_type='tls-unique')
 
         def success(signed):
             self.assertEqual(

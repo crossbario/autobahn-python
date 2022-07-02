@@ -113,8 +113,24 @@ def _parse_user_key_file(key_path: str, private: bool = True) -> OrderedDict:
     if os.path.exists(key_path) and not os.path.isfile(key_path):
         raise Exception("Key file '{}' exists, but isn't a file".format(key_path))
 
-    allowed_tags = ['public-key-ed25519', 'public-adr-eth', 'user-id', 'created-at', 'creator']
+    allowed_tags = [
+        # common tags
+        'public-key-ed25519',
+        'public-adr-eth',
+        'created-at',
+        'creator',
+
+        # user profile
+        'user-id',
+
+        # node profile
+        'machine-id',
+        'node-authid',
+        'node-cluster-ip',
+    ]
+
     if private:
+        # private key file tags
         allowed_tags.extend(['private-key-ed25519', 'private-key-eth'])
 
     tags = OrderedDict()  # type: ignore

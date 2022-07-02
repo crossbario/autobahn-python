@@ -523,8 +523,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def call(self, procedure: str, *args: Optional[List[Any]], **kwargs: Optional[Dict[str, Any]]) -> \
-            Union[Any, CallResult]:
+    def call(self, procedure: str, *args, **kwargs) -> Union[Any, CallResult]:
         """
         Call a remote procedure.
 
@@ -605,8 +604,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def publish(self, topic: str, *args: Optional[List[Any]], **kwargs: Optional[Dict[str, Any]]) -> \
-            Optional[Publication]:
+    def publish(self, topic: str, *args, **kwargs) -> Optional[Publication]:
         """
         Publish an event to a topic.
 

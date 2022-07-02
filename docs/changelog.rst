@@ -8,7 +8,7 @@ Changelog
 22.6.1
 ------
 
-* new: add SecurityModuleMemory.from_config
+* new: add SecurityModuleMemory.from_config and SecurityModuleMemory.from_keyfile
 * new: moved UserKey from crossbar to autobahn
 * fix: more WAMP-Cryptosign unit tests
 * new: experimental WAMP API catalog support

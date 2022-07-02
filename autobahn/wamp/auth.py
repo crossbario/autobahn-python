@@ -196,7 +196,10 @@ class AuthCryptoSign(object):
         return self._args.get('authextra', dict())
 
     def on_challenge(self, session, challenge):
-        return self._privkey.sign_challenge(session, challenge, channel_id_type=self._channel_binding)
+        channel_id = session._transport.transport_details.channel_id.get(self._channel_binding, None)
+        return self._privkey.sign_challenge(challenge,
+                                            channel_id=channel_id,
+                                            channel_id_type=self._channel_binding)
 
     def on_welcome(self, msg, authextra):
         return None

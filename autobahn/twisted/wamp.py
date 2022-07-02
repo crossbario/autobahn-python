@@ -829,7 +829,7 @@ class AuthCryptoSign(object):
                     "Must provide '{}' for cryptosign".format(key)
                 )
         for key in kw.get('authextra', dict()):
-            if key not in ['pubkey']:
+            if key not in ['pubkey', 'channel_binding', 'trustroot', 'challenge']:
                 raise ValueError(
                     "Unexpected key '{}' in 'authextra'".format(key)
                 )
@@ -851,7 +851,12 @@ class AuthCryptoSign(object):
         self._args = kw
 
     def on_challenge(self, session, challenge):
-        return self._privkey.sign_challenge(session, challenge)
+        # sign the challenge with our private key.
+        channel_id_type = self._args['authextra'].get('channel_binding', None)
+        channel_id = self.transport.transport_details.channel_id.get(channel_id_type, None)
+        signed_challenge = self._privkey.sign_challenge(challenge, channel_id=channel_id,
+                                                        channel_id_type=channel_id_type)
+        return signed_challenge
 
 
 IAuthenticator.register(AuthCryptoSign)
