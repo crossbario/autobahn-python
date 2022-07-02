@@ -90,6 +90,9 @@ _COMMANDS = ['version', 'get-member', 'register-member', 'register-member-verify
 
 class Client(ApplicationSession):
 
+    # when running over TLS, require TLS channel binding
+    CHANNEL_BINDING = 'tls-unique'
+
     def __init__(self, config=None):
         ApplicationSession.__init__(self, config)
 
@@ -144,7 +147,7 @@ class Client(ApplicationSession):
                 'pubkey': self._key.public_key(),
                 'trustroot': None,
                 'challenge': None,
-                'channel_binding': 'tls-unique'
+                'channel_binding': self.CHANNEL_BINDING,
             }
             self.log.info('Client connected, now joining realm "{realm}" with WAMP-cryptosign authentication ..',
                           realm=hlid(self.config.realm))
@@ -156,7 +159,9 @@ class Client(ApplicationSession):
 
     def onChallenge(self, challenge):
         if challenge.method == 'cryptosign':
-            signed_challenge = self._key.sign_challenge(self, challenge)
+            signed_challenge = self._key.sign_challenge(challenge,
+                                                        channel_id=self.transport.transport_details.channel_id.get(self.CHANNEL_BINDING, None),
+                                                        channel_id_type=self.CHANNEL_BINDING)
             return signed_challenge
         else:
             raise RuntimeError('unable to process authentication method {}'.format(challenge.method))
