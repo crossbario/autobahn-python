@@ -4,4 +4,6 @@ creator: oberstet@thinkpad-t430s
 created-at: 2017-03-26T22:01:20.440Z
 machine-id: 7a3357418649414dbd536c31c6bd0ee8
 public-key-ed25519: a81b5e80ff63ebb5f31af8afbfd7d0af5983befe3cbfca48b62026d43847c885
+public-adr-eth: 0x656215F3966FBe27E1CA2Cb04308fDB0db7002Fa
 private-key-ed25519: af032ab972a29a530463ba9a5beed1636af538103d5d4b413a623b6ebd60d202
+private-key-eth: 9467229e53579a46a781c447b1a0a8de22d177b20a1c4dbfe9e9e22bc8761337
