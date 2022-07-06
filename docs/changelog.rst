@@ -5,6 +5,11 @@
 Changelog
 =========
 
+22.7.1
+------
+
+* new: add EthereumKey.from_keyfile, CryptosignKey.from_keyfile, CryptosignKey.from_pubkey
+
 22.6.1
 ------
 

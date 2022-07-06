@@ -42,7 +42,7 @@ from py_eth_sig_utils.signing import v_r_s_to_signature, signature_to_v_r_s
 
 from autobahn.wamp.interfaces import ISecurityModule, IEthereumKey
 from autobahn.xbr._mnemonic import mnemonic_to_private_key
-from autobahn.xbr._userkey import _parse_user_key_file
+from autobahn.util import parse_keyfile
 from autobahn.wamp.cryptosign import CryptosignKey
 
 __all__ = ('EthereumKey', 'SecurityModuleMemory', )
@@ -124,7 +124,7 @@ class EthereumKey(object):
         # FIXME: implement signing address recovery from signature of raw data
         raise NotImplementedError()
 
-    def sign_typed_data(self, data: Dict[str, Any]) -> bytes:
+    def sign_typed_data(self, data: Dict[str, Any], binary=True) -> bytes:
         """
         Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.sign_typed_data`.
         """
@@ -146,7 +146,10 @@ class EthereumKey(object):
         except Exception as e:
             return txaio.create_future_error(e)
         else:
-            return txaio.create_future_success(signature)
+            if binary:
+                return txaio.create_future_success(signature)
+            else:
+                return txaio.create_future_success(binascii.b2a_hex(signature).decode())
 
     def verify_typed_data(self, data: Dict[str, Any], signature: bytes) -> bool:
         """
@@ -211,6 +214,53 @@ class EthereumKey(object):
 
         account: LocalAccount = Account.from_key(key)
         return EthereumKey(key_or_address=account, can_sign=True)
+
+    @classmethod
+    def from_keyfile(cls, keyfile: str) -> 'EthereumKey':
+        """
+        Create a public or private key from reading the given public or private key file.
+
+        Here is an example key file that includes an Ethereum private key ``private-key-eth``, which
+        is loaded in this function, and other fields, which are ignored by this function:
+
+        .. code-block::
+
+            This is a comment (all lines until the first empty line are comments indeed).
+
+            creator: oberstet@intel-nuci7
+            created-at: 2022-07-05T12:29:48.832Z
+            user-id: oberstet@intel-nuci7
+            public-key-ed25519: 7326d9dc0307681cc6940fde0e60eb31a6e4d642a81e55c434462ce31f95deed
+            public-adr-eth: 0x10848feBdf7f200Ba989CDf7E3eEB3EC03ae7768
+            private-key-ed25519: f750f42b0430e28a2e272c3cedcae4dcc4a1cf33bc345c35099d3322626ab666
+            private-key-eth: 4d787714dcb0ae52e1c5d2144648c255d660b9a55eac9deeb80d9f506f501025
+
+        :param keyfile: Path (relative or absolute) to a public or private keys file.
+        :return: New instance of :class:`EthereumKey`
+        """
+        if not os.path.exists(keyfile) or not os.path.isfile(keyfile):
+            raise RuntimeError('keyfile "{}" is not a file'.format(keyfile))
+
+        # now load the private or public key file - this returns a dict which should
+        # include (for a private key):
+        #
+        #   private-key-eth: 6b08b6e186bd2a3b9b2f36e6ece3f8031fe788ab3dc4a1cfd3a489ea387c496b
+        #
+        # or (for a public key only):
+        #
+        #   public-adr-eth: 0x10848feBdf7f200Ba989CDf7E3eEB3EC03ae7768
+        #
+        data = parse_keyfile(keyfile)
+
+        privkey_eth_hex = data.get('private-key-eth', None)
+        if privkey_eth_hex is None:
+            pub_adr_eth = data.get('public-adr-eth', None)
+            if pub_adr_eth is None:
+                raise RuntimeError('neither "private-key-eth" nor "public-adr-eth" found in keyfile {}'.format(keyfile))
+            else:
+                return EthereumKey.from_address(pub_adr_eth)
+        else:
+            return EthereumKey.from_bytes(binascii.a2b_hex(privkey_eth_hex))
 
 
 IEthereumKey.register(EthereumKey)
@@ -462,7 +512,7 @@ class SecurityModuleMemory(MutableMapping):
         # now load the private key file - this returns a dict which should include:
         # private-key-eth: 6b08b6e186bd2a3b9b2f36e6ece3f8031fe788ab3dc4a1cfd3a489ea387c496b
         # private-key-ed25519: 20e8c05d0ede9506462bb049c4843032b18e8e75b314583d0c8d8a4942f9be40
-        data = _parse_user_key_file(privkey)
+        data = parse_keyfile(privkey)
 
         # first, add Ethereum key
         privkey_eth_hex = data.get('private-key-eth', None)
@@ -493,7 +543,7 @@ class SecurityModuleMemory(MutableMapping):
         # now load the private key file - this returns a dict which should include:
         # private-key-eth: 6b08b6e186bd2a3b9b2f36e6ece3f8031fe788ab3dc4a1cfd3a489ea387c496b
         # private-key-ed25519: 20e8c05d0ede9506462bb049c4843032b18e8e75b314583d0c8d8a4942f9be40
-        data = _parse_user_key_file(keyfile)
+        data = parse_keyfile(keyfile)
 
         # first, add Ethereum key
         privkey_eth_hex = data.get('private-key-eth', None)
