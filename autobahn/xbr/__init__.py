@@ -50,6 +50,8 @@ try:
     from autobahn.xbr._abi import XBR_DEBUG_TOKEN_ADDR_SRC, XBR_DEBUG_NETWORK_ADDR_SRC, XBR_DEBUG_MARKET_ADDR_SRC, XBR_DEBUG_CATALOG_ADDR_SRC, XBR_DEBUG_CHANNEL_ADDR_SRC  # noqa
     from autobahn.xbr._interfaces import IMarketMaker, IProvider, IConsumer, ISeller, IBuyer, IDelegate  # noqa
     from autobahn.xbr._util import make_w3, pack_uint256, unpack_uint256  # noqa
+    from autobahn.xbr._eip712_authority_certificate import sign_eip712_authority_certificate, recover_eip712_authority_certificate, create_eip712_authority_certificate  # noqa
+    from autobahn.xbr._eip712_delegate_certificate import sign_eip712_delegate_certificate, recover_eip712_delegate_certificate, create_eip712_delegate_certificate  # noqa
     from autobahn.xbr._eip712_member_register import sign_eip712_member_register, recover_eip712_member_register  # noqa
     from autobahn.xbr._eip712_member_login import sign_eip712_member_login, recover_eip712_member_login  # noqa
     from autobahn.xbr._eip712_market_create import sign_eip712_market_create, recover_eip712_market_create  # noqa
@@ -327,6 +329,13 @@ try:
         'check_seedphrase',
         'account_from_seedphrase',
         'ASCII_BOMB',
+
+        'create_eip712_authority_certificate',
+        'sign_eip712_authority_certificate',
+        'recover_eip712_authority_certificate',
+        'create_eip712_delegate_certificate',
+        'sign_eip712_delegate_certificate',
+        'recover_eip712_delegate_certificate',
 
         'sign_eip712_member_register',
         'recover_eip712_member_register',

@@ -85,6 +85,16 @@ def is_bytes16(provided: Any) -> bool:
     return type(provided) == bytes and len(provided) == 16
 
 
+def is_bytes32(provided: Any) -> bool:
+    """
+    Check if the value is of type bytes and length 32.
+
+    :param provided: The value to check.
+    :return: True iff the value is of correct type.
+    """
+    return type(provided) == bytes and len(provided) == 32
+
+
 def is_signature(provided: Any) -> bool:
     """
     Check if the value is a proper Ethereum signature.

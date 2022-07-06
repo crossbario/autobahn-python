@@ -107,8 +107,10 @@ class EthereumKey(object):
         """
         Implements :meth:`autobahn.wamp.interfaces.IEthereumKey.address`.
         """
-        # FIXME: implement "binary"
-        return self._address
+        if binary:
+            return binascii.a2b_hex(self._address[2:])
+        else:
+            return self._address
 
     def sign(self, data: bytes) -> bytes:
         """
