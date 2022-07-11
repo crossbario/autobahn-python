@@ -31,10 +31,11 @@ def create_eip712_authority_certificate(chainId: int,
                                         verifyingContract: bytes,
                                         validFrom: int,
                                         authority: bytes,
-                                        delegate: bytes,
                                         domain: bytes,
+                                        delegate: bytes,
                                         realm: bytes,
-                                        role: str) -> dict:
+                                        role: str,
+                                        reservation: bytes) -> dict:
     """
     Authority certificate: long-lived, on-chain L2.
 
@@ -46,6 +47,7 @@ def create_eip712_authority_certificate(chainId: int,
     :param domain:
     :param realm:
     :param role:
+    :param reservation:
     :return:
     """
     assert is_chain_id(chainId)
@@ -56,6 +58,7 @@ def create_eip712_authority_certificate(chainId: int,
     assert is_address(domain)
     assert is_address(realm)
     assert type(role) == str
+    assert is_address(reservation)
 
     data = {
         'types': {
@@ -101,6 +104,10 @@ def create_eip712_authority_certificate(chainId: int,
                 {
                     'name': 'role',
                     'type': 'string'
+                },
+                {
+                    'name': 'reservation',
+                    'type': 'address'
                 }
             ]
         },
@@ -118,6 +125,7 @@ def create_eip712_authority_certificate(chainId: int,
             'domain': domain,
             'realm': realm,
             'role': role,
+            'reservation': reservation,
         }
     }
 
@@ -132,7 +140,8 @@ def sign_eip712_authority_certificate(eth_privkey: bytes,
                                       delegate: bytes,
                                       domain: bytes,
                                       realm: bytes,
-                                      role: str) -> bytes:
+                                      role: str,
+                                      reservation: bytes) -> bytes:
     """
     Sign the given data using a EIP712 based signature with the provided private key.
 
@@ -145,12 +154,13 @@ def sign_eip712_authority_certificate(eth_privkey: bytes,
     :param domain:
     :param realm:
     :param role:
+    :param reservation:
     :return:
     """
     assert is_eth_privkey(eth_privkey)
 
     data = create_eip712_authority_certificate(chainId, verifyingContract, validFrom, authority,
-                                               delegate, domain, realm, role)
+                                               delegate, domain, realm, role, reservation)
     return sign(eth_privkey, data)
 
 
@@ -162,6 +172,7 @@ def recover_eip712_authority_certificate(chainId: int,
                                          domain: bytes,
                                          realm: bytes,
                                          role: str,
+                                         reservation: bytes,
                                          signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
@@ -174,11 +185,12 @@ def recover_eip712_authority_certificate(chainId: int,
     :param domain:
     :param realm:
     :param role:
+    :param reservation:
     :param signature:
     :return: The (computed) signer address the signature was signed with.
     """
     assert is_signature(signature)
 
     data = create_eip712_authority_certificate(chainId, verifyingContract, validFrom, authority,
-                                               delegate, domain, realm, role)
+                                               delegate, domain, realm, role, reservation)
     return recover(data, signature)

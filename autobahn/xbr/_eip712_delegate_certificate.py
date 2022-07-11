@@ -24,7 +24,7 @@
 #
 ###############################################################################
 
-from ._eip712_base import sign, recover, is_chain_id, is_address, is_bytes32, is_cs_pubkey, \
+from ._eip712_base import sign, recover, is_chain_id, is_address, is_cs_pubkey, \
     is_block_number, is_signature, is_eth_privkey
 
 
@@ -33,9 +33,7 @@ def create_eip712_delegate_certificate(chainId: int,
                                        validFrom: int,
                                        delegate: bytes,
                                        csPubKey: bytes,
-                                       csChallenge: bytes,
-                                       csChannelId: bytes,
-                                       reservation: bytes) -> dict:
+                                       bootedAt: int) -> dict:
     """
     Delegate certificate: dynamic/one-time, off-chain.
 
@@ -44,9 +42,7 @@ def create_eip712_delegate_certificate(chainId: int,
     :param validFrom:
     :param delegate:
     :param csPubKey:
-    :param csChallenge:
-    :param csChannelId:
-    :param reservation:
+    :param bootedAt:
     :return:
     """
     assert is_chain_id(chainId)
@@ -54,9 +50,7 @@ def create_eip712_delegate_certificate(chainId: int,
     assert is_block_number(validFrom)
     assert is_address(delegate)
     assert is_cs_pubkey(csPubKey)
-    assert is_bytes32(csChallenge)
-    assert is_bytes32(csChannelId)
-    assert is_address(reservation)
+    assert type(bootedAt) == int
 
     data = {
         'types': {
@@ -92,16 +86,8 @@ def create_eip712_delegate_certificate(chainId: int,
                     'type': 'bytes32'
                 },
                 {
-                    'name': 'csChallenge',
-                    'type': 'bytes32'
-                },
-                {
-                    'name': 'csChannelId',
-                    'type': 'bytes32'
-                },
-                {
-                    'name': 'reservation',
-                    'type': 'address'
+                    'name': 'bootedAt',
+                    'type': 'uint64'
                 }
             ]
         },
@@ -116,9 +102,7 @@ def create_eip712_delegate_certificate(chainId: int,
             'validFrom': validFrom,
             'delegate': delegate,
             'csPubKey': csPubKey,
-            'csChallenge': csChallenge,
-            'csChannelId': csChannelId,
-            'reservation': reservation,
+            'bootedAt': bootedAt
         }
     }
 
@@ -131,9 +115,7 @@ def sign_eip712_delegate_certificate(eth_privkey: bytes,
                                      validFrom: int,
                                      delegate: bytes,
                                      csPubKey: bytes,
-                                     csChallenge: bytes,
-                                     csChannelId: bytes,
-                                     reservation: bytes) -> bytes:
+                                     bootedAt: int) -> bytes:
     """
     Sign the given data using a EIP712 based signature with the provided private key.
 
@@ -143,15 +125,13 @@ def sign_eip712_delegate_certificate(eth_privkey: bytes,
     :param validFrom:
     :param delegate:
     :param csPubKey:
-    :param csChallenge:
-    :param csChannelId:
-    :param reservation:
+    :param bootedAt:
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     """
     assert is_eth_privkey(eth_privkey)
 
     data = create_eip712_delegate_certificate(chainId, verifyingContract, validFrom, delegate,
-                                              csPubKey, csChallenge, csChannelId, reservation)
+                                              csPubKey, bootedAt)
     return sign(eth_privkey, data)
 
 
@@ -160,9 +140,7 @@ def recover_eip712_delegate_certificate(chainId: int,
                                         validFrom: int,
                                         delegate: bytes,
                                         csPubKey: bytes,
-                                        csChallenge: bytes,
-                                        csChannelId: bytes,
-                                        reservation: bytes,
+                                        bootedAt: int,
                                         signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
@@ -172,14 +150,12 @@ def recover_eip712_delegate_certificate(chainId: int,
     :param validFrom:
     :param delegate:
     :param csPubKey:
-    :param csChallenge:
-    :param csChannelId:
-    :param reservation:
+    :param bootedAt:
     :param signature:
     :return: The (computed) signer address the signature was signed with.
     """
     assert is_signature(signature)
 
     data = create_eip712_delegate_certificate(chainId, verifyingContract, validFrom, delegate,
-                                              csPubKey, csChallenge, csChannelId, reservation)
+                                              csPubKey, bootedAt)
     return recover(data, signature)

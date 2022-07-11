@@ -27,7 +27,6 @@
 import os
 import sys
 from binascii import a2b_hex
-from pprint import pformat
 from unittest import skipIf
 
 from twisted.internet.defer import inlineCallbacks
@@ -74,24 +73,21 @@ class TestEip712(TestCase):
         delegate_cs_key: CryptosignKey = self._sm[6]
 
         chainId = 1
-        validFrom = 1
         verifyingContract = a2b_hex('0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'[2:])
+        validFrom = 15124128
         delegate = delegate_eth_key.address(binary=True)
         csPubKey = delegate_cs_key.public_key(binary=True)
-        csChallenge = a2b_hex('eb870538efe96311e4cd9b18947bbff491d5d31a7b292c5b6ca48f6ad24f16dd')
-        csChannelId = a2b_hex('70f1c7ecaf43858f256d45c4c5db76a2b1b2c18c418fc828600f1ce9e1f71ce1')
-        reservation = a2b_hex('0xe78ea2fE1533D4beD9A10d91934e109A130D0ad8'[2:])
+        bootedAt = 1657579546469365046  # txaio.time_ns()
 
         cert_data = create_eip712_delegate_certificate(chainId=chainId, verifyingContract=verifyingContract,
                                                        validFrom=validFrom, delegate=delegate, csPubKey=csPubKey,
-                                                       csChallenge=csChallenge, csChannelId=csChannelId,
-                                                       reservation=reservation)
+                                                       bootedAt=bootedAt)
 
-        print('\n\n{}\n\n'.format(pformat(cert_data)))
+        # print('\n\n{}\n\n'.format(pformat(cert_data)))
 
         cert_sig = yield delegate_eth_key.sign_typed_data(cert_data, binary=False)
 
-        self.assertEqual(cert_sig, 'd716910a8c4cd3a10c200d332cffcbc1f143adea429c67f01e72b43ddc8a9676158ae2b1d64f4ffbddf4da91635f5ae90ac4d1975339da20bb1dd50e39a0c7ce1b')
+        self.assertEqual(cert_sig, 'fcf69947bceac2d7b224dcbc739e6e824f9fcabc526dbcaf8c28de7e9a44969d4b332584bbd8a34c0a12f57041146d888d6fd5b9db1031d5b083f169bf70edeb1c')
 
         yield self._sm.close()
 
@@ -103,22 +99,23 @@ class TestEip712(TestCase):
         delegate_eth_key: EthereumKey = self._sm[1]
 
         chainId = 1
-        validFrom = 1
         verifyingContract = a2b_hex('0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'[2:])
+        validFrom = 15124128
         authority = a2b_hex('0xe78ea2fE1533D4beD9A10d91934e109A130D0ad8'[2:])
         delegate = delegate_eth_key.address(binary=True)
         domain = a2b_hex('0x5f61F4c611501c1084738c0c8c5EbB5D3d8f2B6E'[2:])
         realm = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
         role = 'consumer'
+        reservation = a2b_hex('0x52d66f36A7927cF9612e1b40bD6549d08E0513Ff'[2:])
 
         cert_data = create_eip712_authority_certificate(chainId=chainId, verifyingContract=verifyingContract,
                                                         validFrom=validFrom, authority=authority, delegate=delegate,
-                                                        domain=domain, realm=realm, role=role)
+                                                        domain=domain, realm=realm, role=role, reservation=reservation)
 
-        print('\n\n{}\n\n'.format(pformat(cert_data)))
+        # print('\n\n{}\n\n'.format(pformat(cert_data)))
 
         cert_sig = yield trustroot_eth_key.sign_typed_data(cert_data, binary=False)
 
-        self.assertEqual(cert_sig, 'ce873125c294936a5fdb86cbbc94613e3b92010df2c915360493b5aace5f571335f53ab181d0d243e0b8882c0eb2400f2aa63c80774cdfc9dc6d4653296c93061b')
+        self.assertEqual(cert_sig, 'd13a710d10a2ab1b3466db7a890eec48d0b9e35a7f8595baa43cdfdc44854a9a07db9489d368db2a461e6fb7d554d1129df3076a1830b22992e7ed660ab10d101c')
 
         yield self._sm.close()
