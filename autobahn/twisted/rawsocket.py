@@ -36,7 +36,7 @@ from twisted.internet.error import ConnectionDone
 from twisted.internet.defer import CancelledError
 
 from autobahn.util import public, _LazyHexFormatter
-from autobahn.twisted.util import create_transport_details
+from autobahn.twisted.util import create_transport_details, transport_channel_id
 from autobahn.wamp.types import TransportDetails
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost, InvalidUriError
 from autobahn.exception import PayloadExceededError
@@ -113,7 +113,17 @@ class WampRawSocketProtocol(Int32StringReceiver):
         self._max_len_send = None
 
     def _on_handshake_complete(self):
+        # RawSocket connection established. Now let the user WAMP session factory
+        # create a new WAMP session and fire off session open callback.
         try:
+            if self._transport_details.is_secure:
+                # now that the TLS opening handshake is complete, the actual TLS channel ID
+                # will be available. make sure to set it!
+                channel_id = {
+                    'tls-unique': transport_channel_id(self.transport, self._transport_details.is_server, 'tls-unique'),
+                }
+                self._transport_details.channel_id = channel_id
+
             self._session = self.factory._factory()
             self.log.debug('{klass}._on_handshake_complete(): calling {method}', session=self._session,
                            klass=self.__class__.__name__, method=self._session.onOpen)

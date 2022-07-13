@@ -33,7 +33,7 @@ from typing import Optional
 import txaio
 from autobahn.util import public, _LazyHexFormatter, hltype
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
-from autobahn.asyncio.util import get_serializers, create_transport_details
+from autobahn.asyncio.util import get_serializers, create_transport_details, transport_channel_id
 
 __all__ = (
     'WampRawSocketServerProtocol',
@@ -279,7 +279,17 @@ class WampRawSocketMixinGeneral(object):
 
     def _on_handshake_complete(self):
         self.log.debug("WampRawSocketProtocol: Handshake complete")
+        # RawSocket connection established. Now let the user WAMP session factory
+        # create a new WAMP session and fire off session open callback.
         try:
+            if self._transport_details.is_secure:
+                # now that the TLS opening handshake is complete, the actual TLS channel ID
+                # will be available. make sure to set it!
+                channel_id = {
+                    'tls-unique': transport_channel_id(self.transport, self._transport_details.is_server, 'tls-unique'),
+                }
+                self._transport_details.channel_id = channel_id
+
             self._session = self.factory._factory()
             self._session.onOpen(self)
         except Exception as e:
