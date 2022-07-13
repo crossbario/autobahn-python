@@ -26,9 +26,12 @@
 
 import re
 import binascii
+import textwrap
+from pprint import pformat
 from typing import Any, Dict, Optional
 
 import autobahn
+from autobahn.util import hlval
 from autobahn.wamp.exception import ProtocolError, InvalidUriError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
@@ -531,6 +534,10 @@ class Message(object):
         """
         return not self.__eq__(other)
 
+    def __str__(self) -> str:
+        return '{}\n{}'.format(hlval(self.__class__.__name__.upper() + '::', color='blue', bold=True),
+                               hlval(textwrap.indent(pformat(self.marshal()), '    '), color='blue', bold=False))
+
     @staticmethod
     def parse(wmsg):
         """
@@ -830,12 +837,6 @@ class Hello(Message):
 
         return [Hello.MESSAGE_TYPE, self.realm, details]
 
-    def __str__(self):
-        """
-        Return a string representation of this message.
-        """
-        return "Hello(realm={}, roles={}, authmethods={}, authid={}, authrole={}, authextra={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole, self.authextra, self.resumable, self.resume_session, self.resume_token)
-
 
 class Welcome(Message):
     """
@@ -1081,12 +1082,6 @@ class Welcome(Message):
 
         return [Welcome.MESSAGE_TYPE, self.session, details]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Welcome(session={}, roles={}, realm={}, authid={}, authrole={}, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
-
 
 class Abort(Message):
     """
@@ -1167,12 +1162,6 @@ class Abort(Message):
 
         return [Abort.MESSAGE_TYPE, details, self.reason]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Abort(message={0}, reason={1})".format(self.message, self.reason)
-
 
 class Challenge(Message):
     """
@@ -1242,12 +1231,6 @@ class Challenge(Message):
         """
         return [Challenge.MESSAGE_TYPE, self.method, self.extra]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Challenge(method={0}, extra={1})".format(self.method, self.extra)
-
 
 class Authenticate(Message):
     """
@@ -1316,12 +1299,6 @@ class Authenticate(Message):
         :rtype: list
         """
         return [Authenticate.MESSAGE_TYPE, self.signature, self.extra]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Authenticate(signature={0}, extra={1})".format(self.signature, self.extra)
 
 
 class Goodbye(Message):
@@ -1424,12 +1401,6 @@ class Goodbye(Message):
             details['resumable'] = self.resumable
 
         return [Goodbye.MESSAGE_TYPE, details, self.reason]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Goodbye(message={}, reason={}, resumable={})".format(self.message, self.reason, self.resumable)
 
 
 class Error(Message):
@@ -1730,12 +1701,6 @@ class Error(Message):
                 return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error, self.args]
             else:
                 return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Error(request_type={0}, request={1}, error={2}, args={3}, kwargs={4}, enc_algo={5}, enc_key={6}, enc_serializer={7}, payload={8}, callee={9}, callee_authid={10}, callee_authrole={11}, forward_for={12})".format(self.request_type, self.request, self.error, self.args, self.kwargs, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
 
 
 class Publish(Message):
@@ -2714,12 +2679,6 @@ class Publish(Message):
             else:
                 return [Publish.MESSAGE_TYPE, self.request, options, self.topic]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Publish(request={}, topic={}, args={}, kwargs={}, acknowledge={}, exclude_me={}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, transaction_hash={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.transaction_hash, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
-
 
 class Published(Message):
     """
@@ -2785,12 +2744,6 @@ class Published(Message):
         :rtype: list
         """
         return [Published.MESSAGE_TYPE, self.request, self.publication]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Published(request={0}, publication={1})".format(self.request, self.publication)
 
 
 class Subscribe(Message):
@@ -2947,12 +2900,6 @@ class Subscribe(Message):
         """
         return [Subscribe.MESSAGE_TYPE, self.request, self.marshal_options(), self.topic]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Subscribe(request={0}, topic={1}, match={2}, get_retained={3}, forward_for={4})".format(self.request, self.topic, self.match, self.get_retained, self.forward_for)
-
 
 class Subscribed(Message):
     """
@@ -3018,12 +2965,6 @@ class Subscribed(Message):
         :rtype: list
         """
         return [Subscribed.MESSAGE_TYPE, self.request, self.subscription]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Subscribed(request={0}, subscription={1})".format(self.request, self.subscription)
 
 
 class Unsubscribe(Message):
@@ -3135,12 +3076,6 @@ class Unsubscribe(Message):
         else:
             return [Unsubscribe.MESSAGE_TYPE, self.request, self.subscription]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Unsubscribe(request={0}, subscription={1}, forward_for={2})".format(self.request, self.subscription, self.forward_for)
-
 
 class Unsubscribed(Message):
     """
@@ -3241,12 +3176,6 @@ class Unsubscribed(Message):
             return [Unsubscribed.MESSAGE_TYPE, self.request, details]
         else:
             return [Unsubscribed.MESSAGE_TYPE, self.request]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Unsubscribed(request={0}, reason={1}, subscription={2})".format(self.request, self.reason, self.subscription)
 
 
 class Event(Message):
@@ -3940,12 +3869,6 @@ class Event(Message):
             else:
                 return [Event.MESSAGE_TYPE, self.subscription, self.publication, details]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Event(subscription={}, publication={}, args={}, kwargs={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic={}, retained={}, transaction_hash={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, forward_for={})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.transaction_hash, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.forward_for)
-
 
 class EventReceived(Message):
     """
@@ -4005,12 +3928,6 @@ class EventReceived(Message):
         :rtype: list
         """
         return [EventReceived.MESSAGE_TYPE, self.publication]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "EventReceived(publication={})".format(self.publication)
 
 
 class Call(Message):
@@ -4366,12 +4283,6 @@ class Call(Message):
             else:
                 return [Call.MESSAGE_TYPE, self.request, options, self.procedure]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Call(request={}, procedure={}, args={}, kwargs={}, timeout={}, receive_progress={}, transaction_hash={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={}, caller={}, caller_authid={}, caller_authrole={}, forward_for={})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.transaction_hash, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.caller, self.caller_authid, self.caller_authrole, self.forward_for)
-
 
 class Cancel(Message):
     """
@@ -4500,12 +4411,6 @@ class Cancel(Message):
             options['forward_for'] = self.forward_for
 
         return [Cancel.MESSAGE_TYPE, self.request, options]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Cancel(request={0}, mode={1})".format(self.request, self.mode)
 
 
 class Result(Message):
@@ -4798,12 +4703,6 @@ class Result(Message):
             else:
                 return [Result.MESSAGE_TYPE, self.request, details]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Result(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7}, callee={8}, callee_authid={9}, callee_authrole={10}, forward_for={11})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
-
 
 class Register(Message):
     """
@@ -5029,12 +4928,6 @@ class Register(Message):
         """
         return [Register.MESSAGE_TYPE, self.request, self.marshal_options(), self.procedure]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Register(request={0}, procedure={1}, match={2}, invoke={3}, concurrency={4}, force_reregister={5}, forward_for={6})".format(self.request, self.procedure, self.match, self.invoke, self.concurrency, self.force_reregister, self.forward_for)
-
 
 class Registered(Message):
     """
@@ -5100,12 +4993,6 @@ class Registered(Message):
         :rtype: list
         """
         return [Registered.MESSAGE_TYPE, self.request, self.registration]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Registered(request={0}, registration={1})".format(self.request, self.registration)
 
 
 class Unregister(Message):
@@ -5211,12 +5098,6 @@ class Unregister(Message):
         else:
             return [Unregister.MESSAGE_TYPE, self.request, self.registration]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Unregister(request={0}, registration={1})".format(self.request, self.registration)
-
 
 class Unregistered(Message):
     """
@@ -5316,12 +5197,6 @@ class Unregistered(Message):
             return [Unregistered.MESSAGE_TYPE, self.request, details]
         else:
             return [Unregistered.MESSAGE_TYPE, self.request]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Unregistered(request={0}, reason={1}, registration={2})".format(self.request, self.reason, self.registration)
 
 
 class Invocation(Message):
@@ -5686,12 +5561,6 @@ class Invocation(Message):
             else:
                 return [Invocation.MESSAGE_TYPE, self.request, self.registration, options]
 
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Invocation(request={0}, registration={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, caller={6}, caller_authid={7}, caller_authrole={8}, procedure={9}, transaction_hash={10}, enc_algo={11}, enc_key={12}, enc_serializer={13}, payload={14})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.transaction_hash, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
-
 
 class Interrupt(Message):
     """
@@ -5840,12 +5709,6 @@ class Interrupt(Message):
             options['forward_for'] = self.forward_for
 
         return [Interrupt.MESSAGE_TYPE, self.request, options]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Interrupt(request={0}, mode={1}, reason={2})".format(self.request, self.mode, self.reason)
 
 
 class Yield(Message):
@@ -6135,9 +5998,3 @@ class Yield(Message):
                 return [Yield.MESSAGE_TYPE, self.request, options, self.args]
             else:
                 return [Yield.MESSAGE_TYPE, self.request, options]
-
-    def __str__(self):
-        """
-        Returns string representation of this message.
-        """
-        return "Yield(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7}, callee={8}, callee_authid={9}, callee_authrole={10}, forward_for={11})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.callee, self.callee_authid, self.callee_authrole, self.forward_for)
