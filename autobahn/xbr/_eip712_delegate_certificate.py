@@ -24,6 +24,10 @@
 #
 ###############################################################################
 
+from binascii import a2b_hex
+
+from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
+
 from ._eip712_base import sign, recover, is_chain_id, is_address, is_cs_pubkey, \
     is_block_number, is_signature, is_eth_privkey
 
@@ -159,3 +163,71 @@ def recover_eip712_delegate_certificate(chainId: int,
     data = create_eip712_delegate_certificate(chainId, verifyingContract, validFrom, delegate,
                                               csPubKey, bootedAt)
     return recover(data, signature)
+
+
+class EIP712DelegateCertificate(object):
+    def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int,
+                 delegate: bytes, csPubKey: bytes, bootedAt: int):
+        self.chainId = chainId
+        self.verifyingContract = verifyingContract
+        self.delegate = delegate
+        self.validFrom = validFrom
+        self.csPubKey = csPubKey
+        self.bootedAt = bootedAt
+
+    @staticmethod
+    def parse(data) -> 'EIP712DelegateCertificate':
+        if type(data) != dict:
+            raise ValueError('invalid type {} for EIP712DelegateCertificate'.format(type(data)))
+        for k in data:
+            if k not in ['chainId', 'verifyingContract', 'delegate', 'validFrom', 'csPubKey', 'bootedAt']:
+                raise ValueError('invalid attribute {} in EIP712DelegateCertificate'.format(k))
+
+        chainId = data.get('chainId', None)
+        if chainId is None:
+            raise ValueError('missing chainId in EIP712DelegateCertificate')
+        if type(chainId) != int:
+            raise ValueError('invalid type {} for chainId in EIP712DelegateCertificate'.format(type(chainId)))
+
+        verifyingContract = data.get('verifyingContract', None)
+        if verifyingContract is None:
+            raise ValueError('missing verifyingContract in EIP712DelegateCertificate')
+        if type(verifyingContract) != str:
+            raise ValueError('invalid type {} for verifyingContract in EIP712DelegateCertificate'.format(type(verifyingContract)))
+        if not _URI_PAT_REALM_NAME_ETH.match(verifyingContract):
+            raise ValueError('invalid value "{}" for verifyingContract in EIP712DelegateCertificate'.format(verifyingContract))
+        verifyingContract = a2b_hex(verifyingContract[2:])
+
+        validFrom = data.get('validFrom', None)
+        if validFrom is None:
+            raise ValueError('missing validFrom in EIP712DelegateCertificate')
+        if type(validFrom) != int:
+            raise ValueError('invalid type {} for validFrom in EIP712DelegateCertificate'.format(type(validFrom)))
+
+        delegate = data.get('delegate', None)
+        if delegate is None:
+            raise ValueError('missing delegate in EIP712DelegateCertificate')
+        if type(delegate) != str:
+            raise ValueError('invalid type {} for delegate in EIP712DelegateCertificate'.format(type(delegate)))
+        if not _URI_PAT_REALM_NAME_ETH.match(delegate):
+            raise ValueError('invalid value "{}" for verifyingContract in EIP712DelegateCertificate'.format(delegate))
+        delegate = a2b_hex(delegate[2:])
+
+        csPubKey = data.get('csPubKey', None)
+        if csPubKey is None:
+            raise ValueError('missing csPubKey in EIP712DelegateCertificate')
+        if type(csPubKey) != str:
+            raise ValueError('invalid type {} for csPubKey in EIP712DelegateCertificate'.format(type(csPubKey)))
+        if len(csPubKey) != 64:
+            raise ValueError('invalid value "{}" for csPubKey in EIP712DelegateCertificate'.format(csPubKey))
+        csPubKey = a2b_hex(csPubKey)
+
+        bootedAt = data.get('bootedAt', None)
+        if bootedAt is None:
+            raise ValueError('missing bootedAt in EIP712DelegateCertificate')
+        if type(bootedAt) != int:
+            raise ValueError('invalid type {} for bootedAt in EIP712DelegateCertificate'.format(type(bootedAt)))
+
+        obj = EIP712DelegateCertificate(chainId=chainId, verifyingContract=verifyingContract, validFrom=validFrom,
+                                        delegate=delegate, csPubKey=csPubKey, bootedAt=bootedAt)
+        return obj

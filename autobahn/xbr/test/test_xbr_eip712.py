@@ -40,6 +40,7 @@ if HAS_XBR and HAS_CRYPTOSIGN:
     from autobahn.xbr import make_w3, EthereumKey
     from autobahn.xbr._secmod import SecurityModuleMemory
     from autobahn.xbr import create_eip712_delegate_certificate, create_eip712_authority_certificate
+    from autobahn.xbr._eip712_delegate_certificate import EIP712DelegateCertificate
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
@@ -51,7 +52,7 @@ IS_CPY_310 = sys.version_info.minor == 10
 @skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
 @skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
 @skipIf(not (HAS_XBR and HAS_CRYPTOSIGN), 'package autobahn[encryption,xbr] not installed')
-class TestEip712(TestCase):
+class TestEip712Certificate(TestCase):
 
     def setUp(self):
         self._gw_config = {
@@ -122,6 +123,69 @@ class TestEip712(TestCase):
 
         yield self._sm.close()
 
+
+@skipIf(not os.environ.get('USE_TWISTED', False), 'only for Twisted')
+@skipIf(not HAS_INFURA, 'env var WEB3_INFURA_PROJECT_ID not defined')
+@skipIf(not (HAS_XBR and HAS_CRYPTOSIGN), 'package autobahn[encryption,xbr] not installed')
+class TestEip712CertificateChain(TestCase):
+
+    def setUp(self):
+        self._gw_config = {
+            'type': 'infura',
+            'key': os.environ.get('WEB3_INFURA_PROJECT_ID', ''),
+            'network': 'mainnet',
+        }
+        self._w3 = make_w3(self._gw_config)
+
+        self._seedphrase = "avocado style uncover thrive same grace crunch want essay reduce current edge"
+        self._sm: SecurityModuleMemory = SecurityModuleMemory.from_seedphrase(self._seedphrase, num_eth_keys=5,
+                                                                              num_cs_keys=5)
+
+        # HELLO.Details.authextra.certificates
+        #
+        self._certs_expected1 = [
+            ({'domain': {'name': 'WMP', 'version': '1'},
+              'message': {'bootedAt': 1657781999086394759,
+                          'chainId': 1,
+                          'csPubKey': '12ae0184b180e9a9c5e45be4a1afbce3c6491320063701cd9c4011a777d04089',
+                          'delegate': '0xf5173a6111B2A6B3C20fceD53B2A8405EC142bF6',
+                          'validFrom': 15139218,
+                          'verifyingContract': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'},
+              'primaryType': 'EIP712DelegateCertificate',
+              'types': {'EIP712DelegateCertificate': [{'name': 'chainId', 'type': 'uint256'},
+                                                      {'name': 'verifyingContract', 'type': 'address'},
+                                                      {'name': 'validFrom', 'type': 'uint256'},
+                                                      {'name': 'delegate', 'type': 'address'},
+                                                      {'name': 'csPubKey', 'type': 'bytes32'},
+                                                      {'name': 'bootedAt', 'type': 'uint64'}],
+                        'EIP712Domain': [{'name': 'name', 'type': 'string'},
+                                         {'name': 'version', 'type': 'string'}]}},
+             '7a54cb99f1dc5ea004484691a2f18ce8b40ebe32b026897bb31f12414e4d0db61c1870df5c1f721926c95f38d41034eec00f6c7a4e10ba6bf41ba45b78e4cb521b'),
+            ({'domain': {'name': 'WMP', 'version': '1'},
+              'message': {'authority': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
+                          'chainId': 1,
+                          'delegate': '0xf5173a6111B2A6B3C20fceD53B2A8405EC142bF6',
+                          'domain': '0x5f61F4c611501c1084738c0c8c5EbB5D3d8f2B6E',
+                          'realm': '0xA6e693CC4A2b4F1400391a728D26369D9b82ef96',
+                          'reservation': '0x52d66f36A7927cF9612e1b40bD6549d08E0513Ff',
+                          'role': 'consumer',
+                          'validFrom': 15139218,
+                          'verifyingContract': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'},
+              'primaryType': 'EIP712AuthorityCertificate',
+              'types': {'EIP712AuthorityCertificate': [{'name': 'chainId', 'type': 'uint256'},
+                                                       {'name': 'verifyingContract', 'type': 'address'},
+                                                       {'name': 'validFrom', 'type': 'uint256'},
+                                                       {'name': 'authority', 'type': 'address'},
+                                                       {'name': 'delegate', 'type': 'address'},
+                                                       {'name': 'domain', 'type': 'address'},
+                                                       {'name': 'realm', 'type': 'address'},
+                                                       {'name': 'role', 'type': 'string'},
+                                                       {'name': 'reservation', 'type': 'address'}],
+                        'EIP712Domain': [{'name': 'name', 'type': 'string'},
+                                         {'name': 'version', 'type': 'string'}]}},
+             'fbde7089eca0299678e6f106ea5b55c2b52276b381d66de0855b9e13a5ad601a019343b853f02307510cacd3168942b04c31ed019a8b536e451095115062196e1c')
+        ]
+
     @inlineCallbacks
     def test_eip712_create_certificate_chain(self):
         yield self._sm.open()
@@ -185,51 +249,31 @@ class TestEip712(TestCase):
         self.assertEqual(cert1_sig, '7a54cb99f1dc5ea004484691a2f18ce8b40ebe32b026897bb31f12414e4d0db61c1870df5c1f721926c95f38d41034eec00f6c7a4e10ba6bf41ba45b78e4cb521b')
         self.assertEqual(cert2_sig, 'fbde7089eca0299678e6f106ea5b55c2b52276b381d66de0855b9e13a5ad601a019343b853f02307510cacd3168942b04c31ed019a8b536e451095115062196e1c')
 
-        # HELLO.Details.authextra.certificates
-        #
-        certs_expected = [
-            ({'domain': {'name': 'WMP', 'version': '1'},
-              'message': {'bootedAt': 1657781999086394759,
-                          'chainId': 1,
-                          'csPubKey': '12ae0184b180e9a9c5e45be4a1afbce3c6491320063701cd9c4011a777d04089',
-                          'delegate': '0xf5173a6111B2A6B3C20fceD53B2A8405EC142bF6',
-                          'validFrom': 15139218,
-                          'verifyingContract': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'},
-              'primaryType': 'EIP712DelegateCertificate',
-              'types': {'EIP712DelegateCertificate': [{'name': 'chainId', 'type': 'uint256'},
-                                                      {'name': 'verifyingContract', 'type': 'address'},
-                                                      {'name': 'validFrom', 'type': 'uint256'},
-                                                      {'name': 'delegate', 'type': 'address'},
-                                                      {'name': 'csPubKey', 'type': 'bytes32'},
-                                                      {'name': 'bootedAt', 'type': 'uint64'}],
-                        'EIP712Domain': [{'name': 'name', 'type': 'string'},
-                                         {'name': 'version', 'type': 'string'}]}},
-             '7a54cb99f1dc5ea004484691a2f18ce8b40ebe32b026897bb31f12414e4d0db61c1870df5c1f721926c95f38d41034eec00f6c7a4e10ba6bf41ba45b78e4cb521b'),
-            ({'domain': {'name': 'WMP', 'version': '1'},
-              'message': {'authority': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
-                          'chainId': 1,
-                          'delegate': '0xf5173a6111B2A6B3C20fceD53B2A8405EC142bF6',
-                          'domain': '0x5f61F4c611501c1084738c0c8c5EbB5D3d8f2B6E',
-                          'realm': '0xA6e693CC4A2b4F1400391a728D26369D9b82ef96',
-                          'reservation': '0x52d66f36A7927cF9612e1b40bD6549d08E0513Ff',
-                          'role': 'consumer',
-                          'validFrom': 15139218,
-                          'verifyingContract': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'},
-              'primaryType': 'EIP712AuthorityCertificate',
-              'types': {'EIP712AuthorityCertificate': [{'name': 'chainId', 'type': 'uint256'},
-                                                       {'name': 'verifyingContract', 'type': 'address'},
-                                                       {'name': 'validFrom', 'type': 'uint256'},
-                                                       {'name': 'authority', 'type': 'address'},
-                                                       {'name': 'delegate', 'type': 'address'},
-                                                       {'name': 'domain', 'type': 'address'},
-                                                       {'name': 'realm', 'type': 'address'},
-                                                       {'name': 'role', 'type': 'string'},
-                                                       {'name': 'reservation', 'type': 'address'}],
-                        'EIP712Domain': [{'name': 'name', 'type': 'string'},
-                                         {'name': 'version', 'type': 'string'}]}},
-             'fbde7089eca0299678e6f106ea5b55c2b52276b381d66de0855b9e13a5ad601a019343b853f02307510cacd3168942b04c31ed019a8b536e451095115062196e1c')
-        ]
 
-        self.assertEqual(certificates, certs_expected)
+        self.assertEqual(certificates, self._certs_expected1)
+
+        yield self._sm.close()
+
+    @inlineCallbacks
+    def test_eip712_verify_certificate_chain(self):
+        yield self._sm.open()
+
+        # keys needed to create all certificates in certificate chain
+        #
+        trustroot_eth_key: EthereumKey = self._sm[0]
+        delegate_eth_key: EthereumKey = self._sm[1]
+        delegate_cs_key: CryptosignKey = self._sm[6]
+
+        for cert_data, cert_sig in self._certs_expected1:
+            self.assertIn('domain', cert_data)
+            self.assertIn('message', cert_data)
+            self.assertIn('primaryType', cert_data)
+            self.assertIn('types', cert_data)
+            self.assertIn(cert_data['primaryType'], cert_data['types'])
+
+            self.assertIn(cert_data['primaryType'], ['EIP712DelegateCertificate', 'EIP712AuthorityCertificate'])
+
+            if cert_data['primaryType'] == 'EIP712DelegateCertificate':
+                cert = EIP712DelegateCertificate.parse(cert_data['message'])
 
         yield self._sm.close()
