@@ -126,24 +126,36 @@ class TestEip712(TestCase):
     def test_eip712_create_certificate_chain(self):
         yield self._sm.open()
 
+        # keys needed to create all certificates in certificate chain
+        #
         trustroot_eth_key: EthereumKey = self._sm[0]
-        eth_key: EthereumKey = self._sm[1]
-        key: CryptosignKey = self._sm[6]
+        delegate_eth_key: EthereumKey = self._sm[1]
+        delegate_cs_key: CryptosignKey = self._sm[6]
 
-        # create delegate certificate
+        # data needed for delegate certificate
         #
         chainId = 1  # self._w3.eth.chain_id
         verifyingContract = a2b_hex('0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'[2:])
         validFrom = 15139218  # self._w3.eth.block_number
-        delegate = eth_key.address(binary=True)
-        csPubKey = key.public_key(binary=True)
+        delegate = delegate_eth_key.address(binary=True)
+        csPubKey = delegate_cs_key.public_key(binary=True)
         bootedAt = 1657781999086394759  # txaio.time_ns()
 
+        # data needed for authority certificate
+        #
+        authority = trustroot_eth_key.address(binary=True)
+        domain = a2b_hex('0x5f61F4c611501c1084738c0c8c5EbB5D3d8f2B6E'[2:])
+        realm = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
+        role = 'consumer'
+        reservation = a2b_hex('0x52d66f36A7927cF9612e1b40bD6549d08E0513Ff'[2:])
+
+        # create delegate certificate
+        #
         cert1_data = create_eip712_delegate_certificate(chainId=chainId, verifyingContract=verifyingContract,
                                                         validFrom=validFrom, delegate=delegate, csPubKey=csPubKey,
                                                         bootedAt=bootedAt)
 
-        cert1_sig = yield eth_key.sign_typed_data(cert1_data, binary=False)
+        cert1_sig = yield delegate_eth_key.sign_typed_data(cert1_data, binary=False)
 
         cert1_data['message']['csPubKey'] = b2a_hex(cert1_data['message']['csPubKey']).decode()
         cert1_data['message']['delegate'] = self._w3.toChecksumAddress(cert1_data['message']['delegate'])
@@ -152,12 +164,6 @@ class TestEip712(TestCase):
 
         # create authority certificate
         #
-        authority = trustroot_eth_key.address(binary=True)
-        domain = a2b_hex('0x5f61F4c611501c1084738c0c8c5EbB5D3d8f2B6E'[2:])
-        realm = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
-        role = 'consumer'
-        reservation = a2b_hex('0x52d66f36A7927cF9612e1b40bD6549d08E0513Ff'[2:])
-
         cert2_data = create_eip712_authority_certificate(chainId=chainId, verifyingContract=verifyingContract,
                                                          validFrom=validFrom, authority=authority, delegate=delegate,
                                                          domain=domain, realm=realm, role=role, reservation=reservation)
