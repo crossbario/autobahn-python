@@ -24,6 +24,10 @@
 #
 ###############################################################################
 
+from binascii import a2b_hex
+
+from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
+
 from ._eip712_base import sign, recover, is_chain_id, is_address, is_block_number, is_signature, is_eth_privkey
 
 
@@ -54,7 +58,7 @@ def create_eip712_authority_certificate(chainId: int,
     assert is_address(issuer)
     assert is_address(subject)
     assert is_address(realm)
-    assert type(capabilities) == int and 0 <= capabilities <= 2**53
+    assert type(capabilities) == int and 0 <= capabilities <= 2 ** 53
     assert meta is None or type(meta) == str
 
     data = {
@@ -182,3 +186,91 @@ def recover_eip712_authority_certificate(chainId: int,
     data = create_eip712_authority_certificate(chainId, verifyingContract, validFrom, issuer,
                                                subject, realm, capabilities, meta)
     return recover(data, signature)
+
+
+class EIP712AuthorityCertificate(object):
+    def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int,
+                 issuer: bytes, subject: bytes, realm: bytes, capabilities: int, meta: str):
+        self.chainId = chainId
+        self.verifyingContract = verifyingContract
+        self.validFrom = validFrom
+        self.issuer = issuer
+        self.subject = subject
+        self.realm = realm
+        self.capabilities = capabilities
+        self.meta = meta
+
+    @staticmethod
+    def parse(data) -> 'EIP712AuthorityCertificate':
+        if type(data) != dict:
+            raise ValueError('invalid type {} for EIP712AuthorityCertificate'.format(type(data)))
+        for k in data:
+            if k not in ['chainId', 'verifyingContract', 'validFrom', 'issuer', 'subject',
+                         'realm', 'capabilities', 'meta']:
+                raise ValueError('invalid attribute "{}" in EIP712AuthorityCertificate'.format(k))
+
+        chainId = data.get('chainId', None)
+        if chainId is None:
+            raise ValueError('missing chainId in EIP712AuthorityCertificate')
+        if type(chainId) != int:
+            raise ValueError('invalid type {} for chainId in EIP712AuthorityCertificate'.format(type(chainId)))
+
+        verifyingContract = data.get('verifyingContract', None)
+        if verifyingContract is None:
+            raise ValueError('missing verifyingContract in EIP712AuthorityCertificate')
+        if type(verifyingContract) != str:
+            raise ValueError(
+                'invalid type {} for verifyingContract in EIP712AuthorityCertificate'.format(type(verifyingContract)))
+        if not _URI_PAT_REALM_NAME_ETH.match(verifyingContract):
+            raise ValueError(
+                'invalid value "{}" for verifyingContract in EIP712AuthorityCertificate'.format(verifyingContract))
+        verifyingContract = a2b_hex(verifyingContract[2:])
+
+        validFrom = data.get('validFrom', None)
+        if validFrom is None:
+            raise ValueError('missing validFrom in EIP712AuthorityCertificate')
+        if type(validFrom) != int:
+            raise ValueError('invalid type {} for validFrom in EIP712AuthorityCertificate'.format(type(validFrom)))
+
+        issuer = data.get('issuer', None)
+        if issuer is None:
+            raise ValueError('missing issuer in EIP712AuthorityCertificate')
+        if type(issuer) != str:
+            raise ValueError('invalid type {} for issuer in EIP712AuthorityCertificate'.format(type(issuer)))
+        if not _URI_PAT_REALM_NAME_ETH.match(issuer):
+            raise ValueError('invalid value "{}" for issuer in EIP712AuthorityCertificate'.format(issuer))
+        issuer = a2b_hex(issuer[2:])
+
+        subject = data.get('subject', None)
+        if subject is None:
+            raise ValueError('missing subject in EIP712AuthorityCertificate')
+        if type(subject) != str:
+            raise ValueError('invalid type {} for subject in EIP712AuthorityCertificate'.format(type(subject)))
+        if not _URI_PAT_REALM_NAME_ETH.match(subject):
+            raise ValueError('invalid value "{}" for subject in EIP712AuthorityCertificate'.format(subject))
+        subject = a2b_hex(subject[2:])
+
+        realm = data.get('realm', None)
+        if realm is None:
+            raise ValueError('missing realm in EIP712AuthorityCertificate')
+        if type(realm) != str:
+            raise ValueError('invalid type {} for realm in EIP712AuthorityCertificate'.format(type(realm)))
+        if not _URI_PAT_REALM_NAME_ETH.match(realm):
+            raise ValueError('invalid value "{}" for realm in EIP712AuthorityCertificate'.format(realm))
+        realm = a2b_hex(realm[2:])
+
+        capabilities = data.get('capabilities', None)
+        if capabilities is None:
+            raise ValueError('missing capabilities in EIP712AuthorityCertificate')
+        if type(capabilities) != int:
+            raise ValueError('invalid type {} for capabilities in EIP712AuthorityCertificate'.format(type(capabilities)))
+
+        meta = data.get('meta', None)
+        if meta is None:
+            raise ValueError('missing meta in EIP712AuthorityCertificate')
+        if type(meta) != str:
+            raise ValueError('invalid type {} for meta in EIP712AuthorityCertificate'.format(type(meta)))
+
+        obj = EIP712AuthorityCertificate(chainId=chainId, verifyingContract=verifyingContract, validFrom=validFrom,
+                                         issuer=issuer, subject=subject, realm=realm, capabilities=capabilities, meta=meta)
+        return obj

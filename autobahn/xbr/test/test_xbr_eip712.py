@@ -41,6 +41,7 @@ if HAS_XBR and HAS_CRYPTOSIGN:
     from autobahn.xbr._secmod import SecurityModuleMemory
     from autobahn.xbr import create_eip712_delegate_certificate, create_eip712_authority_certificate
     from autobahn.xbr._eip712_delegate_certificate import EIP712DelegateCertificate
+    from autobahn.xbr._eip712_authority_certificate import EIP712AuthorityCertificate
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
@@ -256,12 +257,16 @@ class TestEip712CertificateChain(TestCase):
         #
         certificates = [(cert1_data, cert1_sig), (cert2_data, cert2_sig)]
 
+        # check certificates and certificate signatures of whole chain
+        #
+        self.assertEqual(certificates, self._certs_expected1)
+
+        # check signatures
+        #
         self.assertEqual(cert1_sig,
                          '70726dda677cac8f21366f8023d17203b2f4f9099e954f9bebb2134086e2ac291d80ce038a1342a7748d4b0750f06b8de491561d581c90c99f1c09c91cfa7e191c')
         self.assertEqual(cert2_sig,
                          'd625b069771de42f7ef81680219c037f7037a43ee5692efea03764ab361438fc3777346455d20c09f13cd5bae1d992c122095a2ae261130edabf58a7900d661b1b')
-
-        self.assertEqual(certificates, self._certs_expected1)
 
         yield self._sm.close()
 
@@ -275,6 +280,8 @@ class TestEip712CertificateChain(TestCase):
         # delegate_eth_key: EthereumKey = self._sm[1]
         # delegate_cs_key: CryptosignKey = self._sm[6]
 
+        cert_chain = []
+
         for cert_data, cert_sig in self._certs_expected1:
             self.assertIn('domain', cert_data)
             self.assertIn('message', cert_data)
@@ -285,6 +292,14 @@ class TestEip712CertificateChain(TestCase):
             self.assertIn(cert_data['primaryType'], ['EIP712DelegateCertificate', 'EIP712AuthorityCertificate'])
 
             if cert_data['primaryType'] == 'EIP712DelegateCertificate':
-                EIP712DelegateCertificate.parse(cert_data['message'])
+                cert = EIP712DelegateCertificate.parse(cert_data['message'])
+            elif cert_data['primaryType'] == 'EIP712AuthorityCertificate':
+                cert = EIP712AuthorityCertificate.parse(cert_data['message'])
+            else:
+                assert False, 'should not arrive here'
+
+            cert_chain.append(cert)
+
+        self.assertEqual(len(cert_chain), 2)
 
         yield self._sm.close()
