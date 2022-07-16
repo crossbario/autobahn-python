@@ -196,7 +196,35 @@ class TestEip712CertificateChain(TestCase):
                                                                             {'name': 'meta', 'type': 'string'}],
                                              'EIP712Domain': [{'name': 'name', 'type': 'string'},
                                                               {'name': 'version', 'type': 'string'}]}},
-                                  'd625b069771de42f7ef81680219c037f7037a43ee5692efea03764ab361438fc3777346455d20c09f13cd5bae1d992c122095a2ae261130edabf58a7900d661b1b')]
+                                  'd625b069771de42f7ef81680219c037f7037a43ee5692efea03764ab361438fc3777346455d20c09f13cd5bae1d992c122095a2ae261130edabf58a7900d661b1b'),
+                                 ({'domain': {'name': 'WMP', 'version': '1'},
+                                   'message': {'capabilities': 7,
+                                               'chainId': 1,
+                                               'issuer': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
+                                               'meta': 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G',
+                                               'realm': '0xA6e693CC4A2b4F1400391a728D26369D9b82ef96',
+                                               'subject': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
+                                               'validFrom': 15139218,
+                                               'verifyingContract': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'},
+                                   'primaryType': 'EIP712AuthorityCertificate',
+                                   'types': {'EIP712AuthorityCertificate': [{'name': 'chainId',
+                                                                             'type': 'uint256'},
+                                                                            {'name': 'verifyingContract',
+                                                                             'type': 'address'},
+                                                                            {'name': 'validFrom',
+                                                                             'type': 'uint256'},
+                                                                            {'name': 'issuer',
+                                                                             'type': 'address'},
+                                                                            {'name': 'subject',
+                                                                             'type': 'address'},
+                                                                            {'name': 'realm',
+                                                                             'type': 'address'},
+                                                                            {'name': 'capabilities',
+                                                                             'type': 'uint64'},
+                                                                            {'name': 'meta', 'type': 'string'}],
+                                             'EIP712Domain': [{'name': 'name', 'type': 'string'},
+                                                              {'name': 'version', 'type': 'string'}]}},
+                                  '46b8b9838e818c6fcc0385bf3da5d853f073fa3851214931f766a014da9a6d4f468b7402d2e8d9a12b0367e6b24b693f2e396eb2c7e7f77e7b89be8ffc11da081b')]
 
     @inlineCallbacks
     def test_eip712_create_certificate_chain(self):
@@ -208,7 +236,7 @@ class TestEip712CertificateChain(TestCase):
         delegate_eth_key: EthereumKey = self._sm[1]
         delegate_cs_key: CryptosignKey = self._sm[6]
 
-        # data needed for delegate certificate
+        # data needed for delegate certificate: cert1
         #
         chainId = 1  # self._w3.eth.chain_id
         verifyingContract = a2b_hex('0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'[2:])
@@ -218,13 +246,21 @@ class TestEip712CertificateChain(TestCase):
         bootedAt = 1657781999086394759  # txaio.time_ns()
         delegateMeta = 'Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu'
 
-        # data needed for authority certificate
+        # data needed for intermediate authority certificate: cert2
         #
-        issuer = trustroot_eth_key.address(binary=True)
-        subject = delegate
-        realm = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
-        capabilities = 3
-        authorityMeta = 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G'
+        issuer_cert2 = trustroot_eth_key.address(binary=True)
+        subject_cert2 = delegate
+        realm_cert2 = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
+        capabilities_cert2 = 3
+        meta_cert2 = 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G'
+
+        # data needed for root authority certificate: cert3
+        #
+        issuer_cert3 = trustroot_eth_key.address(binary=True)
+        subject_cert3 = issuer_cert3
+        realm_cert3 = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
+        capabilities_cert3 = 7
+        meta_cert3 = 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G'
 
         # create delegate certificate
         #
@@ -239,11 +275,13 @@ class TestEip712CertificateChain(TestCase):
         cert1_data['message']['verifyingContract'] = self._w3.toChecksumAddress(
             cert1_data['message']['verifyingContract'])
 
-        # create authority certificate
+        # create intermediate authority certificate
         #
         cert2_data = create_eip712_authority_certificate(chainId=chainId, verifyingContract=verifyingContract,
-                                                         validFrom=validFrom, issuer=issuer, subject=subject,
-                                                         realm=realm, capabilities=capabilities, meta=authorityMeta)
+                                                         validFrom=validFrom, issuer=issuer_cert2,
+                                                         subject=subject_cert2,
+                                                         realm=realm_cert2, capabilities=capabilities_cert2,
+                                                         meta=meta_cert2)
 
         cert2_sig = yield trustroot_eth_key.sign_typed_data(cert2_data, binary=False)
 
@@ -253,20 +291,28 @@ class TestEip712CertificateChain(TestCase):
         cert2_data['message']['subject'] = self._w3.toChecksumAddress(cert2_data['message']['subject'])
         cert2_data['message']['realm'] = self._w3.toChecksumAddress(cert2_data['message']['realm'])
 
+        # create root authority certificate
+        #
+        cert3_data = create_eip712_authority_certificate(chainId=chainId, verifyingContract=verifyingContract,
+                                                         validFrom=validFrom, issuer=issuer_cert3, subject=subject_cert3,
+                                                         realm=realm_cert3, capabilities=capabilities_cert3,
+                                                         meta=meta_cert3)
+
+        cert3_sig = yield trustroot_eth_key.sign_typed_data(cert3_data, binary=False)
+
+        cert3_data['message']['verifyingContract'] = self._w3.toChecksumAddress(
+            cert3_data['message']['verifyingContract'])
+        cert3_data['message']['issuer'] = self._w3.toChecksumAddress(cert3_data['message']['issuer'])
+        cert3_data['message']['subject'] = self._w3.toChecksumAddress(cert3_data['message']['subject'])
+        cert3_data['message']['realm'] = self._w3.toChecksumAddress(cert3_data['message']['realm'])
+
         # create certificates chain
         #
-        certificates = [(cert1_data, cert1_sig), (cert2_data, cert2_sig)]
+        certificates = [(cert1_data, cert1_sig), (cert2_data, cert2_sig), (cert3_data, cert3_sig)]
 
         # check certificates and certificate signatures of whole chain
         #
         self.assertEqual(certificates, self._certs_expected1)
-
-        # check signatures
-        #
-        self.assertEqual(cert1_sig,
-                         '70726dda677cac8f21366f8023d17203b2f4f9099e954f9bebb2134086e2ac291d80ce038a1342a7748d4b0750f06b8de491561d581c90c99f1c09c91cfa7e191c')
-        self.assertEqual(cert2_sig,
-                         'd625b069771de42f7ef81680219c037f7037a43ee5692efea03764ab361438fc3777346455d20c09f13cd5bae1d992c122095a2ae261130edabf58a7900d661b1b')
 
         yield self._sm.close()
 
@@ -300,6 +346,16 @@ class TestEip712CertificateChain(TestCase):
 
             cert_chain.append(cert)
 
-        self.assertEqual(len(cert_chain), 2)
+        # check chain length
+        self.assertEqual(len(cert_chain), 3)
+
+        # check certificate types: the first must be a EIP712DelegateCertificate, and all
+        # subsequent certificates must be of type EIP712AuthorityCertificate
+        self.assertIsInstance(cert_chain[0], EIP712DelegateCertificate)
+        for i in [1, len(cert_chain) - 1]:
+            self.assertIsInstance(cert_chain[i], EIP712AuthorityCertificate)
+
+        # the last certificate must be self-signed: it is a root CA certificate
+        self.assertEqual(cert_chain[-1].subject, cert_chain[-1].issuer)
 
         yield self._sm.close()
