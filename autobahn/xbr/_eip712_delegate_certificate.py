@@ -37,7 +37,8 @@ def create_eip712_delegate_certificate(chainId: int,
                                        validFrom: int,
                                        delegate: bytes,
                                        csPubKey: bytes,
-                                       bootedAt: int) -> dict:
+                                       bootedAt: int,
+                                       meta: str) -> dict:
     """
     Delegate certificate: dynamic/one-time, off-chain.
 
@@ -47,6 +48,7 @@ def create_eip712_delegate_certificate(chainId: int,
     :param delegate:
     :param csPubKey:
     :param bootedAt:
+    :param meta:
     :return:
     """
     assert is_chain_id(chainId)
@@ -55,6 +57,7 @@ def create_eip712_delegate_certificate(chainId: int,
     assert is_address(delegate)
     assert is_cs_pubkey(csPubKey)
     assert type(bootedAt) == int
+    assert meta is None or type(meta) == str
 
     data = {
         'types': {
@@ -92,6 +95,10 @@ def create_eip712_delegate_certificate(chainId: int,
                 {
                     'name': 'bootedAt',
                     'type': 'uint64'
+                },
+                {
+                    'name': 'meta',
+                    'type': 'string'
                 }
             ]
         },
@@ -106,7 +113,8 @@ def create_eip712_delegate_certificate(chainId: int,
             'validFrom': validFrom,
             'delegate': delegate,
             'csPubKey': csPubKey,
-            'bootedAt': bootedAt
+            'bootedAt': bootedAt,
+            'meta': meta or '',
         }
     }
 
@@ -119,7 +127,8 @@ def sign_eip712_delegate_certificate(eth_privkey: bytes,
                                      validFrom: int,
                                      delegate: bytes,
                                      csPubKey: bytes,
-                                     bootedAt: int) -> bytes:
+                                     bootedAt: int,
+                                     meta: str) -> bytes:
     """
     Sign the given data using a EIP712 based signature with the provided private key.
 
@@ -130,12 +139,13 @@ def sign_eip712_delegate_certificate(eth_privkey: bytes,
     :param delegate:
     :param csPubKey:
     :param bootedAt:
+    :param meta:
     :return: The signature according to EIP712 (32+32+1 raw bytes).
     """
     assert is_eth_privkey(eth_privkey)
 
     data = create_eip712_delegate_certificate(chainId, verifyingContract, validFrom, delegate,
-                                              csPubKey, bootedAt)
+                                              csPubKey, bootedAt, meta)
     return sign(eth_privkey, data)
 
 
@@ -145,6 +155,7 @@ def recover_eip712_delegate_certificate(chainId: int,
                                         delegate: bytes,
                                         csPubKey: bytes,
                                         bootedAt: int,
+                                        meta: str,
                                         signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
@@ -156,32 +167,34 @@ def recover_eip712_delegate_certificate(chainId: int,
     :param csPubKey:
     :param bootedAt:
     :param signature:
+    :param meta:
     :return: The (computed) signer address the signature was signed with.
     """
     assert is_signature(signature)
 
     data = create_eip712_delegate_certificate(chainId, verifyingContract, validFrom, delegate,
-                                              csPubKey, bootedAt)
+                                              csPubKey, bootedAt, meta)
     return recover(data, signature)
 
 
 class EIP712DelegateCertificate(object):
     def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int,
-                 delegate: bytes, csPubKey: bytes, bootedAt: int):
+                 delegate: bytes, csPubKey: bytes, bootedAt: int, meta: str):
         self.chainId = chainId
         self.verifyingContract = verifyingContract
         self.delegate = delegate
         self.validFrom = validFrom
         self.csPubKey = csPubKey
         self.bootedAt = bootedAt
+        self.meta = meta
 
     @staticmethod
     def parse(data) -> 'EIP712DelegateCertificate':
         if type(data) != dict:
             raise ValueError('invalid type {} for EIP712DelegateCertificate'.format(type(data)))
         for k in data:
-            if k not in ['chainId', 'verifyingContract', 'delegate', 'validFrom', 'csPubKey', 'bootedAt']:
-                raise ValueError('invalid attribute {} in EIP712DelegateCertificate'.format(k))
+            if k not in ['chainId', 'verifyingContract', 'delegate', 'validFrom', 'csPubKey', 'bootedAt', 'meta']:
+                raise ValueError('invalid attribute "{}" in EIP712DelegateCertificate'.format(k))
 
         chainId = data.get('chainId', None)
         if chainId is None:
@@ -228,6 +241,12 @@ class EIP712DelegateCertificate(object):
         if type(bootedAt) != int:
             raise ValueError('invalid type {} for bootedAt in EIP712DelegateCertificate'.format(type(bootedAt)))
 
+        meta = data.get('meta', None)
+        if meta is None:
+            raise ValueError('missing meta in EIP712DelegateCertificate')
+        if type(meta) != str:
+            raise ValueError('invalid type {} for meta in EIP712DelegateCertificate'.format(type(meta)))
+
         obj = EIP712DelegateCertificate(chainId=chainId, verifyingContract=verifyingContract, validFrom=validFrom,
-                                        delegate=delegate, csPubKey=csPubKey, bootedAt=bootedAt)
+                                        delegate=delegate, csPubKey=csPubKey, bootedAt=bootedAt, meta=meta)
         return obj

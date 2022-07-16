@@ -79,17 +79,18 @@ class TestEip712Certificate(TestCase):
         delegate = delegate_eth_key.address(binary=True)
         csPubKey = delegate_cs_key.public_key(binary=True)
         bootedAt = 1657579546469365046  # txaio.time_ns()
+        meta = 'Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu'
 
         cert_data = create_eip712_delegate_certificate(chainId=chainId, verifyingContract=verifyingContract,
                                                        validFrom=validFrom, delegate=delegate, csPubKey=csPubKey,
-                                                       bootedAt=bootedAt)
+                                                       bootedAt=bootedAt, meta=meta)
 
         # print('\n\n{}\n\n'.format(pformat(cert_data)))
 
         cert_sig = yield delegate_eth_key.sign_typed_data(cert_data, binary=False)
 
         self.assertEqual(cert_sig,
-                         'fcf69947bceac2d7b224dcbc739e6e824f9fcabc526dbcaf8c28de7e9a44969d4b332584bbd8a34c0a12f57041146d888d6fd5b9db1031d5b083f169bf70edeb1c')
+                         '2bd697b2bdb9bc2c2494e53e9440ddb3e8a596eedaad717f8ecdb732d091a7de48d72d9a26d7e092ec55c074979ab039f8e003acf80224819ff396c9529eb1d11b')
 
         yield self._sm.close()
 
@@ -103,23 +104,22 @@ class TestEip712Certificate(TestCase):
         chainId = 1
         verifyingContract = a2b_hex('0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'[2:])
         validFrom = 15124128
-        authority = a2b_hex('0xe78ea2fE1533D4beD9A10d91934e109A130D0ad8'[2:])
-        delegate = delegate_eth_key.address(binary=True)
-        domain = a2b_hex('0x5f61F4c611501c1084738c0c8c5EbB5D3d8f2B6E'[2:])
+        issuer = trustroot_eth_key.address(binary=True)
+        subject = delegate_eth_key.address(binary=True)
         realm = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
-        role = 'consumer'
-        reservation = a2b_hex('0x52d66f36A7927cF9612e1b40bD6549d08E0513Ff'[2:])
+        capabilities = 3
+        meta = 'Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu'
 
         cert_data = create_eip712_authority_certificate(chainId=chainId, verifyingContract=verifyingContract,
-                                                        validFrom=validFrom, authority=authority, delegate=delegate,
-                                                        domain=domain, realm=realm, role=role, reservation=reservation)
+                                                        validFrom=validFrom, issuer=issuer, subject=subject,
+                                                        realm=realm, capabilities=capabilities, meta=meta)
 
         # print('\n\n{}\n\n'.format(pformat(cert_data)))
 
         cert_sig = yield trustroot_eth_key.sign_typed_data(cert_data, binary=False)
 
         self.assertEqual(cert_sig,
-                         'd13a710d10a2ab1b3466db7a890eec48d0b9e35a7f8595baa43cdfdc44854a9a07db9489d368db2a461e6fb7d554d1129df3076a1830b22992e7ed660ab10d101c')
+                         '83590d4304cc5f6024d6a85ed2c511a60e804d609e4f498c8af777d5102c6d22657673e7b68876795e3c72f857b68e13cf616ee4c2ea559bceb344021bf977b61c')
 
         yield self._sm.close()
 
@@ -143,48 +143,59 @@ class TestEip712CertificateChain(TestCase):
 
         # HELLO.Details.authextra.certificates
         #
-        self._certs_expected1 = [
-            ({'domain': {'name': 'WMP', 'version': '1'},
-              'message': {'bootedAt': 1657781999086394759,
-                          'chainId': 1,
-                          'csPubKey': '12ae0184b180e9a9c5e45be4a1afbce3c6491320063701cd9c4011a777d04089',
-                          'delegate': '0xf5173a6111B2A6B3C20fceD53B2A8405EC142bF6',
-                          'validFrom': 15139218,
-                          'verifyingContract': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'},
-              'primaryType': 'EIP712DelegateCertificate',
-              'types': {'EIP712DelegateCertificate': [{'name': 'chainId', 'type': 'uint256'},
-                                                      {'name': 'verifyingContract', 'type': 'address'},
-                                                      {'name': 'validFrom', 'type': 'uint256'},
-                                                      {'name': 'delegate', 'type': 'address'},
-                                                      {'name': 'csPubKey', 'type': 'bytes32'},
-                                                      {'name': 'bootedAt', 'type': 'uint64'}],
-                        'EIP712Domain': [{'name': 'name', 'type': 'string'},
-                                         {'name': 'version', 'type': 'string'}]}},
-             '7a54cb99f1dc5ea004484691a2f18ce8b40ebe32b026897bb31f12414e4d0db61c1870df5c1f721926c95f38d41034eec00f6c7a4e10ba6bf41ba45b78e4cb521b'),
-            ({'domain': {'name': 'WMP', 'version': '1'},
-              'message': {'authority': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
-                          'chainId': 1,
-                          'delegate': '0xf5173a6111B2A6B3C20fceD53B2A8405EC142bF6',
-                          'domain': '0x5f61F4c611501c1084738c0c8c5EbB5D3d8f2B6E',
-                          'realm': '0xA6e693CC4A2b4F1400391a728D26369D9b82ef96',
-                          'reservation': '0x52d66f36A7927cF9612e1b40bD6549d08E0513Ff',
-                          'role': 'consumer',
-                          'validFrom': 15139218,
-                          'verifyingContract': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'},
-              'primaryType': 'EIP712AuthorityCertificate',
-              'types': {'EIP712AuthorityCertificate': [{'name': 'chainId', 'type': 'uint256'},
-                                                       {'name': 'verifyingContract', 'type': 'address'},
-                                                       {'name': 'validFrom', 'type': 'uint256'},
-                                                       {'name': 'authority', 'type': 'address'},
-                                                       {'name': 'delegate', 'type': 'address'},
-                                                       {'name': 'domain', 'type': 'address'},
-                                                       {'name': 'realm', 'type': 'address'},
-                                                       {'name': 'role', 'type': 'string'},
-                                                       {'name': 'reservation', 'type': 'address'}],
-                        'EIP712Domain': [{'name': 'name', 'type': 'string'},
-                                         {'name': 'version', 'type': 'string'}]}},
-             'fbde7089eca0299678e6f106ea5b55c2b52276b381d66de0855b9e13a5ad601a019343b853f02307510cacd3168942b04c31ed019a8b536e451095115062196e1c')
-        ]
+        self._certs_expected1 = [({'domain': {'name': 'WMP', 'version': '1'},
+                                   'message': {'bootedAt': 1657781999086394759,
+                                               'chainId': 1,
+                                               'csPubKey': '12ae0184b180e9a9c5e45be4a1afbce3c6491320063701cd9c4011a777d04089',
+                                               'delegate': '0xf5173a6111B2A6B3C20fceD53B2A8405EC142bF6',
+                                               'meta': 'Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu',
+                                               'validFrom': 15139218,
+                                               'verifyingContract': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'},
+                                   'primaryType': 'EIP712DelegateCertificate',
+                                   'types': {'EIP712DelegateCertificate': [{'name': 'chainId',
+                                                                            'type': 'uint256'},
+                                                                           {'name': 'verifyingContract',
+                                                                            'type': 'address'},
+                                                                           {'name': 'validFrom',
+                                                                            'type': 'uint256'},
+                                                                           {'name': 'delegate',
+                                                                            'type': 'address'},
+                                                                           {'name': 'csPubKey',
+                                                                            'type': 'bytes32'},
+                                                                           {'name': 'bootedAt',
+                                                                            'type': 'uint64'},
+                                                                           {'name': 'meta', 'type': 'string'}],
+                                             'EIP712Domain': [{'name': 'name', 'type': 'string'},
+                                                              {'name': 'version', 'type': 'string'}]}},
+                                  '70726dda677cac8f21366f8023d17203b2f4f9099e954f9bebb2134086e2ac291d80ce038a1342a7748d4b0750f06b8de491561d581c90c99f1c09c91cfa7e191c'),
+                                 ({'domain': {'name': 'WMP', 'version': '1'},
+                                   'message': {'capabilities': 3,
+                                               'chainId': 1,
+                                               'issuer': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
+                                               'meta': 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G',
+                                               'realm': '0xA6e693CC4A2b4F1400391a728D26369D9b82ef96',
+                                               'subject': '0xf5173a6111B2A6B3C20fceD53B2A8405EC142bF6',
+                                               'validFrom': 15139218,
+                                               'verifyingContract': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'},
+                                   'primaryType': 'EIP712AuthorityCertificate',
+                                   'types': {'EIP712AuthorityCertificate': [{'name': 'chainId',
+                                                                             'type': 'uint256'},
+                                                                            {'name': 'verifyingContract',
+                                                                             'type': 'address'},
+                                                                            {'name': 'validFrom',
+                                                                             'type': 'uint256'},
+                                                                            {'name': 'issuer',
+                                                                             'type': 'address'},
+                                                                            {'name': 'subject',
+                                                                             'type': 'address'},
+                                                                            {'name': 'realm',
+                                                                             'type': 'address'},
+                                                                            {'name': 'capabilities',
+                                                                             'type': 'uint64'},
+                                                                            {'name': 'meta', 'type': 'string'}],
+                                             'EIP712Domain': [{'name': 'name', 'type': 'string'},
+                                                              {'name': 'version', 'type': 'string'}]}},
+                                  'd625b069771de42f7ef81680219c037f7037a43ee5692efea03764ab361438fc3777346455d20c09f13cd5bae1d992c122095a2ae261130edabf58a7900d661b1b')]
 
     @inlineCallbacks
     def test_eip712_create_certificate_chain(self):
@@ -204,20 +215,21 @@ class TestEip712CertificateChain(TestCase):
         delegate = delegate_eth_key.address(binary=True)
         csPubKey = delegate_cs_key.public_key(binary=True)
         bootedAt = 1657781999086394759  # txaio.time_ns()
+        delegateMeta = 'Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu'
 
         # data needed for authority certificate
         #
-        authority = trustroot_eth_key.address(binary=True)
-        domain = a2b_hex('0x5f61F4c611501c1084738c0c8c5EbB5D3d8f2B6E'[2:])
+        issuer = trustroot_eth_key.address(binary=True)
+        subject = delegate
         realm = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
-        role = 'consumer'
-        reservation = a2b_hex('0x52d66f36A7927cF9612e1b40bD6549d08E0513Ff'[2:])
+        capabilities = 3
+        authorityMeta = 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G'
 
         # create delegate certificate
         #
         cert1_data = create_eip712_delegate_certificate(chainId=chainId, verifyingContract=verifyingContract,
                                                         validFrom=validFrom, delegate=delegate, csPubKey=csPubKey,
-                                                        bootedAt=bootedAt)
+                                                        bootedAt=bootedAt, meta=delegateMeta)
 
         cert1_sig = yield delegate_eth_key.sign_typed_data(cert1_data, binary=False)
 
@@ -229,26 +241,25 @@ class TestEip712CertificateChain(TestCase):
         # create authority certificate
         #
         cert2_data = create_eip712_authority_certificate(chainId=chainId, verifyingContract=verifyingContract,
-                                                         validFrom=validFrom, authority=authority, delegate=delegate,
-                                                         domain=domain, realm=realm, role=role, reservation=reservation)
+                                                         validFrom=validFrom, issuer=issuer, subject=subject,
+                                                         realm=realm, capabilities=capabilities, meta=authorityMeta)
 
         cert2_sig = yield trustroot_eth_key.sign_typed_data(cert2_data, binary=False)
 
-        cert2_data['message']['delegate'] = self._w3.toChecksumAddress(cert2_data['message']['delegate'])
         cert2_data['message']['verifyingContract'] = self._w3.toChecksumAddress(
             cert2_data['message']['verifyingContract'])
-        cert2_data['message']['authority'] = self._w3.toChecksumAddress(cert2_data['message']['authority'])
-        cert2_data['message']['domain'] = self._w3.toChecksumAddress(cert2_data['message']['domain'])
+        cert2_data['message']['issuer'] = self._w3.toChecksumAddress(cert2_data['message']['issuer'])
+        cert2_data['message']['subject'] = self._w3.toChecksumAddress(cert2_data['message']['subject'])
         cert2_data['message']['realm'] = self._w3.toChecksumAddress(cert2_data['message']['realm'])
-        cert2_data['message']['reservation'] = self._w3.toChecksumAddress(cert2_data['message']['reservation'])
 
         # create certificates chain
         #
         certificates = [(cert1_data, cert1_sig), (cert2_data, cert2_sig)]
 
-        self.assertEqual(cert1_sig, '7a54cb99f1dc5ea004484691a2f18ce8b40ebe32b026897bb31f12414e4d0db61c1870df5c1f721926c95f38d41034eec00f6c7a4e10ba6bf41ba45b78e4cb521b')
-        self.assertEqual(cert2_sig, 'fbde7089eca0299678e6f106ea5b55c2b52276b381d66de0855b9e13a5ad601a019343b853f02307510cacd3168942b04c31ed019a8b536e451095115062196e1c')
-
+        self.assertEqual(cert1_sig,
+                         '70726dda677cac8f21366f8023d17203b2f4f9099e954f9bebb2134086e2ac291d80ce038a1342a7748d4b0750f06b8de491561d581c90c99f1c09c91cfa7e191c')
+        self.assertEqual(cert2_sig,
+                         'd625b069771de42f7ef81680219c037f7037a43ee5692efea03764ab361438fc3777346455d20c09f13cd5bae1d992c122095a2ae261130edabf58a7900d661b1b')
 
         self.assertEqual(certificates, self._certs_expected1)
 
@@ -260,9 +271,9 @@ class TestEip712CertificateChain(TestCase):
 
         # keys needed to create all certificates in certificate chain
         #
-        trustroot_eth_key: EthereumKey = self._sm[0]
-        delegate_eth_key: EthereumKey = self._sm[1]
-        delegate_cs_key: CryptosignKey = self._sm[6]
+        # trustroot_eth_key: EthereumKey = self._sm[0]
+        # delegate_eth_key: EthereumKey = self._sm[1]
+        # delegate_cs_key: CryptosignKey = self._sm[6]
 
         for cert_data, cert_sig in self._certs_expected1:
             self.assertIn('domain', cert_data)
@@ -274,6 +285,6 @@ class TestEip712CertificateChain(TestCase):
             self.assertIn(cert_data['primaryType'], ['EIP712DelegateCertificate', 'EIP712AuthorityCertificate'])
 
             if cert_data['primaryType'] == 'EIP712DelegateCertificate':
-                cert = EIP712DelegateCertificate.parse(cert_data['message'])
+                EIP712DelegateCertificate.parse(cert_data['message'])
 
         yield self._sm.close()

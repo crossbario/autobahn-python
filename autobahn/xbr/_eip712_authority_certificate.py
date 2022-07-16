@@ -30,35 +30,32 @@ from ._eip712_base import sign, recover, is_chain_id, is_address, is_block_numbe
 def create_eip712_authority_certificate(chainId: int,
                                         verifyingContract: bytes,
                                         validFrom: int,
-                                        authority: bytes,
-                                        domain: bytes,
-                                        delegate: bytes,
+                                        issuer: bytes,
+                                        subject: bytes,
                                         realm: bytes,
-                                        role: str,
-                                        reservation: bytes) -> dict:
+                                        capabilities: int,
+                                        meta: str) -> dict:
     """
     Authority certificate: long-lived, on-chain L2.
 
     :param chainId:
     :param verifyingContract:
     :param validFrom:
-    :param authority:
-    :param delegate:
-    :param domain:
+    :param issuer:
+    :param subject:
     :param realm:
-    :param role:
-    :param reservation:
+    :param capabilities:
+    :param meta:
     :return:
     """
     assert is_chain_id(chainId)
     assert is_address(verifyingContract)
     assert is_block_number(validFrom)
-    assert is_address(authority)
-    assert is_address(delegate)
-    assert is_address(domain)
+    assert is_address(issuer)
+    assert is_address(subject)
     assert is_address(realm)
-    assert type(role) == str
-    assert is_address(reservation)
+    assert type(capabilities) == int and 0 <= capabilities <= 2**53
+    assert meta is None or type(meta) == str
 
     data = {
         'types': {
@@ -86,15 +83,11 @@ def create_eip712_authority_certificate(chainId: int,
                     'type': 'uint256'
                 },
                 {
-                    'name': 'authority',
+                    'name': 'issuer',
                     'type': 'address'
                 },
                 {
-                    'name': 'delegate',
-                    'type': 'address'
-                },
-                {
-                    'name': 'domain',
+                    'name': 'subject',
                     'type': 'address'
                 },
                 {
@@ -102,12 +95,12 @@ def create_eip712_authority_certificate(chainId: int,
                     'type': 'address'
                 },
                 {
-                    'name': 'role',
-                    'type': 'string'
+                    'name': 'capabilities',
+                    'type': 'uint64'
                 },
                 {
-                    'name': 'reservation',
-                    'type': 'address'
+                    'name': 'meta',
+                    'type': 'string'
                 }
             ]
         },
@@ -120,12 +113,11 @@ def create_eip712_authority_certificate(chainId: int,
             'chainId': chainId,
             'verifyingContract': verifyingContract,
             'validFrom': validFrom,
-            'authority': authority,
-            'delegate': delegate,
-            'domain': domain,
+            'issuer': issuer,
+            'subject': subject,
             'realm': realm,
-            'role': role,
-            'reservation': reservation,
+            'capabilities': capabilities,
+            'meta': meta or '',
         }
     }
 
@@ -136,12 +128,11 @@ def sign_eip712_authority_certificate(eth_privkey: bytes,
                                       chainId: int,
                                       verifyingContract: bytes,
                                       validFrom: int,
-                                      authority: bytes,
-                                      delegate: bytes,
-                                      domain: bytes,
+                                      issuer: bytes,
+                                      subject: bytes,
                                       realm: bytes,
-                                      role: str,
-                                      reservation: bytes) -> bytes:
+                                      capabilities: int,
+                                      meta: str) -> bytes:
     """
     Sign the given data using a EIP712 based signature with the provided private key.
 
@@ -149,30 +140,28 @@ def sign_eip712_authority_certificate(eth_privkey: bytes,
     :param chainId:
     :param verifyingContract:
     :param validFrom:
-    :param authority:
-    :param delegate:
-    :param domain:
+    :param issuer:
+    :param subject:
     :param realm:
-    :param role:
-    :param reservation:
+    :param capabilities:
+    :param meta:
     :return:
     """
     assert is_eth_privkey(eth_privkey)
 
-    data = create_eip712_authority_certificate(chainId, verifyingContract, validFrom, authority,
-                                               delegate, domain, realm, role, reservation)
+    data = create_eip712_authority_certificate(chainId, verifyingContract, validFrom, issuer,
+                                               subject, realm, capabilities, meta)
     return sign(eth_privkey, data)
 
 
 def recover_eip712_authority_certificate(chainId: int,
                                          verifyingContract: bytes,
                                          validFrom: int,
-                                         authority: bytes,
-                                         delegate: bytes,
-                                         domain: bytes,
+                                         issuer: bytes,
+                                         subject: bytes,
                                          realm: bytes,
-                                         role: str,
-                                         reservation: bytes,
+                                         capabilities: int,
+                                         meta: str,
                                          signature: bytes) -> bytes:
     """
     Recover the signer address the given EIP712 signature was signed with.
@@ -180,17 +169,16 @@ def recover_eip712_authority_certificate(chainId: int,
     :param chainId:
     :param verifyingContract:
     :param validFrom:
-    :param authority:
-    :param delegate:
-    :param domain:
+    :param issuer:
+    :param subject:
     :param realm:
-    :param role:
-    :param reservation:
+    :param capabilities:
+    :param meta:
     :param signature:
     :return: The (computed) signer address the signature was signed with.
     """
     assert is_signature(signature)
 
-    data = create_eip712_authority_certificate(chainId, verifyingContract, validFrom, authority,
-                                               delegate, domain, realm, role, reservation)
+    data = create_eip712_authority_certificate(chainId, verifyingContract, validFrom, issuer,
+                                               subject, realm, capabilities, meta)
     return recover(data, signature)
