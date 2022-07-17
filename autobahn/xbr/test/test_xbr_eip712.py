@@ -170,7 +170,7 @@ class TestEip712CertificateChain(TestCase):
                                                               {'name': 'version', 'type': 'string'}]}},
                                   '70726dda677cac8f21366f8023d17203b2f4f9099e954f9bebb2134086e2ac291d80ce038a1342a7748d4b0750f06b8de491561d581c90c99f1c09c91cfa7e191c'),
                                  ({'domain': {'name': 'WMP', 'version': '1'},
-                                   'message': {'capabilities': 3,
+                                   'message': {'capabilities': 2,
                                                'chainId': 1,
                                                'issuer': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
                                                'meta': 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G',
@@ -196,9 +196,9 @@ class TestEip712CertificateChain(TestCase):
                                                                             {'name': 'meta', 'type': 'string'}],
                                              'EIP712Domain': [{'name': 'name', 'type': 'string'},
                                                               {'name': 'version', 'type': 'string'}]}},
-                                  'd625b069771de42f7ef81680219c037f7037a43ee5692efea03764ab361438fc3777346455d20c09f13cd5bae1d992c122095a2ae261130edabf58a7900d661b1b'),
+                                  '3083d690b72dd0baea0f98b91344b57de771aa93041b471cde40ec6c06e0b84353943a591ec24a62bfa46c361b0be47b410fcd0f418be5d965ad214d0974ccee1b'),
                                  ({'domain': {'name': 'WMP', 'version': '1'},
-                                   'message': {'capabilities': 7,
+                                   'message': {'capabilities': 3,
                                                'chainId': 1,
                                                'issuer': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
                                                'meta': 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G',
@@ -224,7 +224,7 @@ class TestEip712CertificateChain(TestCase):
                                                                             {'name': 'meta', 'type': 'string'}],
                                              'EIP712Domain': [{'name': 'name', 'type': 'string'},
                                                               {'name': 'version', 'type': 'string'}]}},
-                                  '46b8b9838e818c6fcc0385bf3da5d853f073fa3851214931f766a014da9a6d4f468b7402d2e8d9a12b0367e6b24b693f2e396eb2c7e7f77e7b89be8ffc11da081b')]
+                                  'fa36eb9c7e0af7e2356fac5c38d48f1600b8053f26e75f5bdf6b4563518dc7744fcb8f508b430ea5a98426dc6d2b303cf77b4140ee89ab86f28bd5ce5580e99d1b')]
 
     @inlineCallbacks
     def test_eip712_create_certificate_chain(self):
@@ -251,7 +251,7 @@ class TestEip712CertificateChain(TestCase):
         issuer_cert2 = trustroot_eth_key.address(binary=True)
         subject_cert2 = delegate
         realm_cert2 = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
-        capabilities_cert2 = 3
+        capabilities_cert2 = EIP712AuthorityCertificate.CAPABILITY_CA
         meta_cert2 = 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G'
 
         # data needed for root authority certificate: cert3
@@ -259,7 +259,7 @@ class TestEip712CertificateChain(TestCase):
         issuer_cert3 = trustroot_eth_key.address(binary=True)
         subject_cert3 = issuer_cert3
         realm_cert3 = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
-        capabilities_cert3 = 7
+        capabilities_cert3 = EIP712AuthorityCertificate.CAPABILITY_CA | EIP712AuthorityCertificate.CAPABILITY_ROOT_CA
         meta_cert3 = 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G'
 
         # create delegate certificate
@@ -294,7 +294,8 @@ class TestEip712CertificateChain(TestCase):
         # create root authority certificate
         #
         cert3_data = create_eip712_authority_certificate(chainId=chainId, verifyingContract=verifyingContract,
-                                                         validFrom=validFrom, issuer=issuer_cert3, subject=subject_cert3,
+                                                         validFrom=validFrom, issuer=issuer_cert3,
+                                                         subject=subject_cert3,
                                                          realm=realm_cert3, capabilities=capabilities_cert3,
                                                          meta=meta_cert3)
 
@@ -309,6 +310,12 @@ class TestEip712CertificateChain(TestCase):
         # create certificates chain
         #
         certificates = [(cert1_data, cert1_sig), (cert2_data, cert2_sig), (cert3_data, cert3_sig)]
+
+        if False:
+            from pprint import pprint
+            print()
+            pprint(certificates)
+            print()
 
         # check certificates and certificate signatures of whole chain
         #
@@ -362,19 +369,31 @@ class TestEip712CertificateChain(TestCase):
 
         # CC2:
         # last certificate must be self-signed - it is a root CA certificate
-        self.assertEqual(cert_chain[-1].subject, cert_chain[-1].issuer)
+        self.assertEqual(cert_chain[2].subject, cert_chain[2].issuer)
 
-        # CC3:
+        # CC3.1:
         # intermediate certificate's issuer must be the root CA certificate subject
         self.assertEqual(cert_chain[1].issuer, cert_chain[2].subject)
 
-        # CC4:
+        # CC3.2:
+        # and root certificate must be valid before the intermediate certificate
+        self.assertLessEqual(cert_chain[2].validFrom, cert_chain[1].validFrom)
+
+        # CC3.3:
+        # and capabilities of intermediate certificate must be a subset of the root cert
+        self.assertTrue(cert_chain[2].capabilities == cert_chain[2].capabilities | cert_chain[1].capabilities)
+
+        # CC4.1:
         # intermediate certificate's subject must be the delegate certificate delegate
         self.assertEqual(cert_chain[1].subject, cert_chain[0].delegate)
 
+        # CC4.2:
+        # and intermediate certificate must be valid before the delegate certificate
+        self.assertLessEqual(cert_chain[1].validFrom, cert_chain[0].validFrom)
+
         # CC5:
         # verify signature on root certificate
-        _issuer = cert_chain[-1].recover(a2b_hex(cert_sigs[-1]))
+        _issuer = cert_chain[2].recover(a2b_hex(cert_sigs[2]))
         self.assertEqual(_issuer, trustroot_eth_key.address(binary=True))
 
         # CC6:

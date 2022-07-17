@@ -189,6 +189,9 @@ def recover_eip712_authority_certificate(chainId: int,
 
 
 class EIP712AuthorityCertificate(object):
+    CAPABILITY_ROOT_CA = 1
+    CAPABILITY_CA = 2
+
     def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int,
                  issuer: bytes, subject: bytes, realm: bytes, capabilities: int, meta: str):
         self.chainId = chainId
