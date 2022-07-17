@@ -200,6 +200,17 @@ class EIP712AuthorityCertificate(object):
         self.capabilities = capabilities
         self.meta = meta
 
+    def recover(self, signature: bytes) -> bytes:
+        return recover_eip712_authority_certificate(self.chainId,
+                                                    self.verifyingContract,
+                                                    self.validFrom,
+                                                    self.issuer,
+                                                    self.subject,
+                                                    self.realm,
+                                                    self.capabilities,
+                                                    self.meta,
+                                                    signature)
+
     @staticmethod
     def parse(data) -> 'EIP712AuthorityCertificate':
         if type(data) != dict:

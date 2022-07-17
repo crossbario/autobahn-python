@@ -182,11 +182,21 @@ class EIP712DelegateCertificate(object):
                  delegate: bytes, csPubKey: bytes, bootedAt: int, meta: str):
         self.chainId = chainId
         self.verifyingContract = verifyingContract
-        self.delegate = delegate
         self.validFrom = validFrom
+        self.delegate = delegate
         self.csPubKey = csPubKey
         self.bootedAt = bootedAt
         self.meta = meta
+
+    def recover(self, signature: bytes) -> bytes:
+        return recover_eip712_delegate_certificate(self.chainId,
+                                                   self.verifyingContract,
+                                                   self.validFrom,
+                                                   self.delegate,
+                                                   self.csPubKey,
+                                                   self.bootedAt,
+                                                   self.meta,
+                                                   signature)
 
     @staticmethod
     def parse(data) -> 'EIP712DelegateCertificate':
