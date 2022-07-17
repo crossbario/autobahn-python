@@ -29,6 +29,7 @@ from binascii import a2b_hex
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
 
 from ._eip712_base import sign, recover, is_chain_id, is_address, is_block_number, is_signature, is_eth_privkey
+from ._eip712_certificate import EIP712Certificate
 
 
 def create_eip712_authority_certificate(chainId: int,
@@ -188,7 +189,7 @@ def recover_eip712_authority_certificate(chainId: int,
     return recover(data, signature)
 
 
-class EIP712AuthorityCertificate(object):
+class EIP712AuthorityCertificate(EIP712Certificate):
     CAPABILITY_ROOT_CA = 1
     CAPABILITY_INTERMEDIATE_CA = 2
     CAPABILITY_PUBLIC_RELAY = 4
@@ -196,11 +197,20 @@ class EIP712AuthorityCertificate(object):
     CAPABILITY_PROVIDER = 16
     CAPABILITY_CONSUMER = 32
 
-    def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int,
-                 issuer: bytes, subject: bytes, realm: bytes, capabilities: int, meta: str):
-        self.chainId = chainId
-        self.verifyingContract = verifyingContract
-        self.validFrom = validFrom
+    __slots__ = (
+        'chainId',
+        'verifyingContract',
+        'validFrom',
+        'issuer',
+        'subject',
+        'realm',
+        'capabilities',
+        'meta',
+    )
+
+    def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int, issuer: bytes, subject: bytes,
+                 realm: bytes, capabilities: int, meta: str):
+        super().__init__(chainId, verifyingContract, validFrom)
         self.issuer = issuer
         self.subject = subject
         self.realm = realm

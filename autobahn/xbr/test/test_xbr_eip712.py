@@ -42,6 +42,7 @@ if HAS_XBR and HAS_CRYPTOSIGN:
     from autobahn.xbr import create_eip712_delegate_certificate, create_eip712_authority_certificate
     from autobahn.xbr._eip712_delegate_certificate import EIP712DelegateCertificate
     from autobahn.xbr._eip712_authority_certificate import EIP712AuthorityCertificate
+    from autobahn.xbr._eip712_certificate_chain import verify_certificate_chain
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
@@ -324,7 +325,7 @@ class TestEip712CertificateChain(TestCase):
         yield self._sm.close()
 
     @inlineCallbacks
-    def test_eip712_verify_certificate_chain(self):
+    def test_eip712_verify_certificate_chain_manual(self):
         yield self._sm.open()
 
         # keys originally used to sign the certificates in the certificate chain
@@ -405,5 +406,23 @@ class TestEip712CertificateChain(TestCase):
         # verify signature on delegate certificate
         _issuer = cert_chain[0].recover(a2b_hex(cert_sigs[0]))
         self.assertEqual(_issuer, delegate_eth_key.address(binary=True))
+
+        yield self._sm.close()
+
+    @inlineCallbacks
+    def test_eip712_verify_certificate_chain(self):
+        yield self._sm.open()
+
+        # keys originally used to sign the certificates in the certificate chain
+        trustroot_eth_key: EthereumKey = self._sm[0]
+        delegate_eth_key: EthereumKey = self._sm[1]
+        delegate_cs_key: CryptosignKey = self._sm[6]
+
+        certificates = verify_certificate_chain(self._certs_expected1)
+
+        self.assertEqual(certificates[2].issuer, trustroot_eth_key.address(binary=True))
+
+        self.assertEqual(certificates[0].delegate, delegate_eth_key.address(binary=True))
+        self.assertEqual(certificates[0].csPubKey, delegate_cs_key.public_key(binary=True))
 
         yield self._sm.close()

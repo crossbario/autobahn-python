@@ -34,6 +34,7 @@ from autobahn.xbr._secmod import EthereumKey
 
 from ._eip712_base import sign, recover, is_chain_id, is_address, is_cs_pubkey, \
     is_block_number, is_signature, is_eth_privkey
+from ._eip712_certificate import EIP712Certificate
 
 
 def create_eip712_delegate_certificate(chainId: int,
@@ -181,12 +182,20 @@ def recover_eip712_delegate_certificate(chainId: int,
     return recover(data, signature)
 
 
-class EIP712DelegateCertificate(object):
-    def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int,
-                 delegate: bytes, csPubKey: bytes, bootedAt: int, meta: str):
-        self.chainId = chainId
-        self.verifyingContract = verifyingContract
-        self.validFrom = validFrom
+class EIP712DelegateCertificate(EIP712Certificate):
+    __slots__ = (
+        'chainId',
+        'verifyingContract',
+        'validFrom',
+        'delegate',
+        'csPubKey',
+        'bootedAt',
+        'meta',
+    )
+
+    def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int, delegate: bytes, csPubKey: bytes,
+                 bootedAt: int, meta: str):
+        super().__init__(chainId, verifyingContract, validFrom)
         self.delegate = delegate
         self.csPubKey = csPubKey
         self.bootedAt = bootedAt
