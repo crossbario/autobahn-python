@@ -170,7 +170,7 @@ class TestEip712CertificateChain(TestCase):
                                                               {'name': 'version', 'type': 'string'}]}},
                                   '70726dda677cac8f21366f8023d17203b2f4f9099e954f9bebb2134086e2ac291d80ce038a1342a7748d4b0750f06b8de491561d581c90c99f1c09c91cfa7e191c'),
                                  ({'domain': {'name': 'WMP', 'version': '1'},
-                                   'message': {'capabilities': 2,
+                                   'message': {'capabilities': 12,
                                                'chainId': 1,
                                                'issuer': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
                                                'meta': 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G',
@@ -196,9 +196,9 @@ class TestEip712CertificateChain(TestCase):
                                                                             {'name': 'meta', 'type': 'string'}],
                                              'EIP712Domain': [{'name': 'name', 'type': 'string'},
                                                               {'name': 'version', 'type': 'string'}]}},
-                                  '3083d690b72dd0baea0f98b91344b57de771aa93041b471cde40ec6c06e0b84353943a591ec24a62bfa46c361b0be47b410fcd0f418be5d965ad214d0974ccee1b'),
+                                  'f031b2625ae7e32e7eec3a8fa09f4db3a43217f282b7695e5b09dd2e13c25dc679c1f3ce27b94a3074786f7f12183a2a275a00aea5a66b83c431281f1069bd841c'),
                                  ({'domain': {'name': 'WMP', 'version': '1'},
-                                   'message': {'capabilities': 3,
+                                   'message': {'capabilities': 63,
                                                'chainId': 1,
                                                'issuer': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
                                                'meta': 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G',
@@ -224,7 +224,7 @@ class TestEip712CertificateChain(TestCase):
                                                                             {'name': 'meta', 'type': 'string'}],
                                              'EIP712Domain': [{'name': 'name', 'type': 'string'},
                                                               {'name': 'version', 'type': 'string'}]}},
-                                  'fa36eb9c7e0af7e2356fac5c38d48f1600b8053f26e75f5bdf6b4563518dc7744fcb8f508b430ea5a98426dc6d2b303cf77b4140ee89ab86f28bd5ce5580e99d1b')]
+                                  'c3bcd7a3c3c45ae45a24cd7745db3b39c4113e6b71a4220f943f0969282246b4083ef61277bd7ba9e92c9a07b79869ce63bc6206986480f9c5daddb27b91bebe1b')]
 
     @inlineCallbacks
     def test_eip712_create_certificate_chain(self):
@@ -251,7 +251,7 @@ class TestEip712CertificateChain(TestCase):
         issuer_cert2 = trustroot_eth_key.address(binary=True)
         subject_cert2 = delegate
         realm_cert2 = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
-        capabilities_cert2 = EIP712AuthorityCertificate.CAPABILITY_CA
+        capabilities_cert2 = EIP712AuthorityCertificate.CAPABILITY_PUBLIC_RELAY | EIP712AuthorityCertificate.CAPABILITY_PRIVATE_RELAY
         meta_cert2 = 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G'
 
         # data needed for root authority certificate: cert3
@@ -259,7 +259,7 @@ class TestEip712CertificateChain(TestCase):
         issuer_cert3 = trustroot_eth_key.address(binary=True)
         subject_cert3 = issuer_cert3
         realm_cert3 = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
-        capabilities_cert3 = EIP712AuthorityCertificate.CAPABILITY_CA | EIP712AuthorityCertificate.CAPABILITY_ROOT_CA
+        capabilities_cert3 = EIP712AuthorityCertificate.CAPABILITY_ROOT_CA | EIP712AuthorityCertificate.CAPABILITY_INTERMEDIATE_CA | EIP712AuthorityCertificate.CAPABILITY_PUBLIC_RELAY | EIP712AuthorityCertificate.CAPABILITY_PRIVATE_RELAY | EIP712AuthorityCertificate.CAPABILITY_PROVIDER | EIP712AuthorityCertificate.CAPABILITY_CONSUMER
         meta_cert3 = 'QmNbMM6TMLAgqBKzY69mJKk5VKvpcTtAtwAaLC2FV4zC3G'
 
         # create delegate certificate
