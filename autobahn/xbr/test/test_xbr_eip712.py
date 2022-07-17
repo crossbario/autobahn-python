@@ -320,13 +320,14 @@ class TestEip712CertificateChain(TestCase):
     def test_eip712_verify_certificate_chain(self):
         yield self._sm.open()
 
-        # keys needed to create all certificates in certificate chain
-        #
+        # keys originally used to sign the certificates in the certificate chain
         trustroot_eth_key: EthereumKey = self._sm[0]
         delegate_eth_key: EthereumKey = self._sm[1]
         delegate_cs_key: CryptosignKey = self._sm[6]
 
-        # CC-0:
+        # check and verify the certificate chain: CC0 - CC7
+
+        # CC0:
         # parse the whole certificate chain
         cert_chain = []
         cert_sigs = []
@@ -345,35 +346,45 @@ class TestEip712CertificateChain(TestCase):
                 assert False, 'should not arrive here'
             cert_chain.append(cert)
             cert_sigs.append(cert_sig)
-        self.assertEqual(len(cert_chain), 3)
 
-        # CC-1:
+        self.assertEqual(len(cert_chain), 3)
+        self.assertEqual(cert_chain[0].delegate, delegate_eth_key.address(binary=True))
+        self.assertEqual(cert_chain[0].csPubKey, delegate_cs_key.public_key(binary=True))
+        self.assertEqual(cert_chain[1].issuer, trustroot_eth_key.address(binary=True))
+        self.assertEqual(cert_chain[2].issuer, trustroot_eth_key.address(binary=True))
+
+        # CC1:
         # check certificate types - the first must be a EIP712DelegateCertificate, and all
         # subsequent certificates must be of type EIP712AuthorityCertificate
         self.assertIsInstance(cert_chain[0], EIP712DelegateCertificate)
         for i in [1, len(cert_chain) - 1]:
             self.assertIsInstance(cert_chain[i], EIP712AuthorityCertificate)
 
-        # CC-2:
-        # the last certificate must be self-signed - it is a root CA certificate
+        # CC2:
+        # last certificate must be self-signed - it is a root CA certificate
         self.assertEqual(cert_chain[-1].subject, cert_chain[-1].issuer)
 
-        # CC-3:
+        # CC3:
+        # intermediate certificate's issuer must be the root CA certificate subject
+        self.assertEqual(cert_chain[1].issuer, cert_chain[2].subject)
+
+        # CC4:
+        # intermediate certificate's subject must be the delegate certificate delegate
+        self.assertEqual(cert_chain[1].subject, cert_chain[0].delegate)
+
+        # CC5:
         # verify signature on root certificate
         _issuer = cert_chain[-1].recover(a2b_hex(cert_sigs[-1]))
         self.assertEqual(_issuer, trustroot_eth_key.address(binary=True))
 
-        ##############
-
-        self.assertEqual(cert_chain[0].csPubKey, delegate_cs_key.public_key(binary=True))
-
-        self.assertEqual(cert_chain[0].delegate, cert_chain[1].subject)
-        self.assertEqual(cert_chain[1].issuer, cert_chain[2].subject)
-
-        _issuer = cert_chain[0].recover(a2b_hex(cert_sigs[0]))
-        self.assertEqual(_issuer, delegate_eth_key.address(binary=True))
-
+        # CC6:
+        # verify signature on intermediate certificate
         _issuer = cert_chain[1].recover(a2b_hex(cert_sigs[1]))
         self.assertEqual(_issuer, trustroot_eth_key.address(binary=True))
+
+        # CC7:
+        # verify signature on delegate certificate
+        _issuer = cert_chain[0].recover(a2b_hex(cert_sigs[0]))
+        self.assertEqual(_issuer, delegate_eth_key.address(binary=True))
 
         yield self._sm.close()

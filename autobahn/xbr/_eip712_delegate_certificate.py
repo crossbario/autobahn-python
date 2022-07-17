@@ -25,8 +25,12 @@
 ###############################################################################
 
 from binascii import a2b_hex
+from typing import Dict, Any
+
+import json
 
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
+from autobahn.xbr._secmod import EthereumKey
 
 from ._eip712_base import sign, recover, is_chain_id, is_address, is_cs_pubkey, \
     is_block_number, is_signature, is_eth_privkey
@@ -188,6 +192,18 @@ class EIP712DelegateCertificate(object):
         self.bootedAt = bootedAt
         self.meta = meta
 
+    def sign(self, key: EthereumKey) -> bytes:
+        eip712 = create_eip712_delegate_certificate(self.chainId,
+                                                    self.verifyingContract,
+                                                    self.validFrom,
+                                                    self.delegate,
+                                                    self.csPubKey,
+                                                    self.bootedAt,
+                                                    self.meta)
+        # FIXME
+        data = json.dumps(eip712).encode()
+        return key.sign(data)
+
     def recover(self, signature: bytes) -> bytes:
         return recover_eip712_delegate_certificate(self.chainId,
                                                    self.verifyingContract,
@@ -197,6 +213,15 @@ class EIP712DelegateCertificate(object):
                                                    self.bootedAt,
                                                    self.meta,
                                                    signature)
+
+    def marshal(self) -> Dict[str, Any]:
+        return create_eip712_delegate_certificate(self.chainId,
+                                                  self.verifyingContract,
+                                                  self.validFrom,
+                                                  self.delegate,
+                                                  self.csPubKey,
+                                                  self.bootedAt,
+                                                  self.meta)
 
     @staticmethod
     def parse(data) -> 'EIP712DelegateCertificate':
@@ -216,9 +241,11 @@ class EIP712DelegateCertificate(object):
         if verifyingContract is None:
             raise ValueError('missing verifyingContract in EIP712DelegateCertificate')
         if type(verifyingContract) != str:
-            raise ValueError('invalid type {} for verifyingContract in EIP712DelegateCertificate'.format(type(verifyingContract)))
+            raise ValueError(
+                'invalid type {} for verifyingContract in EIP712DelegateCertificate'.format(type(verifyingContract)))
         if not _URI_PAT_REALM_NAME_ETH.match(verifyingContract):
-            raise ValueError('invalid value "{}" for verifyingContract in EIP712DelegateCertificate'.format(verifyingContract))
+            raise ValueError(
+                'invalid value "{}" for verifyingContract in EIP712DelegateCertificate'.format(verifyingContract))
         verifyingContract = a2b_hex(verifyingContract[2:])
 
         validFrom = data.get('validFrom', None)
