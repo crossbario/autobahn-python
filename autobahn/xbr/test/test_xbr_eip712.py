@@ -42,7 +42,7 @@ if HAS_XBR and HAS_CRYPTOSIGN:
     from autobahn.xbr import create_eip712_delegate_certificate, create_eip712_authority_certificate
     from autobahn.xbr._eip712_delegate_certificate import EIP712DelegateCertificate
     from autobahn.xbr._eip712_authority_certificate import EIP712AuthorityCertificate
-    from autobahn.xbr._eip712_certificate_chain import verify_certificate_chain
+    from autobahn.xbr._eip712_certificate_chain import parse_certificate_chain
 
 # https://web3py.readthedocs.io/en/stable/providers.html#infura-mainnet
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
@@ -228,7 +228,7 @@ class TestEip712CertificateChain(TestCase):
                                   'c3bcd7a3c3c45ae45a24cd7745db3b39c4113e6b71a4220f943f0969282246b4083ef61277bd7ba9e92c9a07b79869ce63bc6206986480f9c5daddb27b91bebe1b')]
 
     @inlineCallbacks
-    def test_eip712_create_certificate_chain(self):
+    def test_eip712_create_certificate_chain_manual(self):
         yield self._sm.open()
 
         # keys needed to create all certificates in certificate chain
@@ -325,6 +325,12 @@ class TestEip712CertificateChain(TestCase):
         yield self._sm.close()
 
     @inlineCallbacks
+    def test_eip712_create_certificate_chain_highlevel(self):
+        yield self._sm.open()
+        # FIXME
+        yield self._sm.close()
+
+    @inlineCallbacks
     def test_eip712_verify_certificate_chain_manual(self):
         yield self._sm.open()
 
@@ -361,56 +367,66 @@ class TestEip712CertificateChain(TestCase):
         self.assertEqual(cert_chain[1].issuer, trustroot_eth_key.address(binary=True))
         self.assertEqual(cert_chain[2].issuer, trustroot_eth_key.address(binary=True))
 
-        # CC1:
-        # check certificate types - the first must be a EIP712DelegateCertificate, and all
-        # subsequent certificates must be of type EIP712AuthorityCertificate
+        # Certificate Chain Rules (CCR):
+        #
+        # 1. **CCR-1**: The `chainId` and `verifyingContract` must match for all certificates to what we expect, and `validFrom` before current block number on the respective chain.
+        # 2. **CCR-2**: The type of the first certificate in the chain must be a `EIP712DelegateCertificate`, and all subsequent certificates must be of type `EIP712AuthorityCertificate`.
+        # 3. **CCR-3**: The last certificate must be self-signed (`issuer` equals `subject`), it is a root CA certificate.
+        # 4. **CCR-4**: The intermediate certificate's `issuer` must be equal to the `subject` of the previous certificate.
+        # 5. **CCR-5**: The root certificate must be `validFrom` before the intermediate certificate
+        # 6. **CCR-6**: The `capabilities` of intermediate certificate must be a subset of the root cert
+        # 7. **CCR-7**: The intermediate certificate's `subject` must be the delegate certificate `delegate`
+        # 8. **CCR-8**: The intermediate certificate must be `validFrom` before the delegate certificate
+        # 9. **CCR-9**: The root certificate's signature must be valid and signed by the root certificate's `issuer`.
+        # 10. **CCR-10**: The intermediate certificate's signature must be valid and signed by the intermediate certificate's `issuer`.
+        # 11. **CCR-11**: The delegate certificate's signature must be valid and signed by the `delegate`.
+
+        # CCR-1
+        chainId = 1
+        verifyingContract = a2b_hex('0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'[2:])
+        for cert in cert_chain:
+            self.assertEqual(cert.chainId, chainId)
+            self.assertEqual(cert.verifyingContract, verifyingContract)
+
+        # CCR-2
         self.assertIsInstance(cert_chain[0], EIP712DelegateCertificate)
         for i in [1, len(cert_chain) - 1]:
             self.assertIsInstance(cert_chain[i], EIP712AuthorityCertificate)
 
-        # CC2:
-        # last certificate must be self-signed - it is a root CA certificate
+        # CCR-3
         self.assertEqual(cert_chain[2].subject, cert_chain[2].issuer)
 
-        # CC3.1:
-        # intermediate certificate's issuer must be the root CA certificate subject
+        # CCR-4
         self.assertEqual(cert_chain[1].issuer, cert_chain[2].subject)
 
-        # CC3.2:
-        # and root certificate must be valid before the intermediate certificate
+        # CCR-5
         self.assertLessEqual(cert_chain[2].validFrom, cert_chain[1].validFrom)
 
-        # CC3.3:
-        # and capabilities of intermediate certificate must be a subset of the root cert
+        # CCR-6
         self.assertTrue(cert_chain[2].capabilities == cert_chain[2].capabilities | cert_chain[1].capabilities)
 
-        # CC4.1:
-        # intermediate certificate's subject must be the delegate certificate delegate
+        # CCR-7
         self.assertEqual(cert_chain[1].subject, cert_chain[0].delegate)
 
-        # CC4.2:
-        # and intermediate certificate must be valid before the delegate certificate
+        # CCR-8
         self.assertLessEqual(cert_chain[1].validFrom, cert_chain[0].validFrom)
 
-        # CC5:
-        # verify signature on root certificate
+        # CCR-9
         _issuer = cert_chain[2].recover(a2b_hex(cert_sigs[2]))
         self.assertEqual(_issuer, trustroot_eth_key.address(binary=True))
 
-        # CC6:
-        # verify signature on intermediate certificate
+        # CCR-10
         _issuer = cert_chain[1].recover(a2b_hex(cert_sigs[1]))
         self.assertEqual(_issuer, trustroot_eth_key.address(binary=True))
 
-        # CC7:
-        # verify signature on delegate certificate
+        # CCR-11
         _issuer = cert_chain[0].recover(a2b_hex(cert_sigs[0]))
         self.assertEqual(_issuer, delegate_eth_key.address(binary=True))
 
         yield self._sm.close()
 
     @inlineCallbacks
-    def test_eip712_verify_certificate_chain(self):
+    def test_eip712_verify_certificate_chain_highlevel(self):
         yield self._sm.open()
 
         # keys originally used to sign the certificates in the certificate chain
@@ -418,7 +434,7 @@ class TestEip712CertificateChain(TestCase):
         delegate_eth_key: EthereumKey = self._sm[1]
         delegate_cs_key: CryptosignKey = self._sm[6]
 
-        certificates = verify_certificate_chain(self._certs_expected1)
+        certificates = parse_certificate_chain(self._certs_expected1)
 
         self.assertEqual(certificates[2].issuer, trustroot_eth_key.address(binary=True))
 

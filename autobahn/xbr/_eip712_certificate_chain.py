@@ -31,7 +31,7 @@ from autobahn.xbr._eip712_delegate_certificate import EIP712DelegateCertificate
 from autobahn.xbr._eip712_authority_certificate import EIP712AuthorityCertificate
 
 
-def verify_certificate_chain(certificates: List[Tuple[Dict[str, Any], str]]) \
+def parse_certificate_chain(certificates: List[Tuple[Dict[str, Any], str]]) \
         -> List[Union[EIP712DelegateCertificate, EIP712AuthorityCertificate]]:
     """
 
