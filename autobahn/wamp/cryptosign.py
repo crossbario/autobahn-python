@@ -24,6 +24,7 @@
 #
 ###############################################################################
 
+import os
 import binascii
 from binascii import a2b_hex, b2a_hex
 import struct
@@ -35,6 +36,7 @@ from autobahn import util
 from autobahn.wamp.interfaces import ISecurityModule, ICryptosignKey
 from autobahn.wamp.types import Challenge
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
+from autobahn.util import parse_keyfile
 
 __all__ = [
     'HAS_CRYPTOSIGN',
@@ -435,7 +437,6 @@ if HAS_CRYPTOSIGN:
 
         return d2
 
-    @util.public
     class CryptosignKey(object):
         """
         A cryptosign private key for signing, and hence usable for authentication or a
@@ -489,7 +490,6 @@ if HAS_CRYPTOSIGN:
             """
             return self._can_sign
 
-        @util.public
         def sign(self, data: bytes) -> bytes:
             """
             Implements :meth:`autobahn.wamp.interfaces.IKey.sign`.
@@ -508,7 +508,6 @@ if HAS_CRYPTOSIGN:
             # the signature
             return txaio.create_future_success(sig.signature)
 
-        @util.public
         def sign_challenge(self, challenge: Challenge, channel_id: Optional[bytes] = None,
                            channel_id_type: Optional[str] = None) -> bytes:
             """
@@ -521,7 +520,6 @@ if HAS_CRYPTOSIGN:
 
             return _sign_challenge(data, self.sign)
 
-        @util.public
         def public_key(self, binary: bool = False) -> Union[str, bytes]:
             """
             Returns the public key part of a signing key or the (public) verification key.
@@ -539,22 +537,32 @@ if HAS_CRYPTOSIGN:
             else:
                 return key.encode(encoder=encoding.HexEncoder).decode('ascii')
 
-        @util.public
         @classmethod
-        def from_bytes(cls, key_data: bytes, comment: Optional[str] = None) -> 'CryptosignKey':
+        def from_pubkey(cls, pubkey: bytes, comment: Optional[str] = None) -> 'CryptosignKey':
             if not (comment is None or type(comment) == str):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
-            if type(key_data) != bytes:
-                raise ValueError("invalid key type {} (expected binary)".format(type(key_data)))
+            if type(pubkey) != bytes:
+                raise ValueError("invalid key type {} (expected binary)".format(type(pubkey)))
 
-            if len(key_data) != 32:
-                raise ValueError("invalid key length {} (expected 32)".format(len(key_data)))
+            if len(pubkey) != 32:
+                raise ValueError("invalid key length {} (expected 32)".format(len(pubkey)))
 
-            key = signing.SigningKey(key_data)
-            return cls(key=key, can_sign=True, comment=comment)
+            return cls(key=signing.VerifyKey(pubkey), can_sign=False, comment=comment)
 
-        @util.public
+        @classmethod
+        def from_bytes(cls, key: bytes, comment: Optional[str] = None) -> 'CryptosignKey':
+            if not (comment is None or type(comment) == str):
+                raise ValueError("invalid type {} for comment".format(type(comment)))
+
+            if type(key) != bytes:
+                raise ValueError("invalid key type {} (expected binary)".format(type(key)))
+
+            if len(key) != 32:
+                raise ValueError("invalid key length {} (expected 32)".format(len(key)))
+
+            return cls(key=signing.SigningKey(key), can_sign=True, comment=comment)
+
         @classmethod
         def from_file(cls, filename: str, comment: Optional[str] = None) -> 'CryptosignKey':
             """
@@ -581,7 +589,6 @@ if HAS_CRYPTOSIGN:
 
             return cls.from_bytes(key_data, comment=comment)
 
-        @util.public
         @classmethod
         def from_ssh_file(cls, filename: str) -> 'CryptosignKey':
             """
@@ -594,7 +601,6 @@ if HAS_CRYPTOSIGN:
                 key_data = f.read().decode('utf-8').strip()
             return cls.from_ssh_bytes(key_data)
 
-        @util.public
         @classmethod
         def from_ssh_bytes(cls, key_data: str) -> 'CryptosignKey':
             """
@@ -644,6 +650,53 @@ if HAS_CRYPTOSIGN:
             key = cls.from_bytes(key_raw)
 
             return key
+
+        @classmethod
+        def from_keyfile(cls, keyfile: str) -> 'CryptosignKey':
+            """
+            Create a public or private key from reading the given public or private key file.
+
+            Here is an example key file that includes an CryptosignKey private key ``private-key-ed25519``, which
+            is loaded in this function, and other fields, which are ignored by this function:
+
+            .. code-block::
+
+                This is a comment (all lines until the first empty line are comments indeed).
+
+                creator: oberstet@intel-nuci7
+                created-at: 2022-07-05T12:29:48.832Z
+                user-id: oberstet@intel-nuci7
+                public-key-ed25519: 7326d9dc0307681cc6940fde0e60eb31a6e4d642a81e55c434462ce31f95deed
+                public-adr-eth: 0x10848feBdf7f200Ba989CDf7E3eEB3EC03ae7768
+                private-key-ed25519: f750f42b0430e28a2e272c3cedcae4dcc4a1cf33bc345c35099d3322626ab666
+                private-key-eth: 4d787714dcb0ae52e1c5d2144648c255d660b9a55eac9deeb80d9f506f501025
+
+            :param keyfile: Path (relative or absolute) to a public or private keys file.
+            :return: New instance of :class:`CryptosignKey`
+            """
+            if not os.path.exists(keyfile) or not os.path.isfile(keyfile):
+                raise RuntimeError('keyfile "{}" is not a file'.format(keyfile))
+
+            # now load the private or public key file - this returns a dict which should
+            # include (for a private key):
+            #
+            #   private-key-ed25519: 20e8c05d0ede9506462bb049c4843032b18e8e75b314583d0c8d8a4942f9be40
+            #
+            # or (for a public key only):
+            #
+            #   public-key-ed25519: 7326d9dc0307681cc6940fde0e60eb31a6e4d642a81e55c434462ce31f95deed
+            #
+            data = parse_keyfile(keyfile)
+
+            privkey_ed25519_hex = data.get('private-key-ed25519', None)
+            if privkey_ed25519_hex is None:
+                pubkey_ed25519_hex = data.get('public-key-ed25519', None)
+                if pubkey_ed25519_hex is None:
+                    raise RuntimeError('neither "private-key-ed25519" nor "public-key-ed25519" found in keyfile {}'.format(keyfile))
+                else:
+                    return CryptosignKey.from_pubkey(binascii.a2b_hex(pubkey_ed25519_hex))
+            else:
+                return CryptosignKey.from_bytes(binascii.a2b_hex(privkey_ed25519_hex))
 
     ICryptosignKey.register(CryptosignKey)
 

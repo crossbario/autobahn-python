@@ -35,6 +35,7 @@ import random
 import binascii
 import socket
 import subprocess
+from collections import OrderedDict
 
 from typing import Optional
 from datetime import datetime, timedelta
@@ -69,6 +70,8 @@ __all__ = ("public",
            "generate_serial_number",
            "generate_user_password",
            "machine_id",
+           'parse_keyfile',
+           'write_keyfile',
            "hl",
            "hltype",
            "hlid",
@@ -982,3 +985,60 @@ def without_0x(address):
     if address and address.startswith('0x'):
         return address[2:]
     return address
+
+
+def write_keyfile(filepath, tags, msg):
+    """
+    Internal helper, write the given tags to the given file-
+    """
+    with open(filepath, 'w') as f:
+        f.write(msg)
+        for (tag, value) in tags.items():
+            if value:
+                f.write('{}: {}\n'.format(tag, value))
+
+
+def parse_keyfile(key_path: str, private: bool = True) -> OrderedDict:
+    """
+    Internal helper. This parses a node.pub or node.priv file and
+    returns a dict mapping tags -> values.
+    """
+    if os.path.exists(key_path) and not os.path.isfile(key_path):
+        raise Exception("Key file '{}' exists, but isn't a file".format(key_path))
+
+    allowed_tags = [
+        # common tags
+        'public-key-ed25519',
+        'public-adr-eth',
+        'created-at',
+        'creator',
+
+        # user profile
+        'user-id',
+
+        # node profile
+        'machine-id',
+        'node-authid',
+        'node-cluster-ip',
+    ]
+
+    if private:
+        # private key file tags
+        allowed_tags.extend(['private-key-ed25519', 'private-key-eth'])
+
+    tags = OrderedDict()  # type: ignore
+    with open(key_path, 'r') as key_file:
+        got_blankline = False
+        for line in key_file.readlines():
+            if line.strip() == '':
+                got_blankline = True
+            elif got_blankline:
+                tag, value = line.split(':', 1)
+                tag = tag.strip().lower()
+                value = value.strip()
+                if tag not in allowed_tags:
+                    raise Exception("Invalid tag '{}' in key file {}".format(tag, key_path))
+                if tag in tags:
+                    raise Exception("Duplicate tag '{}' in key file {}".format(tag, key_path))
+                tags[tag] = value
+    return tags

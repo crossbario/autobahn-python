@@ -5,6 +5,16 @@
 Changelog
 =========
 
+22.7.1
+------
+
+* new: EIP712 certificate chains, incl. use for WAMP-Cryptosign
+* fix: improve message logging at trace log level
+* fix: forward correct TLS channel ID once the TLS handshake is complete
+* new: add eip712 types for WAMP-Cryptosign certificates
+* new: add more helpers to EthereumKey and CryptosignKey
+* new: add EthereumKey.from_keyfile, CryptosignKey.from_keyfile, CryptosignKey.from_pubkey
+
 22.6.1
 ------
 

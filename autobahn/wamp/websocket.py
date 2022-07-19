@@ -29,6 +29,7 @@ import traceback
 
 from typing import Optional, Dict, Tuple
 
+from autobahn.util import hlval
 from autobahn.websocket import protocol
 from autobahn.websocket.types import ConnectionDeny, ConnectionRequest, ConnectionResponse
 from autobahn.wamp.types import TransportDetails
@@ -63,6 +64,7 @@ class WampWebSocketProtocol(object):
         try:
             self._session = self.factory._factory()
             self._session._transport = self
+
             self._session.onOpen(self)
         except Exception as e:
             self.log.critical("{tb}", tb=traceback.format_exc())
@@ -94,12 +96,13 @@ class WampWebSocketProtocol(object):
         """
         try:
             for msg in self._serializer.unserialize(payload, isBinary):
-                self.log.trace(
-                    "WAMP RECV: message={message}, session={session}, authid={authid}",
-                    authid=self._session._authid,
-                    session=self._session._session_id,
-                    message=msg,
-                )
+                self.log.trace('\n{action1}{session}, {authid}{action2}\n  {message}\n{action3}',
+                               action1=hlval('WAMP-Receive(', color='green', bold=True),
+                               authid=hlval(self._session._authid, color='green', bold=False) if self._session._authid else '-',
+                               session=hlval(self._session._session_id, color='green', bold=False) if self._session._session_id else '-',
+                               action2=hlval(') <<', color='green', bold=True),
+                               action3=hlval('<<', color='green', bold=True),
+                               message=msg)
                 self._session.onMessage(msg)
 
         except ProtocolError as e:
@@ -118,12 +121,13 @@ class WampWebSocketProtocol(object):
         """
         if self.isOpen():
             try:
-                self.log.trace(
-                    "WAMP SEND: message={message}, session={session}, authid={authid}",
-                    authid=self._session._authid,
-                    session=self._session._session_id,
-                    message=msg,
-                )
+                self.log.trace('\n{action1}{session}, {authid}{action2}\n  {message}\n{action3}',
+                               action1=hlval('WAMP-Transmit(', color='red', bold=True),
+                               authid=hlval(self._session._authid, color='red', bold=False) if self._session._authid else '-',
+                               session=hlval(self._session._session_id, color='red', bold=False) if self._session._session_id else '-',
+                               action2=hlval(') >>', color='red', bold=True),
+                               action3=hlval('>>', color='red', bold=True),
+                               message=msg)
                 payload, isBinary = self._serializer.serialize(msg)
             except Exception as e:
                 self.log.error("WAMP message serialization error: {}".format(e))

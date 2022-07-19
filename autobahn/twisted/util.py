@@ -174,17 +174,19 @@ else:
             # see also: https://bugs.python.org/file22646/tls_channel_binding.patch
             if is_server != is_not_resumed:
                 # for routers (=servers) XOR new sessions, the channel ID is based on the TLS Finished message we
-                # expected to receive from the client
+                # expected to receive from the client: contents of the message or None if the TLS handshake has
+                # not yet completed.
                 tls_finished_msg = connection.get_peer_finished()
             else:
                 # for clients XOR resumed sessions, the channel ID is based on the TLS Finished message we sent
-                # to the router (=server)
+                # to the router (=server): contents of the message or None if the TLS handshake has not yet completed.
                 tls_finished_msg = connection.get_finished()
 
             if tls_finished_msg is None:
-                # this can occur if we made a successful connection (in a
-                # TCP sense) but something failed with the TLS handshake
-                # (e.g. invalid certificate)
+                # this can occur when:
+                #   1. we made a successful connection (in a TCP sense) but something failed with
+                #      the TLS handshake (e.g. invalid certificate)
+                #   2. the TLS handshake has not yet completed
                 return b'\x00' * 32
             else:
                 m = hashlib.sha256()
@@ -280,6 +282,7 @@ def create_transport_details(transport: Union[ITransport, IProcessTransport], is
 
     if _HAS_TLS and ISSLTransport.providedBy(transport):
         channel_id = {
+            # this will only be filled when the TLS opening handshake is complete (!)
             'tls-unique': transport_channel_id(transport, is_server, 'tls-unique'),
         }
         channel_type = TransportDetails.CHANNEL_TYPE_TLS
@@ -294,6 +297,8 @@ def create_transport_details(transport: Union[ITransport, IProcessTransport], is
     # FIXME: really set a default (websocket)?
     channel_framing = TransportDetails.CHANNEL_FRAMING_WEBSOCKET
 
-    return TransportDetails(channel_type=channel_type, channel_framing=channel_framing, peer=peer,
-                            is_server=is_server, own_pid=own_pid, own_tid=own_tid, own_fd=own_fd,
-                            is_secure=is_secure, channel_id=channel_id, peer_cert=peer_cert)
+    td = TransportDetails(channel_type=channel_type, channel_framing=channel_framing, peer=peer,
+                          is_server=is_server, own_pid=own_pid, own_tid=own_tid, own_fd=own_fd,
+                          is_secure=is_secure, channel_id=channel_id, peer_cert=peer_cert)
+
+    return td

@@ -24,6 +24,17 @@
 #
 ###############################################################################
 
-__version__ = '22.7.1.dev1'
 
-__build__ = '00000000-0000000'
+class EIP712Certificate(object):
+
+    def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int):
+        self.chainId = chainId
+        self.verifyingContract = verifyingContract
+        self.validFrom = validFrom
+
+    def recover(self, signature: bytes) -> bytes:
+        raise NotImplementedError()
+
+    @staticmethod
+    def parse(data) -> 'EIP712Certificate':
+        raise NotImplementedError()

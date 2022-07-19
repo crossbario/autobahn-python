@@ -39,7 +39,7 @@ from nacl.encoding import HexEncoder
 from eth_keys import KeyAPI
 from eth_keys.backends import NativeECCBackend
 
-from autobahn.util import utcnow
+from autobahn.util import utcnow, write_keyfile, parse_keyfile
 from autobahn.wamp import cryptosign
 
 if 'USER' in os.environ:
@@ -94,63 +94,6 @@ def _creator(yes_to_all=False):
         return '{}@{}'.format(user, hostname)
 
 
-def _write_user_key(filepath, tags, msg):
-    """
-    Internal helper, write the given tags to the given file-
-    """
-    with open(filepath, 'w') as f:
-        f.write(msg)
-        for (tag, value) in tags.items():
-            if value:
-                f.write('{}: {}\n'.format(tag, value))
-
-
-def _parse_user_key_file(key_path: str, private: bool = True) -> OrderedDict:
-    """
-    Internal helper. This parses a node.pub or node.priv file and
-    returns a dict mapping tags -> values.
-    """
-    if os.path.exists(key_path) and not os.path.isfile(key_path):
-        raise Exception("Key file '{}' exists, but isn't a file".format(key_path))
-
-    allowed_tags = [
-        # common tags
-        'public-key-ed25519',
-        'public-adr-eth',
-        'created-at',
-        'creator',
-
-        # user profile
-        'user-id',
-
-        # node profile
-        'machine-id',
-        'node-authid',
-        'node-cluster-ip',
-    ]
-
-    if private:
-        # private key file tags
-        allowed_tags.extend(['private-key-ed25519', 'private-key-eth'])
-
-    tags = OrderedDict()  # type: ignore
-    with open(key_path, 'r') as key_file:
-        got_blankline = False
-        for line in key_file.readlines():
-            if line.strip() == '':
-                got_blankline = True
-            elif got_blankline:
-                tag, value = line.split(':', 1)
-                tag = tag.strip().lower()
-                value = value.strip()
-                if tag not in allowed_tags:
-                    raise Exception("Invalid tag '{}' in key file {}".format(tag, key_path))
-                if tag in tags:
-                    raise Exception("Duplicate tag '{}' in key file {}".format(tag, key_path))
-                tags[tag] = value
-    return tags
-
-
 class UserKey(object):
     def __init__(self, privkey, pubkey, yes_to_all=True):
 
@@ -177,7 +120,7 @@ class UserKey(object):
 
             # node private key seems to exist already .. check!
 
-            priv_tags = _parse_user_key_file(privkey_path, private=True)
+            priv_tags = parse_keyfile(privkey_path, private=True)
             for tag in ['creator', 'created-at', 'user-id', 'public-key-ed25519', 'private-key-ed25519']:
                 if tag not in priv_tags:
                     raise Exception("Corrupt user private key file {} - {} tag not found".format(privkey_path, tag))
@@ -208,7 +151,7 @@ class UserKey(object):
                                          " correspond to private-key-eth").format(privkey_path))
 
             if os.path.exists(pubkey_path):
-                pub_tags = _parse_user_key_file(pubkey_path, private=False)
+                pub_tags = parse_keyfile(pubkey_path, private=False)
                 for tag in ['creator', 'created-at', 'user-id', 'public-key-ed25519']:
                     if tag not in pub_tags:
                         raise Exception("Corrupt user public key file {} - {} tag not found".format(pubkey_path, tag))
@@ -232,7 +175,7 @@ class UserKey(object):
                     ('public-adr-eth', eth_pubadr),
                 ])
                 msg = 'Crossbar.io user public key\n\n'
-                _write_user_key(pubkey_path, pub_tags, msg)
+                write_keyfile(pubkey_path, pub_tags, msg)
 
                 click.echo('Re-created user public key from private key: {}'.format(pubkey_path))
 
@@ -261,14 +204,14 @@ class UserKey(object):
                 ('public-adr-eth', eth_pubadr),
             ])
             msg = 'Crossbar.io user public key\n\n'
-            _write_user_key(pubkey_path, tags, msg)
+            write_keyfile(pubkey_path, tags, msg)
             os.chmod(pubkey_path, 420)
 
             # now, add the private key and write the private file
             tags['private-key-ed25519'] = privkey_hex
             tags['private-key-eth'] = eth_privkey_seed_hex
             msg = 'Crossbar.io user private key - KEEP THIS SAFE!\n\n'
-            _write_user_key(privkey_path, tags, msg)
+            write_keyfile(privkey_path, tags, msg)
             os.chmod(privkey_path, 384)
 
             click.echo('New user public key generated: {}'.format(pubkey_path))

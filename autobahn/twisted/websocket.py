@@ -49,7 +49,7 @@ from autobahn.wamp.types import TransportDetails
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
 from autobahn.websocket import protocol
 from autobahn.websocket.interfaces import IWebSocketClientAgent
-from autobahn.twisted.util import create_transport_details
+from autobahn.twisted.util import create_transport_details, transport_channel_id
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
@@ -355,6 +355,14 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             self.transport.loseConnection()
 
     def _onOpen(self):
+        if self._transport_details.is_secure:
+            # now that the TLS opening handshake is complete, the actual TLS channel ID
+            # will be available. make sure to set it!
+            channel_id = {
+                'tls-unique': transport_channel_id(self.transport, self._transport_details.is_server, 'tls-unique'),
+            }
+            self._transport_details.channel_id = channel_id
+
         self.onOpen()
 
     def _onMessageBegin(self, isBinary):
