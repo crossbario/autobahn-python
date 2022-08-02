@@ -54,7 +54,7 @@ txaio.use_twisted()
 
 # XXX other ideas to get 'connection config':
 # - if there .crossbar/ here, load that config and accept a --name or
-#   so to idicate which transport to use
+#   so to indicate which transport to use
 
 # wamp [options] {call,publish,subscribe,register} wamp-uri [args] [kwargs]
 #

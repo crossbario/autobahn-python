@@ -56,7 +56,7 @@ component = Component(
 @component.on_join
 def join(session, details):
     print("joined {}: {}".format(session, details))
-    # if you want full tracbacks on the client-side, you enable that
+    # if you want full trackbacks on the client-side, you enable that
     # here:
     # session.traceback_app = True
 

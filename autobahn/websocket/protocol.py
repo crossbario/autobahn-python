@@ -2215,7 +2215,7 @@ class WebSocketProtocol(ObservableMixin):
             self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
 
         # when =0 : frame was completed exactly
-        # when >0 : frame is still uncomplete and that much amount is still left to complete the frame
+        # when >0 : frame is still incomplete and that much amount is still left to complete the frame
         # when <0 : frame was completed and there was this much unconsumed data in payload argument
         #
         return rest
