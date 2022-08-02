@@ -2561,7 +2561,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
               * ``(str, dict)``: a pair of subprotocol accepted and HTTP headers to send to the client.
            You can also return a Deferred/Future that resolves/rejects to the above.
         """
-        self.log.info('{func}: request={request}', func=hltype(self.onConnect), request=request)
+        self.log.debug('{func}: request={request}', func=hltype(self.onConnect), request=request)
         return None
 
     def _connectionMade(self):
