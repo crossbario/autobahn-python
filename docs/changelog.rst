@@ -8,6 +8,9 @@ Changelog
 22.7.1
 ------
 
+* fix: Fix a few typos in docs (#1587)
+* fix: remove log noise from autobahn.websocket.protocol (#1588)
+* new: add more helpers to EthereumKey and CryptosignKey (#1583)
 * new: EIP712 certificate chains, incl. use for WAMP-Cryptosign
 * fix: improve message logging at trace log level
 * fix: forward correct TLS channel ID once the TLS handshake is complete
