@@ -2,7 +2,7 @@ awscli
 backports.tempfile>=1.0
 bumpversion>=0.5.3
 codecov>=2.0.15
-flake8>=3.5.0
+flake8<5
 humanize>=0.5.1
 mypy>=0.610; python_version >= '3.4' and platform_python_implementation != 'PyPy'
 passlib
