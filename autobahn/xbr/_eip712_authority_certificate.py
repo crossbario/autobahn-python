@@ -25,8 +25,12 @@
 ###############################################################################
 
 from binascii import a2b_hex
+from typing import Dict, Any
+
+import web3
 
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
+from autobahn.xbr._secmod import EthereumKey
 
 from ._eip712_base import sign, recover, is_chain_id, is_address, is_block_number, is_signature, is_eth_privkey
 from ._eip712_certificate import EIP712Certificate
@@ -217,6 +221,17 @@ class EIP712AuthorityCertificate(EIP712Certificate):
         self.capabilities = capabilities
         self.meta = meta
 
+    def sign(self, key: EthereumKey) -> bytes:
+        eip712 = create_eip712_authority_certificate(self.chainId,
+                                                     self.verifyingContract,
+                                                     self.validFrom,
+                                                     self.issuer,
+                                                     self.subject,
+                                                     self.realm,
+                                                     self.capabilities,
+                                                     self.meta)
+        return key.sign_typed_data(eip712, binary=False)
+
     def recover(self, signature: bytes) -> bytes:
         return recover_eip712_authority_certificate(self.chainId,
                                                     self.verifyingContract,
@@ -227,6 +242,30 @@ class EIP712AuthorityCertificate(EIP712Certificate):
                                                     self.capabilities,
                                                     self.meta,
                                                     signature)
+
+    def marshal(self, binary: bool = False) -> Dict[str, Any]:
+        if binary:
+            return {
+                'chainId': self.chainId,
+                'verifyingContract': self.verifyingContract,
+                'validFrom': self.validFrom,
+                'issuer': self.issuer,
+                'subject': self.subject,
+                'realm': self.realm,
+                'capabilities': self.capabilities,
+                'meta': self.meta,
+            }
+        else:
+            return {
+                'chainId': self.chainId,
+                'verifyingContract': web3.Web3.toChecksumAddress(self.verifyingContract) if self.verifyingContract else None,
+                'validFrom': self.validFrom,
+                'issuer': web3.Web3.toChecksumAddress(self.issuer) if self.issuer else None,
+                'subject': web3.Web3.toChecksumAddress(self.subject) if self.subject else None,
+                'realm': web3.Web3.toChecksumAddress(self.realm) if self.realm else None,
+                'capabilities': self.capabilities,
+                'meta': self.meta,
+            }
 
     @staticmethod
     def parse(data) -> 'EIP712AuthorityCertificate':

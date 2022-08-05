@@ -27,8 +27,6 @@
 from binascii import a2b_hex
 from typing import Dict, Any
 
-import json
-
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
 from autobahn.xbr._secmod import EthereumKey
 
@@ -209,9 +207,7 @@ class EIP712DelegateCertificate(EIP712Certificate):
                                                     self.csPubKey,
                                                     self.bootedAt,
                                                     self.meta)
-        # FIXME
-        data = json.dumps(eip712).encode()
-        return key.sign(data)
+        return key.sign_typed_data(eip712, binary=False)
 
     def recover(self, signature: bytes) -> bytes:
         return recover_eip712_delegate_certificate(self.chainId,

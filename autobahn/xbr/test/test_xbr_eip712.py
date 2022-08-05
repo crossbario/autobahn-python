@@ -327,7 +327,51 @@ class TestEip712CertificateChain(TestCase):
     @inlineCallbacks
     def test_eip712_create_certificate_chain_highlevel(self):
         yield self._sm.open()
-        # FIXME
+
+        # keys needed to create all certificates in certificate chain
+        ca_key: EthereumKey = self._sm[0]
+
+        # data needed for root authority certificate: cert3
+        ca_cert_chainId = 1
+        ca_cert_verifyingContract = a2b_hex('0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'[2:])
+        ca_cert_validFrom = 666666
+        ca_cert_issuer = ca_key.address(binary=True)
+        ca_cert_subject = ca_cert_issuer
+        ca_cert_realm = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
+        ca_cert_capabilities = EIP712AuthorityCertificate.CAPABILITY_ROOT_CA | EIP712AuthorityCertificate.CAPABILITY_INTERMEDIATE_CA | EIP712AuthorityCertificate.CAPABILITY_PUBLIC_RELAY | EIP712AuthorityCertificate.CAPABILITY_PRIVATE_RELAY | EIP712AuthorityCertificate.CAPABILITY_PROVIDER | EIP712AuthorityCertificate.CAPABILITY_CONSUMER
+        ca_cert_meta = ''
+
+        # create root authority certificate signature: directly from provided data attributes
+        ca_cert_data = create_eip712_authority_certificate(chainId=ca_cert_chainId,
+                                                           verifyingContract=ca_cert_verifyingContract,
+                                                           validFrom=ca_cert_validFrom, issuer=ca_cert_issuer,
+                                                           subject=ca_cert_subject, realm=ca_cert_realm,
+                                                           capabilities=ca_cert_capabilities, meta=ca_cert_meta)
+        ca_cert_sig = yield ca_key.sign_typed_data(ca_cert_data, binary=False)
+
+        # create root authority certificate signature: from certificate object
+        ca_cert = EIP712AuthorityCertificate(chainId=ca_cert_chainId,
+                                             verifyingContract=ca_cert_verifyingContract,
+                                             validFrom=ca_cert_validFrom,
+                                             issuer=ca_cert_issuer,
+                                             subject=ca_cert_subject,
+                                             realm=ca_cert_realm,
+                                             capabilities=ca_cert_capabilities,
+                                             meta=ca_cert_meta)
+        ca_cert_sig2 = yield ca_cert.sign(ca_key)
+
+        # re-create root authority certificate from round-tripping (marshal-parse)
+        ca_cert2 = EIP712AuthorityCertificate.parse(ca_cert.marshal())
+        ca_cert_sig3 = yield ca_cert2.sign(ca_key)
+
+        # all different ways to compute signature must result in same signature value
+        self.assertEqual(ca_cert_sig, ca_cert_sig2)
+        self.assertEqual(ca_cert_sig, ca_cert_sig3)
+
+        # and match this signature value
+        self.assertEqual(ca_cert_sig, 'd9e679753e1120a8ba8edea4895d2e056ba98eaa1acbe11bf6210f3a48a56de830aa6a566cc4920'
+                                      'c74a284ffcd9f7d1af5fe229268a44030522db19d5a75f4131c')
+
         yield self._sm.close()
 
     @inlineCallbacks
