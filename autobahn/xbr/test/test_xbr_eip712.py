@@ -26,6 +26,7 @@
 
 import os
 import sys
+import tempfile
 from binascii import a2b_hex, b2a_hex
 from unittest import skipIf
 
@@ -371,6 +372,18 @@ class TestEip712CertificateChain(TestCase):
         # and match this signature value
         self.assertEqual(ca_cert_sig, 'd9e679753e1120a8ba8edea4895d2e056ba98eaa1acbe11bf6210f3a48a56de830aa6a566cc4920'
                                       'c74a284ffcd9f7d1af5fe229268a44030522db19d5a75f4131c')
+
+        # test save/load instance to/from file
+        with tempfile.NamedTemporaryFile() as fd:
+            # save certificate to file
+            ca_cert.save(fd.name)
+
+            # load certificate from file
+            ca_cert3 = EIP712AuthorityCertificate.load(fd.name)
+
+            # ensure it produces the same signature
+            ca_cert_sig4 = yield ca_cert3.sign(ca_key)
+            self.assertEqual(ca_cert_sig, ca_cert_sig4)
 
         yield self._sm.close()
 

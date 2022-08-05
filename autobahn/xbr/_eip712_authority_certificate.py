@@ -23,7 +23,9 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-
+import os.path
+import json
+import pprint
 from binascii import a2b_hex
 from typing import Dict, Any
 
@@ -221,7 +223,36 @@ class EIP712AuthorityCertificate(EIP712Certificate):
         self.capabilities = capabilities
         self.meta = meta
 
-    def sign(self, key: EthereumKey) -> bytes:
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+        if not EIP712AuthorityCertificate.__eq__(self, other):
+            return False
+        if other.chainId != self.chainId:
+            return False
+        if other.verifyingContract != self.verifyingContract:
+            return False
+        if other.validFrom != self.validFrom:
+            return False
+        if other.issuer != self.issuer:
+            return False
+        if other.subject != self.subject:
+            return False
+        if other.realm != self.realm:
+            return False
+        if other.capabilities != self.capabilities:
+            return False
+        if other.meta != self.meta:
+            return False
+        return True
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    def __str__(self) -> str:
+        return pprint.pformat(self.marshal())
+
+    def sign(self, key: EthereumKey, binary: bool = False) -> bytes:
         eip712 = create_eip712_authority_certificate(self.chainId,
                                                      self.verifyingContract,
                                                      self.validFrom,
@@ -230,7 +261,7 @@ class EIP712AuthorityCertificate(EIP712Certificate):
                                                      self.realm,
                                                      self.capabilities,
                                                      self.meta)
-        return key.sign_typed_data(eip712, binary=False)
+        return key.sign_typed_data(eip712, binary=binary)
 
     def recover(self, signature: bytes) -> bytes:
         return recover_eip712_authority_certificate(self.chainId,
@@ -246,6 +277,7 @@ class EIP712AuthorityCertificate(EIP712Certificate):
     def marshal(self, binary: bool = False) -> Dict[str, Any]:
         if binary:
             return {
+                'type': 'EIP712AuthorityCertificate',
                 'chainId': self.chainId,
                 'verifyingContract': self.verifyingContract,
                 'validFrom': self.validFrom,
@@ -257,6 +289,7 @@ class EIP712AuthorityCertificate(EIP712Certificate):
             }
         else:
             return {
+                'type': 'EIP712AuthorityCertificate',
                 'chainId': self.chainId,
                 'verifyingContract': web3.Web3.toChecksumAddress(self.verifyingContract) if self.verifyingContract else None,
                 'validFrom': self.validFrom,
@@ -272,9 +305,13 @@ class EIP712AuthorityCertificate(EIP712Certificate):
         if type(data) != dict:
             raise ValueError('invalid type {} for EIP712AuthorityCertificate'.format(type(data)))
         for k in data:
-            if k not in ['chainId', 'verifyingContract', 'validFrom', 'issuer', 'subject',
+            if k not in ['type', 'chainId', 'verifyingContract', 'validFrom', 'issuer', 'subject',
                          'realm', 'capabilities', 'meta']:
                 raise ValueError('invalid attribute "{}" in EIP712AuthorityCertificate'.format(k))
+
+        _type = data.get('type', None)
+        if _type and _type != 'EIP712AuthorityCertificate':
+            raise ValueError('unexpected type "{}" in EIP712AuthorityCertificate'.format(_type))
 
         chainId = data.get('chainId', None)
         if chainId is None:
@@ -341,3 +378,16 @@ class EIP712AuthorityCertificate(EIP712Certificate):
         obj = EIP712AuthorityCertificate(chainId=chainId, verifyingContract=verifyingContract, validFrom=validFrom,
                                          issuer=issuer, subject=subject, realm=realm, capabilities=capabilities, meta=meta)
         return obj
+
+    def save(self, filename):
+        with open(filename, 'wb') as f:
+            data = json.dumps(self.marshal(), ensure_ascii=False).encode('utf8')
+            f.write(data)
+
+    @staticmethod
+    def load(filename) -> 'EIP712AuthorityCertificate':
+        if not os.path.isfile(filename):
+            raise RuntimeError('cannot create EIP712AuthorityCertificate from filename "{}": not a file'.format(filename))
+        with open(filename, 'rb') as f:
+            data = json.loads(f.read())
+            return EIP712AuthorityCertificate.parse(data)
