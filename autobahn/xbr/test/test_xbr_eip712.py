@@ -379,7 +379,10 @@ class TestEip712CertificateChain(TestCase):
             ca_cert.save(fd.name)
 
             # load certificate from file
-            ca_cert3 = EIP712AuthorityCertificate.load(fd.name)
+            ca_cert3, ca_cert3_sig = EIP712AuthorityCertificate.load(fd.name)
+
+            if ca_cert3_sig:
+                self.assertEqual(ca_cert_sig, ca_cert3_sig)
 
             # ensure it produces the same signature
             ca_cert_sig4 = yield ca_cert3.sign(ca_key)

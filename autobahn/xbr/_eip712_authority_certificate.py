@@ -26,10 +26,12 @@
 import os.path
 import json
 import pprint
+import struct
 from binascii import a2b_hex
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Optional
 
 import web3
+import cbor2
 
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
 from autobahn.xbr._secmod import EthereumKey
@@ -301,7 +303,7 @@ class EIP712AuthorityCertificate(EIP712Certificate):
             }
 
     @staticmethod
-    def parse(data) -> 'EIP712AuthorityCertificate':
+    def parse(data, binary: bool = False) -> 'EIP712AuthorityCertificate':
         if type(data) != dict:
             raise ValueError('invalid type {} for EIP712AuthorityCertificate'.format(type(data)))
         for k in data:
@@ -322,13 +324,20 @@ class EIP712AuthorityCertificate(EIP712Certificate):
         verifyingContract = data.get('verifyingContract', None)
         if verifyingContract is None:
             raise ValueError('missing verifyingContract in EIP712AuthorityCertificate')
-        if type(verifyingContract) != str:
-            raise ValueError(
-                'invalid type {} for verifyingContract in EIP712AuthorityCertificate'.format(type(verifyingContract)))
-        if not _URI_PAT_REALM_NAME_ETH.match(verifyingContract):
-            raise ValueError(
-                'invalid value "{}" for verifyingContract in EIP712AuthorityCertificate'.format(verifyingContract))
-        verifyingContract = a2b_hex(verifyingContract[2:])
+        if binary:
+            if type(verifyingContract) != bytes:
+                raise ValueError(
+                    'invalid type {} for verifyingContract in EIP712AuthorityCertificate'.format(type(verifyingContract)))
+            if len(verifyingContract) != 20:
+                raise ValueError('invalid value length {} of verifyingContract'.format(len(verifyingContract)))
+        else:
+            if type(verifyingContract) != str:
+                raise ValueError(
+                    'invalid type {} for verifyingContract in EIP712AuthorityCertificate'.format(type(verifyingContract)))
+            if not _URI_PAT_REALM_NAME_ETH.match(verifyingContract):
+                raise ValueError(
+                    'invalid value "{}" for verifyingContract in EIP712AuthorityCertificate'.format(verifyingContract))
+            verifyingContract = a2b_hex(verifyingContract[2:])
 
         validFrom = data.get('validFrom', None)
         if validFrom is None:
@@ -339,29 +348,50 @@ class EIP712AuthorityCertificate(EIP712Certificate):
         issuer = data.get('issuer', None)
         if issuer is None:
             raise ValueError('missing issuer in EIP712AuthorityCertificate')
-        if type(issuer) != str:
-            raise ValueError('invalid type {} for issuer in EIP712AuthorityCertificate'.format(type(issuer)))
-        if not _URI_PAT_REALM_NAME_ETH.match(issuer):
-            raise ValueError('invalid value "{}" for issuer in EIP712AuthorityCertificate'.format(issuer))
-        issuer = a2b_hex(issuer[2:])
+        if binary:
+            if type(issuer) != bytes:
+                raise ValueError(
+                    'invalid type {} for issuer in EIP712AuthorityCertificate'.format(type(issuer)))
+            if len(issuer) != 20:
+                raise ValueError('invalid value length {} of issuer'.format(len(issuer)))
+        else:
+            if type(issuer) != str:
+                raise ValueError('invalid type {} for issuer in EIP712AuthorityCertificate'.format(type(issuer)))
+            if not _URI_PAT_REALM_NAME_ETH.match(issuer):
+                raise ValueError('invalid value "{}" for issuer in EIP712AuthorityCertificate'.format(issuer))
+            issuer = a2b_hex(issuer[2:])
 
         subject = data.get('subject', None)
         if subject is None:
             raise ValueError('missing subject in EIP712AuthorityCertificate')
-        if type(subject) != str:
-            raise ValueError('invalid type {} for subject in EIP712AuthorityCertificate'.format(type(subject)))
-        if not _URI_PAT_REALM_NAME_ETH.match(subject):
-            raise ValueError('invalid value "{}" for subject in EIP712AuthorityCertificate'.format(subject))
-        subject = a2b_hex(subject[2:])
+        if binary:
+            if type(subject) != bytes:
+                raise ValueError(
+                    'invalid type {} for subject in EIP712AuthorityCertificate'.format(type(subject)))
+            if len(subject) != 20:
+                raise ValueError('invalid value length {} of verifyingContract'.format(len(subject)))
+        else:
+            if type(subject) != str:
+                raise ValueError('invalid type {} for subject in EIP712AuthorityCertificate'.format(type(subject)))
+            if not _URI_PAT_REALM_NAME_ETH.match(subject):
+                raise ValueError('invalid value "{}" for subject in EIP712AuthorityCertificate'.format(subject))
+            subject = a2b_hex(subject[2:])
 
         realm = data.get('realm', None)
         if realm is None:
             raise ValueError('missing realm in EIP712AuthorityCertificate')
-        if type(realm) != str:
-            raise ValueError('invalid type {} for realm in EIP712AuthorityCertificate'.format(type(realm)))
-        if not _URI_PAT_REALM_NAME_ETH.match(realm):
-            raise ValueError('invalid value "{}" for realm in EIP712AuthorityCertificate'.format(realm))
-        realm = a2b_hex(realm[2:])
+        if binary:
+            if type(realm) != bytes:
+                raise ValueError(
+                    'invalid type {} for realm in EIP712AuthorityCertificate'.format(type(realm)))
+            if len(realm) != 20:
+                raise ValueError('invalid value length {} of realm'.format(len(realm)))
+        else:
+            if type(realm) != str:
+                raise ValueError('invalid type {} for realm in EIP712AuthorityCertificate'.format(type(realm)))
+            if not _URI_PAT_REALM_NAME_ETH.match(realm):
+                raise ValueError('invalid value "{}" for realm in EIP712AuthorityCertificate'.format(realm))
+            realm = a2b_hex(realm[2:])
 
         capabilities = data.get('capabilities', None)
         if capabilities is None:
@@ -379,15 +409,42 @@ class EIP712AuthorityCertificate(EIP712Certificate):
                                          issuer=issuer, subject=subject, realm=realm, capabilities=capabilities, meta=meta)
         return obj
 
-    def save(self, filename):
+    def save(self, filename, signature=None):
+        cert_obj = [self.marshal(binary=True), signature]
         with open(filename, 'wb') as f:
-            data = json.dumps(self.marshal(), ensure_ascii=False).encode('utf8')
-            f.write(data)
+            f.write(cbor2.dumps(cert_obj))
 
     @staticmethod
-    def load(filename) -> 'EIP712AuthorityCertificate':
+    def load(filename) -> Tuple['EIP712AuthorityCertificate', Optional[bytes]]:
         if not os.path.isfile(filename):
             raise RuntimeError('cannot create EIP712AuthorityCertificate from filename "{}": not a file'.format(filename))
         with open(filename, 'rb') as f:
-            data = json.loads(f.read())
-            return EIP712AuthorityCertificate.parse(data)
+            cert_data, signature = cbor2.loads(f.read())
+            return EIP712AuthorityCertificate.parse(cert_data, binary=True), signature
+
+    def save_json(self, filename, signature=None):
+        with open(filename, 'wb') as f:
+            data = json.dumps(self.marshal(), ensure_ascii=False).encode('utf8')
+            f.write(data)
+            if signature:
+                assert type(signature) == bytes and len(signature) == 65
+                f.write(signature)
+                f.write(struct.pack('>I', len(signature)))
+            else:
+                f.write(struct.pack('>I', 0))
+
+    @staticmethod
+    def load_json(filename) -> Tuple['EIP712AuthorityCertificate', Optional[bytes]]:
+        if not os.path.isfile(filename):
+            raise RuntimeError('cannot create EIP712AuthorityCertificate from filename "{}": not a file'.format(filename))
+        with open(filename, 'rb') as f:
+            raw_data = f.read()
+            signature_len = struct.unpack('>I', raw_data[len(raw_data) - 4:])[0]
+            if signature_len:
+                assert signature_len == 65, 'invalid signature length {}'.format(signature_len)
+                signature = raw_data[len(raw_data) - 4 - signature_len, len(raw_data) - 4]
+                raw_data = raw_data[0:len(raw_data) - 4 - signature_len]
+            else:
+                raw_data = raw_data[0:len(raw_data) - 4]
+            data = json.loads(raw_data)
+            return EIP712AuthorityCertificate.parse(data), signature
