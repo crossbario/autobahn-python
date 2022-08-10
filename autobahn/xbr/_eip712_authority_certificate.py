@@ -24,9 +24,7 @@
 #
 ###############################################################################
 import os.path
-import json
 import pprint
-import struct
 from binascii import a2b_hex
 from typing import Dict, Any, Tuple, Optional
 
@@ -410,6 +408,24 @@ class EIP712AuthorityCertificate(EIP712Certificate):
         return obj
 
     def save(self, filename, signature=None):
+        """
+
+        Unsigned certificate:
+
+            [cert_hash: bytes, cert_obj: Dict[str, Any]]
+
+        Issuer-signed certificate:
+
+            [cert_hash: bytes, cert_obj: Dict[str, Any], cert_sig1: bytes]
+
+        Poly-signed certificates, e.g. Issuer- and Subject-signed:
+
+            [cert_hash: bytes, cert_obj: Dict[str, Any], cert_sig1: bytes, ..., cert_sigN: bytes]
+
+        :param filename:
+        :param signature:
+        :return:
+        """
         cert_obj = [self.marshal(binary=True), signature]
         with open(filename, 'wb') as f:
             f.write(cbor2.dumps(cert_obj))
@@ -421,30 +437,3 @@ class EIP712AuthorityCertificate(EIP712Certificate):
         with open(filename, 'rb') as f:
             cert_data, signature = cbor2.loads(f.read())
             return EIP712AuthorityCertificate.parse(cert_data, binary=True), signature
-
-    def save_json(self, filename, signature=None):
-        with open(filename, 'wb') as f:
-            data = json.dumps(self.marshal(), ensure_ascii=False).encode('utf8')
-            f.write(data)
-            if signature:
-                assert type(signature) == bytes and len(signature) == 65
-                f.write(signature)
-                f.write(struct.pack('>I', len(signature)))
-            else:
-                f.write(struct.pack('>I', 0))
-
-    @staticmethod
-    def load_json(filename) -> Tuple['EIP712AuthorityCertificate', Optional[bytes]]:
-        if not os.path.isfile(filename):
-            raise RuntimeError('cannot create EIP712AuthorityCertificate from filename "{}": not a file'.format(filename))
-        with open(filename, 'rb') as f:
-            raw_data = f.read()
-            signature_len = struct.unpack('>I', raw_data[len(raw_data) - 4:])[0]
-            if signature_len:
-                assert signature_len == 65, 'invalid signature length {}'.format(signature_len)
-                signature = raw_data[len(raw_data) - 4 - signature_len, len(raw_data) - 4]
-                raw_data = raw_data[0:len(raw_data) - 4 - signature_len]
-            else:
-                raw_data = raw_data[0:len(raw_data) - 4]
-            data = json.loads(raw_data)
-            return EIP712AuthorityCertificate.parse(data), signature

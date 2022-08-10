@@ -25,12 +25,12 @@
 ###############################################################################
 
 import os
-import json
 import pprint
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Optional
 from binascii import a2b_hex, b2a_hex
 
 import web3
+import cbor2
 
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
 from autobahn.xbr._secmod import EthereumKey
@@ -344,15 +344,33 @@ class EIP712DelegateCertificate(EIP712Certificate):
                                         delegate=delegate, csPubKey=csPubKey, bootedAt=bootedAt, meta=meta)
         return obj
 
-    def save(self, filename):
+    def save(self, filename, signature=None):
+        """
+
+        Unsigned certificate:
+
+            [cert_hash: bytes, cert_obj: Dict[str, Any]]
+
+        Issuer-signed certificate:
+
+            [cert_hash: bytes, cert_obj: Dict[str, Any], cert_sig1: bytes]
+
+        Poly-signed certificates, e.g. Issuer- and Subject-signed:
+
+            [cert_hash: bytes, cert_obj: Dict[str, Any], cert_sig1: bytes, ..., cert_sigN: bytes]
+
+        :param filename:
+        :param signature:
+        :return:
+        """
+        cert_obj = [self.marshal(binary=True), signature]
         with open(filename, 'wb') as f:
-            data = json.dumps(self.marshal(), ensure_ascii=False).encode('utf8')
-            f.write(data)
+            f.write(cbor2.dumps(cert_obj))
 
     @staticmethod
-    def load(filename) -> 'EIP712DelegateCertificate':
+    def load(filename) -> Tuple['EIP712DelegateCertificate', Optional[bytes]]:
         if not os.path.isfile(filename):
-            raise RuntimeError('cannot create EIP712AuthorityCertificate from filename "{}": not a file'.format(filename))
+            raise RuntimeError('cannot create EIP712DelegateCertificate from filename "{}": not a file'.format(filename))
         with open(filename, 'rb') as f:
-            data = json.loads(f.read())
-            return EIP712DelegateCertificate.parse(data)
+            cert_data, signature = cbor2.loads(f.read())
+            return EIP712DelegateCertificate.parse(cert_data, binary=True), signature

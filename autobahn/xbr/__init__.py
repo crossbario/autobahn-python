@@ -76,12 +76,11 @@ try:
     from autobahn.xbr._schema import FbsSchema, FbsObject, FbsType, FbsRPCCall, FbsEnum, FbsService, FbsEnumValue, \
     FbsAttribute, FbsField, FbsRepository  # noqa
     from autobahn.xbr._wallet import stretch_argon2_secret, expand_argon2_secret, pkm_from_argon2_secret  # noqa
+    from autobahn.xbr._frealm import FederatedRealm, Seeder  # noqa
+    from autobahn.xbr._secmod import EthereumKey, SecurityModuleMemory  # noqa
+    from autobahn.xbr._userkey import UserKey  # noqa
 
     HAS_XBR = True
-
-    from autobahn.xbr._frealm import FederatedRealm, Seeder  # noqa
-    from autobahn.xbr._secmod import EthereumKey  # noqa
-    from autobahn.xbr._userkey import UserKey  # noqa
 
     if not hasattr(abi, 'collapse_type'):
 
@@ -414,6 +413,7 @@ try:
         'FederatedRealm',
         'Seeder',
         'EthereumKey',
+        'SecurityModuleMemory',
     )
 
 except (ImportError, FileNotFoundError) as e:
