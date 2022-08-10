@@ -252,31 +252,31 @@ class EIP712DelegateCertificate(EIP712Certificate):
                                                    signature)
 
     def marshal(self, binary: bool = False) -> Dict[str, Any]:
-        if binary:
-            return {
-                'type': 'EIP712DelegateCertificate',
-                'chainId': self.chainId,
-                'verifyingContract': self.verifyingContract,
-                'validFrom': self.validFrom,
-                'delegate': self.delegate,
-                'csPubKey': self.csPubKey,
-                'bootedAt': self.bootedAt,
-                'meta': self.meta,
-            }
-        else:
-            return {
-                'type': 'EIP712DelegateCertificate',
-                'chainId': self.chainId,
-                'verifyingContract': web3.Web3.toChecksumAddress(self.verifyingContract) if self.verifyingContract else None,
-                'validFrom': self.validFrom,
-                'delegate': web3.Web3.toChecksumAddress(self.delegate) if self.delegate else None,
-                'csPubKey': b2a_hex(self.csPubKey).decode() if self.csPubKey else None,
-                'bootedAt': self.bootedAt,
-                'meta': self.meta,
-            }
+        obj = create_eip712_delegate_certificate(chainId=self.chainId,
+                                                 verifyingContract=self.verifyingContract,
+                                                 validFrom=self.validFrom,
+                                                 delegate=self.delegate,
+                                                 csPubKey=self.csPubKey,
+                                                 bootedAt=self.bootedAt,
+                                                 meta=self.meta)
+        if not binary:
+            obj['message']['verifyingContract'] = web3.Web3.toChecksumAddress(obj['message']['verifyingContract']) if obj['message']['verifyingContract'] else None
+            obj['message']['delegate'] = web3.Web3.toChecksumAddress(obj['message']['delegate']) if obj['message']['delegate'] else None
+            obj['message']['csPubKey'] = b2a_hex(obj['message']['csPubKey']).decode() if obj['message']['csPubKey'] else None
+        return obj
 
     @staticmethod
-    def parse(data) -> 'EIP712DelegateCertificate':
+    def parse(obj) -> 'EIP712DelegateCertificate':
+        if type(obj) != dict:
+            raise ValueError('invalid type {} for object in EIP712DelegateCertificate.parse'.format(type(obj)))
+
+        primaryType = obj.get('primaryType', None)
+        if primaryType != 'EIP712DelegateCertificate':
+            raise ValueError('invalid primaryType "{}" - expected "EIP712DelegateCertificate"'.format(primaryType))
+
+        # FIXME: check EIP712 types, domain
+
+        data = obj.get('message', None)
         if type(data) != dict:
             raise ValueError('invalid type {} for EIP712DelegateCertificate'.format(type(data)))
         for k in data:

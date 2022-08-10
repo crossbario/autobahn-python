@@ -43,9 +43,9 @@ def parse_certificate_chain(certificates: List[Tuple[Dict[str, Any], str]]) \
     cert_sigs = []
     for cert_data, cert_sig in certificates:
         if cert_data['primaryType'] == 'EIP712DelegateCertificate':
-            cert = EIP712DelegateCertificate.parse(cert_data['message'])
+            cert = EIP712DelegateCertificate.parse(cert_data)
         elif cert_data['primaryType'] == 'EIP712AuthorityCertificate':
-            cert = EIP712AuthorityCertificate.parse(cert_data['message'])
+            cert = EIP712AuthorityCertificate.parse(cert_data)
         else:
             assert False, 'should not arrive here'
         cert_chain.append(cert)

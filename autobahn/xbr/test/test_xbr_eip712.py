@@ -410,9 +410,9 @@ class TestEip712CertificateChain(TestCase):
             self.assertIn(cert_data['primaryType'], cert_data['types'])
             self.assertIn(cert_data['primaryType'], ['EIP712DelegateCertificate', 'EIP712AuthorityCertificate'])
             if cert_data['primaryType'] == 'EIP712DelegateCertificate':
-                cert = EIP712DelegateCertificate.parse(cert_data['message'])
+                cert = EIP712DelegateCertificate.parse(cert_data)
             elif cert_data['primaryType'] == 'EIP712AuthorityCertificate':
-                cert = EIP712AuthorityCertificate.parse(cert_data['message'])
+                cert = EIP712AuthorityCertificate.parse(cert_data)
             else:
                 assert False, 'should not arrive here'
             cert_chain.append(cert)

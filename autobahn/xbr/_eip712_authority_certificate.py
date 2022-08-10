@@ -275,33 +275,33 @@ class EIP712AuthorityCertificate(EIP712Certificate):
                                                     signature)
 
     def marshal(self, binary: bool = False) -> Dict[str, Any]:
-        if binary:
-            return {
-                'type': 'EIP712AuthorityCertificate',
-                'chainId': self.chainId,
-                'verifyingContract': self.verifyingContract,
-                'validFrom': self.validFrom,
-                'issuer': self.issuer,
-                'subject': self.subject,
-                'realm': self.realm,
-                'capabilities': self.capabilities,
-                'meta': self.meta,
-            }
-        else:
-            return {
-                'type': 'EIP712AuthorityCertificate',
-                'chainId': self.chainId,
-                'verifyingContract': web3.Web3.toChecksumAddress(self.verifyingContract) if self.verifyingContract else None,
-                'validFrom': self.validFrom,
-                'issuer': web3.Web3.toChecksumAddress(self.issuer) if self.issuer else None,
-                'subject': web3.Web3.toChecksumAddress(self.subject) if self.subject else None,
-                'realm': web3.Web3.toChecksumAddress(self.realm) if self.realm else None,
-                'capabilities': self.capabilities,
-                'meta': self.meta,
-            }
+        obj = create_eip712_authority_certificate(chainId=self.chainId,
+                                                  verifyingContract=self.verifyingContract,
+                                                  validFrom=self.validFrom,
+                                                  issuer=self.issuer,
+                                                  subject=self.subject,
+                                                  realm=self.realm,
+                                                  capabilities=self.capabilities,
+                                                  meta=self.meta)
+        if not binary:
+            obj['message']['verifyingContract'] = web3.Web3.toChecksumAddress(obj['message']['verifyingContract']) if obj['message']['verifyingContract'] else None
+            obj['message']['issuer'] = web3.Web3.toChecksumAddress(obj['message']['issuer']) if obj['message']['issuer'] else None
+            obj['message']['subject'] = web3.Web3.toChecksumAddress(obj['message']['subject']) if obj['message']['subject'] else None
+            obj['message']['realm'] = web3.Web3.toChecksumAddress(obj['message']['realm']) if obj['message']['realm'] else None
+        return obj
 
     @staticmethod
-    def parse(data, binary: bool = False) -> 'EIP712AuthorityCertificate':
+    def parse(obj, binary: bool = False) -> 'EIP712AuthorityCertificate':
+        if type(obj) != dict:
+            raise ValueError('invalid type {} for object in EIP712AuthorityCertificate.parse'.format(type(obj)))
+
+        primaryType = obj.get('primaryType', None)
+        if primaryType != 'EIP712AuthorityCertificate':
+            raise ValueError('invalid primaryType "{}" - expected "EIP712AuthorityCertificate"'.format(primaryType))
+
+        # FIXME: check EIP712 types, domain
+
+        data = obj.get('message', None)
         if type(data) != dict:
             raise ValueError('invalid type {} for EIP712AuthorityCertificate'.format(type(data)))
         for k in data:
