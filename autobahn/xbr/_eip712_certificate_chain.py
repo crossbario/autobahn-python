@@ -51,7 +51,7 @@ def parse_certificate_chain(certificates: List[Tuple[Dict[str, Any], str]]) \
         cert_chain.append(cert)
         cert_sigs.append(cert_sig)
 
-    # FIXME: allow length != 3
+    # FIXME: proper adaptive implementation of certificate chain rules checking
     if False:
         assert len(cert_chain) == 3
 

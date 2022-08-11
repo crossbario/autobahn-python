@@ -26,10 +26,12 @@
 import os.path
 import pprint
 from binascii import a2b_hex
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Optional, List
 
 import web3
 import cbor2
+
+from py_eth_sig_utils.eip712 import encode_typed_data
 
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
 from autobahn.xbr._secmod import EthereumKey
@@ -204,6 +206,7 @@ class EIP712AuthorityCertificate(EIP712Certificate):
     CAPABILITY_CONSUMER = 32
 
     __slots__ = (
+        # EIP712 attributes
         'chainId',
         'verifyingContract',
         'validFrom',
@@ -212,16 +215,31 @@ class EIP712AuthorityCertificate(EIP712Certificate):
         'realm',
         'capabilities',
         'meta',
+
+        # additional attributes
+        'signatures',
+        'hash',
     )
 
     def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int, issuer: bytes, subject: bytes,
-                 realm: bytes, capabilities: int, meta: str):
+                 realm: bytes, capabilities: int, meta: str,
+                 signatures: Optional[List[bytes]] = None):
         super().__init__(chainId, verifyingContract, validFrom)
         self.issuer = issuer
         self.subject = subject
         self.realm = realm
         self.capabilities = capabilities
         self.meta = meta
+        self.signatures = signatures
+        eip712 = create_eip712_authority_certificate(chainId,
+                                                     verifyingContract,
+                                                     validFrom,
+                                                     issuer,
+                                                     subject,
+                                                     realm,
+                                                     capabilities,
+                                                     meta)
+        self.hash = encode_typed_data(eip712)
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, self.__class__):
@@ -243,6 +261,10 @@ class EIP712AuthorityCertificate(EIP712Certificate):
         if other.capabilities != self.capabilities:
             return False
         if other.meta != self.meta:
+            return False
+        if other.signatures != self.signatures:
+            return False
+        if other.hash != self.hash:
             return False
         return True
 
@@ -407,33 +429,34 @@ class EIP712AuthorityCertificate(EIP712Certificate):
                                          issuer=issuer, subject=subject, realm=realm, capabilities=capabilities, meta=meta)
         return obj
 
-    def save(self, filename, signature=None):
+    def save(self, filename: str) -> int:
         """
+        Save certificate to file. File format (serialized as CBOR):
 
-        Unsigned certificate:
-
-            [cert_hash: bytes, cert_obj: Dict[str, Any]]
-
-        Issuer-signed certificate:
-
-            [cert_hash: bytes, cert_obj: Dict[str, Any], cert_sig1: bytes]
-
-        Poly-signed certificates, e.g. Issuer- and Subject-signed:
-
-            [cert_hash: bytes, cert_obj: Dict[str, Any], cert_sig1: bytes, ..., cert_sigN: bytes]
+            [cert_hash: bytes, cert_eip712: Dict[str, Any], cert_signatures: List[bytes]]
 
         :param filename:
-        :param signature:
         :return:
         """
-        cert_obj = [self.marshal(binary=True), signature]
+        cert_obj = [self.hash, self.marshal(binary=True), self.signatures or []]
         with open(filename, 'wb') as f:
-            f.write(cbor2.dumps(cert_obj))
+            data = cbor2.dumps(cert_obj)
+            f.write(data)
+        return len(data)
 
     @staticmethod
-    def load(filename) -> Tuple['EIP712AuthorityCertificate', Optional[bytes]]:
+    def load(filename) -> 'EIP712AuthorityCertificate':
+        """
+        Load certificate from file.
+
+        :param filename:
+        :return:
+        """
         if not os.path.isfile(filename):
             raise RuntimeError('cannot create EIP712AuthorityCertificate from filename "{}": not a file'.format(filename))
         with open(filename, 'rb') as f:
-            cert_data, signature = cbor2.loads(f.read())
-            return EIP712AuthorityCertificate.parse(cert_data, binary=True), signature
+            cert_hash, cert_eip712, cert_signatures = cbor2.loads(f.read())
+            cert = EIP712AuthorityCertificate.parse(cert_eip712, binary=True)
+            assert cert_hash == cert.hash
+            cert.cert_signatures = cert_signatures
+            return cert
