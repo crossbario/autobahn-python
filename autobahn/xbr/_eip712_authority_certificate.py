@@ -458,5 +458,5 @@ class EIP712AuthorityCertificate(EIP712Certificate):
             cert_hash, cert_eip712, cert_signatures = cbor2.loads(f.read())
             cert = EIP712AuthorityCertificate.parse(cert_eip712, binary=True)
             assert cert_hash == cert.hash
-            cert.cert_signatures = cert_signatures
+            cert.signatures = cert_signatures
             return cert

@@ -26,7 +26,7 @@
 
 import os
 import pprint
-from typing import Dict, Any, Tuple, Optional, List
+from typing import Dict, Any, Optional, List
 from binascii import a2b_hex, b2a_hex
 
 import web3
@@ -380,11 +380,12 @@ class EIP712DelegateCertificate(EIP712Certificate):
         return len(data)
 
     @staticmethod
-    def load(filename) -> Tuple['EIP712DelegateCertificate', Optional[bytes]]:
+    def load(filename) -> 'EIP712DelegateCertificate':
         if not os.path.isfile(filename):
             raise RuntimeError('cannot create EIP712DelegateCertificate from filename "{}": not a file'.format(filename))
         with open(filename, 'rb') as f:
             cert_hash, cert_eip712, cert_signatures = cbor2.loads(f.read())
             cert = EIP712DelegateCertificate.parse(cert_eip712, binary=True)
             assert cert_hash == cert.hash
-            return cert, cert_signatures
+            cert.signatures = cert_signatures
+            return cert
