@@ -146,7 +146,8 @@ class TestEip712CertificateChain(TestCase):
 
         # HELLO.Details.authextra.certificates
         #
-        self._certs_expected1 = [({'domain': {'name': 'WMP', 'version': '1'},
+        self._certs_expected1 = [(None,
+                                  {'domain': {'name': 'WMP', 'version': '1'},
                                    'message': {'bootedAt': 1657781999086394759,
                                                'chainId': 1,
                                                'csPubKey': '12ae0184b180e9a9c5e45be4a1afbce3c6491320063701cd9c4011a777d04089',
@@ -171,7 +172,8 @@ class TestEip712CertificateChain(TestCase):
                                              'EIP712Domain': [{'name': 'name', 'type': 'string'},
                                                               {'name': 'version', 'type': 'string'}]}},
                                   '70726dda677cac8f21366f8023d17203b2f4f9099e954f9bebb2134086e2ac291d80ce038a1342a7748d4b0750f06b8de491561d581c90c99f1c09c91cfa7e191c'),
-                                 ({'domain': {'name': 'WMP', 'version': '1'},
+                                 (None,
+                                  {'domain': {'name': 'WMP', 'version': '1'},
                                    'message': {'capabilities': 12,
                                                'chainId': 1,
                                                'issuer': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
@@ -199,7 +201,8 @@ class TestEip712CertificateChain(TestCase):
                                              'EIP712Domain': [{'name': 'name', 'type': 'string'},
                                                               {'name': 'version', 'type': 'string'}]}},
                                   'f031b2625ae7e32e7eec3a8fa09f4db3a43217f282b7695e5b09dd2e13c25dc679c1f3ce27b94a3074786f7f12183a2a275a00aea5a66b83c431281f1069bd841c'),
-                                 ({'domain': {'name': 'WMP', 'version': '1'},
+                                 (None,
+                                  {'domain': {'name': 'WMP', 'version': '1'},
                                    'message': {'capabilities': 63,
                                                'chainId': 1,
                                                'issuer': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
@@ -311,7 +314,7 @@ class TestEip712CertificateChain(TestCase):
 
         # create certificates chain
         #
-        certificates = [(cert1_data, cert1_sig), (cert2_data, cert2_sig), (cert3_data, cert3_sig)]
+        certificates = [(None, cert1_data, cert1_sig), (None, cert2_data, cert2_sig), (None, cert3_data, cert3_sig)]
 
         if False:
             from pprint import pprint
@@ -399,7 +402,7 @@ class TestEip712CertificateChain(TestCase):
         # parse the whole certificate chain
         cert_chain = []
         cert_sigs = []
-        for cert_data, cert_sig in self._certs_expected1:
+        for cert_hash, cert_data, cert_sig in self._certs_expected1:
             self.assertIn('domain', cert_data)
             self.assertIn('message', cert_data)
             self.assertIn('primaryType', cert_data)
