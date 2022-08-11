@@ -40,8 +40,7 @@ def parse_certificate_chain(certificates: List[Tuple[Dict[str, Any], str]]) \
     """
     # parse the whole certificate chain
     cert_chain = []
-    cert_sigs = []
-    for cert_data, cert_sig in certificates:
+    for cert_hash, cert_data, cert_sig in certificates:
         if cert_data['primaryType'] == 'EIP712DelegateCertificate':
             cert = EIP712DelegateCertificate.parse(cert_data)
         elif cert_data['primaryType'] == 'EIP712AuthorityCertificate':
@@ -49,7 +48,6 @@ def parse_certificate_chain(certificates: List[Tuple[Dict[str, Any], str]]) \
         else:
             assert False, 'should not arrive here'
         cert_chain.append(cert)
-        cert_sigs.append(cert_sig)
 
     # FIXME: proper adaptive implementation of certificate chain rules checking
     if False:
