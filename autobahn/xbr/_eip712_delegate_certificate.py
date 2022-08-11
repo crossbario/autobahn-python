@@ -24,10 +24,15 @@
 #
 ###############################################################################
 
-from binascii import a2b_hex
-from typing import Dict, Any
+import os
+import pprint
+from typing import Dict, Any, Optional, List
+from binascii import a2b_hex, b2a_hex
 
-import json
+import web3
+import cbor2
+
+from py_eth_sig_utils.eip712 import encode_typed_data
 
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
 from autobahn.xbr._secmod import EthereumKey
@@ -184,6 +189,7 @@ def recover_eip712_delegate_certificate(chainId: int,
 
 class EIP712DelegateCertificate(EIP712Certificate):
     __slots__ = (
+        # EIP712 attributes
         'chainId',
         'verifyingContract',
         'validFrom',
@@ -191,17 +197,61 @@ class EIP712DelegateCertificate(EIP712Certificate):
         'csPubKey',
         'bootedAt',
         'meta',
+
+        # additional attributes
+        'signatures',
+        'hash',
     )
 
     def __init__(self, chainId: int, verifyingContract: bytes, validFrom: int, delegate: bytes, csPubKey: bytes,
-                 bootedAt: int, meta: str):
+                 bootedAt: int, meta: str, signatures: Optional[List[bytes]] = None):
         super().__init__(chainId, verifyingContract, validFrom)
         self.delegate = delegate
         self.csPubKey = csPubKey
         self.bootedAt = bootedAt
         self.meta = meta
+        self.signatures = signatures
+        eip712 = create_eip712_delegate_certificate(chainId,
+                                                    verifyingContract,
+                                                    validFrom,
+                                                    delegate,
+                                                    csPubKey,
+                                                    bootedAt,
+                                                    meta)
+        self.hash = encode_typed_data(eip712)
 
-    def sign(self, key: EthereumKey) -> bytes:
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+        if not EIP712DelegateCertificate.__eq__(self, other):
+            return False
+        if other.chainId != self.chainId:
+            return False
+        if other.verifyingContract != self.verifyingContract:
+            return False
+        if other.validFrom != self.validFrom:
+            return False
+        if other.delegate != self.delegate:
+            return False
+        if other.csPubKey != self.csPubKey:
+            return False
+        if other.bootedAt != self.bootedAt:
+            return False
+        if other.meta != self.meta:
+            return False
+        if other.signatures != self.signatures:
+            return False
+        if other.hash != self.hash:
+            return False
+        return True
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    def __str__(self) -> str:
+        return pprint.pformat(self.marshal())
+
+    def sign(self, key: EthereumKey, binary: bool = False) -> bytes:
         eip712 = create_eip712_delegate_certificate(self.chainId,
                                                     self.verifyingContract,
                                                     self.validFrom,
@@ -209,9 +259,7 @@ class EIP712DelegateCertificate(EIP712Certificate):
                                                     self.csPubKey,
                                                     self.bootedAt,
                                                     self.meta)
-        # FIXME
-        data = json.dumps(eip712).encode()
-        return key.sign(data)
+        return key.sign_typed_data(eip712, binary=binary)
 
     def recover(self, signature: bytes) -> bytes:
         return recover_eip712_delegate_certificate(self.chainId,
@@ -223,22 +271,41 @@ class EIP712DelegateCertificate(EIP712Certificate):
                                                    self.meta,
                                                    signature)
 
-    def marshal(self) -> Dict[str, Any]:
-        return create_eip712_delegate_certificate(self.chainId,
-                                                  self.verifyingContract,
-                                                  self.validFrom,
-                                                  self.delegate,
-                                                  self.csPubKey,
-                                                  self.bootedAt,
-                                                  self.meta)
+    def marshal(self, binary: bool = False) -> Dict[str, Any]:
+        obj = create_eip712_delegate_certificate(chainId=self.chainId,
+                                                 verifyingContract=self.verifyingContract,
+                                                 validFrom=self.validFrom,
+                                                 delegate=self.delegate,
+                                                 csPubKey=self.csPubKey,
+                                                 bootedAt=self.bootedAt,
+                                                 meta=self.meta)
+        if not binary:
+            obj['message']['verifyingContract'] = web3.Web3.toChecksumAddress(obj['message']['verifyingContract']) if obj['message']['verifyingContract'] else None
+            obj['message']['delegate'] = web3.Web3.toChecksumAddress(obj['message']['delegate']) if obj['message']['delegate'] else None
+            obj['message']['csPubKey'] = b2a_hex(obj['message']['csPubKey']).decode() if obj['message']['csPubKey'] else None
+        return obj
 
     @staticmethod
-    def parse(data) -> 'EIP712DelegateCertificate':
+    def parse(obj) -> 'EIP712DelegateCertificate':
+        if type(obj) != dict:
+            raise ValueError('invalid type {} for object in EIP712DelegateCertificate.parse'.format(type(obj)))
+
+        primaryType = obj.get('primaryType', None)
+        if primaryType != 'EIP712DelegateCertificate':
+            raise ValueError('invalid primaryType "{}" - expected "EIP712DelegateCertificate"'.format(primaryType))
+
+        # FIXME: check EIP712 types, domain
+
+        data = obj.get('message', None)
         if type(data) != dict:
             raise ValueError('invalid type {} for EIP712DelegateCertificate'.format(type(data)))
         for k in data:
-            if k not in ['chainId', 'verifyingContract', 'delegate', 'validFrom', 'csPubKey', 'bootedAt', 'meta']:
+            if k not in ['type', 'chainId', 'verifyingContract', 'delegate', 'validFrom', 'csPubKey', 'bootedAt', 'meta']:
                 raise ValueError('invalid attribute "{}" in EIP712DelegateCertificate'.format(k))
+
+        _type = data.get('type', None)
+        if _type and _type != 'EIP712DelegateCertificate':
+            raise ValueError('unexpected type "{}" in EIP712DelegateCertificate'.format(_type))
 
         chainId = data.get('chainId', None)
         if chainId is None:
@@ -296,3 +363,29 @@ class EIP712DelegateCertificate(EIP712Certificate):
         obj = EIP712DelegateCertificate(chainId=chainId, verifyingContract=verifyingContract, validFrom=validFrom,
                                         delegate=delegate, csPubKey=csPubKey, bootedAt=bootedAt, meta=meta)
         return obj
+
+    def save(self, filename: str) -> int:
+        """
+        Save certificate to file. File format (serialized as CBOR):
+
+            [cert_hash: bytes, cert_eip712: Dict[str, Any], cert_signatures: List[bytes]]
+
+        :param filename:
+        :return:
+        """
+        cert_obj = [self.hash, self.marshal(binary=True), self.signatures or []]
+        with open(filename, 'wb') as f:
+            data = cbor2.dumps(cert_obj)
+            f.write(data)
+        return len(data)
+
+    @staticmethod
+    def load(filename) -> 'EIP712DelegateCertificate':
+        if not os.path.isfile(filename):
+            raise RuntimeError('cannot create EIP712DelegateCertificate from filename "{}": not a file'.format(filename))
+        with open(filename, 'rb') as f:
+            cert_hash, cert_eip712, cert_signatures = cbor2.loads(f.read())
+            cert = EIP712DelegateCertificate.parse(cert_eip712, binary=True)
+            assert cert_hash == cert.hash
+            cert.signatures = cert_signatures
+            return cert

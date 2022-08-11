@@ -31,6 +31,23 @@ from py_eth_sig_utils import signing
 _EIP712_SIG_LEN = 32 + 32 + 1
 
 
+def _hash(data) -> bytes:
+    """
+    keccak256(abi.encode(
+            EIP712_MEMBER_REGISTER_TYPEHASH,
+            obj.chainId,
+            obj.verifyingContract,
+            obj.member,
+            obj.registered,
+            keccak256(bytes(obj.eula)),
+            keccak256(bytes(obj.profile))
+        ));
+
+    :param data:
+    :return:
+    """
+
+
 def sign(eth_privkey: bytes, data: Dict[str, Any]) -> bytes:
     """
     Sign the given data using the given Ethereum private key.

@@ -26,6 +26,7 @@
 
 import os
 import sys
+import tempfile
 from binascii import a2b_hex, b2a_hex
 from unittest import skipIf
 
@@ -145,7 +146,8 @@ class TestEip712CertificateChain(TestCase):
 
         # HELLO.Details.authextra.certificates
         #
-        self._certs_expected1 = [({'domain': {'name': 'WMP', 'version': '1'},
+        self._certs_expected1 = [(None,
+                                  {'domain': {'name': 'WMP', 'version': '1'},
                                    'message': {'bootedAt': 1657781999086394759,
                                                'chainId': 1,
                                                'csPubKey': '12ae0184b180e9a9c5e45be4a1afbce3c6491320063701cd9c4011a777d04089',
@@ -170,7 +172,8 @@ class TestEip712CertificateChain(TestCase):
                                              'EIP712Domain': [{'name': 'name', 'type': 'string'},
                                                               {'name': 'version', 'type': 'string'}]}},
                                   '70726dda677cac8f21366f8023d17203b2f4f9099e954f9bebb2134086e2ac291d80ce038a1342a7748d4b0750f06b8de491561d581c90c99f1c09c91cfa7e191c'),
-                                 ({'domain': {'name': 'WMP', 'version': '1'},
+                                 (None,
+                                  {'domain': {'name': 'WMP', 'version': '1'},
                                    'message': {'capabilities': 12,
                                                'chainId': 1,
                                                'issuer': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
@@ -198,7 +201,8 @@ class TestEip712CertificateChain(TestCase):
                                              'EIP712Domain': [{'name': 'name', 'type': 'string'},
                                                               {'name': 'version', 'type': 'string'}]}},
                                   'f031b2625ae7e32e7eec3a8fa09f4db3a43217f282b7695e5b09dd2e13c25dc679c1f3ce27b94a3074786f7f12183a2a275a00aea5a66b83c431281f1069bd841c'),
-                                 ({'domain': {'name': 'WMP', 'version': '1'},
+                                 (None,
+                                  {'domain': {'name': 'WMP', 'version': '1'},
                                    'message': {'capabilities': 63,
                                                'chainId': 1,
                                                'issuer': '0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57',
@@ -310,7 +314,7 @@ class TestEip712CertificateChain(TestCase):
 
         # create certificates chain
         #
-        certificates = [(cert1_data, cert1_sig), (cert2_data, cert2_sig), (cert3_data, cert3_sig)]
+        certificates = [(None, cert1_data, cert1_sig), (None, cert2_data, cert2_sig), (None, cert3_data, cert3_sig)]
 
         if False:
             from pprint import pprint
@@ -327,7 +331,63 @@ class TestEip712CertificateChain(TestCase):
     @inlineCallbacks
     def test_eip712_create_certificate_chain_highlevel(self):
         yield self._sm.open()
-        # FIXME
+
+        # keys needed to create all certificates in certificate chain
+        ca_key: EthereumKey = self._sm[0]
+
+        # data needed for root authority certificate: cert3
+        ca_cert_chainId = 1
+        ca_cert_verifyingContract = a2b_hex('0xf766Dc789CF04CD18aE75af2c5fAf2DA6650Ff57'[2:])
+        ca_cert_validFrom = 666666
+        ca_cert_issuer = ca_key.address(binary=True)
+        ca_cert_subject = ca_cert_issuer
+        ca_cert_realm = a2b_hex('0xA6e693CC4A2b4F1400391a728D26369D9b82ef96'[2:])
+        ca_cert_capabilities = EIP712AuthorityCertificate.CAPABILITY_ROOT_CA | EIP712AuthorityCertificate.CAPABILITY_INTERMEDIATE_CA | EIP712AuthorityCertificate.CAPABILITY_PUBLIC_RELAY | EIP712AuthorityCertificate.CAPABILITY_PRIVATE_RELAY | EIP712AuthorityCertificate.CAPABILITY_PROVIDER | EIP712AuthorityCertificate.CAPABILITY_CONSUMER
+        ca_cert_meta = ''
+
+        # create root authority certificate signature: directly from provided data attributes
+        ca_cert_data = create_eip712_authority_certificate(chainId=ca_cert_chainId,
+                                                           verifyingContract=ca_cert_verifyingContract,
+                                                           validFrom=ca_cert_validFrom, issuer=ca_cert_issuer,
+                                                           subject=ca_cert_subject, realm=ca_cert_realm,
+                                                           capabilities=ca_cert_capabilities, meta=ca_cert_meta)
+        ca_cert_sig = yield ca_key.sign_typed_data(ca_cert_data, binary=False)
+
+        # create root authority certificate signature: from certificate object
+        ca_cert = EIP712AuthorityCertificate(chainId=ca_cert_chainId,
+                                             verifyingContract=ca_cert_verifyingContract,
+                                             validFrom=ca_cert_validFrom,
+                                             issuer=ca_cert_issuer,
+                                             subject=ca_cert_subject,
+                                             realm=ca_cert_realm,
+                                             capabilities=ca_cert_capabilities,
+                                             meta=ca_cert_meta)
+        ca_cert_sig2 = yield ca_cert.sign(ca_key)
+
+        # re-create root authority certificate from round-tripping (marshal-parse)
+        ca_cert2 = EIP712AuthorityCertificate.parse(ca_cert.marshal())
+        ca_cert_sig3 = yield ca_cert2.sign(ca_key)
+
+        # all different ways to compute signature must result in same signature value
+        self.assertEqual(ca_cert_sig, ca_cert_sig2)
+        self.assertEqual(ca_cert_sig, ca_cert_sig3)
+
+        # and match this signature value
+        self.assertEqual(ca_cert_sig, 'd9e679753e1120a8ba8edea4895d2e056ba98eaa1acbe11bf6210f3a48a56de830aa6a566cc4920'
+                                      'c74a284ffcd9f7d1af5fe229268a44030522db19d5a75f4131c')
+
+        # test save/load instance to/from file
+        with tempfile.NamedTemporaryFile() as fd:
+            # save certificate to file
+            ca_cert.save(fd.name)
+
+            # load certificate from file
+            ca_cert3 = EIP712AuthorityCertificate.load(fd.name)
+
+            # ensure it produces the same signature
+            ca_cert_sig4 = yield ca_cert3.sign(ca_key)
+            self.assertEqual(ca_cert_sig, ca_cert_sig4)
+
         yield self._sm.close()
 
     @inlineCallbacks
@@ -342,7 +402,7 @@ class TestEip712CertificateChain(TestCase):
         # parse the whole certificate chain
         cert_chain = []
         cert_sigs = []
-        for cert_data, cert_sig in self._certs_expected1:
+        for cert_hash, cert_data, cert_sig in self._certs_expected1:
             self.assertIn('domain', cert_data)
             self.assertIn('message', cert_data)
             self.assertIn('primaryType', cert_data)
@@ -350,9 +410,9 @@ class TestEip712CertificateChain(TestCase):
             self.assertIn(cert_data['primaryType'], cert_data['types'])
             self.assertIn(cert_data['primaryType'], ['EIP712DelegateCertificate', 'EIP712AuthorityCertificate'])
             if cert_data['primaryType'] == 'EIP712DelegateCertificate':
-                cert = EIP712DelegateCertificate.parse(cert_data['message'])
+                cert = EIP712DelegateCertificate.parse(cert_data)
             elif cert_data['primaryType'] == 'EIP712AuthorityCertificate':
-                cert = EIP712AuthorityCertificate.parse(cert_data['message'])
+                cert = EIP712AuthorityCertificate.parse(cert_data)
             else:
                 assert False, 'should not arrive here'
             cert_chain.append(cert)
