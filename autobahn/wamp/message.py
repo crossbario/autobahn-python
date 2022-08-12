@@ -75,7 +75,7 @@ __all__ = ('Message',
            'check_or_raise_extra',
            'is_valid_enc_algo',
            'is_valid_enc_serializer',
-           'identity_realm_name_category',
+           'identify_realm_name_category',
            'PAYLOAD_ENC_CRYPTO_BOX',
            'PAYLOAD_ENC_MQTT',
            'PAYLOAD_ENC_STANDARD_IDENTIFIERS')
@@ -228,18 +228,18 @@ def b2a(data, max_len=40):
         return s
 
 
-def identity_realm_name_category(value: Any) -> Optional[str]:
+def identify_realm_name_category(value: Any) -> Optional[str]:
     """
     Identify the real name category of the given value:
 
-    * ``"normal"``: A normal WAMP realm name, e.g. ``"realm1"``.
+    * ``"standalone"``: A normal, standalone WAMP realm name, e.g. ``"realm1"``.
     * ``"eth"``: An Ethereum address, e.g. ``"0xe59C7418403CF1D973485B36660728a5f4A8fF9c"``.
     * ``"ens"``: An Ethereum ENS name, e.g. ``"wamp-proto.eth"``.
     * ``"reverse_ens"``: An Ethereum ENS name in reverse notation, e.g. ``"eth.wamp-proto"``.
     * ``None``: The value is not a WAMP realm name.
 
     :param value: The value for which to identify realm name category.
-    :return: The category identified, one of ``["normal", "eth", "ens", "reverse-ens"]``
+    :return: The category identified, one of ``["standalone", "eth", "ens", "reverse-ens"]``
         or ``None``.
     """
     if type(value) != str:
@@ -250,7 +250,7 @@ def identity_realm_name_category(value: Any) -> Optional[str]:
         elif _URI_PAT_REALM_NAME_ENS_REVERSE.match(value):
             return 'reverse_ens'
         else:
-            return 'normal'
+            return 'standalone'
     elif _URI_PAT_REALM_NAME_ETH.match(value):
         return 'eth'
     else:

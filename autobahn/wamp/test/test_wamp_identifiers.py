@@ -24,7 +24,7 @@
 #
 ###############################################################################
 
-from autobahn.wamp.message import check_or_raise_realm_name, identity_realm_name_category
+from autobahn.wamp.message import check_or_raise_realm_name, identify_realm_name_category
 from autobahn.wamp.exception import InvalidUriError
 
 import unittest
@@ -69,17 +69,17 @@ class TestWampIdentifiers(unittest.TestCase):
     def test_realm_name_categories(self):
         for name, category in [
             # valid
-            ('realm1', 'normal'),
-            ('com.example.myapp1', 'normal'),
-            ('myapp1.example.com', 'normal'),
+            ('realm1', 'standalone'),
+            ('com.example.myapp1', 'standalone'),
+            ('myapp1.example.com', 'standalone'),
             ('eth.wamp-proto', 'reverse_ens'),
             ('wamp-proto.eth', 'ens'),
             ('eth.wamp-proto.myapp1', 'reverse_ens'),
             ('myapp1.wamp-proto.eth', 'ens'),
-            ('aaa', 'normal'),
-            ('Abc', 'normal'),
-            ('a00', 'normal'),
-            ('A00', 'normal'),
+            ('aaa', 'standalone'),
+            ('Abc', 'standalone'),
+            ('a00', 'standalone'),
+            ('A00', 'standalone'),
             ('0x0000000000000000000000000000000000000000', 'eth'),
             ('0xe59C7418403CF1D973485B36660728a5f4A8fF9c', 'eth'),
             # invalid
@@ -95,4 +95,4 @@ class TestWampIdentifiers(unittest.TestCase):
             ('rlm$test', None),
             ('a' * 256, None),
         ]:
-            self.assertEqual(category, identity_realm_name_category(name))
+            self.assertEqual(category, identify_realm_name_category(name))

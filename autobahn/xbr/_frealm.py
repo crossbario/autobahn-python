@@ -36,7 +36,7 @@ from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.internet.threads import deferToThread
 
 from autobahn.wamp.interfaces import ICryptosignKey, IEthereumKey
-from autobahn.wamp.message import identity_realm_name_category
+from autobahn.wamp.message import identify_realm_name_category
 from autobahn.xbr import make_w3
 
 
@@ -366,7 +366,7 @@ class FederatedRealm(object):
         # status, will change to 'RUNNING' after initialize() has completed
         self._status = 'STOPPED'
 
-        self._name_category: Optional[str] = identity_realm_name_category(self._name_or_address)
+        self._name_category: Optional[str] = identify_realm_name_category(self._name_or_address)
         if self._name_category not in ['eth', 'ens', 'reverse_ens']:
             raise ValueError('name_or_address "{}" not an Ethereum address or ENS name'.format(self._name_or_address))
 
