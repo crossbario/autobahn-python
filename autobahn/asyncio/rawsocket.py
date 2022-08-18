@@ -33,6 +33,7 @@ from typing import Optional
 import txaio
 from autobahn.util import public, _LazyHexFormatter, hltype
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
+from autobahn.wamp.types import TransportDetails
 from autobahn.asyncio.util import get_serializers, create_transport_details, transport_channel_id
 
 __all__ = (
@@ -59,6 +60,13 @@ class PrefixProtocol(asyncio.Protocol):
     peer: Optional[str] = None
     is_server: Optional[bool] = None
 
+    @property
+    def transport_details(self) -> Optional[TransportDetails]:
+        """
+        Implements :func:`autobahn.wamp.interfaces.ITransport.transport_details`
+        """
+        return self._transport_details
+
     def connection_made(self, transport):
         # asyncio networking framework entry point, called by asyncio
         # when the connection is established (either a client or a server)
@@ -66,8 +74,9 @@ class PrefixProtocol(asyncio.Protocol):
 
         self.transport = transport
 
-        # determine preliminary transport details (what is know at this point)
+        # determine preliminary transport details (what is known at this point)
         self._transport_details = create_transport_details(self.transport, self.is_server)
+        self._transport_details.channel_framing = TransportDetails.CHANNEL_FRAMING_RAWSOCKET
 
         # backward compatibility
         self.peer = self._transport_details.peer

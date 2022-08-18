@@ -7,6 +7,7 @@ from autobahn.asyncio.rawsocket import PrefixProtocol, RawSocketClientProtocol, 
     WampRawSocketClientFactory, WampRawSocketServerFactory
 from autobahn.asyncio.util import get_serializers
 from autobahn.wamp import message
+from autobahn.wamp.types import TransportDetails
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
@@ -192,6 +193,8 @@ def test_wamp_server(event_loop):
 
     proto = WampRawSocketServerFactory(fact_server)()
     proto.connection_made(transport)
+    assert proto.transport_details.is_server == True
+    assert proto.transport_details.channel_framing == TransportDetails.CHANNEL_FRAMING_RAWSOCKET
     assert proto.factory._serializers
     s = proto.factory._serializers[1].RAWSOCKET_SERIALIZER_ID
     proto.data_received(bytes(bytearray([0x7F, 0xF0 | s, 0, 0])))
@@ -218,6 +221,8 @@ def test_wamp_client(event_loop):
 
     proto = WampRawSocketClientFactory(fact_client)()
     proto.connection_made(transport)
+    assert proto.transport_details.is_server == False
+    assert proto.transport_details.channel_framing == TransportDetails.CHANNEL_FRAMING_RAWSOCKET
     assert proto._serializer
     s = proto._serializer.RAWSOCKET_SERIALIZER_ID
     proto.data_received(bytes(bytearray([0x7F, 0xF0 | s, 0, 0])))
