@@ -179,12 +179,8 @@ def test_raw_socket_client_error(event_loop):
     transport.close.assert_called_once_with()
 
 
-# FIXME: tests below
-
-
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def _test_wamp_server(event_loop):
+def test_wamp_server(event_loop):
     transport = Mock(spec_set=('abort', 'close', 'write', 'get_extra_info'))
     transport.write = Mock(side_effect=lambda m: messages.append(m))
     server = Mock(spec=['onOpen', 'onMessage'])
@@ -202,16 +198,15 @@ def _test_wamp_server(event_loop):
     assert proto._serializer
     server.onOpen.assert_called_once_with(proto)
 
-    proto.sendMessage(message.Abort('close'))
+    proto.send(message.Abort('close'))
     for d in messages[1:]:
         proto.data_received(d)
     assert server.onMessage.called
     assert isinstance(server.onMessage.call_args[0][0], message.Abort)
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def _test_wamp_client(event_loop):
+def test_wamp_client(event_loop):
     transport = Mock(spec_set=('abort', 'close', 'write', 'get_extra_info'))
     transport.write = Mock(side_effect=lambda m: messages.append(m))
     client = Mock(spec=['onOpen', 'onMessage'])
@@ -228,7 +223,7 @@ def _test_wamp_client(event_loop):
     proto.data_received(bytes(bytearray([0x7F, 0xF0 | s, 0, 0])))
     client.onOpen.assert_called_once_with(proto)
 
-    proto.sendMessage(message.Abort('close'))
+    proto.send(message.Abort('close'))
     for d in messages[1:]:
         proto.data_received(d)
     assert client.onMessage.called

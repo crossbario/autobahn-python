@@ -463,7 +463,7 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
         # when no serializers were requested specifically, then support
         # all that are available
         if serializers is None:
-            serializers = get_serializers()
+            serializers = [serializer() for serializer in get_serializers()]
 
             if not serializers:
                 raise Exception("could not import any WAMP serializers")
