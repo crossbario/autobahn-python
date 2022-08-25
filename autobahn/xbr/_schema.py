@@ -660,7 +660,8 @@ def parse_calls(repository, schema, svc_obj, objs_lst=None):
 
 class FbsObject(object):
     __slots__ = ('_repository', '_schema', '_declaration_file', '_name', '_fields', '_fields_by_id',
-                 '_is_struct', '_min_align', '_bytesize', '_attrs', '_docs')
+                 '_is_struct', '_min_align', '_bytesize', '_attrs', '_docs',
+                 'modulename', 'classname', 'module_relimport')
 
     def __init__(self,
                  repository: 'FbsRepository',
@@ -1740,6 +1741,7 @@ class FbsRepository(object):
             # and defined in schemata previously loaded int
 
             for item in values:
+                assert isinstance(item, FbsObject) or isinstance(item, FbsEnum) or isinstance(item, FbsService), 'unexpected type {}'.format(type(item))
                 # metadata = item.marshal()
                 # pprint(item.marshal())
                 metadata = item

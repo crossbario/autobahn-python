@@ -37,7 +37,7 @@ from twisted.internet.threads import deferToThread
 
 from autobahn.wamp.interfaces import ICryptosignKey, IEthereumKey
 from autobahn.wamp.message import identify_realm_name_category
-from autobahn.xbr import make_w3
+from autobahn.xbr import make_w3, EIP712AuthorityCertificate
 
 
 class Seeder(object):
@@ -346,6 +346,21 @@ class FederatedRealm(object):
     in the WAMP Network contract. The federated realm address thus only needs to exist as an
     identifier of the federated realm-owner record.
     """
+    __slots__ = (
+        '_name_or_address',
+        '_gateway_config',
+        '_status',
+        '_name_category',
+        '_w3',
+        '_ens',
+        '_address',
+        '_contract',
+
+        '_seeders',
+        '_root_ca',
+        '_catalog',
+        '_meta',
+    )
     # FIXME
     CONTRACT_ADDRESS = web3.Web3.toChecksumAddress('0xF7acf1C4CB4a9550B8969576573C2688B48988C2')
     CONTRACT_ABI: str = ''
@@ -383,6 +398,8 @@ class FederatedRealm(object):
         # cache of federated realm seeders, filled once in status running
         self._seeders: List[Seeder] = []
 
+        self._root_ca = None
+
     @property
     def status(self) -> str:
         return self._status
@@ -402,6 +419,10 @@ class FederatedRealm(object):
     @property
     def address(self):
         return self._address
+
+    def root_ca(self) -> EIP712AuthorityCertificate:
+        assert self._status == 'RUNNING'
+        return self._root_ca
 
     @property
     def seeders(self) -> List[Seeder]:
