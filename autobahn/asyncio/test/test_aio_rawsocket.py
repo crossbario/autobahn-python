@@ -7,6 +7,7 @@ from autobahn.asyncio.rawsocket import PrefixProtocol, RawSocketClientProtocol, 
     WampRawSocketClientFactory, WampRawSocketServerFactory
 from autobahn.asyncio.util import get_serializers
 from autobahn.wamp import message
+from autobahn.wamp.types import TransportDetails
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
@@ -179,12 +180,8 @@ def test_raw_socket_client_error(event_loop):
     transport.close.assert_called_once_with()
 
 
-# FIXME: tests below
-
-
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def _test_wamp_server(event_loop):
+def test_wamp_server(event_loop):
     transport = Mock(spec_set=('abort', 'close', 'write', 'get_extra_info'))
     transport.write = Mock(side_effect=lambda m: messages.append(m))
     server = Mock(spec=['onOpen', 'onMessage'])
@@ -196,22 +193,23 @@ def _test_wamp_server(event_loop):
 
     proto = WampRawSocketServerFactory(fact_server)()
     proto.connection_made(transport)
+    assert proto.transport_details.is_server is True
+    assert proto.transport_details.channel_framing == TransportDetails.CHANNEL_FRAMING_RAWSOCKET
     assert proto.factory._serializers
     s = proto.factory._serializers[1].RAWSOCKET_SERIALIZER_ID
     proto.data_received(bytes(bytearray([0x7F, 0xF0 | s, 0, 0])))
     assert proto._serializer
     server.onOpen.assert_called_once_with(proto)
 
-    proto.sendMessage(message.Abort('close'))
+    proto.send(message.Abort('close'))
     for d in messages[1:]:
         proto.data_received(d)
     assert server.onMessage.called
     assert isinstance(server.onMessage.call_args[0][0], message.Abort)
 
 
-@pytest.mark.asyncio
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def _test_wamp_client(event_loop):
+def test_wamp_client(event_loop):
     transport = Mock(spec_set=('abort', 'close', 'write', 'get_extra_info'))
     transport.write = Mock(side_effect=lambda m: messages.append(m))
     client = Mock(spec=['onOpen', 'onMessage'])
@@ -223,12 +221,14 @@ def _test_wamp_client(event_loop):
 
     proto = WampRawSocketClientFactory(fact_client)()
     proto.connection_made(transport)
+    assert proto.transport_details.is_server is False
+    assert proto.transport_details.channel_framing == TransportDetails.CHANNEL_FRAMING_RAWSOCKET
     assert proto._serializer
     s = proto._serializer.RAWSOCKET_SERIALIZER_ID
     proto.data_received(bytes(bytearray([0x7F, 0xF0 | s, 0, 0])))
     client.onOpen.assert_called_once_with(proto)
 
-    proto.sendMessage(message.Abort('close'))
+    proto.send(message.Abort('close'))
     for d in messages[1:]:
         proto.data_received(d)
     assert client.onMessage.called
