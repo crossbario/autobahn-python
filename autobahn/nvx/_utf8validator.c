@@ -28,7 +28,9 @@
 #include <stdint.h>
 
 // http://stackoverflow.com/questions/11228855/header-files-for-simd-intrinsics
+#if defined(__SSE2__) || defined(__SSE4_1__)
 #include <x86intrin.h>
+#endif
 
 
 #define UTF8_ACCEPT 0
