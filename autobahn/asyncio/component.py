@@ -354,8 +354,7 @@ def run(components, start_loop=True, log_level='info'):
     #   import signal
     #   signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    @asyncio.coroutine
-    def nicely_exit(signal):
+    async def nicely_exit(signal):
         log.info("Shutting down due to {signal}", signal=signal)
 
         try:
