@@ -1,5 +1,4 @@
 from os import environ
-import asyncio
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 

@@ -46,8 +46,7 @@ class Component(ApplicationSession):
             if self.received > 5:
                 self.leave()
 
-        await self.subscribe(on_event, 'com.myapp.topic1',
-                                  options=SubscribeOptions(details_arg='details'))
+        await self.subscribe(on_event, 'com.myapp.topic1', options=SubscribeOptions(details_arg='details'))
 
     def onDisconnect(self):
         asyncio.get_event_loop().stop()

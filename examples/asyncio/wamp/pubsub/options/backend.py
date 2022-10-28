@@ -45,8 +45,8 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             publication = await self.publish('com.myapp.topic1',
-                                                  counter,
-                                                  options=PublishOptions(acknowledge=True, exclude_me=False))
+                                             counter,
+                                             options=PublishOptions(acknowledge=True, exclude_me=False))
             print("Event published with publication ID {}".format(publication.id))
             counter += 1
             await asyncio.sleep(1)

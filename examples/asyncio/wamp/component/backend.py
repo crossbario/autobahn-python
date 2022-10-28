@@ -40,12 +40,11 @@ def join(session, details):
     "example.foo",
     options=RegisterOptions(details_arg='details'),
 )
-@asyncio.coroutine
-def foo(*args, **kw):
+async def foo(*args, **kw):
     print("foo({}, {})".format(args, kw))
     for x in range(5, 0, -1):
         print("  returning in {}".format(x))
-        yield from asyncio.sleep(1)
+        await asyncio.sleep(1)
     print("returning '42'")
     return 42
 
