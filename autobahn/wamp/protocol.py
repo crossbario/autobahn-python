@@ -27,6 +27,7 @@ from typing import Union, Optional, Dict, Any, ClassVar, List, Callable
 
 import txaio
 import inspect
+import asyncio
 from functools import reduce
 
 from autobahn import wamp
@@ -928,31 +929,34 @@ class ApplicationSession(BaseSession):
                         if enc_err:
                             txaio.reject(on_reply, enc_err)
                         else:
-                            if msg.kwargs or (call_request.options and call_request.options.details):
-                                kwargs = msg.kwargs or {}
-                                if msg.args:
-                                    res = types.CallResult(*msg.args,
-                                                           callee=msg.callee,
-                                                           callee_authid=msg.callee_authid,
-                                                           callee_authrole=msg.callee_authrole,
-                                                           forward_for=msg.forward_for,
-                                                           **kwargs)
-                                else:
-                                    res = types.CallResult(callee=msg.callee,
-                                                           callee_authid=msg.callee_authid,
-                                                           callee_authrole=msg.callee_authrole,
-                                                           forward_for=msg.forward_for,
-                                                           **kwargs)
-                                txaio.resolve(on_reply, res)
-                            else:
-                                if msg.args:
-                                    if len(msg.args) > 1:
-                                        res = types.CallResult(*msg.args)
-                                        txaio.resolve(on_reply, res)
+                            try:
+                                if msg.kwargs or (call_request.options and call_request.options.details):
+                                    kwargs = msg.kwargs or {}
+                                    if msg.args:
+                                        res = types.CallResult(*msg.args,
+                                                               callee=msg.callee,
+                                                               callee_authid=msg.callee_authid,
+                                                               callee_authrole=msg.callee_authrole,
+                                                               forward_for=msg.forward_for,
+                                                               **kwargs)
                                     else:
-                                        txaio.resolve(on_reply, msg.args[0])
+                                        res = types.CallResult(callee=msg.callee,
+                                                               callee_authid=msg.callee_authid,
+                                                               callee_authrole=msg.callee_authrole,
+                                                               forward_for=msg.forward_for,
+                                                               **kwargs)
+                                    txaio.resolve(on_reply, res)
                                 else:
-                                    txaio.resolve(on_reply, None)
+                                    if msg.args:
+                                        if len(msg.args) > 1:
+                                            res = types.CallResult(*msg.args)
+                                            txaio.resolve(on_reply, res)
+                                        else:
+                                            txaio.resolve(on_reply, msg.args[0])
+                                    else:
+                                        txaio.resolve(on_reply, None)
+                            except asyncio.exceptions.InvalidStateError as e:
+                                self.log.warn("Failed to resolve {future}: {error}", future=on_reply, error=e)
                 else:
                     raise ProtocolError("RESULT received for non-pending request ID {0}".format(msg.request))
 
