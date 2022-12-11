@@ -801,6 +801,9 @@ class ApplicationSession(BaseSession):
                     # get and pop outstanding publish request
                     publish_request = self._publish_reqs.pop(msg.request)
 
+                    if txaio.is_future(publish_request.on_reply) and txaio.is_called(publish_request.on_reply):
+                        return
+
                     # create a new publication object
                     publication = Publication(msg.publication, was_encrypted=publish_request.was_encrypted)
 
@@ -815,6 +818,9 @@ class ApplicationSession(BaseSession):
 
                     # get and pop outstanding subscribe request
                     request = self._subscribe_reqs.pop(msg.request)
+
+                    if txaio.is_future(request.on_reply) and txaio.is_called(request.on_reply):
+                        return
 
                     # create new handler subscription list for subscription ID if not yet tracked
                     if msg.subscription not in self._subscriptions:
@@ -836,6 +842,9 @@ class ApplicationSession(BaseSession):
 
                     # get and pop outstanding subscribe request
                     request = self._unsubscribe_reqs.pop(msg.request)
+
+                    if txaio.is_future(request.on_reply) and txaio.is_called(request.on_reply):
+                        return
 
                     # if the subscription still exists, mark as inactive and remove ..
                     if request.subscription_id in self._subscriptions:
@@ -923,6 +932,9 @@ class ApplicationSession(BaseSession):
 
                         # user callback that gets fired
                         on_reply = call_request.on_reply
+
+                        if txaio.is_future(on_reply) and txaio.is_called(on_reply):
+                            return
 
                         # above might already have rejected, so we guard ..
                         if enc_err:
@@ -1201,6 +1213,9 @@ class ApplicationSession(BaseSession):
                     # get and pop outstanding register request
                     request = self._register_reqs.pop(msg.request)
 
+                    if txaio.is_future(request.on_reply) and txaio.is_called(request.on_reply):
+                        return
+
                     # create new registration if not yet tracked
                     if msg.registration not in self._registrations:
                         registration = Registration(self, msg.registration, request.procedure, request.endpoint)
@@ -1234,6 +1249,9 @@ class ApplicationSession(BaseSession):
 
                     # get and pop outstanding subscribe request
                     request = self._unregister_reqs.pop(msg.request)
+
+                    if txaio.is_future(request.on_reply) and txaio.is_called(request.on_reply):
+                        return
 
                     # if the registration still exists, mark as inactive and remove ..
                     if request.registration_id in self._registrations:
