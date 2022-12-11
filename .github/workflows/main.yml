@@ -72,7 +72,7 @@ jobs:
         # os: [ubuntu-20.04, macos-latest, windows-latest]
 
         # https://github.com/actions/setup-python#specifying-a-pypy-version
-        python-version: ['3.7', '3.10', 'pypy-3.8']
+        python-version: ['3.7', '3.11', 'pypy-3.8']
         framework: ['asyncio', 'tw1910', 'tw221', 'twtrunk']
 
     # https://github.blog/changelog/2020-04-15-github-actions-new-workflow-features/
