@@ -25,26 +25,36 @@ class Registered(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Registered
-    def Request(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Registered
-    def Registration(self):
+    def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def RegisteredStart(builder): builder.StartObject(2)
+    # Registered
+    def Registration(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+def RegisteredStart(builder): builder.StartObject(3)
 def Start(builder):
     return RegisteredStart(builder)
-def RegisteredAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def RegisteredAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return RegisteredAddSession(builder, session)
+def RegisteredAddRequest(builder, request): builder.PrependUint64Slot(1, request, 0)
 def AddRequest(builder, request):
     return RegisteredAddRequest(builder, request)
-def RegisteredAddRegistration(builder, registration): builder.PrependUint64Slot(1, registration, 0)
+def RegisteredAddRegistration(builder, registration): builder.PrependUint64Slot(2, registration, 0)
 def AddRegistration(builder, registration):
     return RegisteredAddRegistration(builder, registration)
 def RegisteredEnd(builder): return builder.EndObject()

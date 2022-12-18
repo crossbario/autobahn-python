@@ -80,7 +80,7 @@ else:
 extras_require_serialization.extend([
     'cbor2>=5.2.0',             # MIT license
     'py-ubjson>=0.16.1',        # Apache 2.0 license
-    'flatbuffers>=1.12',        # Apache 2.0 license
+    'flatbuffers>=22.12.6',     # Apache 2.0 license
 ])
 
 # TLS transport encryption
@@ -303,6 +303,7 @@ setup(
                  "Programming Language :: Python :: 3.8",
                  "Programming Language :: Python :: 3.9",
                  "Programming Language :: Python :: 3.10",
+                 "Programming Language :: Python :: 3.11",
                  "Programming Language :: Python :: Implementation :: CPython",
                  "Programming Language :: Python :: Implementation :: PyPy",
                  "Topic :: Internet",

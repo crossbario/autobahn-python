@@ -25,26 +25,36 @@ class Abort(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Abort
-    def Reason(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # Abort
+    def Reason(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Abort
     def Message(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def AbortStart(builder): builder.StartObject(2)
+def AbortStart(builder): builder.StartObject(3)
 def Start(builder):
     return AbortStart(builder)
-def AbortAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def AbortAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return AbortAddSession(builder, session)
+def AbortAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
 def AddReason(builder, reason):
     return AbortAddReason(builder, reason)
-def AbortAddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
+def AbortAddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
 def AddMessage(builder, message):
     return AbortAddMessage(builder, message)
 def AbortEnd(builder): return builder.EndObject()

@@ -25,15 +25,22 @@ class Challenge(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Challenge
-    def Method(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # Challenge
+    def Method(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
     # Challenge
     def Extra(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.Map import Map
@@ -42,13 +49,16 @@ class Challenge(object):
             return obj
         return None
 
-def ChallengeStart(builder): builder.StartObject(2)
+def ChallengeStart(builder): builder.StartObject(3)
 def Start(builder):
     return ChallengeStart(builder)
-def ChallengeAddMethod(builder, method): builder.PrependUint8Slot(0, method, 0)
+def ChallengeAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return ChallengeAddSession(builder, session)
+def ChallengeAddMethod(builder, method): builder.PrependUint8Slot(1, method, 0)
 def AddMethod(builder, method):
     return ChallengeAddMethod(builder, method)
-def ChallengeAddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
+def ChallengeAddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
 def AddExtra(builder, extra):
     return ChallengeAddExtra(builder, extra)
 def ChallengeEnd(builder): return builder.EndObject()

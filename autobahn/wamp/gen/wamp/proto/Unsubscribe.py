@@ -25,26 +25,36 @@ class Unsubscribe(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Unsubscribe
-    def Request(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Unsubscribe
-    def Subscription(self):
+    def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def UnsubscribeStart(builder): builder.StartObject(2)
+    # Unsubscribe
+    def Subscription(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+def UnsubscribeStart(builder): builder.StartObject(3)
 def Start(builder):
     return UnsubscribeStart(builder)
-def UnsubscribeAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def UnsubscribeAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return UnsubscribeAddSession(builder, session)
+def UnsubscribeAddRequest(builder, request): builder.PrependUint64Slot(1, request, 0)
 def AddRequest(builder, request):
     return UnsubscribeAddRequest(builder, request)
-def UnsubscribeAddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
+def UnsubscribeAddSubscription(builder, subscription): builder.PrependUint64Slot(2, subscription, 0)
 def AddSubscription(builder, subscription):
     return UnsubscribeAddSubscription(builder, subscription)
 def UnsubscribeEnd(builder): return builder.EndObject()

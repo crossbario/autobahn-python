@@ -25,26 +25,36 @@ class Subscribed(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Subscribed
-    def Request(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Subscribed
-    def Subscription(self):
+    def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def SubscribedStart(builder): builder.StartObject(2)
+    # Subscribed
+    def Subscription(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+def SubscribedStart(builder): builder.StartObject(3)
 def Start(builder):
     return SubscribedStart(builder)
-def SubscribedAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def SubscribedAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return SubscribedAddSession(builder, session)
+def SubscribedAddRequest(builder, request): builder.PrependUint64Slot(1, request, 0)
 def AddRequest(builder, request):
     return SubscribedAddRequest(builder, request)
-def SubscribedAddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
+def SubscribedAddSubscription(builder, subscription): builder.PrependUint64Slot(2, subscription, 0)
 def AddSubscription(builder, subscription):
     return SubscribedAddSubscription(builder, subscription)
 def SubscribedEnd(builder): return builder.EndObject()

@@ -18,16 +18,16 @@ include "rpc.fbs";
 // Web Application Message Protocol (WAMP) namespace.
 //
 // WAMP at the application level exposes 4 roles:
-// 
+//
 // - Caller and Callee
 // - Publisher and Subscriber
-// 
+//
 // To decouple each pair of roles (or actors), WAMP uses an intermediary
 // that may implement two additional roles:
-// 
+//
 // - Dealer, to forward calls from Callers to Callees
 // - Broker, to dispatch events from Publishers to Subscribers
-// 
+//
 // WAMP is then defined in terms of message flow between those 6 roles.
 // There 26 WAMP messages at the wire level, and these are defined
 // (structurally) using FlatBuffers in this namespace.
@@ -51,7 +51,6 @@ union AnyMessage
     // PubSub
     Publish,
     Published,
-    SubscriberReceived,     // NEW
     Subscribe,
     Subscribed,
     Unsubscribe,

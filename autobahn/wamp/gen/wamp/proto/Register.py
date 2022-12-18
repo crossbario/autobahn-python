@@ -25,66 +25,76 @@ class Register(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Register
-    def Request(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Register
-    def Procedure(self):
+    def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # Register
+    def Procedure(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Register
     def Match(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
-        return 0
-
-    # Register
-    def Invoke(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
     # Register
-    def Concurrency(self):
+    def Invoke(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
+        return 0
+
+    # Register
+    def Concurrency(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint16Flags, o + self._tab.Pos)
         return 0
 
     # Register
     def ForceReregister(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def RegisterStart(builder): builder.StartObject(6)
+def RegisterStart(builder): builder.StartObject(7)
 def Start(builder):
     return RegisterStart(builder)
-def RegisterAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def RegisterAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return RegisterAddSession(builder, session)
+def RegisterAddRequest(builder, request): builder.PrependUint64Slot(1, request, 0)
 def AddRequest(builder, request):
     return RegisterAddRequest(builder, request)
-def RegisterAddProcedure(builder, procedure): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(procedure), 0)
+def RegisterAddProcedure(builder, procedure): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(procedure), 0)
 def AddProcedure(builder, procedure):
     return RegisterAddProcedure(builder, procedure)
-def RegisterAddMatch(builder, match): builder.PrependUint8Slot(2, match, 0)
+def RegisterAddMatch(builder, match): builder.PrependUint8Slot(3, match, 0)
 def AddMatch(builder, match):
     return RegisterAddMatch(builder, match)
-def RegisterAddInvoke(builder, invoke): builder.PrependUint8Slot(3, invoke, 0)
+def RegisterAddInvoke(builder, invoke): builder.PrependUint8Slot(4, invoke, 0)
 def AddInvoke(builder, invoke):
     return RegisterAddInvoke(builder, invoke)
-def RegisterAddConcurrency(builder, concurrency): builder.PrependUint16Slot(4, concurrency, 0)
+def RegisterAddConcurrency(builder, concurrency): builder.PrependUint16Slot(5, concurrency, 0)
 def AddConcurrency(builder, concurrency):
     return RegisterAddConcurrency(builder, concurrency)
-def RegisterAddForceReregister(builder, forceReregister): builder.PrependBoolSlot(5, forceReregister, 0)
+def RegisterAddForceReregister(builder, forceReregister): builder.PrependBoolSlot(6, forceReregister, 0)
 def AddForceReregister(builder, forceReregister):
     return RegisterAddForceReregister(builder, forceReregister)
 def RegisterEnd(builder): return builder.EndObject()

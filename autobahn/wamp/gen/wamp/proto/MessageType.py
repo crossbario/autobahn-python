@@ -13,7 +13,6 @@ class MessageType(object):
     ERROR = 8
     PUBLISH = 16
     PUBLISHED = 17
-    SUBSCRIBER_RECEIVED = 18
     SUBSCRIBE = 32
     SUBSCRIBED = 33
     UNSUBSCRIBE = 34

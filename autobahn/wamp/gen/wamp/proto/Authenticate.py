@@ -25,15 +25,22 @@ class Authenticate(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Authenticate
-    def Signature(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # Authenticate
+    def Signature(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Authenticate
     def Extra(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.Map import Map
@@ -42,13 +49,16 @@ class Authenticate(object):
             return obj
         return None
 
-def AuthenticateStart(builder): builder.StartObject(2)
+def AuthenticateStart(builder): builder.StartObject(3)
 def Start(builder):
     return AuthenticateStart(builder)
-def AuthenticateAddSignature(builder, signature): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(signature), 0)
+def AuthenticateAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return AuthenticateAddSession(builder, session)
+def AuthenticateAddSignature(builder, signature): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(signature), 0)
 def AddSignature(builder, signature):
     return AuthenticateAddSignature(builder, signature)
-def AuthenticateAddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
+def AuthenticateAddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
 def AddExtra(builder, extra):
     return AuthenticateAddExtra(builder, extra)
 def AuthenticateEnd(builder): return builder.EndObject()

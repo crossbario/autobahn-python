@@ -15,6 +15,9 @@ namespace wamp.proto;
 // CALL message (message_type = 48): [CALL, Request|id, Options|dict, Procedure|uri, Payload|binary]
 table Call
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The WAMP request ID of this request.
     request: uint64 (key);
 
@@ -59,6 +62,9 @@ table Call
 // CANCEL message (message_type = 49): [CANCEL, CALL.Request|id, Options|dict]
 table Cancel
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The request ID of the original CALL request.
     request: uint64 (key);
 
@@ -73,6 +79,9 @@ table Cancel
 // RESULT message (message_type = 50): [RESULT, CALL.Request|id, Details|dict, Payload|binary]
 table Result
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The request ID of the original CALL request.
     request: uint64 (key);
 
@@ -108,6 +117,9 @@ table Result
 // REGISTER message (message_type = 64): [REGISTER, Request|id, Options|dict, Procedure|uri]
 table Register
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The WAMP request ID of this request.
     request: uint64 (key);
 
@@ -131,6 +143,9 @@ table Register
 // REGISTERED message (message_type = 65): [REGISTERED, REGISTER.Request|id, Registration|id]
 table Registered
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The request ID of the original ``REGISTER`` request.
     request: uint64 (key);
 
@@ -142,6 +157,9 @@ table Registered
 // UNREGISTER message (message_type = 66): [UNREGISTER, Request|id, REGISTERED.Registration|id]
 table Unregister
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The request ID of the original ``REGISTER`` request.
     request: uint64 (key);
 
@@ -153,6 +171,9 @@ table Unregister
 // UNREGISTERED message (message_type = 67): [UNREGISTERED, UNREGISTER.Request|id, Details|dict]
 table Unregistered
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The request ID of the original UNREGISTER request.
     request: uint64 (key);
 
@@ -167,6 +188,9 @@ table Unregistered
 // INVOCATION message (message_type = 68): [INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Payload|binary]
 table Invocation
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The WAMP request ID of this request.
     request: uint64 (key);
 
@@ -214,6 +238,9 @@ table Invocation
 // INTERRUPT message (message_type = 69): [INTERRUPT, INVOCATION.Request|id, Options|dict]
 table Interrupt
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The WAMP request ID of this request.
     request: uint64 (key);
 
@@ -231,6 +258,9 @@ table Interrupt
 // YIELD message (message_type = 70): [YIELD, INVOCATION.Request|id, Options|dict, Payload|binary]
 table Yield
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The WAMP request ID of this request.
     request: uint64 (key);
 

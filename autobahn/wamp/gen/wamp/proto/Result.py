@@ -25,15 +25,22 @@ class Result(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Result
-    def Request(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Result
-    def Payload(self, j):
+    def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # Result
+    def Payload(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             a = self._tab.Vector(o)
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
@@ -41,40 +48,40 @@ class Result(object):
 
     # Result
     def PayloadAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Uint8Flags, o)
         return 0
 
     # Result
     def PayloadLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Result
     def PayloadIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         return o == 0
 
     # Result
     def EncAlgo(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
-        return 0
-
-    # Result
-    def EncSerializer(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
     # Result
-    def EncKey(self, j):
+    def EncSerializer(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
+        return 0
+
+    # Result
+    def EncKey(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             a = self._tab.Vector(o)
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
@@ -82,54 +89,54 @@ class Result(object):
 
     # Result
     def EncKeyAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Uint8Flags, o)
         return 0
 
     # Result
     def EncKeyLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Result
     def EncKeyIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         return o == 0
 
     # Result
     def Progress(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # Result
     def Callee(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Result
     def CalleeAuthid(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-    # Result
-    def CalleeAuthrole(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Result
-    def ForwardFor(self, j):
+    def CalleeAuthrole(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Result
+    def ForwardFor(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
@@ -141,53 +148,56 @@ class Result(object):
 
     # Result
     def ForwardForLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Result
     def ForwardForIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         return o == 0
 
-def ResultStart(builder): builder.StartObject(10)
+def ResultStart(builder): builder.StartObject(11)
 def Start(builder):
     return ResultStart(builder)
-def ResultAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def ResultAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return ResultAddSession(builder, session)
+def ResultAddRequest(builder, request): builder.PrependUint64Slot(1, request, 0)
 def AddRequest(builder, request):
     return ResultAddRequest(builder, request)
-def ResultAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+def ResultAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
 def AddPayload(builder, payload):
     return ResultAddPayload(builder, payload)
 def ResultStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
 def StartPayloadVector(builder, numElems):
     return ResultStartPayloadVector(builder, numElems)
-def ResultAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(2, encAlgo, 0)
+def ResultAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(3, encAlgo, 0)
 def AddEncAlgo(builder, encAlgo):
     return ResultAddEncAlgo(builder, encAlgo)
-def ResultAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(3, encSerializer, 0)
+def ResultAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(4, encSerializer, 0)
 def AddEncSerializer(builder, encSerializer):
     return ResultAddEncSerializer(builder, encSerializer)
-def ResultAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+def ResultAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
 def AddEncKey(builder, encKey):
     return ResultAddEncKey(builder, encKey)
 def ResultStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
 def StartEncKeyVector(builder, numElems):
     return ResultStartEncKeyVector(builder, numElems)
-def ResultAddProgress(builder, progress): builder.PrependBoolSlot(5, progress, 0)
+def ResultAddProgress(builder, progress): builder.PrependBoolSlot(6, progress, 0)
 def AddProgress(builder, progress):
     return ResultAddProgress(builder, progress)
-def ResultAddCallee(builder, callee): builder.PrependUint64Slot(6, callee, 0)
+def ResultAddCallee(builder, callee): builder.PrependUint64Slot(7, callee, 0)
 def AddCallee(builder, callee):
     return ResultAddCallee(builder, callee)
-def ResultAddCalleeAuthid(builder, calleeAuthid): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthid), 0)
+def ResultAddCalleeAuthid(builder, calleeAuthid): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthid), 0)
 def AddCalleeAuthid(builder, calleeAuthid):
     return ResultAddCalleeAuthid(builder, calleeAuthid)
-def ResultAddCalleeAuthrole(builder, calleeAuthrole): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthrole), 0)
+def ResultAddCalleeAuthrole(builder, calleeAuthrole): builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthrole), 0)
 def AddCalleeAuthrole(builder, calleeAuthrole):
     return ResultAddCalleeAuthrole(builder, calleeAuthrole)
-def ResultAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def ResultAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
 def AddForwardFor(builder, forwardFor):
     return ResultAddForwardFor(builder, forwardFor)
 def ResultStartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
