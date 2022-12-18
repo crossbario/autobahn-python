@@ -25,29 +25,36 @@ class Interrupt(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Interrupt
-    def Request(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Interrupt
-    def Mode(self):
+    def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # Interrupt
+    def Mode(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 1
 
     # Interrupt
     def Reason(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Interrupt
     def ForwardFor(self, j):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
@@ -59,29 +66,32 @@ class Interrupt(object):
 
     # Interrupt
     def ForwardForLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Interrupt
     def ForwardForIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         return o == 0
 
-def InterruptStart(builder): builder.StartObject(4)
+def InterruptStart(builder): builder.StartObject(5)
 def Start(builder):
     return InterruptStart(builder)
-def InterruptAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def InterruptAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return InterruptAddSession(builder, session)
+def InterruptAddRequest(builder, request): builder.PrependUint64Slot(1, request, 0)
 def AddRequest(builder, request):
     return InterruptAddRequest(builder, request)
-def InterruptAddMode(builder, mode): builder.PrependUint8Slot(1, mode, 1)
+def InterruptAddMode(builder, mode): builder.PrependUint8Slot(2, mode, 1)
 def AddMode(builder, mode):
     return InterruptAddMode(builder, mode)
-def InterruptAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+def InterruptAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
 def AddReason(builder, reason):
     return InterruptAddReason(builder, reason)
-def InterruptAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def InterruptAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
 def AddForwardFor(builder, forwardFor):
     return InterruptAddForwardFor(builder, forwardFor)
 def InterruptStartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)

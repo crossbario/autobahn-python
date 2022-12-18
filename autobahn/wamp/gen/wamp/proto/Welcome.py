@@ -25,8 +25,15 @@ class Welcome(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Welcome
-    def Roles(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # Welcome
+    def Roles(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.proto.RouterRoles import RouterRoles
@@ -34,13 +41,6 @@ class Welcome(object):
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
-
-    # Welcome
-    def Session(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
-        return 0
 
     # Welcome
     def Realm(self):
@@ -112,12 +112,12 @@ class Welcome(object):
 def WelcomeStart(builder): builder.StartObject(11)
 def Start(builder):
     return WelcomeStart(builder)
-def WelcomeAddRoles(builder, roles): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(roles), 0)
-def AddRoles(builder, roles):
-    return WelcomeAddRoles(builder, roles)
-def WelcomeAddSession(builder, session): builder.PrependUint64Slot(1, session, 0)
+def WelcomeAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
 def AddSession(builder, session):
     return WelcomeAddSession(builder, session)
+def WelcomeAddRoles(builder, roles): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(roles), 0)
+def AddRoles(builder, roles):
+    return WelcomeAddRoles(builder, roles)
 def WelcomeAddRealm(builder, realm): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(realm), 0)
 def AddRealm(builder, realm):
     return WelcomeAddRealm(builder, realm)

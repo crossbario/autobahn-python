@@ -76,6 +76,7 @@ class Serializer(object):
         message.Unsubscribe.MESSAGE_TYPE: message.Unsubscribe,
         message.Unsubscribed.MESSAGE_TYPE: message.Unsubscribed,
         message.Event.MESSAGE_TYPE: message.Event,
+        message.EventReceived.MESSAGE_TYPE: message.EventReceived,
         message.Call.MESSAGE_TYPE: message.Call,
         message.Cancel.MESSAGE_TYPE: message.Cancel,
         message.Result.MESSAGE_TYPE: message.Result,

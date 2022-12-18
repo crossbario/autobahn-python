@@ -25,46 +25,56 @@ class Subscribe(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Subscribe
-    def Request(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Subscribe
-    def Topic(self):
+    def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # Subscribe
+    def Topic(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Subscribe
     def Match(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
     # Subscribe
     def GetRetained(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
-def SubscribeStart(builder): builder.StartObject(4)
+def SubscribeStart(builder): builder.StartObject(5)
 def Start(builder):
     return SubscribeStart(builder)
-def SubscribeAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def SubscribeAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return SubscribeAddSession(builder, session)
+def SubscribeAddRequest(builder, request): builder.PrependUint64Slot(1, request, 0)
 def AddRequest(builder, request):
     return SubscribeAddRequest(builder, request)
-def SubscribeAddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
+def SubscribeAddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
 def AddTopic(builder, topic):
     return SubscribeAddTopic(builder, topic)
-def SubscribeAddMatch(builder, match): builder.PrependUint8Slot(2, match, 0)
+def SubscribeAddMatch(builder, match): builder.PrependUint8Slot(3, match, 0)
 def AddMatch(builder, match):
     return SubscribeAddMatch(builder, match)
-def SubscribeAddGetRetained(builder, getRetained): builder.PrependBoolSlot(3, getRetained, 0)
+def SubscribeAddGetRetained(builder, getRetained): builder.PrependBoolSlot(4, getRetained, 0)
 def AddGetRetained(builder, getRetained):
     return SubscribeAddGetRetained(builder, getRetained)
 def SubscribeEnd(builder): return builder.EndObject()

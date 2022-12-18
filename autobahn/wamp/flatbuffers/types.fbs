@@ -136,8 +136,11 @@ enum Serializer: uint8
     // Raw pass-through of app payload, uninterpreted in any way.
     OPAQUE = 5,
 
-    // Explicit use of FlatBuffers also for (statically typed) payload.
-    FLATBUFFERS = 6
+    // Use FlatBuffers serialized (statically typed) payload (https://google.github.io/flatbuffers/index.html).
+    FLATBUFFERS = 6,
+
+    // Use FlexBuffers serialized (dynamically typed) payload (https://google.github.io/flatbuffers/flexbuffers.html).
+    FLEXBUFFERS = 7
 }
 
 

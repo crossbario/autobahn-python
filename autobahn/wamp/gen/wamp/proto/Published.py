@@ -25,26 +25,36 @@ class Published(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Published
-    def Request(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Published
-    def Publication(self):
+    def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
-def PublishedStart(builder): builder.StartObject(2)
+    # Published
+    def Publication(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+def PublishedStart(builder): builder.StartObject(3)
 def Start(builder):
     return PublishedStart(builder)
-def PublishedAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def PublishedAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return PublishedAddSession(builder, session)
+def PublishedAddRequest(builder, request): builder.PrependUint64Slot(1, request, 0)
 def AddRequest(builder, request):
     return PublishedAddRequest(builder, request)
-def PublishedAddPublication(builder, publication): builder.PrependUint64Slot(1, publication, 0)
+def PublishedAddPublication(builder, publication): builder.PrependUint64Slot(2, publication, 0)
 def AddPublication(builder, publication):
     return PublishedAddPublication(builder, publication)
 def PublishedEnd(builder): return builder.EndObject()

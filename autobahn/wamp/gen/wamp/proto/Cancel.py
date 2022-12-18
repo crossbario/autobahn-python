@@ -25,22 +25,29 @@ class Cancel(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Cancel
-    def Request(self):
+    def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Cancel
-    def Mode(self):
+    def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
+
+    # Cancel
+    def Mode(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
     # Cancel
     def ForwardFor(self, j):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
@@ -52,26 +59,29 @@ class Cancel(object):
 
     # Cancel
     def ForwardForLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Cancel
     def ForwardForIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         return o == 0
 
-def CancelStart(builder): builder.StartObject(3)
+def CancelStart(builder): builder.StartObject(4)
 def Start(builder):
     return CancelStart(builder)
-def CancelAddRequest(builder, request): builder.PrependUint64Slot(0, request, 0)
+def CancelAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+def AddSession(builder, session):
+    return CancelAddSession(builder, session)
+def CancelAddRequest(builder, request): builder.PrependUint64Slot(1, request, 0)
 def AddRequest(builder, request):
     return CancelAddRequest(builder, request)
-def CancelAddMode(builder, mode): builder.PrependUint8Slot(1, mode, 0)
+def CancelAddMode(builder, mode): builder.PrependUint8Slot(2, mode, 0)
 def AddMode(builder, mode):
     return CancelAddMode(builder, mode)
-def CancelAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+def CancelAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
 def AddForwardFor(builder, forwardFor):
     return CancelAddForwardFor(builder, forwardFor)
 def CancelStartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)

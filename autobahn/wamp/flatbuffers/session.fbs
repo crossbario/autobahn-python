@@ -17,6 +17,9 @@ namespace wamp.proto;
 // HELLO message (message_type = 1): [HELLO, Realm|uri, Details|dict]
 table Hello
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The WAMP session roles and client library features to announce.
     roles: ClientRoles (required);
 
@@ -50,11 +53,11 @@ table Hello
 // WELCOME message (message_type = 2): [WELCOME, Session|id, Details|dict]
 table Welcome
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The WAMP roles to announce.
     roles: RouterRoles (required);
-
-    // The WAMP session ID the other peer is assigned.
-    session: uint64;
 
     // The effective realm the session is joined on.
     realm: string (required, uri);
@@ -88,6 +91,9 @@ table Welcome
 // ABORT message (message_type = 3): [ABORT, Details|dict, Reason|uri]
 table Abort
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // WAMP or application error URI for aborting reason.
     reason: string (required, uri);
 
@@ -99,6 +105,9 @@ table Abort
 // CHALLENGE message (message_type = 4): [CHALLENGE, Method|string, Extra|dict]
 table Challenge
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The challenge method.
     method: AuthMethod;
 
@@ -110,6 +119,9 @@ table Challenge
 // AUTHENTICATE message (message_type = 5): [AUTHENTICATE, Signature|string, Extra|dict]
 table Authenticate
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The signature for the authentication challenge.
     signature: string (required);
 
@@ -121,6 +133,9 @@ table Authenticate
 // GOODBYE message (message_type = 6): [GOODBYE, Details|dict, Reason|uri]
 table Goodbye
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // Optional WAMP or application error URI for closing reason.
     reason: string (required, uri);
 
@@ -135,6 +150,9 @@ table Goodbye
 // ERROR message (message_type = 8): [ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Payload|binary]
 table Error
 {
+    // The WAMP session ID on the node this session is (directly) attached to.
+    session: uint64;
+
     // The WAMP message type code for the original request.
     request_type: MessageType;
 
