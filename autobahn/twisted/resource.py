@@ -29,11 +29,16 @@ from zope.interface import implementer
 
 from twisted.protocols.policies import ProtocolWrapper
 try:
-    # noinspection PyUnresolvedReferences
-    from twisted.web.error import NoResource
+    # starting from Twisted 22.10.0 we have `notFound`
+    from twisted.web.pages import notFound
 except ImportError:
-    # starting from Twisted 12.2, NoResource has moved
-    from twisted.web.resource import NoResource
+    try:
+        # In Twisted < 22.10.0 && > 12.2 this was called `NoResource`
+        from twisted.web.resource import NoResource as notFound
+    except ImportError:
+        # And in Twisted < 12.2 this was in a different place
+        from twisted.web.error import NoResource as notFound
+
 from twisted.web.resource import IResource, Resource
 
 # The following triggers an import of reactor at module level!
@@ -100,7 +105,7 @@ class WebSocketResource(object):
         """
         This resource cannot have children, hence this will always fail.
         """
-        return NoResource("No such child resource.")
+        return notFound(message="No such child resource.")
 
     def putChild(self, path, child):
         """
