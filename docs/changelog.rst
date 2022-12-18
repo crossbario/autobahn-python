@@ -8,7 +8,8 @@ Changelog
 22.12.1
 -------
 
-* new: update Flatbuffers schemata to flatc v22.12.06
+* new: expand WAMP Flatbuffers schemata (session ID in each message for MUXing)
+* new: update flatc v22.12.06 and regenerate WAMP Flatbuffers type libraries
 * fix: Twisted 22.10.0 incompability (#1604)
 * fix: Rapid Cancelling Of Tasks Can Cause InvalidStateError (#1600)
 * fix: identify_realm_name_category (#1590)
