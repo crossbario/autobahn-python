@@ -354,6 +354,15 @@ gource:
 # generate (a special set of) WAMP message classes from FlatBuffers schema
 #
 
+# To build flatc from sourcces:
+#
+#  git clone https://github.com/google/flatbuffers.git
+#  cd flatbuffers
+#  git checkout v22.12.06
+#  cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+#  make
+#  sudo cp ./flatc /usr/local/bin/flatc
+
 # input .fbs files for schema
 FBSFILES=./autobahn/wamp/flatbuffers/*.fbs
 
@@ -364,14 +373,21 @@ clean_fbs:
 	-rm -rf ./autobahn/wamp/gen/
 
 build_fbs:
-	# generate schema type library (*.bfbs files)
+	# generate schema binary type library (*.bfbs files)
 	$(FLATC) -o ./autobahn/wamp/gen/schema/ --binary --schema --bfbs-comments --bfbs-builtins $(FBSFILES)
 	@find ./autobahn/wamp/gen/schema/ -name "*.bfbs" | wc -l
 
 	# generate schema Python bindings (*.py files)
 	$(FLATC) -o ./autobahn/wamp/gen/ --python $(FBSFILES)
+	@touch ./autobahn/wamp/gen/__init__.py
 	@find ./autobahn/wamp/gen/ -name "*.py" | wc -l
 
+build_fbs_cpp:
 	# generate schema C++ bindings (*.cpp/hpp files)
-	# $(FLATC) -o /tmp/gen/ --cpp $(FBSFILES)
-	# @find /tmp/gen/
+	$(FLATC) -o /tmp/gen-cpp/ --cpp $(FBSFILES)
+	@find /tmp/gen-cpp/
+
+build_fbs_rust:
+	# generate schema Rust bindings (*.rs files)
+	$(FLATC) -o /tmp/gen-rust/ --rust $(FBSFILES)
+	@find /tmp/gen-rust/
