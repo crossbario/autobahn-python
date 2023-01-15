@@ -80,6 +80,7 @@ publish: clean
 
 clean_docs:
 	-rm -rf ./docs/_build
+	-rm -rf ./docs/autoapi/
 
 docs:
 	tox -e sphinx

@@ -106,6 +106,7 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
 
 autoapi_type = 'python'
 autoapi_dirs = ['../autobahn']
+autoapi_ignore = ['../autobahn/wamp/test/test_*.py', '../autobahn/websocket/test/test_*.py']
 autoapi_add_toctree_entry = False
 autoapi_options = ['members', 'undoc-members', 'private-members', 'show-inheritance', 'special-members', 'show-module-summary']
 # autoapi_template_dir = 'docs/autoapi/templates'
