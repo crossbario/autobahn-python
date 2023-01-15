@@ -1,4 +1,9 @@
-awscli
+# FIXME:
+# The conflict is caused by:
+# awscli 1.27.50 depends on colorama<0.4.5 and >=0.2.5
+# tox 4.2.8 depends on colorama>=0.4.6
+# awscli>=1.27.50
+# botocore>=1.29.50
 backports.tempfile>=1.0
 bumpversion>=0.5.3
 codecov>=2.0.15
@@ -23,9 +28,9 @@ sphinx>=1.7.1
 sphinx_rtd_theme>=0.1.9
 sphinxcontrib-images>=0.9.1
 tox-gh-actions>=2.2.0
-tox>=2.9.1
+tox>=4.2.8
 twine>=3.3.0
-twisted>=18.7.0
+twisted>=22.10.0
 txaio>=20.4.1
 watchdog>=0.8.3
 wheel>=0.36.2

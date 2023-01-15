@@ -53,10 +53,6 @@ clean: clean_docs clean_catalog
 	-rm -rf ./.tox
 	-rm -rf ./.eggs
 	-rm -rf ./htmlcov
-	-rm -f ./.coverage
-	-rm -f ./coverage.xml
-	-rm -f ./.coverage.*
-	-rm -rf ~/coverage
 	-rm -f  ./twisted/plugins/dropin.cache
 	-find . -name "*dropin.cache.new" -type f -exec rm -f {} \;
 	-find . -name ".pytest_cache" -type d -exec rm -rf {} \;
@@ -80,6 +76,7 @@ publish: clean
 
 clean_docs:
 	-rm -rf ./docs/_build
+	-rm -rf ./docs/autoapi/
 
 docs:
 	tox -e sphinx
@@ -180,7 +177,7 @@ test_setuptools:
 	python setup.py test
 
 test:
-	tox -e flake8,py37-twtrunk,py37-asyncio,coverage
+	tox -e flake8,py37-twtrunk,py37-asyncio
 
 #test: flake8 test_twisted test_asyncio
 
@@ -245,26 +242,10 @@ test_session_details:
 test_tx_protocol:
 	USE_TWISTED=1 trial autobahn.twisted.test.test_tx_protocol
 
-test_twisted_coverage:
-	-rm .coverage
-	USE_TWISTED=1 coverage run --omit=*/test/* --source=autobahn `which trial` autobahn
-#	coverage -a -d annotated_coverage
-	coverage html
-	coverage report --show-missing
-
-test_coverage:
-	-rm .coverage
-	tox -e py27-twtrunk,py27-asyncio,py36-asyncio
-	coverage combine
-	coverage html
-	coverage report --show-missing
-
-# test under asyncio
 test_asyncio:
 	USE_ASYNCIO=1 pytest -s -v -rfP --ignore=./autobahn/twisted autobahn
 #	USE_ASYNCIO=1 pytest -s -v -rA --ignore=./autobahn/twisted ./autobahn/asyncio/test/test_aio_websocket.py
 #	USE_ASYNCIO=1 pytest -s -v -rA --log-cli-level=info --ignore=./autobahn/twisted ./autobahn/asyncio/test/test_aio_websocket.py
-
 
 test_cs1:
 	USE_ASYNCIO=1 python -m pytest -s -v autobahn/wamp/test/test_cryptosign.py
@@ -395,3 +376,6 @@ build_fbs_rust:
 	# generate schema Rust bindings (*.rs files)
 	$(FLATC) -o /tmp/gen-rust/ --rust $(FBSFILES)
 	@find /tmp/gen-rust/
+
+fix_copyright:
+	find . -type f -exec sed -i 's/Copyright (c) Crossbar.io Technologies GmbH/Copyright (c) typedef int GmbH/g' {} \;

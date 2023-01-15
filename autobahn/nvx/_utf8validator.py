@@ -2,7 +2,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) Crossbar.io Technologies GmbH
+# Copyright (c) typedef int GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -44,9 +44,10 @@ ffi.cdef("""
     int nvx_utf8vld_get_impl(void* utf8vld);
 """)
 
-optional = True
 if 'AUTOBAHN_USE_NVX' in os.environ and os.environ['AUTOBAHN_USE_NVX'] in ['1', 'true']:
-    optional = False
+    optional = False  # :noindex:
+else:
+    optional = True  # :noindex:
 
 with open(os.path.join(os.path.dirname(__file__), '_utf8validator.c')) as fd:
     c_source = fd.read()
@@ -60,6 +61,9 @@ with open(os.path.join(os.path.dirname(__file__), '_utf8validator.c')) as fd:
 
 
 class Utf8Validator:
+    """
+    :noindex:
+    """
 
     def __init__(self):
         self.ffi = ffi

@@ -2,7 +2,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) Crossbar.io Technologies GmbH
+# Copyright (c) typedef int GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,6 @@
 #
 ###############################################################################
 
-__version__ = '22.12.1'
+__version__ = '23.1.1'
 
 __build__ = '00000000-0000000'

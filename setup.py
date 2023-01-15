@@ -2,7 +2,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) Crossbar.io Technologies GmbH
+# Copyright (c) typedef int GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -123,7 +123,11 @@ extras_require_xbr = [
     'cbor2>=5.2.0',             # MIT license
     'zlmdb>=21.2.1',            # MIT license
     'twisted>=20.3.0',          # MIT license
-    'web3>=5.29.0',             # MIT license
+
+    # ImportError: cannot import name 'getargspec' from 'inspect'
+    # https://github.com/ethereum/web3.py/issues/2704#issuecomment-1369041219
+    # pip install git+https://github.com/ethereum/web3.py.git
+    'web3>=5.31.3',             # MIT license
 
     # the following is needed for EIP712 ("signed typed data"):
     'rlp>=2.0.1',               # MIT license
@@ -247,8 +251,8 @@ setup(
     description='WebSocket client & server library, WAMP real-time framework',
     long_description=docstr,
     license='MIT License',
-    author='Crossbar.io Technologies GmbH',
-    url='http://crossbar.io/autobahn',
+    author='typedef int GmbH',
+    url='https://github.com/crossbario/autobahn-python',
     project_urls={
         'Source': 'https://github.com/crossbario/autobahn-python',
     },

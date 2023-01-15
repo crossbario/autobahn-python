@@ -2,7 +2,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) Crossbar.io Technologies GmbH
+# Copyright (c) typedef int GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -48,18 +48,14 @@ class IWebSocketClientAgent(abc.ABC):
         """
         Open a new WebSocket connection.
 
-        :returns: a future which fires with a new
-            WebSocketClientProtocol instance which has just completed the
-            handshake, or an error.
-
         :param transport_config: the endpoint to connect to. A string
             containing a ws:// or wss:// URI (or a dict containing
             transport configuration?)
-
         :param options: any relevant options for this connection
-            attempt. Can include:
-                - headers: a dict() of headers to send
-                - anything currently in Factory / setProtocolOptions?
+            attempt. Can include: headers: a dict() of headers to send,
+            anything currently in Factory / setProtocolOptions?
+        :returns: a future which fires with a new WebSocketClientProtocol instance
+            which has just completed the handshake, or an error.
         """
 
 
@@ -68,7 +64,6 @@ class IWebSocketServerChannelFactory(abc.ABC):
     """
     WebSocket server protocol factories implement this interface, and create
     protocol instances which in turn implement
-    :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
     """
 
     @abc.abstractmethod
@@ -81,8 +76,8 @@ class IWebSocketServerChannelFactory(abc.ABC):
         """
 
         :param url: The WebSocket URL this factory is working for, e.g. ``ws://myhost.com/somepath``.
-                    For non-TCP transports like pipes or Unix domain sockets, provide ``None``.
-                    This will use an implicit URL of ``ws://localhost``.
+            For non-TCP transports like pipes or Unix domain sockets, provide ``None``.
+            This will use an implicit URL of ``ws://localhost``.
         :type url: str
 
         :param protocols: List of subprotocols the server supports. The subprotocol used is the first from
@@ -112,8 +107,8 @@ class IWebSocketServerChannelFactory(abc.ABC):
         Set WebSocket session parameters.
 
         :param url: The WebSocket URL this factory is working for, e.g. ``ws://myhost.com/somepath``.
-                    For non-TCP transports like pipes or Unix domain sockets, provide ``None``.
-                    This will use an implicit URL of ``ws://localhost``.
+            For non-TCP transports like pipes or Unix domain sockets, provide ``None``.
+            This will use an implicit URL of ``ws://localhost``.
         :type url: str
 
         :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the
@@ -216,11 +211,11 @@ class IWebSocketServerChannelFactory(abc.ABC):
         :type perMessageCompressionAccept: callable or None
 
         :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
-           in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
+            in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingInterval: float or None
 
         :param autoPingTimeout: Wait this many seconds for the peer to respond to automatically sent pings. If the
-           peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
+            peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingTimeout: float or None
 
         :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer
@@ -233,7 +228,7 @@ class IWebSocketServerChannelFactory(abc.ABC):
 
         :param flashSocketPolicy: The flash socket policy to be served when we are serving
             the Flash Socket Policy on this protocol
-           and when Flash tried to connect to the destination port. It must end with a null character.
+            and when Flash tried to connect to the destination port. It must end with a null character.
         :type flashSocketPolicy: str or None
 
         :param allowedOrigins: A list of allowed WebSocket origins (with '*' as a wildcard character).
@@ -263,7 +258,6 @@ class IWebSocketClientChannelFactory(abc.ABC):
     """
     WebSocket client protocol factories implement this interface, and create
     protocol instances which in turn implement
-    :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
     """
 
     @abc.abstractmethod
@@ -281,8 +275,8 @@ class IWebSocketClientChannelFactory(abc.ABC):
         *before* the factory is started.
 
         :param url: WebSocket URL this factory will connect to, e.g. ``ws://myhost.com/somepath?param1=23``.
-                    For non-TCP transports like pipes or Unix domain sockets, provide ``None``.
-                    This will use an implicit URL of ``ws://localhost``.
+            For non-TCP transports like pipes or Unix domain sockets, provide ``None``.
+            This will use an implicit URL of ``ws://localhost``.
         :type url: str
 
         :param origin: The origin to be sent in WebSocket opening handshake or None (default: `None`).
@@ -315,8 +309,8 @@ class IWebSocketClientChannelFactory(abc.ABC):
         Set WebSocket session parameters.
 
         :param url: WebSocket URL this factory will connect to, e.g. `ws://myhost.com/somepath?param1=23`.
-                    For non-TCP transports like pipes or Unix domain sockets, provide `None`.
-                    This will use an implicit URL of `ws://localhost`.
+            For non-TCP transports like pipes or Unix domain sockets, provide `None`.
+            This will use an implicit URL of `ws://localhost`.
         :type url: str
 
         :param origin: The origin to be sent in opening handshake.
@@ -420,11 +414,11 @@ class IWebSocketClientChannelFactory(abc.ABC):
         :type perMessageCompressionAccept: callable
 
         :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
-           in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
+            in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingInterval: float or None
 
         :param autoPingTimeout: Wait this many seconds for the peer to respond to automatically sent pings. If the
-           peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
+            peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingTimeout: float or None
 
         :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer
@@ -465,12 +459,14 @@ class IWebSocketChannel(abc.ABC):
     * :meth:`IWebSocketChannel.sendClose`
     * :meth:`IWebSocketChannel.onClose`
 
-    Finally, WebSocket ping/pong messages (e.g. for heart-beating) can use:
+    Finally, WebSocket ping/pong messages
 
     * :meth:`IWebSocketChannel.sendPing`
     * :meth:`IWebSocketChannel.onPing`
     * :meth:`IWebSocketChannel.sendPong`
     * :meth:`IWebSocketChannel.onPong`
+
+    which are used for e.g. for heart-beating.
     """
 
     @public
@@ -482,8 +478,7 @@ class IWebSocketChannel(abc.ABC):
 
         :param transport_details: information about the transport.
 
-        :returns: A
-            :class:`autobahn.websocket.types.ConnectingRequest`
+        :returns: A :class:`autobahn.websocket.types.ConnectingRequest`
             instance is returned to indicate which options should be
             used for this connection. If you wish to use the default
             behavior, ``None`` may be returned (this is the default).
@@ -502,16 +497,15 @@ class IWebSocketChannel(abc.ABC):
 
         :param request_or_response: Connection request (for servers) or response (for clients).
         :type request_or_response: Instance of :class:`autobahn.websocket.types.ConnectionRequest`
-           or :class:`autobahn.websocket.types.ConnectionResponse`.
+            or :class:`autobahn.websocket.types.ConnectionResponse`.
 
-        :returns:
-           When this callback is fired on a WebSocket **server**, you may return one of:
-              * ``None``: the connection is accepted with no specific WebSocket subprotocol,
-              * ``str``: the connection is accepted with the returned name as the WebSocket subprotocol, or
-              * ``(str, dict)``: a pair of subprotocol accepted and HTTP headers to send to the client.
-           When this callback is fired on a WebSocket **client**, this method must return ``None``.
-           To deny a connection (client and server), raise an Exception.
-           You can also return a Deferred/Future that resolves/rejects to the above.
+        :returns: When this callback is fired on a WebSocket **server**, you may return one of:
+            ``None``: the connection is accepted with no specific WebSocket subprotocol,
+            ``str``: the connection is accepted with the returned name as the WebSocket subprotocol, or
+            ``(str, dict)``: a pair of subprotocol accepted and HTTP headers to send to the client.
+            When this callback is fired on a WebSocket **client**, this method must return ``None``.
+            To deny a connection (client and server), raise an Exception.
+            You can also return a Deferred/Future that resolves/rejects to the above.
         """
 
     @public
@@ -532,8 +526,7 @@ class IWebSocketChannel(abc.ABC):
 
         :param payload: The WebSocket message to be sent.
 
-        :param isBinary: Flag indicating whether payload is binary or
-            UTF-8 encoded text.
+        :param isBinary: Flag indicating whether payload is binary or UTF-8 encoded text.
         """
 
     @public
@@ -546,8 +539,7 @@ class IWebSocketChannel(abc.ABC):
 
         :param payload: The WebSocket message received.
 
-        :param isBinary: Flag indicating whether payload is binary or
-            UTF-8 encoded text.
+        :param isBinary: Flag indicating whether payload is binary or UTF-8 encoded text.
         """
 
     @public
@@ -557,9 +549,9 @@ class IWebSocketChannel(abc.ABC):
         Starts a WebSocket closing handshake tearing down the WebSocket connection.
 
         :param code: An optional close status code (``1000`` for normal close or ``3000-4999`` for
-           application specific close).
+            application specific close).
         :param reason: An optional close reason (a string that when present, a status
-           code MUST also be present).
+            code MUST also be present).
         """
 
     @public
@@ -655,9 +647,9 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         :param isBinary: ``True`` if payload is binary, else the payload must be UTF-8 encoded text.
         :type isBinary: bool
         :param doNotCompress: If ``True``, never compress this message. This only applies to
-           Hybi-Mode and only when WebSocket compression has been negotiated on the WebSocket
-           connection. Use when you know the payload incompressible (e.g. encrypted or
-           already compressed).
+            Hybi-Mode and only when WebSocket compression has been negotiated on the WebSocket
+            connection. Use when you know the payload incompressible (e.g. encrypted or
+            already compressed).
         :type doNotCompress: bool
         """
 
@@ -669,12 +661,8 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         :param payload: The message frame payload. When sending a text message, the payload must
                         be UTF-8 encoded already.
         :type payload: bytes
-        :param sync: If ``True``, try to force data onto the wire immediately.
-
-           .. warning::
-              Do NOT use this feature for normal applications.
-              Performance likely will suffer significantly.
-              This feature is mainly here for use by Autobahn|Testsuite.
+        :param sync: If ``True``, try to force data onto the wire immediately.S
+           .. warning:: Do NOT use this feature for normal applications. Performance likely will suffer significantly. This feature is mainly here for use by Autobahn|Testsuite.
         :type sync: bool
         """
 
@@ -741,15 +729,11 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
         :param payload: Frame payload to send.
         :type payload: bytes
         :param sync: If ``True``, try to force data onto the wire immediately.
-
-           .. warning::
-              Do NOT use this feature for normal applications.
-              Performance likely will suffer significantly.
-              This feature is mainly here for use by Autobahn|Testsuite.
+           .. warning:: Do NOT use this feature for normal applications. Performance likely will suffer significantly. This feature is mainly here for use by Autobahn|Testsuite.
         :type sync: bool
 
         :returns: When the currently sent message frame is still incomplete, returns octets
-           remaining to be sent. When the frame is complete, returns **0**. Otherwise the amount
-           of unconsumed data in payload argument is returned.
+            remaining to be sent. When the frame is complete, returns **0**. Otherwise the amount
+            of unconsumed data in payload argument is returned.
         :rtype: int
         """

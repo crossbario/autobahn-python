@@ -2,7 +2,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) Crossbar.io Technologies GmbH
+# Copyright (c) typedef int GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -1612,7 +1612,6 @@ class ApplicationSession(BaseSession):
                                     subopts = types.SubscribeOptions(match="exact")
                             on_replies.append(_subscribe(handler, proc, _uri, subopts, pat._check_types))
 
-            # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)
 
     def _unsubscribe(self, subscription):
@@ -1818,7 +1817,6 @@ class ApplicationSession(BaseSession):
                             regopts = pat.options or options
                             on_replies.append(_register(endpoint, proc, _uri, regopts, pat._check_types))
 
-            # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)
 
     def _unregister(self, registration):

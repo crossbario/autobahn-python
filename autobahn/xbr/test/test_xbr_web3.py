@@ -10,7 +10,7 @@ from autobahn.xbr import HAS_XBR
 HAS_INFURA = 'WEB3_INFURA_PROJECT_ID' in os.environ and len(os.environ['WEB3_INFURA_PROJECT_ID']) > 0
 
 # TypeError: As of 3.10, the *loop* parameter was removed from Lock() since it is no longer necessary
-IS_CPY_310 = sys.version_info.minor == 10
+IS_CPY_310 = sys.version_info.minor >= 10
 
 
 @skipIf(not HAS_XBR, 'package autobahn[xbr] not installed')

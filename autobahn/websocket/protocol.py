@@ -2,7 +2,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) Crossbar.io Technologies GmbH
+# Copyright (c) typedef int GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -263,7 +263,7 @@ def parseHttpHeader(data):
     :param data: The HTTP header data up to the \n\n line.
     :type data: bytes
 
-    :returns: tuple -- Tuple of HTTP status line, headers and headers count.
+    :returns: Tuple of HTTP status line, headers and headers count.
     """
     # By default, message header field parameters in Hypertext Transfer
     # Protocol (HTTP) messages cannot carry characters outside the ISO-
@@ -327,7 +327,7 @@ class Timings(object):
         :param formatted: If ``True``, format computed time period and return string.
         :type formatted: bool
 
-        :returns: float or str -- Computed time period in seconds (or formatted string).
+        :returns: Computed time period in seconds (or formatted string).
         """
         if endKey in self._timings and startKey in self._timings:
             d = self._timings[endKey] - self._timings[startKey]
@@ -945,7 +945,7 @@ class WebSocketProtocol(ObservableMixin):
         :param reason: Protocol violation that was encountered (human readable).
         :type reason: str
 
-        :returns: bool -- True, when any further processing should be discontinued.
+        :returns: True, when any further processing should be discontinued.
         """
         self.log.debug("Protocol violation: {reason}", reason=reason)
 
@@ -967,7 +967,7 @@ class WebSocketProtocol(ObservableMixin):
         :param reason: What was invalid for the payload (human readable).
         :type reason: str
 
-        :returns: bool -- True, when any further processing should be discontinued.
+        :returns: True, when any further processing should be discontinued.
         """
         self.log.debug("Invalid payload: {reason}", reason=reason)
 
@@ -2488,7 +2488,7 @@ class WebSocketFactory(object):
             (e.g. encrypted or already compressed).
         :type doNotCompress: bool
 
-        :returns: obj -- An instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
+        :returns: An instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
         """
         applyMask = not self.isServer
         return PreparedMessage(payload, isBinary, applyMask, doNotCompress)
@@ -2554,12 +2554,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
         :param request: WebSocket connection request information.
 
-        :returns:
-           You may return one of:
-              * ``None``: the connection is accepted with no specific WebSocket subprotocol,
-              * ``str``: the connection is accepted with the returned name as the WebSocket subprotocol, or
-              * ``(str, dict)``: a pair of subprotocol accepted and HTTP headers to send to the client.
-           You can also return a Deferred/Future that resolves/rejects to the above.
+        :returns: You may return one of: ``None``: the connection is accepted with no specific WebSocket subprotocol,
+            ``str``: the connection is accepted with the returned name as the WebSocket subprotocol, or
+            ``(str, dict)``: a pair of subprotocol accepted and HTTP headers to send to the client.
+            You can also return a Deferred/Future that resolves/rejects to the above.
         """
         self.log.debug('{func}: request={request}', func=hltype(self.onConnect), request=request)
         return None
@@ -3427,7 +3425,7 @@ class WebSocketServerFactory(WebSocketFactory):
         """
         Get number of currently connected clients.
 
-        :returns: int -- Number of currently connected clients.
+        :returns: Number of currently connected clients.
         """
         return self.countConnections
 
@@ -3449,8 +3447,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         :param transport_details: Details of the transport underlying the WebSocket connection being established.
 
-        :returns: A
-            :class:`autobahn.websocket.types.ConnectingRequest`
+        :returns: A :class:`autobahn.websocket.types.ConnectingRequest`
             instance is returned to indicate which options should be
             used for this connection. If you wish to use the default
             behavior, ``None`` may be returned (this is the default).

@@ -5,6 +5,14 @@
 Changelog
 =========
 
+23.1.1
+------
+
+- fix: support for Python up to v3.11
+- fix: update GitHub CI
+- fix: copyright transferred to typedef int GmbH - no license change!
+- fix: remove coverage crap
+
 22.12.1
 -------
 
