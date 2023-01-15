@@ -2,7 +2,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) Crossbar.io Technologies GmbH
+# Copyright (c) typedef int GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -247,8 +247,8 @@ setup(
     description='WebSocket client & server library, WAMP real-time framework',
     long_description=docstr,
     license='MIT License',
-    author='Crossbar.io Technologies GmbH',
-    url='http://crossbar.io/autobahn',
+    author='typedef int GmbH',
+    url='https://github.com/crossbario/autobahn-python',
     project_urls={
         'Source': 'https://github.com/crossbario/autobahn-python',
     },

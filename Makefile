@@ -397,4 +397,4 @@ build_fbs_rust:
 	@find /tmp/gen-rust/
 
 fix_copyright:
-	find . -type f -exec sed -i 's/Copyright (c) typedef int GmbH/Copyright (c) typedef int GmbH/g' {} \;
+	find . -type f -exec sed -i 's/Copyright (c) Crossbar.io Technologies GmbH/Copyright (c) typedef int GmbH/g' {} \;
