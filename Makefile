@@ -395,3 +395,6 @@ build_fbs_rust:
 	# generate schema Rust bindings (*.rs files)
 	$(FLATC) -o /tmp/gen-rust/ --rust $(FBSFILES)
 	@find /tmp/gen-rust/
+
+fix_copyright:
+	find . -type f -exec sed -i 's/Copyright (c) typedef int GmbH/Copyright (c) typedef int GmbH/g' {} \;
