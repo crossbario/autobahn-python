@@ -66,7 +66,7 @@ jobs:
         # python 3.11 fails with "src/twisted/test/raiser.c:198:12: fatal error: longintrepr.h: No such file or directory"
         # twisted doesn't yet support 3.11 formally: https://github.com/twisted/twisted/blob/trunk/pyproject.toml#L24
         python-version: ['3.7', '3.11', 'pypy-3.7', 'pypy-3.9']
-        framework: ['asyncio', 'tw203', 'tw223', 'twtrunk']
+        framework: ['asyncio', 'tw203', 'tw2210', 'twtrunk']
 
     # https://github.blog/changelog/2020-04-15-github-actions-new-workflow-features/
     # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstepscontinue-on-error
@@ -128,7 +128,7 @@ jobs:
     - name: Install OS package dependencies
       run: |
         sudo apt update
-        sudo apt install libenchant-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
+        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v3
