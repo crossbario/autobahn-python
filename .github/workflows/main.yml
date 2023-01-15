@@ -39,14 +39,6 @@ jobs:
     - name: Run Flake8
       run: tox -c tox.ini -e flake8
 
-    # since we use --parallel-mode to coverage inside Tox we use
-    # "coverage combine" so the filename is always ".coverage"
-    - name: Run Coverage
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      run: |
-        tox -c tox.ini -e coverage
-
   test:
     env:
       CB_FULLTESTS: 1

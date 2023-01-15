@@ -1612,7 +1612,6 @@ class ApplicationSession(BaseSession):
                                     subopts = types.SubscribeOptions(match="exact")
                             on_replies.append(_subscribe(handler, proc, _uri, subopts, pat._check_types))
 
-            # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)
 
     def _unsubscribe(self, subscription):
@@ -1818,7 +1817,6 @@ class ApplicationSession(BaseSession):
                             regopts = pat.options or options
                             on_replies.append(_register(endpoint, proc, _uri, regopts, pat._check_types))
 
-            # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)
 
     def _unregister(self, registration):

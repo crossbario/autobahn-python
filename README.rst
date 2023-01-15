@@ -3,7 +3,7 @@ Autobahn\|Python
 
 WebSocket & WAMP for Python on Twisted and asyncio.
 
-| |Version|  |CI Test Status|  |CI Deploy Status|  |CI Docker Status|  |CI EXE Status|  |Coverage|  |Docs|  |Docker Images|  |EXE Download|
+| |Version|  |CI Test Status|  |CI Deploy Status|  |CI Docker Status|  |CI EXE Status|  |Docs|  |Docker Images|  |EXE Download|
 
 --------------
 
@@ -268,9 +268,6 @@ Further, to speed up JSON on CPython using ``ujson``, set the environment variab
 .. |CI EXE Status| image:: https://github.com/crossbario/autobahn-python/workflows/pyinstaller/badge.svg
    :target: https://github.com/crossbario/autobahn-python/actions?query=workflow%3Apyinstaller
    :alt: CI EXE Status
-
-.. |Coverage| image:: https://img.shields.io/codecov/c/github/crossbario/autobahn-python/master.svg
-   :target: https://codecov.io/github/crossbario/autobahn-python
 
 .. |Docs| image:: https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat
    :target: https://autobahn.readthedocs.io/en/latest/

@@ -26,7 +26,6 @@ egg
 .egg*
 .tox
 htmlcov/
-.coverage
 *~
 *.log
 *.pid
@@ -40,8 +39,6 @@ node.key
 *.swo
 *.swn
 *.so
-coverage.xml
-.coverage.*
 autobahn/xbr/contracts
 .wheels
 get-pip.py
