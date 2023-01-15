@@ -123,7 +123,11 @@ extras_require_xbr = [
     'cbor2>=5.2.0',             # MIT license
     'zlmdb>=21.2.1',            # MIT license
     'twisted>=20.3.0',          # MIT license
-    'web3>=5.29.0',             # MIT license
+
+    # ImportError: cannot import name 'getargspec' from 'inspect'
+    # https://github.com/ethereum/web3.py/issues/2704#issuecomment-1369041219
+    # pip install git+https://github.com/ethereum/web3.py.git
+    'web3>=5.31.3',             # MIT license
 
     # the following is needed for EIP712 ("signed typed data"):
     'rlp>=2.0.1',               # MIT license
