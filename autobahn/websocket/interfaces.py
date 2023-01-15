@@ -211,11 +211,11 @@ class IWebSocketServerChannelFactory(abc.ABC):
         :type perMessageCompressionAccept: callable or None
 
         :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
-           in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
+            in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingInterval: float or None
 
         :param autoPingTimeout: Wait this many seconds for the peer to respond to automatically sent pings. If the
-           peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
+            peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingTimeout: float or None
 
         :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer
@@ -228,7 +228,7 @@ class IWebSocketServerChannelFactory(abc.ABC):
 
         :param flashSocketPolicy: The flash socket policy to be served when we are serving
             the Flash Socket Policy on this protocol
-           and when Flash tried to connect to the destination port. It must end with a null character.
+            and when Flash tried to connect to the destination port. It must end with a null character.
         :type flashSocketPolicy: str or None
 
         :param allowedOrigins: A list of allowed WebSocket origins (with '*' as a wildcard character).
@@ -414,11 +414,11 @@ class IWebSocketClientChannelFactory(abc.ABC):
         :type perMessageCompressionAccept: callable
 
         :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
-           in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
+            in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingInterval: float or None
 
         :param autoPingTimeout: Wait this many seconds for the peer to respond to automatically sent pings. If the
-           peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
+            peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
         :type autoPingTimeout: float or None
 
         :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer
@@ -661,8 +661,7 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         :param payload: The message frame payload. When sending a text message, the payload must
                         be UTF-8 encoded already.
         :type payload: bytes
-        :param sync: If ``True``, try to force data onto the wire immediately.
-
+        :param sync: If ``True``, try to force data onto the wire immediately.S
            .. warning:: Do NOT use this feature for normal applications. Performance likely will suffer significantly. This feature is mainly here for use by Autobahn|Testsuite.
         :type sync: bool
         """
@@ -730,7 +729,6 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
         :param payload: Frame payload to send.
         :type payload: bytes
         :param sync: If ``True``, try to force data onto the wire immediately.
-
            .. warning:: Do NOT use this feature for normal applications. Performance likely will suffer significantly. This feature is mainly here for use by Autobahn|Testsuite.
         :type sync: bool
 
