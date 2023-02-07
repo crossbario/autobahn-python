@@ -38,10 +38,75 @@ try:
     from mnemonic import Mnemonic
     from autobahn.xbr._mnemonic import mnemonic_to_private_key
 
+    # monkey patch eth_abi for master branch (which we need for python 3.11)
+    # https://github.com/ethereum/eth-abi/blob/master/docs/release_notes.rst#breaking-changes
+    # https://github.com/ethereum/eth-abi/pull/161
+    # ImportError: cannot import name 'encode_single' from 'eth_abi' (/home/oberstet/cpy311_2/lib/python3.11/site-packages/eth_abi/__init__.py)
+    import eth_abi
+
+    if not hasattr(eth_abi, 'encode_abi') and hasattr(eth_abi, 'encode'):
+        eth_abi.encode_abi = eth_abi.encode
+    if not hasattr(eth_abi, 'encode_single') and hasattr(eth_abi, 'encode'):
+        eth_abi.encode_single = eth_abi.encode
+
     # monkey patch, see:
     # https://github.com/ethereum/web3.py/issues/1201
     # https://github.com/ethereum/eth-abi/pull/88
-    from eth_abi import abi
+    if not hasattr(eth_abi, 'collapse_type'):
+
+        def collapse_type(base, sub, arrlist):
+            return base + sub + ''.join(map(repr, arrlist))
+
+        eth_abi.collapse_type = collapse_type
+
+    if not hasattr(eth_abi, 'process_type'):
+        from eth_abi.grammar import (
+            TupleType,
+            normalize,
+            parse,
+        )
+
+        def process_type(type_str):
+            normalized_type_str = normalize(type_str)
+            abi_type = parse(normalized_type_str)
+
+            type_str_repr = repr(type_str)
+            if type_str != normalized_type_str:
+                type_str_repr = '{} (normalized to {})'.format(
+                    type_str_repr,
+                    repr(normalized_type_str),
+                )
+
+            if isinstance(abi_type, TupleType):
+                raise ValueError("Cannot process type {}: tuple types not supported".format(type_str_repr, ))
+
+            abi_type.validate()
+
+            sub = abi_type.sub
+            if isinstance(sub, tuple):
+                sub = 'x'.join(map(str, sub))
+            elif isinstance(sub, int):
+                sub = str(sub)
+            else:
+                sub = ''
+
+            arrlist = abi_type.arrlist
+            if isinstance(arrlist, tuple):
+                arrlist = list(map(list, arrlist))
+            else:
+                arrlist = []
+
+            return abi_type.base, sub, arrlist
+
+        eth_abi.process_type = process_type
+
+    # monkey patch web3 for master branch / upcoming v6 (which we need for python 3.11)
+    # AttributeError: type object 'Web3' has no attribute 'toChecksumAddress'. Did you mean: 'to_checksum_address'?
+    import web3
+    if not hasattr(web3.Web3, 'toChecksumAddress') and hasattr(web3.Web3, 'to_checksum_address'):
+        web3.Web3.toChecksumAddress = web3.Web3.to_checksum_address
+    if not hasattr(web3.Web3, 'isConnected') and hasattr(web3.Web3, 'is_connected'):
+        web3.Web3.isConnected = web3.Web3.is_connected
 
     import eth_account
 
@@ -81,54 +146,6 @@ try:
     from autobahn.xbr._userkey import UserKey  # noqa
 
     HAS_XBR = True
-
-    if not hasattr(abi, 'collapse_type'):
-
-        def collapse_type(base, sub, arrlist):
-            return base + sub + ''.join(map(repr, arrlist))
-
-        abi.collapse_type = collapse_type
-
-    if not hasattr(abi, 'process_type'):
-        from eth_abi.grammar import (
-            TupleType,
-            normalize,
-            parse,
-        )
-
-        def process_type(type_str):
-            normalized_type_str = normalize(type_str)
-            abi_type = parse(normalized_type_str)
-
-            type_str_repr = repr(type_str)
-            if type_str != normalized_type_str:
-                type_str_repr = '{} (normalized to {})'.format(
-                    type_str_repr,
-                    repr(normalized_type_str),
-                )
-
-            if isinstance(abi_type, TupleType):
-                raise ValueError("Cannot process type {}: tuple types not supported".format(type_str_repr, ))
-
-            abi_type.validate()
-
-            sub = abi_type.sub
-            if isinstance(sub, tuple):
-                sub = 'x'.join(map(str, sub))
-            elif isinstance(sub, int):
-                sub = str(sub)
-            else:
-                sub = ''
-
-            arrlist = abi_type.arrlist
-            if isinstance(arrlist, tuple):
-                arrlist = list(map(list, arrlist))
-            else:
-                arrlist = []
-
-            return abi_type.base, sub, arrlist
-
-        abi.process_type = process_type
 
     xbrtoken = None
     """
