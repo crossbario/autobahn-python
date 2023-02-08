@@ -130,7 +130,7 @@ extras_require_xbr = [
     # https://github.com/ethereum/web3.py/issues/2704#issuecomment-1369041219
     # pip install git+https://github.com/ethereum/web3.py.git
     # 'web3>=5.31.3',             # MIT license
-    'web3[ipfs] @ git+https://github.com/ethereum/web3.py.git#v6.0.0-beta.9',
+    'web3[ipfs] @ git+https://github.com/ethereum/web3.py.git#v6.0.0-beta.9#egg=web3',
 
     # the following is needed for EIP712 ("signed typed data"):
     'rlp>=2.0.1',               # MIT license
@@ -138,7 +138,7 @@ extras_require_xbr = [
     'py-ecc>=5.1.0',            # MIT license (https://github.com/ethereum/py_ecc)
 
     # 'eth-abi>=2.1.1',           # MIT license (https://github.com/ethereum/eth-abi)
-    'eth-abi @ git+https://github.com/ethereum/eth-abi.git@v4.0.0-beta.2',
+    'eth-abi @ git+https://github.com/ethereum/eth-abi.git@v4.0.0-beta.2#egg=eth-abi',
 
     # the following is needed (at least) for BIP32/39 mnemonic processing
     'mnemonic>=0.19',           # MIT license (https://github.com/trezor/python-mnemonic)
