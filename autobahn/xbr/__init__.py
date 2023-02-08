@@ -47,7 +47,7 @@ try:
     if not hasattr(eth_abi, 'encode_abi') and hasattr(eth_abi, 'encode'):
         eth_abi.encode_abi = eth_abi.encode
     if not hasattr(eth_abi, 'encode_single') and hasattr(eth_abi, 'encode'):
-        eth_abi.encode_single = eth_abi.encode
+        eth_abi.encode_single = lambda typ, val: eth_abi.encode([typ], [val])
 
     # monkey patch, see:
     # https://github.com/ethereum/web3.py/issues/1201
@@ -111,6 +111,10 @@ try:
         web3.Web3.isConnected = web3.Web3.is_connected
     if not hasattr(web3.Web3, 'privateKeyToAccount') and hasattr(web3.middleware.signing, 'private_key_to_account'):
         web3.Web3.privateKeyToAccount = web3.middleware.signing.private_key_to_account
+
+    import ens
+    if not hasattr(ens, 'main') and hasattr(ens, 'ens'):
+        ens.main = ens.ens
 
     import eth_account
 
@@ -300,11 +304,11 @@ try:
         :param index: The account index in account hierarchy defined by the seedphrase.
         :return: The new Eth account object
         """
-        from web3.auto import w3
+        from web3.middleware.signing import private_key_to_account
 
         derivation_path = "m/44'/60'/0'/0/{}".format(index)
         key = mnemonic_to_private_key(seedphrase, str_derivation_path=derivation_path)
-        account = w3.eth.account.privateKeyToAccount(key)
+        account = private_key_to_account(key)
         return account
 
     def account_from_ethkey(ethkey: bytes) -> eth_account.account.Account:
@@ -314,10 +318,10 @@ try:
         :param ethkey: The Ethereum private key seed (32 octets).
         :return: The new Eth account object
         """
-        from web3.auto import w3
+        from web3.middleware.signing import private_key_to_account
 
         assert len(ethkey) == 32
-        account = w3.eth.account.privateKeyToAccount(ethkey)
+        account = private_key_to_account(ethkey)
         return account
 
     ASCII_BOMB = r"""

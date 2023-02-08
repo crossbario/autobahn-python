@@ -39,17 +39,17 @@ class TestWeb3(TestCase):
         self.assertTrue(w3.isConnected())
 
     def test_ens_valid_names(self):
-        from ens.main import ENS
+        from ens.ens import ENS
 
         for name in ['wamp-proto.eth']:
             self.assertTrue(ENS.is_valid_name(name))
 
     def test_ens_resolve_names(self):
         from autobahn.xbr import make_w3
-        from ens.main import ENS
+        from ens.ens import ENS
 
         w3 = make_w3(self.gw_config)
-        ens = ENS.fromWeb3(w3)
+        ens = ENS.from_web3(w3)
         for name, adr in [
             ('wamp-proto.eth', '0x66267d0b1114cFae80C37942177a846d666b114a'),
         ]:
