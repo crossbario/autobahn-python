@@ -27,7 +27,7 @@ class TestWeb3(TestCase):
     #
     # solved via websockets>=10.3, but web3==5.29.0 requires websockets<10
     #
-    @skipIf(IS_CPY_310, 'Web3 v5.29.0 (web3.auto.infura) raises TypeError on Python 3.10')
+    @skipIf(True, 'FIXME: web3.auto.infura was removed')
     def test_connect_w3_infura_auto(self):
         from web3.auto.infura import w3
 
@@ -39,17 +39,17 @@ class TestWeb3(TestCase):
         self.assertTrue(w3.isConnected())
 
     def test_ens_valid_names(self):
-        from ens.main import ENS
+        from ens.ens import ENS
 
         for name in ['wamp-proto.eth']:
             self.assertTrue(ENS.is_valid_name(name))
 
     def test_ens_resolve_names(self):
         from autobahn.xbr import make_w3
-        from ens.main import ENS
+        from ens.ens import ENS
 
         w3 = make_w3(self.gw_config)
-        ens = ENS.fromWeb3(w3)
+        ens = ENS.from_web3(w3)
         for name, adr in [
             ('wamp-proto.eth', '0x66267d0b1114cFae80C37942177a846d666b114a'),
         ]:

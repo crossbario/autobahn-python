@@ -80,4 +80,4 @@ if HAS_XBR:
                 private_key = binascii.a2b_hex(private_key[2:])
 
                 self.assertEqual(account.address, public_adr)
-                self.assertEqual(account.privateKey, private_key)
+                self.assertEqual(account.key, private_key)

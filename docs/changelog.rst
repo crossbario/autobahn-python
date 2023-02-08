@@ -5,6 +5,11 @@
 Changelog
 =========
 
+23.1.2
+------
+
+- fix: monkey patch web3/eth_abi for python 3.11
+
 23.1.1
 ------
 

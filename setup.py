@@ -112,6 +112,8 @@ cffi_modules = []
 if 'AUTOBAHN_USE_NVX' not in os.environ or os.environ['AUTOBAHN_USE_NVX'] not in ['0', 'false']:
     cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
 
+# https://peps.python.org/pep-0440/#direct-references
+# https://stackoverflow.com/a/63688209/884770
 extras_require_xbr = [
     # XBR contracts and ABI file bundle
     'xbr>=21.2.1',              # Apache 2.0
@@ -127,13 +129,16 @@ extras_require_xbr = [
     # ImportError: cannot import name 'getargspec' from 'inspect'
     # https://github.com/ethereum/web3.py/issues/2704#issuecomment-1369041219
     # pip install git+https://github.com/ethereum/web3.py.git
-    'web3>=5.31.3',             # MIT license
+    # 'web3>=5.31.3',             # MIT license
+    'web3 @ git+https://github.com/ethereum/web3.py.git#v6.0.0-beta.9',
 
     # the following is needed for EIP712 ("signed typed data"):
     'rlp>=2.0.1',               # MIT license
     'py-eth-sig-utils>=0.4.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
     'py-ecc>=5.1.0',            # MIT license (https://github.com/ethereum/py_ecc)
-    'eth-abi>=2.1.1',           # MIT license (https://github.com/ethereum/eth-abi)
+
+    # 'eth-abi>=2.1.1',           # MIT license (https://github.com/ethereum/eth-abi)
+    'eth-abi @ git+https://github.com/ethereum/eth-abi.git@master#v4.0.0',
 
     # the following is needed (at least) for BIP32/39 mnemonic processing
     'mnemonic>=0.19',           # MIT license (https://github.com/trezor/python-mnemonic)

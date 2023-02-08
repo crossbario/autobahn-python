@@ -444,9 +444,12 @@ class FederatedRealm(object):
         if self._gateway_config:
             self._w3 = make_w3(self._gateway_config)
         else:
-            from web3.auto.infura import w3
-            self._w3 = w3
-        self._ens = ENS.fromWeb3(self._w3)
+            raise RuntimeError('cannot auto-configure ethereum connection (was removed from web3.py in v6)')
+            # https://github.com/ethereum/web3.py/issues/1416
+            # https://github.com/ethereum/web3.py/pull/2706
+            # from web3.auto.infura import w3
+            # self._w3 = w3
+        self._ens = ENS.from_web3(self._w3)
 
         if self._name_category in ['ens', 'reverse_ens']:
             if self._name_category == 'reverse_ens':
