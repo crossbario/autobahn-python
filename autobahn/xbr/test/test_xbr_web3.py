@@ -27,7 +27,7 @@ class TestWeb3(TestCase):
     #
     # solved via websockets>=10.3, but web3==5.29.0 requires websockets<10
     #
-    @skipIf(IS_CPY_310, 'Web3 v5.29.0 (web3.auto.infura) raises TypeError on Python 3.10')
+    @skipIf(True, 'FIXME: web3.auto.infura was removed')
     def test_connect_w3_infura_auto(self):
         from web3.auto.infura import w3
 
