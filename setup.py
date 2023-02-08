@@ -130,7 +130,7 @@ extras_require_xbr = [
     # https://github.com/ethereum/web3.py/issues/2704#issuecomment-1369041219
     # pip install git+https://github.com/ethereum/web3.py.git
     # 'web3>=5.31.3',             # MIT license
-    'web3 @ git+https://github.com/ethereum/web3.py.git#v6.0.0-beta.9',
+    'web3[ipfs] @ git+https://github.com/ethereum/web3.py.git#v6.0.0-beta.9',
 
     # the following is needed for EIP712 ("signed typed data"):
     'rlp>=2.0.1',               # MIT license
