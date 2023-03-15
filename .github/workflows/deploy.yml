@@ -10,70 +10,45 @@ on:
       - master
     types:
       - completed
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
 
-  deploy:
-    if: github.ref == 'refs/heads/master'
-
-    runs-on: ubuntu-20.04
-
-    # https://github.blog/changelog/2020-12-15-github-actions-environments-environment-protection-rules-and-environment-secrets-beta/
-    # https://docs.github.com/en/free-pro-team@latest/actions/reference/environments
-    environment: deploy_aws
-
-    env:
-      AWS_DEFAULT_REGION:    ${{ secrets.AWS_DEFAULT_REGION }}
-      AWS_S3_BUCKET_NAME:    ${{ secrets.AWS_S3_BUCKET_NAME }}
-      AWS_ACCESS_KEY_ID:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      WAMP_PRIVATE_KEY:      ${{ secrets.WAMP_PRIVATE_KEY }}
-
+  build_wheels:
+    name: Build & Upload
+    runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v2
-
-    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
-    # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#adding-a-system-path
-    - name: Set environment
-      run: |
-        echo AUTOBAHN_BUILD_DATE=`date -u +"%Y-%m-%d"` >> $GITHUB_ENV
-        echo AUTOBAHN_BUILD_ID=$(date --utc +%Y%m%d)-$(git rev-parse --short ${GITHUB_SHA}) >> $GITHUB_ENV
-        echo AUTOBAHN_VCS_REF=`git rev-parse --short ${GITHUB_SHA}` >> $GITHUB_ENV
-        echo AUTOBAHN_VERSION=$(grep -E '^(__version__)' ./autobahn/_version.py | cut -d ' ' -f3 | sed -e 's|[u"'\'']||g') >> $GITHUB_ENV
-
-    - name: Print environment
-      run: |
-        echo ""
-        echo "Build environment configured:"
-        echo ""
-        echo "  AUTOBAHN_BUILD_DATE = ${AUTOBAHN_BUILD_DATE}"
-        echo "  AUTOBAHN_BUILD_ID   = ${AUTOBAHN_BUILD_ID}"
-        echo "  AUTOBAHN_VCS_REF    = ${AUTOBAHN_VCS_REF}"
-        echo "  AUTOBAHN_VERSION    = ${AUTOBAHN_VERSION}"
-        echo ""
-        echo "Wheels (publish):"
-        echo "  AWS_DEFAULT_REGION  = ${AWS_DEFAULT_REGION}"
-        echo "  AWS_S3_BUCKET_NAME  = ${AWS_S3_BUCKET_NAME}"
-        echo ""
-
-    - name: Install OS package dependencies
-      run: |
-        sudo apt update
-        sudo apt install build-essential libssl-dev libffi-dev libunwind-dev \
-          libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
-          libsnappy-dev  libgirepository1.0-dev
+    - uses: actions/checkout@v3
 
     - name: Set up Python 3.x
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         architecture: 'x64'
 
-    - name: Install Python package dependencies
+    - name: Upgrade pip
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
+        python3 -m pip install --upgrade pip
 
-    - name: Deploy (build, package and upload)
+    - name: Install build & wheel
+      run:
+        pip3 install --upgrade build wheel
+
+    - name: Build wheel & sdist
       run: |
-        ./deploy.sh
+        python3 -m build --wheel --sdist
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: built-packages
+        path: |
+          ./dist/*.whl
+          ./dist/*.tar.gz
+
+    - name: Publish to Pypi
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
