@@ -5,6 +5,11 @@
 Changelog
 =========
 
+23.3.1
+------
+
+- fix: Updated web3 and eth-abi to not use beta versions (#1616)
+
 23.1.2
 ------
 
