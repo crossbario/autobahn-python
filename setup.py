@@ -122,7 +122,12 @@ if PYPY:
     # us bitarray upstream master until next upstream release
     # {package-name}[flavor] @ git+https://github.com/{user|org}/{repository}.git@{tag}#egg={package-name}
     # https://peps.python.org/pep-0508/
-    extras_require_xbr = ["bitarray @ git+https://github.com/ilanschnell/bitarray.git@master#bitarray"]
+    # extras_require_xbr = ["bitarray @ git+https://github.com/ilanschnell/bitarray.git@master#bitarray"]
+
+    # TODO: Bump when the issue is fixed upstream:
+    # https://github.com/ilanschnell/bitarray/issues/188
+    # https://github.com/velodrome-finance/api/pull/58
+    extras_require_xbr = ["bitarray==2.7.2"]
 else:
     extras_require_xbr = ["bitarray>=2.7.3"]
 
