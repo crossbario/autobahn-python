@@ -43,12 +43,22 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: built-packages
+        if-no-files-found: error
         path: |
           ./dist/*.whl
           ./dist/*.tar.gz
 
-    - name: Publish to Pypi
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1
+  publish_release:
+    name: Publish to PyPi
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    needs:
+      - build_wheels
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+    - uses: actions/download-artifact@v3
       with:
-        password: ${{ secrets.PYPI_API_TOKEN }}
+        name: built-packages
+    - name: Publish to Pypi
+      uses: pypa/gh-action-pypi-publish@release/v1
