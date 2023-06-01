@@ -113,27 +113,13 @@ cffi_modules = []
 if 'AUTOBAHN_USE_NVX' not in os.environ or os.environ['AUTOBAHN_USE_NVX'] not in ['0', 'false']:
     cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
 
-if PYPY:
-    # bitarray is required by eth-account, but on pypy:
-    #
-    # https://github.com/crossbario/autobahn-python/pull/1617#issuecomment-1492005329
-    # https://github.com/ilanschnell/bitarray/issues/188
-    #
-    # us bitarray upstream master until next upstream release
-    # {package-name}[flavor] @ git+https://github.com/{user|org}/{repository}.git@{tag}#egg={package-name}
-    # https://peps.python.org/pep-0508/
-    # extras_require_xbr = ["bitarray @ git+https://github.com/ilanschnell/bitarray.git@master#bitarray"]
-
-    # TODO: Bump when the issue is fixed upstream:
-    # https://github.com/ilanschnell/bitarray/issues/188
-    # https://github.com/velodrome-finance/api/pull/58
-    extras_require_xbr = ["bitarray==2.7.2"]
-else:
-    extras_require_xbr = ["bitarray>=2.7.3"]
-
 # https://peps.python.org/pep-0440/#direct-references
 # https://stackoverflow.com/a/63688209/884770
-extras_require_xbr.extend([
+extras_require_xbr = [
+    # bitarray is required by eth-account, but on pypy
+    # see discussion/links on https://github.com/crossbario/autobahn-python/pull/1617
+    'bitarray>=2.7.4',          # PSF
+
     # XBR contracts and ABI file bundle
     'xbr>=21.2.1',              # Apache 2.0
 
@@ -170,7 +156,7 @@ extras_require_xbr.extend([
     # the following is needed for XBR account synch and device pairing
     'spake2>=0.8',              # MIT license (https://github.com/warner/python-spake2/blob/master/LICENSE)
     'hkdf>=0.0.3',              # BSD 2-Clause "Simplified" License
-])
+]
 
 # required for UI based tools, e.g. xbrnetwork-ui (autobahn.xbr._gui:_main)
 extras_require_ui = [
