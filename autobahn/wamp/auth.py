@@ -530,8 +530,10 @@ def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
         )
 
     backend = default_backend()
+
+    # https://cryptography.io/en/latest/hazmat/primitives/key-derivation-functions/#pbkdf2
     kdf = PBKDF2HMAC(
-        algorithm=getattr(hashes, hashfunc.upper()),
+        algorithm=getattr(hashes, hashfunc.upper())(),
         length=keylen,
         salt=salt,
         iterations=iterations,

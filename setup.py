@@ -32,6 +32,7 @@ from setuptools import setup
 from setuptools.command.test import test as test_command
 
 CPY = platform.python_implementation() == 'CPython'
+PYPY = platform.python_implementation() == 'PyPy'
 
 # read version string
 with open('autobahn/_version.py') as f:
@@ -115,6 +116,11 @@ if 'AUTOBAHN_USE_NVX' not in os.environ or os.environ['AUTOBAHN_USE_NVX'] not in
 # https://peps.python.org/pep-0440/#direct-references
 # https://stackoverflow.com/a/63688209/884770
 extras_require_xbr = [
+    # bitarray is required by eth-account, but on pypy
+    # see discussion/links on https://github.com/crossbario/autobahn-python/pull/1617
+    # 'bitarray>=2.7.5',          # PSF
+    'bitarray @ git+https://github.com/ilanschnell/bitarray.git@master#egg=bitarray',
+
     # XBR contracts and ABI file bundle
     'xbr>=21.2.1',              # Apache 2.0
 
@@ -295,7 +301,7 @@ setup(
 
     zip_safe=False,
 
-    python_requires='>=3.7',
+    python_requires='>=3.9',
 
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=["License :: OSI Approved :: MIT License",
@@ -306,8 +312,6 @@ setup(
                  "Operating System :: OS Independent",
                  "Programming Language :: Python",
                  "Programming Language :: Python :: 3",
-                 "Programming Language :: Python :: 3.7",
-                 "Programming Language :: Python :: 3.8",
                  "Programming Language :: Python :: 3.9",
                  "Programming Language :: Python :: 3.10",
                  "Programming Language :: Python :: 3.11",

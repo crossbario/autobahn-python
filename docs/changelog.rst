@@ -5,6 +5,12 @@
 Changelog
 =========
 
+23.6.1
+------
+
+- fix: updated bitarray to make eth-account work on pypy
+- fix: updated web3 and eth-abi to not use beta versions (#1616)
+
 23.1.2
 ------
 
