@@ -119,7 +119,7 @@ extras_require_xbr = [
     # bitarray is required by eth-account, but on pypy
     # see discussion/links on https://github.com/crossbario/autobahn-python/pull/1617
     # 'bitarray>=2.7.5',          # PSF
-    'bitarray @ git+https://github.com/ilanschnell/bitarray.git@master#egg=bitarray'
+    'bitarray @ git+https://github.com/ilanschnell/bitarray.git@master#egg=bitarray',
 
     # XBR contracts and ABI file bundle
     'xbr>=21.2.1',              # Apache 2.0

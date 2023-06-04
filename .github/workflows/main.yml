@@ -133,9 +133,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements-dev.txt
 
-    - name: Install this package
+    - name: Install this package and run Sphinx
       run: |
         pip install .[all]
-
-    - name: Run Sphinx
-      run: tox -c tox.ini -e sphinx
+        tox -c tox.ini -e sphinx
