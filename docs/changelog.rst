@@ -5,6 +5,11 @@
 Changelog
 =========
 
+23.6.2
+------
+
+- fix: use regular PyPI bitarray>=2.7.5 rather than from GitHub master
+
 23.6.1
 ------
 
