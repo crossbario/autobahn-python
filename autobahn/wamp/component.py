@@ -120,8 +120,8 @@ def _create_transport(index, transport, check_native_endpoint=None):
     valid_transport_keys = [
         'type', 'url', 'endpoint', 'serializer', 'serializers', 'options',
         'max_retries', 'max_retry_delay', 'initial_retry_delay',
-        'retry_delay_growth', 'retry_delay_jitter', 'proxy',
-    ]
+        'retry_delay_growth', 'retry_delay_jitter', 'proxy', 'headers'
+        ]
     for k in transport.keys():
         if k not in valid_transport_keys:
             raise ValueError(
@@ -160,6 +160,8 @@ def _create_transport(index, transport, check_native_endpoint=None):
             raise ValueError(
                 'options must be a dict, not {}'.format(type(options))
             )
+    
+    headers = transport.get("headers", None)
 
     if kind == 'websocket':
         for key in ['url']:
@@ -252,6 +254,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
         serializers=serializer_config,
         proxy=proxy,
         options=options,
+        headers=headers,
         **kw
     )
 
@@ -268,7 +271,8 @@ class _Transport(object):
                  retry_delay_growth=1.5,
                  retry_delay_jitter=0.1,
                  proxy=None,
-                 options=None):
+                 options=None,
+                 headers=None):
         """
         """
         if options is None:
@@ -279,6 +283,7 @@ class _Transport(object):
         self.url = url
         self.endpoint = endpoint
         self.options = options
+        self.headers = headers
 
         self.serializers = serializers
         if self.type == 'rawsocket' and len(serializers) != 1:
