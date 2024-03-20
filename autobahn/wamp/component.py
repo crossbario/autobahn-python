@@ -161,7 +161,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
                 'options must be a dict, not {}'.format(type(options))
             )
     
-    headers = transport.get("headers", None)
+    headers = transport.get("headers")
 
     if kind == 'websocket':
         for key in ['url']:
@@ -229,6 +229,8 @@ def _create_transport(index, transport, check_native_endpoint=None):
             endpoint_config = transport['endpoint']
         if 'serializers' in transport:
             raise ValueError("'serializers' is only for websocket; use 'serializer'")
+        if headers is None:
+            raise ValueError("'headers' not supported for rawsocket transport")
         # always a list; len == 1 for rawsocket
         if 'serializer' in transport:
             if not isinstance(transport['serializer'], (str, str)):
