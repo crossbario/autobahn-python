@@ -229,7 +229,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
             endpoint_config = transport['endpoint']
         if 'serializers' in transport:
             raise ValueError("'serializers' is only for websocket; use 'serializer'")
-        if headers is None:
+        if headers is not None:
             raise ValueError("'headers' not supported for rawsocket transport")
         # always a list; len == 1 for rawsocket
         if 'serializer' in transport:
