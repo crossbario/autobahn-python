@@ -50,7 +50,7 @@ RUN    apt-get update \
                pkg-config \
                libcairo2-dev \
                libgirepository1.0-dev \
-    && pip install --upgrade --no-cache-dir setuptools pip wheel \
+    && pip install --upgrade --no-cache-dir pip \
     && rm -rf ~/.cache \
     && rm -rf /var/lib/apt/lists/*
 
