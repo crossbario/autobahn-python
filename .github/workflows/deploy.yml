@@ -32,9 +32,9 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
 
-    - name: Install build & wheel
+    - name: Install build
       run:
-        pip3 install --upgrade build wheel
+        pip3 install --upgrade build
 
     - name: Build wheel & sdist
       run: |

@@ -22,7 +22,8 @@ aws --version
 
 # build python source dist and wheels
 echo 'building package ..'
-python setup.py sdist bdist_wheel --universal
+pip install build
+python -m build
 ls -la ./dist
 
 # upload to S3: https://s3.eu-central-1.amazonaws.com/crossbarbuilder/wheels/
