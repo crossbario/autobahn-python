@@ -25,14 +25,12 @@
 ###############################################################################
 
 import os
-import sys
-import shutil
 import platform
+import shutil
+
 from setuptools import setup
-from setuptools.command.test import test as test_command
 
 CPY = platform.python_implementation() == 'CPython'
-PYPY = platform.python_implementation() == 'PyPy'
 
 # read version string
 with open('autobahn/_version.py') as f:
@@ -51,13 +49,10 @@ extras_require_twisted = [
 ]
 
 # C-based WebSocket acceleration (only use on CPython, not PyPy!)
-if CPY and sys.platform != 'win32':
-    # wsaccel does not provide wheels: https://github.com/methane/wsaccel/issues/12
-    extras_require_accelerate = [
-        # "wsaccel>=0.6.3"            # Apache 2.0
-    ]
-else:
-    extras_require_accelerate = []
+# wsaccel does not provide wheels: https://github.com/methane/wsaccel/issues/12
+extras_require_accelerate = [
+    # "wsaccel>=0.6.3 ; platform_python_implementation == 'CPython' and sys_platform != 'win32'"  # Apache 2.0
+]
 
 # non-standard WebSocket compression support (FIXME: consider removing altogether)
 # Ubuntu: sudo apt-get install libsnappy-dev
@@ -67,16 +62,13 @@ extras_require_compress = [
 
 # accelerated JSON and non-JSON WAMP serialization support (namely MessagePack, CBOR and UBJSON)
 extras_require_serialization = []
-if CPY:
-    extras_require_serialization.extend([
-        'msgpack>=1.0.2',           # Apache 2.0 license
-        'ujson>=4.0.2',             # BSD license
-    ])
-else:
+extras_require_serialization.extend([
+    'msgpack>=1.0.2 ; platform_python_implementation == "CPython"',           # Apache 2.0 license
+    'ujson>=4.0.2 ; platform_python_implementation == "CPython"',             # BSD license
+    'u-msgpack-python>=2.1 ; platform_python_implementation != "CPython"',    # MIT license
+])
+if not CPY:
     os.environ['PYUBJSON_NO_EXTENSION'] = '1'  # enforce use of pure Python py-ubjson (no Cython)
-    extras_require_serialization.extend([
-        'u-msgpack-python>=2.1',    # MIT license
-    ])
 
 extras_require_serialization.extend([
     'cbor2>=5.2.0',             # MIT license
@@ -227,33 +219,6 @@ with open('requirements-dev.txt') as f:
         if not line.startswith('#'):
             extras_require_dev.append(line)
 
-# for testing by users with "python setup.py test" (not Tox, which we use)
-test_requirements = [
-    "pytest>=2.8.6,<3.3.0",             # MIT license
-]
-
-
-class PyTest(test_command):
-    """
-    pytest integration for setuptools.
-
-    see:
-      - http://pytest.org/latest/goodpractises.html#integration-with-setuptools-test-commands
-      - https://github.com/pyca/cryptography/pull/678/files
-    """
-
-    def finalize_options(self):
-        test_command.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # Import here because in module scope the eggs are not loaded.
-        import pytest
-        errno = pytest.main(self.test_args)
-        sys.exit(errno)
-
-
 setup(
     name='autobahn',
     version=__version__,  # noqa
@@ -285,10 +250,6 @@ setup(
         'dev': extras_require_dev,
         'xbr': extras_require_xbr,
         'ui': extras_require_ui,
-    },
-    tests_require=test_requirements,
-    cmdclass={
-        'test': PyTest
     },
     packages=packages,
     package_data=package_data,

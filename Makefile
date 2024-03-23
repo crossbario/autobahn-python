@@ -29,13 +29,13 @@ install:
 
 build:
 	-rm -f dist/*
-	# AUTOBAHN_USE_NVX=0 python setup.py sdist --universal
-	AUTOBAHN_USE_NVX=1 python setup.py sdist
+	# AUTOBAHN_USE_NVX=0 python -m build
+	AUTOBAHN_USE_NVX=1 python -m build
 	ls -la dist
 
 # upload to our internal deployment system
 upload: clean
-	AUTOBAHN_USE_NVX=0 python setup.py sdist --universal
+	AUTOBAHN_USE_NVX=0 python -m build
 	aws s3 cp --acl public-read \
 		dist/autobahn-*.whl \
 		s3://fabric-deploy/autobahn/
@@ -71,7 +71,7 @@ rebuild_catalog:
 
 # publish to PyPI
 publish: clean
-	AUTOBAHN_USE_NVX=0 python setup.py sdist
+	AUTOBAHN_USE_NVX=0 python -m build
 	twine upload dist/*
 
 clean_docs:
@@ -171,10 +171,6 @@ test_styleguide:
 # direct test via pytest (only here because of setuptools test integration)
 test_pytest:
 	USE_ASYNCIO=1 python -m pytest -c setup.cfg -rsvx autobahn/
-
-# test via setuptools command
-test_setuptools:
-	python setup.py test
 
 test:
 	tox -e flake8,py37-twtrunk,py37-asyncio
