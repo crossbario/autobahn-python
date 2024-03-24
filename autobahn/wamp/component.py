@@ -121,7 +121,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
         'type', 'url', 'endpoint', 'serializer', 'serializers', 'options',
         'max_retries', 'max_retry_delay', 'initial_retry_delay',
         'retry_delay_growth', 'retry_delay_jitter', 'proxy', 'headers'
-        ]
+    ]
     for k in transport.keys():
         if k not in valid_transport_keys:
             raise ValueError(
@@ -160,7 +160,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
             raise ValueError(
                 'options must be a dict, not {}'.format(type(options))
             )
-    
+
     headers = transport.get("headers")
 
     if kind == 'websocket':
