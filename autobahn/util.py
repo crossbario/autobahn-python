@@ -298,7 +298,7 @@ def rid():
     :returns: A random integer ID.
     :rtype: int
     """
-    return (struct.unpack("@Q", os.urandom(8))[0] & _WAMP_ID_MASK) + 1
+    return (struct.unpack(">Q", os.urandom(8))[0] & _WAMP_ID_MASK) + 1
 
 
 # noinspection PyShadowingBuiltins
