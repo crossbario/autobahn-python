@@ -9,6 +9,7 @@ Changelog
 ------
 
 - new: bump minimum required Twisted version to 24.3.0 (`see also <https://github.com/crossbario/autobahn-python/pull/1634>`_)
+- fix: full conformance to WAMP spec rgd allowed ranges of WAMP (session scope) IDs (`PR #1637 <https://github.com/crossbario/autobahn-python/pull/1637>`_)
 
 23.6.2
 ------

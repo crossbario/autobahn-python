@@ -222,7 +222,7 @@ class IdGenerator(object):
     Hence, IDs can be safely used with languages that use IEEE double as their
     main (or only) number type (JavaScript, Lua, etc).
 
-    See https://github.com/wamp-proto/wamp-proto/blob/master/spec/basic.md#ids
+    .. seealso:: `WAMP Spec <https://wamp-proto.org/wamp_latest_ietf.html#name-ids>`_
     """
 
     def __init__(self):
@@ -236,7 +236,7 @@ class IdGenerator(object):
         :rtype: int
         """
         self._next += 1
-        if self._next > 9007199254740992:
+        if self._next > 9007199254740992:  # enforce range [1, 2**53]
             self._next = 1
         return self._next
 
@@ -278,16 +278,16 @@ class IdGenerator(object):
 #
 
 
-# 8 byte mask with 53 LSBs set (WAMP requires IDs from [0, 2**53]
-_WAMP_ID_MASK = struct.unpack(">Q", b"\x00\x1f\xff\xff\xff\xff\xff\xff")[0]
+# 8 byte mask with 53 LSBs set (WAMP actually requires IDs from [1, 2**53])
+_WAMP_ID_MASK = struct.unpack(">Q", b"\x00\x1f\xff\xff\xff\xff\xff\xff")[0]  # use big endian !
 
 
 def rid():
     """
-    Generate a new random integer ID from range **[0, 2**53]**.
+    Generate a new random integer ID from range **[1, 2**53]**.
 
     The generated ID is uniformly distributed over the whole range, doesn't have
-    a period (no pseudo-random generator is used) and cryptographically strong.
+    a period (no pseudo-random generator is used) and IS cryptographically strong.
 
     The upper bound **2**53** is chosen since it is the maximum integer that can be
     represented as a IEEE double such that all smaller integers are representable as well.
@@ -295,16 +295,23 @@ def rid():
     Hence, IDs can be safely used with languages that use IEEE double as their
     main (or only) number type (JavaScript, Lua, etc).
 
+    The lower bound **1** is chosen since 0 is often used as "falsy" in languages.
+
+    .. seealso:: `WAMP Spec <https://wamp-proto.org/wamp_latest_ietf.html#name-ids>`_
+
     :returns: A random integer ID.
     :rtype: int
     """
-    return struct.unpack("@Q", os.urandom(8))[0] & _WAMP_ID_MASK
+    # os.urandom is "unpredictable enough for cryptographic applications"
+    # https://docs.python.org/3/library/os.html#os.urandom
+    # use range [1, 2**53] + use big endian
+    return (struct.unpack(">Q", os.urandom(8))[0] & _WAMP_ID_MASK) + 1
 
 
 # noinspection PyShadowingBuiltins
 def id():
     """
-    Generate a new random integer ID from range **[0, 2**53]**.
+    Generate a new random integer ID from range **[1, 2**53]**.
 
     The generated ID is based on a pseudo-random number generator (Mersenne Twister,
     which has a period of 2**19937-1). It is NOT cryptographically strong, and
@@ -316,10 +323,17 @@ def id():
     Hence, IDs can be safely used with languages that use IEEE double as their
     main (or only) number type (JavaScript, Lua, etc).
 
+    The lower bound **1** is chosen since 0 is often used as "falsy" in languages.
+
+    .. seealso:: `WAMP Spec <https://wamp-proto.org/wamp_latest_ietf.html#name-ids>`_
+
     :returns: A random integer ID.
     :rtype: int
     """
-    return random.randint(0, 9007199254740992)
+    # "Warning: The pseudo-random generators of this module should not be used for security purposes.
+    # For security or cryptographic uses, see the secrets module."
+    # https://docs.python.org/3/library/random.html
+    return random.randint(1, 9007199254740992)  # use range [1, 2**53]
 
 
 def newid(length=16):
