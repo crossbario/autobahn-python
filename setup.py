@@ -46,7 +46,7 @@ with open('README.rst') as f:
 # as we make claim to support older Twisted!)
 extras_require_twisted = [
     "zope.interface>=5.2.0",        # Zope Public License
-    "twisted>=20.3.0",              # MIT license (https://pypi.org/project/Twisted/20.3.0/)
+    "twisted>=24.3.0",              # MIT license (https://pypi.org/project/Twisted/24.3.0/)
     "attrs>=20.3.0"                 # MIT license (https://pypi.org/project/attrs/19.2.0/)
 ]
 
