@@ -279,7 +279,7 @@ class IdGenerator(object):
 
 
 # 8 byte mask with 53 LSBs set (WAMP requires IDs from [1, 2**53]
-_WAMP_ID_MASK = 2 ** 53 - 1
+_WAMP_ID_MASK = struct.unpack("@Q", b"\x00\x1f\xff\xff\xff\xff\xff\xff")[0]
 
 
 def rid():
@@ -298,7 +298,7 @@ def rid():
     :returns: A random integer ID.
     :rtype: int
     """
-    return (struct.unpack("@Q", os.urandom(8))[0] & _WAMP_ID_MASK) + 1
+    return struct.unpack("@Q", os.urandom(8))[0] & _WAMP_ID_MASK or 2 ** 53
 
 
 # noinspection PyShadowingBuiltins
