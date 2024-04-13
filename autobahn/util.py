@@ -235,8 +235,9 @@ class IdGenerator(object):
         :returns: The next ID.
         :rtype: int
         """
-        self._next += 1
-        if self._next > 9007199254740992:
+        if self._next < 9007199254740992:
+            self._next += 1
+        else:
             self._next = 1
         return self._next
 
