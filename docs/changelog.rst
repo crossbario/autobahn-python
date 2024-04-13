@@ -5,6 +5,11 @@
 Changelog
 =========
 
+24.4.2
+------
+
+- fix: Ensure ID generator in range [1, 2 ** 53] (#1637)
+
 24.4.1
 ------
 
