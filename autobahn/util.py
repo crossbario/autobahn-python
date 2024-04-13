@@ -278,13 +278,13 @@ class IdGenerator(object):
 #
 
 
-# 8 byte mask with 53 LSBs set (WAMP requires IDs from [0, 2**53]
+# 8 byte mask with 53 LSBs set (WAMP requires IDs from [1, 2**53]
 _WAMP_ID_MASK = struct.unpack(">Q", b"\x00\x1f\xff\xff\xff\xff\xff\xff")[0]
 
 
 def rid():
     """
-    Generate a new random integer ID from range **[0, 2**53]**.
+    Generate a new random integer ID from range **[1, 2**53]**.
 
     The generated ID is uniformly distributed over the whole range, doesn't have
     a period (no pseudo-random generator is used) and cryptographically strong.
@@ -298,13 +298,13 @@ def rid():
     :returns: A random integer ID.
     :rtype: int
     """
-    return struct.unpack("@Q", os.urandom(8))[0] & _WAMP_ID_MASK
+    return struct.unpack("@Q", os.urandom(8))[0] & _WAMP_ID_MASK + 1
 
 
 # noinspection PyShadowingBuiltins
 def id():
     """
-    Generate a new random integer ID from range **[0, 2**53]**.
+    Generate a new random integer ID from range **[1, 2**53]**.
 
     The generated ID is based on a pseudo-random number generator (Mersenne Twister,
     which has a period of 2**19937-1). It is NOT cryptographically strong, and
@@ -319,7 +319,7 @@ def id():
     :returns: A random integer ID.
     :rtype: int
     """
-    return random.randint(0, 9007199254740992)
+    return random.randint(1, 9007199254740992)
 
 
 def newid(length=16):
