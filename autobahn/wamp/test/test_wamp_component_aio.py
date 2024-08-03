@@ -34,8 +34,7 @@ if os.environ.get('USE_ASYNCIO', False):
     from autobahn.asyncio.component import Component
 
     @pytest.mark.skipif(sys.version_info < (3, 5), reason="requires Python 3.5+")
-    @pytest.mark.asyncio(forbid_global_loop=True)
-    async def test_asyncio_component(event_loop):
+    def test_asyncio_component(event_loop):
         orig_loop = txaio.config.loop
         txaio.config.loop = event_loop
 
@@ -72,11 +71,11 @@ if os.environ.get('USE_ASYNCIO', False):
             txaio.config.loop = orig_loop
             assert comp._done_f is None
         f.add_done_callback(done)
-        await finished
+
+        event_loop.run_until_complete(finished)
 
     @pytest.mark.skipif(sys.version_info < (3, 5), reason="requires Python 3.5+")
-    @pytest.mark.asyncio(forbid_global_loop=True)
-    async def test_asyncio_component_404(event_loop):
+    def test_asyncio_component_404(event_loop):
         """
         If something connects but then gets aborted, it should still try
         to re-connect (in real cases this could be e.g. wrong path,
@@ -151,4 +150,5 @@ if os.environ.get('USE_ASYNCIO', False):
                 finished.set_result(None)
                 txaio.config.loop = orig_loop
             f.add_done_callback(done)
-            await finished
+
+            event_loop.run_until_complete(finished)
