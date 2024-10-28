@@ -339,7 +339,7 @@ class BaseSession(ObservableMixin):
                 else:
                     exc = exception.ApplicationError(msg.error)
 
-        # FIXME: cleanup and integate into ctors above
+        # FIXME: cleanup and integrate into ctors above
         if hasattr(exc, 'enc_algo'):
             exc.enc_algo = msg.enc_algo
         if hasattr(exc, 'callee'):
@@ -1237,7 +1237,7 @@ class ApplicationSession(BaseSession):
                         reg = self._registrations[msg.registration]
                     except KeyError:
                         raise ProtocolError(
-                            "UNREGISTERED received for non-existant registration"
+                            "UNREGISTERED received for non-existent registration"
                             " ID {0}".format(msg.registration)
                         )
                     self.log.debug(

@@ -1679,7 +1679,7 @@ class WebSocketProtocol(ObservableMixin):
                 compressedLen = len(payload)
                 self.log.debug(
                     "RX compressed [length]: octets",
-                    legnth=compressedLen,
+                    length=compressedLen,
                     octets=_LazyHexFormatter(payload),
                 )
 

@@ -37,7 +37,7 @@ def main(accounts):
                     recipient = args['receiver']
                     channel = args['channel']
 
-                    print('Actor {} opened payment channel {} in market {} with inital deposit of {}, delegate {} and recipient {}!'.format(actor['addr'], hl(channel), market['id'], amount, hl(delegate), recipient))
+                    print('Actor {} opened payment channel {} in market {} with initial deposit of {}, delegate {} and recipient {}!'.format(actor['addr'], hl(channel), market['id'], amount, hl(delegate), recipient))
 
 
 if __name__ == '__main__':

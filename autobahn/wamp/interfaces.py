@@ -356,7 +356,7 @@ class ISession(_ABC):
         current stack-trace and then error-message to stdout.
 
         ApplicationSession-derived objects may override this to
-        provide logging if they prefer. The Twisted implemention does
+        provide logging if they prefer. The Twisted implementation does
         this. (See :class:`autobahn.twisted.wamp.ApplicationSession`)
 
         :param fail: The failure that occurred.

@@ -317,7 +317,7 @@ After the upload has finished, check the live pages:
 
 * Automatic reconnection
 * Configurable WAMP connecting transports
-* WAMP Connection abstration
+* WAMP Connection abstraction
 * Authentication
 
 **0.10** will get into "maintenance mode" after **0.10.6**. We'll have a maintenance branch for that over some time. The new development will be based on **0.11** (see below).

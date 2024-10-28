@@ -308,7 +308,7 @@ if os.environ.get('USE_TWISTED', False):
             self.assertEqual(1, len(got_errors))
             # ...now let the async errback continue by completing the
             # Deferred we returned in our errback (could be fail or
-            # success, shoudln't matter)
+            # success, shouldn't matter)
             error_d.callback(None)
 
             # ensure we (now) get our errback
@@ -666,7 +666,7 @@ if os.environ.get('USE_TWISTED', False):
                     message.Unregister(0, 1234)
                 )
             self.assertIn(
-                "UNREGISTERED received for non-existant registration",
+                "UNREGISTERED received for non-existent registration",
                 str(ctx.exception)
             )
 

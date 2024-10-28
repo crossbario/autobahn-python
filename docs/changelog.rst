@@ -502,7 +502,7 @@ Changelog
 18.9.1
 ------
 
-* new: Interrupt has Options.reason to signal detailed origin of call cancelation (active cancel vs passive timeout)
+* new: Interrupt has Options.reason to signal detailed origin of call cancellation (active cancel vs passive timeout)
 * fix: Cancel and Interrupt gets ``"killnowait"`` mode
 * new: Cancel and Interrupt no longer have ``ABORT/"abort"``
 
@@ -786,7 +786,7 @@ Changelog
 * new: support new UBJSON WAMP serialization format
 * new: publish universal wheels
 * fix: replaced `msgpack-python` with `u-msgpack-python`
-* fix: some glitches with `eligible / exlude` when used with `authid / authrole`
+* fix: some glitches with `eligible / exclude` when used with `authid / authrole`
 * fix: some logging glitches
 * fix: pin Twisted at 16.1.1 (for now)
 

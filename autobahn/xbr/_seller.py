@@ -577,7 +577,7 @@ class SimpleSeller(object):
 
     def sell(self, market_maker_adr, buyer_pubkey, key_id, channel_oid, channel_seq, amount, balance, signature, details=None):
         """
-        Called by a XBR Market Maker to buy a data encyption key. The XBR Market Maker here is
+        Called by a XBR Market Maker to buy a data encryption key. The XBR Market Maker here is
         acting for (triggered by) the XBR buyer delegate.
 
         :param market_maker_adr: The market maker Ethereum address. The technical buyer is usually the

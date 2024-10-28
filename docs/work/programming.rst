@@ -197,7 +197,7 @@ The direct asyncio equivalent of above would be:
 > Note: Part of the verbosity stems from the fact that, different from Twisted's `addCallback`, asyncio's `add_done_callback` sadly does not take and forward `args` and `kwargs` to the callback added.
 >
 
-However, there is a better way, if we restructure the code a litte:
+However, there is a better way, if we restructure the code a little:
 
 .. code-block:: python
 

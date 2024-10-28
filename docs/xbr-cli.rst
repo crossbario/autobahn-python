@@ -367,7 +367,7 @@ When doing ``xbrnetwork get-member``, the information returned will include both
 as well as your balance of XBR Token (which is one coin that can be used as a market-payment-coin in markets
 configured to use XBR as a means of payment).
 
-Transfering XBR tokens looks like this
+Transferring XBR tokens looks like this
 
 .. thumbnail:: _static/screenshots/xbr-token-transfer.png
 

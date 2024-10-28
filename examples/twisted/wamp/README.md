@@ -31,7 +31,7 @@ The following examples show two alternative ways of connecting a WAMP client to 
   * [Decorators](rpc/decorators): register RPC methods using decorators
   * [Errors](rpc/errors): map custom error classes to WAMP URIs
   * [Options](rpc/options): show some RegistrationOptions and CallOptions use
-  * [Progress](rpc/progress): progressive results for long-running oprations
+  * [Progress](rpc/progress): progressive results for long-running operations
   * [Slow Square](rpc/slowsquare): an RPC call that takes some time
   * [Time Service](rpc/timeservice): XXX delete?
 

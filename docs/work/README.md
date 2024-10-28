@@ -8,7 +8,7 @@
 
 * performance (passthrough of app payloads, general zero copy)
 * support end-to-end encryption
-* carrying proprietory binary payloads (MQTT)
+* carrying proprietary binary payloads (MQTT)
 * strict static typing of interfaces
 
 ---
@@ -44,13 +44,13 @@ The approach taken (**XX**) allows for a number of useful features:
 
 1. flexible support of popular dynamically typed serializers, namely: JSON, MsgPack, CBOR and UBJSON
 2. allow arbitrary adhoc extensibility (as the router basically does not care about new app payloads)
-3. transparantly translate the *application payload* between serialization formats used by different clients connected at the same time.
+3. transparently translate the *application payload* between serialization formats used by different clients connected at the same time.
 4. support optional router side application payload validation: both static, and dynamic (calling into user supplied payload validators)
 
 However, a number of downsides have become apparent as well:
 
 1. resource consumption: serialization/deserialization can eat significant chunks of CPU, and produce GC pressure
-2. legacy (MQTT) and proprietory payloads that should simply be transported "as is" (passthrough, without ever touching)
+2. legacy (MQTT) and proprietary payloads that should simply be transported "as is" (passthrough, without ever touching)
 3. as apps and systems get larger and more complex, the dynamic typing flexibility turns into a major problem: **the internal and external interfaces and APIs in a microservices based application must be relied upon and their evolution actively managed**
 
 The latter does not mean an "either or" question. You can have important base APIs and external interfaces defined rigorously, using static, strict typing discipline, while at the same time have other parts of your system evolve more freely, basically allowing weakly and dynamically typed data exchange - for limited areas.
@@ -60,7 +60,7 @@ The latter does not mean an "either or" question. You can have important base AP
 
 ### Payload Transparency Mode
 
-**Payload Transparancy Mode (PTM)** adds a 4th application payload variant to above **XX**
+**Payload Transparency Mode (PTM)** adds a 4th application payload variant to above **XX**
 
 4. `[CALL, Request|id, Options|dict, Procedure|uri, Payload|binary]`
 

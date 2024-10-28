@@ -78,7 +78,7 @@ class StreamingProducerHashClientProtocol(WebSocketClientProtocol):
     sent to streaming WebSockets server, which computes a running SHA-256,
     which it will send every BATCH_SIZE octets back to us. This example
     uses a Twisted producer to produce the byte stream as fast as the
-    receiver can consume, but not faster. Therefor, we don't need the
+    receiver can consume, but not faster. Therefore, we don't need the
     application-level flow control as with the other examples.
     """
 

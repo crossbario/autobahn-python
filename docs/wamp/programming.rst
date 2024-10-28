@@ -160,7 +160,7 @@ Many of the examples in this documentation use a decorator style with fixed, sta
 
 It is important to remember that :class:`Component` handles re-connection  -- this implies there are times when your component is **not** connected. The `on_join` handlers are run whenever a fresh WAMP session is started, so this is the appropriate way to hook in "initialization"-style code (`on_leave` is where "un-initialization" code goes). Note that each new WAMP session will use a new instance of :class:`ApplicationSession`.
 
-Here's a slightly more complex example that is a small `Klein`_ Web application that publishes to a WAMP session when a certian URL is requested (note that the Crossbario.io router supports `various REST-style integrations <https://crossbar.io/docs/HTTP-Bridge/>`_ already). Using a similar pattern, you could tie together two or more :class:`Component` instances (even connecting to two or more *different* WAMP routers).
+Here's a slightly more complex example that is a small `Klein`_ Web application that publishes to a WAMP session when a certain URL is requested (note that the Crossbario.io router supports `various REST-style integrations <https://crossbar.io/docs/HTTP-Bridge/>`_ already). Using a similar pattern, you could tie together two or more :class:`Component` instances (even connecting to two or more *different* WAMP routers).
 
 .. _Klein: https://github.com/twisted/klein
 
@@ -438,7 +438,7 @@ A *Publisher* publishes events to topics by providing the topic URI and any payl
 
 *Subscribers* subscribe to topics they are interested in with *Brokers*. *Publishers* initiate publication first at a *Broker*. *Brokers* route events incoming from *Publishers* to *Subscribers* that are subscribed to respective topics.
 
-The *Publisher* and *Subscriber* will usually run application code, while the *Broker* works as a generic router for events thus decoupling *Publishers* from *Subscribers*. That is, there can be many *Subscribers* written in different languages on different machines which can all receive a single event published by an independant *Publisher*.
+The *Publisher* and *Subscriber* will usually run application code, while the *Broker* works as a generic router for events thus decoupling *Publishers* from *Subscribers*. That is, there can be many *Subscribers* written in different languages on different machines which can all receive a single event published by an independent *Publisher*.
 
 
 .. _subscribing-to-topics:
@@ -655,7 +655,7 @@ Before any logging happens of course you must activate the logging system. There
 
 If you have instead got your own log-starting code (e.g. ``twistd``) or Twisted/asyncio specific log handlers (``logging.Handler`` subclass on asyncio and ``ILogObserver`` implementer under Twisted) then you will still get |Ab| and `Crossbar`_ messages. Probably the formatting will be slightly different from what ``txaio.start_logging`` provides. In either case, **do not depend on the formatting** of the messages e.g. by "screen-scraping" the logs.
 
-We very much **recommend using the ``txaio.start_logging()`` method** of activating the logging system, as we've gone to pains to ensure that over-level logs are a "no-op" and incur minimal runtime cost. We achieve this by re-binding all out-of-scope methods on any logger created by ``txaio.make_logger()`` to a do-nothing function (by saving weak-refs of all the loggers created); at least on `PyPy`_ this is very well optimized out. This allows us to be generous with ``.debug()`` or ``.trace()`` calls without incurring very much overhead. Your Milage May Vary using other methods. If you haven't called ``txaio.start_logging()`` this optimization is not activated.
+We very much **recommend using the ``txaio.start_logging()`` method** of activating the logging system, as we've gone to pains to ensure that over-level logs are a "no-op" and incur minimal runtime cost. We achieve this by re-binding all out-of-scope methods on any logger created by ``txaio.make_logger()`` to a do-nothing function (by saving weak-refs of all the loggers created); at least on `PyPy`_ this is very well optimized out. This allows us to be generous with ``.debug()`` or ``.trace()`` calls without incurring very much overhead. Your Mileage May Vary using other methods. If you haven't called ``txaio.start_logging()`` this optimization is not activated.
 
 
 Upgrading

@@ -237,7 +237,7 @@ int _nvx_utf8vld_validate_table (void* utf8vld, const uint8_t* data, size_t leng
          state = 1; \
       } \
    } else if (state == 1) { \
-      /* refective state 1 */ \
+      /* reflective state 1 */ \
    } else { \
       /* should not arrive here */ \
    }

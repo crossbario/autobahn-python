@@ -404,7 +404,7 @@ def generate_token(char_groups: int,
     :param chars_per_group: Number of characters per character group (or 1 to return a token with no grouping).
     :param chars: Characters to choose from. Default is 27 character subset
         of the ISO basic Latin alphabet (see: ``DEFAULT_TOKEN_CHARS``).
-    :param sep: When separating groups in the token, the separater string.
+    :param sep: When separating groups in the token, the separator string.
     :param lower_case: If ``True``, generate token in lower-case.
 
     :returns: The generated token.
@@ -751,7 +751,7 @@ class ObservableMixin(object):
     # be a lot easier to deal with here.  Having an __init__ method
     # with a "mix in" style class can be fragile and error-prone,
     # especially if it takes arguments. Since we don't use the
-    # "parent" beavior anywhere, I didn't add a .set_parent() (yet?)
+    # "parent" behavior anywhere, I didn't add a .set_parent() (yet?)
 
     # these are class-level globals; individual instances are
     # initialized as-needed (e.g. the first .on() call adds a
@@ -789,7 +789,7 @@ class ObservableMixin(object):
 
         :param event: the name of the event
 
-        :param handler: a callable thats invoked when .fire() is
+        :param handler: a callable that's invoked when .fire() is
             called for this events. Arguments will be whatever are given
             to .fire()
         """
@@ -816,7 +816,7 @@ class ObservableMixin(object):
                 # maybe this should mean "remove the given handler
                 # from any event at all that contains it"...?
                 raise RuntimeError(
-                    "Can't specificy a specific handler without an event"
+                    "Can't specify a specific handler without an event"
                 )
             self._listeners = dict()
         else:

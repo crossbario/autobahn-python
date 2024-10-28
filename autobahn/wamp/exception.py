@@ -110,7 +110,7 @@ class ApplicationError(Error):
 
     PAYLOAD_SIZE_EXCEEDED = "wamp.error.payload_size_exceeded"
     """
-    The application payload could not be transported becuase the serialized/framed payload
+    The application payload could not be transported because the serialized/framed payload
     exceeds the transport limits.
     """
 
@@ -144,7 +144,7 @@ class ApplicationError(Error):
 
     NO_SUCH_SESSION = "wamp.error.no_such_session"
     """
-    A router could not perform an operation, since a session ID specified was non-existant.
+    A router could not perform an operation, since a session ID specified was non-existent.
     """
 
     INVALID_ARGUMENT = "wamp.error.invalid_argument"

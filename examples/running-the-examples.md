@@ -39,7 +39,7 @@ To run an example, you can have two (or three) terminal sessions open with:
  2. backend
  3. the router (e.g. `crossbar`)
 
-You can also run the frontend/backend in the same shell by putting one in the background. This makes tbe examples less clear, however:
+You can also run the frontend/backend in the same shell by putting one in the background. This makes the examples less clear, however:
 
 ```shell
 python twisted/wamp/pubsub/basic/frontend.py &

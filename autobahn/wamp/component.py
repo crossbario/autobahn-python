@@ -319,7 +319,7 @@ class _Transport(object):
         """
         Mark this transport as failed, meaning we won't try to connect to
         it any longer (that is: can_reconnect() will always return
-        False afer calling this).
+        False after calling this).
         """
         self._permanent_failure = True
 

@@ -186,7 +186,7 @@ table Event
     // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
     enc_key: [uint8];
 
-    // The WAMP session ID of the pubisher. Only filled when the publisher is disclosed.
+    // The WAMP session ID of the publisher. Only filled when the publisher is disclosed.
     publisher: uint64;
 
     // The WAMP authrole of the publisher. Only filled when publisher is disclosed.

@@ -310,7 +310,7 @@ class Client(ApplicationSession):
             # buyer/seller (payment/paying) channel
             channel_type = self.config.extra['channel_type']
 
-            # the delgate allowed to use the channel
+            # the delegate allowed to use the channel
             delegate = self.config.extra['delegate']
 
             # amount of market coins for initial channel balance

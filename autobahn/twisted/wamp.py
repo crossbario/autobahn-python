@@ -308,7 +308,7 @@ class ApplicationRunner(object):
             # be applied for every Autobahn/Twisted protocol instance from the factory
             transport_factory.setProtocolOptions(**protocol_options)
 
-        # supress pointless log noise
+        # suppress pointless log noise
         transport_factory.noisy = False
 
         if endpoint:

@@ -1876,7 +1876,7 @@ class Publish(Message):
         assert(retain is None or type(retain) == bool)
         assert(transaction_hash is None or type(transaction_hash) == str)
 
-        # publisher exlusion and black-/whitelisting
+        # publisher exclusion and black-/whitelisting
         assert(exclude_me is None or type(exclude_me) == bool)
 
         assert(exclude is None or type(exclude) == list)
@@ -1930,7 +1930,7 @@ class Publish(Message):
         self._payload = payload
         self._acknowledge = acknowledge
 
-        # publisher exlusion and black-/whitelisting
+        # publisher exclusion and black-/whitelisting
         self._exclude_me = exclude_me
         self._exclude = exclude
         self._exclude_authid = exclude_authid

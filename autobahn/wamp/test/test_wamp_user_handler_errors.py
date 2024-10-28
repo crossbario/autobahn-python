@@ -120,7 +120,7 @@ if os.environ.get('USE_TWISTED', False):
             session.onJoin = exception_raiser(exception)
             msg = create_mock_welcome()
 
-            # give the sesion a WELCOME, from which it should call onJoin
+            # give the session a WELCOME, from which it should call onJoin
             session.onMessage(msg)
 
             # make sure we got the right error out of onUserError
@@ -133,7 +133,7 @@ if os.environ.get('USE_TWISTED', False):
             session.onJoin = async_exception_raiser(exception)
             msg = create_mock_welcome()
 
-            # give the sesion a WELCOME, from which it should call onJoin
+            # give the session a WELCOME, from which it should call onJoin
             session.onMessage(msg)
 
             # make sure we got the right error out of onUserError

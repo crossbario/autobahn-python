@@ -140,7 +140,7 @@ def parse_derivation_path(str_derivation_path):
 
 
 def mnemonic_to_private_key(mnemonic, str_derivation_path=LEDGER_ETH_DERIVATION_PATH, passphrase=""):
-    """ Performs all convertions to get a private key from a mnemonic sentence, including:
+    """ Performs all conversions to get a private key from a mnemonic sentence, including:
 
             BIP39 mnemonic to seed
             BIP32 seed to master key

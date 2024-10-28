@@ -159,7 +159,7 @@ class ConnectingRequest(object):
 
         :param int port: the port to present to the server
 
-        :param str resouce:
+        :param str resource:
 
         :param headers: extra HTTP headers to send in the opening handshake
         :type headers: dict

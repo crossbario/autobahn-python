@@ -4,7 +4,7 @@ WAMP Application
 Introduction
 ------------
 
-Flask-like syntaxe for WAMP projects.
+Flask-like syntax for WAMP projects.
 
 This is intended to make it easier to start with autobahn/crossbar.io
 and abstract a lot of things : you don't have to think about the main
