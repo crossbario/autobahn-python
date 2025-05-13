@@ -23,7 +23,7 @@ jobs:
     - name: Install OS package dependencies
       run: |
         sudo apt update
-        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
+        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository-2.0-dev libcairo2-dev
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v3
