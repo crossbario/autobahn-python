@@ -23,7 +23,7 @@ jobs:
     - name: Install OS package dependencies
       run: |
         sudo apt update
-        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
+        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository-2.0-dev libcairo2-dev
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v3
@@ -79,7 +79,7 @@ jobs:
         sudo apt update
         sudo apt install build-essential libssl-dev libffi-dev libunwind-dev \
           libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
-          libsnappy-dev libgirepository1.0-dev
+          libsnappy-dev libgirepository-2.0-dev libcairo2-dev
 
     # Use this Python
     # https://github.com/actions/setup-python/blob/main/README.md
@@ -120,7 +120,7 @@ jobs:
     - name: Install OS package dependencies
       run: |
         sudo apt update
-        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
+        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository-2.0-dev libcairo2-dev
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v3
