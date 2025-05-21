@@ -16,14 +16,14 @@ jobs:
       # WEB3_INFURA_PROJECT_ID: ${{ secrets.WEB3_INFURA_PROJECT_ID }}
       # WEB3_INFURA_API_SECRET: ${{ secrets.WEB3_INFURA_API_SECRET }}
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v3
 
     - name: Install OS package dependencies
       run: |
-        sudo apt update
-        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
+        sudo apt-get update
+        sudo apt-get -y install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository-2.0-dev libcairo2-dev
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v3
@@ -52,8 +52,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04]
-        # os: [ubuntu-22.04, macos-latest, windows-latest]
+        os: [ubuntu-24.04]
+        # os: [ubuntu-24.04, macos-latest, windows-latest]
 
         # python 3.11 fails with "src/twisted/test/raiser.c:198:12: fatal error: longintrepr.h: No such file or directory"
         # twisted doesn't yet support 3.11 formally: https://github.com/twisted/twisted/blob/trunk/pyproject.toml#L24
@@ -76,10 +76,10 @@ jobs:
     #
     - name: Install OS package dependencies
       run: |
-        sudo apt update
-        sudo apt install build-essential libssl-dev libffi-dev libunwind-dev \
+        sudo apt-get update
+        sudo apt-get -y install build-essential libssl-dev libffi-dev libunwind-dev \
           libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
-          libsnappy-dev libgirepository1.0-dev
+          libsnappy-dev libgirepository-2.0-dev libcairo2-dev
 
     # Use this Python
     # https://github.com/actions/setup-python/blob/main/README.md
@@ -113,14 +113,14 @@ jobs:
         tox -c tox.ini -e ${{ matrix.framework }}
 
   docs:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v3
 
     - name: Install OS package dependencies
       run: |
-        sudo apt update
-        sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
+        sudo apt-get update
+        sudo apt-get -y install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository-2.0-dev libcairo2-dev
 
     - name: Set up Python 3.11
       uses: actions/setup-python@v3
