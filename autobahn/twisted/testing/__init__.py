@@ -73,32 +73,9 @@ class _StaticTestResolver(object):
         receiver.resolutionComplete()
 
 
-@implementer(IReactorPluggableNameResolver)
-class _TestNameResolver(object):
-    """
-    A test version of IReactorPluggableNameResolver
-    """
-
-    _resolver = None
-
-    @property
-    def nameResolver(self):
-        if self._resolver is None:
-            self._resolver = _StaticTestResolver()
-        return self._resolver
-
-    def installNameResolver(self, resolver):
-        old = self._resolver
-        self._resolver = resolver
-        return old
-
-
-class MemoryReactorClockResolver(MemoryReactorClock, _TestNameResolver):
-    """
-    Combine MemoryReactor, Clock and an IReactorPluggableNameResolver
-    together.
-    """
-    pass
+# in previous revisions, we exported MemoryReactorClockResolver so
+# this maintains compatibility with any downstream code
+MemoryReactorClockResolver = MemoryReactorClock
 
 
 class _TwistedWebMemoryAgent(IWebSocketClientAgent):
