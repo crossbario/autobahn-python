@@ -37,7 +37,7 @@ except ImportError:
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address
 from twisted.internet._resolver import HostResolution  # "internal" class, but it's simple
-from twisted.internet.interfaces import ISSLTransport, IReactorPluggableNameResolver
+from twisted.internet.interfaces import ISSLTransport
 try:
     from twisted.internet.testing import MemoryReactorClock
 except ImportError:

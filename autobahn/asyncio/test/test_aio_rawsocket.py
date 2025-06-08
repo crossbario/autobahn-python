@@ -11,7 +11,7 @@ from autobahn.wamp.types import TransportDetails
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_sers(event_loop):
+def test_sers():
     serializers = get_serializers()
     assert len(serializers) > 0
     m = serializers[0]().serialize(message.Abort('close'))
@@ -19,7 +19,7 @@ def test_sers(event_loop):
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_prefix(event_loop):
+def test_prefix():
     p = PrefixProtocol()
     transport = Mock()
     receiver = Mock()
@@ -62,7 +62,7 @@ def test_prefix(event_loop):
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_is_closed(event_loop):
+def test_is_closed():
     class CP(RawSocketClientProtocol):
         @property
         def serializer_id(self):
@@ -83,7 +83,7 @@ def test_is_closed(event_loop):
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_raw_socket_server1(event_loop):
+def test_raw_socket_server1():
 
     server = RawSocketServerProtocol()
     ser = Mock(return_value=True)
@@ -108,7 +108,7 @@ def test_raw_socket_server1(event_loop):
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_raw_socket_server_errors(event_loop):
+def test_raw_socket_server_errors():
 
     server = RawSocketServerProtocol()
     ser = Mock(return_value=True)
@@ -139,7 +139,7 @@ def test_raw_socket_server_errors(event_loop):
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_raw_socket_client1(event_loop):
+def test_raw_socket_client1():
     class CP(RawSocketClientProtocol):
         @property
         def serializer_id(self):
@@ -162,7 +162,7 @@ def test_raw_socket_client1(event_loop):
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_raw_socket_client_error(event_loop):
+def test_raw_socket_client_error():
     class CP(RawSocketClientProtocol):
         @property
         def serializer_id(self):
@@ -181,7 +181,7 @@ def test_raw_socket_client_error(event_loop):
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_wamp_server(event_loop):
+def test_wamp_server():
     transport = Mock(spec_set=('abort', 'close', 'write', 'get_extra_info'))
     transport.write = Mock(side_effect=lambda m: messages.append(m))
     server = Mock(spec=['onOpen', 'onMessage'])
@@ -209,7 +209,7 @@ def test_wamp_server(event_loop):
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_wamp_client(event_loop):
+def test_wamp_client():
     transport = Mock(spec_set=('abort', 'close', 'write', 'get_extra_info'))
     transport.write = Mock(side_effect=lambda m: messages.append(m))
     client = Mock(spec=['onOpen', 'onMessage'])
