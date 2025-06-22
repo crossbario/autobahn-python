@@ -1,12 +1,13 @@
 from twisted.trial import unittest
 
 try:
-    from autobahn.twisted.testing import create_memory_agent, MemoryReactorClockResolver, create_pumper
+    from autobahn.twisted.testing import create_memory_agent, create_pumper
     HAVE_TESTING = True
 except ImportError:
     HAVE_TESTING = False
 
 from twisted.internet.defer import inlineCallbacks
+from twisted.internet.testing import MemoryReactorClock
 from autobahn.twisted.websocket import WebSocketServerProtocol
 
 
@@ -16,7 +17,7 @@ class TestAgent(unittest.TestCase):
 
     def setUp(self):
         self.pumper = create_pumper()
-        self.reactor = MemoryReactorClockResolver()
+        self.reactor = MemoryReactorClock()
         return self.pumper.start()
 
     def tearDown(self):

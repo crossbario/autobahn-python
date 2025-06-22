@@ -22,15 +22,15 @@ async def test_echo_async():
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_websocket_custom_loop(event_loop):
-    factory = WebSocketServerFactory(loop=event_loop)
+def test_websocket_custom_loop():
+    factory = WebSocketServerFactory(loop=asyncio.new_event_loop())
     server = factory()
     transport = Mock()
     server.connection_made(transport)
 
 
 @pytest.mark.skipif(not os.environ.get('USE_ASYNCIO', False), reason='test runs on asyncio only')
-def test_async_on_connect_server(event_loop):
+def test_async_on_connect_server():
 
     num = 42
     done = txaio.create_future()
@@ -64,7 +64,7 @@ def test_async_on_connect_server(event_loop):
     ])
     server.processHandshake()
 
-    event_loop.run_until_complete(done)
+    asyncio.get_event_loop().run_until_complete(done)
 
     assert len(values) == 1
     assert values[0] == num * num

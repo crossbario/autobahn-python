@@ -29,14 +29,15 @@ import sys
 import unittest.mock as mock
 import pytest
 import txaio
+import asyncio
 
 if os.environ.get('USE_ASYNCIO', False):
     from autobahn.asyncio.component import Component
 
     @pytest.mark.skipif(sys.version_info < (3, 5), reason="requires Python 3.5+")
-    def test_asyncio_component(event_loop):
+    def test_asyncio_component():
         orig_loop = txaio.config.loop
-        txaio.config.loop = event_loop
+        txaio.config.loop = asyncio.get_event_loop()
 
         comp = Component(
             transports=[
@@ -51,8 +52,8 @@ if os.environ.get('USE_ASYNCIO', False):
         # if having trouble, try starting some logging (and use
         # "py.test -s" to get real-time output)
         # txaio.start_logging(level="debug")
-        f = comp.start(loop=event_loop)
-        txaio.config.loop = event_loop
+        f = comp.start(loop=asyncio.get_event_loop())
+        txaio.config.loop = asyncio.get_event_loop()
         finished = txaio.create_future()
 
         def fail():
@@ -72,17 +73,17 @@ if os.environ.get('USE_ASYNCIO', False):
             assert comp._done_f is None
         f.add_done_callback(done)
 
-        event_loop.run_until_complete(finished)
+        asyncio.get_event_loop().run_until_complete(finished)
 
     @pytest.mark.skipif(sys.version_info < (3, 5), reason="requires Python 3.5+")
-    def test_asyncio_component_404(event_loop):
+    def test_asyncio_component_404():
         """
         If something connects but then gets aborted, it should still try
         to re-connect (in real cases this could be e.g. wrong path,
         TLS failure, WebSocket handshake failure, etc)
         """
         orig_loop = txaio.config.loop
-        txaio.config.loop = event_loop
+        txaio.config.loop = asyncio.get_event_loop()
 
         class FakeTransport(object):
             def close(self):
@@ -103,8 +104,8 @@ if os.environ.get('USE_ASYNCIO', False):
             else:
                 return txaio.create_future_error(RuntimeError("second connection fails completely"))
 
-        with mock.patch.object(event_loop, 'create_connection', create_connection):
-            event_loop.create_connection = create_connection
+        with mock.patch.object(txaio.config.loop, 'create_connection', create_connection):
+            txaio.config.loop.create_connection = create_connection
 
             comp = Component(
                 transports=[
@@ -119,8 +120,8 @@ if os.environ.get('USE_ASYNCIO', False):
             # if having trouble, try starting some logging (and use
             # "py.test -s" to get real-time output)
             # txaio.start_logging(level="debug")
-            f = comp.start(loop=event_loop)
-            txaio.config.loop = event_loop
+            f = comp.start(loop=asyncio.get_event_loop())
+            txaio.config.loop = asyncio.get_event_loop()
 
             # now that we've started connecting, we *should* be able
             # to connetion_lost our transport .. but we do a
@@ -151,4 +152,4 @@ if os.environ.get('USE_ASYNCIO', False):
                 txaio.config.loop = orig_loop
             f.add_done_callback(done)
 
-            event_loop.run_until_complete(finished)
+            asyncio.get_event_loop().run_until_complete(finished)
