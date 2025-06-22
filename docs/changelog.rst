@@ -5,6 +5,12 @@
 Changelog
 =========
 
+25.6.1
+------
+
+- new: announcement of upcoming (but not yet effective) new AI policy clarifying matter with respect to AI assisted contributions (#1663)
+- FIXME: all what happened since last release;)
+
 24.4.2
 ------
 
