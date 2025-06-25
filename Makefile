@@ -90,6 +90,57 @@ autoformat_markdown_docs:
 autoformat_rest_docs:
 	rstfmt AI_POLICY.rst
 
+# list of i) AI Policy and ii) GitHub template files
+AIPOLICY_GH_TMPL_FILES := \
+	AI_POLICY.rst \
+	CLAUDE.md \
+	.github/pull_request_template.md \
+	.github/ISSUE_TEMPLATE/config.yml \
+	.github/ISSUE_TEMPLATE/bug_report.md \
+	.github/ISSUE_TEMPLATE/feature_request.md
+
+# list of target directories for copying AI Policy & GitHub template files
+AIPOLICY_GH_TMPL_DESTDIRS := \
+	../txaio \
+	../zlmdb \
+	../cfxdb \
+	../crossbar
+
+# split by whitespace, printing a separate line per file path
+list_aipolicy_gh_tmpl_files:
+	@printf '%s\n' $(AIPOLICY_GH_TMPL_FILES)
+
+list_aipolicy_gh_tmpl_destdirs:
+	@printf '%s\n' $(AIPOLICY_GH_TMPL_DESTDIRS)
+
+# copy all AIPOLICY_GH_TMPL_FILES to each of AIPOLICY_GH_TMPL_DESTDIRS
+#
+# IMPORTANT:
+#  - the relative dir path of the file to be copied MUST be
+#    replicated in the target directory tree, e.g.
+#
+#       .github/ISSUE_TEMPLATE/bug_report.md"
+#                 ==copy==>
+#       <DESTDIR>/.github/ISSUE_TEMPLATE/bug_report.md
+#
+#   doing so might require dirs to be created below DESTDIR !
+#
+copy_aipolicy_gh_tmpl:
+	@echo "Copying AI Policy and GitHub templates..."
+	@for dest in $(AIPOLICY_GH_TMPL_DESTDIRS); do \
+		if [ ! -d "$$dest" ]; then \
+			echo "WARNING: Destination directory '$$dest' does not exist. Skipping."; \
+			continue; \
+		fi; \
+		echo "--- Syncing to: $$dest"; \
+		for file in $(AIPOLICY_GH_TMPL_FILES); do \
+			mkdir -p "$$dest/$$(dirname $$file)"; \
+			echo "  => $$dest/$$file"; \
+			cp "$$file" "$$dest/$$file"; \
+		done; \
+	done
+	@echo "Done."
+
 clean_docs:
 	-rm -rf ./docs/_build
 	-rm -rf ./docs/autoapi/
