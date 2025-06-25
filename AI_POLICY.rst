@@ -3,6 +3,12 @@ AI Policy for Developers and Contributors
 
 .. sectionauthor:: Tobias Oberstein <tobias.oberstein@gmail.com>
 
+.. note:: Policy FOR human contributors about using AI
+
+    * Legal/IP requirements
+    * Disclosure obligations
+    * Authorship warranties
+
 .. important:: **The Bottom Line (tldr;)**
 
     Your pull request is your byline. When you submit code, you are signing your name
