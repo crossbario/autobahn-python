@@ -7,6 +7,8 @@ labels: ["needs-triage"]
 
 > 📝 **Note for maintainers:** Please triage this issue (review, classify, and assign appropriate labels).
 
+---
+
 ## What is your issue about?
 
 <!-- Please provide a clear and concise description. -->
