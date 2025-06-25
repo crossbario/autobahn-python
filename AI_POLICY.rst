@@ -2,13 +2,20 @@
  AI Policy for Developers and Contributors
 ###########################################
 
-.. note::
+This is our AI Policy **for** *human contributors* about **using**
+AI assistance with details on:
 
-   Policy FOR human contributors about using AI
+-  Legal/IP requirements
+-  Disclosure obligations
+-  Authorship warranties
 
-   -  Legal/IP requirements
-   -  Disclosure obligations
-   -  Authorship warranties
+For instructions **to** *AI assistants* (e.g.
+`Anthropic Claude <https://www.anthropic.com/claude>`_,
+`Google Gemini <https://gemini.google.com/app>`_,
+`OpenAI ChatGPT <https://openai.com/chatgpt/overview/>`_,
+`Microsoft Copilot <https://copilot.microsoft.com/>`_ or other)
+about **providing** AI assistance, please see
+:download:`CLAUDE.md </_static/CLAUDE.md>`.
 
 .. important::
 
@@ -16,9 +23,12 @@
 
    Your pull request is your byline. When you submit code, you are
    signing your name to it and warranting that you are the **Author**.
+
    Whether you used an AI as an **Editor** or a **Ghostwriter**, the
-   final work must be a *product of your skill, judgment, and creative
-   labor*. An AI can never be credited as an author or co-author.
+   final work must be a product of **Your** skill, judgment, and creative
+   labor.
+
+   An AI can never be credited as an author or co-author.
 
 ----
 
@@ -82,12 +92,12 @@ In this role, you are using the AI to generate raw material, but it is
 your intellectual labor — your review, validation, and integration —
 that transforms it into a valid contribution.
 
+**************************************************
 The Role an AI Can Never Fill: Author or Co-Author
-==================================================
+**************************************************
 
 The hard line is this: an AI can never be credited as an **Author** or
 **Co-Author**.
-
 It has no legal standing, cannot be held accountable, and cannot hold
 copyright. Any contribution where the AI was the primary creator and the
 human was merely a prompter without significant review or modification
@@ -101,5 +111,3 @@ obligations.
 
 In either case, our codebase would cease to be a clean, single-license
 work and would become a legally ambiguous patchwork.
-
-----
