@@ -9,17 +9,14 @@ from pathlib import Path
 # The name of the current repository, used as the string to be replaced.
 CURRENT_REPO_NAME = "autobahn-python"
 
-# The specific file inside the source list that needs its contents modified.
-CONFIG_FILE_TO_MODIFY = ".github/ISSUE_TEMPLATE/config.yml"
-
 # List of i) AI Policy and ii) GitHub template files to copy.
 SOURCE_FILES = [
-    "AI_POLICY.rst",
-    "CLAUDE.md",
-    ".github/pull_request_template.md",
-    CONFIG_FILE_TO_MODIFY,
-    ".github/ISSUE_TEMPLATE/bug_report.md",
-    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ("AI_POLICY.rst", True),
+    ("CLAUDE.md", False),
+    (".github/pull_request_template.md", True),
+    (".github/ISSUE_TEMPLATE/config.yml", True),
+    (".github/ISSUE_TEMPLATE/bug_report.md", True),
+    (".github/ISSUE_TEMPLATE/feature_request.md", True),
 ]
 
 # List of target directories for copying the files.
@@ -48,7 +45,7 @@ def main():
         print(f"--- Syncing to: {dest_dir}")
 
         # 1. Copy all source files
-        for src_file_str in SOURCE_FILES:
+        for src_file_str, replace_repo_name in SOURCE_FILES:
             src_file = Path(src_file_str)
             dest_file = dest_dir / src_file
 
@@ -58,18 +55,17 @@ def main():
             # Copy the file, preserving metadata
             shutil.copy2(src_file, dest_file)
 
-        # 2. Modify the specific config file after it has been copied
-        target_repo_name = dest_dir.name
-        target_config_file = dest_dir / CONFIG_FILE_TO_MODIFY
-
-        if target_config_file.is_file():
-            print(f"  => Modifying repository name in {target_config_file} to '{target_repo_name}'")
-            # Read the file content
-            content = target_config_file.read_text()
-            # Perform the replacement
-            new_content = content.replace(CURRENT_REPO_NAME, target_repo_name)
-            # Write the modified content back
-            target_config_file.write_text(new_content)
+            # 2. Modify the specific config file after it has been copied
+            if replace_repo_name:
+                target_repo_name = dest_dir.name
+                if dest_file.is_file():
+                    print(f"  => Modifying repository name in {dest_file} to '{target_repo_name}'")
+                    # Read the file content
+                    content = dest_file.read_text()
+                    # Perform the replacement
+                    new_content = content.replace(CURRENT_REPO_NAME, target_repo_name)
+                    # Write the modified content back
+                    dest_file.write_text(new_content)
 
     print("Done.")
 

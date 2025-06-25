@@ -31,4 +31,4 @@ Triage is reviewing, categorization and prioritizing *bugs* depending on affecte
 ## AI Assistance Disclosure
 
 - [ ] I did NOT use AI to generate any part of this issue.
-- [ ] I used AI for drafting part/all of this issue. (Please review our [AI Policy](../AI_POLICY.rst) for disclosure requirements.)
+- [ ] I used AI for drafting part/all of this issue. (Please review our [AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.rst) for disclosure requirements.)
