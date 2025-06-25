@@ -12,7 +12,7 @@
 
 .. important::
 
-   **The Bottom Line (tldr;)**
+   **The Bottom Line - Make the right thing the easy thing.**
 
    Your pull request is your byline. When you submit code, you are
    signing your name to it and warranting that you are the **Author**.

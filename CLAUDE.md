@@ -19,6 +19,17 @@ Copilot, etc. when working with this project's codebase. It aims
 to ensure AI-generated contributions maintain our project's
 quality standards and development practices.
 
+## General Mantras
+
+General mantras this project aims to follow:
+
+- Do The Right Thing
+- Secure by Design
+- Secure by Default
+- Make the Right Thing the Easy Thing
+- Batteries included - It just works!
+- No bullshit Bingo - No time to waste.
+
 ## Project Overview
 
 The purpose of and an overview of this specific project can be
@@ -206,10 +217,13 @@ everywhere unfortunately_) using
 
 ### 3. Code Style and Standards
 
-- Use [Black](https://black.readthedocs.io/)
-- Use [Mypy](https://www.mypy-lang.org/)
-- Use [tox](https://tox.wiki/)
-- Use [Read the Docs](https://about.readthedocs.com/)
+- Use [Black](https://black.readthedocs.io/) for Python code formatting
+- Use [Prettier](https://prettier.io/) for Markdown documentation formatting
+- Use [rstfmt](https://github.com/dzhu/rstfmt) for ReST documentation formatting
+- Use [Mypy](https://www.mypy-lang.org/) for additional type hinting (in addition to Python standard type hinting)
+- Use [tox](https://tox.wiki/) for driving tests
+- Use [Sphinx](https://www.sphinx-doc.org/) for Python documentation
+- Use [Read the Docs](https://about.readthedocs.com/) to host documentation
 - Follow PEP 8 with project-specific exceptions (see .flake8
   config)
 - Use consistent import ordering (stdlib, third-party, local)
