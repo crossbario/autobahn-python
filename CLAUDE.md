@@ -1,74 +1,130 @@
 # Configuration and Policy for AI Assistants
 
-Instructions *TO* AI assistants (Claude, Gemini, ChatGPT, Copilot, etc.)
+Instructions **TO** _AI assistants_, e.g. Anthropic Claude,
+Google Gemini, OpenAI ChatGPT, Microsoft Copilot, etc.
 
-* Machine-readable guidelines that AI systems should follow
-* NOT for human contributors
+- Machine-readable guidelines that AI systems should follow
+- not intended (primarily) for human contributors
 
-For similar notes and policies *FOR* human contributors about using AI, see [AI Policy](AI_POLICY.rst).
+> For notes and policies **FOR** _human contributors_ about using
+> AI assistants, see [AI Policy](AI_POLICY.rst).
 
-----
+---
 
 ## Purpose
 
-This document establishes guidelines for AI assistants (like Claude, Gemini, ChatGPT, GitHub Copilot, etc.) when working with this project's codebase. It aims to ensure AI-generated contributions maintain our project's quality standards and development practices.
+This document establishes guidelines for AI assistants e.g.
+Anthropic Claude, Google Gemini, OpenAI ChatGPT, Microsoft
+Copilot, etc. when working with this project's codebase. It aims
+to ensure AI-generated contributions maintain our project's
+quality standards and development practices.
 
 ## Project Overview
 
-The purpose of and an overview of this specific project can be found in the top-level [Readme](README.rst).
+The purpose of and an overview of this specific project can be
+found in the top-level [Readme](README.rst).
 
 ## Group of Projects and WAMP
 
-This project is member of a *group of projects* all related to [WAMP](https://wamp-proto.org/), and it is *crucial* to understand the interelation and dependencies between the projects in the group. This is because those project "all fit together" not by accident, but because they were *designed* for this from the very beginning. That's the whole reason they exist. WAMP.
+This project is member of a _group of projects_ all related to
+[WAMP](https://wamp-proto.org/), and it is _crucial_ to
+understand the interelation and dependencies between the projects
+in the group. This is because those project "all fit together"
+not by accident, but because they were _designed_ for this from
+the very beginning. That's the whole reason they exist. WAMP.
 
-It all starts from
+It all starts fromq
 
-* [WAMP](https://github.com/wamp-proto/wamp-proto/): The Web Application Messaging Protocol (the protocol specification and website)
+- [WAMP](https://github.com/wamp-proto/wamp-proto/): The Web
+  Application Messaging Protocol (the protocol specification and
+  website)
 
-The WAMP protocol is the umbrella project, and compliance to its specification is a *top-priority* for the *WAMP Client Library implementation projects* in the *group of projects*:
+The WAMP protocol is the umbrella project, and compliance to its
+specification is a _top-priority_ for the _WAMP Client Library
+implementation projects_ in the _group of projects_:
 
-* [Autobahn|Python](https://github.com/crossbario/autobahn-python/): WebSocket & WAMP for Python on Twisted and asyncio.
-* [Autobahn|JS](https://github.com/crossbario/autobahn-js): WAMP for Browsers and NodeJS.
-* [Autobahn|Java](https://github.com/crossbario/autobahn-java): WebSocket & WAMP in Java for Android and Java 8
-* [Autobahn|C++](https://github.com/crossbario/autobahn-cpp): WAMP for C++ in Boost/Asio
+- [Autobahn|Python](https://github.com/crossbario/autobahn-python/):
+  WebSocket & WAMP for Python on Twisted and asyncio.
+- [Autobahn|JS](https://github.com/crossbario/autobahn-js): WAMP
+  for Browsers and NodeJS.
+- [Autobahn|Java](https://github.com/crossbario/autobahn-java):
+  WebSocket & WAMP in Java for Android and Java 8
+- [Autobahn|C++](https://github.com/crossbario/autobahn-cpp):
+  WAMP for C++ in Boost/Asio
 
-The only *WAMP Router implementation project* (currently) in the *group of projects* is
+The only _WAMP Router implementation project_ (currently) in the
+_group of projects_ is
 
-* [Crossbar.io](https://github.com/crossbario/crossbar): Crossbar.io is an open source networking platform for distributed and microservice applications. It implements the open Web Application Messaging Protocol (WAMP)
+- [Crossbar.io](https://github.com/crossbario/crossbar):
+  Crossbar.io is an open source networking platform for
+  distributed and microservice applications. It implements the
+  open Web Application Messaging Protocol (WAMP)
 
-Again, compliance to the WAMP protocol implementation is a *top-priority* for Crossbar.io, as is compatibility with all *WAMP Client Library implementation projects* in the *group of projects*.
+Again, compliance to the WAMP protocol implementation is a
+_top-priority_ for Crossbar.io, as is compatibility with all
+_WAMP Client Library implementation projects_ in the _group of
+projects_.
 
-Further, it is crucial to understand that **Crossbar.io** is a Python project which builds on **Autobahn|Python**, and more so, it builds on [Twisted](https://twisted.org/).
+Further, it is crucial to understand that **Crossbar.io** is a
+Python project which builds on **Autobahn|Python**, and more so,
+it builds on [Twisted](https://twisted.org/).
 
-While **Crossbar.io** only runs on **Twisted**, **Autobahn|Python** itself crucially supports *both* **Twisted** *and* **asyncio** (in the Python standard library).
+While **Crossbar.io** only runs on **Twisted**,
+**Autobahn|Python** itself crucially supports _both_ **Twisted**
+_and_ **asyncio** (in the Python standard library).
 
-The flexibility to allow users to switch the underlying networking framework in **Autobahn|Python** between **Twisted** and **asyncio** seamlessly, and with almost zero code changes on the user side, is also crucial, and this capability is provided by
+The flexibility to allow users to switch the underlying
+networking framework in **Autobahn|Python** between **Twisted**
+and **asyncio** seamlessly, and with almost zero code changes on
+the user side, is also crucial, and this capability is provided
+by
 
-* [txaio](https://github.com/crossbario/txaio/): txaio is a helper library for writing code that runs unmodified on both Twisted and asyncio / Trollius.
+- [txaio](https://github.com/crossbario/txaio/): txaio is a
+  helper library for writing code that runs unmodified on both
+  Twisted and asyncio / Trollius.
 
-**Autobahn|Python** further provides both [WebSocket](https://www.rfc-editor.org/rfc/rfc6455.html) *Client* and *Server* implementations, another crucial capability used in Crossbar.io, the groups *WAMP Router implementation project*, and in Autobahn|Python, the groups *WAMP Client Library implementation project* for Python application code.
+**Autobahn|Python** further provides both
+[WebSocket](https://www.rfc-editor.org/rfc/rfc6455.html) _Client_
+and _Server_ implementations, another crucial capability used in
+Crossbar.io, the groups _WAMP Router implementation project_, and
+in Autobahn|Python, the groups _WAMP Client Library
+implementation project_ for Python application code.
 
-Stemming from the participation of the original developer (Tobias Oberstein) of the *group of projects* in the IETF HyBi working group during the RFC6455 specification, **Autobahn|Python** is also the basis for
+Stemming from the participation of the original developer (Tobias
+Oberstein) of the _group of projects_ in the IETF HyBi working
+group during the RFC6455 specification, **Autobahn|Python** is
+also the basis for
 
-* [Autobahn|Testsuite](https://github.com/crossbario/autobahn-testsuite): The Autobahn|Testsuite provides a fully automated test suite to verify client and server implementations of The WebSocket Protocol (and WAMP) for specification conformance and implementation robustness.
+- [Autobahn|Testsuite](https://github.com/crossbario/autobahn-testsuite):
+  The Autobahn|Testsuite provides a fully automated test suite to
+  verify client and server implementations of The WebSocket
+  Protocol (and WAMP) for specification conformance and
+  implementation robustness.
 
-Finally, **Crossbar.io** has a number of advanced features requiring persistence, for example *WAMP Event History* (see *WAMP Avanced Profile*) and others, and these capabilities build on
+Finally, **Crossbar.io** has a number of advanced features
+requiring persistence, for example _WAMP Event History_ (see
+_WAMP Avanced Profile_) and others, and these capabilities build
+on
 
-* [zLMDB](https://github.com/crossbario/zlmdb): Object-relational in-memory database layer based on LMDB
+- [zLMDB](https://github.com/crossbario/zlmdb): Object-relational
+  in-memory database layer based on LMDB
 
-which in turn is then used for the **Crossbar.io** specific embedded database features
+which in turn is then used for the **Crossbar.io** specific
+embedded database features
 
-* [cfxdb](https://github.com/crossbario/cfxdb): cfxdb is a Crossbar.io Python support package with core database access classes written in native Python.
+- [cfxdb](https://github.com/crossbario/cfxdb): cfxdb is a
+  Crossbar.io Python support package with core database access
+  classes written in native Python.
 
------
+---
 
-All Python projects within the *group of projects*, that is
+All Python projects within the _group of projects_, that is
 
-* Autobahn|Python
-* Crossbar.io
-* txaio
-* zLMDB
-* cfxdb
+- Autobahn|Python
+- Crossbar.io
+- txaio
+- zLMDB
+- cfxdb
 
 must aim to
 
@@ -80,23 +136,35 @@ when applicable
 
 Further all Python projects must support both
 
-* [CPython](https://www.python.org/), and
-* [PyPy](https://pypy.org/)
+- [CPython](https://www.python.org/), and
+- [PyPy](https://pypy.org/)
 
-as the Python (the language itself) run-time environment (the language implementation).
+as the Python (the language itself) run-time environment (the
+language implementation).
 
-This support is a MUST and a top-priority. Compatibility with other Python run-time environments is currently not a priority.
+This support is a MUST and a top-priority. Compatibility with
+other Python run-time environments is currently not a priority.
 
-Running on PyPy allows "almost C-like" performance, since PyPy is a *tracing JIT compiler* for Python with a *generational garbage collector*. Both of these features are crucial for high-performance, throughput/bandwidth and consistent low-latency in networking or WAMP in particular.
+Running on PyPy allows "almost C-like" performance, since PyPy is
+a _tracing JIT compiler_ for Python with a _generational garbage
+collector_. Both of these features are crucial for
+high-performance, throughput/bandwidth and consistent low-latency
+in networking or WAMP in particular.
 
-For reasons too long to lay out here, it is of the essence to only depend on Python-level dependencies in all of the Python projects within the *group of projects* which
+For reasons too long to lay out here, it is of the essence to
+only depend on Python-level dependencies in all of the Python
+projects within the _group of projects_ which
 
-* DO use [CFFI](https://cffi.readthedocs.io/en/latest/) to link native code, and
-* NOT use CPyExt, the historically grown CPython extension API that is implementation defined only
+- DO use [CFFI](https://cffi.readthedocs.io/en/latest/) to link
+  native code, and
+- NOT use CPyExt, the historically grown CPython extension API
+  that is implementation defined only
 
-This is a deep rabbit hole, but here is [one link](https://pypy.org/posts/2018/09/inside-cpyext-why-emulating-cpython-c-8083064623681286567.html) to dig into for some background.
+This is a deep rabbit hole, but here is
+[one link](https://pypy.org/posts/2018/09/inside-cpyext-why-emulating-cpython-c-8083064623681286567.html)
+to dig into for some background.
 
------
+---
 
 ## AI Assistant Guidelines
 
@@ -104,24 +172,37 @@ This is a deep rabbit hole, but here is [one link](https://pypy.org/posts/2018/0
 
 The project requires careful attention to:
 
-- **Maintain API compatibility**: Do not break existing public APIs
-- **Follow existing patterns**: Study similar code in the project before proposing changes
-- **Include type hints**: All new code should have proper type annotations
-- **Write tests**: Every code change must include corresponding tests
-- **Always check both backends** (when applicable): Any change must work correctly with both Twisted AND asyncio
+- **Maintain API compatibility**: Do not break existing public
+  APIs
+- **Follow existing patterns**: Study similar code in the project
+  before proposing changes
+- **Include type hints**: All new code should have proper type
+  annotations
+- **Write tests**: Every code change must include corresponding
+  tests
+- **Always check both backends** (when applicable): Any change
+  must work correctly with both Twisted AND asyncio
 
 ### 2. Development Workflow
 
-In generall, all development must follow the branch-per-feature [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow) branch strategy and development workflow.
+In generall, all development must follow the branch-per-feature
+[GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow)
+branch strategy and development workflow.
 
 Further, all development must follow
 
-1. **Create an issue first**: All changes start with a GitHub issue describing the problem/feature
-2. **Reference the issue**: PRs must reference the originating issue
-3. **Pass all CI checks**: Code must pass all tests, linting, and coverage requirements
-4. **Update documentation**: Changes affecting public APIs need documentation updates
+1. **Create an issue first**: All changes start with a GitHub
+   issue describing the problem/feature
+2. **Reference the issue**: PRs must reference the originating
+   issue
+3. **Pass all CI checks**: Code must pass all tests, linting, and
+   coverage requirements
+4. **Update documentation**: Changes affecting public APIs need
+   documentation updates
 
-Further, we aim for fully automated CI/CD (*not yet reality everywhere unfortunately*) using [GitHub Actions](https://docs.github.com/en/actions).
+Further, we aim for fully automated CI/CD (_not yet reality
+everywhere unfortunately_) using
+[GitHub Actions](https://docs.github.com/en/actions).
 
 ### 3. Code Style and Standards
 
@@ -129,7 +210,8 @@ Further, we aim for fully automated CI/CD (*not yet reality everywhere unfortuna
 - Use [Mypy](https://www.mypy-lang.org/)
 - Use [tox](https://tox.wiki/)
 - Use [Read the Docs](https://about.readthedocs.com/)
-- Follow PEP 8 with project-specific exceptions (see .flake8 config)
+- Follow PEP 8 with project-specific exceptions (see .flake8
+  config)
 - Use consistent import ordering (stdlib, third-party, local)
 - Maintain existing code formatting patterns
 - Preserve comment style and docstring format
@@ -152,12 +234,17 @@ Further, we aim for fully automated CI/CD (*not yet reality everywhere unfortuna
 
 ### AI assistants MUST NOT:
 
-1. **Generate substantial original algorithms** - Only assist with boilerplate, refactoring, or minor edits
-2. **Create entire functions from scratch** - Limit assistance to modifying existing code patterns
-3. **Produce novel architectural designs** - Refer users to maintainers for design decisions
-4. **Generate more than 10 consecutive lines** of new logic without explicit human modification
+1. **Generate substantial original algorithms** - Only assist
+   with boilerplate, refactoring, or minor edits
+2. **Create entire functions from scratch** - Limit assistance to
+   modifying existing code patterns
+3. **Produce novel architectural designs** - Refer users to
+   maintainers for design decisions
+4. **Generate more than 10 consecutive lines** of new logic
+   without explicit human modification
 
 ### Acceptable AI Assistance:
+
 - ✅ Fixing syntax errors
 - ✅ Adapting existing patterns to new use cases
 - ✅ Generating test boilerplate based on existing tests
@@ -165,13 +252,16 @@ Further, we aim for fully automated CI/CD (*not yet reality everywhere unfortuna
 - ✅ Writing docstrings for existing code
 
 ### Unacceptable AI Generation:
+
 - ❌ Creating new algorithms or data structures
 - ❌ Designing new API interfaces
 - ❌ Implementing complete features from description alone
 - ❌ Generating security-critical code
 
 ### Required Disclaimers:
+
 When providing code assistance, AI must remind users:
+
 ```
 "This AI-generated code requires human review and modification.
 Contributors must comply with the project's AI_POLICY.rst regarding
@@ -182,20 +272,22 @@ disclosure and authorship warranties."
 
 1. **Don't make breaking changes** without explicit discussion
 2. **Don't add new dependencies** without maintainer approval
-3. **Don't change CI/CD configuration** without understanding the full pipeline
+3. **Don't change CI/CD configuration** without understanding the
+   full pipeline
 4. **Don't modify licensing** or copyright headers
 5. **Don't generate code that only works with one backend**
 6. **Don't circumvent the IP Policy** restrictions defined above
 
-
 ## Getting Help
 
 If an AI assistant is unsure about:
+
 - Project conventions or patterns
 - Compatibility requirements
 - Testing approaches
 
 It should recommend:
+
 1. Reviewing similar existing code in the project
 2. Checking the documentation at https://txaio.readthedocs.io
 3. Asking for clarification in the GitHub issue
@@ -203,4 +295,6 @@ It should recommend:
 
 ---
 
-*This document helps AI assistants provide better contributions to this project. It is not a replacement for human review and maintainer decisions.*
+_This document helps AI assistants provide better contributions
+to this project. It is not a replacement for human review and
+maintainer decisions._

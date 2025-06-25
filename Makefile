@@ -74,6 +74,22 @@ publish: clean
 	AUTOBAHN_USE_NVX=0 python -m build
 	twine upload dist/*
 
+# Prettier: Markdown docs => opinionated, auto-formatting tool that "just works"
+# 	https://prettier.io/
+# Config: ./.prettierrc.json
+# Installation: npm install --save-dev --save-exact prettier
+#
+autoformat_markdown_docs:
+	npx prettier --write CLAUDE.md
+
+# rstfmt: ReST docs => opinionated, auto-formatting tool that "just works"
+# 	https://github.com/dzhu/rstfmt
+# Config: ./pyproject.toml
+# Installation: pip install rstfmt
+#
+autoformat_rest_docs:
+	rstfmt AI_POLICY.rst
+
 clean_docs:
 	-rm -rf ./docs/_build
 	-rm -rf ./docs/autoapi/

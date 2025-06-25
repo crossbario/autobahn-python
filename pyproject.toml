@@ -1,0 +1,7 @@
+[tool.black]
+# Black configuration: Python code files
+line-length = 119
+
+[tool.rstfmt]
+# rstfmt configuration: ReST (Sphinx) doc files
+width = 65
