@@ -233,7 +233,7 @@ setup(
     },
     platforms='Any',
     install_requires=[
-        'txaio>=21.6.1',        # MIT license (https://github.com/crossbario/txaio)
+        'txaio>=25.6.1',        # MIT license (https://github.com/crossbario/txaio)
         'cryptography>=3.4.6',  # BSD *or* Apache license (https://github.com/pyca/cryptography)
         'hyperlink>=21.0.0',    # MIT license (https://github.com/python-hyper/hyperlink)
         'importlib.resources>=5.0.0 ; python_version < "3.10"',    # Apache license (https://github.com/python/importlib_resources/blob/main/LICENSE)
@@ -264,7 +264,7 @@ setup(
 
     zip_safe=False,
 
-    python_requires='>=3.9',
+    python_requires='>=3.10',
 
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=["License :: OSI Approved :: MIT License",
@@ -275,9 +275,9 @@ setup(
                  "Operating System :: OS Independent",
                  "Programming Language :: Python",
                  "Programming Language :: Python :: 3",
-                 "Programming Language :: Python :: 3.9",
                  "Programming Language :: Python :: 3.10",
                  "Programming Language :: Python :: 3.11",
+                 "Programming Language :: Python :: 3.12",
                  "Programming Language :: Python :: Implementation :: CPython",
                  "Programming Language :: Python :: Implementation :: PyPy",
                  "Topic :: Internet",

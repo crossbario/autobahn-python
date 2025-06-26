@@ -25,10 +25,10 @@ jobs:
         sudo apt update
         sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
 
-    - name: Set up Python 3.11
+    - name: Set up Python 3.12
       uses: actions/setup-python@v3
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         architecture: 'x64'
 
     - name: Install Python package dependencies
@@ -57,7 +57,7 @@ jobs:
 
         # python 3.11 fails with "src/twisted/test/raiser.c:198:12: fatal error: longintrepr.h: No such file or directory"
         # twisted doesn't yet support 3.11 formally: https://github.com/twisted/twisted/blob/trunk/pyproject.toml#L24
-        python-version: ['3.9', '3.11', 'pypy-3.9']
+        python-version: ['3.10', '3.12', 'pypy-3.10']
         framework: ['asyncio', 'tw2403', 'twtrunk']
 
     # https://github.blog/changelog/2020-04-15-github-actions-new-workflow-features/
@@ -123,10 +123,10 @@ jobs:
         sudo apt update
         sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libcairo2-dev libgirepository-2.0-dev
 
-    - name: Set up Python 3.11
+    - name: Set up Python 3.12
       uses: actions/setup-python@v3
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         architecture: 'x64'
 
     - name: Install Python package dependencies
