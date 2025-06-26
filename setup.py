@@ -37,7 +37,7 @@ with open('autobahn/_version.py') as f:
     exec(f.read())  # defines __version__
 
 # read package long description
-with open('README.rst') as f:
+with open('README.md') as f:
     docstr = f.read()
 
 # Twisted dependencies (be careful bumping these minimal versions,
@@ -224,6 +224,7 @@ setup(
     version=__version__,  # noqa
     description='WebSocket client & server library, WAMP real-time framework',
     long_description=docstr,
+    long_description_content_type='text/markdown',
     license='MIT License',
     author='typedef int GmbH',
     url='https://github.com/crossbario/autobahn-python',
@@ -232,7 +233,7 @@ setup(
     },
     platforms='Any',
     install_requires=[
-        'txaio>=21.2.1',        # MIT license (https://github.com/crossbario/txaio)
+        'txaio>=21.6.1',        # MIT license (https://github.com/crossbario/txaio)
         'cryptography>=3.4.6',  # BSD *or* Apache license (https://github.com/pyca/cryptography)
         'hyperlink>=21.0.0',    # MIT license (https://github.com/python-hyper/hyperlink)
         'importlib.resources>=5.0.0 ; python_version < "3.10"',    # Apache license (https://github.com/python/importlib_resources/blob/main/LICENSE)

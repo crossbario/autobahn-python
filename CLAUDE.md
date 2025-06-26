@@ -33,7 +33,7 @@ General mantras this project aims to follow:
 ## Project Overview
 
 The purpose of and an overview of this specific project can be
-found in the top-level [Readme](README.rst).
+found in the top-level [README](README.md).
 
 ## Group of Projects and WAMP
 

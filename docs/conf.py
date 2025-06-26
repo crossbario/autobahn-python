@@ -132,6 +132,8 @@ RTD_BUILD = os.environ.get('READTHEDOCS', None) == 'True'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'myst_parser',
+
     # https://sphinx-autoapi.readthedocs.io
     'autoapi.extension',
 
@@ -238,7 +240,6 @@ todo_include_todos = False
 # a list of builtin themes.
 if sphinx_rtd_theme:
     html_theme = "sphinx_rtd_theme"
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 else:
     html_theme = "default"
 
@@ -339,10 +340,10 @@ intersphinx_mapping = {
    'zlmdb': ('https://zlmdb.readthedocs.io/en/latest/', None),
 }
 
-rst_epilog = """
+rst_epilog = r"""
 .. |ab| replace:: Autobahn
 .. |Ab| replace:: **Autobahn**
-.. |abL| replace:: Autobahn|Python
+.. |abL| replace:: Autobahn\|Python
 .. |AbL| replace:: **Autobahn**\|Python
 .. _Autobahn: http://crossbar.io/autobahn#python
 .. _AutobahnJS: http://crossbar.io/autobahn#js
