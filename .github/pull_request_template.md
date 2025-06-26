@@ -1,12 +1,12 @@
 ## Description
 
-Please explain the changes you are proposing:
+Please explain the changes you are proposing.
 
 ---
 
 ## Related Issue(s)
 
-Closes #
+Closes or relates to #
 
 ---
 
@@ -14,7 +14,8 @@ Closes #
 
 - [ ] I have referenced relevant issue numbers above
 - [ ] I have performed a self-review of my code
-- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] I have added tests that prove my fix is effective or that
+      my feature works
 - [ ] I have added necessary documentation (if appropriate)
 - [ ] My code follows the style guidelines of this project
 
@@ -22,9 +23,53 @@ Closes #
 
 ## AI Assistance Disclosure
 
-Please check one:
+:warning: **Required for this PR:** You MUST include a disclosure
+file at `.audit/<branch-name>.md` right in this PR. Submitting
+code generated _primarily_ by AI, or for which you cannot claim
+_human authorship_, is not permitted. See
+[AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md)
+for details. The disclosure file must **follow the exact format
+and content** as described below. _Your PR will not be accepted
+without a disclosure file._
 
-- [ ] I did NOT use AI tools to generate code/content for this PR.
-- [ ] I used AI tools to assist with this PR. (If checked, please describe how AI was used, and ensure you reviewed, modified, and take full responsibility for all contributions, per our [AI Policy](../AI_POLICY.rst).)
+**Example 1** file contents of your disclosure file
+`.audit/<branch-name>.md`:
 
-**NOTE:** Submitting code generated primarily by AI, or for which you cannot claim human authorship, is not permitted. See [AI_POLICY.rst](../AI_POLICY.rst).
+```
+## AI Assistance Disclosure
+
+- [ ] I did **not** use any AI-assistance tools to help create this pull request.
+- [x] I **did** use AI-assistance tools to *help* create this pull request.
+- [x] I have read, understood and followed the projects' [AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md) when creating code, documentation etc. for this pull request.
+
+Submitted by: @your-github-username
+Date: YYYY-MM-DD
+Related issue(s): #issue-number
+Branch: branch-name
+```
+
+**OR**
+
+**Example 2** file contents of your disclosure file
+`.audit/<branch-name>.md`:
+
+```
+## AI Assistance Disclosure
+
+- [x] I did **not** use any AI-assistance tools to help create this pull request.
+- [ ] I **did** use AI-assistance tools to *help* create this pull request.
+- [x] I have read, understood and followed the projects' [AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md) when creating code, documentation etc. for this pull request.
+
+Submitted by: @your-github-username
+Date: YYYY-MM-DD
+Related issue(s): #issue-number
+Branch: branch-name
+```
+
+**Example 1 OR Example 2** show the only valid two variants. You
+cannot have both or none of the first two marks checked, and you
+must always have the last tick checked.
+
+Well, "must" if you want your PR to be accepted and ultimately
+merged that is. Of course you are always free to
+`Go ahead! Fork my Day. (TM)` ;) This is Open-source.

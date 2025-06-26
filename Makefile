@@ -20,6 +20,10 @@ abi_files:
 	rm -rf ${PWD}/autobahn/xbr/contracts
 	unzip /tmp/xbr-protocol-latest.zip -d ${PWD}/autobahn/xbr/contracts
 
+os_install:
+	sudo apt install -y libgirepository-2.0-0
+	sudo apt install -y libgirepository-2.0-dev
+
 # install locally
 install:
 	-pip uninstall -y pytest_asyncio # remove the broken shit
@@ -80,7 +84,17 @@ publish: clean
 # Installation: npm install --save-dev --save-exact prettier
 #
 autoformat_markdown_docs:
+	npx prettier --write README.md
+	npx prettier --write OVERVIEW.md
+	npx prettier --write CONTRIBUTING.md
+	npx prettier --write RELEASING.md
+	npx prettier --write AI_AUDIT_PROCESS.md
+	npx prettier --write AI_POLICY.md
 	npx prettier --write CLAUDE.md
+	npx prettier --write .audit/README.md
+	npx prettier --write .github/pull_request_template.md
+	npx prettier --write .github/ISSUE_TEMPLATE/bug_report.md
+	npx prettier --write .github/ISSUE_TEMPLATE/feature_request.md
 
 # rstfmt: ReST docs => opinionated, auto-formatting tool that "just works"
 # 	https://github.com/dzhu/rstfmt
@@ -91,8 +105,8 @@ autoformat_rest_docs:
 	rstfmt AI_POLICY.rst
 
 # copy AI Policy and GitHub template files; and adjust them; in one go
-copy_aipolicy_gh_tmpl:
-	@python3 sync_templates.py
+copy_project_templates:
+	@python3 copy_project_templates.py
 
 clean_docs:
 	-rm -rf ./docs/_build

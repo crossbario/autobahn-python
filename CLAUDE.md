@@ -217,13 +217,19 @@ everywhere unfortunately_) using
 
 ### 3. Code Style and Standards
 
-- Use [Black](https://black.readthedocs.io/) for Python code formatting
-- Use [Prettier](https://prettier.io/) for Markdown documentation formatting
-- Use [rstfmt](https://github.com/dzhu/rstfmt) for ReST documentation formatting
-- Use [Mypy](https://www.mypy-lang.org/) for additional type hinting (in addition to Python standard type hinting)
+- Use [Black](https://black.readthedocs.io/) for Python code
+  formatting
+- Use [Prettier](https://prettier.io/) for Markdown documentation
+  formatting
+- Use [rstfmt](https://github.com/dzhu/rstfmt) for ReST
+  documentation formatting
+- Use [Mypy](https://www.mypy-lang.org/) for additional type
+  hinting (in addition to Python standard type hinting)
 - Use [tox](https://tox.wiki/) for driving tests
-- Use [Sphinx](https://www.sphinx-doc.org/) for Python documentation
-- Use [Read the Docs](https://about.readthedocs.com/) to host documentation
+- Use [Sphinx](https://www.sphinx-doc.org/) for Python
+  documentation
+- Use [Read the Docs](https://about.readthedocs.com/) to host
+  documentation
 - Follow PEP 8 with project-specific exceptions (see .flake8
   config)
 - Use consistent import ordering (stdlib, third-party, local)

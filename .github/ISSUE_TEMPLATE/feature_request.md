@@ -5,7 +5,8 @@ title: "[ISSUE] "
 labels: ["needs-triage"]
 ---
 
-> 📝 **Note for maintainers:** Please triage this issue (review, classify, and assign appropriate labels).
+> 📝 **Note for maintainers:** Please triage this issue (review,
+> classify, and assign appropriate labels).
 
 ---
 
@@ -31,5 +32,11 @@ Triage is reviewing, categorization and prioritizing *features* depending on aff
 
 ## AI Assistance Disclosure
 
-- [ ] I did NOT use AI to generate any part of this issue.
-- [ ] I used AI for drafting part/all of this issue. (Please review our [AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.rst) for disclosure requirements.)
+- [ ] I did **not** use any AI-assistance tools to help create
+      this issue.
+- [x] I **did** use AI-assistance tools to _help_ create this
+      issue.
+- [x] I have read, understood and followed the projects'
+      [AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md)
+      when creating code, documentation etc. for this pull
+      request.
