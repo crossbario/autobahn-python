@@ -17,4 +17,3 @@ The following is a API reference of |Ab| generated from Python source code and d
     autobahn.wamp.component
     autobahn.twisted
     autobahn.asyncio
-    autobahn.xbr

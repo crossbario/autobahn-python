@@ -36,6 +36,7 @@ from autobahn import util
 from autobahn.wamp.interfaces import ISecurityModule, ICryptosignKey
 from autobahn.wamp.types import Challenge
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
+from autobahn.wamp.mnemonic import mnemonic_to_private_key
 from autobahn.util import parse_keyfile
 
 __all__ = [
@@ -632,11 +633,6 @@ if HAS_CRYPTOSIGN:
             :param index: The account index in account hierarchy defined by the seedphrase.
             :return: New instance of :class:`EthereumKey`
             """
-            try:
-                from autobahn.xbr._mnemonic import mnemonic_to_private_key
-            except ImportError as e:
-                raise RuntimeError('package autobahn[xbr] not installed ("{}")'.format(e))
-
             # BIP44 path for WAMP
             # https://github.com/wamp-proto/wamp-proto/issues/401
             # https://github.com/satoshilabs/slips/pull/1322

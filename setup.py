@@ -86,6 +86,8 @@ extras_require_encryption = [
     'pynacl>=1.4.0',                # Apache license
     'pytrie>=0.4.0',                # BSD license
     'qrcode>=7.3.1',                # BSD license
+    'base58>=2.1.1',                # MIT license
+    'ecdsa>=0.19.1',                # MIT license
 ]
 
 # Support for WAMP-SCRAM authentication
@@ -105,62 +107,10 @@ cffi_modules = []
 if 'AUTOBAHN_USE_NVX' not in os.environ or os.environ['AUTOBAHN_USE_NVX'] not in ['0', 'false']:
     cffi_modules.append('autobahn/nvx/_utf8validator.py:ffi')
 
-# https://peps.python.org/pep-0440/#direct-references
-# https://stackoverflow.com/a/63688209/884770
-extras_require_xbr = [
-    # bitarray is required by eth-account, but on pypy
-    # see discussion/links on https://github.com/crossbario/autobahn-python/pull/1617
-    'bitarray>=2.7.5',          # PSF
-    # 'bitarray @ git+https://github.com/ilanschnell/bitarray.git@master#egg=bitarray',
-
-    # XBR contracts and ABI file bundle
-    'xbr>=21.2.1',              # Apache 2.0
-
-    # CLI handling and color terminal output
-    'click>=8.1.2',             # BSD license
-
-    # the following is needed for XBR basics and XBR IDL code generation
-    'cbor2>=5.2.0',             # MIT license
-    'zlmdb>=21.2.1',            # MIT license
-    'twisted>=20.3.0',          # MIT license
-
-    # ImportError: cannot import name 'getargspec' from 'inspect'
-    # https://github.com/ethereum/web3.py/issues/2704#issuecomment-1369041219
-    # pip install git+https://github.com/ethereum/web3.py.git
-    'web3[ipfs]>=6.0.0',        # MIT license
-
-    # the following is needed for EIP712 ("signed typed data"):
-    'rlp>=2.0.1',               # MIT license
-    'py-eth-sig-utils>=0.4.0',  # MIT license (https://github.com/rmeissner/py-eth-sig-utils)
-    'py-ecc>=5.1.0',            # MIT license (https://github.com/ethereum/py_ecc)
-
-    'eth-abi>=4.0.0',           # MIT license (https://github.com/ethereum/eth-abi)
-
-    # the following is needed (at least) for BIP32/39 mnemonic processing
-    'mnemonic>=0.19',           # MIT license (https://github.com/trezor/python-mnemonic)
-    'base58>=2.1.0',            # MIT license (https://github.com/keis/base58)
-    'ecdsa>=0.16.1',            # MIT license (https://github.com/warner/python-ecdsa)
-    'py-multihash>=2.0.1',      # MIT license (https://github.com/multiformats/py-multihash / https://pypi.org/project/py-multihash/)
-
-    # the following is needed for the WAMP/XBR IDL code generator
-    'jinja2>=2.11.3',           # BSD license
-    'yapf==0.29.0',             # Apache 2.0
-
-    # the following is needed for XBR account synch and device pairing
-    'spake2>=0.8',              # MIT license (https://github.com/warner/python-spake2/blob/master/LICENSE)
-    'hkdf>=0.0.3',              # BSD 2-Clause "Simplified" License
-]
-
-# required for UI based tools, e.g. xbrnetwork-ui (autobahn.xbr._gui:_main)
-extras_require_ui = [
-    # the following is needed for the graphical XBR onboarding UI
-    'PyGObject>=3.40.0',        # GNU Lesser General Public License v2 or later (LGPLv2+) (GNU LGPL)
-]
-
 # everything
 extras_require_all = extras_require_twisted + extras_require_accelerate + extras_require_compress + \
                      extras_require_serialization + extras_require_encryption + extras_require_scram + \
-                     extras_require_nvx + extras_require_xbr + extras_require_ui
+                     extras_require_nvx
 
 packages = [
     'autobahn',
@@ -183,13 +133,6 @@ packages = [
     'twisted.plugins',
 ]
 
-xbr_packages = [
-    'autobahn.xbr',
-    'autobahn.xbr.test',
-    'autobahn.asyncio.xbr',
-    'autobahn.twisted.xbr',
-]
-
 package_data = {'autobahn.asyncio': ['./test/*']}
 
 entry_points = {
@@ -197,19 +140,6 @@ entry_points = {
         "wamp = autobahn.__main__:_main",
     ]
 }
-
-if 'AUTOBAHN_STRIP_XBR' in os.environ:
-    # force regeneration of egg-info manifest for stripped install
-    shutil.rmtree('autobahn.egg-info', ignore_errors=True)
-else:
-    extras_require_all += extras_require_xbr
-    packages += xbr_packages
-    package_data['xbr'] = [
-        './xbr/templates/py-autobahn/*.py.jinja2',
-        './xbr/templates/sol-eip712/*.sol.jinja2',
-    ]
-    entry_points['console_scripts'] += ["xbrnetwork = autobahn.xbr._cli:_main"]
-    entry_points['console_scripts'] += ["xbrnetwork-ui = autobahn.xbr._gui:_main"]
 
 # development dependencies
 extras_require_dev = []
@@ -251,8 +181,6 @@ setup(
         'scram': extras_require_scram,
         'nvx': extras_require_nvx,
         'dev': extras_require_dev,
-        'xbr': extras_require_xbr,
-        'ui': extras_require_ui,
     },
     packages=packages,
     package_data=package_data,
@@ -288,7 +216,7 @@ setup(
                  "Topic :: Software Development :: Libraries",
                  "Topic :: Software Development :: Libraries :: Python Modules",
                  "Topic :: Software Development :: Object Brokering"],
-    keywords='autobahn crossbar websocket realtime rfc6455 wamp rpc pubsub twisted asyncio xbr data-markets blockchain ethereum'
+    keywords='autobahn crossbar websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
 )
 
 

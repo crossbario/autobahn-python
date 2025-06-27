@@ -39,7 +39,6 @@ node.key
 *.swo
 *.swn
 *.so
-autobahn/xbr/contracts
 .wheels
 get-pip.py
 docs/autoapi/

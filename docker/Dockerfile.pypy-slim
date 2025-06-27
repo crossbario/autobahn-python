@@ -72,9 +72,7 @@ COPY ./.wheels /tmp
 RUN find /tmp
 RUN pip install --no-cache-dir \
         /tmp/txaio-latest-py2.py3-none-any.whl \
-        /tmp/zlmdb-latest-py2.py3-none-any.whl \
-        /tmp/xbr-latest-py2.py3-none-any.whl \
-        /tmp/autobahn-latest-py2.py3-none-any.whl[asyncio,twisted,encryption,compress,serialization,scram,xbr]
+        /tmp/autobahn-latest-py2.py3-none-any.whl[asyncio,twisted,encryption,compress,serialization,scram]
 
 RUN mkdir /app
 COPY print-versions.py /app

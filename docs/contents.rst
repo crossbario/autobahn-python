@@ -13,12 +13,9 @@ Site Contents
    installation
    asynchronous-programming
    websocket/programming
+   websocket/examples
    wamp/programming
    wamp/aio-repl
-   xbr
-   xbr-cli
-   xbr-auth
-   websocket/examples
    wamp/examples
    reference/autobahn
    changelog

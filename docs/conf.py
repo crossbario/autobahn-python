@@ -337,7 +337,6 @@ intersphinx_mapping = {
    'rtd': ('https://docs.readthedocs.io/en/latest/', None),
    'txaio': ('https://txaio.readthedocs.io/en/latest/', None),
    'autobahn': ('https://autobahn.readthedocs.io/en/latest/', None),
-   'zlmdb': ('https://zlmdb.readthedocs.io/en/latest/', None),
 }
 
 rst_epilog = r"""

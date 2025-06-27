@@ -14,4 +14,3 @@ python:
           - serialization
           - encryption
           - scram
-          - xbr

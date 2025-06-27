@@ -10,8 +10,6 @@ WebSocket & WAMP for Python on Twisted and asyncio.
 [![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat)](https://autobahn.readthedocs.io/en/latest/)
 [![Docker
 Images](https://img.shields.io/badge/download-docker-blue.svg?style=flat)](https://hub.docker.com/r/crossbario/autobahn-python/)
-[![EXE
-Download](https://img.shields.io/badge/download-exe-blue.svg?style=flat)](https://download.crossbario.com/xbrnetwork/linux-amd64/xbrnetwork-latest)
 
 ---
 
@@ -19,12 +17,12 @@ Download](https://img.shields.io/badge/download-exe-blue.svg?style=flat)](https:
 [Source Code](https://github.com/crossbario/autobahn-python) -
 [Documentation](https://autobahn.readthedocs.io/en/latest/) -
 [WebSocket Examples](https://autobahn.readthedocs.io/en/latest/websocket/examples.html) -
-[WAMP Examples](https://autobahn.readthedocs.io/en/latest/wamp/examples.html)  
+[WAMP Examples](https://autobahn.readthedocs.io/en/latest/wamp/examples.html)
 **Community**:
 [Forum](https://crossbar.discourse.group/) -
 [StackOverflow](https://stackoverflow.com/questions/tagged/autobahn) -
 [Twitter](https://twitter.com/autobahnws) -
-[IRC \#autobahn/chat.freenode.net](https://webchat.freenode.net/)  
+[IRC \#autobahn/chat.freenode.net](https://webchat.freenode.net/)
 **Companion
 Projects**:
 [Autobahn|JS](https://github.com/crossbario/autobahn-js/) -
@@ -249,27 +247,6 @@ To install use this flavor:
 Autobahn also supports **WAMP-SCRAM** authentication. To install:
 
 - `scram`: Installs WAMP-SCRAM dependencies
-
----
-
-### XBR
-
-Autobahn includes support for [XBR](https://xbr.network/). To
-install use this flavor:
-
-- `xbr`:
-
-To install:
-
-    pip install autobahn[xbr]
-
-or (Twisted, with more bells an whistles)
-
-    pip install autobahn[twisted,encryption,serialization,xbr]
-
-or (asyncio, with more bells an whistles)
-
-    pip install autobahn[asyncio,encryption,serialization,xbr]
 
 ---
 
