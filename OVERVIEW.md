@@ -1,4 +1,4 @@
-# Project Overview
+# WAMP Projects Overview
 
 ## The Group of Projects and WAMP
 

@@ -1,4 +1,4 @@
-# AI Policy Audit: Contributor Disclosure Process
+# AI Disclosure Process
 
 ## Purpose
 
@@ -27,7 +27,7 @@ regulatory scrutiny.
 ## 2. Pull Request (PR) Disclosures
 
 - Every PR **must include exactly one disclosure file** in the
-  form:  
+  form:
   `.audit/<branch-name>.md`
   - The `<branch-name>` must be identical to the branch used for
     the PR.
@@ -47,7 +47,7 @@ regulatory scrutiny.
 
 **File format:** Markdown
 
-**Required content:**  
+**Required content:**
 (Replace placeholders with actual values as appropriate.)
 
 ```
@@ -161,21 +161,21 @@ cannot proceed until corrected.
 
 ## 8. Frequently Asked Questions
 
-**Q: Can `.audit/` be in `.gitignore`?**  
+**Q: Can `.audit/` be in `.gitignore`?**
 **A:** No. The `.audit/` folder must be tracked to include
 disclosure files in PRs.
 
 **Q: How do I ensure my commits are signed with a hardware
-key?**  
+key?**
 **A:** Set up GPG (or SSH/S/MIME) with your hardware security
 key, and configure git to sign all commits.
 [See GitHub’s documentation.](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits)
 
-**Q: What if my disclosure file fails validation?**  
+**Q: What if my disclosure file fails validation?**
 **A:** Update the file according to the template and push again.
 The Action will rerun and revalidate.
 
-**Q: Why not just use GitHub’s PR template or comments?**  
+**Q: Why not just use GitHub’s PR template or comments?**
 **A:** Only files tracked in Git history are cryptographically
 immutable and serve as “hard evidence.”
 

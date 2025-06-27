@@ -1,4 +1,4 @@
-# AI Policy for Developers and Contributors
+# AI Contributors Policy
 
 This is our AI Policy **for** _human contributors_ about
 **using** AI assistance with details on:

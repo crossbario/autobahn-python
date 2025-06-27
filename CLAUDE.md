@@ -1,4 +1,4 @@
-# Configuration and Policy for AI Assistants
+# AI Assistants Policy
 
 Instructions **TO** _AI assistants_, e.g. Anthropic Claude,
 Google Gemini, OpenAI ChatGPT, Microsoft Copilot, etc.
@@ -6,8 +6,8 @@ Google Gemini, OpenAI ChatGPT, Microsoft Copilot, etc.
 - Machine-readable guidelines that AI systems should follow
 - not intended (primarily) for human contributors
 
-> For notes and policies **FOR** _human contributors_ about using
-> AI assistants, see [AI Policy](AI_POLICY.rst).
+For notes and policies **FOR** _human contributors_ about using
+AI assistants, see [AI Policy](project:AI_POLICY.md).
 
 ---
 
@@ -33,7 +33,7 @@ General mantras this project aims to follow:
 ## Project Overview
 
 The purpose of and an overview of this specific project can be
-found in the top-level [README](README.md).
+found in the top-level [README](project:README.md).
 
 ## Group of Projects and WAMP
 
@@ -284,7 +284,7 @@ When providing code assistance, AI must remind users:
 
 ```
 "This AI-generated code requires human review and modification.
-Contributors must comply with the project's AI_POLICY.rst regarding
+Contributors must comply with the project's AI_POLICY.md regarding
 disclosure and authorship warranties."
 ```
 

@@ -44,7 +44,7 @@ with open('README.md') as f:
 # as we make claim to support older Twisted!)
 extras_require_twisted = [
     "zope.interface>=5.2.0",        # Zope Public License
-    "twisted>=24.3.0",              # MIT license (https://pypi.org/project/Twisted/24.3.0/)
+    "twisted>=22.10.0",             # MIT license (https://pypi.org/project/Twisted/24.3.0/)
     "attrs>=20.3.0"                 # MIT license (https://pypi.org/project/attrs/19.2.0/)
 ]
 
@@ -227,7 +227,8 @@ setup(
     long_description_content_type='text/markdown',
     license='MIT License',
     author='typedef int GmbH',
-    url='https://github.com/crossbario/autobahn-python',
+    author_email="contact@typedefint.eu",
+    url='https://autobahn.readthedocs.io/',
     project_urls={
         'Source': 'https://github.com/crossbario/autobahn-python',
     },
