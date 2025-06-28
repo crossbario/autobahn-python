@@ -39,9 +39,12 @@ node.key
 *.swo
 *.swn
 *.so
-autobahn/xbr/contracts
 .wheels
 get-pip.py
 docs/autoapi/
 key.pub
 key.priv
+
+node_modules/
+package-lock.json
+package.json

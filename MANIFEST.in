@@ -3,6 +3,3 @@ include requirements-dev.txt
 include autobahn/nvx/_utf8validator.c
 recursive-include autobahn/wamp/gen/schema *
 recursive-include autobahn/asset *
-recursive-include autobahn/xbr/templates *
-recursive-include autobahn/xbr/test/catalog/schema *
-recursive-include autobahn/xbr/test/profile *

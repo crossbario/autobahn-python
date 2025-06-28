@@ -176,58 +176,6 @@ This folder contains a [Makefile](Makefile) that allows to compile all WAMP Flat
 make clean build cloc
 ```
 
-Here is example output (a total of 30k LOC generated from 500 LOC .fbs):
-
-```console
-cpy2714_1) oberstet@thinkpad-t430s:~/scm/wamp-proto/wamp-proto/flatbuffers$ make clean build cloc
-rm -rf ./_build
-/home/oberstet/scm/xbr/flatbuffers/flatc -o ./_build/schema/ --binary --schema --bfbs-comments --bfbs-builtin-attrs *.fbs
-/home/oberstet/scm/xbr/flatbuffers/flatc -o ./_build/cpp/ --cpp *.fbs
-/home/oberstet/scm/xbr/flatbuffers/flatc -o ./_build/csharp/ --csharp *.fbs
-/home/oberstet/scm/xbr/flatbuffers/flatc -o ./_build/go/ --go *.fbs
-/home/oberstet/scm/xbr/flatbuffers/flatc -o ./_build/java/ --java *.fbs
-/home/oberstet/scm/xbr/flatbuffers/flatc -o ./_build/js/ --js *.fbs
-/home/oberstet/scm/xbr/flatbuffers/flatc -o ./_build/php/ --php *.fbs
-/home/oberstet/scm/xbr/flatbuffers/flatc -o ./_build/python/ --python *.fbs
-/home/oberstet/scm/xbr/flatbuffers/flatc -o ./_build/ts/ --ts *.fbs
-cloc --read-lang-def=cloc.def --exclude-dir=_build .
-      11 text files.
-      11 unique files.                              
-       2 files ignored.
-
-github.com/AlDanial/cloc v 1.76  T=0.01 s (774.6 files/s, 113640.1 lines/s)
----------------------------------------------------------------------------------------
-Language                             files          blank        comment           code
----------------------------------------------------------------------------------------
-FlatBuffers                              7            314            372            535
-Markdown                                 1             64              0            119
-make                                     1             20              8             30
-Windows Module Definition                1              0              0              5
----------------------------------------------------------------------------------------
-SUM:                                    10            398            380            689
----------------------------------------------------------------------------------------
-cloc ./_build
-     331 text files.
-     331 unique files.                                          
-       2 files ignored.
-
-github.com/AlDanial/cloc v 1.76  T=0.35 s (942.1 files/s, 132452.9 lines/s)
--------------------------------------------------------------------------------
-Language                     files          blank        comment           code
--------------------------------------------------------------------------------
-C/C++ Header                     7            405              7           5629
-PHP                             62            961           3206           5006
-Go                              62            826             62           4815
-TypeScript                       7            832           3430           3428
-JavaScript                       7            896           3493           3177
-Java                            62            439             62           2825
-C#                              62            477            186           2800
-Python                          62            616            454           2504
--------------------------------------------------------------------------------
-SUM:                           331           5452          10900          30184
--------------------------------------------------------------------------------
-```
-
 ---
 
 

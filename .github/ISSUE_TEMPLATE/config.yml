@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Other (General Question, Support, or Not a Bug/Feature)
+    url: https://github.com/crossbario/autobahn-python/discussions/new
+    about: Please use GitHub Discussions for all questions, general support, or topics that do not fit a bug or feature request.

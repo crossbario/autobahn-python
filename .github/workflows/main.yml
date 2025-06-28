@@ -10,12 +10,6 @@ on:
 
 jobs:
   check:
-    env:
-      WEB3_INFURA_PROJECT_ID: "1c91697c211f4fcd8c7361f4c4e1f55f"
-      # not sure why, but this doesn't work currently:
-      # WEB3_INFURA_PROJECT_ID: ${{ secrets.WEB3_INFURA_PROJECT_ID }}
-      # WEB3_INFURA_API_SECRET: ${{ secrets.WEB3_INFURA_API_SECRET }}
-
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -25,10 +19,10 @@ jobs:
         sudo apt update
         sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libgirepository1.0-dev
 
-    - name: Set up Python 3.11
+    - name: Set up Python 3.12
       uses: actions/setup-python@v3
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         architecture: 'x64'
 
     - name: Install Python package dependencies
@@ -43,11 +37,6 @@ jobs:
     env:
       CB_FULLTESTS: 1
 
-      WEB3_INFURA_PROJECT_ID: "1c91697c211f4fcd8c7361f4c4e1f55f"
-      # not sure why, but this doesn't work currently:
-      # WEB3_INFURA_PROJECT_ID: ${{ secrets.WEB3_INFURA_PROJECT_ID }}
-      # WEB3_INFURA_API_SECRET: ${{ secrets.WEB3_INFURA_API_SECRET }}
-
     # Test on Ubuntu, MacOS, Windows using CPython and PyPy
     runs-on: ${{ matrix.os }}
     strategy:
@@ -57,7 +46,7 @@ jobs:
 
         # python 3.11 fails with "src/twisted/test/raiser.c:198:12: fatal error: longintrepr.h: No such file or directory"
         # twisted doesn't yet support 3.11 formally: https://github.com/twisted/twisted/blob/trunk/pyproject.toml#L24
-        python-version: ['3.9', '3.11', 'pypy-3.9']
+        python-version: ['3.10', '3.12', 'pypy-3.10']
         framework: ['asyncio', 'tw2403', 'twtrunk']
 
     # https://github.blog/changelog/2020-04-15-github-actions-new-workflow-features/
@@ -77,7 +66,7 @@ jobs:
     - name: Install OS package dependencies
       run: |
         sudo apt update
-        sudo apt install build-essential libssl-dev libffi-dev libunwind-dev \
+        sudo apt install build-essential cargo-1.81 libssl-dev libffi-dev libunwind-dev \
           libreadline-dev zlib1g-dev libbz2-dev libsqlite3-dev libncurses5-dev \
           libsnappy-dev libcairo2-dev libgirepository-2.0-dev \
           build-essential python3-dev pypy3-dev libffi-dev
@@ -101,13 +90,7 @@ jobs:
     - name: Prechecks
       run: |
         python -c "import autobahn; print(autobahn.__version__)"
-        python -c "from autobahn import xbr; print(xbr.HAS_XBR)"
         python -c "from autobahn.testutil import FakeTransport; print(FakeTransport)"
-        python -c "import os; print('WEB3_INFURA_PROJECT_ID', len(os.environ.get('WEB3_INFURA_PROJECT_ID', '')))"
-        python -c "import os; print('WEB3_INFURA_API_SECRET', len(os.environ.get('WEB3_INFURA_API_SECRET', '')))"
-
-    # does not work on py3.11
-    # python -c "from web3.auto.infura import w3; print(w3.isConnected())"
 
     - name: Run unit tests (PyTest)
       run: |
@@ -123,10 +106,10 @@ jobs:
         sudo apt update
         sudo apt install libenchant-2-dev libbz2-dev libsnappy-dev libunwind-dev libcairo2-dev libgirepository-2.0-dev
 
-    - name: Set up Python 3.11
+    - name: Set up Python 3.12
       uses: actions/setup-python@v3
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         architecture: 'x64'
 
     - name: Install Python package dependencies

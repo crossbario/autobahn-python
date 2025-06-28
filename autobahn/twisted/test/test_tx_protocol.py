@@ -366,7 +366,7 @@ class WebSocketXForwardedFor(unittest.TestCase):
         ])
         self.proto.consumeData()
 
-        self.assertEquals(
+        self.assertEqual(
             self.proto.peer, "2.3.4.5",
             "The second address in X-Forwarded-For should have been picked as the peer address")
 

@@ -1,9 +1,0 @@
-Crossbar.io user private key - KEEP THIS SAFE!
-
-creator: oberstet@intel-nuci7
-created-at: 2022-05-06T14:40:09.639Z
-user-id: oberstet@intel-nuci7
-public-key-ed25519: 15cfa4acef5cc312e0b9ba77634849d0a8c6222a546f90eb5123667935d2f561
-public-adr-eth: 0xe59C7418403CF1D973485B36660728a5f4A8fF9c
-private-key-ed25519: 20e8c05d0ede9506462bb049c4843032b18e8e75b314583d0c8d8a4942f9be40
-private-key-eth: 6b08b6e186bd2a3b9b2f36e6ece3f8031fe788ab3dc4a1cfd3a489ea387c496b

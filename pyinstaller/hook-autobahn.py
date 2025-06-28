@@ -9,7 +9,6 @@ datas = collect_data_files('autobahn')
     'autobahn',
     'autobahn.asyncio',
     'autobahn.asyncio.test',
-    'autobahn.asyncio.xbr',
     'autobahn.nvx',
     'autobahn.nvx.test',
     'autobahn.rawsocket',
@@ -18,7 +17,6 @@ datas = collect_data_files('autobahn')
     'autobahn.twisted',
     'autobahn.twisted.test',
     'autobahn.twisted.testing',
-    'autobahn.twisted.xbr',
     'autobahn.wamp',
     'autobahn.wamp.flatbuffers',
     'autobahn.wamp.gen',
@@ -28,7 +26,4 @@ datas = collect_data_files('autobahn')
     'autobahn.wamp.test',
     'autobahn.websocket',
     'autobahn.websocket.test',
-    'autobahn.xbr',
-    'autobahn.xbr.templates',
-    'autobahn.xbr.test'
 ]

@@ -11,7 +11,6 @@ from twisted.internet import reactor
 from twisted.python.reflect import qual
 
 import autobahn
-from autobahn import xbr
 
 from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.websocket.utf8validator import Utf8Validator
@@ -135,19 +134,6 @@ except ImportError:
 res['supported_serializers'] = supported_serializers
 
 try:
-    import lmdb  # noqa
-    lmdb_lib_ver = '.'.join([str(x) for x in lmdb.version()])
-    res['lmdb_ver'] = '{}/lmdb-{}'.format(_get_version(lmdb), lmdb_lib_ver)
-except ImportError:
-    res['lmdb_ver'] = None
-
-try:
-    import zlmdb  # noqa
-    res['zlmdb_ver'] = _get_version(zlmdb)
-except ImportError:
-    res['zlmdb_ver'] = None
-
-try:
     import numpy  # noqa
     res['numpy_ver'] = _get_version(numpy)
 except ImportError:
@@ -164,7 +150,6 @@ print('.' * 80)
 print('Autobahn version:')
 print('')
 print('    autobahn               : v{}'.format(autobahn.__version__))
-print('    autobahn.xbr.HAS_XBR   : {}'.format(xbr.HAS_XBR))
 print('.' * 80)
 print('Autobahn build environment:')
 print('')
@@ -186,11 +171,5 @@ print('    UBJSON Codec           : {}'.format(res['ubjson_ver']))
 print('    FlatBuffers            : {}'.format(res['flatbuffers_ver']))
 print('')
 print('    Twisted                : {}'.format(res['tx_ver']))
-print('    LMDB                   : {}'.format(res['lmdb_ver']))
-print('    zLMDB                  : {}'.format(res['zlmdb_ver']))
 print('    NumPy                  : {}'.format(res['numpy_ver']))
 print('.' * 80)
-
-if xbr.HAS_XBR:
-    from autobahn.xbr._cli import print_version
-    print_version()

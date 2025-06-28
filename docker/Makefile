@@ -48,8 +48,6 @@ download_wheels:
 	mkdir -p ./.wheels/
 	rm -f ./.wheels/*.whl
 	curl -o ./.wheels/txaio-latest-py2.py3-none-any.whl 	$(WHEELS)/txaio-latest-py2.py3-none-any.whl
-	curl -o ./.wheels/zlmdb-latest-py2.py3-none-any.whl 	$(WHEELS)/zlmdb-latest-py2.py3-none-any.whl
-	curl -o ./.wheels/xbr-latest-py2.py3-none-any.whl 		$(WHEELS)/xbr-latest-py2.py3-none-any.whl
 	curl -o ./.wheels/autobahn-latest-py2.py3-none-any.whl 	$(WHEELS)/autobahn-latest-py2.py3-none-any.whl
 	ls -la ./.wheels
 
@@ -69,15 +67,12 @@ docker_stop_rm:
 
 show:
 	@echo
-	@echo
 	@echo "autobahn build configuration -------------------------------------------------------------------------------------------"
 	@echo
 	@echo "  AUTOBAHN_BUILD_DATE     = ${AUTOBAHN_BUILD_DATE}"
 	@echo "  AUTOBAHN_BUILD_ID       = ${AUTOBAHN_BUILD_ID}"
 	@echo "  AUTOBAHN_VCS_REF        = ${AUTOBAHN_VCS_REF}"
 	@echo "  AUTOBAHN_VERSION        = ${AUTOBAHN_VERSION}"
-	@echo ""
-	@echo "  XBRNETWORK_EXE_FILENAME = ${XBRNETWORK_EXE_FILENAME}"
 	@echo
 
 
