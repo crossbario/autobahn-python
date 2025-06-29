@@ -9,6 +9,7 @@ Changelog
 ------
 
 - new: announcement of upcoming (but not yet effective) new AI policy clarifying matter with respect to AI assisted contributions (#1663)
+- fix: stop using twisted.internet.defer.returnValue (#1667, #1651)
 - FIXME: all what happened since last release;)
 
 24.4.2
