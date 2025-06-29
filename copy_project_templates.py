@@ -12,8 +12,9 @@ CURRENT_REPO_NAME = "autobahn-python"
 # List of i) AI Policy and ii) GitHub template files to copy.
 SOURCE_FILES = [
     ("OVERVIEW.md", False, True),
-    ("AI_AUDIT_PROCESS.md", True, True),
     ("AI_POLICY.md", True, True),
+    ("AI_AUDIT_PROCESS.md", True, True),
+    ("AI_AUDIT_PROCESS_REVIEW.md", True, True),
     ("CLAUDE.md", False, True),
     (".audit/README.md", True, False),
     (".github/pull_request_template.md", True, False),
