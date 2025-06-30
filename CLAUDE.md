@@ -7,11 +7,11 @@ Google Gemini, OpenAI ChatGPT, Microsoft Copilot, etc.
 - not intended (primarily) for human contributors
 
 For notes and policies **FOR** _human contributors_ about using
-AI assistants, see [AI Policy](project:AI_POLICY.md).
+AI assistants, see top-level file `AI_POLICY.md` in this repo.
 
 ---
 
-## Purpose
+## AI Assistants Policy: Purpose
 
 This document establishes guidelines for AI assistants e.g.
 Anthropic Claude, Google Gemini, OpenAI ChatGPT, Microsoft
@@ -33,7 +33,7 @@ General mantras this project aims to follow:
 ## Project Overview
 
 The purpose of and an overview of this specific project can be
-found in the top-level [README](project:README.md).
+found in the top-level file `README.md` in this repo.
 
 ## Group of Projects and WAMP
 

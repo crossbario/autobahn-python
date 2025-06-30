@@ -1,30 +1,27 @@
-Below you find a review of our new AI policy and process by an AI
+# AI Audit Process Review
+
+Below you find a review of our new [AI Policy](https://github.com/crossbario/autobahn-python/blob/master/AI_POLICY.md) and process by an AI
 itself (Microsoft Copilot / GitHub), not only in abstract general
-terms, but applied to and in the context of one concrete
-real-world PR.
-
-See
-[anchor issue](https://github.com/crossbario/autobahn-python/issues/1663)
-for the complete history.
-
-This "recursion" finally closes the loop and the topic on a
-"metalevel" for me. Happy for now.
-[Fixed points for the Win!](https://en.wikipedia.org/wiki/Fixed-point_combinator)
-;)
-
-Cheers! @oberstet (So 29. Jun 10:31:16 CEST 2025)
-
-File `ai-policy-review-2025-06-29_Version2.md`, verbatim
-contents, formatting prettified with `prettier`.
-
----
-
-# AI Policy Review Conversation Log
+terms, but applied to and in the context of
+[one concrete real-world PR](https://github.com/crossbario/autobahn-python/pull/1667).
 
 **Date of conversation:** 2025-06-29 **Participants:**
 
 - User: [@oberstet](https://github.com/oberstet)
 - AI Assistant: GitHub Copilot Chat
+
+See
+[anchor issue](https://github.com/crossbario/autobahn-python/issues/1663)
+for the discussion how this policy came into existance.
+
+This AI assistant based review of the new AI process itself,
+this "recursion" finally closes the loop and the topic on a "metalevel" for me.
+Happy for now. [Fixed points for the Win!](https://en.wikipedia.org/wiki/Fixed-point_combinator) ;)
+
+Cheers! @oberstet (So 29. Jun 10:31:16 CEST 2025)
+
+File `ai-policy-review-2025-06-29_Version2.md` below, verbatim
+contents, formatting prettified with `prettier`.
 
 ---
 
@@ -442,5 +439,3 @@ for
 [_this_ PR](https://github.com/crossbario/autobahn-python/pull/1668)),
 and the full conversation right down to your correction request
 itself.
-
----
