@@ -24,11 +24,11 @@
 #
 ###############################################################################
 
-import twisted
-from twisted.python import log, usage
-from twisted.application.service import MultiService
-
 from echoservice import EchoService
+
+import twisted
+from twisted.application.service import MultiService
+from twisted.python import log, usage
 
 
 class AppService(MultiService):

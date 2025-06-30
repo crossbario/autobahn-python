@@ -24,15 +24,13 @@
 #
 ###############################################################################
 
-import os
-import unittest
-import random
 import decimal
+import os
+import random
+import unittest
 from decimal import Decimal
 
-from autobahn.wamp import message
-from autobahn.wamp import role
-from autobahn.wamp import serializer
+from autobahn.wamp import message, role, serializer
 
 
 def generate_test_messages():
@@ -244,7 +242,6 @@ def create_serializers(decimal_support=False):
 
 
 class TestFlatBuffersSerializer(unittest.TestCase):
-
     def test_basic(self):
         messages = [
             message.Event(
@@ -269,7 +266,6 @@ class TestFlatBuffersSerializer(unittest.TestCase):
         # from pprint import pprint
 
         for msg in messages:
-
             # serialize message
             payload, binary = ser.serialize(msg)
 
@@ -433,7 +429,6 @@ class TestDecimalSerializer(unittest.TestCase):
 
 
 class TestSerializer(unittest.TestCase):
-
     def setUp(self):
         self._test_messages = generate_test_messages() + generate_test_messages_binary()
         self._test_serializers = create_serializers()
@@ -463,9 +458,7 @@ class TestSerializer(unittest.TestCase):
         Test round-tripping over each serializer.
         """
         for ser in self._test_serializers:
-
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser.serialize(msg)
 
@@ -480,9 +473,7 @@ class TestSerializer(unittest.TestCase):
         Test cross-tripping over 2 serializers (as is done by WAMP routers).
         """
         for ser1 in self._test_serializers:
-
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser1.serialize(msg)
 
@@ -491,7 +482,6 @@ class TestSerializer(unittest.TestCase):
                 msg1 = msg1[0]
 
                 for ser2 in self._test_serializers:
-
                     # serialize message
                     payload, binary = ser2.serialize(msg1)
 
@@ -507,12 +497,10 @@ class TestSerializer(unittest.TestCase):
         Test message serialization caching.
         """
         for contains_binary, msg in self._test_messages:
-
             # message serialization cache is initially empty
             self.assertEqual(msg._serialized, {})
 
             for ser in self._test_serializers:
-
                 # verify message serialization is not yet cached
                 self.assertFalse(ser._serializer in msg._serialized)
                 payload, binary = ser.serialize(msg)
@@ -531,7 +519,6 @@ class TestSerializer(unittest.TestCase):
         Test initial serializer stats are indeed empty.
         """
         for ser in self._test_serializers:
-
             stats = ser.stats(details=True)
 
             self.assertEqual(stats["serialized"]["bytes"], 0)
@@ -547,9 +534,7 @@ class TestSerializer(unittest.TestCase):
         Test serializer stats are non-empty after serializing/unserializing messages.
         """
         for ser in self._test_serializers:
-
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser.serialize(msg)
 
@@ -567,9 +552,7 @@ class TestSerializer(unittest.TestCase):
         Test serializer stats - with details - are non-empty after serializing/unserializing messages.
         """
         for ser in self._test_serializers:
-
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser.serialize(msg)
 
@@ -605,9 +588,7 @@ class TestSerializer(unittest.TestCase):
         Test serializer stats are reset after fetching stats - depending on option.
         """
         for ser in self._test_serializers:
-
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser.serialize(msg)
 
@@ -639,7 +620,6 @@ class TestSerializer(unittest.TestCase):
             ser.set_stats_autoreset(10, 0, on_stats)
 
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser.serialize(msg)
 

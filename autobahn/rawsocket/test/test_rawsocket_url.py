@@ -30,7 +30,6 @@ from autobahn.rawsocket.util import create_url, parse_url
 
 
 class TestCreateRsUrl(unittest.TestCase):
-
     def test_create_url01(self):
         self.assertEqual(create_url("localhost"), "rs://localhost:80")
 
@@ -82,7 +81,6 @@ class TestCreateRsUrl(unittest.TestCase):
 
 
 class TestParseWsUrl(unittest.TestCase):
-
     # parse_url -> (isSecure, host, port)
 
     def test_parse_url01(self):

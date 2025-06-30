@@ -27,13 +27,13 @@
 from os import environ
 from os.path import join, split
 
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
-
-from twisted.internet.defer import inlineCallbacks
-from twisted.internet._sslverify import OpenSSLCertificateAuthorities
-from twisted.internet.ssl import CertificateOptions
 from OpenSSL import crypto
+
+from autobahn.twisted.util import sleep
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from twisted.internet._sslverify import OpenSSLCertificateAuthorities
+from twisted.internet.defer import inlineCallbacks
+from twisted.internet.ssl import CertificateOptions
 
 
 class Component(ApplicationSession):

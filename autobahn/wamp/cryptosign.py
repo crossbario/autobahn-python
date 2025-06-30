@@ -24,20 +24,20 @@
 #
 ###############################################################################
 
-import os
 import binascii
-from binascii import a2b_hex, b2a_hex
+import os
 import struct
-from typing import Callable, Optional, Union, Dict, Any
+from binascii import a2b_hex, b2a_hex
+from typing import Any, Callable, Dict, Optional, Union
 
 import txaio
 
 from autobahn import util
-from autobahn.wamp.interfaces import ISecurityModule, ICryptosignKey
-from autobahn.wamp.types import Challenge
+from autobahn.util import parse_keyfile
+from autobahn.wamp.interfaces import ICryptosignKey, ISecurityModule
 from autobahn.wamp.message import _URI_PAT_REALM_NAME_ETH
 from autobahn.wamp.mnemonic import mnemonic_to_private_key
-from autobahn.util import parse_keyfile
+from autobahn.wamp.types import Challenge
 
 __all__ = [
     "HAS_CRYPTOSIGN",
@@ -45,7 +45,7 @@ __all__ = [
 
 try:
     # try to import everything we need for WAMP-cryptosign
-    from nacl import encoding, signing, bindings
+    from nacl import bindings, encoding, signing
     from nacl.signing import SignedMessage
 except ImportError:
     HAS_CRYPTOSIGN = False
@@ -433,10 +433,10 @@ if HAS_CRYPTOSIGN:
         challenge_raw = binascii.a2b_hex(challenge_hex)
 
         if channel_id_type == "tls-unique":
-            assert (
-                len(channel_id_raw) == 32
-            ), "unexpected TLS transport channel ID length (was {}, but expected 32)".format(
-                len(channel_id_raw)
+            assert len(channel_id_raw) == 32, (
+                "unexpected TLS transport channel ID length (was {}, but expected 32)".format(
+                    len(channel_id_raw)
+                )
             )
 
             # with TLS channel binding of type "tls-unique", the message to be signed by the client actually
@@ -1158,5 +1158,5 @@ if HAS_CRYPTOSIGN:
             return res
 
     __all__.extend(
-        ["CryptosignKey", "format_challenge", "sign_challenge", "CryptosignAuthextra"]
+        ["CryptosignAuthextra", "CryptosignKey", "format_challenge", "sign_challenge"]
     )

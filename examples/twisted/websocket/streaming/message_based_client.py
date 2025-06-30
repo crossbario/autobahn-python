@@ -25,13 +25,13 @@
 ###############################################################################
 
 from ranstring import randomByteString
-from twisted.internet import reactor
 
 from autobahn.twisted.websocket import (
     WebSocketClientFactory,
     WebSocketClientProtocol,
     connectWS,
 )
+from twisted.internet import reactor
 
 MESSAGE_SIZE = 1 * 2**20
 
@@ -63,7 +63,6 @@ class MessageBasedHashClientProtocol(WebSocketClientProtocol):
 
 
 if __name__ == "__main__":
-
     factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = MessageBasedHashClientProtocol
     connectWS(factory)

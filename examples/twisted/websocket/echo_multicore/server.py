@@ -24,12 +24,13 @@
 #
 ###############################################################################
 
-import sys
 import os
+import sys
+from socket import AF_INET
+from sys import argv, executable
+
 import pkg_resources
 import StringIO
-from sys import argv, executable
-from socket import AF_INET
 
 # make sure we run a capable OS/reactor
 ##
@@ -66,19 +67,14 @@ startupMsgs.append(
 )
 
 
-from twisted.internet import reactor
-from twisted.python import log
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
+from autobahn.util import Stopwatch
+from autobahn.websocket.util import parse_url
 from twisted.internet import reactor
 from twisted.internet.protocol import Factory
+from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
-
-from autobahn.websocket.util import parse_url
-
-from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
-
-from autobahn.util import Stopwatch
-
 
 hasStatprof = False
 try:
@@ -91,7 +87,6 @@ except ImportError:
 
 
 class Stats:
-
     def __init__(self):
         # stats period
         self.period = 0
@@ -185,7 +180,6 @@ class Stats:
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
-
     def onOpen(self):
         self.factory.stats.clients += 1
         self.factory.stats.trackHandshake()
@@ -212,7 +206,6 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 
 class EchoServerFactory(WebSocketServerFactory):
-
     protocol = EchoServerProtocol
 
     def __init__(self, wsuri):
@@ -261,7 +254,6 @@ def master(options):
     # fire off background workers
     ##
     for i in range(options.workers):
-
         args = [
             executable,
             "-",
@@ -376,8 +368,8 @@ def worker(options):
 
 
 if __name__ == "__main__":
-
     import argparse
+
     import psutil
 
     DEFAULT_WORKERS = psutil.cpu_count()

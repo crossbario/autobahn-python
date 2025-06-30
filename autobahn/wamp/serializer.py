@@ -24,23 +24,24 @@
 #
 ###############################################################################
 
+import decimal
+import math
 import os
+import platform
 import re
 import struct
-import platform
-import math
-import decimal
-from binascii import b2a_hex, a2b_hex
-from typing import Optional, List, Tuple
+from binascii import a2b_hex, b2a_hex
+from typing import List, Optional, Tuple
 
 from txaio import time_ns
-from autobahn.wamp.interfaces import IObjectSerializer, ISerializer, IMessage
-from autobahn.wamp.exception import ProtocolError
+
 from autobahn.wamp import message
+from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.interfaces import IMessage, IObjectSerializer, ISerializer
 
 # note: __all__ must be a list here, since we dynamically
 # extend it depending on availability of more serializers
-__all__ = ["Serializer", "JsonObjectSerializer", "JsonSerializer"]
+__all__ = ["JsonObjectSerializer", "JsonSerializer", "Serializer"]
 
 
 SERID_TO_OBJSER = {}
@@ -304,7 +305,6 @@ class Serializer(object):
         else:
             msgs = []
             for raw_msg in raw_msgs:
-
                 if type(raw_msg) != list:
                     raise ProtocolError(
                         "invalid type {0} for WAMP message".format(type(raw_msg))
@@ -386,7 +386,6 @@ else:
     import base64
 
     class _WAMPJsonEncoder(json.JSONEncoder):
-
         def __init__(self, *args, **kwargs):
             if "use_binary_hex_encoding" in kwargs:
                 self._use_binary_hex_encoding = kwargs["use_binary_hex_encoding"]
@@ -416,7 +415,6 @@ else:
     _DEC_MATCH = re.compile(r"^[\+\-E\.0-9]+$")
 
     class _WAMPJsonDecoder(json.JSONDecoder):
-
         def __init__(self, *args, **kwargs):
             if "use_binary_hex_encoding" in kwargs:
                 self._use_binary_hex_encoding = kwargs["use_binary_hex_encoding"]
@@ -495,7 +493,6 @@ else:
 
 
 class JsonObjectSerializer(object):
-
     JSON_MODULE = _json
     """
     The JSON module used (now only stdlib).
@@ -568,7 +565,6 @@ SERID_TO_OBJSER[JsonObjectSerializer.NAME] = JsonObjectSerializer
 
 
 class JsonSerializer(Serializer):
-
     SERIALIZER_ID = "json"
     """
     ID used as part of the WebSocket subprotocol name to identify the
@@ -650,7 +646,6 @@ else:
 if _HAS_MSGPACK:
 
     class MsgPackObjectSerializer(object):
-
         NAME = "msgpack"
 
         MSGPACK_MODULE = _msgpack
@@ -718,7 +713,6 @@ if _HAS_MSGPACK:
     SERID_TO_OBJSER[MsgPackObjectSerializer.NAME] = MsgPackObjectSerializer
 
     class MsgPackSerializer(Serializer):
-
         SERIALIZER_ID = "msgpack"
         """
         ID used as part of the WebSocket subprotocol name to identify the
@@ -846,7 +840,6 @@ if _HAS_CBOR:
     __all__.append("CBORObjectSerializer")
 
     class CBORSerializer(Serializer):
-
         SERIALIZER_ID = "cbor"
         """
         ID used as part of the WebSocket subprotocol name to identify the
@@ -893,7 +886,6 @@ else:
     # print('Notice: Autobahn is using ubjson module for UBJSON serialization')
 
     class UBJSONObjectSerializer(object):
-
         NAME = "ubjson"
 
         UBJSON_MODULE = ubjson
@@ -961,7 +953,6 @@ else:
     __all__.append("UBJSONObjectSerializer")
 
     class UBJSONSerializer(Serializer):
-
         SERIALIZER_ID = "ubjson"
         """
         ID used as part of the WebSocket subprotocol name to identify the
@@ -1010,7 +1001,6 @@ else:
 if _HAS_FLATBUFFERS:
 
     class FlatBuffersObjectSerializer(object):
-
         NAME = "flatbuffers"
 
         FLATBUFFERS_MODULE = flatbuffers
@@ -1031,9 +1021,9 @@ if _HAS_FLATBUFFERS:
             :param batched: Flag that controls whether serializer operates in batched mode.
             :type batched: bool
             """
-            assert (
-                not batched
-            ), "WAMP-FlatBuffers serialization does not support message batching currently"
+            assert not batched, (
+                "WAMP-FlatBuffers serialization does not support message batching currently"
+            )
             self._batched = batched
 
         def serialize(self, obj):
@@ -1069,7 +1059,6 @@ if _HAS_FLATBUFFERS:
     SERID_TO_OBJSER[FlatBuffersObjectSerializer.NAME] = FlatBuffersObjectSerializer
 
     class FlatBuffersSerializer(Serializer):
-
         SERIALIZER_ID = "flatbuffers"
         """
         ID used as part of the WebSocket subprotocol name to identify the

@@ -26,22 +26,19 @@
 
 import sys
 
-from twisted.internet import reactor, ssl
-from twisted.python import log
-from twisted.web.server import Site
-from twisted.web.static import File
-
+from autobahn.twisted.resource import WebSocketResource
 from autobahn.twisted.websocket import (
     WebSocketServerFactory,
     WebSocketServerProtocol,
     listenWS,
 )
-
-from autobahn.twisted.resource import WebSocketResource
+from twisted.internet import reactor, ssl
+from twisted.python import log
+from twisted.web.server import Site
+from twisted.web.static import File
 
 
 class PingServerProtocol(WebSocketServerProtocol):
-
     def doPing(self):
         if self.run:
             self.sendPing()
@@ -72,7 +69,6 @@ class PingServerProtocol(WebSocketServerProtocol):
 
 
 class PingServerFactory(WebSocketServerFactory):
-
     def __init__(self, uri):
         WebSocketServerFactory.__init__(self, uri)
         self.pingsSent = {}
@@ -80,7 +76,6 @@ class PingServerFactory(WebSocketServerFactory):
 
 
 if __name__ == "__main__":
-
     log.startLogging(sys.stdout)
 
     contextFactory = ssl.DefaultOpenSSLContextFactory(

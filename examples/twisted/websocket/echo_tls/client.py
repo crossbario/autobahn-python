@@ -27,18 +27,16 @@
 import sys
 from optparse import OptionParser
 
-from twisted.python import log
-from twisted.internet import reactor, ssl
-
 from autobahn.twisted.websocket import (
     WebSocketClientFactory,
     WebSocketClientProtocol,
     connectWS,
 )
+from twisted.internet import reactor, ssl
+from twisted.python import log
 
 
 class EchoClientProtocol(WebSocketClientProtocol):
-
     def sendHello(self):
         self.sendMessage("Hello, world!".encode("utf8"))
 
@@ -52,7 +50,6 @@ class EchoClientProtocol(WebSocketClientProtocol):
 
 
 if __name__ == "__main__":
-
     log.startLogging(sys.stdout)
 
     parser = OptionParser()

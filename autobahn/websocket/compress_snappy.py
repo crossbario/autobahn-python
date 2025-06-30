@@ -27,20 +27,20 @@
 import snappy
 
 from autobahn.websocket.compress_base import (
+    PerMessageCompress,
     PerMessageCompressOffer,
     PerMessageCompressOfferAccept,
     PerMessageCompressResponse,
     PerMessageCompressResponseAccept,
-    PerMessageCompress,
 )
 
 __all__ = (
+    "PerMessageSnappy",
     "PerMessageSnappyMixin",
     "PerMessageSnappyOffer",
     "PerMessageSnappyOfferAccept",
     "PerMessageSnappyResponse",
     "PerMessageSnappyResponseAccept",
-    "PerMessageSnappy",
 )
 
 
@@ -78,7 +78,6 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
 
         # verify/parse client ("client-to-server direction") parameters of permessage-snappy offer
         for p in params:
-
             if len(params[p]) > 1:
                 raise Exception(
                     "multiple occurrence of extension parameter '%s' for extension '%s'"
@@ -299,7 +298,6 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
         server_no_context_takeover = False
 
         for p in params:
-
             if len(params[p]) > 1:
                 raise Exception(
                     "multiple occurrence of extension parameter '%s' for extension '%s'"

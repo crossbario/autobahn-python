@@ -26,18 +26,16 @@
 
 import sys
 
-from twisted.internet import reactor
-from twisted.python import log
-
 from autobahn.twisted.websocket import (
     WebSocketServerFactory,
     WebSocketServerProtocol,
     listenWS,
 )
+from twisted.internet import reactor
+from twisted.python import log
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
-
     def onConnect(self, request):
         headers = {"MyCustomDynamicServerHeader1": "Hello"}
 
@@ -60,7 +58,6 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == "__main__":
-
     log.startLogging(sys.stdout)
 
     headers = {"MyCustomServerHeader": "Foobar"}

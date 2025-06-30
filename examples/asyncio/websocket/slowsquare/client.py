@@ -25,15 +25,13 @@
 ###############################################################################
 
 import asyncio
-
-from autobahn.asyncio.websocket import WebSocketClientProtocol, WebSocketClientFactory
-
 import json
 import random
 
+from autobahn.asyncio.websocket import WebSocketClientFactory, WebSocketClientProtocol
+
 
 class SlowSquareClientProtocol(WebSocketClientProtocol):
-
     def onOpen(self):
         x = 10.0 * random.random()
         self.sendMessage(json.dumps(x).encode("utf8"))

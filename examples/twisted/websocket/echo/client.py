@@ -24,11 +24,10 @@
 #
 ###############################################################################
 
-from autobahn.twisted.websocket import WebSocketClientProtocol, WebSocketClientFactory
+from autobahn.twisted.websocket import WebSocketClientFactory, WebSocketClientProtocol
 
 
 class MyClientProtocol(WebSocketClientProtocol):
-
     def onConnect(self, response):
         print("Server connected: {0}".format(response.peer))
 
@@ -58,11 +57,10 @@ class MyClientProtocol(WebSocketClientProtocol):
 
 
 if __name__ == "__main__":
-
     import sys
 
-    from twisted.python import log
     from twisted.internet import reactor
+    from twisted.python import log
 
     log.startLogging(sys.stdout)
 

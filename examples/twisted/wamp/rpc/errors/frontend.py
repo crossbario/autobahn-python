@@ -27,12 +27,11 @@
 import math
 from os import environ
 
+from autobahn import wamp
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.exception import ApplicationError
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-
-from autobahn import wamp
-from autobahn.wamp.exception import ApplicationError
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 @wamp.error("com.myapp.error1")

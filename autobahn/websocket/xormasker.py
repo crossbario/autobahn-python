@@ -28,15 +28,12 @@
 try:
     # use Cython implementation of XorMasker validator if available
 
-    from wsaccel.xormask import XorMaskerNull
-
     # noinspection PyUnresolvedReferences
-    from wsaccel.xormask import createXorMasker
+    from wsaccel.xormask import XorMaskerNull, createXorMasker
 
     create_xor_masker = createXorMasker
 
 except ImportError:
-
     # fallback to pure Python implementation (this is faster on PyPy than above!)
 
     # http://stackoverflow.com/questions/15014310/python3-xrange-lack-hurts
@@ -51,7 +48,6 @@ except ImportError:
     from array import array
 
     class XorMaskerNull(object):
-
         __slots__ = ("_ptr",)
 
         # noinspection PyUnusedLocal
@@ -69,7 +65,6 @@ except ImportError:
             return data
 
     class XorMaskerSimple(object):
-
         __slots__ = ("_ptr", "_msk")
 
         def __init__(self, mask):
@@ -92,7 +87,6 @@ except ImportError:
             return payload.tobytes()
 
     class XorMaskerShifted1(object):
-
         __slots__ = ("_ptr", "_mskarray")
 
         def __init__(self, mask):

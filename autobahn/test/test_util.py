@@ -30,9 +30,9 @@ from binascii import b2a_hex
 
 from autobahn.util import (
     IdGenerator,
-    parse_activation_code,
     generate_activation_code,
     generate_token,
+    parse_activation_code,
 )
 
 

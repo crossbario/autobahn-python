@@ -1,13 +1,13 @@
-import os
-import sys
-import json
-import hmac
-import hashlib
 import base64
 import binascii
+import hashlib
+import hmac
+import json
+import os
+import sys
+
+from argon2.low_level import Type, hash_secret
 from passlib.utils import saslprep
-from argon2.low_level import hash_secret
-from argon2.low_level import Type
 
 if len(sys.argv) not in (2, 3):
     print("usage: {} password".format(sys.argv[0]))

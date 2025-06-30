@@ -1,9 +1,8 @@
-from twisted.internet.defer import inlineCallbacks
 from autobahn.twisted.wamp import ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class MyAuthorizer(ApplicationSession):
-
     @inlineCallbacks
     def onJoin(self, details):
         print("MyAuthorizer.onJoin({})".format(details))

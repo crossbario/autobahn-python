@@ -26,14 +26,13 @@
 
 from ranstring import randomByteString
 from zope.interface import implementer
-from twisted.internet import reactor, interfaces
 
 from autobahn.twisted.websocket import (
     WebSocketClientFactory,
     WebSocketClientProtocol,
     connectWS,
 )
-
+from twisted.internet import interfaces, reactor
 
 # 2^63 - This is the maximum imposed by the WS protocol
 FRAME_SIZE = 0x7FFFFFFFFFFFFFFF
@@ -98,7 +97,6 @@ class StreamingProducerHashClientProtocol(WebSocketClientProtocol):
 
 
 if __name__ == "__main__":
-
     factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = StreamingProducerHashClientProtocol
     connectWS(factory)

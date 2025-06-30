@@ -30,7 +30,6 @@ from autobahn.wamp.exception import ApplicationError
 
 
 class ApplicationErrorTestCase(TestCase):
-
     def test_unicode_str(self):
         """
         Unicode arguments in ApplicationError will not raise an exception when

@@ -1,5 +1,5 @@
-from twisted.internet.defer import inlineCallbacks as coroutine
 from autobahn.twisted.util import sleep
+from twisted.internet.defer import inlineCallbacks as coroutine
 
 
 @coroutine
@@ -41,8 +41,8 @@ def component2_main(reactor, session):
 
 
 if __name__ == "__main__":
-    from twisted.internet.task import react
     from autobahn.twisted.component import Component, Config, Transport, run
+    from twisted.internet.task import react
 
     transports = [
         {

@@ -1,12 +1,11 @@
-from autobahn.twisted.component import Component
-from twisted.internet.defer import inlineCallbacks, Deferred
-from twisted.internet.endpoints import TCP4ServerEndpoint
-from twisted.web.server import Site
-from twisted.internet.task import react
-
-
 # pip install klein
 from klein import Klein
+
+from autobahn.twisted.component import Component
+from twisted.internet.defer import Deferred, inlineCallbacks
+from twisted.internet.endpoints import TCP4ServerEndpoint
+from twisted.internet.task import react
+from twisted.web.server import Site
 
 
 class WebApplication(object):

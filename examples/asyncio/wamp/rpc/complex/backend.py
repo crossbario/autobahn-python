@@ -26,8 +26,9 @@
 
 import asyncio
 from os import environ
+
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 from autobahn.wamp.types import CallResult
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
@@ -37,7 +38,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         def add_complex(a, ai, b, bi):
             return CallResult(c=a + b, ci=ai + bi)
 

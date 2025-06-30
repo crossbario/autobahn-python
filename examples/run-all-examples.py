@@ -13,21 +13,20 @@
 # ...then just run this script; it colors the output and runs each
 # frontend/backend pair for a few seconds.
 
-import sys
 import platform
+import sys
 from os import environ
-from os.path import join, exists
+from os.path import exists, join
 
 import colorama
 from colorama import Fore
 
-from twisted.internet.protocol import ProcessProtocol
-from twisted.internet.defer import inlineCallbacks, Deferred
-from twisted.internet.error import ProcessExitedAlready
-from twisted.internet import reactor
-from twisted.internet.task import react
-
 from autobahn.twisted.util import sleep
+from twisted.internet import reactor
+from twisted.internet.defer import Deferred, inlineCallbacks
+from twisted.internet.error import ProcessExitedAlready
+from twisted.internet.protocol import ProcessProtocol
+from twisted.internet.task import react
 
 
 class CrossbarProcessProtocol(ProcessProtocol):

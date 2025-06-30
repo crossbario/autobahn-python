@@ -25,11 +25,11 @@
 ###############################################################################
 
 from os import environ
-from twisted.internet.defer import inlineCallbacks
-from twisted.python.failure import Failure
 
 from autobahn import wamp
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from twisted.internet.defer import inlineCallbacks
+from twisted.python.failure import Failure
 
 
 class MyService1(object):

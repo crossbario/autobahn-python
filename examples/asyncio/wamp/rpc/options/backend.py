@@ -26,8 +26,9 @@
 
 import asyncio
 from os import environ
-from autobahn.wamp.types import CallOptions, RegisterOptions, PublishOptions
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.types import CallOptions, PublishOptions, RegisterOptions
 
 
 class Component(ApplicationSession):
@@ -37,7 +38,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         def square(val, details=None):
             print("square called from: {}".format(details.caller))
 

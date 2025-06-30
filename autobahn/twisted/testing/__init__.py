@@ -32,31 +32,31 @@ try:
 except ImportError:
     raise ImportError("Twisted 17.1.0 or later required for autobahn.twisted.testing")
 
-from twisted.internet.defer import Deferred
-from twisted.internet.address import IPv4Address
 from twisted.internet._resolver import (
     HostResolution,
 )  # "internal" class, but it's simple
+from twisted.internet.address import IPv4Address
+from twisted.internet.defer import Deferred
 from twisted.internet.interfaces import ISSLTransport
 
 try:
     from twisted.internet.testing import MemoryReactorClock
 except ImportError:
     from twisted.test.proto_helpers import MemoryReactorClock
-from twisted.test import iosim
-
 from zope.interface import directlyProvides, implementer
 
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    _TwistedWebSocketClientAgent,
+)
 from autobahn.websocket.interfaces import IWebSocketClientAgent
-from autobahn.twisted.websocket import _TwistedWebSocketClientAgent
-from autobahn.twisted.websocket import WebSocketServerProtocol
-from autobahn.twisted.websocket import WebSocketServerFactory
-
+from twisted.test import iosim
 
 __all__ = (
-    "create_pumper",
-    "create_memory_agent",
     "MemoryReactorClockResolver",
+    "create_memory_agent",
+    "create_pumper",
 )
 
 

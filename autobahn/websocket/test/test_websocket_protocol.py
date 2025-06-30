@@ -26,24 +26,25 @@
 
 import os
 import unittest
-from hashlib import sha1
 from base64 import b64encode
+from hashlib import sha1
 from unittest.mock import Mock
 
 import txaio
 
-from autobahn.websocket.protocol import WebSocketServerProtocol
-from autobahn.websocket.protocol import WebSocketServerFactory
-from autobahn.websocket.protocol import WebSocketClientProtocol
-from autobahn.websocket.protocol import WebSocketClientFactory
-from autobahn.websocket.protocol import WebSocketProtocol
-from autobahn.websocket.types import ConnectingRequest
 from autobahn.testutil import FakeTransport
 from autobahn.wamp.types import TransportDetails
+from autobahn.websocket.protocol import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    WebSocketProtocol,
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+)
+from autobahn.websocket.types import ConnectingRequest
 
 
 class WebSocketClientProtocolTests(unittest.TestCase):
-
     def setUp(self):
         t = FakeTransport()
         f = WebSocketClientFactory()
@@ -246,8 +247,10 @@ if os.environ.get("USE_TWISTED", False):
         """
 
         def setUp(self):
-            from autobahn.twisted.websocket import WebSocketServerProtocol
-            from autobahn.twisted.websocket import WebSocketServerFactory
+            from autobahn.twisted.websocket import (
+                WebSocketServerFactory,
+                WebSocketServerProtocol,
+            )
 
             t = FakeTransport()
             f = WebSocketServerFactory()

@@ -28,7 +28,6 @@ from twisted.internet.protocol import Protocol
 
 
 class HelloClientProtocol(Protocol):
-
     def connectionMade(self):
         print("connectionMade")
         self.transport.write("hello")
@@ -38,13 +37,12 @@ class HelloClientProtocol(Protocol):
 
 
 if __name__ == "__main__":
-
     import sys
 
-    from twisted.python import log
     from twisted.internet import reactor
-    from twisted.internet.protocol import Factory
     from twisted.internet.endpoints import clientFromString
+    from twisted.internet.protocol import Factory
+    from twisted.python import log
 
     log.startLogging(sys.stdout)
 

@@ -24,13 +24,11 @@
 #
 ###############################################################################
 
+from autobahn.twisted.websocket import WebSocketClientFactory, WebSocketClientProtocol
 from twisted.internet.protocol import ReconnectingClientFactory
-
-from autobahn.twisted.websocket import WebSocketClientProtocol, WebSocketClientFactory
 
 
 class MyClientProtocol(WebSocketClientProtocol):
-
     def onConnect(self, response):
         print("Server connected: {0}".format(response.peer))
         self.factory.resetDelay()
@@ -57,7 +55,6 @@ class MyClientProtocol(WebSocketClientProtocol):
 
 
 class MyClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
-
     protocol = MyClientProtocol
 
     def clientConnectionFailed(self, connector, reason):
@@ -70,11 +67,10 @@ class MyClientFactory(WebSocketClientFactory, ReconnectingClientFactory):
 
 
 if __name__ == "__main__":
-
     import sys
 
-    from twisted.python import log
     from twisted.internet import reactor
+    from twisted.python import log
 
     log.startLogging(sys.stdout)
 

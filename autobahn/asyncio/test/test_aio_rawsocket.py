@@ -1,7 +1,7 @@
-import pytest
 import os
-
 from unittest.mock import Mock, call
+
+import pytest
 
 from autobahn.asyncio.rawsocket import (
     PrefixProtocol,
@@ -100,7 +100,6 @@ def test_is_closed():
     not os.environ.get("USE_ASYNCIO", False), reason="test runs on asyncio only"
 )
 def test_raw_socket_server1():
-
     server = RawSocketServerProtocol()
     ser = Mock(return_value=True)
     on_hs = Mock()
@@ -127,7 +126,6 @@ def test_raw_socket_server1():
     not os.environ.get("USE_ASYNCIO", False), reason="test runs on asyncio only"
 )
 def test_raw_socket_server_errors():
-
     server = RawSocketServerProtocol()
     ser = Mock(return_value=True)
     on_hs = Mock()

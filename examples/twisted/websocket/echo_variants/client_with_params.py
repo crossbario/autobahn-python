@@ -25,16 +25,16 @@
 ###############################################################################
 
 import sys
-from twisted.internet import reactor
+
 from autobahn.twisted.websocket import (
     WebSocketClientFactory,
     WebSocketClientProtocol,
     connectWS,
 )
+from twisted.internet import reactor
 
 
 class EchoClientProtocol(WebSocketClientProtocol):
-
     def __init__(self, message):
         self.message = message.encode("utf8")
 
@@ -51,7 +51,6 @@ class EchoClientProtocol(WebSocketClientProtocol):
 
 
 class EchoClientFactory(WebSocketClientFactory):
-
     def buildProtocol(self, addr):
         proto = EchoClientProtocol(self.message)
         proto.factory = self
@@ -59,7 +58,6 @@ class EchoClientFactory(WebSocketClientFactory):
 
 
 if __name__ == "__main__":
-
     if len(sys.argv) < 2:
         print("Need the WebSocket server address, i.e. ws://127.0.0.1:9000")
         sys.exit(1)

@@ -24,11 +24,11 @@
 #
 ###############################################################################
 
-from os import environ
-import datetime
-
 import asyncio
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+import datetime
+from os import environ
+
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):

@@ -66,6 +66,12 @@ publish: clean
 	AUTOBAHN_USE_NVX=0 python -m build
 	twine upload dist/*
 
+# autoformat with import sorting, including __all__
+#
+autoformat_python:
+	ruff check --select I,RUF022 --fix .
+	ruff format .
+
 # Prettier: Markdown docs => opinionated, auto-formatting tool that "just works"
 # 	https://prettier.io/
 # Config: ./.prettierrc.json

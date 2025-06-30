@@ -263,7 +263,6 @@ def _create_valid_utf8_test_sequences():
 
 @unittest.skipIf(not HAS_NVX, "NVX native extensions not present")
 class TestNvxUtf8Validator(unittest.TestCase):
-
     def setUp(self):
         # These tests verify the UTF-8 decoder/validator on the various test cases from
         # http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt

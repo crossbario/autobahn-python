@@ -24,11 +24,11 @@
 #
 ###############################################################################
 
-import unittest
-from txaio.testutil import replace_loop
-
 import asyncio
-from unittest.mock import patch, Mock
+import unittest
+from unittest.mock import Mock, patch
+
+from txaio.testutil import replace_loop
 
 from autobahn.asyncio.wamp import ApplicationRunner
 

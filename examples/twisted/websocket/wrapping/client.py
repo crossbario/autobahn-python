@@ -28,7 +28,6 @@ from twisted.internet.protocol import Protocol
 
 
 class HelloClientProtocol(Protocol):
-
     def connectionMade(self):
         print("connectionMade", self.transport.getHost(), self.transport.getPeer())
         self.transport.write("hello" * 100)
@@ -38,14 +37,12 @@ class HelloClientProtocol(Protocol):
 
 
 if __name__ == "__main__":
-
     import sys
 
-    from twisted.python import log
+    from autobahn.twisted.websocket import WrappingWebSocketClientFactory
     from twisted.internet import reactor
     from twisted.internet.protocol import Factory
-
-    from autobahn.twisted.websocket import WrappingWebSocketClientFactory
+    from twisted.python import log
 
     log.startLogging(sys.stdout)
 

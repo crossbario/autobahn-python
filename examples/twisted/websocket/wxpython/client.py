@@ -24,11 +24,12 @@
 #
 ###############################################################################
 
-import wx
 import json
 from pprint import pprint
 
-from autobahn.twisted.websocket import WebSocketClientProtocol, WebSocketClientFactory
+import wx
+
+from autobahn.twisted.websocket import WebSocketClientFactory, WebSocketClientProtocol
 
 
 class MyFrame(wx.Frame):
@@ -134,14 +135,12 @@ class MyClientFactory(WebSocketClientFactory):
 
 
 if __name__ == "__main__":
-
     import sys
 
     from twisted.internet import wxreactor
 
     wxreactor.install()
     from twisted.internet import reactor
-
     from twisted.python import log
 
     log.startLogging(sys.stdout)

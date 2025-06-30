@@ -26,11 +26,10 @@
 
 from os import environ
 
+from autobahn.twisted.wamp import ApplicationSession
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.serialport import SerialPort
 from twisted.protocols.basic import LineReceiver
-
-from autobahn.twisted.wamp import ApplicationSession
 
 
 class McuProtocol(LineReceiver):
@@ -97,9 +96,8 @@ class McuComponent(ApplicationSession):
 
 
 if __name__ == "__main__":
-
-    import sys
     import argparse
+    import sys
 
     # parse command line arguments
     parser = argparse.ArgumentParser()

@@ -30,15 +30,15 @@ from autobahn import util
 from autobahn.wamp.exception import ProtocolError
 
 __all__ = (
-    "RoleFeatures",
-    "RoleBrokerFeatures",
-    "RoleSubscriberFeatures",
-    "RolePublisherFeatures",
-    "RoleDealerFeatures",
-    "RoleCallerFeatures",
-    "RoleCalleeFeatures",
-    "ROLE_NAME_TO_CLASS",
     "DEFAULT_CLIENT_ROLES",
+    "ROLE_NAME_TO_CLASS",
+    "RoleBrokerFeatures",
+    "RoleCalleeFeatures",
+    "RoleCallerFeatures",
+    "RoleDealerFeatures",
+    "RoleFeatures",
+    "RolePublisherFeatures",
+    "RoleSubscriberFeatures",
 )
 
 
@@ -96,7 +96,7 @@ class RoleBrokerFeatures(RoleFeatures):
         x_acknowledged_event_delivery=None,
         payload_encryption_cryptobox=None,
         event_retention=None,
-        **kwargs
+        **kwargs,
     ):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
@@ -130,7 +130,7 @@ class RoleSubscriberFeatures(RoleFeatures):
         event_history=None,
         payload_transparency=None,
         payload_encryption_cryptobox=None,
-        **kwargs
+        **kwargs,
     ):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
@@ -157,7 +157,7 @@ class RolePublisherFeatures(RoleFeatures):
         payload_transparency=None,
         x_acknowledged_event_delivery=None,
         payload_encryption_cryptobox=None,
-        **kwargs
+        **kwargs,
     ):
         self.publisher_identification = publisher_identification
         self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
@@ -190,7 +190,7 @@ class RoleDealerFeatures(RoleFeatures):
         payload_transparency=None,
         testament_meta_api=None,
         payload_encryption_cryptobox=None,
-        **kwargs
+        **kwargs,
     ):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
@@ -223,7 +223,7 @@ class RoleCallerFeatures(RoleFeatures):
         progressive_call_results=None,
         payload_transparency=None,
         payload_encryption_cryptobox=None,
-        **kwargs
+        **kwargs,
     ):
         self.caller_identification = caller_identification
         self.call_timeout = call_timeout
@@ -253,7 +253,7 @@ class RoleCalleeFeatures(RoleFeatures):
         registration_revocation=None,
         payload_transparency=None,
         payload_encryption_cryptobox=None,
-        **kwargs
+        **kwargs,
     ):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels

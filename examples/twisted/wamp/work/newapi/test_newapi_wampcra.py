@@ -1,6 +1,7 @@
+import binascii
+
 from autobahn.twisted.component import Component, run
 from autobahn.wamp import cryptosign
-import binascii
 
 privkey_hex = "6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c"
 # pubkey: 020b13239ca0f10a1c65feaf26e8dfca6e84c81d2509a2b7b75a7e5ee5ce4b66

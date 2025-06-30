@@ -1,13 +1,13 @@
+from os.path import join, split
+
+from OpenSSL import crypto
+
 from autobahn.twisted.component import Component, run
 from autobahn.twisted.util import sleep
 from autobahn.wamp.types import RegisterOptions
-from twisted.internet.defer import inlineCallbacks
 from twisted.internet._sslverify import OpenSSLCertificateAuthorities
-from twisted.internet.ssl import CertificateOptions
-from twisted.internet.ssl import optionsForClientTLS, Certificate
-from OpenSSL import crypto
-from os.path import join, split
-
+from twisted.internet.defer import inlineCallbacks
+from twisted.internet.ssl import Certificate, CertificateOptions, optionsForClientTLS
 
 examples_dir = join(split(__file__)[0], "..", "..", "..")
 cert_fname = join(examples_dir, "router", ".crossbar", "server.crt")

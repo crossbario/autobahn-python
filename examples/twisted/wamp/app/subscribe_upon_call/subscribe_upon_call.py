@@ -26,7 +26,6 @@
 
 from autobahn.twisted.wamp import Application
 
-
 app = Application()
 
 

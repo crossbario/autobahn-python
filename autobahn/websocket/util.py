@@ -24,9 +24,9 @@
 #
 ###############################################################################
 
-from autobahn.util import public
-
 from urllib import parse as urlparse
+
+from autobahn.util import public
 
 # The Python urlparse module currently does not contain the ws/wss
 # schemes, so we add those dynamically (which is a hack of course).

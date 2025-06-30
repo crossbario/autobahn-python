@@ -28,15 +28,14 @@ import txaio
 
 txaio.use_twisted()
 
-from twisted.python import usage
-from twisted.internet.defer import inlineCallbacks
-from twisted.internet.protocol import Factory, Protocol
-from twisted.internet.endpoints import clientFromString, serverFromString
 from twisted.application import service
+from twisted.internet.defer import inlineCallbacks
+from twisted.internet.endpoints import clientFromString, serverFromString
+from twisted.internet.protocol import Factory, Protocol
+from twisted.python import usage
 
 
 class DestEndpointForwardingProtocol(Protocol):
-
     log = txaio.make_logger()
 
     def connectionMade(self):
@@ -58,7 +57,6 @@ class DestEndpointForwardingProtocol(Protocol):
 
 
 class DestEndpointForwardingFactory(Factory):
-
     def __init__(self, sourceProtocol):
         self._sourceProtocol = sourceProtocol
         self._proto = None
@@ -70,7 +68,6 @@ class DestEndpointForwardingFactory(Factory):
 
 
 class EndpointForwardingProtocol(Protocol):
-
     log = txaio.make_logger()
 
     @inlineCallbacks
@@ -97,7 +94,6 @@ class EndpointForwardingProtocol(Protocol):
 
 
 class EndpointForwardingService(service.Service):
-
     def __init__(self, endpointDescriptor, destEndpointDescriptor, reactor=None):
         if reactor is None:
             from twisted.internet import reactor

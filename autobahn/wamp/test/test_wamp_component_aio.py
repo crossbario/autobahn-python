@@ -24,12 +24,13 @@
 #
 ###############################################################################
 
+import asyncio
 import os
 import sys
 import unittest.mock as mock
+
 import pytest
 import txaio
-import asyncio
 
 if os.environ.get("USE_ASYNCIO", False):
     from autobahn.asyncio.component import Component

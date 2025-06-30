@@ -29,7 +29,6 @@ from binascii import a2b_hex
 
 from autobahn.wamp.auth import derive_scram_credential
 
-
 TEST_VECTORS = [
     {
         "email": "foobar@example.com",
@@ -61,7 +60,6 @@ TEST_VECTORS = [
 
 
 class TestKey(unittest.TestCase):
-
     def test_derive_scram_credential(self):
         for tv in TEST_VECTORS:
             email = tv["email"]

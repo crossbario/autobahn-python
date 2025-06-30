@@ -25,15 +25,15 @@
 ###############################################################################
 
 import hashlib
-from twisted.internet import reactor
+
+from streaming_client import BATCH_SIZE
 
 from autobahn.twisted.websocket import (
     WebSocketServerFactory,
     WebSocketServerProtocol,
     listenWS,
 )
-
-from streaming_client import BATCH_SIZE
+from twisted.internet import reactor
 
 
 class StreamingHashServerProtocol(WebSocketServerProtocol):
@@ -62,7 +62,6 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
 
         # when the data received exceeds the next BATCH_SIZE ..
         if self.received >= self.next:
-
             # update digest up to batch size
             rest = length - (self.received - self.next)
             self.sha256.update(payload[:rest])

@@ -26,10 +26,6 @@
 
 import sys
 
-from twisted.internet import reactor, ssl
-from twisted.web.server import Site
-from twisted.web.static import File
-
 import txaio
 
 from autobahn.twisted.websocket import (
@@ -37,16 +33,17 @@ from autobahn.twisted.websocket import (
     WebSocketServerProtocol,
     listenWS,
 )
+from twisted.internet import reactor, ssl
+from twisted.web.server import Site
+from twisted.web.static import File
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
-
     def onMessage(self, payload, isBinary):
         self.sendMessage(payload, isBinary)
 
 
 if __name__ == "__main__":
-
     txaio.start_logging(level="debug")
 
     # SSL server context: load server key and certificate

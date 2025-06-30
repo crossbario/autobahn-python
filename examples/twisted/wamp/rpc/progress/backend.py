@@ -25,11 +25,11 @@
 ###############################################################################
 
 from os import environ
-from twisted.internet.defer import inlineCallbacks
 
-from autobahn.wamp.types import RegisterOptions
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.types import RegisterOptions
+from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):

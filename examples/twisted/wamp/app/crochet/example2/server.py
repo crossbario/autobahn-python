@@ -24,8 +24,8 @@
 #
 ###############################################################################
 
+from crochet import run_in_reactor, setup, wait_for
 from flask import Flask, request
-from crochet import setup, run_in_reactor, wait_for
 
 # this MUST be called _before_ any Autobahn or Twisted imports!
 setup()
@@ -84,8 +84,8 @@ def slowsquare_submit():
 
 
 if __name__ == "__main__":
-    import sys
     import logging
+    import sys
 
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 

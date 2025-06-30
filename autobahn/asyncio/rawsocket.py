@@ -25,26 +25,27 @@
 ###############################################################################
 
 import asyncio
-import struct
-import math
 import copy
+import math
+import struct
 from typing import Optional
 
 import txaio
-from autobahn.util import public, _LazyHexFormatter, hltype
-from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
-from autobahn.wamp.types import TransportDetails
+
 from autobahn.asyncio.util import (
-    get_serializers,
     create_transport_details,
+    get_serializers,
     transport_channel_id,
 )
+from autobahn.util import _LazyHexFormatter, hltype, public
+from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
+from autobahn.wamp.types import TransportDetails
 
 __all__ = (
-    "WampRawSocketServerProtocol",
+    "WampRawSocketClientFactory",
     "WampRawSocketClientProtocol",
     "WampRawSocketServerFactory",
-    "WampRawSocketClientFactory",
+    "WampRawSocketServerProtocol",
 )
 
 FRAME_TYPE_DATA = 0
@@ -55,7 +56,6 @@ MAGIC_BYTE = 0x7F
 
 
 class PrefixProtocol(asyncio.Protocol):
-
     prefix_format = "!L"
     prefix_length = struct.calcsize(prefix_format)
     max_length = 16 * 1024 * 1024
@@ -176,7 +176,6 @@ class PrefixProtocol(asyncio.Protocol):
 
 
 class RawSocketProtocol(PrefixProtocol):
-
     def __init__(self):
         max_size = None
         if max_size:
@@ -249,7 +248,6 @@ class HandshakeError(Exception):
 
 
 class RawSocketClientProtocol(RawSocketProtocol):
-
     is_server = False
 
     def check_serializer(self, ser_id):
@@ -281,7 +279,6 @@ class RawSocketClientProtocol(RawSocketProtocol):
 
 
 class RawSocketServerProtocol(RawSocketProtocol):
-
     is_server = True
 
     def supports_serializer(self, ser_id):
@@ -303,7 +300,6 @@ class RawSocketServerProtocol(RawSocketProtocol):
 
 # this is transport independent part of WAMP protocol
 class WampRawSocketMixinGeneral(object):
-
     def _on_handshake_complete(self):
         self.log.debug("WampRawSocketProtocol: Handshake complete")
         # RawSocket connection established. Now let the user WAMP session factory

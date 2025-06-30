@@ -25,9 +25,9 @@
 ###############################################################################
 
 from os import environ
-from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):

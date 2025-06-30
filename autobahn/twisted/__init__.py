@@ -26,55 +26,40 @@
 
 import platform
 
-import twisted
-
 import autobahn
+import twisted
+from autobahn.twisted.choosereactor import install_reactor
 
 # Twisted specific utilities (these should really be in Twisted, but
 # they aren't, and we use these in example code, so it must be part of
 # the public API)
 from autobahn.twisted.util import sleep
-from autobahn.twisted.choosereactor import install_reactor
-
-# WebSocket protocol support
-from autobahn.twisted.websocket import (
-    WebSocketServerProtocol,
-    WebSocketClientProtocol,
-    WebSocketServerFactory,
-    WebSocketClientFactory,
-)
-
-# support for running Twisted stream protocols over WebSocket
-from autobahn.twisted.websocket import (
-    WrappingWebSocketServerFactory,
-    WrappingWebSocketClientFactory,
-)
 
 # Twisted Web support - FIXME: these imports trigger import of Twisted reactor!
 # from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
-
 # WAMP support
 from autobahn.twisted.wamp import ApplicationSession
 
+# WebSocket protocol support
+# support for running Twisted stream protocols over WebSocket
+from autobahn.twisted.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    WrappingWebSocketClientFactory,
+    WrappingWebSocketServerFactory,
+)
 
 __all__ = (
-    # this should really be in Twisted
-    "sleep",
-    "install_reactor",
-    # WebSocket
-    "WebSocketServerProtocol",
+    "ApplicationSession",
+    "WebSocketClientFactory",
     "WebSocketClientProtocol",
     "WebSocketServerFactory",
-    "WebSocketClientFactory",
-    # wrapping stream protocols in WebSocket
+    "WebSocketServerProtocol",
     "WrappingWebSocketServerFactory",
-    "WrappingWebSocketClientFactory",
-    # Twisted Web - FIXME: see comment for import above
-    # 'WebSocketResource',
-    # this should really be in Twisted - FIXME: see comment for import above
-    # 'WSGIRootResource',
-    # WAMP support
-    "ApplicationSession",
+    "install_reactor",
+    "sleep",
 )
 
 __ident__ = "Autobahn/{}-Twisted/{}-{}/{}".format(

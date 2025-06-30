@@ -15,9 +15,10 @@
 
 
 import os
+import random
 import sys
 import time
-import random
+
 import colors
 
 prompt = "user@machine:~/autobahn-python$ "

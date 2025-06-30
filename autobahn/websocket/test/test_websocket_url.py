@@ -30,7 +30,6 @@ from autobahn.websocket.util import create_url, parse_url
 
 
 class TestCreateWsUrl(unittest.TestCase):
-
     def test_create_url01(self):
         self.assertEqual(create_url("localhost"), "ws://localhost:80/")
 
@@ -106,7 +105,6 @@ class TestCreateWsUrl(unittest.TestCase):
 
 
 class TestParseWsUrl(unittest.TestCase):
-
     # parse_url -> (isSecure, host, port, resource, path, params)
 
     def test_parse_url01(self):

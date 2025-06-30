@@ -2,21 +2,22 @@ import os
 
 import txaio
 
-from twisted.internet.defer import inlineCallbacks
-from twisted.internet.endpoints import TCP4ClientEndpoint
-from twisted.internet.endpoints import SSL4ClientEndpoint
-from twisted.internet.endpoints import UNIXClientEndpoint
-from twisted.internet.ssl import (
-    optionsForClientTLS,
-    trustRootFromCertificates,
-    Certificate,
-    CertificateOptions,
-)
-from twisted.internet import reactor
-
 from autobahn.twisted.component import Component, run
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import Session
+from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks
+from twisted.internet.endpoints import (
+    SSL4ClientEndpoint,
+    TCP4ClientEndpoint,
+    UNIXClientEndpoint,
+)
+from twisted.internet.ssl import (
+    Certificate,
+    CertificateOptions,
+    optionsForClientTLS,
+    trustRootFromCertificates,
+)
 
 # This uses the new-api with various Twisted native objects. For the
 # Unix socket things, yo'll have to add a transport to "config.json"

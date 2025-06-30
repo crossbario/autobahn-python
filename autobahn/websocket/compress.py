@@ -25,36 +25,35 @@
 ###############################################################################
 
 from autobahn.websocket.compress_base import (
+    PerMessageCompress,
     PerMessageCompressOffer,
     PerMessageCompressOfferAccept,
     PerMessageCompressResponse,
     PerMessageCompressResponseAccept,
-    PerMessageCompress,
 )
-
 from autobahn.websocket.compress_deflate import (
+    PerMessageDeflate,
     PerMessageDeflateMixin,
     PerMessageDeflateOffer,
     PerMessageDeflateOfferAccept,
     PerMessageDeflateResponse,
     PerMessageDeflateResponseAccept,
-    PerMessageDeflate,
 )
 
 # this must be a list (not tuple), since we dynamically
 # extend it ..
 __all__ = [
+    "PERMESSAGE_COMPRESSION_EXTENSION",
+    "PerMessageCompress",
     "PerMessageCompressOffer",
     "PerMessageCompressOfferAccept",
     "PerMessageCompressResponse",
     "PerMessageCompressResponseAccept",
-    "PerMessageCompress",
+    "PerMessageDeflate",
     "PerMessageDeflateOffer",
     "PerMessageDeflateOfferAccept",
     "PerMessageDeflateResponse",
     "PerMessageDeflateResponseAccept",
-    "PerMessageDeflate",
-    "PERMESSAGE_COMPRESSION_EXTENSION",
 ]
 
 # map of available compression extensions
@@ -77,12 +76,12 @@ except ImportError:
     bz2 = None
 else:
     from autobahn.websocket.compress_bzip2 import (
+        PerMessageBzip2,
         PerMessageBzip2Mixin,
         PerMessageBzip2Offer,
         PerMessageBzip2OfferAccept,
         PerMessageBzip2Response,
         PerMessageBzip2ResponseAccept,
-        PerMessageBzip2,
     )
 
     PMCE = {
@@ -96,11 +95,11 @@ else:
 
     __all__.extend(
         [
+            "PerMessageBzip2",
             "PerMessageBzip2Offer",
             "PerMessageBzip2OfferAccept",
             "PerMessageBzip2Response",
             "PerMessageBzip2ResponseAccept",
-            "PerMessageBzip2",
         ]
     )
 
@@ -113,12 +112,12 @@ except ImportError:
     snappy = None
 else:
     from autobahn.websocket.compress_snappy import (
+        PerMessageSnappy,
         PerMessageSnappyMixin,
         PerMessageSnappyOffer,
         PerMessageSnappyOfferAccept,
         PerMessageSnappyResponse,
         PerMessageSnappyResponseAccept,
-        PerMessageSnappy,
     )
 
     PMCE = {
@@ -132,10 +131,10 @@ else:
 
     __all__.extend(
         [
+            "PerMessageSnappy",
             "PerMessageSnappyOffer",
             "PerMessageSnappyOfferAccept",
             "PerMessageSnappyResponse",
             "PerMessageSnappyResponseAccept",
-            "PerMessageSnappy",
         ]
     )

@@ -444,7 +444,6 @@ try:
     from wsaccel.utf8validator import Utf8Validator
 
 except ImportError:
-
     # Fallback to pure Python implementation - also for PyPy.
     #
     # Do NOT touch this code unless you know what you are doing!

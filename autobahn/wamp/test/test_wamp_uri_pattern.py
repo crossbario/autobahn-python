@@ -24,14 +24,13 @@
 #
 ###############################################################################
 
+import unittest
+
 from autobahn import wamp
 from autobahn.wamp.uri import Pattern, RegisterOptions, SubscribeOptions
 
-import unittest
-
 
 class TestUris(unittest.TestCase):
-
     def test_invalid_uris(self):
         for u in [
             "",
@@ -48,8 +47,7 @@ class TestUris(unittest.TestCase):
             "com.myapp.proc1",
             "123",
             "com.myapp.<product:int>.update",
-            "com.myapp.<category:string>.<subcategory>.list"
-            "com.myapp.something..update",
+            "com.myapp.<category:string>.<subcategory>.listcom.myapp.something..update",
         ]:
             p = Pattern(u, Pattern.URI_TARGET_ENDPOINT)
             self.assertIsInstance(p, Pattern)
@@ -126,7 +124,6 @@ class TestUris(unittest.TestCase):
 
 
 class TestDecorators(unittest.TestCase):
-
     def test_decorate_endpoint(self):
         @wamp.register("com.calculator.square")
         def square(_):
@@ -395,7 +392,6 @@ class TestDecorators(unittest.TestCase):
     def test_match_decorated_exception(self):
         @wamp.error("com.myapp.error")
         class AppError(Exception):
-
             def __init__(self, msg):
                 Exception.__init__(self, msg)
 
@@ -408,7 +404,6 @@ class TestDecorators(unittest.TestCase):
 
         @wamp.error("com.myapp.product.<product:int>.product_inactive")
         class ProductInactiveError(Exception):
-
             def __init__(self, msg, product=None):
                 Exception.__init__(self, msg)
                 self.product = product
@@ -429,7 +424,6 @@ class TestDecorators(unittest.TestCase):
 
         @wamp.error("com.myapp.<category:string>.<product:int>.inactive")
         class ObjectInactiveError(Exception):
-
             def __init__(self, msg, category=None, product=None):
                 Exception.__init__(self, msg)
                 self.category = category
@@ -470,7 +464,6 @@ class KwException(Exception):
 
 
 class MockSession(object):
-
     def __init__(self):
         self._ecls_to_uri_pat = {}
         self._uri_to_ecls = {}
@@ -488,7 +481,6 @@ class MockSession(object):
             self._uri_to_ecls[error] = exception
 
     def map_error(self, error, args=None, kwargs=None):
-
         # FIXME:
         # 1. map to ecls based on error URI wildcard/prefix
         # 2. extract additional args/kwargs from error URI
@@ -521,9 +513,7 @@ class MockSession(object):
 
 
 class TestDecoratorsAdvanced(unittest.TestCase):
-
     def test_decorate_exception_non_exception(self):
-
         def test():
             # noinspection PyUnusedLocal
             @wamp.error("com.test.error")
@@ -533,7 +523,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         self.assertRaises(Exception, test)
 
     def test_decorate_endpoint_multiple(self):
-
         # noinspection PyUnusedLocal
         @wamp.register("com.oldapp.oldproc")
         @wamp.register("com.calculator.square")
@@ -555,7 +544,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         self.assertEqual(square._wampuris[1].uri(), "com.oldapp.oldproc")
 
     def test_marshal_decorated_exception(self):
-
         @wamp.error("com.myapp.error")
         class AppError(Exception):
             pass
@@ -567,7 +555,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
 
         @wamp.error("com.myapp.product.<product:int>.product_inactive")
         class ProductInactiveError(Exception):
-
             def __init__(self, msg, product=None):
                 Exception.__init__(self, msg)
                 self.product = product
@@ -583,7 +570,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         session.define(AppError)
 
     def test_define_exception_undecorated(self):
-
         session = MockSession()
 
         class AppError(Exception):
@@ -599,7 +585,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         self.assertIsInstance(exc, AppError)
 
     def test_define_exception_decorated(self):
-
         session = MockSession()
 
         @wamp.error("com.myapp.error")
@@ -616,14 +601,12 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         self.assertIsInstance(exc, AppError)
 
     def test_map_exception_undefined(self):
-
         session = MockSession()
 
         exc = session.map_error("com.myapp.error")
         self.assertIsInstance(exc, Exception)
 
     def test_map_exception_args(self):
-
         session = MockSession()
 
         @wamp.error("com.myapp.error")

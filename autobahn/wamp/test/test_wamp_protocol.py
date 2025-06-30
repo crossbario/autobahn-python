@@ -28,25 +28,30 @@ import os
 import unittest.mock as mock
 
 if os.environ.get("USE_TWISTED", False):
-
-    from twisted.internet.defer import inlineCallbacks, Deferred
-    from twisted.internet.defer import succeed, fail, DeferredList
-    from twisted.trial import unittest
     import twisted
-
     from autobahn import util
-    from autobahn.twisted.wamp import ApplicationSession
-    from autobahn.twisted.wamp import Session
-    from autobahn.wamp import message, role, serializer, types, uri, CloseDetails
-    from autobahn.wamp.request import CallRequest
-    from autobahn.wamp.exception import ApplicationError, NotAuthorized
-    from autobahn.wamp.exception import InvalidUri, ProtocolError
+    from autobahn.twisted.wamp import ApplicationSession, Session
+    from autobahn.wamp import CloseDetails, message, role, serializer, types, uri
     from autobahn.wamp.auth import create_authenticator
+    from autobahn.wamp.exception import (
+        ApplicationError,
+        InvalidUri,
+        NotAuthorized,
+        ProtocolError,
+    )
     from autobahn.wamp.interfaces import IAuthenticator
+    from autobahn.wamp.request import CallRequest
     from autobahn.wamp.types import TransportDetails
+    from twisted.internet.defer import (
+        Deferred,
+        DeferredList,
+        fail,
+        inlineCallbacks,
+        succeed,
+    )
+    from twisted.trial import unittest
 
     class MockTransport(object):
-
         def __init__(self, handler):
             self._log = False
             self._handler = handler
@@ -209,11 +214,8 @@ if os.environ.get("USE_TWISTED", False):
             handler.onLeave(CloseDetails())
 
     class TestRegisterDecorator(unittest.TestCase):
-
         def test_prefix(self):
-
             class Prefix(ApplicationSession):
-
                 @uri.register("method_name")
                 def some_method(self):
                     pass
@@ -232,9 +234,7 @@ if os.environ.get("USE_TWISTED", False):
             self.assertEqual("com.example.prefix.method_name", reg.procedure)
 
         def test_auto_name(self):
-
             class Magic(ApplicationSession):
-
                 @uri.register(None)
                 def some_method(self):
                     pass
@@ -252,7 +252,6 @@ if os.environ.get("USE_TWISTED", False):
             self.assertEqual("com.example.some_method", reg.procedure)
 
     class TestPublisher(unittest.TestCase):
-
         @inlineCallbacks
         def test_publish(self):
             handler = ApplicationSession()
@@ -1129,7 +1128,6 @@ if os.environ.get("USE_TWISTED", False):
         #       yield self.handler.publish('de.myapp.topic1')
 
     class TestAuthenticator(unittest.TestCase):
-
         def test_inconsistent_authids(self):
             session = Session(mock.Mock())
             auth0 = create_authenticator(
@@ -1152,7 +1150,6 @@ if os.environ.get("USE_TWISTED", False):
             session = Session(mock.Mock())
 
             class TestAuthenticator(IAuthenticator):
-
                 name = "test"
 
                 def on_challenge(self, session, challenge):
@@ -1182,7 +1179,6 @@ if os.environ.get("USE_TWISTED", False):
             session = Session(mock.Mock())
 
             class TestAuthenticator(IAuthenticator):
-
                 name = "test"
 
                 def on_challenge(self, session, challenge):

@@ -27,13 +27,13 @@
 import os
 
 if os.environ.get("USE_TWISTED", False):
-    from twisted.trial import unittest
-    from twisted.internet import defer
-    from twisted.python.failure import Failure
+    from autobahn.twisted.wamp import ApplicationSession
     from autobahn.wamp import message, role
     from autobahn.wamp.exception import ProtocolError
-    from autobahn.twisted.wamp import ApplicationSession
     from autobahn.wamp.types import TransportDetails
+    from twisted.internet import defer
+    from twisted.python.failure import Failure
+    from twisted.trial import unittest
 
     class MockTransport:
         def __init__(self):

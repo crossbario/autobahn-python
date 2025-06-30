@@ -24,10 +24,10 @@
 #
 ###############################################################################
 
+import asyncio
 from os import environ
 
-import asyncio
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):

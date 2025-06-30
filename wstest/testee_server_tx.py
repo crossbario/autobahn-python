@@ -25,26 +25,21 @@
 ###############################################################################
 
 import argparse
-
-import sys
 import platform
+import sys
 
 import txaio
 
 txaio.use_twisted()
 
-from twisted.internet import reactor
-
 import autobahn
-
-from autobahn.websocket.util import parse_url
-
-from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
-
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
 from autobahn.websocket.compress import (
     PerMessageDeflateOffer,
     PerMessageDeflateOfferAccept,
 )
+from autobahn.websocket.util import parse_url
+from twisted.internet import reactor
 
 # FIXME: streaming mode API is currently incompatible with permessage-deflate!
 USE_STREAMING_TESTEE = False
@@ -83,7 +78,6 @@ class StreamingTesteeServerProtocol(WebSocketServerProtocol):
 
 
 class TesteeServerFactory(WebSocketServerFactory):
-
     log = txaio.make_logger()
 
     if USE_STREAMING_TESTEE:
@@ -114,7 +108,6 @@ class TesteeServerFactory(WebSocketServerFactory):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Autobahn Testee Server (Twisted)")
     parser.add_argument(
         "--url",

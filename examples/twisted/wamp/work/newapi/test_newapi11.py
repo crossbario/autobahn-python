@@ -30,10 +30,8 @@ if __name__ == "__main__":
 
 @coroutine
 def client_main(reactor, client):
-
     @coroutine
     def transport_main(reactor, transport):
-
         @coroutine
         def session_main(reactor, session):
             result = yield session.call("com.example.add2", 2, 3)
@@ -80,7 +78,6 @@ if __name__ == "__main__":
 
 @coroutine
 def main1(reactor, session, details):
-
     result = yield session.call("com.example.add2", 2, 3)
     print("result={}".format(result))
 
@@ -248,7 +245,6 @@ def main2(reactor, connection):
 
 
 if __name__ == "__main__":
-
     transports = [
         {
             "type": "rawsocket",

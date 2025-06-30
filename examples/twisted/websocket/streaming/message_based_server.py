@@ -25,13 +25,13 @@
 ###############################################################################
 
 import hashlib
-from twisted.internet import reactor
 
 from autobahn.twisted.websocket import (
     WebSocketServerFactory,
     WebSocketServerProtocol,
     listenWS,
 )
+from twisted.internet import reactor
 
 
 class MessageBasedHashServerProtocol(WebSocketServerProtocol):

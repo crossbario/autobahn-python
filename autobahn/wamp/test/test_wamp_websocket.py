@@ -27,9 +27,8 @@
 import os
 
 if os.environ.get("USE_TWISTED", False):
-    from twisted.trial import unittest
-
     from autobahn.wamp.websocket import WampWebSocketProtocol
+    from twisted.trial import unittest
 
     class TestWebsocketProtocol(unittest.TestCase):
         def setUp(self):

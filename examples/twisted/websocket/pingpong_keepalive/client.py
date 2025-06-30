@@ -26,18 +26,15 @@
 
 import sys
 
-from twisted.internet import reactor
-from twisted.python import log
-
 from autobahn.twisted.websocket import (
     WebSocketClientFactory,
     WebSocketClientProtocol,
     connectWS,
 )
-
+from twisted.internet import reactor
+from twisted.python import log
 
 if __name__ == "__main__":
-
     log.startLogging(sys.stdout)
 
     if len(sys.argv) < 2:

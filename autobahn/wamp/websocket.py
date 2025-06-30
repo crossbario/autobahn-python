@@ -26,25 +26,24 @@
 
 import copy
 import traceback
-
-from typing import Optional, Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 from autobahn.util import hlval
+from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
+from autobahn.wamp.interfaces import ISession, ITransport
+from autobahn.wamp.types import TransportDetails
 from autobahn.websocket import protocol
 from autobahn.websocket.types import (
     ConnectionDeny,
     ConnectionRequest,
     ConnectionResponse,
 )
-from autobahn.wamp.types import TransportDetails
-from autobahn.wamp.interfaces import ITransport, ISession
-from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
 __all__ = (
-    "WampWebSocketServerProtocol",
+    "WampWebSocketClientFactory",
     "WampWebSocketClientProtocol",
     "WampWebSocketServerFactory",
-    "WampWebSocketClientFactory",
+    "WampWebSocketServerProtocol",
 )
 
 

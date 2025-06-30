@@ -24,20 +24,17 @@
 #
 ###############################################################################
 
-from twisted.internet.defer import inlineCallbacks
-
-from txdbus import error, client
+from txdbus import client, error
 
 from autobahn import wamp
-from autobahn.twisted.wamp import ApplicationSession
 from autobahn.twisted.util import sleep
+from autobahn.twisted.wamp import ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class DbusNotifier(ApplicationSession):
-
     @inlineCallbacks
     def onJoin(self, details):
-
         conn = yield client.connect(reactor, "session")
         print("Dbus connection created")
 
@@ -52,7 +49,6 @@ class DbusNotifier(ApplicationSession):
     @inlineCallbacks
     @wamp.subscribe("com.example.dbus.on_notify")
     def onNotify(self, title, body, duration=2):
-
         print(
             "Notification received: title = '{}', body = '{}', duration = {}".format(
                 title, body, duration
@@ -81,9 +77,8 @@ class DbusNotifier(ApplicationSession):
 
 
 if __name__ == "__main__":
-
-    import sys
     import argparse
+    import sys
 
     # parse command line arguments
     parser = argparse.ArgumentParser()

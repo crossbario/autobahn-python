@@ -40,8 +40,8 @@ class PluginTests(TestCase):
         from twisted.plugins import autobahn_endpoints
 
         self.assertTrue(hasattr(autobahn_endpoints, "AutobahnClientParser"))
-        from twisted.internet.endpoints import clientFromString, quoteStringArgument
         from twisted.internet import reactor
+        from twisted.internet.endpoints import clientFromString, quoteStringArgument
 
         ep_string = "autobahn:{0}:url={1}".format(
             quoteStringArgument("tcp:localhost:9000"),

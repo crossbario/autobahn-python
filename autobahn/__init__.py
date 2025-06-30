@@ -29,6 +29,7 @@ from autobahn._version import __version__
 version = __version__
 
 import os
+
 import txaio
 
 # this is used in the unit tests (trial/pytest), and when already done here, there

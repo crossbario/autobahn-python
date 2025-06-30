@@ -24,11 +24,11 @@
 #
 ###############################################################################
 
+import asyncio
 from os import environ
 
-import asyncio
-from autobahn.wamp.types import PublishOptions, EventDetails, SubscribeOptions
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.types import EventDetails, PublishOptions, SubscribeOptions
 
 
 class Component(ApplicationSession):
@@ -37,7 +37,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         def on_event(i):
             print("Got event: {}".format(i))
 

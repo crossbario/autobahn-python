@@ -25,12 +25,12 @@
 ###############################################################################
 
 from os import environ
+
+from autobahn import wamp
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.failure import Failure
-
-from autobahn import wamp
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):

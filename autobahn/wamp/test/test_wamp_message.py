@@ -24,11 +24,10 @@
 #
 ###############################################################################
 
-from autobahn.wamp import role
-from autobahn.wamp import message
-from autobahn.wamp.exception import ProtocolError, InvalidUriError
-
 import unittest
+
+from autobahn.wamp import message, role
+from autobahn.wamp.exception import InvalidUriError, ProtocolError
 
 
 class Foo(object):
@@ -36,7 +35,6 @@ class Foo(object):
 
 
 class TestIds(unittest.TestCase):
-
     def test_valid_ids(self):
         for val in [0, 1, 23, 100000, 9007199254740992]:
             self.assertEqual(val, message.check_or_raise_id(val))
@@ -61,7 +59,6 @@ class TestIds(unittest.TestCase):
 
 
 class TestUris(unittest.TestCase):
-
     def test_valid_uris_loose_nonempty(self):
         for u in [
             "com.myapp.topic1",
@@ -220,7 +217,6 @@ class TestUris(unittest.TestCase):
 
 
 class TestErrorMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Error(message.Call.MESSAGE_TYPE, 123456, "com.myapp.error1")
         msg = e.marshal()
@@ -285,7 +281,6 @@ class TestErrorMessage(unittest.TestCase):
 
 
 class TestSubscribeMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Subscribe(123456, "com.myapp.topic1")
         msg = e.marshal()
@@ -376,7 +371,6 @@ class TestSubscribeMessage(unittest.TestCase):
 
 
 class TestSubscribedMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Subscribed(123456, 789123)
         msg = e.marshal()
@@ -395,7 +389,6 @@ class TestSubscribedMessage(unittest.TestCase):
 
 
 class TestUnsubscribeMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Unsubscribe(123456, 789123)
         msg = e.marshal()
@@ -414,7 +407,6 @@ class TestUnsubscribeMessage(unittest.TestCase):
 
 
 class TestUnsubscribedMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Unsubscribed(123456)
         msg = e.marshal()
@@ -471,7 +463,6 @@ class TestUnsubscribedMessage(unittest.TestCase):
 
 
 class TestPublishMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Publish(123456, "com.myapp.topic1")
         msg = e.marshal()
@@ -621,7 +612,6 @@ class TestPublishMessage(unittest.TestCase):
 
 
 class TestPublishedMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Published(123456, 789123)
         msg = e.marshal()
@@ -640,7 +630,6 @@ class TestPublishedMessage(unittest.TestCase):
 
 
 class TestEventMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Event(123456, 789123)
         msg = e.marshal()
@@ -733,7 +722,6 @@ class TestEventMessage(unittest.TestCase):
 
 
 class TestRegisterMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Register(123456, "com.myapp.procedure1")
         msg = e.marshal()
@@ -799,7 +787,6 @@ class TestRegisterMessage(unittest.TestCase):
 
 
 class TestRegisteredMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Registered(123456, 789123)
         msg = e.marshal()
@@ -818,7 +805,6 @@ class TestRegisteredMessage(unittest.TestCase):
 
 
 class TestUnregisterMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Unregister(123456, 789123)
         msg = e.marshal()
@@ -837,7 +823,6 @@ class TestUnregisterMessage(unittest.TestCase):
 
 
 class TestUnregisteredMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Unregistered(123456)
         msg = e.marshal()
@@ -894,7 +879,6 @@ class TestUnregisteredMessage(unittest.TestCase):
 
 
 class TestCallMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Call(123456, "com.myapp.procedure1")
         msg = e.marshal()
@@ -972,7 +956,6 @@ class TestCallMessage(unittest.TestCase):
 
 
 class TestCancelMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Cancel(123456)
         msg = e.marshal()
@@ -1005,7 +988,6 @@ class TestCancelMessage(unittest.TestCase):
 
 
 class TestResultMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Result(123456)
         msg = e.marshal()
@@ -1066,7 +1048,6 @@ class TestResultMessage(unittest.TestCase):
 
 
 class TestInvocationMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Invocation(123456, 789123)
         msg = e.marshal()
@@ -1136,7 +1117,6 @@ class TestInvocationMessage(unittest.TestCase):
 
 
 class TestInterruptMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Interrupt(123456)
         msg = e.marshal()
@@ -1173,7 +1153,6 @@ class TestInterruptMessage(unittest.TestCase):
 
 
 class TestYieldMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Yield(123456)
         msg = e.marshal()
@@ -1234,7 +1213,6 @@ class TestYieldMessage(unittest.TestCase):
 
 
 class TestHelloMessage(unittest.TestCase):
-
     def test_ctor(self):
         e = message.Hello("realm1", {"publisher": role.RolePublisherFeatures()})
         msg = e.marshal()
@@ -1355,7 +1333,6 @@ class TestHelloMessage(unittest.TestCase):
 
 
 class TestGoodbyeMessage(unittest.TestCase):
-
     def test_ctor(self):
         reason = "wamp.error.system_shutdown"
         reason_msg = "The host is shutting down now."

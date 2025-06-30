@@ -39,7 +39,6 @@ __all__ = (
 
 
 class Event(EventGen.Event):
-
     @classmethod
     def GetRootAsEvent(cls, buf, offset):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
@@ -84,7 +83,6 @@ class Event(EventGen.Event):
 
 
 class Publish(PublishGen.Publish):
-
     @classmethod
     def GetRootAsEvent(cls, buf, offset):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)

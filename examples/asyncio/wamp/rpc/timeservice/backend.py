@@ -25,10 +25,10 @@
 ###############################################################################
 
 import asyncio
-from os import environ
 import datetime
+from os import environ
 
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):
@@ -37,7 +37,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         def utcnow():
             now = datetime.datetime.utcnow()
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")

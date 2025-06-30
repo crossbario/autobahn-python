@@ -25,8 +25,6 @@
 ###############################################################################
 
 
-from autobahn.util import public
-
 # The Python urlparse module currently does not contain the rs/rss
 # schemes, so we add those dynamically (which is a hack of course).
 #
@@ -34,6 +32,8 @@ from autobahn.util import public
 # _all_ our unit tests for WS URLs succeed
 #
 from urllib import parse as urlparse
+
+from autobahn.util import public
 
 wsschemes = ["rs", "rss"]
 urlparse.uses_relative.extend(wsschemes)
@@ -72,7 +72,6 @@ def create_url(hostname, port=None, isSecure=False):
     assert type(isSecure) == bool
 
     if hostname == "unix":
-
         netloc = "unix:%s" % port
     else:
         assert port is None or (type(port) == int and port in range(0, 65535))

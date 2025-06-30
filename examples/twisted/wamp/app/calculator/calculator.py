@@ -24,18 +24,16 @@
 #
 ###############################################################################
 
-from os import environ
-import sys
 import decimal
-
-from twisted.internet.defer import inlineCallbacks
+import sys
+from os import environ
 
 from autobahn import wamp
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class Calculator(ApplicationSession):
-
     @inlineCallbacks
     def onJoin(self, details):
         self.clear()
@@ -73,11 +71,10 @@ class Calculator(ApplicationSession):
 
 
 if __name__ == "__main__":
-
     decimal.getcontext().prec = 20
 
-    import sys
     import argparse
+    import sys
 
     # parse command line arguments
     parser = argparse.ArgumentParser()

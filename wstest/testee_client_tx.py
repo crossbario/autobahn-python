@@ -30,26 +30,22 @@ import txaio
 
 txaio.use_twisted()
 
-from twisted.internet import reactor
-
 import autobahn
-
-from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.twisted.websocket import (
-    connectWS,
     WebSocketClientFactory,
     WebSocketClientProtocol,
+    connectWS,
 )
-
 from autobahn.websocket.compress import (
     PerMessageDeflateOffer,
     PerMessageDeflateResponse,
     PerMessageDeflateResponseAccept,
 )
+from autobahn.websocket.protocol import WebSocketProtocol
+from twisted.internet import reactor
 
 
 class TesteeClientProtocol(WebSocketClientProtocol):
-
     def onOpen(self):
         if self.factory.endCaseId is None:
             self.log.info("Getting case count ..")
@@ -74,7 +70,6 @@ class TesteeClientProtocol(WebSocketClientProtocol):
 
 
 class TesteeClientFactory(WebSocketClientFactory):
-
     protocol = TesteeClientProtocol
 
     def __init__(self, url):
@@ -123,7 +118,6 @@ class TesteeClientFactory(WebSocketClientFactory):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Autobahn Testee Client (Twisted)")
     parser.add_argument(
         "--url",

@@ -2,13 +2,12 @@ import txaio
 
 txaio.use_twisted()
 
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.types import ComponentConfig
+from twisted.application.internet import ClientService
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import TCP4ClientEndpoint, UNIXClientEndpoint
-from twisted.application.internet import ClientService
-
-from autobahn.wamp.types import ComponentConfig
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 def add2(a, b):
@@ -17,7 +16,6 @@ def add2(a, b):
 
 
 class MyAppSession(ApplicationSession):
-
     def __init__(self, config):
         ApplicationSession.__init__(self, config)
         self._countdown = 5

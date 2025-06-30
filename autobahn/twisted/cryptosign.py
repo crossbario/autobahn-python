@@ -26,7 +26,6 @@
 
 
 from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN, CryptosignKey
-
 from twisted.internet.defer import inlineCallbacks
 
 __all__ = ["HAS_CRYPTOSIGN_SSHAGENT"]
@@ -35,9 +34,9 @@ if HAS_CRYPTOSIGN:
     try:
         # WAMP-cryptosign support for SSH agent is currently
         # only available on Twisted (on Python 2)
-        from twisted.internet.protocol import Factory
-        from twisted.internet.endpoints import UNIXClientEndpoint
         from twisted.conch.ssh.agent import SSHAgentClient
+        from twisted.internet.endpoints import UNIXClientEndpoint
+        from twisted.internet.protocol import Factory
     except ImportError:
         # twisted.conch is not yet fully ported to Python 3
         HAS_CRYPTOSIGN_SSHAGENT = False
@@ -47,10 +46,11 @@ if HAS_CRYPTOSIGN:
 
 
 if HAS_CRYPTOSIGN_SSHAGENT:
-
     import os
+
     from nacl import signing
-    from autobahn.wamp.cryptosign import _read_ssh_ed25519_pubkey, _unpack, _pack
+
+    from autobahn.wamp.cryptosign import _pack, _read_ssh_ed25519_pubkey, _unpack
 
     class SSHAgentCryptosignKey(CryptosignKey):
         """

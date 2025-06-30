@@ -31,15 +31,13 @@ from functools import partial
 
 import txaio
 
-from autobahn.util import ObservableMixin
-from autobahn.websocket.util import parse_url as parse_ws_url
 from autobahn.rawsocket.util import parse_url as parse_rs_url
-
-from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
-from autobahn.wamp.exception import SessionNotReady, ApplicationError
-from autobahn.wamp.auth import create_authenticator, IAuthenticator
+from autobahn.util import ObservableMixin
+from autobahn.wamp.auth import IAuthenticator, create_authenticator
+from autobahn.wamp.exception import ApplicationError, SessionNotReady
 from autobahn.wamp.serializer import SERID_TO_SER
-
+from autobahn.wamp.types import ComponentConfig, RegisterOptions, SubscribeOptions
+from autobahn.websocket.util import parse_url as parse_ws_url
 
 __all__ = "Component"
 
@@ -260,7 +258,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
         proxy=proxy,
         options=options,
         headers=headers,
-        **kw
+        **kw,
     )
 
 
@@ -393,7 +391,6 @@ class Component(ObservableMixin):
         assert options is None or isinstance(options, SubscribeOptions)
 
         def decorator(fn):
-
             def do_subscription(session, details):
                 return session.subscribe(
                     fn, topic=topic, options=options, check_types=check_types
@@ -420,7 +417,6 @@ class Component(ObservableMixin):
         assert options is None or isinstance(options, RegisterOptions)
 
         def decorator(fn):
-
             def do_registration(session, details):
                 return session.register(
                     fn, procedure=uri, options=options, check_types=check_types
@@ -732,7 +728,6 @@ class Component(ObservableMixin):
                     return
 
             while True:
-
                 transport = next(transport_gen)
 
                 if transport.can_reconnect():
@@ -772,7 +767,6 @@ class Component(ObservableMixin):
         return txaio.create_future_success(None)
 
     def _connect_once(self, reactor, transport):
-
         self.log.info(
             'connecting once using transport type "{transport_type}" '
             'over endpoint "{endpoint_desc}"',
@@ -972,8 +966,9 @@ def _run(reactor, components, done_callback=None):
 
     if type(components) != list:
         raise ValueError(
-            '"components" must be a list of Component objects - encountered'
-            " {0}".format(type(components))
+            '"components" must be a list of Component objects - encountered {0}'.format(
+                type(components)
+            )
         )
 
     for c in components:

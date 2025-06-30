@@ -31,10 +31,10 @@ import txaio
 
 txaio.use_twisted()
 
-from twisted.python import reflect
 from twisted.internet.error import ReactorAlreadyInstalledError
+from twisted.python import reflect
 
-__all__ = ("install_optimal_reactor", "install_reactor", "current_reactor_klass")
+__all__ = ("current_reactor_klass", "install_optimal_reactor", "install_reactor")
 
 
 def current_reactor_klass():
@@ -84,7 +84,6 @@ def install_optimal_reactor(require_optimal_reactor=True):
     # depending on platform, install optimal reactor
     #
     if "bsd" in sys.platform or sys.platform.startswith("darwin"):
-
         # *BSD and MacOSX
         #
         if current_reactor != "KQueueReactor":
@@ -115,7 +114,6 @@ def install_optimal_reactor(require_optimal_reactor=True):
             )
 
     elif sys.platform in ["win32"]:
-
         # Windows
         #
         if current_reactor != "IOCPReactor":
@@ -146,7 +144,6 @@ def install_optimal_reactor(require_optimal_reactor=True):
             )
 
     elif sys.platform.startswith("linux"):
-
         # Linux
         #
         if current_reactor != "EPollReactor":
@@ -175,7 +172,6 @@ def install_optimal_reactor(require_optimal_reactor=True):
             log.debug("Running on Linux and optimal reactor (epoll) already installed.")
 
     else:
-
         # Other platform
         #
         if current_reactor != "SelectReactor":

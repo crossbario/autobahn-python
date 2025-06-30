@@ -28,24 +28,23 @@ import platform
 
 import autobahn
 
-# WebSocket protocol support
-from autobahn.asyncio.websocket import (
-    WebSocketServerProtocol,
-    WebSocketClientProtocol,
-    WebSocketServerFactory,
-    WebSocketClientFactory,
-)
-
 # WAMP support
 from autobahn.asyncio.wamp import ApplicationSession
 
+# WebSocket protocol support
+from autobahn.asyncio.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+)
 
 __all__ = (
-    "WebSocketServerProtocol",
+    "ApplicationSession",
+    "WebSocketClientFactory",
     "WebSocketClientProtocol",
     "WebSocketServerFactory",
-    "WebSocketClientFactory",
-    "ApplicationSession",
+    "WebSocketServerProtocol",
 )
 
 __ident__ = "Autobahn/{}-asyncio-{}/{}".format(

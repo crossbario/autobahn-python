@@ -23,19 +23,16 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-from typing import Union, Optional, Dict, Any, ClassVar, List, Callable
-
-import txaio
 import inspect
 from functools import reduce
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
+
+import txaio
 
 from autobahn import wamp
-from autobahn.util import public, IdGenerator, ObservableMixin
-from autobahn.wamp import uri
-from autobahn.wamp import message
-from autobahn.wamp import types
-from autobahn.wamp import role
-from autobahn.wamp import exception
+from autobahn.exception import PayloadExceededError
+from autobahn.util import IdGenerator, ObservableMixin, public
+from autobahn.wamp import exception, message, role, types, uri
 from autobahn.wamp.exception import (
     ApplicationError,
     ProtocolError,
@@ -43,35 +40,34 @@ from autobahn.wamp.exception import (
     TypeCheckError,
 )
 from autobahn.wamp.interfaces import (
-    ISession,
-    IPayloadCodec,
     IAuthenticator,
-    ITransport,
     IMessage,
+    IPayloadCodec,
+    ISession,
+    ITransport,
 )  # noqa
+from autobahn.wamp.request import (
+    CallRequest,
+    Endpoint,
+    Handler,
+    InvocationRequest,
+    Publication,
+    PublishRequest,
+    RegisterRequest,
+    Registration,
+    SubscribeRequest,
+    Subscription,
+    UnregisterRequest,
+    UnsubscribeRequest,
+)
 from autobahn.wamp.types import (
+    CallResult,
     Challenge,
-    SessionDetails,
     CloseDetails,
     EncodedPayload,
-    SubscribeOptions,
-    CallResult,
     RegisterOptions,
-)
-from autobahn.exception import PayloadExceededError
-from autobahn.wamp.request import (
-    Publication,
-    Subscription,
-    Handler,
-    Registration,
-    Endpoint,
-    PublishRequest,
-    SubscribeRequest,
-    UnsubscribeRequest,
-    CallRequest,
-    InvocationRequest,
-    RegisterRequest,
-    UnregisterRequest,
+    SessionDetails,
+    SubscribeOptions,
 )
 
 
@@ -295,7 +291,6 @@ class BaseSession(ObservableMixin):
         enc_err = None
 
         if msg.enc_algo:
-
             if not self._payload_codec:
                 log_msg = "received encoded payload, but no payload codec active"
                 self.log.warn(log_msg)
@@ -617,10 +612,8 @@ class ApplicationSession(BaseSession):
         """
 
         if self._session_id is None:
-
             # the first message must be WELCOME, ABORT or CHALLENGE ..
             if isinstance(msg, message.Welcome):
-
                 # before we let user code see the session -- that is,
                 # before we fire "join" -- we give authentication
                 # instances a chance to abort the session. Usually
@@ -730,7 +723,6 @@ class ApplicationSession(BaseSession):
                 txaio.add_callbacks(d, success, _error)
 
             elif isinstance(msg, message.Challenge):
-
                 challenge = types.Challenge(msg.method, msg.extra)
                 d = txaio.as_future(self.onChallenge, challenge)
 
@@ -808,12 +800,9 @@ class ApplicationSession(BaseSession):
                 txaio.add_callbacks(d, success, _error)
 
             elif isinstance(msg, message.Event):
-
                 if msg.subscription in self._subscriptions:
-
                     # fire all event handlers on subscription ..
                     for subscription in self._subscriptions[msg.subscription]:
-
                         handler = subscription.handler
                         topic = msg.topic or subscription.topic
 
@@ -908,9 +897,7 @@ class ApplicationSession(BaseSession):
                     )
 
             elif isinstance(msg, message.Published):
-
                 if msg.request in self._publish_reqs:
-
                     # get and pop outstanding publish request
                     publish_request = self._publish_reqs.pop(msg.request)
 
@@ -934,9 +921,7 @@ class ApplicationSession(BaseSession):
                     )
 
             elif isinstance(msg, message.Subscribed):
-
                 if msg.request in self._subscribe_reqs:
-
                     # get and pop outstanding subscribe request
                     request = self._subscribe_reqs.pop(msg.request)
 
@@ -966,9 +951,7 @@ class ApplicationSession(BaseSession):
                     )
 
             elif isinstance(msg, message.Unsubscribed):
-
                 if msg.request in self._unsubscribe_reqs:
-
                     # get and pop outstanding subscribe request
                     request = self._unsubscribe_reqs.pop(msg.request)
 
@@ -995,15 +978,12 @@ class ApplicationSession(BaseSession):
                     )
 
             elif isinstance(msg, message.Result):
-
                 if msg.request in self._call_reqs:
-
                     call_request = self._call_reqs[msg.request]
                     proc = call_request.procedure
                     enc_err = None
 
                     if msg.enc_algo:
-
                         if not self._payload_codec:
                             log_msg = (
                                 "received encoded payload, but no payload codec active"
@@ -1078,7 +1058,7 @@ class ApplicationSession(BaseSession):
                                             callee_authid=msg.callee_authid,
                                             callee_authrole=msg.callee_authrole,
                                             forward_for=msg.forward_for,
-                                            **msg.kwargs
+                                            **msg.kwargs,
                                         ),
                                     )
                                 else:
@@ -1115,7 +1095,7 @@ class ApplicationSession(BaseSession):
                                         callee_authid=msg.callee_authid,
                                         callee_authrole=msg.callee_authrole,
                                         forward_for=msg.forward_for,
-                                        **kwargs
+                                        **kwargs,
                                     )
                                 else:
                                     res = types.CallResult(
@@ -1123,7 +1103,7 @@ class ApplicationSession(BaseSession):
                                         callee_authid=msg.callee_authid,
                                         callee_authrole=msg.callee_authrole,
                                         forward_for=msg.forward_for,
-                                        **kwargs
+                                        **kwargs,
                                     )
                                 txaio.resolve(on_reply, res)
                             else:
@@ -1143,9 +1123,7 @@ class ApplicationSession(BaseSession):
                     )
 
             elif isinstance(msg, message.Invocation):
-
                 if msg.request in self._invocations:
-
                     raise ProtocolError(
                         "INVOCATION received for request ID {0} already invoked".format(
                             msg.request
@@ -1153,9 +1131,7 @@ class ApplicationSession(BaseSession):
                     )
 
                 else:
-
                     if msg.registration not in self._registrations:
-
                         raise ProtocolError(
                             "INVOCATION received for non-registered registration ID {0}".format(
                                 msg.registration
@@ -1223,7 +1199,6 @@ class ApplicationSession(BaseSession):
                             self._transport.send(reply)
 
                         else:
-
                             if endpoint.obj is not None:
                                 invoke_args = (endpoint.obj,)
                             else:
@@ -1235,7 +1210,6 @@ class ApplicationSession(BaseSession):
                             invoke_kwargs = msg.kwargs if msg.kwargs else dict()
 
                             if endpoint.details_arg:
-
                                 if msg.receive_progress:
 
                                     def progress(*args, **kwargs):
@@ -1466,7 +1440,6 @@ class ApplicationSession(BaseSession):
                             txaio.add_callbacks(on_reply, success, error)
 
             elif isinstance(msg, message.Interrupt):
-
                 if msg.request not in self._invocations:
                     # raise ProtocolError("INTERRUPT received for non-pending invocation {0}".format(msg.request))
                     self.log.debug(
@@ -1481,9 +1454,7 @@ class ApplicationSession(BaseSession):
                     txaio.cancel(invoked.on_reply)
 
             elif isinstance(msg, message.Registered):
-
                 if msg.request in self._register_reqs:
-
                     # get and pop outstanding register request
                     request = self._register_reqs.pop(msg.request)
 
@@ -1514,7 +1485,6 @@ class ApplicationSession(BaseSession):
                     )
 
             elif isinstance(msg, message.Unregistered):
-
                 if msg.request == 0:
                     # this is a forced un-register either from a call
                     # to the wamp.* meta-api or the force_reregister
@@ -1532,7 +1502,6 @@ class ApplicationSession(BaseSession):
                         id=msg.registration,
                     )
                 elif msg.request in self._unregister_reqs:
-
                     # get and pop outstanding subscribe request
                     request = self._unregister_reqs.pop(msg.request)
 
@@ -1556,7 +1525,6 @@ class ApplicationSession(BaseSession):
                     )
 
             elif isinstance(msg, message.Error):
-
                 # remove outstanding request and get the reply deferred/future
                 on_reply = None
 
@@ -1613,7 +1581,6 @@ class ApplicationSession(BaseSession):
                     )
 
             else:
-
                 raise ProtocolError("Unexpected message {0}".format(msg.__class__))
 
     @public
@@ -1821,7 +1788,7 @@ class ApplicationSession(BaseSession):
                     enc_algo=encoded_payload.enc_algo,
                     enc_key=encoded_payload.enc_key,
                     enc_serializer=encoded_payload.enc_serializer,
-                    **options.message_attr()
+                    **options.message_attr(),
                 )
             else:
                 msg = message.Publish(
@@ -1839,7 +1806,7 @@ class ApplicationSession(BaseSession):
                     topic,
                     args=args,
                     kwargs=kwargs,
-                    **options.message_attr()
+                    **options.message_attr(),
                 )
             else:
                 msg = message.Publish(request_id, topic, args=args, kwargs=kwargs)
@@ -1941,7 +1908,6 @@ class ApplicationSession(BaseSession):
             return _subscribe(None, handler, topic, options, check_types)
 
         else:
-
             # subscribe all methods on an object decorated with "wamp.subscribe"
             on_replies = []
             for k in inspect.getmembers(handler.__class__, is_method_or_function):
@@ -2052,7 +2018,7 @@ class ApplicationSession(BaseSession):
                     enc_algo=encoded_payload.enc_algo,
                     enc_key=encoded_payload.enc_key,
                     enc_serializer=encoded_payload.enc_serializer,
-                    **options.message_attr()
+                    **options.message_attr(),
                 )
             else:
                 msg = message.Call(
@@ -2070,7 +2036,7 @@ class ApplicationSession(BaseSession):
                     procedure,
                     args=args,
                     kwargs=kwargs,
-                    **options.message_attr()
+                    **options.message_attr(),
                 )
             else:
                 msg = message.Call(request_id, procedure, args=args, kwargs=kwargs)
@@ -2172,12 +2138,10 @@ class ApplicationSession(BaseSession):
             return on_reply
 
         if callable(endpoint):
-
             # register a single callable
             return _register(None, endpoint, procedure, options, check_types)
 
         else:
-
             # register all methods on an object decorated with "wamp.register"
             on_replies = []
             for k in inspect.getmembers(endpoint.__class__, is_method_or_function):

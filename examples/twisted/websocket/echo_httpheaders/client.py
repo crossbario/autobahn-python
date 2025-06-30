@@ -26,18 +26,16 @@
 
 import sys
 
-from twisted.internet import reactor
-from twisted.python import log
-
 from autobahn.twisted.websocket import (
     WebSocketClientFactory,
     WebSocketClientProtocol,
     connectWS,
 )
+from twisted.internet import reactor
+from twisted.python import log
 
 
 class EchoClientProtocol(WebSocketClientProtocol):
-
     def onConnect(self, response):
         print(response)
 
@@ -54,7 +52,6 @@ class EchoClientProtocol(WebSocketClientProtocol):
 
 
 if __name__ == "__main__":
-
     if len(sys.argv) < 2:
         print("Need the WebSocket server address, i.e. ws://127.0.0.1:9000")
         sys.exit(1)

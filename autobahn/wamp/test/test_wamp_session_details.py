@@ -24,16 +24,14 @@
 #
 ###############################################################################
 
-from autobahn.wamp.types import TransportDetails, SessionDetails
-
 import unittest
 
 # from .test_wamp_transport_details import TRANSPORT_DETAILS_1
 from autobahn.wamp.test.test_wamp_transport_details import TRANSPORT_DETAILS_1
+from autobahn.wamp.types import SessionDetails, TransportDetails
 
 
 class TestSessionDetails(unittest.TestCase):
-
     def test_empty(self):
         sd1 = SessionDetails()
         data = sd1.marshal()

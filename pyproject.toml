@@ -19,14 +19,38 @@ target-version = "py312"  # Adjust to your Python version
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
 select = ["E4", "E7", "E9", "F"]
+
+# --- Files and Directories to Ignore ---
+# Exclude auto-generated files and compatibility layers.
+exclude = [
+    ".tox",
+    ".git",
+    "__pycache__",
+    "autobahn/wamp/message_fbs.py",
+    "autobahn/wamp/gen/*",
+]
+
+# --- Violations to Ignore ---
+# This is our "technical debt" list.
+# We should aim to remove codes from this list over time.
 ignore = [
     # E275: missing whitespace after keyword
     "E275",
+    # F401 [*] X imported but unused
+    "F401",
     # E402: module level import not at top of file
     "E402",
+    # F403 X used; unable to detect undefined names
+    "F403",
+    # F405 X may be undefined, or defined from star imports
+    "F405",
     # E501: line too long (handled by max-line-length)
     # E501 is often ignored if you use an autoformatter like `black`.
     "E501",
+    # F706 `return` statement outside of a function/method
+    "F706",
+    # E713 [*] Test for membership should be `not in`
+    "E713",
     # E721: do not compare types, use 'isinstance()'
     "E721",
     # E722: do not use bare 'except'
@@ -43,10 +67,16 @@ ignore = [
     "N805",
     # N806: variable in function should be lowercase
     "N806",
+    # F811 Redefinition of unused X from line Y
+    "F811",
     # N815: variable in class scope should not be mixedCase
     "N815",
     # N818: exception name should end with 'Error'
-    "N818"
+    "N818",
+    # F821 Undefined name X
+    "F821",
+    # F841 Local variable X is assigned to but never used
+    "F841",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.

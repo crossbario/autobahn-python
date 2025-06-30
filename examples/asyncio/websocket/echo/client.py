@@ -26,11 +26,10 @@
 
 import asyncio
 
-from autobahn.asyncio.websocket import WebSocketClientProtocol, WebSocketClientFactory
+from autobahn.asyncio.websocket import WebSocketClientFactory, WebSocketClientProtocol
 
 
 class MyClientProtocol(WebSocketClientProtocol):
-
     def onConnect(self, response):
         print("Server connected: {0}".format(response.peer))
 

@@ -24,16 +24,15 @@
 #
 ###############################################################################
 
-import os
 import hashlib
+import os
 import threading
-from typing import Optional, Union, Dict, Any
-
-from twisted.internet.defer import Deferred
-from twisted.internet.address import IPv4Address, UNIXAddress
-from twisted.internet.interfaces import ITransport, IProcessTransport
+from typing import Any, Dict, Optional, Union
 
 from autobahn.wamp.types import TransportDetails
+from twisted.internet.address import IPv4Address, UNIXAddress
+from twisted.internet.defer import Deferred
+from twisted.internet.interfaces import IProcessTransport, ITransport
 
 try:
     from twisted.internet.stdio import PipeAddress
@@ -50,9 +49,10 @@ except ImportError:
     IPv6Address = type(None)
 
 try:
+    from OpenSSL.SSL import Connection
+
     from twisted.internet.interfaces import ISSLTransport
     from twisted.protocols.tls import TLSMemoryBIOProtocol
-    from OpenSSL.SSL import Connection
 
     _HAS_TLS = True
 except ImportError:

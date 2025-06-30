@@ -24,9 +24,9 @@
 #
 ###############################################################################
 
-from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
-
 import json
+
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
 from twisted.internet.defer import Deferred, inlineCallbacks
 
 
@@ -37,7 +37,6 @@ def sleep(delay):
 
 
 class SlowSquareServerProtocol(WebSocketServerProtocol):
-
     @inlineCallbacks
     def slowsquare(self, x):
         if x > 5:
@@ -59,11 +58,10 @@ class SlowSquareServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == "__main__":
-
     import sys
 
-    from twisted.python import log
     from twisted.internet import reactor
+    from twisted.python import log
 
     log.startLogging(sys.stdout)
 

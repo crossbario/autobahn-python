@@ -23,37 +23,35 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-from pprint import pformat
-from typing import Optional, Any, Dict, List
 from binascii import a2b_hex
+from pprint import pformat
+from typing import Any, Dict, List, Optional
 
 from autobahn.util import public
-
-from autobahn.wamp.request import Subscription, Registration, Publication
-
+from autobahn.wamp.request import Publication, Registration, Subscription
 
 __all__ = (
-    "ComponentConfig",
-    "HelloReturn",
     "Accept",
-    "Deny",
-    "Challenge",
-    "HelloDetails",
-    "SessionIdent",
-    "CloseDetails",
-    "SubscribeOptions",
-    "EventDetails",
-    "PublishOptions",
-    "RegisterOptions",
     "CallDetails",
     "CallOptions",
     "CallResult",
+    "Challenge",
+    "CloseDetails",
+    "ComponentConfig",
+    "Deny",
     "EncodedPayload",
-    "Subscription",
-    "Registration",
+    "EventDetails",
+    "HelloDetails",
+    "HelloReturn",
     "Publication",
-    "TransportDetails",
+    "PublishOptions",
+    "RegisterOptions",
+    "Registration",
     "SessionDetails",
+    "SessionIdent",
+    "SubscribeOptions",
+    "Subscription",
+    "TransportDetails",
 )
 
 
@@ -874,33 +872,33 @@ class PublishOptions(object):
         assert retain is None or type(retain) == bool
         assert transaction_hash is None or type(transaction_hash) == str
 
-        assert (
-            forward_for is None or type(forward_for) == list
-        ), "forward_for, when present, must have list type - was {}".format(
-            type(forward_for)
+        assert forward_for is None or type(forward_for) == list, (
+            "forward_for, when present, must have list type - was {}".format(
+                type(forward_for)
+            )
         )
         if forward_for:
             for ff in forward_for:
-                assert (
-                    type(ff) == dict
-                ), "forward_for must be type dict - was {}".format(type(ff))
+                assert type(ff) == dict, (
+                    "forward_for must be type dict - was {}".format(type(ff))
+                )
                 assert "session" in ff, "forward_for must have session attribute"
-                assert (
-                    type(ff["session"]) == int
-                ), "forward_for.session must have integer type - was {}".format(
-                    type(ff["session"])
+                assert type(ff["session"]) == int, (
+                    "forward_for.session must have integer type - was {}".format(
+                        type(ff["session"])
+                    )
                 )
                 assert "authid" in ff, "forward_for must have authid attributed"
-                assert (
-                    type(ff["authid"]) == str
-                ), "forward_for.authid must have str type - was {}".format(
-                    type(ff["authid"])
+                assert type(ff["authid"]) == str, (
+                    "forward_for.authid must have str type - was {}".format(
+                        type(ff["authid"])
+                    )
                 )
                 assert "authrole" in ff, "forward_for must have authrole attribute"
-                assert (
-                    type(ff["authrole"]) == str
-                ), "forward_for.authrole must have str type - was {}".format(
-                    type(ff["authrole"])
+                assert type(ff["authrole"]) == str, (
+                    "forward_for.authrole must have str type - was {}".format(
+                        type(ff["authrole"])
+                    )
                 )
 
         self.acknowledge = acknowledge

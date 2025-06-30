@@ -27,17 +27,16 @@
 import unittest
 from unittest.mock import Mock
 
+from autobahn.testutil import FakeTransport
 from autobahn.twisted.rawsocket import (
-    WampRawSocketServerFactory,
-    WampRawSocketServerProtocol,
     WampRawSocketClientFactory,
     WampRawSocketClientProtocol,
+    WampRawSocketServerFactory,
+    WampRawSocketServerProtocol,
 )
-from autobahn.testutil import FakeTransport
 
 
 class RawSocketHandshakeTests(unittest.TestCase):
-
     def test_handshake_succeeds(self):
         """
         A client can connect to a server.

@@ -25,16 +25,15 @@
 ###############################################################################
 
 import hashlib
-from ranstring import randomByteString
 
-from twisted.internet import reactor
+from ranstring import randomByteString
 
 from autobahn.twisted.websocket import (
     WebSocketClientFactory,
     WebSocketClientProtocol,
     connectWS,
 )
-
+from twisted.internet import reactor
 
 FRAME_SIZE = 1 * 2**20
 FRAME_COUNT = 10
@@ -86,7 +85,6 @@ class FrameBasedHashClientProtocol(WebSocketClientProtocol):
 
 
 if __name__ == "__main__":
-
     factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = FrameBasedHashClientProtocol
 

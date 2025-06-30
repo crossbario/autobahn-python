@@ -25,9 +25,10 @@
 ###############################################################################
 
 import unittest
-
 from unittest.mock import patch
+
 from zope.interface import implementer
+
 from twisted.internet.interfaces import IReactorTime
 
 
@@ -73,10 +74,10 @@ class TestWampTwistedRunner(unittest.TestCase):
         """
         try:
             from autobahn.twisted.wamp import ApplicationRunner
-            from twisted.internet.error import ConnectionRefusedError
 
             # the 'reactor' member doesn't exist until we import it
             from twisted.internet import reactor  # noqa: F401
+            from twisted.internet.error import ConnectionRefusedError
         except ImportError:
             raise unittest.SkipTest("No twisted")
 

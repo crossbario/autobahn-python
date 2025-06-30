@@ -25,13 +25,13 @@
 ###############################################################################
 
 import hashlib
-from twisted.internet import reactor
 
 from autobahn.twisted.websocket import (
     WebSocketServerFactory,
     WebSocketServerProtocol,
     listenWS,
 )
+from twisted.internet import reactor
 
 
 class FrameBasedHashServerProtocol(WebSocketServerProtocol):
@@ -64,7 +64,6 @@ class FrameBasedHashServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == "__main__":
-
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = FrameBasedHashServerProtocol
 

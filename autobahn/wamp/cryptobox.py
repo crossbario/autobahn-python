@@ -27,16 +27,16 @@
 
 from autobahn.util import public
 from autobahn.wamp.interfaces import IPayloadCodec
-from autobahn.wamp.types import EncodedPayload
 from autobahn.wamp.serializer import _dumps as _json_dumps
 from autobahn.wamp.serializer import _loads as _json_loads
+from autobahn.wamp.types import EncodedPayload
 
 __all__ = ["HAS_CRYPTOBOX", "EncodedPayload"]
 
 try:
     # try to import everything we need for WAMP-cryptobox
-    from nacl.encoding import Base64Encoder, RawEncoder, HexEncoder
-    from nacl.public import PrivateKey, PublicKey, Box
+    from nacl.encoding import Base64Encoder, HexEncoder, RawEncoder
+    from nacl.public import Box, PrivateKey, PublicKey
     from nacl.utils import random
     from pytrie import StringTrie
 except ImportError:

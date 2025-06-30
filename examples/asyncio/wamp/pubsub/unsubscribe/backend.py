@@ -25,6 +25,7 @@
 ###############################################################################
 
 import asyncio
+
 from autobahn.asyncio.wamp import ApplicationSession
 
 
@@ -34,7 +35,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         counter = 0
         while True:
             self.publish("com.myapp.topic1", counter)

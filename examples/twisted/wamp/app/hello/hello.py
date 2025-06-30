@@ -25,8 +25,8 @@
 ###############################################################################
 
 from os import environ
-from autobahn.twisted.wamp import Application
 
+from autobahn.twisted.wamp import Application
 
 app = Application("com.example")
 

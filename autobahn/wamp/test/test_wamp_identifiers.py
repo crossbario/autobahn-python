@@ -24,17 +24,16 @@
 #
 ###############################################################################
 
+import unittest
+
+from autobahn.wamp.exception import InvalidUriError
 from autobahn.wamp.message import (
     check_or_raise_realm_name,
     identify_realm_name_category,
 )
-from autobahn.wamp.exception import InvalidUriError
-
-import unittest
 
 
 class TestWampIdentifiers(unittest.TestCase):
-
     def test_valid_realm_names(self):
         for name in [
             "realm1",

@@ -24,9 +24,9 @@
 #
 ###############################################################################
 
-import os
-import hashlib
 import binascii
+import hashlib
+import os
 import unittest
 from unittest.mock import Mock
 
@@ -41,15 +41,15 @@ else:
 
 from autobahn.wamp import types
 from autobahn.wamp.auth import create_authenticator
-from autobahn.wamp.cryptosign import _makepad, HAS_CRYPTOSIGN, CryptosignAuthextra
+from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN, CryptosignAuthextra, _makepad
 
 if HAS_CRYPTOSIGN:
-    from autobahn.wamp.cryptosign import CryptosignKey
     from nacl.encoding import HexEncoder
+
+    from autobahn.wamp.cryptosign import CryptosignKey
 
 
 import tempfile
-
 
 keybody = """-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
@@ -106,7 +106,6 @@ test_vectors_1 = [
 
 
 class TestSigVectors(unittest.TestCase):
-
     def test_vectors(self):
         session = Mock()
 
@@ -163,7 +162,6 @@ class TestSigVectors(unittest.TestCase):
 
 
 class TestAuth(unittest.TestCase):
-
     def setUp(self):
         self.key = CryptosignKey.from_ssh_bytes(keybody)
         self.privkey_hex = self.key._key.encode(encoder=HexEncoder)
@@ -236,7 +234,6 @@ class TestAuth(unittest.TestCase):
 
 
 class TestKey(unittest.TestCase):
-
     def test_pad(self):
         self.assertEqual(_makepad(0), b"")
         self.assertEqual(_makepad(2), b"\x01\x02")

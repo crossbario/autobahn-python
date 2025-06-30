@@ -28,7 +28,6 @@ from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerPr
 
 
 class BroadcastServerProtocol(WebSocketServerProtocol):
-
     def onOpen(self):
         self.factory.register(self)
 
@@ -68,11 +67,10 @@ class BroadcastServerFactory(WebSocketServerFactory):
 
 
 if __name__ == "__main__":
-
     import sys
 
-    from twisted.python import log
     from twisted.internet import reactor
+    from twisted.python import log
 
     log.startLogging(sys.stdout)
 

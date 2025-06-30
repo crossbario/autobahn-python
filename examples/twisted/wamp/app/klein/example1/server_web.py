@@ -24,9 +24,10 @@
 #
 ###############################################################################
 
-from twisted.internet.defer import inlineCallbacks
 from klein import Klein
+
 from autobahn.twisted.wamp import Application
+from twisted.internet.defer import inlineCallbacks
 
 app = Klein()
 wampapp = Application()
@@ -42,9 +43,10 @@ def square_submit(request):
 
 if __name__ == "__main__":
     import sys
+
+    from twisted.internet import reactor
     from twisted.python import log
     from twisted.web.server import Site
-    from twisted.internet import reactor
 
     log.startLogging(sys.stdout)
 

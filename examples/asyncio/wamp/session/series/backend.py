@@ -35,7 +35,6 @@ class Component(ApplicationSession):
     """
 
     def onJoin(self, details):
-
         def utcnow():
             now = datetime.datetime.utcnow()
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")

@@ -30,14 +30,16 @@ import txaio
 
 txaio.use_twisted()
 
+from autobahn.twisted.websocket import (
+    WebSocketClientProtocol,
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+)
 from autobahn.util import wildcards2patterns
-from autobahn.twisted.websocket import WebSocketServerFactory
-from autobahn.twisted.websocket import WebSocketServerProtocol
-from autobahn.twisted.websocket import WebSocketClientProtocol
 from autobahn.wamp.types import TransportDetails
 from autobahn.websocket.types import ConnectingRequest
+from twisted.internet.error import ConnectionAborted, ConnectionDone, ConnectionLost
 from twisted.python.failure import Failure
-from twisted.internet.error import ConnectionDone, ConnectionAborted, ConnectionLost
 from twisted.trial import unittest
 
 try:
@@ -398,7 +400,6 @@ class OnConnectingTests(unittest.TestCase):
     """
 
     def test_on_connecting_client_fails(self):
-
         MAGIC_STR = "bad stuff"
 
         class TestProto(WebSocketClientProtocol):
@@ -422,7 +423,6 @@ class OnConnectingTests(unittest.TestCase):
         self.assertTrue(magic_found, "MAGIC_STR not found when expected")
 
     def test_on_connecting_client_success(self):
-
         class TestProto(WebSocketClientProtocol):
             state = None
             wasClean = True

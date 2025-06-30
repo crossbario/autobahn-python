@@ -31,7 +31,7 @@ from typing import Optional, Union
 from autobahn.util import public
 from autobahn.wamp.types import RegisterOptions, SubscribeOptions
 
-__all__ = ("Pattern", "register", "subscribe", "error", "convert_starred_uri")
+__all__ = ("Pattern", "convert_starred_uri", "error", "register", "subscribe")
 
 
 def convert_starred_uri(uri: str):

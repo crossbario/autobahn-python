@@ -47,8 +47,8 @@ from twisted.web.resource import IResource, Resource
 from twisted.web.server import NOT_DONE_YET
 
 __all__ = (
-    "WebSocketResource",
     "WSGIRootResource",
+    "WebSocketResource",
 )
 
 

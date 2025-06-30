@@ -1,11 +1,10 @@
-from twisted.internet.task import react
-from twisted.internet.defer import inlineCallbacks as coroutine
-from autobahn.twisted.wamp import Session
 from autobahn.twisted.connection import Connection
+from autobahn.twisted.wamp import Session
+from twisted.internet.defer import inlineCallbacks as coroutine
+from twisted.internet.task import react
 
 
 class MySession(Session):
-
     @coroutine
     def on_join(self, details):
         print("on_join: {}".format(details))
@@ -33,7 +32,6 @@ class MySession(Session):
 
 
 if __name__ == "__main__":
-
     transports = "ws://localhost:8080/ws"
 
     connection = Connection(transports=transports)

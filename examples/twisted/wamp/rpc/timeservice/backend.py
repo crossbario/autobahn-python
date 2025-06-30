@@ -24,12 +24,11 @@
 #
 ###############################################################################
 
-from os import environ
 import datetime
+from os import environ
 
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
 from twisted.internet.defer import inlineCallbacks
-
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):

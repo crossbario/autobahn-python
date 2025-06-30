@@ -24,11 +24,11 @@
 #
 ###############################################################################
 
+import asyncio
 import hashlib
+from asyncio import sleep  # noqa
 from subprocess import Popen
 from typing import Optional
-import asyncio
-from asyncio import sleep  # noqa
 
 from autobahn.wamp.types import TransportDetails
 

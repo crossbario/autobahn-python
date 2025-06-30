@@ -24,9 +24,8 @@
 #
 ###############################################################################
 
-from twisted.internet.defer import inlineCallbacks
-
 from autobahn.twisted.wamp import ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):

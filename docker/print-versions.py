@@ -1,21 +1,19 @@
-import os
-import sys
-import platform
 import importlib
 import importlib.metadata
+import os
+import platform
+import sys
 
 import txaio
 
 txaio.use_twisted()  # noqa
 
-from twisted.internet import reactor
-from twisted.python.reflect import qual
-
 import autobahn
-
 from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull
+from twisted.internet import reactor
+from twisted.python.reflect import qual
 
 
 def _get_version(name_or_module):

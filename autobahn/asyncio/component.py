@@ -25,23 +25,21 @@
 ###############################################################################
 
 import asyncio
-import ssl
 import signal
+import ssl
 from functools import wraps
 
 import txaio
-from autobahn.asyncio.websocket import WampWebSocketClientFactory
-from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
 
+from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
+from autobahn.asyncio.wamp import Session
+from autobahn.asyncio.websocket import WampWebSocketClientFactory
 from autobahn.wamp import component
 from autobahn.wamp.exception import TransportLost
-
-from autobahn.asyncio.wamp import Session
 from autobahn.wamp.serializer import (
-    create_transport_serializers,
     create_transport_serializer,
+    create_transport_serializers,
 )
-
 
 __all__ = ("Component", "run")
 
@@ -166,7 +164,6 @@ class Component(component.Component):
             return self._wrap_connection_future(transport, done, time_f)
 
         elif transport.endpoint["type"] == "tcp":
-
             version = transport.endpoint.get("version", 4)
             if version not in [4, 6]:
                 raise ValueError(
@@ -267,7 +264,6 @@ class Component(component.Component):
             assert False, "should not arrive here"
 
     def _wrap_connection_future(self, transport, done, conn_f):
-
         def on_connect_success(result):
             # async connect call returns a 2-tuple
             transport, proto = result

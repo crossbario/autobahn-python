@@ -34,7 +34,6 @@ class EchoServerProtocol(WebSocketServerProtocol):
     """
 
     def onMessage(self, payload, isBinary):
-
         # just echo any WebSocket message received back to client
         ##
         self.sendMessage(payload, isBinary)
@@ -50,12 +49,11 @@ class EchoServerFactory(WebSocketServerFactory):
 
 
 if __name__ == "__main__":
-
-    import sys
     import argparse
+    import sys
 
-    from twisted.python import log
     from twisted.internet.endpoints import serverFromString
+    from twisted.python import log
 
     # parse command line arguments
     ##

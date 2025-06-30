@@ -55,12 +55,11 @@ class EchoClientFactory(WebSocketClientFactory):
 
 
 if __name__ == "__main__":
-
-    import sys
     import argparse
+    import sys
 
-    from twisted.python import log
     from twisted.internet.endpoints import clientFromString
+    from twisted.python import log
 
     # parse command line arguments
     ##

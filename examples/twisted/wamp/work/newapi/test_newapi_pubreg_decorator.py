@@ -1,23 +1,27 @@
 import txaio
 
-from twisted.internet.defer import inlineCallbacks
-from twisted.internet.endpoints import TCP4ClientEndpoint
-from twisted.internet.endpoints import SSL4ClientEndpoint
-from twisted.internet.endpoints import UNIXClientEndpoint
-from twisted.internet.ssl import (
-    optionsForClientTLS,
-    trustRootFromCertificates,
-    Certificate,
-    CertificateOptions,
-)
-from twisted.internet import reactor
-
 from autobahn.twisted.component import Component, run
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import Session
-from autobahn.wamp.types import PublishOptions, SubscribeOptions
-from autobahn.wamp.types import RegisterOptions, CallOptions
-
+from autobahn.wamp.types import (
+    CallOptions,
+    PublishOptions,
+    RegisterOptions,
+    SubscribeOptions,
+)
+from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks
+from twisted.internet.endpoints import (
+    SSL4ClientEndpoint,
+    TCP4ClientEndpoint,
+    UNIXClientEndpoint,
+)
+from twisted.internet.ssl import (
+    Certificate,
+    CertificateOptions,
+    optionsForClientTLS,
+    trustRootFromCertificates,
+)
 
 component = Component(
     transports="ws://localhost:8080/ws",

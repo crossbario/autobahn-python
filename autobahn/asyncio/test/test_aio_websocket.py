@@ -1,11 +1,11 @@
-import os
 import asyncio
-import pytest
-
-import txaio
+import os
 
 # because py.test tries to collect it as a test-case
 from unittest.mock import Mock
+
+import pytest
+import txaio
 
 from autobahn.asyncio.websocket import WebSocketServerFactory
 
@@ -37,7 +37,6 @@ def test_websocket_custom_loop():
     not os.environ.get("USE_ASYNCIO", False), reason="test runs on asyncio only"
 )
 def test_async_on_connect_server():
-
     num = 42
     done = txaio.create_future()
     values = []

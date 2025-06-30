@@ -1,6 +1,6 @@
 from autobahn.twisted.component import Component, run
-from autobahn.wamp.types import RegisterOptions
 from autobahn.wamp.exception import ApplicationError
+from autobahn.wamp.types import RegisterOptions
 from twisted.internet.defer import inlineCallbacks
 
 

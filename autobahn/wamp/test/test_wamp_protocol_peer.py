@@ -27,16 +27,13 @@
 # we need to select a txaio subsystem because we're importing the base
 # protocol classes here for testing purposes. "normally" yo'd import
 # from autobahn.twisted.wamp or autobahn.asyncio.wamp explicitly.
-from autobahn import wamp
-from autobahn.wamp import message
-from autobahn.wamp import exception
-from autobahn.wamp import protocol
-
 import unittest
+
+from autobahn import wamp
+from autobahn.wamp import exception, message, protocol
 
 
 class TestPeerExceptions(unittest.TestCase):
-
     def test_exception_from_message(self):
         session = protocol.BaseSession()
 

@@ -25,16 +25,17 @@
 ###############################################################################
 
 from pprint import pformat
+
 from autobahn.util import public
 
 __all__ = (
-    "ConnectionRequest",
     "ConnectingRequest",
-    "ConnectionResponse",
     "ConnectionAccept",
     "ConnectionDeny",
-    "Message",
+    "ConnectionRequest",
+    "ConnectionResponse",
     "IncomingMessage",
+    "Message",
     "OutgoingMessage",
     "Ping",
 )
@@ -433,16 +434,16 @@ class Ping(object):
         :param payload: The WebSocket ping message payload.
         :type payload: bytes or None
         """
-        assert (
-            payload is None or type(payload) == bytes
-        ), "invalid type {} for WebSocket ping payload - must be None or bytes".format(
-            type(payload)
+        assert payload is None or type(payload) == bytes, (
+            "invalid type {} for WebSocket ping payload - must be None or bytes".format(
+                type(payload)
+            )
         )
         if payload is not None:
-            assert (
-                len(payload) < 126
-            ), "WebSocket ping payload too long ({} bytes) - must be <= 125 bytes".format(
-                len(payload)
+            assert len(payload) < 126, (
+                "WebSocket ping payload too long ({} bytes) - must be <= 125 bytes".format(
+                    len(payload)
+                )
             )
 
         self.payload = payload

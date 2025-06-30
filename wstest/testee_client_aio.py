@@ -24,29 +24,25 @@
 #
 ###############################################################################
 
-import asyncio
 import argparse
+import asyncio
 
 import txaio
 
 txaio.use_asyncio()
 
 import autobahn
-
-from autobahn.websocket.util import parse_url
-
-from autobahn.websocket.protocol import WebSocketProtocol
-from autobahn.asyncio.websocket import WebSocketClientProtocol, WebSocketClientFactory
-
+from autobahn.asyncio.websocket import WebSocketClientFactory, WebSocketClientProtocol
 from autobahn.websocket.compress import (
     PerMessageDeflateOffer,
     PerMessageDeflateResponse,
     PerMessageDeflateResponseAccept,
 )
+from autobahn.websocket.protocol import WebSocketProtocol
+from autobahn.websocket.util import parse_url
 
 
 class TesteeClientProtocol(WebSocketClientProtocol):
-
     def onOpen(self):
         if self.factory.endCaseId is None:
             self.log.info("Getting case count ..")
@@ -74,7 +70,6 @@ class TesteeClientProtocol(WebSocketClientProtocol):
 
 
 class TesteeClientFactory(WebSocketClientFactory):
-
     protocol = TesteeClientProtocol
 
     def __init__(self, url, agent):
@@ -95,7 +90,6 @@ class TesteeClientFactory(WebSocketClientFactory):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Autobahn Testee Client (asyncio)")
     parser.add_argument(
         "--url",
@@ -128,7 +122,6 @@ if __name__ == "__main__":
     factory.updateReports = True
 
     while True:
-
         factory._done = txaio.create_future()
         coro = loop.create_connection(factory, host, port)
         loop.run_until_complete(coro)

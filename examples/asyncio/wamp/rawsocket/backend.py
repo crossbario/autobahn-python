@@ -1,15 +1,16 @@
-import sys
 import asyncio
-from datetime import datetime
-import os.path
 import logging
+import os.path
+import sys
+from datetime import datetime
 
 log = logging.getLogger("backend")
 
 sys.path = [os.path.join(os.path.dirname(__file__), "../../../..")] + sys.path
 
-from autobahn.asyncio.wamp import ApplicationSession
 from runner import ApplicationRunnerRawSocket
+
+from autobahn.asyncio.wamp import ApplicationSession
 
 
 class MyComponent(ApplicationSession):

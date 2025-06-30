@@ -24,23 +24,21 @@
 #
 ###############################################################################
 
-import sys
 import json
+import sys
 import urllib
+
 import Cookie
 
+import autobahn
+from autobahn.twisted.resource import WebSocketResource
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
+from autobahn.util import newid, utcnow
+from autobahn.websocket import http
 from twisted.internet import reactor
 from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
-
-import autobahn
-from autobahn.util import newid, utcnow
-from autobahn.websocket import http
-
-from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
-
-from autobahn.twisted.resource import WebSocketResource
 
 
 class PersonaServerProtocol(WebSocketServerProtocol):
@@ -50,7 +48,6 @@ class PersonaServerProtocol(WebSocketServerProtocol):
     """
 
     def onConnect(self, request):
-
         # This is called during the initial WebSocket opening handshake.
 
         protocol, headers = None, {}
@@ -74,7 +71,6 @@ class PersonaServerProtocol(WebSocketServerProtocol):
 
         # if no cookie is set, create a new one ..
         if self._cbtid is None:
-
             self._cbtid = newid()
             maxAge = 86400
 
@@ -102,7 +98,6 @@ class PersonaServerProtocol(WebSocketServerProtocol):
         return (protocol, headers)
 
     def onOpen(self):
-
         # This is called when initial WebSocket opening handshake has
         # been completed.
 
@@ -119,7 +114,6 @@ class PersonaServerProtocol(WebSocketServerProtocol):
             )
 
     def onClose(self, wasClean, code, reason):
-
         # This is called when WebSocket connection is gone
 
         # remove this connection from list of connections associated with
@@ -131,15 +125,12 @@ class PersonaServerProtocol(WebSocketServerProtocol):
             log.msg("All connections for {} gone".format(self._cbtid))
 
     def onMessage(self, payload, isBinary):
-
         # This is called when we receive a WebSocket message
 
         if not isBinary:
-
             msg = json.loads(payload)
 
             if msg["cmd"] == "AUTHENTICATE":
-
                 # The client did it's Mozilla Persona authentication thing
                 # and now wants to verify the authentication and login.
                 assertion = msg.get("assertion")
@@ -214,7 +205,6 @@ class PersonaServerProtocol(WebSocketServerProtocol):
                 d.addCallbacks(done, error)
 
             elif msg["cmd"] == "LOGOUT":
-
                 # user wants to logout ..
                 if self.factory._cookies[self._cbtid]["authenticated"]:
                     self.factory._cookies[self._cbtid]["authenticated"] = False
@@ -243,7 +233,6 @@ class PersonaServerFactory(WebSocketServerFactory):
 
 
 if __name__ == "__main__":
-
     log.startLogging(sys.stdout)
 
     print("Running Autobahn|Python {}".format(autobahn.version))

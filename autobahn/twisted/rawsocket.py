@@ -30,27 +30,26 @@ from typing import Optional
 
 import txaio
 
-from twisted.internet.protocol import Factory
-from twisted.protocols.basic import Int32StringReceiver
-from twisted.internet.error import ConnectionDone
-from twisted.internet.defer import CancelledError
-
-from autobahn.util import public, _LazyHexFormatter
+from autobahn.exception import PayloadExceededError
 from autobahn.twisted.util import create_transport_details, transport_channel_id
-from autobahn.wamp.types import TransportDetails
+from autobahn.util import _LazyHexFormatter, public
 from autobahn.wamp.exception import (
+    InvalidUriError,
     ProtocolError,
     SerializationError,
     TransportLost,
-    InvalidUriError,
 )
-from autobahn.exception import PayloadExceededError
+from autobahn.wamp.types import TransportDetails
+from twisted.internet.defer import CancelledError
+from twisted.internet.error import ConnectionDone
+from twisted.internet.protocol import Factory
+from twisted.protocols.basic import Int32StringReceiver
 
 __all__ = (
-    "WampRawSocketServerProtocol",
+    "WampRawSocketClientFactory",
     "WampRawSocketClientProtocol",
     "WampRawSocketServerFactory",
-    "WampRawSocketClientFactory",
+    "WampRawSocketServerProtocol",
 )
 
 
@@ -323,7 +322,6 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
     """
 
     def dataReceived(self, data):
-
         if self._handshake_complete:
             WampRawSocketProtocol.dataReceived(self, data)
         else:
@@ -331,7 +329,6 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
             self._handshake_bytes += data[:remaining]
 
             if len(self._handshake_bytes) == 4:
-
                 self.log.debug(
                     "WampRawSocketServerProtocol: opening handshake received - 0x{octets}",
                     octets=_LazyHexFormatter(self._handshake_bytes),
@@ -451,7 +448,6 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
         self.transport.write(b"\x00\x00")  # reserved octets
 
     def dataReceived(self, data):
-
         if self._handshake_complete:
             WampRawSocketProtocol.dataReceived(self, data)
         else:
@@ -459,7 +455,6 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
             self._handshake_bytes += data[:remaining]
 
             if len(self._handshake_bytes) == 4:
-
                 self.log.debug(
                     "WampRawSocketClientProtocol: opening handshake received - {handshake}",
                     handshake=_LazyHexFormatter(self._handshake_bytes),
@@ -664,7 +659,6 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
         self.noisy = False
 
         if serializer is None:
-
             # try CBOR WAMP serializer
             try:
                 from autobahn.wamp.serializer import CBORSerializer
@@ -674,7 +668,6 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
                 pass
 
         if serializer is None:
-
             # try MsgPack WAMP serializer
             try:
                 from autobahn.wamp.serializer import MsgPackSerializer
@@ -684,7 +677,6 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
                 pass
 
         if serializer is None:
-
             # try UBJSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import UBJSONSerializer

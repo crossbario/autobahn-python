@@ -1,5 +1,6 @@
-from autobahn.asyncio.component import Component, run
 from asyncio import sleep
+
+from autobahn.asyncio.component import Component, run
 from autobahn.wamp.types import RegisterOptions
 
 # to see how this works on the Crossbar.io side, see the example

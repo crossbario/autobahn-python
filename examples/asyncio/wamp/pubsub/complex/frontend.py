@@ -24,12 +24,12 @@
 #
 ###############################################################################
 
+import asyncio
 import random
 from os import environ
 
-import asyncio
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 from autobahn.wamp.types import SubscribeOptions
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):

@@ -28,20 +28,20 @@ import zlib
 
 from autobahn.util import public
 from autobahn.websocket.compress_base import (
+    PerMessageCompress,
     PerMessageCompressOffer,
     PerMessageCompressOfferAccept,
     PerMessageCompressResponse,
     PerMessageCompressResponseAccept,
-    PerMessageCompress,
 )
 
 __all__ = (
+    "PerMessageDeflate",
     "PerMessageDeflateMixin",
     "PerMessageDeflateOffer",
     "PerMessageDeflateOfferAccept",
     "PerMessageDeflateResponse",
     "PerMessageDeflateResponseAccept",
-    "PerMessageDeflate",
 )
 
 
@@ -96,7 +96,6 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
         # verify/parse client ("client-to-server direction") parameters of permessage-deflate offer
         for p in params:
-
             if len(params[p]) > 1:
                 raise Exception(
                     "multiple occurrence of extension parameter '%s' for extension '%s'"
@@ -492,7 +491,6 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
         server_no_context_takeover = False
 
         for p in params:
-
             if len(params[p]) > 1:
                 raise Exception(
                     "multiple occurrence of extension parameter '%s' for extension '%s'"

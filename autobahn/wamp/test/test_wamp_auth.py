@@ -24,17 +24,14 @@
 #
 ###############################################################################
 
+import binascii
+import json
+import platform
+import re
 import unittest
 from unittest.mock import Mock
-import platform
 
-import re
-import json
-import binascii
-
-from autobahn.wamp import auth
-from autobahn.wamp import types
-
+from autobahn.wamp import auth, types
 
 # these test vectors are all for HMAC-SHA1
 PBKDF2_TEST_VECTORS = [
@@ -82,7 +79,6 @@ PBKDF2_TEST_VECTORS = [
 ]
 
 if platform.python_implementation() != "PyPy":
-
     # the following fails on PyPy: "RuntimeError: maximum recursion depth exceeded"
     PBKDF2_TEST_VECTORS.extend(
         [
@@ -115,7 +111,6 @@ if platform.python_implementation() != "PyPy":
 
 
 class TestWampAuthHelpers(unittest.TestCase):
-
     def test_pbkdf2(self):
         for tv in PBKDF2_TEST_VECTORS:
             result = auth.pbkdf2(tv[0], tv[1], tv[2], tv[3], "sha1")
@@ -176,7 +171,6 @@ class TestWampAuthHelpers(unittest.TestCase):
 
 @unittest.skipIf(not auth.HAS_ARGON, "no Argon2 library")
 class TestScram(unittest.TestCase):
-
     def test_argon2id_static(self):
         # re-generate from the official argon2 tools:
         # echo -n "p4ssw0rd" | argon2 '1234567890abcdef' -id -t 32 -m 9 -p 1 -l 32

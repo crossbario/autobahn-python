@@ -28,19 +28,19 @@ import os
 from unittest.mock import Mock, patch
 
 if os.environ.get("USE_TWISTED", False):
-    from autobahn.twisted.component import Component
+    from txaio.testutil import replace_loop
     from zope.interface import directlyProvides
-    from autobahn.wamp.message import Welcome, Goodbye, Hello, Abort
-    from autobahn.wamp.serializer import JsonSerializer
+
     from autobahn.testutil import FakeTransport
+    from autobahn.twisted.component import Component
+    from autobahn.wamp.message import Abort, Goodbye, Hello, Welcome
+    from autobahn.wamp.serializer import JsonSerializer
+    from twisted.internet.defer import Deferred, inlineCallbacks, succeed
     from twisted.internet.interfaces import IStreamClientEndpoint
-    from twisted.internet.defer import inlineCallbacks, succeed, Deferred
     from twisted.internet.task import Clock
     from twisted.trial import unittest
-    from txaio.testutil import replace_loop
 
     class ConnectionTests(unittest.TestCase):
-
         def setUp(self):
             pass
 
@@ -69,9 +69,10 @@ if os.environ.get("USE_TWISTED", False):
                 transport = FakeTransport()
                 proto.makeConnection(transport)
 
-                from autobahn.websocket.protocol import WebSocketProtocol
                 from base64 import b64encode
                 from hashlib import sha1
+
+                from autobahn.websocket.protocol import WebSocketProtocol
 
                 key = proto.websocket_key + WebSocketProtocol._WS_MAGIC
                 proto.data = (
@@ -274,9 +275,10 @@ if os.environ.get("USE_TWISTED", False):
                 proto = factory.buildProtocol("boom")
                 proto.makeConnection(Mock())
 
-                from autobahn.websocket.protocol import WebSocketProtocol
                 from base64 import b64encode
                 from hashlib import sha1
+
+                from autobahn.websocket.protocol import WebSocketProtocol
 
                 key = proto.websocket_key + WebSocketProtocol._WS_MAGIC
                 proto.data = (
@@ -323,7 +325,6 @@ if os.environ.get("USE_TWISTED", False):
             self.assertIn("Exhausted all transport", str(ctx.exception))
 
     class InvalidTransportConfigs(unittest.TestCase):
-
         def test_invalid_key(self):
             with self.assertRaises(ValueError) as ctx:
                 Component(

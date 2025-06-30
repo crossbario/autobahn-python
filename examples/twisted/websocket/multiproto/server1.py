@@ -26,15 +26,13 @@
 
 import txaio
 
-from twisted.internet import reactor
-
 from autobahn.twisted.websocket import (
     WebSocketServerFactory,
     WebSocketServerProtocol,
     listenWS,
 )
-
 from autobahn.websocket.types import ConnectionDeny
+from twisted.internet import reactor
 
 
 class BaseService:
@@ -81,7 +79,6 @@ class Echo2Service(BaseService):
 
 
 class ServiceServerProtocol(WebSocketServerProtocol):
-
     SERVICEMAP = {"/echo1": Echo1Service, "/echo2": Echo2Service}
 
     def __init__(self):
@@ -128,7 +125,6 @@ class ServiceServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == "__main__":
-
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = ServiceServerProtocol
     listenWS(factory)

@@ -25,8 +25,7 @@
 ###############################################################################
 
 import asyncio
-from asyncio import iscoroutine
-from asyncio import Future
+from asyncio import Future, iscoroutine
 from collections import deque
 from typing import Optional
 
@@ -34,20 +33,20 @@ import txaio
 
 txaio.use_asyncio()  # noqa
 
-from autobahn.util import public, hltype
 from autobahn.asyncio.util import create_transport_details, transport_channel_id
+from autobahn.util import hltype, public
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
 
 __all__ = (
-    "WebSocketServerProtocol",
-    "WebSocketClientProtocol",
-    "WebSocketServerFactory",
-    "WebSocketClientFactory",
-    "WampWebSocketServerProtocol",
+    "WampWebSocketClientFactory",
     "WampWebSocketClientProtocol",
     "WampWebSocketServerFactory",
-    "WampWebSocketClientFactory",
+    "WampWebSocketServerProtocol",
+    "WebSocketClientFactory",
+    "WebSocketClientProtocol",
+    "WebSocketServerFactory",
+    "WebSocketServerProtocol",
 )
 
 

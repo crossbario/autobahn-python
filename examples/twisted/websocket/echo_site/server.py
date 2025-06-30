@@ -26,18 +26,15 @@
 
 import sys
 
+from autobahn.twisted.resource import WebSocketResource
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
 from twisted.internet import reactor
 from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
-
-from autobahn.twisted.resource import WebSocketResource
-
 
 class EchoServerProtocol(WebSocketServerProtocol):
-
     def onConnect(self, request):
         print("WebSocket connection request: {}".format(request))
 
@@ -46,7 +43,6 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == "__main__":
-
     log.startLogging(sys.stdout)
 
     factory = WebSocketServerFactory("ws://127.0.0.1:8080")

@@ -25,11 +25,11 @@
 ###############################################################################
 
 from os import environ
+
+from autobahn.twisted.wamp import ApplicationRunner, Session
+from autobahn.wamp import auth
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-
-from autobahn.twisted.wamp import Session, ApplicationRunner
-from autobahn.wamp import auth
 
 if False:
     # this is (one way) to get the encoded/salted secret to put in

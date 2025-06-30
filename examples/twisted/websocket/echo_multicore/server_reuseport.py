@@ -24,16 +24,15 @@
 #
 ###############################################################################
 
-import sys
 import os
 import socket
+import sys
 
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
 from twisted.internet import tcp
-from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
 
 
 class CustomPort(tcp.Port):
-
     def __init__(
         self, port, factory, backlog=50, interface="", reactor=None, reuse=False
     ):
@@ -70,7 +69,6 @@ class CustomPort(tcp.Port):
 
 
 class MyServerProtocol(WebSocketServerProtocol):
-
     def onConnect(self, request):
         print(
             "Client connecting: {0} on server PID {1}".format(request.peer, os.getpid())
@@ -93,9 +91,8 @@ class MyServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == "__main__":
-
-    from twisted.python import log
     from twisted.internet import reactor
+    from twisted.python import log
 
     log.startLogging(sys.stdout)
 

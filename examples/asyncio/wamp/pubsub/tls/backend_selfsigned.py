@@ -25,9 +25,10 @@
 ###############################################################################
 
 import asyncio
-from os import environ
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 import ssl
+from os import environ
+
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):

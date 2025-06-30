@@ -27,11 +27,10 @@
 import asyncio
 import json
 
-from autobahn.asyncio.websocket import WebSocketServerProtocol, WebSocketServerFactory
+from autobahn.asyncio.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 
 class SlowSquareServerProtocol(WebSocketServerProtocol):
-
     async def slowsquare(self, x):
         if x > 5:
             raise Exception("number too large")
@@ -51,7 +50,6 @@ class SlowSquareServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == "__main__":
-
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = SlowSquareServerProtocol
 

@@ -26,12 +26,12 @@
 
 from zope.interface import implementer
 
-from twisted.plugin import IPlugin
 from twisted.internet.interfaces import (
-    IStreamServerEndpointStringParser,
-    IStreamServerEndpoint,
     IStreamClientEndpoint,
+    IStreamServerEndpoint,
+    IStreamServerEndpointStringParser,
 )
+from twisted.plugin import IPlugin
 
 try:
     from twisted.internet.interfaces import IStreamClientEndpointStringParserWithReactor
@@ -43,12 +43,11 @@ except ImportError:
         IStreamClientEndpointStringParser as IStreamClientEndpointStringParserWithReactor,
     )
 
-from twisted.internet.endpoints import serverFromString, clientFromString
-
 from autobahn.twisted.websocket import (
-    WrappingWebSocketServerFactory,
     WrappingWebSocketClientFactory,
+    WrappingWebSocketServerFactory,
 )
+from twisted.internet.endpoints import clientFromString, serverFromString
 
 
 def _parseOptions(options):
@@ -100,11 +99,9 @@ def _parseOptions(options):
 @implementer(IPlugin)
 @implementer(IStreamServerEndpointStringParser)
 class AutobahnServerParser(object):
-
     prefix = "autobahn"
 
     def parseStreamServer(self, reactor, description, **options):
-
         # The present endpoint plugin is intended to be used as in the
         # following for running a streaming protocol over WebSocket over
         # an underlying stream transport.
@@ -133,7 +130,6 @@ class AutobahnServerParser(object):
 @implementer(IPlugin)
 @implementer(IStreamServerEndpoint)
 class AutobahnServerEndpoint(object):
-
     def __init__(self, reactor, endpoint, options):
         self._reactor = reactor
         self._endpoint = endpoint
@@ -179,7 +175,6 @@ class AutobahnClientParser(object):
 @implementer(IPlugin)
 @implementer(IStreamClientEndpoint)
 class AutobahnClientEndpoint(object):
-
     def __init__(self, reactor, endpoint, options):
         self._reactor = reactor
         self._endpoint = endpoint

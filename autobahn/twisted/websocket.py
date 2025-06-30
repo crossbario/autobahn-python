@@ -24,64 +24,58 @@
 #
 ###############################################################################
 
-from base64 import b64encode, b64decode
+from base64 import b64decode, b64encode
 from typing import Optional
 
-from zope.interface import implementer
-
 import txaio
+from zope.interface import implementer
 
 txaio.use_twisted()
 
 import twisted.internet.protocol
-from twisted.internet import endpoints
-from twisted.internet.interfaces import ITransport
-
-from twisted.internet.error import ConnectionDone, ConnectionAborted, ConnectionLost
-from twisted.internet.defer import Deferred
-from twisted.python.failure import Failure
-from twisted.internet.protocol import connectionDone
-
-from autobahn.util import public, hltype, hlval
-from autobahn.util import _is_tls_error, _maybe_tls_reason
+from autobahn.twisted.util import create_transport_details, transport_channel_id
+from autobahn.util import _is_tls_error, _maybe_tls_reason, hltype, hlval, public
 from autobahn.wamp import websocket
 from autobahn.wamp.types import TransportDetails
-from autobahn.websocket.types import (
-    ConnectionRequest,
-    ConnectionResponse,
-    ConnectionDeny,
-)
 from autobahn.websocket import protocol
-from autobahn.websocket.interfaces import IWebSocketClientAgent
-from autobahn.twisted.util import create_transport_details, transport_channel_id
-
 from autobahn.websocket.compress import (
     PerMessageDeflateOffer,
     PerMessageDeflateOfferAccept,
     PerMessageDeflateResponse,
     PerMessageDeflateResponseAccept,
 )
-
+from autobahn.websocket.interfaces import IWebSocketClientAgent
+from autobahn.websocket.types import (
+    ConnectionDeny,
+    ConnectionRequest,
+    ConnectionResponse,
+)
+from twisted.internet import endpoints
+from twisted.internet.defer import Deferred
+from twisted.internet.error import ConnectionAborted, ConnectionDone, ConnectionLost
+from twisted.internet.interfaces import ITransport
+from twisted.internet.protocol import connectionDone
+from twisted.python.failure import Failure
 
 __all__ = (
-    "create_client_agent",
-    "WebSocketAdapterProtocol",
-    "WebSocketServerProtocol",
-    "WebSocketClientProtocol",
+    "WampWebSocketClientFactory",
+    "WampWebSocketClientProtocol",
+    "WampWebSocketServerFactory",
+    "WampWebSocketServerProtocol",
     "WebSocketAdapterFactory",
-    "WebSocketServerFactory",
+    "WebSocketAdapterProtocol",
     "WebSocketClientFactory",
+    "WebSocketClientProtocol",
+    "WebSocketServerFactory",
+    "WebSocketServerProtocol",
     "WrappingWebSocketAdapter",
-    "WrappingWebSocketServerProtocol",
+    "WrappingWebSocketClientFactory",
     "WrappingWebSocketClientProtocol",
     "WrappingWebSocketServerFactory",
-    "WrappingWebSocketClientFactory",
-    "listenWS",
+    "WrappingWebSocketServerProtocol",
     "connectWS",
-    "WampWebSocketServerProtocol",
-    "WampWebSocketServerFactory",
-    "WampWebSocketClientProtocol",
-    "WampWebSocketClientFactory",
+    "create_client_agent",
+    "listenWS",
 )
 
 
@@ -224,7 +218,6 @@ class _TwistedWebSocketClientAgent(IWebSocketClientAgent):
             rtn_d.errback(f)
 
         def got_proto(proto):
-
             def handshake_completed(arg):
                 rtn_d.callback(proto)
                 return arg

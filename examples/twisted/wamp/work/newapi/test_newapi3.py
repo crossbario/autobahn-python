@@ -1,10 +1,9 @@
-from twisted.internet.task import react
-from twisted.internet.defer import inlineCallbacks as coroutine
 from autobahn.twisted.connection import Connection
+from twisted.internet.defer import inlineCallbacks as coroutine
+from twisted.internet.task import react
 
 
 def main(reactor, connection):
-
     @coroutine
     def on_join(session, details):
         print("on_join: {}".format(details))

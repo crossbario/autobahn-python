@@ -25,12 +25,12 @@
 ###############################################################################
 
 import os
+import random
 import sys
 import unittest
-
 import uuid
-import random
-from nacl import utils, public
+
+from nacl import public, utils
 
 from autobahn import util
 
@@ -47,14 +47,12 @@ from autobahn import util
     "entropy depletion tests only available on Linux",
 )
 class TestEntropy(unittest.TestCase):
-
     def test_non_depleting(self):
         res = {}
 
         with open("/dev/urandom", "rb") as rng:
             for i in range(1000):
                 for j in range(100):
-
                     # "reseed" (seems pointless, but ..)
                     random.seed()
 
@@ -100,7 +98,6 @@ class TestEntropy(unittest.TestCase):
 
         with open("/dev/random", "rb") as rng:
             for i in range(10000):
-
                 # direct procfs access to "real" RNG
                 d = rng.read(1000)  # noqa
 

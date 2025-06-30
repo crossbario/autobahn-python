@@ -7,13 +7,12 @@ try:
 except ImportError:
     HAVE_TESTING = False
 
+from autobahn.twisted.websocket import WebSocketServerProtocol
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.testing import MemoryReactorClock
-from autobahn.twisted.websocket import WebSocketServerProtocol
 
 
 class TestAgent(unittest.TestCase):
-
     skip = not HAVE_TESTING
 
     def setUp(self):
@@ -26,7 +25,6 @@ class TestAgent(unittest.TestCase):
 
     @inlineCallbacks
     def test_echo_server(self):
-
         class EchoServer(WebSocketServerProtocol):
             def onMessage(self, msg, is_binary):
                 self.sendMessage(msg)

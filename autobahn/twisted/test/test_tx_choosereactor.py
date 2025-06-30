@@ -28,13 +28,11 @@ import sys
 from unittest.mock import Mock
 
 import twisted.internet
-from twisted.trial import unittest
-
 from autobahn.twisted import choosereactor
+from twisted.trial import unittest
 
 
 class ChooseReactorTests(unittest.TestCase):
-
     def patch_reactor(self, name, new_reactor):
         """
         Patch ``name`` so that Twisted will grab a fake reactor instead of

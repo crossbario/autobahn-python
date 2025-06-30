@@ -24,20 +24,21 @@
 #
 ###############################################################################
 
-import re
 import binascii
+import re
 import textwrap
 from pprint import pformat
 from typing import Any, Dict, Optional
 
 import autobahn
 from autobahn.util import hlval
-from autobahn.wamp.exception import ProtocolError, InvalidUriError
+from autobahn.wamp.exception import InvalidUriError, ProtocolError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
 try:
     import cbor2
     import flatbuffers
+
     from autobahn.wamp import message_fbs
 except ImportError:
     _HAS_WAMP_FLATBUFFERS = False
@@ -45,41 +46,41 @@ else:
     _HAS_WAMP_FLATBUFFERS = True
 
 __all__ = (
-    "Message",
-    "Hello",
-    "Welcome",
-    "Abort",
-    "Challenge",
-    "Authenticate",
-    "Goodbye",
-    "Error",
-    "Publish",
-    "Published",
-    "Subscribe",
-    "Subscribed",
-    "Unsubscribe",
-    "Unsubscribed",
-    "Event",
-    "Call",
-    "Cancel",
-    "Result",
-    "Register",
-    "Registered",
-    "Unregister",
-    "Unregistered",
-    "Invocation",
-    "Interrupt",
-    "Yield",
-    "check_or_raise_uri",
-    "check_or_raise_realm_name",
-    "check_or_raise_id",
-    "check_or_raise_extra",
-    "is_valid_enc_algo",
-    "is_valid_enc_serializer",
-    "identify_realm_name_category",
     "PAYLOAD_ENC_CRYPTO_BOX",
     "PAYLOAD_ENC_MQTT",
     "PAYLOAD_ENC_STANDARD_IDENTIFIERS",
+    "Abort",
+    "Authenticate",
+    "Call",
+    "Cancel",
+    "Challenge",
+    "Error",
+    "Event",
+    "Goodbye",
+    "Hello",
+    "Interrupt",
+    "Invocation",
+    "Message",
+    "Publish",
+    "Published",
+    "Register",
+    "Registered",
+    "Result",
+    "Subscribe",
+    "Subscribed",
+    "Unregister",
+    "Unregistered",
+    "Unsubscribe",
+    "Unsubscribed",
+    "Welcome",
+    "Yield",
+    "check_or_raise_extra",
+    "check_or_raise_id",
+    "check_or_raise_realm_name",
+    "check_or_raise_uri",
+    "identify_realm_name_category",
+    "is_valid_enc_algo",
+    "is_valid_enc_serializer",
 )
 
 # all realm names in Autobahn/Crossbar.io must match this
@@ -1313,7 +1314,6 @@ class Abort(Message):
         message = None
 
         if "message" in details:
-
             details_message = details["message"]
             if type(details_message) != str:
                 raise ProtocolError(
@@ -1559,7 +1559,6 @@ class Goodbye(Message):
         resumable = None
 
         if "message" in details:
-
             details_message = details["message"]
             if type(details_message) != str:
                 raise ProtocolError(
@@ -1797,7 +1796,6 @@ class Error(Message):
         forward_for = None
 
         if len(wmsg) == 6 and type(wmsg[5]) == bytes:
-
             payload = wmsg[5]
 
             enc_algo = details.get("enc_algo", None)
@@ -1838,7 +1836,6 @@ class Error(Message):
                     )
 
         if "callee" in details:
-
             detail_callee = details["callee"]
             if type(detail_callee) != int:
                 raise ProtocolError(
@@ -1850,7 +1847,6 @@ class Error(Message):
             callee = detail_callee
 
         if "callee_authid" in details:
-
             detail_callee_authid = details["callee_authid"]
             if type(detail_callee_authid) != str:
                 raise ProtocolError(
@@ -1862,7 +1858,6 @@ class Error(Message):
             callee_authid = detail_callee_authid
 
         if "callee_authrole" in details:
-
             detail_callee_authrole = details["callee_authrole"]
             if type(detail_callee_authrole) != str:
                 raise ProtocolError(
@@ -2552,7 +2547,6 @@ class Publish(Message):
         return Publish(from_fbs=message_fbs.Publish.GetRootAsPublish(buf, 0))
 
     def build(self, builder):
-
         args = self.args
         if args:
             args = builder.CreateByteVector(cbor2.dumps(args))
@@ -2738,7 +2732,6 @@ class Publish(Message):
         payload = None
 
         if len(wmsg) == 5 and type(wmsg[4]) in [str, bytes]:
-
             payload = wmsg[4]
 
             enc_algo = options.get("enc_algo", None)
@@ -2797,7 +2790,6 @@ class Publish(Message):
         forward_for = None
 
         if "acknowledge" in options:
-
             option_acknowledge = options["acknowledge"]
             if type(option_acknowledge) != bool:
                 raise ProtocolError(
@@ -2809,7 +2801,6 @@ class Publish(Message):
             acknowledge = option_acknowledge
 
         if "exclude_me" in options:
-
             option_exclude_me = options["exclude_me"]
             if type(option_exclude_me) != bool:
                 raise ProtocolError(
@@ -2821,7 +2812,6 @@ class Publish(Message):
             exclude_me = option_exclude_me
 
         if "exclude" in options:
-
             option_exclude = options["exclude"]
             if type(option_exclude) != list:
                 raise ProtocolError(
@@ -2841,7 +2831,6 @@ class Publish(Message):
             exclude = option_exclude
 
         if "exclude_authid" in options:
-
             option_exclude_authid = options["exclude_authid"]
             if type(option_exclude_authid) != list:
                 raise ProtocolError(
@@ -2861,7 +2850,6 @@ class Publish(Message):
             exclude_authid = option_exclude_authid
 
         if "exclude_authrole" in options:
-
             option_exclude_authrole = options["exclude_authrole"]
             if type(option_exclude_authrole) != list:
                 raise ProtocolError(
@@ -2881,7 +2869,6 @@ class Publish(Message):
             exclude_authrole = option_exclude_authrole
 
         if "eligible" in options:
-
             option_eligible = options["eligible"]
             if type(option_eligible) != list:
                 raise ProtocolError(
@@ -2901,7 +2888,6 @@ class Publish(Message):
             eligible = option_eligible
 
         if "eligible_authid" in options:
-
             option_eligible_authid = options["eligible_authid"]
             if type(option_eligible_authid) != list:
                 raise ProtocolError(
@@ -2921,7 +2907,6 @@ class Publish(Message):
             eligible_authid = option_eligible_authid
 
         if "eligible_authrole" in options:
-
             option_eligible_authrole = options["eligible_authrole"]
             if type(option_eligible_authrole) != list:
                 raise ProtocolError(
@@ -3245,7 +3230,6 @@ class Subscribe(Message):
         forward_for = None
 
         if "match" in options:
-
             option_match = options["match"]
             if type(option_match) != str:
                 raise ProtocolError(
@@ -3591,7 +3575,6 @@ class Unsubscribed(Message):
         reason = None
 
         if len(wmsg) > 2:
-
             details = check_or_raise_extra(wmsg[2], "'details' in UNSUBSCRIBED")
 
             if "subscription" in details:
@@ -4058,7 +4041,6 @@ class Event(Message):
         return Event(from_fbs=message_fbs.Event.GetRootAsEvent(buf, 0))
 
     def build(self, builder):
-
         args = self.args
         if args:
             args = builder.CreateByteVector(cbor2.dumps(args))
@@ -4171,7 +4153,6 @@ class Event(Message):
         enc_serializer = None
 
         if len(wmsg) == 5 and type(wmsg[4]) == bytes:
-
             payload = wmsg[4]
 
             enc_algo = details.get("enc_algo", None)
@@ -4220,7 +4201,6 @@ class Event(Message):
         x_acknowledged_delivery = None
 
         if "publisher" in details:
-
             detail_publisher = details["publisher"]
             if type(detail_publisher) != int:
                 raise ProtocolError(
@@ -4232,7 +4212,6 @@ class Event(Message):
             publisher = detail_publisher
 
         if "publisher_authid" in details:
-
             detail_publisher_authid = details["publisher_authid"]
             if type(detail_publisher_authid) != str:
                 raise ProtocolError(
@@ -4244,7 +4223,6 @@ class Event(Message):
             publisher_authid = detail_publisher_authid
 
         if "publisher_authrole" in details:
-
             detail_publisher_authrole = details["publisher_authrole"]
             if type(detail_publisher_authrole) != str:
                 raise ProtocolError(
@@ -4256,7 +4234,6 @@ class Event(Message):
             publisher_authrole = detail_publisher_authrole
 
         if "topic" in details:
-
             detail_topic = details["topic"]
             if type(detail_topic) != str:
                 raise ProtocolError(
@@ -4277,7 +4254,6 @@ class Event(Message):
                 )
 
         if "transaction_hash" in details:
-
             detail_transaction_hash = details["transaction_hash"]
             if type(detail_transaction_hash) != str:
                 raise ProtocolError(
@@ -4661,7 +4637,6 @@ class Call(Message):
         enc_serializer = None
 
         if len(wmsg) == 5 and type(wmsg[4]) in [str, bytes]:
-
             payload = wmsg[4]
 
             enc_algo = options.get("enc_algo", None)
@@ -4710,7 +4685,6 @@ class Call(Message):
         forward_for = None
 
         if "timeout" in options:
-
             option_timeout = options["timeout"]
             if type(option_timeout) != int:
                 raise ProtocolError(
@@ -4729,7 +4703,6 @@ class Call(Message):
             timeout = option_timeout
 
         if "receive_progress" in options:
-
             option_receive_progress = options["receive_progress"]
             if type(option_receive_progress) != bool:
                 raise ProtocolError(
@@ -4741,7 +4714,6 @@ class Call(Message):
             receive_progress = option_receive_progress
 
         if "transaction_hash" in options:
-
             option_transaction_hash = options["transaction_hash"]
             if type(option_transaction_hash) != str:
                 raise ProtocolError(
@@ -4753,7 +4725,6 @@ class Call(Message):
             transaction_hash = option_transaction_hash
 
         if "caller" in options:
-
             option_caller = options["caller"]
             if type(option_caller) != int:
                 raise ProtocolError(
@@ -4765,7 +4736,6 @@ class Call(Message):
             caller = option_caller
 
         if "caller_authid" in options:
-
             option_caller_authid = options["caller_authid"]
             if type(option_caller_authid) != str:
                 raise ProtocolError(
@@ -4777,7 +4747,6 @@ class Call(Message):
             caller_authid = option_caller_authid
 
         if "caller_authrole" in options:
-
             option_caller_authrole = options["caller_authrole"]
             if type(option_caller_authrole) != str:
                 raise ProtocolError(
@@ -4983,7 +4952,6 @@ class Cancel(Message):
         forward_for = None
 
         if "mode" in options:
-
             option_mode = options["mode"]
             if type(option_mode) != str:
                 raise ProtocolError(
@@ -5214,7 +5182,6 @@ class Result(Message):
         forward_for = None
 
         if len(wmsg) == 4 and type(wmsg[3]) in [str, bytes]:
-
             payload = wmsg[3]
 
             enc_algo = details.get("enc_algo", None)
@@ -5255,7 +5222,6 @@ class Result(Message):
                     )
 
         if "progress" in details:
-
             detail_progress = details["progress"]
             if type(detail_progress) != bool:
                 raise ProtocolError(
@@ -5267,7 +5233,6 @@ class Result(Message):
             progress = detail_progress
 
         if "callee" in details:
-
             detail_callee = details["callee"]
             if type(detail_callee) != int:
                 raise ProtocolError(
@@ -5279,7 +5244,6 @@ class Result(Message):
             callee = detail_callee
 
         if "callee_authid" in details:
-
             detail_callee_authid = details["callee_authid"]
             if type(detail_callee_authid) != str:
                 raise ProtocolError(
@@ -5291,7 +5255,6 @@ class Result(Message):
             callee_authid = detail_callee_authid
 
         if "callee_authrole" in details:
-
             detail_callee_authrole = details["callee_authrole"]
             if type(detail_callee_authrole) != str:
                 raise ProtocolError(
@@ -5512,7 +5475,6 @@ class Register(Message):
         forward_for = None
 
         if "match" in options:
-
             option_match = options["match"]
             if type(option_match) != str:
                 raise ProtocolError(
@@ -5557,7 +5519,6 @@ class Register(Message):
         )
 
         if "invoke" in options:
-
             option_invoke = options["invoke"]
             if type(option_invoke) != str:
                 raise ProtocolError(
@@ -5582,7 +5543,6 @@ class Register(Message):
             invoke = option_invoke
 
         if "concurrency" in options:
-
             options_concurrency = options["concurrency"]
             if type(options_concurrency) != int:
                 raise ProtocolError(
@@ -5923,7 +5883,6 @@ class Unregistered(Message):
         reason = None
 
         if len(wmsg) > 2:
-
             details = check_or_raise_extra(wmsg[2], "'details' in UNREGISTERED")
 
             if "registration" in details:
@@ -6155,7 +6114,6 @@ class Invocation(Message):
         enc_serializer = None
 
         if len(wmsg) == 5 and type(wmsg[4]) == bytes:
-
             payload = wmsg[4]
 
             enc_algo = details.get("enc_algo", None)
@@ -6209,7 +6167,6 @@ class Invocation(Message):
         forward_for = None
 
         if "timeout" in details:
-
             detail_timeout = details["timeout"]
             if type(detail_timeout) != int:
                 raise ProtocolError(
@@ -6228,7 +6185,6 @@ class Invocation(Message):
             timeout = detail_timeout
 
         if "receive_progress" in details:
-
             detail_receive_progress = details["receive_progress"]
             if type(detail_receive_progress) != bool:
                 raise ProtocolError(
@@ -6240,7 +6196,6 @@ class Invocation(Message):
             receive_progress = detail_receive_progress
 
         if "caller" in details:
-
             detail_caller = details["caller"]
             if type(detail_caller) != int:
                 raise ProtocolError(
@@ -6252,7 +6207,6 @@ class Invocation(Message):
             caller = detail_caller
 
         if "caller_authid" in details:
-
             detail_caller_authid = details["caller_authid"]
             if type(detail_caller_authid) != str:
                 raise ProtocolError(
@@ -6264,7 +6218,6 @@ class Invocation(Message):
             caller_authid = detail_caller_authid
 
         if "caller_authrole" in details:
-
             detail_caller_authrole = details["caller_authrole"]
             if type(detail_caller_authrole) != str:
                 raise ProtocolError(
@@ -6276,7 +6229,6 @@ class Invocation(Message):
             caller_authrole = detail_caller_authrole
 
         if "procedure" in details:
-
             detail_procedure = details["procedure"]
             if type(detail_procedure) != str:
                 raise ProtocolError(
@@ -6288,7 +6240,6 @@ class Invocation(Message):
             procedure = detail_procedure
 
         if "transaction_hash" in details:
-
             detail_transaction_hash = details["transaction_hash"]
             if type(detail_transaction_hash) != str:
                 raise ProtocolError(
@@ -6511,7 +6462,6 @@ class Interrupt(Message):
         forward_for = None
 
         if "mode" in options:
-
             option_mode = options["mode"]
             if type(option_mode) != str:
                 raise ProtocolError(
@@ -6741,7 +6691,6 @@ class Yield(Message):
         enc_serializer = None
 
         if len(wmsg) == 4 and type(wmsg[3]) == bytes:
-
             payload = wmsg[3]
 
             enc_algo = options.get("enc_algo", None)
@@ -6788,7 +6737,6 @@ class Yield(Message):
         forward_for = None
 
         if "progress" in options:
-
             option_progress = options["progress"]
             if type(option_progress) != bool:
                 raise ProtocolError(
@@ -6800,7 +6748,6 @@ class Yield(Message):
             progress = option_progress
 
         if "callee" in options:
-
             option_callee = options["callee"]
             if type(option_callee) != int:
                 raise ProtocolError(
@@ -6812,7 +6759,6 @@ class Yield(Message):
             callee = option_callee
 
         if "callee_authid" in options:
-
             option_callee_authid = options["callee_authid"]
             if type(option_callee_authid) != str:
                 raise ProtocolError(
@@ -6824,7 +6770,6 @@ class Yield(Message):
             callee_authid = option_callee_authid
 
         if "callee_authrole" in options:
-
             option_callee_authrole = options["callee_authrole"]
             if type(option_callee_authrole) != str:
                 raise ProtocolError(

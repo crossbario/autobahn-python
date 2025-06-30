@@ -24,13 +24,13 @@
 #
 ###############################################################################
 
-from os import environ
-import math
-
 import asyncio
+import math
+from os import environ
+
 from autobahn import wamp
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 from autobahn.wamp.exception import ApplicationError
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 @wamp.error("com.myapp.error1")
@@ -47,7 +47,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         # catching standard exceptions
         ##
         for x in [2, 0, -2]:

@@ -24,9 +24,9 @@
 #
 ###############################################################################
 
-from autobahn.wamp.types import TransportDetails
-
 import unittest
+
+from autobahn.wamp.types import TransportDetails
 
 TRANSPORT_DETAILS_1 = {
     # TransportDetails.CHANNEL_TYPE_TO_STR[TransportDetails.CHANNEL_TYPE_TCP]
@@ -73,7 +73,6 @@ TRANSPORT_DETAILS_1 = {
 
 
 class TestTransportDetails(unittest.TestCase):
-
     def test_ctor_empty(self):
         td = TransportDetails()
         data = td.marshal()

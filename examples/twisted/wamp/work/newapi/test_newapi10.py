@@ -20,7 +20,6 @@ def main2(reactor, transport):
 
 
 if __name__ == "__main__":
-
     transports = [
         {
             "type": "rawsocket",

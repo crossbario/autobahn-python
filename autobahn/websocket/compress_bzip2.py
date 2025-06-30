@@ -27,20 +27,20 @@
 import bz2
 
 from autobahn.websocket.compress_base import (
+    PerMessageCompress,
     PerMessageCompressOffer,
     PerMessageCompressOfferAccept,
     PerMessageCompressResponse,
     PerMessageCompressResponseAccept,
-    PerMessageCompress,
 )
 
 __all__ = (
+    "PerMessageBzip2",
     "PerMessageBzip2Mixin",
     "PerMessageBzip2Offer",
     "PerMessageBzip2OfferAccept",
     "PerMessageBzip2Response",
     "PerMessageBzip2ResponseAccept",
-    "PerMessageBzip2",
 )
 
 
@@ -82,7 +82,6 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
 
         # verify/parse client ("client-to-server direction") parameters of permessage-bzip2 offer
         for p in params:
-
             if len(params[p]) > 1:
                 raise Exception(
                     "multiple occurrence of extension parameter '%s' for extension '%s'"
@@ -322,7 +321,6 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
         server_max_compress_level = 0
 
         for p in params:
-
             if len(params[p]) > 1:
                 raise Exception(
                     "multiple occurrence of extension parameter '%s' for extension '%s'"

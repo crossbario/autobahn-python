@@ -25,40 +25,39 @@
 ###############################################################################
 
 import abc
-from typing import Union, Dict, Any, Optional, List, Tuple, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 # FIXME: see ISecurityModule.__iter__
 # from collections.abc import Iterator
-
 from autobahn.util import public
+from autobahn.wamp.message import Message, Welcome
 from autobahn.wamp.types import (
-    Challenge,
-    SessionDetails,
-    CloseDetails,
     CallResult,
-    RegisterOptions,
-    SubscribeOptions,
-    Registration,
-    Subscription,
-    Publication,
+    Challenge,
+    CloseDetails,
     ComponentConfig,
+    Publication,
+    RegisterOptions,
+    Registration,
+    SessionDetails,
+    SubscribeOptions,
+    Subscription,
     TransportDetails,
 )
-from autobahn.wamp.message import Message, Welcome
 
 __all__ = (
-    "IObjectSerializer",
-    "ISerializer",
-    "IMessage",
-    "ITransport",
-    "ITransportHandler",
-    "ISession",
     "IAuthenticator",
-    "IKey",
     "ICryptosignKey",
     "IEthereumKey",
-    "ISecurityModule",
+    "IKey",
+    "IMessage",
+    "IObjectSerializer",
     "IPayloadCodec",
+    "ISecurityModule",
+    "ISerializer",
+    "ISession",
+    "ITransport",
+    "ITransportHandler",
 )
 
 
@@ -288,7 +287,6 @@ class ITransport(abc.ABC):
 
 @public
 class ITransportHandler(abc.ABC):
-
     @public
     @abc.abstractmethod
     def onOpen(self, transport: ITransport):

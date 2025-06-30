@@ -25,22 +25,22 @@
 ###############################################################################
 
 import abc
-from typing import Optional, Union, Tuple, Dict
+from typing import Dict, Optional, Tuple, Union
 
 from autobahn.util import public
+from autobahn.wamp.types import TransportDetails
 from autobahn.websocket.types import (
+    ConnectingRequest,
     ConnectionRequest,
     ConnectionResponse,
-    ConnectingRequest,
 )
-from autobahn.wamp.types import TransportDetails
 
 __all__ = (
-    "IWebSocketServerChannelFactory",
-    "IWebSocketClientChannelFactory",
     "IWebSocketChannel",
     "IWebSocketChannelFrameApi",
     "IWebSocketChannelStreamingApi",
+    "IWebSocketClientChannelFactory",
+    "IWebSocketServerChannelFactory",
 )
 
 

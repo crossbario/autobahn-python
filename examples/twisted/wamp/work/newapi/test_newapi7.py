@@ -1,6 +1,6 @@
-from twisted.internet.task import react
-from twisted.internet.defer import inlineCallbacks as coroutine
 from autobahn.twisted.wamp import Connection
+from twisted.internet.defer import inlineCallbacks as coroutine
+from twisted.internet.task import react
 
 session = ApplicationSession()
 

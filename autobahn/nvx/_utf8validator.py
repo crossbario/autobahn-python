@@ -25,8 +25,8 @@
 ###############################################################################
 
 import os
-from cffi import FFI
 
+from cffi import FFI
 
 ffi = FFI()
 

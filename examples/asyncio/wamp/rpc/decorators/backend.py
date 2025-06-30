@@ -24,12 +24,12 @@
 #
 ###############################################################################
 
-from os import environ
-import datetime
-
 import asyncio
+import datetime
+from os import environ
+
 from autobahn import wamp
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):
@@ -38,7 +38,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         # register all methods on this object decorated with "@wamp.register"
         # as a RPC endpoint
         ##

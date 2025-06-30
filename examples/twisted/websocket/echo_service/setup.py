@@ -24,7 +24,7 @@
 #
 ###############################################################################
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 LONGDESC = """
 A WebSocket echo service implemented as a Twisted service and

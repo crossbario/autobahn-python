@@ -24,18 +24,19 @@
 #
 ###############################################################################
 
-import inspect
 import binascii
+import inspect
 import random
-from typing import Optional, Dict, Any, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import txaio
+
 from autobahn.websocket.protocol import WebSocketProtocol
 
 txaio.use_twisted()  # noqa
 
-from twisted.internet.defer import inlineCallbacks, succeed, Deferred
 from twisted.application import service
+from twisted.internet.defer import Deferred, inlineCallbacks, succeed
 from twisted.internet.interfaces import IReactorCore, IStreamClientEndpoint
 
 try:
@@ -44,38 +45,32 @@ except ImportError:
     # PyOpenSSL / TLS not available
     CertificateOptions = Any
 
-from autobahn.util import public
-
-from autobahn.websocket.util import parse_url as parse_ws_url
 from autobahn.rawsocket.util import parse_url as parse_rs_url
-
-from autobahn.twisted.websocket import WampWebSocketClientFactory
 from autobahn.twisted.rawsocket import WampRawSocketClientFactory
-
+from autobahn.twisted.websocket import WampWebSocketClientFactory
+from autobahn.util import public
+from autobahn.wamp import auth, protocol
+from autobahn.wamp.interfaces import (
+    IAuthenticator,
+    ISerializer,
+    ISession,
+    ITransportHandler,
+)
+from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.compress import (
     PerMessageDeflateOffer,
     PerMessageDeflateResponse,
     PerMessageDeflateResponseAccept,
 )
-
-from autobahn.wamp import protocol, auth
-from autobahn.wamp.interfaces import (
-    ITransportHandler,
-    ISession,
-    IAuthenticator,
-    ISerializer,
-)
-from autobahn.wamp.types import ComponentConfig
+from autobahn.websocket.util import parse_url as parse_ws_url
 
 __all__ = [
+    "Application",
+    "ApplicationRunner",
     "ApplicationSession",
     "ApplicationSessionFactory",
-    "ApplicationRunner",
-    "Application",
     "Service",
-    # new API
     "Session",
-    # 'run',  # should probably move this method to here? instead of component
 ]
 
 
@@ -396,8 +391,7 @@ class ApplicationRunner(object):
         if auto_reconnect:
             try:
                 # since Twisted 16.1.0
-                from twisted.application.internet import ClientService
-                from twisted.application.internet import backoffPolicy
+                from twisted.application.internet import ClientService, backoffPolicy
 
                 use_service = True
             except ImportError:
@@ -414,7 +408,6 @@ class ApplicationRunner(object):
                 or self.retry_delay_growth is not None
                 or self.retry_delay_jitter is not None
             ):
-
                 if self.max_retry_delay > 0:
                     kwargs = {}
 
@@ -869,7 +862,6 @@ class Session(protocol._SessionShim):
 
 # experimental authentication API
 class AuthCryptoSign(object):
-
     def __init__(self, **kw):
         # should put in checkconfig or similar
         for key in kw.keys():
@@ -913,7 +905,6 @@ IAuthenticator.register(AuthCryptoSign)
 
 
 class AuthWampCra(object):
-
     def __init__(self, **kw):
         # should put in checkconfig or similar
         for key in kw.keys():

@@ -26,22 +26,18 @@
 
 import sys
 
-from twisted.internet import reactor
-from twisted.python import log
-from twisted.web.server import Site
-from twisted.web.static import File
-
+from autobahn.twisted.resource import WebSocketResource
 from autobahn.twisted.websocket import (
     WebSocketServerFactory,
     WebSocketServerProtocol,
     listenWS,
 )
-
-from autobahn.twisted.resource import WebSocketResource
-
+from twisted.internet import reactor
+from twisted.python import log
+from twisted.web.server import Site
+from twisted.web.static import File
 
 if __name__ == "__main__":
-
     log.startLogging(sys.stdout)
 
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")

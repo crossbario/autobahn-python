@@ -26,8 +26,9 @@
 
 import asyncio
 from os import environ
+
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 from autobahn.wamp.types import CallOptions, RegisterOptions
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
@@ -36,7 +37,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         async def longop(n, details=None):
             if details.progress:
                 for i in range(n):

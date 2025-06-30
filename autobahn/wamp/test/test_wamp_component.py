@@ -27,12 +27,11 @@
 import os
 
 if os.environ.get("USE_TWISTED", False):
-    from autobahn.twisted.util import sleep
     from autobahn.twisted import wamp
-
-    from twisted.trial import unittest
-    from twisted.internet import defer
+    from autobahn.twisted.util import sleep
     from twisted.application import service
+    from twisted.internet import defer
+    from twisted.trial import unittest
 
     class CaseComponent(wamp.ApplicationSession):
         """
@@ -70,10 +69,8 @@ if os.environ.get("USE_TWISTED", False):
                 print("already finished")
 
     class Case1_Backend(CaseComponent):
-
         @defer.inlineCallbacks
         def onJoin(self, details):
-
             self.log("joined")
 
             def add2(x, y):
@@ -86,10 +83,8 @@ if os.environ.get("USE_TWISTED", False):
             self.finish()
 
     class Case1_Frontend(CaseComponent):
-
         @defer.inlineCallbacks
         def onJoin(self, details):
-
             self.log("joined")
 
             try:
@@ -102,10 +97,8 @@ if os.environ.get("USE_TWISTED", False):
             self.finish()
 
     class Case2_Backend(CaseComponent):
-
         @defer.inlineCallbacks
         def onJoin(self, details):
-
             self.log("joined")
 
             def ping():
@@ -137,10 +130,8 @@ if os.environ.get("USE_TWISTED", False):
             self.log("procedures registered")
 
     class Case2_Frontend(CaseComponent):
-
         @defer.inlineCallbacks
         def onJoin(self, details):
-
             self.log("joined")
 
             yield sleep(1)
@@ -186,7 +177,6 @@ if os.environ.get("USE_TWISTED", False):
             self.finish()
 
     class TestRpc(unittest.TestCase):
-
         if os.environ.get("WAMP_ROUTER_URL") is None:
             skip = (
                 "Please provide WAMP_ROUTER_URL environment with url to "

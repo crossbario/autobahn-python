@@ -26,7 +26,8 @@
 
 import asyncio
 from os import environ
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):
@@ -35,7 +36,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         procs = ["com.mathservice.add2", "com.mathservice.mul2", "com.mathservice.div2"]
 
         try:

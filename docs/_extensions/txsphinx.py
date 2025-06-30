@@ -23,7 +23,6 @@ The label is optional, hence you can also use
 
 
 def make_api_link(name, rawtext, text, lineno, inliner, options={}, content=[]):
-
     from docutils import nodes, utils
 
     # quick, dirty, and ugly...

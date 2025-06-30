@@ -1,9 +1,11 @@
 import asyncio
 import signal
 from urllib.parse import urlparse
-from autobahn.wamp.types import ComponentConfig
-from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
+
 import txaio
+
+from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
+from autobahn.wamp.types import ComponentConfig
 
 
 # TODO - unify with previous class

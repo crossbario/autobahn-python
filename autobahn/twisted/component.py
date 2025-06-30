@@ -28,22 +28,22 @@
 from functools import wraps
 from typing import List
 
-from twisted.internet.interfaces import IStreamClientEndpoint
-from twisted.internet.endpoints import UNIXClientEndpoint
-from twisted.internet.endpoints import TCP4ClientEndpoint
-from twisted.python.failure import Failure
+from twisted.internet.endpoints import TCP4ClientEndpoint, UNIXClientEndpoint
 from twisted.internet.error import ReactorNotRunning
+from twisted.internet.interfaces import IStreamClientEndpoint
+from twisted.python.failure import Failure
 
 try:
     _TLS = True
-    from twisted.internet.endpoints import SSL4ClientEndpoint
-    from twisted.internet.ssl import (
-        optionsForClientTLS,
-        CertificateOptions,
-        Certificate,
-    )
-    from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
     from OpenSSL import SSL
+
+    from twisted.internet.endpoints import SSL4ClientEndpoint
+    from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
+    from twisted.internet.ssl import (
+        Certificate,
+        CertificateOptions,
+        optionsForClientTLS,
+    )
 except ImportError:
     _TLS = False
     # there's no optionsForClientTLS in older Twisteds or we might be
@@ -51,15 +51,13 @@ except ImportError:
 
 import txaio
 
-from autobahn.twisted.websocket import WampWebSocketClientFactory
 from autobahn.twisted.rawsocket import WampRawSocketClientFactory
-
-from autobahn.wamp import component
-
 from autobahn.twisted.wamp import Session
+from autobahn.twisted.websocket import WampWebSocketClientFactory
+from autobahn.wamp import component
 from autobahn.wamp.serializer import (
-    create_transport_serializers,
     create_transport_serializer,
+    create_transport_serializers,
 )
 
 __all__ = ("Component", "run")
@@ -124,7 +122,6 @@ def _create_transport_endpoint(reactor, endpoint_config):
     else:
         # create a connecting TCP socket
         if endpoint_config["type"] == "tcp":
-
             version = endpoint_config.get("version", 4)
             if version not in [4, 6]:
                 raise ValueError(
@@ -329,7 +326,6 @@ class Component(component.Component):
         d = transport_endpoint.connect(transport_factory)
 
         def on_connect_success(proto):
-
             # if e.g. an SSL handshake fails, we will have
             # successfully connected (i.e. get here) but need to
             # 'listen' for the "connectionLost" from the underlying

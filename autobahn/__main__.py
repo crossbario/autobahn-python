@@ -27,10 +27,10 @@
 # this module is available as the 'wamp' command-line tool or as
 # 'python -m autobahn'
 
-import os
-import sys
 import argparse
 import json
+import os
+import sys
 from copy import copy
 
 try:
@@ -40,15 +40,13 @@ except ImportError:
     print("  pip install autobahn[twisted]")
     sys.exit(1)
 
-from twisted.internet.defer import Deferred, inlineCallbacks
-from twisted.internet.task import react
-from twisted.internet.protocol import ProcessProtocol
+import txaio
 
 from autobahn.wamp.exception import ApplicationError
-from autobahn.wamp.types import PublishOptions
-from autobahn.wamp.types import SubscribeOptions
-
-import txaio
+from autobahn.wamp.types import PublishOptions, SubscribeOptions
+from twisted.internet.defer import Deferred, inlineCallbacks
+from twisted.internet.protocol import ProcessProtocol
+from twisted.internet.task import react
 
 txaio.use_twisted()
 
@@ -247,7 +245,7 @@ def do_publish(reactor, session, options):
         options.uri,
         *publish_args,
         options=PublishOptions(acknowledge=True),
-        **publish_kwargs
+        **publish_kwargs,
     )
 
 

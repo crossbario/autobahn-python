@@ -25,10 +25,10 @@
 ###############################################################################
 
 from os import environ
+
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):

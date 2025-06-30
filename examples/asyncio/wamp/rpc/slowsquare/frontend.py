@@ -24,13 +24,12 @@
 #
 ###############################################################################
 
-from os import environ
-import time
-
 import asyncio
+import time
 from functools import partial
+from os import environ
 
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):
@@ -39,7 +38,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         def got(started, msg, f):
             res = f.result()
             duration = 1000.0 * (time.clock() - started)

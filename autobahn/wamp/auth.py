@@ -24,29 +24,29 @@
 #
 ###############################################################################
 
-import os
 import base64
+import binascii
+import hashlib
+import hmac
+import os
+import random
 import struct
 import time
-import binascii
-import hmac
-import hashlib
-import random
-from typing import Optional, Dict
+from typing import Dict, Optional
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from autobahn.util import public
 from autobahn.util import xor as xor_array
 from autobahn.wamp.interfaces import IAuthenticator
 
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
-
 # if we don't have argon2/passlib (see "authentication" extra) then
 # you don't get AuthScram and variants
 try:
-    from argon2.low_level import hash_secret
     from argon2 import Type
+    from argon2.low_level import hash_secret
     from passlib.utils import saslprep
 
     HAS_ARGON = True
@@ -56,20 +56,20 @@ except ImportError:
 
 __all__ = (
     "AuthAnonymous",
-    "AuthScram",
     "AuthCryptoSign",
-    "AuthWampCra",
+    "AuthScram",
     "AuthTicket",
-    "create_authenticator",
-    "pbkdf2",
-    "generate_totp_secret",
-    "compute_totp",
+    "AuthWampCra",
     "check_totp",
-    "qrcode_from_totp",
-    "derive_key",
-    "generate_wcs",
+    "compute_totp",
     "compute_wcs",
+    "create_authenticator",
+    "derive_key",
     "derive_scram_credential",
+    "generate_totp_secret",
+    "generate_wcs",
+    "pbkdf2",
+    "qrcode_from_totp",
 )
 
 
@@ -652,8 +652,7 @@ def derive_scram_credential(
         into the ``config.json`` node configuration for a Crossbar.io node.
     """
     assert HAS_ARGON, "missing dependency argon2"
-    from argon2.low_level import hash_secret
-    from argon2.low_level import Type
+    from argon2.low_level import Type, hash_secret
 
     # derive salt from email
     if not salt:

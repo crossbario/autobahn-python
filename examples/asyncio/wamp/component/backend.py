@@ -1,9 +1,8 @@
-from autobahn.asyncio.component import Component, run
-from autobahn.wamp.types import RegisterOptions
-
 import asyncio
 import ssl
 
+from autobahn.asyncio.component import Component, run
+from autobahn.wamp.types import RegisterOptions
 
 context = ssl.create_default_context(
     purpose=ssl.Purpose.SERVER_AUTH,

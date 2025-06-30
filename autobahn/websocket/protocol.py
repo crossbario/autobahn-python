@@ -24,49 +24,52 @@
 #
 ###############################################################################
 
-import binascii
-import hashlib
 import base64
-import struct
-import random
+import binascii
+import copy
+import hashlib
+import json
 import os
 import pickle
-import copy
-import json
+import random
+import struct
 import time
-from typing import Optional, Union, Tuple, Dict
-from pprint import pformat
 from collections import deque
+from pprint import pformat
+from typing import Dict, Optional, Tuple, Union
 from urllib import parse
 
-from autobahn import __version__
+import hyperlink
+import txaio
 
+from autobahn import __version__
+from autobahn.exception import Disconnected, PayloadExceededError
+from autobahn.util import (
+    ObservableMixin,
+    Stopwatch,
+    _LazyHexFormatter,
+    _maybe_tls_reason,
+    encode_truncate,
+    hltype,
+    hlval,
+    wildcards2patterns,
+)
+from autobahn.wamp.types import TransportDetails
+from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 from autobahn.websocket.interfaces import (
     IWebSocketChannel,
     IWebSocketChannelFrameApi,
     IWebSocketChannelStreamingApi,
 )
-
 from autobahn.websocket.types import (
     ConnectingRequest,
+    ConnectionDeny,
     ConnectionRequest,
     ConnectionResponse,
-    ConnectionDeny,
 )
-from autobahn.wamp.types import TransportDetails
-
-from autobahn.util import Stopwatch, wildcards2patterns, encode_truncate, hltype, hlval
-from autobahn.util import _LazyHexFormatter
-from autobahn.util import ObservableMixin
 from autobahn.websocket.utf8validator import Utf8Validator
-from autobahn.websocket.xormasker import XorMaskerNull, create_xor_masker
-from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 from autobahn.websocket.util import parse_url
-from autobahn.exception import PayloadExceededError, Disconnected
-from autobahn.util import _maybe_tls_reason
-
-import txaio
-import hyperlink
+from autobahn.websocket.xormasker import XorMaskerNull, create_xor_masker
 
 # https://stackoverflow.com/a/15844751/884770
 # from types import NoneType
@@ -74,12 +77,12 @@ NoneType = type(None)
 
 
 __all__ = (
-    "WebSocketProtocol",
-    "WebSocketFactory",
-    "WebSocketServerProtocol",
-    "WebSocketServerFactory",
-    "WebSocketClientProtocol",
     "WebSocketClientFactory",
+    "WebSocketClientProtocol",
+    "WebSocketFactory",
+    "WebSocketProtocol",
+    "WebSocketServerFactory",
+    "WebSocketServerProtocol",
 )
 
 
@@ -161,7 +164,6 @@ def _is_same_origin(websocket_origin, host_scheme, host_port, host_policy):
 
 
 class TrafficStats(object):
-
     def __init__(self):
         self.reset()
 
@@ -187,7 +189,6 @@ class TrafficStats(object):
         self.preopenIncomingOctetsWireLevel = 0
 
     def __json__(self):
-
         # compression ratio = compressed size / uncompressed size
         #
         if self.outgoingOctetsAppLevel > 0:
@@ -972,7 +973,6 @@ class WebSocketProtocol(ObservableMixin):
         """
         self.unregisterProducer()
         if self.state != WebSocketProtocol.STATE_CLOSED:
-
             if self.wasClean:
                 self.log.debug(
                     "dropping connection to peer {peer} with abort={abort}",
@@ -1392,7 +1392,6 @@ class WebSocketProtocol(ObservableMixin):
             self.state == WebSocketProtocol.STATE_OPEN
             or self.state == WebSocketProtocol.STATE_CLOSING
         ):
-
             # process until no more buffered data left or WS was closed
             #
             while self.processData() and self.state != WebSocketProtocol.STATE_CLOSED:
@@ -1401,13 +1400,11 @@ class WebSocketProtocol(ObservableMixin):
         # need to establish proxy connection
         #
         elif self.state == WebSocketProtocol.STATE_PROXY_CONNECTING:
-
             self.processProxyConnect()
 
         # WebSocket needs handshake
         #
         elif self.state == WebSocketProtocol.STATE_CONNECTING:
-
             # the implementation of processHandshake() in derived
             # class needs to perform client or server handshake
             # from other party here ..
@@ -1417,7 +1414,6 @@ class WebSocketProtocol(ObservableMixin):
         # we failed the connection .. don't process any more data!
         #
         elif self.state == WebSocketProtocol.STATE_CLOSED:
-
             # ignore any data received after WS was closed
             #
             self.log.debug("received data in STATE_CLOSED")
@@ -1459,7 +1455,6 @@ class WebSocketProtocol(ObservableMixin):
             e = self.send_queue.popleft()
 
             if self.state != WebSocketProtocol.STATE_CLOSED:
-
                 self.transport.write(e[0])
 
                 if self.state == WebSocketProtocol.STATE_OPEN:
@@ -1549,11 +1544,9 @@ class WebSocketProtocol(ObservableMixin):
         # outside a frame, that is we are awaiting data which starts a new frame
         #
         if self.current_frame is None:
-
             # need minimum of 2 octets to for new frame
             #
             if buffered_len >= 2:
-
                 # FIN, RSV, OPCODE
                 #
                 b = self.data[0]
@@ -1602,7 +1595,6 @@ class WebSocketProtocol(ObservableMixin):
                 # check frame
                 #
                 if frame_opcode > 7:  # control frame (have MSB in opcode set)
-
                     # control frames MUST NOT be fragmented
                     #
                     if not frame_fin:
@@ -1647,7 +1639,6 @@ class WebSocketProtocol(ObservableMixin):
                             return False
 
                 else:  # data frame
-
                     # check for reserved data frame opcodes
                     #
                     if frame_opcode not in [0, 1, 2]:
@@ -1706,7 +1697,6 @@ class WebSocketProtocol(ObservableMixin):
                 # frame header (which includes extended payload len + mask)
                 #
                 if buffered_len >= frame_header_len:
-
                     # minimum frame header length (already consumed)
                     #
                     i = 2
@@ -1781,7 +1771,6 @@ class WebSocketProtocol(ObservableMixin):
         # inside a started frame
         #
         else:
-
             # cut out rest of frame payload
             #
             rest = self.current_frame.length - self.current_frame_masker.pointer()
@@ -1834,7 +1823,6 @@ class WebSocketProtocol(ObservableMixin):
             # new message started
             #
             if not self.inside_message:
-
                 self.inside_message = True
 
                 # setup decompressor
@@ -1936,7 +1924,6 @@ class WebSocketProtocol(ObservableMixin):
                 self._cancelAutoPingTimeoutCall()
 
             if self.current_frame.fin:
-
                 # handle end of compressed message
                 #
                 if self._isMessageCompressed:
@@ -1971,7 +1958,6 @@ class WebSocketProtocol(ObservableMixin):
         # CLOSE frame
         #
         if self.current_frame.opcode == 8:
-
             code = None
             reasonRaw = None
             ll = len(payload)
@@ -1991,7 +1977,6 @@ class WebSocketProtocol(ObservableMixin):
         # PONG frame
         #
         elif self.current_frame.opcode == 10:
-
             # auto ping/pong processing
             #
             if self.autoPingPending:
@@ -2255,7 +2240,6 @@ class WebSocketProtocol(ObservableMixin):
             raise Exception("cannot close a connection not yet connected")
 
         elif self.state == WebSocketProtocol.STATE_OPEN:
-
             # construct Hybi close frame payload and send frame
             payload = b""
             if code is not None:
@@ -2407,7 +2391,6 @@ class WebSocketProtocol(ObservableMixin):
         # FIN = false .. since with streaming, we don't know when message ends
         b0 = 0
         if self.send_state == WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN:
-
             b0 |= self.send_message_opcode % 128
 
             if self.send_compressed:
@@ -2550,22 +2533,22 @@ class WebSocketProtocol(ObservableMixin):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage`
         """
-        assert (
-            type(payload) == bytes
-        ), '"payload" must have type bytes, but was "{}"'.format(type(payload))
-        assert (
-            type(isBinary) == bool
-        ), '"isBinary" must have type bool, but was "{}"'.format(type(isBinary))
-        assert (
-            fragmentSize is None or type(fragmentSize) == int
-        ), '"fragmentSize" must have type int, but was "{}"'.format(type(fragmentSize))
+        assert type(payload) == bytes, (
+            '"payload" must have type bytes, but was "{}"'.format(type(payload))
+        )
+        assert type(isBinary) == bool, (
+            '"isBinary" must have type bool, but was "{}"'.format(type(isBinary))
+        )
+        assert fragmentSize is None or type(fragmentSize) == int, (
+            '"fragmentSize" must have type int, but was "{}"'.format(type(fragmentSize))
+        )
         assert type(sync) == bool, '"sync" must have type bool, but was "{}"'.format(
             type(sync)
         )
-        assert (
-            type(doNotCompress) == bool
-        ), '"doNotCompress" must have type bool, but was "{}"'.format(
-            type(doNotCompress)
+        assert type(doNotCompress) == bool, (
+            '"doNotCompress" must have type bool, but was "{}"'.format(
+                type(doNotCompress)
+            )
         )
 
         if self.state != WebSocketProtocol.STATE_OPEN:
@@ -3172,7 +3155,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     )
 
             if version not in self.versions:
-
                 # respond with list of supported versions (descending order)
                 #
                 sv = sorted(self.versions)
@@ -3254,8 +3236,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     )
                 if not origin_is_allowed:
                     return self.failHandshake(
-                        "WebSocket connection denied: origin '{0}' "
-                        "not allowed".format(self.websocket_origin)
+                        "WebSocket connection denied: origin '{0}' not allowed".format(
+                            self.websocket_origin
+                        )
                     )
 
             # Sec-WebSocket-Key
@@ -3318,7 +3301,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 self.maxConnections > 0
                 and self.factory.countConnections > self.maxConnections
             ):
-
                 # maximum number of concurrent connections reached
                 #
                 self.failHandshake(
@@ -3425,7 +3407,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # handle WebSocket extensions
         #
         for extension, params in self.websocket_extensions:
-
             self.log.debug(
                 "parsed WebSocket extension '{extension}' with params '{params}'",
                 extension=extension,
@@ -3435,7 +3416,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
             # process permessage-compress extension
             #
             if extension in PERMESSAGE_COMPRESSION_EXTENSION:
-
                 PMCE = PERMESSAGE_COMPRESSION_EXTENSION[extension]
 
                 try:
@@ -4025,7 +4005,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
         #
         end_of_header = self.data.find(b"\x0d\x0a\x0d\x0a")
         if end_of_header >= 0:
-
             http_response_data = self.data[: end_of_header + 4]
             self.log.debug(
                 "received HTTP response:\n\n{response}\n\n",
@@ -4075,7 +4054,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 )
 
             if not (200 <= status_code < 300):
-
                 # FIXME: handle redirects
                 # FIXME: handle authentication required
 
@@ -4258,7 +4236,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
         #
         end_of_header = self.data.find(b"\x0d\x0a\x0d\x0a")
         if end_of_header >= 0:
-
             self.http_response_data: bytes = self.data[: end_of_header + 4]
             self.log.debug(
                 "{meth}: received HTTP response:\n{response}",
@@ -4308,7 +4285,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
                     'Bad HTTP status code "{}"'.format(sl[1].strip())
                 )
             if status_code != 101:  # Switching Protocols
-
                 # FIXME: handle redirects
                 # FIXME: handle authentication required
 
@@ -4383,7 +4359,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
             self.websocket_extensions_in_use = []
 
             if "sec-websocket-extensions" in self.http_headers:
-
                 if http_headers_cnt["sec-websocket-extensions"] > 1:
                     return self.failHandshake(
                         "HTTP Sec-WebSocket-Extensions header appears more than once in opening handshake reply"
@@ -4398,7 +4373,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 # process extensions selected by server
                 #
                 for extension, params in websocket_extensions:
-
                     self.log.debug(
                         "parsed WebSocket extension '{extension}' with params '{params}'",
                         extension=extension,
@@ -4408,7 +4382,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
                     # process permessage-compress extension
                     #
                     if extension in PERMESSAGE_COMPRESSION_EXTENSION:
-
                         # check that server only responded with 1 configuration ("PMCE")
                         #
                         if self._perMessageCompress is not None:

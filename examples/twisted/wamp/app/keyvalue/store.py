@@ -26,10 +26,9 @@
 
 import shelve
 
-from twisted.internet.defer import inlineCallbacks
-
 from autobahn import wamp
 from autobahn.twisted.wamp import ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class KeyValueStore(ApplicationSession):
@@ -72,9 +71,8 @@ class KeyValueStore(ApplicationSession):
 
 
 if __name__ == "__main__":
-
-    import sys
     import argparse
+    import sys
 
     # parse command line arguments
     parser = argparse.ArgumentParser()

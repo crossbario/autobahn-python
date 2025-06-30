@@ -1,5 +1,5 @@
-from twisted.internet.defer import inlineCallbacks as coroutine
 from autobahn.twisted import Client
+from twisted.internet.defer import inlineCallbacks as coroutine
 
 
 @coroutine

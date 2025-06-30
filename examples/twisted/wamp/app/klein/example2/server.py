@@ -27,9 +27,8 @@
 import jinja2
 from klein import Klein
 
-from twisted.internet.defer import inlineCallbacks
 from autobahn.twisted.wamp import Application
-
+from twisted.internet.defer import inlineCallbacks
 
 # This is our WAMP application
 ##
@@ -73,9 +72,10 @@ def square_submit(request):
 
 if __name__ == "__main__":
     import sys
+
+    from twisted.internet import reactor
     from twisted.python import log
     from twisted.web.server import Site
-    from twisted.internet import reactor
 
     log.startLogging(sys.stdout)
 
