@@ -31,9 +31,11 @@ from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol, \
-    listenWS
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    listenWS,
+)
 
 
 class BroadcastServerProtocol(WebSocketServerProtocol):
@@ -43,7 +45,7 @@ class BroadcastServerProtocol(WebSocketServerProtocol):
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            msg = "{} from {}".format(payload.decode('utf8'), self.peer)
+            msg = "{} from {}".format(payload.decode("utf8"), self.peer)
             self.factory.broadcast(msg)
 
     def connectionLost(self, reason):
@@ -52,7 +54,6 @@ class BroadcastServerProtocol(WebSocketServerProtocol):
 
 
 class BroadcastServerFactory(WebSocketServerFactory):
-
     """
     Simple broadcast server broadcasting any message it receives to all
     currently connected clients.
@@ -82,12 +83,11 @@ class BroadcastServerFactory(WebSocketServerFactory):
     def broadcast(self, msg):
         print("broadcasting message '{}' ..".format(msg))
         for c in self.clients:
-            c.sendMessage(msg.encode('utf8'))
+            c.sendMessage(msg.encode("utf8"))
             print("message sent to {}".format(c.peer))
 
 
 class BroadcastPreparedServerFactory(BroadcastServerFactory):
-
     """
     Functionally same as above, but optimized broadcast using
     prepareMessage and sendPreparedMessage.
@@ -101,7 +101,7 @@ class BroadcastPreparedServerFactory(BroadcastServerFactory):
             print("prepared message sent to {}".format(c.peer))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     log.startLogging(sys.stdout)
 

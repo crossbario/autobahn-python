@@ -2,6 +2,7 @@ from twisted.trial import unittest
 
 try:
     from autobahn.twisted.testing import create_memory_agent, create_pumper
+
     HAVE_TESTING = True
 except ImportError:
     HAVE_TESTING = False
@@ -37,6 +38,7 @@ class TestAgent(unittest.TestCase):
 
         def got(msg, is_binary):
             messages.append(msg)
+
         proto.on("message", got)
 
         proto.sendMessage(b"hello")

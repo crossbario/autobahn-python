@@ -27,10 +27,12 @@
 import unittest
 from unittest.mock import Mock
 
-from autobahn.twisted.rawsocket import (WampRawSocketServerFactory,
-                                        WampRawSocketServerProtocol,
-                                        WampRawSocketClientFactory,
-                                        WampRawSocketClientProtocol)
+from autobahn.twisted.rawsocket import (
+    WampRawSocketServerFactory,
+    WampRawSocketServerProtocol,
+    WampRawSocketClientFactory,
+    WampRawSocketClientProtocol,
+)
 from autobahn.testutil import FakeTransport
 
 

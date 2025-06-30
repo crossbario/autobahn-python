@@ -1,5 +1,3 @@
-
-
 from autobahn.twisted.component import Component, run
 from autobahn.wamp.types import RegisterOptions
 from autobahn.wamp.exception import ApplicationError
@@ -31,4 +29,4 @@ component = Component(
 
 
 if __name__ == "__main__":
-    run([component])  #, log_level='debug')
+    run([component])  # , log_level='debug')

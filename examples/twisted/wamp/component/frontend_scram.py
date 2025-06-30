@@ -1,5 +1,3 @@
-
-
 from autobahn.twisted.component import Component, run
 from autobahn.wamp.types import RegisterOptions
 from autobahn.wamp.exception import ApplicationError
@@ -16,8 +14,9 @@ component = Component(
             "password": "p4ssw0rd",
             "kdf": "argon2id13",
         }
-    }
+    },
 )
+
 
 @component.on_join
 def joined(session, details):
@@ -25,4 +24,4 @@ def joined(session, details):
 
 
 if __name__ == "__main__":
-    run([component])  #, log_level='debug')
+    run([component])  # , log_level='debug')

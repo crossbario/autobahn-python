@@ -53,15 +53,15 @@ class Component(ApplicationSession):
         def arglen(*args, **kwargs):
             return [len(args), len(kwargs)]
 
-        await self.register(ping, 'com.arguments.ping')
-        await self.register(add2, 'com.arguments.add2')
-        await self.register(stars, 'com.arguments.stars')
-        await self.register(orders, 'com.arguments.orders')
-        await self.register(arglen, 'com.arguments.arglen')
+        await self.register(ping, "com.arguments.ping")
+        await self.register(add2, "com.arguments.add2")
+        await self.register(stars, "com.arguments.stars")
+        await self.register(orders, "com.arguments.orders")
+        await self.register(arglen, "com.arguments.arglen")
         print("Registered methods; ready for frontend.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

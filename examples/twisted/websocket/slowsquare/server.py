@@ -24,12 +24,10 @@
 #
 ###############################################################################
 
-from autobahn.twisted.websocket import WebSocketServerProtocol, \
-    WebSocketServerFactory
+from autobahn.twisted.websocket import WebSocketServerProtocol, WebSocketServerFactory
 
 import json
-from twisted.internet.defer import Deferred, \
-    inlineCallbacks
+from twisted.internet.defer import Deferred, inlineCallbacks
 
 
 def sleep(delay):
@@ -51,16 +49,16 @@ class SlowSquareServerProtocol(WebSocketServerProtocol):
     @inlineCallbacks
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            x = json.loads(payload.decode('utf8'))
+            x = json.loads(payload.decode("utf8"))
             try:
                 res = yield self.slowsquare(x)
             except Exception as e:
                 self.sendClose(1000, "Exception raised: {0}".format(e))
             else:
-                self.sendMessage(json.dumps(res).encode('utf8'))
+                self.sendMessage(json.dumps(res).encode("utf8"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     import sys
 

@@ -44,19 +44,19 @@ class Component(Session):
         while True:
             counter += 1
 
-            pub = yield self.publish('event.foo.{}'.format(counter), "some data")
+            pub = yield self.publish("event.foo.{}".format(counter), "some data")
             print("published {}".format(pub))
             yield sleep(1)
 
-            sub = yield self.subscribe(lambda: None, 'event.sub_{}'.format(counter))
+            sub = yield self.subscribe(lambda: None, "event.sub_{}".format(counter))
             print("subscribed {sub.id}".format(sub=sub))
             yield sleep(1)
 
-            reg = yield self.register(lambda: 42, 'event.rpc.test_{}'.format(counter))
+            reg = yield self.register(lambda: 42, "event.rpc.test_{}".format(counter))
             print("registered {reg.id}".format(reg=reg))
             yield sleep(1)
 
-            call = yield self.call('event.rpc.test_{}'.format(counter))
+            call = yield self.call("event.rpc.test_{}".format(counter))
             print("called {}".format(call))
             yield sleep(1)
 
@@ -64,7 +64,7 @@ class Component(Session):
             yield sub.unsubscribe()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     runner = ApplicationRunner(
         environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
         "crossbardemo",

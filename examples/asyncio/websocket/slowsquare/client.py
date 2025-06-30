@@ -26,8 +26,7 @@
 
 import asyncio
 
-from autobahn.asyncio.websocket import WebSocketClientProtocol, \
-    WebSocketClientFactory
+from autobahn.asyncio.websocket import WebSocketClientProtocol, WebSocketClientFactory
 
 import json
 import random
@@ -36,13 +35,13 @@ import random
 class SlowSquareClientProtocol(WebSocketClientProtocol):
 
     def onOpen(self):
-        x = 10. * random.random()
-        self.sendMessage(json.dumps(x).encode('utf8'))
+        x = 10.0 * random.random()
+        self.sendMessage(json.dumps(x).encode("utf8"))
         print("Request to square {} sent.".format(x))
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            res = json.loads(payload.decode('utf8'))
+            res = json.loads(payload.decode("utf8"))
             print("Result received: {}".format(res))
             self.sendClose()
 
@@ -52,12 +51,12 @@ class SlowSquareClientProtocol(WebSocketClientProtocol):
         loop.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = SlowSquareClientProtocol
 
     loop = asyncio.get_event_loop()
-    coro = loop.create_connection(factory, '127.0.0.1', 9000)
+    coro = loop.create_connection(factory, "127.0.0.1", 9000)
     loop.run_until_complete(coro)
     loop.run_forever()
     loop.close()

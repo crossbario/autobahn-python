@@ -29,7 +29,6 @@ from autobahn.asyncio.wamp import ApplicationSession
 
 
 class Component(ApplicationSession):
-
     """
     An application component that publishes an event every second.
     """
@@ -38,6 +37,6 @@ class Component(ApplicationSession):
 
         counter = 0
         while True:
-            self.publish('com.myapp.topic1', counter)
+            self.publish("com.myapp.topic1", counter)
             counter += 1
             await asyncio.sleep(1)

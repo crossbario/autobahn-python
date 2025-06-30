@@ -1,12 +1,13 @@
 @coroutine
 def main(reactor, session):
     # the session is joined and ready
-    result = yield session.call('com.example.add2', 2, 3)
-    print('result={}'.format(result))
+    result = yield session.call("com.example.add2", 2, 3)
+    print("result={}".format(result))
     # as we exit, this signals we are done with the session! the session
     # can be recycled
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     client = Client(main=main)
     react(client.run)
 
@@ -16,15 +17,15 @@ def setup(reactor, session):
     # the session is joined and ready also!
     def add2(a, b):
         return a + b
-    yield session.register('com.example.add2', add2)
-    print('procedure registered')
+
+    yield session.register("com.example.add2", add2)
+    print("procedure registered")
     # as we exit, this signals we are ready! the session must be kept.
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     client = Client(setup=setup)
     react(client.run)
-
-
 
 
 @coroutine
@@ -35,8 +36,8 @@ def client_main(reactor, client):
 
         @coroutine
         def session_main(reactor, session):
-            result = yield session.call('com.example.add2', 2, 3)
-            print('result={}'.format(result))
+            result = yield session.call("com.example.add2", 2, 3)
+            print("result={}".format(result))
 
         # returns when the session_main has finished (!), the session
         # calls leave() or the underlying transport closes
@@ -45,34 +46,34 @@ def client_main(reactor, client):
     # returns when the transport_main won't reconnect
     yield client.connect(transport_main)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     client = Client(client_main=client_main)
     react(client.run)
 
 
-
 @coroutine
 def session_main(reactor, session):
-    result = yield session.call('com.example.add2', 2, 3)
-    print('result={}'.format(result))
+    result = yield session.call("com.example.add2", 2, 3)
+    print("result={}".format(result))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     client = Client(session_main=session_main)
     react(client.run)
-
 
 
 @coroutine
 def session_main(reactor, session):
     def add2(a, b):
         return a + b
-    yield session.register('com.example.add2', add2)
-    print('procedure registered')
+
+    yield session.register("com.example.add2", add2)
+    print("procedure registered")
     txaio.return_value(txaio.create_future())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     client = Client(session_main=session_main)
     react(client.run)
 
@@ -80,13 +81,13 @@ if __name__ == '__main__':
 @coroutine
 def main1(reactor, session, details):
 
-    result = yield session.call('com.example.add2', 2, 3)
-    print('result={}'.format(result))
+    result = yield session.call("com.example.add2", 2, 3)
+    print("result={}".format(result))
 
     yield session.leave()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # hooking into on_join is the highest-level API -
     # the user callback will fire with a joined session ready to use
     # both the transport auto-reconnection logic and the session creation
@@ -101,13 +102,13 @@ def main1(reactor, transport, details):
     session = yield transport.join(details.config.realm)
 
     # the session is joined and can be used
-    result = yield session.call('com.example.add2', 2, 3)
-    print('result={}'.format(result))
+    result = yield session.call("com.example.add2", 2, 3)
+    print("result={}".format(result))
 
     yield session.leave()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # hooking into on_connect is a medium-level API -
     # the user callback will fire with a connected transport which
     # can be used to create new sessions from. the auto-reconnection
@@ -125,13 +126,13 @@ def main1(reactor, client, details):
 
     # create a session running over the transport
     session = yield transport.join(config.realm)
-    result = yield session.call('com.example.add2', 2, 3)
-    print('result={}'.format(result))
+    result = yield session.call("com.example.add2", 2, 3)
+    print("result={}".format(result))
     yield session.leave()
     yield transport.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # hooking into on_create is a low-level API - the user callback
     # will fire with a created client, and the user code can
     # control the whole transport and session creation, connection and
@@ -144,13 +145,13 @@ if __name__ == '__main__':
 def main1(reactor, client, config):
     transport = yield client.open()
     session = yield transport.join(config.realm)
-    result = yield session.call('com.example.add2', 2, 3)
-    print('result={}'.format(result))
+    result = yield session.call("com.example.add2", 2, 3)
+    print("result={}".format(result))
     yield session.leave()
     yield transport.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # hooking into on_create is a low-level API - the user callback
     # will fire with a created client, and the user code can
     # control the whole transport and session creation, connection and
@@ -168,19 +169,20 @@ def main1(reactor, client, config):
         else:
             break
         try:
+            pass
             # client.open() yields a connected WAMP transport
-            with yield client.open() as transport:
-                try:
-                    with yield transport.join(config.realm) as session:
-                        result = yield session.call('com.example.add2', 2, 3)
-                        print('result={}'.format(result))
-                except Exception as e:
-                    pass
+            # with yield client.open() as transport:
+            #     try:
+            #         with yield transport.join(config.realm) as session:
+            #             result = yield session.call('com.example.add2', 2, 3)
+            #             print('result={}'.format(result))
+            #     except Exception as e:
+            #         pass
         except Exception as e:
             pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # hooking into on_create is a low-level API - the user callback
     # will fire with a created client, and the user code can
     # control the whole transport and session creation, connection and
@@ -201,11 +203,11 @@ def main2(reactor, connection):
     def add2(a, b):
         return a + b
 
-    yield session.register('com.example.add2', add2)
+    yield session.register("com.example.add2", add2)
 
     # and call the procedure
-    result = yield session.call('com.example.add2', 2, 3)
-    print('result={}'.format(result))
+    result = yield session.call("com.example.add2", 2, 3)
+    print("result={}".format(result))
 
     # now leave the realm, which frees the underlying transport
     # but freeze the session
@@ -228,8 +230,8 @@ def main2(reactor, connection):
     session2 = transport.join(connection.config.realm)
 
     # call the procedure registered on the (resumed) session running on transport2
-    result = yield session.call('com.example.add2', 2, 3)
-    print('result={}'.format(result))
+    result = yield session.call("com.example.add2", 2, 3)
+    print("result={}".format(result))
 
     # if the transport supports multiplexing, multiple session can run
     # concurrently over the underlying transport
@@ -245,18 +247,15 @@ def main2(reactor, connection):
     yield transport2.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     transports = [
         {
-            'type': 'rawsocket',
-            'serializer': 'msgpack',
-            'endpoint': {
-                'type': 'unix',
-                'path': '/tmp/cb1.sock'
-            }
+            "type": "rawsocket",
+            "serializer": "msgpack",
+            "endpoint": {"type": "unix", "path": "/tmp/cb1.sock"},
         }
     ]
-    config = Config(realm='myrealm1')
+    config = Config(realm="myrealm1")
     connection = Connection(main, transports=transports, config=config)
     react(connection.start)

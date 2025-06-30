@@ -7,6 +7,7 @@ from autobahn.twisted.wamp import Connection
 # sessions have a lifecycle independent of Connection/Transport
 session = ApplicationSession()
 
+
 def add2(a, b):
     return a + b
 
@@ -14,12 +15,12 @@ def add2(a, b):
 @coroutine
 def main(transport):
     # join a realm and try to resume the session
-    details = yield session.join(transport, 'myrealm1', resume=True)
+    details = yield session.join(transport, "myrealm1", resume=True)
 
     if not details.is_resumed:
         # if the session is fresh, register a procedure ..
 
-        yield session.register('com.myapp.add2', add2)
+        yield session.register("com.myapp.add2", add2)
 
         # and leave the realm, freezing the session
         yield session.leave(freeze=True)
@@ -28,7 +29,7 @@ def main(transport):
         # if the session is resumed, our registration will have been
         # reestablished automatically
 
-        result = yield session.call('com.myapp.add2', 2, 3)
+        result = yield session.call("com.myapp.add2", 2, 3)
         print("Result: {}", result)
 
         # leave the realm finally
@@ -41,22 +42,15 @@ def main(transport):
 def test():
     transports = [
         {
-            'type': 'rawsocket',
-            'serializer': 'msgpack',
-            'endpoint': {
-                'type': 'unix',
-                'path': '/tmp/cb1.sock'
-            }
+            "type": "rawsocket",
+            "serializer": "msgpack",
+            "endpoint": {"type": "unix", "path": "/tmp/cb1.sock"},
         },
         {
-            'type': 'websocket',
-            'url': 'ws://127.0.0.1:8080/ws',
-            'endpoint': {
-                'type': 'tcp',
-                'host': '127.0.0.1',
-                'port': 8080
-            }
-        }
+            "type": "websocket",
+            "url": "ws://127.0.0.1:8080/ws",
+            "endpoint": {"type": "tcp", "host": "127.0.0.1", "port": 8080},
+        },
     ]
 
     connection1 = Connection(main1, transports=transports[0])
@@ -66,5 +60,5 @@ def test():
     yield react(connection2.start)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test()

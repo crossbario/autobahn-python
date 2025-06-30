@@ -27,15 +27,16 @@
 from ranstring import randomByteString
 from twisted.internet import reactor
 
-from autobahn.twisted.websocket import WebSocketClientFactory, \
-    WebSocketClientProtocol, \
-    connectWS
+from autobahn.twisted.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    connectWS,
+)
 
 BATCH_SIZE = 1 * 2**20
 
 
 class StreamingHashClientProtocol(WebSocketClientProtocol):
-
     """
     Streaming WebSockets client that generates stream of random octets
     sent to WebSockets server as a sequence of batches in one frame, in
@@ -60,12 +61,16 @@ class StreamingHashClientProtocol(WebSocketClientProtocol):
         self.sendOneBatch()
 
     def onMessage(self, payload, isBinary):
-        print("Digest for batch {} computed by server: {}".format(self.count, payload.decode('utf8')))
+        print(
+            "Digest for batch {} computed by server: {}".format(
+                self.count, payload.decode("utf8")
+            )
+        )
         self.count += 1
         self.sendOneBatch()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = StreamingHashClientProtocol

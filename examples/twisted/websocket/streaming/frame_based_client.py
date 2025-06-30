@@ -29,9 +29,11 @@ from ranstring import randomByteString
 
 from twisted.internet import reactor
 
-from autobahn.twisted.websocket import WebSocketClientFactory, \
-    WebSocketClientProtocol, \
-    connectWS
+from autobahn.twisted.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    connectWS,
+)
 
 
 FRAME_SIZE = 1 * 2**20
@@ -39,7 +41,6 @@ FRAME_COUNT = 10
 
 
 class FrameBasedHashClientProtocol(WebSocketClientProtocol):
-
     """
     Message-based WebSockets client that generates stream of random octets
     sent to WebSockets server as a sequence of frames all in one message.
@@ -64,7 +65,11 @@ class FrameBasedHashClientProtocol(WebSocketClientProtocol):
         self.sendOneFrame()
 
     def onMessage(self, payload, isBinary):
-        print("Digest for frame {} computed by server: {}".format(self.count, payload.decode('utf8')))
+        print(
+            "Digest for frame {} computed by server: {}".format(
+                self.count, payload.decode("utf8")
+            )
+        )
         self.count += 1
 
         if self.count < FRAME_COUNT:
@@ -80,16 +85,18 @@ class FrameBasedHashClientProtocol(WebSocketClientProtocol):
         reactor.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = FrameBasedHashClientProtocol
 
     enableCompression = False
     if enableCompression:
-        from autobahn.websocket.compress import PerMessageDeflateOffer, \
-            PerMessageDeflateResponse, \
-            PerMessageDeflateResponseAccept
+        from autobahn.websocket.compress import (
+            PerMessageDeflateOffer,
+            PerMessageDeflateResponse,
+            PerMessageDeflateResponseAccept,
+        )
 
         # The extensions offered to the server ..
         offers = [PerMessageDeflateOffer()]

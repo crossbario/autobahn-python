@@ -31,14 +31,16 @@ from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol, \
-    listenWS
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    listenWS,
+)
 
 from autobahn.twisted.resource import WebSocketResource
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     log.startLogging(sys.stdout)
 

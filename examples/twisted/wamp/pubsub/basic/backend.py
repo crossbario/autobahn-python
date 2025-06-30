@@ -42,13 +42,13 @@ class Component(ApplicationSession):
         print("session attached")
         counter = 0
         while True:
-            print('backend publishing com.myapp.topic1', counter)
-            self.publish('com.myapp.topic1', counter)
+            print("backend publishing com.myapp.topic1", counter)
+            self.publish("com.myapp.topic1", counter)
             counter += 1
             yield sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

@@ -30,7 +30,6 @@ from autobahn.asyncio.wamp import ApplicationSession
 
 
 class Component(ApplicationSession):
-
     """
     An application component using the time service
     during 3 subsequent WAMP sessions, while the
@@ -45,7 +44,7 @@ class Component(ApplicationSession):
         print("Realm joined (WAMP session started).")
 
         try:
-            now = await self.call('com.timeservice.now')
+            now = await self.call("com.timeservice.now")
         except Exception as e:
             print("Error: {}".format(e))
         else:

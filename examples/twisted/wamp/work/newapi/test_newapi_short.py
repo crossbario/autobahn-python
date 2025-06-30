@@ -5,7 +5,7 @@ from autobahn.twisted import Client
 @coroutine
 def on_join(session):
     try:
-        res = yield session.call('com.example.add2', 2, 3)
+        res = yield session.call("com.example.add2", 2, 3)
         print("Result: {}".format(res))
     except Exception as e:
         print("Error: {}".format(e))
@@ -13,7 +13,7 @@ def on_join(session):
         session.leave()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # this is Client, a high-level API above Connection and Session
     # it's a what is nowerdays ApplicationRunner, but with a better
     # name and a listener based interface

@@ -52,16 +52,17 @@ app = Flask(__name__)
 app._visits = 0
 
 
-@app.route('/')
+@app.route("/")
 def index():
     app._visits += 1
-    publish('com.example.on_visit', app._visits, msg="hello from flask")
+    publish("com.example.on_visit", app._visits, msg="hello from flask")
     return "Visit {}".format(app._visits)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
     import logging
+
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
     # this will start the WAMP app on a background thread and setup communication

@@ -41,16 +41,16 @@ class Component(ApplicationSession):
         def add_complex(a, ai, b, bi):
             return CallResult(c=a + b, ci=ai + bi)
 
-        await self.register(add_complex, 'com.myapp.add_complex')
+        await self.register(add_complex, "com.myapp.add_complex")
 
         def split_name(fullname):
             forename, surname = fullname.split()
             return CallResult(forename, surname)
 
-        await self.register(split_name, 'com.myapp.split_name')
+        await self.register(split_name, "com.myapp.split_name")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

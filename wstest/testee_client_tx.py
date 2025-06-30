@@ -27,6 +27,7 @@
 import argparse
 
 import txaio
+
 txaio.use_twisted()
 
 from twisted.internet import reactor
@@ -34,11 +35,17 @@ from twisted.internet import reactor
 import autobahn
 
 from autobahn.websocket.protocol import WebSocketProtocol
-from autobahn.twisted.websocket import connectWS, WebSocketClientFactory, \
-    WebSocketClientProtocol
+from autobahn.twisted.websocket import (
+    connectWS,
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+)
 
-from autobahn.websocket.compress import PerMessageDeflateOffer, \
-    PerMessageDeflateResponse, PerMessageDeflateResponseAccept
+from autobahn.websocket.compress import (
+    PerMessageDeflateOffer,
+    PerMessageDeflateResponse,
+    PerMessageDeflateResponseAccept,
+)
 
 
 class TesteeClientProtocol(WebSocketClientProtocol):
@@ -47,16 +54,20 @@ class TesteeClientProtocol(WebSocketClientProtocol):
         if self.factory.endCaseId is None:
             self.log.info("Getting case count ..")
         elif self.factory.currentCaseId <= self.factory.endCaseId:
-            self.log.info("Running test case {case_id}/{last_case_id} as user agent {agent} on peer {peer}",
-                          case_id=self.factory.currentCaseId,
-                          last_case_id=self.factory.endCaseId,
-                          agent=self.factory.agent,
-                          peer=self.peer)
+            self.log.info(
+                "Running test case {case_id}/{last_case_id} as user agent {agent} on peer {peer}",
+                case_id=self.factory.currentCaseId,
+                last_case_id=self.factory.endCaseId,
+                agent=self.factory.agent,
+                peer=self.peer,
+            )
 
     def onMessage(self, msg, binary):
         if self.factory.endCaseId is None:
             self.factory.endCaseId = int(msg)
-            self.log.info("Ok, will run {case_count} cases", case_count=self.factory.endCaseId)
+            self.log.info(
+                "Ok, will run {case_count} cases", case_count=self.factory.endCaseId
+            )
         else:
             if self.state == WebSocketProtocol.STATE_OPEN:
                 self.sendMessage(msg, binary)
@@ -91,7 +102,9 @@ class TesteeClientFactory(WebSocketClientFactory):
     def clientConnectionLost(self, connector, reason):
         self.currentCaseId += 1
         if self.currentCaseId <= self.endCaseId:
-            self.resource = "/runCase?case={}&agent={}".format(self.currentCaseId, self.agent)
+            self.resource = "/runCase?case={}&agent={}".format(
+                self.currentCaseId, self.agent
+            )
             connector.connect()
         elif self.updateReports:
             self.resource = "/updateReports?agent={}".format(self.agent)
@@ -101,15 +114,31 @@ class TesteeClientFactory(WebSocketClientFactory):
             reactor.stop()
 
     def clientConnectionFailed(self, connector, reason):
-        self.log.info("Connection to {url} failed: {error_message}", url=self.url, error_message=reason.getErrorMessage())
+        self.log.info(
+            "Connection to {url} failed: {error_message}",
+            url=self.url,
+            error_message=reason.getErrorMessage(),
+        )
         reactor.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Autobahn Testee Client (Twisted)')
-    parser.add_argument('--url', dest='url', type=str, default='ws://127.0.0.1:9001', help='The WebSocket fuzzing server URL.')
-    parser.add_argument('--loglevel', dest='loglevel', type=str, default='info', help='Log level, eg "info" or "debug".')
+    parser = argparse.ArgumentParser(description="Autobahn Testee Client (Twisted)")
+    parser.add_argument(
+        "--url",
+        dest="url",
+        type=str,
+        default="ws://127.0.0.1:9001",
+        help="The WebSocket fuzzing server URL.",
+    )
+    parser.add_argument(
+        "--loglevel",
+        dest="loglevel",
+        type=str,
+        default="info",
+        help='Log level, eg "info" or "debug".',
+    )
 
     options = parser.parse_args()
 

@@ -24,8 +24,7 @@
 #
 ###############################################################################
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 
 class BroadcastServerProtocol(WebSocketServerProtocol):
@@ -41,11 +40,11 @@ class BroadcastServerProtocol(WebSocketServerProtocol):
 
 
 class BroadcastServerFactory(WebSocketServerFactory):
-
     """
     Simple broadcast server broadcasting any message it receives to all
     currently connected clients.
     """
+
     protocol = BroadcastServerProtocol
 
     def __init__(self, url):
@@ -68,7 +67,7 @@ class BroadcastServerFactory(WebSocketServerFactory):
         print("broadcasted message to {} clients".format(len(self.clients)))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     import sys
 

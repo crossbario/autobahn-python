@@ -43,15 +43,17 @@ class Component(Session):
         print("session attached {}".format(details))
 
         def got_meta(*args, **kw):
-            details = kw.pop('details')
+            details = kw.pop("details")
             print("meta: '{}' args={}, kw={}".format(details.topic, args, kw))
+
         yield self.subscribe(
-            got_meta, '',
-            options=SubscribeOptions(match='prefix', details_arg='details'),
+            got_meta,
+            "",
+            options=SubscribeOptions(match="prefix", details_arg="details"),
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     runner = ApplicationRunner(
         environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
         "crossbardemo",
@@ -59,8 +61,7 @@ if __name__ == '__main__':
 
     def make(config):
         session = Component(config)
-        session.add_authenticator(
-            "wampcra", authid='username', secret='p4ssw0rd'
-        )
+        session.add_authenticator("wampcra", authid="username", secret="p4ssw0rd")
         return session
+
     runner.run(make)

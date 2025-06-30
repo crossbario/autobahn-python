@@ -14,14 +14,15 @@ class WebApplication(object):
     A simple Web application that publishes an event every time the
     url "/" is visited.
     """
+
     def __init__(self, app, wamp_comp):
         self._app = app
         self._wamp = wamp_comp
         self._session = None  # "None" while we're disconnected from WAMP router
 
         # associate ourselves with WAMP session lifecycle
-        self._wamp.on('join', self._initialize)
-        self._wamp.on('leave', self._uninitialize)
+        self._wamp.on("join", self._initialize)
+        self._wamp.on("leave", self._uninitialize)
         # hook up Klein routes
         self._app.route("/", branch=True)(self._render_slash)
 
@@ -65,7 +66,8 @@ def main(reactor):
 
     # When not using run() we also must start logging ourselves.
     import txaio
-    txaio.start_logging(level='info')
+
+    txaio.start_logging(level="info")
 
     # If the Component raises an exception we want to exit. Note that
     # things like failing to connect will be swallowed by the
@@ -74,6 +76,7 @@ def main(reactor):
     def _failed(f):
         print("Component failed: {}".format(f))
         done.errback(f)
+
     comp_d.addErrback(_failed)
 
     # wait forever (unless the Component raises an error)
@@ -81,5 +84,5 @@ def main(reactor):
     yield done
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     react(main)

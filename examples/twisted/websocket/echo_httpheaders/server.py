@@ -29,22 +29,26 @@ import sys
 from twisted.internet import reactor
 from twisted.python import log
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol, \
-    listenWS
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    listenWS,
+)
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
 
     def onConnect(self, request):
-        headers = {'MyCustomDynamicServerHeader1': 'Hello'}
+        headers = {"MyCustomDynamicServerHeader1": "Hello"}
 
         # Note: HTTP header field names are case-insensitive,
         # hence AutobahnPython will normalize header field names to
         # lower case.
         ##
-        if 'mycustomclientheader' in request.headers:
-            headers['MyCustomDynamicServerHeader2'] = request.headers['mycustomclientheader']
+        if "mycustomclientheader" in request.headers:
+            headers["MyCustomDynamicServerHeader2"] = request.headers[
+                "mycustomclientheader"
+            ]
 
         # return a pair with WS protocol spoken (or None for any) and
         # custom headers to send in initial WS opening handshake HTTP response
@@ -55,11 +59,11 @@ class EchoServerProtocol(WebSocketServerProtocol):
         self.sendMessage(payload, isBinary)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     log.startLogging(sys.stdout)
 
-    headers = {'MyCustomServerHeader': 'Foobar'}
+    headers = {"MyCustomServerHeader": "Foobar"}
 
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = EchoServerProtocol

@@ -24,58 +24,54 @@
 #
 ###############################################################################
 
-from autobahn.wamp.types import \
-    ComponentConfig, \
-    SessionDetails, \
-    CloseDetails, \
-    RegisterOptions, \
-    CallOptions, \
-    CallDetails, \
-    CallResult, \
-    SubscribeOptions, \
-    PublishOptions, \
-    EventDetails
+from autobahn.wamp.types import (
+    ComponentConfig,
+    SessionDetails,
+    CloseDetails,
+    RegisterOptions,
+    CallOptions,
+    CallDetails,
+    CallResult,
+    SubscribeOptions,
+    PublishOptions,
+    EventDetails,
+)
 
-from autobahn.wamp.exception import \
-    Error, \
-    SessionNotReady, \
-    SerializationError, \
-    ProtocolError, \
-    TransportLost, \
-    ApplicationError, \
-    InvalidUri
+from autobahn.wamp.exception import (
+    Error,
+    SessionNotReady,
+    SerializationError,
+    ProtocolError,
+    TransportLost,
+    ApplicationError,
+    InvalidUri,
+)
 
 from autobahn.wamp.interfaces import ISession
 
-from autobahn.wamp.uri import \
-    error, \
-    register, \
-    subscribe
+from autobahn.wamp.uri import error, register, subscribe
 
 
 __all__ = (
-    'ComponentConfig',
-    'SessionDetails',
-    'CloseDetails',
-    'RegisterOptions',
-    'CallOptions',
-    'CallDetails',
-    'CallResult',
-    'SubscribeOptions',
-    'PublishOptions',
-    'EventDetails',
-
-    'Error',
-    'SessionNotReady',
-    'SerializationError',
-    'ProtocolError',
-    'TransportLost',
-    'ApplicationError',
-    'InvalidUri',
-
-    'ISession',
-
-    'error',
-    'register',
-    'subscribe',
+    "ComponentConfig",
+    "SessionDetails",
+    "CloseDetails",
+    "RegisterOptions",
+    "CallOptions",
+    "CallDetails",
+    "CallResult",
+    "SubscribeOptions",
+    "PublishOptions",
+    "EventDetails",
+    "Error",
+    "SessionNotReady",
+    "SerializationError",
+    "ProtocolError",
+    "TransportLost",
+    "ApplicationError",
+    "InvalidUri",
+    "ISession",
+    "error",
+    "register",
+    "subscribe",
 )

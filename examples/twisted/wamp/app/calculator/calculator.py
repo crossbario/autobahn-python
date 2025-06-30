@@ -42,13 +42,13 @@ class Calculator(ApplicationSession):
         yield self.register(self)
         print("Ok, calculator procedures registered!")
 
-    @wamp.register('com.example.calculator.clear')
+    @wamp.register("com.example.calculator.clear")
     def clear(self, arg=None):
         self.op = None
         self.current = decimal.Decimal(0)
         return str(self.current)
 
-    @wamp.register('com.example.calculator.calc')
+    @wamp.register("com.example.calculator.calc")
     def calc(self, op, num):
         num = decimal.Decimal(num)
         if self.op:
@@ -72,7 +72,7 @@ class Calculator(ApplicationSession):
         return res
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     decimal.getcontext().prec = 20
 
@@ -82,15 +82,24 @@ if __name__ == '__main__':
     # parse command line arguments
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--web", type=int, default=8080,
-                        help='Web port to use for embedded Web server. Use 0 to disable.')
+    parser.add_argument(
+        "--web",
+        type=int,
+        default=8080,
+        help="Web port to use for embedded Web server. Use 0 to disable.",
+    )
 
-    parser.add_argument("--router", type=str, default=None,
-                        help='If given, connect to this WAMP router. Else run an embedded router on 9000.')
+    parser.add_argument(
+        "--router",
+        type=str,
+        default=None,
+        help="If given, connect to this WAMP router. Else run an embedded router on 9000.",
+    )
 
     args = parser.parse_args()
 
     from twisted.python import log
+
     log.startLogging(sys.stdout)
 
     # run WAMP application component

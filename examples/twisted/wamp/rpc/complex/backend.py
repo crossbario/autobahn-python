@@ -32,7 +32,6 @@ from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     Application component that provides procedures which
     return complex results.
@@ -45,18 +44,18 @@ class Component(ApplicationSession):
         def add_complex(a, ai, b, bi):
             return CallResult(c=a + b, ci=ai + bi)
 
-        yield self.register(add_complex, 'com.myapp.add_complex')
+        yield self.register(add_complex, "com.myapp.add_complex")
 
         def split_name(fullname):
             forename, surname = fullname.split()
             return CallResult(forename, surname)
 
-        yield self.register(split_name, 'com.myapp.split_name')
+        yield self.register(split_name, "com.myapp.split_name")
 
         print("procedures registered")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

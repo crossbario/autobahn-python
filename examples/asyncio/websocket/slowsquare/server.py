@@ -27,8 +27,7 @@
 import asyncio
 import json
 
-from autobahn.asyncio.websocket import WebSocketServerProtocol, \
-    WebSocketServerFactory
+from autobahn.asyncio.websocket import WebSocketServerProtocol, WebSocketServerFactory
 
 
 class SlowSquareServerProtocol(WebSocketServerProtocol):
@@ -42,22 +41,22 @@ class SlowSquareServerProtocol(WebSocketServerProtocol):
 
     async def onMessage(self, payload, isBinary):
         if not isBinary:
-            x = json.loads(payload.decode('utf8'))
+            x = json.loads(payload.decode("utf8"))
             try:
                 res = await self.slowsquare(x)
             except Exception as e:
                 self.sendClose(1000, "Exception raised: {0}".format(e))
             else:
-                self.sendMessage(json.dumps(res).encode('utf8'))
+                self.sendMessage(json.dumps(res).encode("utf8"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = SlowSquareServerProtocol
 
     loop = asyncio.get_event_loop()
-    coro = loop.create_server(factory, '127.0.0.1', 9000)
+    coro = loop.create_server(factory, "127.0.0.1", 9000)
     server = loop.run_until_complete(coro)
 
     try:

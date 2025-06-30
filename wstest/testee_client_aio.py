@@ -28,6 +28,7 @@ import asyncio
 import argparse
 
 import txaio
+
 txaio.use_asyncio()
 
 import autobahn
@@ -35,11 +36,13 @@ import autobahn
 from autobahn.websocket.util import parse_url
 
 from autobahn.websocket.protocol import WebSocketProtocol
-from autobahn.asyncio.websocket import WebSocketClientProtocol, \
-    WebSocketClientFactory
+from autobahn.asyncio.websocket import WebSocketClientProtocol, WebSocketClientFactory
 
-from autobahn.websocket.compress import PerMessageDeflateOffer, \
-    PerMessageDeflateResponse, PerMessageDeflateResponseAccept
+from autobahn.websocket.compress import (
+    PerMessageDeflateOffer,
+    PerMessageDeflateResponse,
+    PerMessageDeflateResponseAccept,
+)
 
 
 class TesteeClientProtocol(WebSocketClientProtocol):
@@ -48,16 +51,20 @@ class TesteeClientProtocol(WebSocketClientProtocol):
         if self.factory.endCaseId is None:
             self.log.info("Getting case count ..")
         elif self.factory.currentCaseId <= self.factory.endCaseId:
-            self.log.info("Running test case {case_id}/{last_case_id} as user agent {agent} on peer {peer}",
-                          case_id=self.factory.currentCaseId,
-                          last_case_id=self.factory.endCaseId,
-                          agent=self.factory.agent,
-                          peer=self.peer)
+            self.log.info(
+                "Running test case {case_id}/{last_case_id} as user agent {agent} on peer {peer}",
+                case_id=self.factory.currentCaseId,
+                last_case_id=self.factory.endCaseId,
+                agent=self.factory.agent,
+                peer=self.peer,
+            )
 
     def onMessage(self, msg, binary):
         if self.factory.endCaseId is None:
             self.factory.endCaseId = int(msg)
-            self.log.info("Ok, will run {case_count} cases", case_count=self.factory.endCaseId)
+            self.log.info(
+                "Ok, will run {case_count} cases", case_count=self.factory.endCaseId
+            )
         else:
             if self.state == WebSocketProtocol.STATE_OPEN:
                 self.sendMessage(msg, binary)
@@ -87,11 +94,23 @@ class TesteeClientFactory(WebSocketClientFactory):
         self.setProtocolOptions(perMessageCompressionAccept=accept)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Autobahn Testee Client (asyncio)')
-    parser.add_argument('--url', dest='url', type=str, default='ws://127.0.0.1:9001', help='The WebSocket fuzzing server URL.')
-    parser.add_argument('--loglevel', dest='loglevel', type=str, default='info', help='Log level, eg "info" or "debug".')
+    parser = argparse.ArgumentParser(description="Autobahn Testee Client (asyncio)")
+    parser.add_argument(
+        "--url",
+        dest="url",
+        type=str,
+        default="ws://127.0.0.1:9001",
+        help="The WebSocket fuzzing server URL.",
+    )
+    parser.add_argument(
+        "--loglevel",
+        dest="loglevel",
+        type=str,
+        default="info",
+        help='Log level, eg "info" or "debug".',
+    )
 
     options = parser.parse_args()
 
@@ -103,7 +122,7 @@ if __name__ == '__main__':
 
     loop = asyncio.get_event_loop()
 
-    factory.resource = '/getCaseCount'
+    factory.resource = "/getCaseCount"
     factory.endCaseId = None
     factory.currentCaseId = 0
     factory.updateReports = True
@@ -117,7 +136,9 @@ if __name__ == '__main__':
 
         factory.currentCaseId += 1
         if factory.currentCaseId <= factory.endCaseId:
-            factory.resource = "/runCase?case={}&agent={}".format(factory.currentCaseId, factory.agent)
+            factory.resource = "/runCase?case={}&agent={}".format(
+                factory.currentCaseId, factory.agent
+            )
         elif factory.updateReports:
             factory.resource = "/updateReports?agent={}".format(factory.agent)
             factory.updateReports = False

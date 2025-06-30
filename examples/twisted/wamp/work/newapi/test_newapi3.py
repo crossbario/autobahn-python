@@ -18,10 +18,10 @@ def main(reactor, connection):
             print("add2() called", a, b)
             return a + b
 
-        yield session.register(add2, 'com.example.add2')
+        yield session.register(add2, "com.example.add2")
 
         try:
-            res = yield session.call('com.example.add2', 2, 3)
+            res = yield session.call("com.example.add2", 2, 3)
             print("result: {}".format(res))
         except Exception as e:
             print("error: {}".format(e))
@@ -29,34 +29,27 @@ def main(reactor, connection):
             print("leaving ..")
             session.leave()
 
-    connection.on('join', on_join)
+    connection.on("join", on_join)
 
 
-if __name__ == '__main__':
-    #import txaio
-    #txaio.use_twisted()
-    #txaio.start_logging(level='debug')
+if __name__ == "__main__":
+    # import txaio
+    # txaio.use_twisted()
+    # txaio.start_logging(level='debug')
 
     transports = [
         {
-            'type': 'rawsocket',
-            'serializer': 'msgpack',
-            'endpoint': {
-                'type': 'unix',
-                'path': '/tmp/cb1.sock'
-            }
+            "type": "rawsocket",
+            "serializer": "msgpack",
+            "endpoint": {"type": "unix", "path": "/tmp/cb1.sock"},
         },
         {
-            'type': 'websocket',
-            'url': 'ws://127.0.0.1:8080/ws',
-            'endpoint': {
-                'type': 'tcp',
-                'host': '127.0.0.1',
-                'port': 8080
-            }
-        }
+            "type": "websocket",
+            "url": "ws://127.0.0.1:8080/ws",
+            "endpoint": {"type": "tcp", "host": "127.0.0.1", "port": 8080},
+        },
     ]
     connection = Connection(transports=transports)
-    connection.on('start', main)
+    connection.on("start", main)
 
     react(connection.start)

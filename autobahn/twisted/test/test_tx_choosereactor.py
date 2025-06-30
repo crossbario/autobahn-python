@@ -43,8 +43,10 @@ class ChooseReactorTests(unittest.TestCase):
         if hasattr(twisted.internet, name):
             self.patch(twisted.internet, name, new_reactor)
         else:
+
             def _cleanup():
                 delattr(twisted.internet, name)
+
             setattr(twisted.internet, name, new_reactor)
 
     def patch_modules(self):
@@ -97,8 +99,8 @@ class ChooseReactorTests(unittest.TestCase):
         """
         ``install_optimal_reactor`` will install IOCPReactor on Windows.
         """
-        if sys.platform != 'win32':
-            raise unittest.SkipTest('unit test requires Windows')
+        if sys.platform != "win32":
+            raise unittest.SkipTest("unit test requires Windows")
 
         reactor_mock = Mock()
         self.patch_reactor("iocpreactor", reactor_mock)

@@ -27,62 +27,70 @@
 from zope.interface import implementer
 
 from twisted.plugin import IPlugin
-from twisted.internet.interfaces import IStreamServerEndpointStringParser, \
-    IStreamServerEndpoint, \
-    IStreamClientEndpoint
+from twisted.internet.interfaces import (
+    IStreamServerEndpointStringParser,
+    IStreamServerEndpoint,
+    IStreamClientEndpoint,
+)
 
 try:
     from twisted.internet.interfaces import IStreamClientEndpointStringParserWithReactor
+
     _HAS_REACTOR_ARG = True
 except ImportError:
     _HAS_REACTOR_ARG = False
-    from twisted.internet.interfaces import IStreamClientEndpointStringParser as \
-        IStreamClientEndpointStringParserWithReactor
+    from twisted.internet.interfaces import (
+        IStreamClientEndpointStringParser as IStreamClientEndpointStringParserWithReactor,
+    )
 
 from twisted.internet.endpoints import serverFromString, clientFromString
 
-from autobahn.twisted.websocket import WrappingWebSocketServerFactory, \
-    WrappingWebSocketClientFactory
+from autobahn.twisted.websocket import (
+    WrappingWebSocketServerFactory,
+    WrappingWebSocketClientFactory,
+)
 
 
 def _parseOptions(options):
     opts = {}
 
-    if 'url' not in options:
+    if "url" not in options:
         raise Exception("URL needed")
     else:
-        opts['url'] = options['url']
+        opts["url"] = options["url"]
 
-    if 'compression' in options:
-        value = options['compression'].lower().strip()
-        if value == 'true':
-            opts['enableCompression'] = True
-        elif value == 'false':
-            opts['enableCompression'] = False
+    if "compression" in options:
+        value = options["compression"].lower().strip()
+        if value == "true":
+            opts["enableCompression"] = True
+        elif value == "false":
+            opts["enableCompression"] = False
         else:
             raise Exception("invalid value '{0}' for compression".format(value))
 
-    if 'autofrag' in options:
+    if "autofrag" in options:
         try:
-            value = int(options['autofrag'])
+            value = int(options["autofrag"])
         except:
-            raise Exception("invalid value '{0}' for autofrag".format(options['autofrag']))
+            raise Exception(
+                "invalid value '{0}' for autofrag".format(options["autofrag"])
+            )
 
         if value < 0:
             raise Exception("negative value '{0}' for autofrag".format(value))
 
-        opts['autoFragmentSize'] = value
+        opts["autoFragmentSize"] = value
 
-    if 'subprotocol' in options:
-        value = options['subprotocol'].lower().strip()
-        opts['subprotocol'] = value
+    if "subprotocol" in options:
+        value = options["subprotocol"].lower().strip()
+        opts["subprotocol"] = value
 
-    if 'debug' in options:
-        value = options['debug'].lower().strip()
-        if value == 'true':
-            opts['debug'] = True
-        elif value == 'false':
-            opts['debug'] = False
+    if "debug" in options:
+        value = options["debug"].lower().strip()
+        if value == "true":
+            opts["debug"] = True
+        elif value == "false":
+            opts["debug"] = False
         else:
             raise Exception("invalid value '{0}' for debug".format(value))
 
@@ -132,7 +140,11 @@ class AutobahnServerEndpoint(object):
         self._options = options
 
     def listen(self, protocolFactory):
-        return self._endpoint.listen(WrappingWebSocketServerFactory(protocolFactory, reactor=self._reactor, **self._options))
+        return self._endpoint.listen(
+            WrappingWebSocketServerFactory(
+                protocolFactory, reactor=self._reactor, **self._options
+            )
+        )
 
 
 # note that for older Twisted before the WithReactor variant, we
@@ -147,12 +159,17 @@ class AutobahnClientParser(object):
         if _HAS_REACTOR_ARG:
             reactor = args[0]
             if len(args) != 2:
-                raise RuntimeError("autobahn: client plugin takes exactly one positional argument")
+                raise RuntimeError(
+                    "autobahn: client plugin takes exactly one positional argument"
+                )
             description = args[1]
         else:
             from twisted.internet import reactor
+
             if len(args) != 1:
-                raise RuntimeError("autobahn: client plugin takes exactly one positional argument")
+                raise RuntimeError(
+                    "autobahn: client plugin takes exactly one positional argument"
+                )
             description = args[0]
         opts = _parseOptions(options)
         endpoint = clientFromString(reactor, description)
@@ -169,7 +186,11 @@ class AutobahnClientEndpoint(object):
         self._options = options
 
     def connect(self, protocolFactory):
-        return self._endpoint.connect(WrappingWebSocketClientFactory(protocolFactory, reactor=self._reactor, **self._options))
+        return self._endpoint.connect(
+            WrappingWebSocketClientFactory(
+                protocolFactory, reactor=self._reactor, **self._options
+            )
+        )
 
 
 autobahnServerParser = AutobahnServerParser()

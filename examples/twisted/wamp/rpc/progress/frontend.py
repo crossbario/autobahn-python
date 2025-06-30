@@ -44,7 +44,9 @@ class Component(ApplicationSession):
         def on_progress(i):
             print("Progress: {}".format(i))
 
-        res = yield self.call('com.myapp.longop', 3, options=CallOptions(on_progress=on_progress))
+        res = yield self.call(
+            "com.myapp.longop", 3, options=CallOptions(on_progress=on_progress)
+        )
 
         print("Final: {}".format(res))
 
@@ -55,7 +57,7 @@ class Component(ApplicationSession):
         reactor.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

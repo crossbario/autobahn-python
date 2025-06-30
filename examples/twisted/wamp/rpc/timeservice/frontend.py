@@ -40,7 +40,7 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
         try:
-            now = yield self.call('com.timeservice.now')
+            now = yield self.call("com.timeservice.now")
         except Exception as e:
             print("Error: {}".format(e))
         else:
@@ -53,7 +53,7 @@ class Component(ApplicationSession):
         reactor.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

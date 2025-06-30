@@ -31,13 +31,13 @@ class HelloServerProtocol(Protocol):
 
     def connectionMade(self):
         print("connectionMade")
-        self.transport.write('how are you?')
+        self.transport.write("how are you?")
 
     def dataReceived(self, data):
         print("dataReceived: {}".format(data))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     import sys
 

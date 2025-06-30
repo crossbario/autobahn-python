@@ -36,9 +36,7 @@ class Component(ApplicationSession):
 
     async def onJoin(self, details):
 
-        procs = ['com.mathservice.add2',
-                 'com.mathservice.mul2',
-                 'com.mathservice.div2']
+        procs = ["com.mathservice.add2", "com.mathservice.mul2", "com.mathservice.div2"]
 
         try:
             for proc in procs:
@@ -53,7 +51,7 @@ class Component(ApplicationSession):
         asyncio.get_event_loop().stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

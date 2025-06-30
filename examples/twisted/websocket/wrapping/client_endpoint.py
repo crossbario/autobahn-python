@@ -31,13 +31,13 @@ class HelloClientProtocol(Protocol):
 
     def connectionMade(self):
         print("connectionMade")
-        self.transport.write('hello')
+        self.transport.write("hello")
 
     def dataReceived(self, data):
         print("dataReceived: {}".format(data))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     import sys
 
@@ -50,7 +50,9 @@ if __name__ == '__main__':
 
     wrappedFactory = Factory.forProtocol(HelloClientProtocol)
 
-    endpoint = clientFromString(reactor, "autobahn:tcp\:127.0.0.1\:9000:url=ws\://localhost\:9000")
+    endpoint = clientFromString(
+        reactor, "autobahn:tcp\:127.0.0.1\:9000:url=ws\://localhost\:9000"
+    )
     endpoint.connect(wrappedFactory)
 
     reactor.run()

@@ -39,17 +39,17 @@ class Component(ApplicationSession):
         def square(x):
             return x * x
 
-        await self.register(square, 'com.math.square')
+        await self.register(square, "com.math.square")
 
         async def slowsquare(x, delay=1):
             await asyncio.sleep(delay)
             return x * x
 
-        await self.register(slowsquare, 'com.math.slowsquare')
+        await self.register(slowsquare, "com.math.slowsquare")
         print("Registered com.math.slowsquare")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

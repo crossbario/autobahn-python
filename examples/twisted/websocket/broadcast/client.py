@@ -26,20 +26,21 @@
 
 import sys
 from twisted.internet import reactor
-from autobahn.twisted.websocket import WebSocketClientFactory, \
-    WebSocketClientProtocol, \
-    connectWS
+from autobahn.twisted.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    connectWS,
+)
 
 
 class BroadcastClientProtocol(WebSocketClientProtocol):
-
     """
     Simple client that connects to a WebSocket server, send a HELLO
     message every 2 seconds and print everything it receives.
     """
 
     def sendHello(self):
-        self.sendMessage("Hello from Python!".encode('utf8'))
+        self.sendMessage("Hello from Python!".encode("utf8"))
         reactor.callLater(2, self.sendHello)
 
     def onOpen(self):
@@ -47,10 +48,10 @@ class BroadcastClientProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            print("Text message received: {}".format(payload.decode('utf8')))
+            print("Text message received: {}".format(payload.decode("utf8")))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print("Need the WebSocket server address, i.e. ws://127.0.0.1:9000")

@@ -31,13 +31,13 @@ class HelloClientProtocol(Protocol):
 
     def connectionMade(self):
         print("connectionMade", self.transport.getHost(), self.transport.getPeer())
-        self.transport.write('hello' * 100)
+        self.transport.write("hello" * 100)
 
     def dataReceived(self, data):
         print("dataReceived: {}".format(data))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     import sys
 
@@ -50,10 +50,12 @@ if __name__ == '__main__':
     log.startLogging(sys.stdout)
 
     wrappedFactory = Factory.forProtocol(HelloClientProtocol)
-    factory = WrappingWebSocketClientFactory(wrappedFactory,
-                                             "ws://127.0.0.1:9000",
-                                             enableCompression=False,
-                                             autoFragmentSize=1024)
+    factory = WrappingWebSocketClientFactory(
+        wrappedFactory,
+        "ws://127.0.0.1:9000",
+        enableCompression=False,
+        autoFragmentSize=1024,
+    )
 
     reactor.connectTCP("127.0.0.1", 9000, factory)
     reactor.run()

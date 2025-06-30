@@ -27,15 +27,16 @@
 from ranstring import randomByteString
 from twisted.internet import reactor
 
-from autobahn.twisted.websocket import WebSocketClientFactory, \
-    WebSocketClientProtocol, \
-    connectWS
+from autobahn.twisted.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    connectWS,
+)
 
 MESSAGE_SIZE = 1 * 2**20
 
 
 class MessageBasedHashClientProtocol(WebSocketClientProtocol):
-
     """
     Message-based WebSockets client that generates stream of random octets
     sent to WebSockets server as a sequence of messages. The server will
@@ -52,12 +53,16 @@ class MessageBasedHashClientProtocol(WebSocketClientProtocol):
         self.sendOneMessage()
 
     def onMessage(self, payload, isBinary):
-        print("Digest for message {} computed by server: {}".format(self.count, payload.decode('utf8')))
+        print(
+            "Digest for message {} computed by server: {}".format(
+                self.count, payload.decode("utf8")
+            )
+        )
         self.count += 1
         self.sendOneMessage()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = MessageBasedHashClientProtocol

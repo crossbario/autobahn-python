@@ -34,7 +34,6 @@ from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     An application component that subscribes and receives events
     of no payload and of complex payload, and stops after 5 seconds.
@@ -50,14 +49,15 @@ class Component(ApplicationSession):
             print("heartbeat (publication ID {})".format(details.publication))
 
         yield self.subscribe(
-            on_heartbeat, 'com.myapp.heartbeat',
-            options=SubscribeOptions(details_arg='details')
+            on_heartbeat,
+            "com.myapp.heartbeat",
+            options=SubscribeOptions(details_arg="details"),
         )
 
         def on_topic2(a, b, c=None, d=None):
             print("Got event: {} {} {} {}".format(a, b, c, d))
 
-        yield self.subscribe(on_topic2, 'com.myapp.topic2')
+        yield self.subscribe(on_topic2, "com.myapp.topic2")
 
         reactor.callLater(5, self.leave)
 
@@ -66,7 +66,7 @@ class Component(ApplicationSession):
         reactor.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

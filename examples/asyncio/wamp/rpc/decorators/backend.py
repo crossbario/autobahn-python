@@ -51,15 +51,15 @@ class Component(ApplicationSession):
                 # res is an Failure instance
                 print("Failed to register procedure: {}".format(res))
 
-    @wamp.register('com.mathservice.add2')
+    @wamp.register("com.mathservice.add2")
     def add2(self, x, y):
         return x + y
 
-    @wamp.register('com.mathservice.mul2')
+    @wamp.register("com.mathservice.mul2")
     def mul2(self, x, y):
         return x * y
 
-    @wamp.register('com.mathservice.div2')
+    @wamp.register("com.mathservice.div2")
     def square(self, x, y):
         if y:
             return float(x) / float(y)
@@ -67,7 +67,7 @@ class Component(ApplicationSession):
             return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

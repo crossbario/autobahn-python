@@ -27,15 +27,16 @@
 import hashlib
 from twisted.internet import reactor
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol, \
-    listenWS
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    listenWS,
+)
 
 from streaming_client import BATCH_SIZE
 
 
 class StreamingHashServerProtocol(WebSocketServerProtocol):
-
     """
     Streaming WebSockets server that computes a running SHA-256 for data
     received. It will respond every BATCH_SIZE bytes with the digest
@@ -68,7 +69,7 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
 
             # send digest
             digest = self.sha256.hexdigest()
-            self.sendMessage(digest.encode('utf8'))
+            self.sendMessage(digest.encode("utf8"))
             print("Sent digest for batch {} : {}".format(self.count, digest))
 
             # advance to next batch
@@ -88,7 +89,7 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
         pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = StreamingHashServerProtocol
     listenWS(factory)

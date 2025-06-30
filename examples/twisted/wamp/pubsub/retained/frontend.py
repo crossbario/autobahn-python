@@ -51,7 +51,8 @@ class Component(Session):
         for topic in ["com.example.no_history_here", "com.example.history"]:
             print("subscribing to '{}'".format(topic))
             pub = yield self.subscribe(
-                got_event, topic,
+                got_event,
+                topic,
                 options=SubscribeOptions(get_retained=True),
             )
             print("id={}".format(pub.id))
@@ -60,10 +61,14 @@ class Component(Session):
         print("Using the WAMP Meta API:")
         print("wamp.subscription.get_events {}: {}".format(pub.id, len(events)))
         for event in events:
-            print("  {event[timestamp]} {event[topic]} args={event[args]} kwargs={event[kwargs]}".format(event=event))
+            print(
+                "  {event[timestamp]} {event[topic]} args={event[args]} kwargs={event[kwargs]}".format(
+                    event=event
+                )
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     runner = ApplicationRunner(
         environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
         "crossbardemo",

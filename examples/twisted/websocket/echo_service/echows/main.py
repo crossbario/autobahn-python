@@ -32,7 +32,6 @@ from echoservice import EchoService
 
 
 class AppService(MultiService):
-
     """
     Our application service hierarchy.
     """
@@ -47,7 +46,14 @@ class AppService(MultiService):
 
 
 class Options(usage.Options):
-    optParameters = [["port", "p", 8080, "Listening port (for both Web and WebSocket) - default 8080."]]
+    optParameters = [
+        [
+            "port",
+            "p",
+            8080,
+            "Listening port (for both Web and WebSocket) - default 8080.",
+        ]
+    ]
 
 
 def makeService(options):
@@ -58,6 +64,6 @@ def makeService(options):
 
     # create application service and forward command line options ..
     service = AppService()
-    service.port = int(options['port'])
+    service.port = int(options["port"])
 
     return service

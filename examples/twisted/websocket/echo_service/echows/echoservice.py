@@ -34,8 +34,7 @@ from twisted.application import service
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol
+from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 from autobahn.resource import WebSocketResource
 
@@ -47,7 +46,6 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 
 class EchoService(service.Service):
-
     """
     WebSocket Echo service - this runs a Twisted Web site with a WebSocket
     echo server running under path "/ws".

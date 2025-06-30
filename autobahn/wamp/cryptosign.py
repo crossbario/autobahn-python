@@ -40,7 +40,7 @@ from autobahn.wamp.mnemonic import mnemonic_to_private_key
 from autobahn.util import parse_keyfile
 
 __all__ = [
-    'HAS_CRYPTOSIGN',
+    "HAS_CRYPTOSIGN",
 ]
 
 try:
@@ -51,7 +51,7 @@ except ImportError:
     HAS_CRYPTOSIGN = False
 else:
     HAS_CRYPTOSIGN = True
-    __all__.append('CryptosignKey')
+    __all__.append("CryptosignKey")
 
 
 def _unpack(keydata):
@@ -63,10 +63,10 @@ def _unpack(keydata):
     parts = []
     while keydata:
         # read the length of the data
-        dlen = struct.unpack('>I', keydata[:4])[0]
+        dlen = struct.unpack(">I", keydata[:4])[0]
 
         # read in <length> bytes
-        data, keydata = keydata[4:dlen + 4], keydata[4 + dlen:]
+        data, keydata = keydata[4 : dlen + 4], keydata[4 + dlen :]
         parts.append(data)
     return parts
 
@@ -77,9 +77,9 @@ def _pack(keyparts):
     """
     parts = []
     for part in keyparts:
-        parts.append(struct.pack('>I', len(part)))
+        parts.append(struct.pack(">I", len(part)))
         parts.append(part)
-    return b''.join(parts)
+    return b"".join(parts)
 
 
 def _read_ssh_ed25519_pubkey(keydata):
@@ -101,21 +101,23 @@ def _read_ssh_ed25519_pubkey(keydata):
 
     parts = keydata.strip().split()
     if len(parts) != 3:
-        raise Exception('invalid SSH Ed25519 public key')
+        raise Exception("invalid SSH Ed25519 public key")
     algo, keydata, comment = parts
 
-    if algo != 'ssh-ed25519':
-        raise Exception('not a Ed25519 SSH public key (but {})'.format(algo))
+    if algo != "ssh-ed25519":
+        raise Exception("not a Ed25519 SSH public key (but {})".format(algo))
 
     blob = binascii.a2b_base64(keydata)
 
     try:
         key = _unpack(blob)[1]
     except Exception as e:
-        raise Exception('could not parse key ({})'.format(e))
+        raise Exception("could not parse key ({})".format(e))
 
     if len(key) != 32:
-        raise Exception('invalid length {} for embedded raw key (must be 32 bytes)'.format(len(key)))
+        raise Exception(
+            "invalid length {} for embedded raw key (must be 32 bytes)".format(len(key))
+        )
 
     return key, comment
 
@@ -131,18 +133,18 @@ class _SSHPacketReader:
         self._len = len(packet)
 
     def get_remaining_payload(self):
-        return self._packet[self._idx:]
+        return self._packet[self._idx :]
 
     def get_bytes(self, size):
         if self._idx + size > self._len:
-            raise Exception('incomplete packet')
+            raise Exception("incomplete packet")
 
-        value = self._packet[self._idx:self._idx + size]
+        value = self._packet[self._idx : self._idx + size]
         self._idx += size
         return value
 
     def get_uint32(self):
-        return struct.unpack('>I', self.get_bytes(4))[0]
+        return struct.unpack(">I", self.get_bytes(4))[0]
 
     def get_string(self):
         return self.get_bytes(self.get_uint32())
@@ -150,7 +152,7 @@ class _SSHPacketReader:
 
 def _makepad(size: int) -> bytes:
     assert 0 <= size < 255
-    return b''.join(x.to_bytes(1, byteorder='big') for x in range(1, size + 1))
+    return b"".join(x.to_bytes(1, byteorder="big") for x in range(1, size + 1))
 
 
 def _read_ssh_ed25519_privkey(keydata):
@@ -183,19 +185,21 @@ def _read_ssh_ed25519_privkey(keydata):
     # https://tools.ietf.org/html/draft-bjh21-ssh-ed25519-02
     # http://blog.oddbit.com/2011/05/08/converting-openssh-public-keys/
 
-    SSH_BEGIN = '-----BEGIN OPENSSH PRIVATE KEY-----'
-    SSH_END = '-----END OPENSSH PRIVATE KEY-----'
-    OPENSSH_KEY_V1 = b'openssh-key-v1\0'
+    SSH_BEGIN = "-----BEGIN OPENSSH PRIVATE KEY-----"
+    SSH_END = "-----END OPENSSH PRIVATE KEY-----"
+    OPENSSH_KEY_V1 = b"openssh-key-v1\0"
 
     if not (keydata.startswith(SSH_BEGIN) and keydata.endswith(SSH_END)):
-        raise Exception('invalid OpenSSH private key (does not start/end with OPENSSH preamble)')
+        raise Exception(
+            "invalid OpenSSH private key (does not start/end with OPENSSH preamble)"
+        )
 
     ssh_end = keydata.find(SSH_END)
-    keydata = keydata[len(SSH_BEGIN):ssh_end]
-    keydata = ''.join(x.strip() for x in keydata.split())
+    keydata = keydata[len(SSH_BEGIN) : ssh_end]
+    keydata = "".join(x.strip() for x in keydata.split())
     blob = binascii.a2b_base64(keydata)
 
-    blob = blob[len(OPENSSH_KEY_V1):]
+    blob = blob[len(OPENSSH_KEY_V1) :]
     packet = _SSHPacketReader(blob)
 
     cipher_name = packet.get_string()
@@ -208,17 +212,23 @@ def _read_ssh_ed25519_privkey(keydata):
 
     block_size = 8
 
-    if cipher_name != b'none':
-        raise Exception('encrypted private keys not supported (please remove the passphrase from your private key or use SSH agent)')
+    if cipher_name != b"none":
+        raise Exception(
+            "encrypted private keys not supported (please remove the passphrase from your private key or use SSH agent)"
+        )
 
-    if kdf != b'none':
-        raise Exception('passphrase encrypted private keys not supported')
+    if kdf != b"none":
+        raise Exception("passphrase encrypted private keys not supported")
 
     if nkeys != 1:
-        raise Exception('multiple private keys in a key file not supported (found {} keys)'.format(nkeys))
+        raise Exception(
+            "multiple private keys in a key file not supported (found {} keys)".format(
+                nkeys
+            )
+        )
 
     if mac:
-        raise Exception('invalid OpenSSH private key (found remaining payload for mac)')
+        raise Exception("invalid OpenSSH private key (found remaining payload for mac)")
 
     packet = _SSHPacketReader(key_data)
 
@@ -227,28 +237,36 @@ def _read_ssh_ed25519_privkey(keydata):
 
     alg = packet.get_string()
 
-    if alg != b'ssh-ed25519':
-        raise Exception('invalid key type: we only support Ed25519 (found "{}")'.format(alg.decode('ascii')))
+    if alg != b"ssh-ed25519":
+        raise Exception(
+            'invalid key type: we only support Ed25519 (found "{}")'.format(
+                alg.decode("ascii")
+            )
+        )
 
     vk = packet.get_string()
     sk = packet.get_string()
 
     if len(vk) != bindings.crypto_sign_PUBLICKEYBYTES:
-        raise Exception('invalid public key length')
+        raise Exception("invalid public key length")
 
     if len(sk) != bindings.crypto_sign_SECRETKEYBYTES:
-        raise Exception('invalid public key length')
+        raise Exception("invalid public key length")
 
-    comment = packet.get_string()                             # comment
+    comment = packet.get_string()  # comment
     pad = packet.get_remaining_payload()
 
     if len(pad) and (len(pad) >= block_size or pad != _makepad(len(pad))):
-        raise Exception('invalid OpenSSH private key (padlen={}, actual_pad={}, expected_pad={})'.format(len(pad), pad, _makepad(len(pad))))
+        raise Exception(
+            "invalid OpenSSH private key (padlen={}, actual_pad={}, expected_pad={})".format(
+                len(pad), pad, _makepad(len(pad))
+            )
+        )
 
     # secret key (64 octets) = 32 octets seed || 32 octets secret key derived of seed
-    seed = sk[:bindings.crypto_sign_SEEDBYTES]
+    seed = sk[: bindings.crypto_sign_SEEDBYTES]
 
-    comment = comment.decode('ascii')
+    comment = comment.decode("ascii")
 
     return seed, comment
 
@@ -263,7 +281,11 @@ def _read_signify_ed25519_signature(signature_file):
         # signature file format: 2nd line is base64 of 'Ed' || 8 random octets || 64 octets Ed25519 signature
         sig = binascii.a2b_base64(f.read().splitlines()[1])[10:]
         if len(sig) != 64:
-            raise Exception('bogus Ed25519 signature: raw signature length was {}, but expected 64'.format(len(sig)))
+            raise Exception(
+                "bogus Ed25519 signature: raw signature length was {}, but expected 64".format(
+                    len(sig)
+                )
+            )
         return sig
 
 
@@ -277,11 +299,15 @@ def _read_signify_ed25519_pubkey(pubkey_file):
         # signature file format: 2nd line is base64 of 'Ed' || 8 random octets || 32 octets Ed25519 public key
         pubkey = binascii.a2b_base64(f.read().splitlines()[1])[10:]
         if len(pubkey) != 32:
-            raise Exception('bogus Ed25519 public key: raw key length was {}, but expected 32'.format(len(pubkey)))
+            raise Exception(
+                "bogus Ed25519 public key: raw key length was {}, but expected 32".format(
+                    len(pubkey)
+                )
+            )
         return pubkey
 
 
-def _qrcode_from_signify_ed25519_pubkey(pubkey_file, mode='text'):
+def _qrcode_from_signify_ed25519_pubkey(pubkey_file, mode="text"):
     """
 
     Usage:
@@ -298,30 +324,29 @@ def _qrcode_from_signify_ed25519_pubkey(pubkey_file, mode='text'):
 
         https://www.openbsd.org/papers/bsdcan-signify.html
     """
-    assert(mode in ['text', 'svg'])
+    assert mode in ["text", "svg"]
 
     import qrcode
 
     with open(pubkey_file) as f:
         pubkey = f.read().splitlines()[1]
 
-        qr = qrcode.QRCode(box_size=3,
-                           error_correction=qrcode.ERROR_CORRECT_L)
+        qr = qrcode.QRCode(box_size=3, error_correction=qrcode.ERROR_CORRECT_L)
         qr.add_data(pubkey)
 
-        if mode == 'text':
+        if mode == "text":
             import io
 
             with io.StringIO() as data_buffer:
                 qr.print_ascii(out=data_buffer, invert=True)
                 return data_buffer.getvalue()
-        elif mode == 'svg':
+        elif mode == "svg":
             import qrcode.image.svg
 
             image = qr.make_image(image_factory=qrcode.image.svg.SvgImage)
             return image.to_string()
         else:
-            raise Exception('logic error')
+            raise Exception("logic error")
 
 
 def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
@@ -364,7 +389,11 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
 
 if HAS_CRYPTOSIGN:
 
-    def _format_challenge(challenge: Challenge, channel_id_raw: Optional[bytes], channel_id_type: Optional[str]) -> bytes:
+    def _format_challenge(
+        challenge: Challenge,
+        channel_id_raw: Optional[bytes],
+        channel_id_type: Optional[str],
+    ) -> bytes:
         """
         Format the challenge based on provided parameters
 
@@ -375,27 +404,40 @@ if HAS_CRYPTOSIGN:
         """
         if not isinstance(challenge, Challenge):
             raise Exception(
-                "challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
+                "challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(
+                    type(challenge)
+                )
+            )
 
-        if 'challenge' not in challenge.extra:
+        if "challenge" not in challenge.extra:
             raise Exception("missing challenge value in challenge.extra")
 
         # the challenge sent by the router (a 32 bytes random value)
-        challenge_hex = challenge.extra['challenge']
+        challenge_hex = challenge.extra["challenge"]
 
         if type(challenge_hex) != str:
-            raise Exception("invalid type {} for challenge (expected a hex string)".format(type(challenge_hex)))
+            raise Exception(
+                "invalid type {} for challenge (expected a hex string)".format(
+                    type(challenge_hex)
+                )
+            )
 
         if len(challenge_hex) != 64:
-            raise Exception("unexpected challenge (hex) length: was {}, but expected 64".format(len(challenge_hex)))
+            raise Exception(
+                "unexpected challenge (hex) length: was {}, but expected 64".format(
+                    len(challenge_hex)
+                )
+            )
 
         # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
         challenge_raw = binascii.a2b_hex(challenge_hex)
 
-        if channel_id_type == 'tls-unique':
-            assert len(
-                channel_id_raw) == 32, 'unexpected TLS transport channel ID length (was {}, but expected 32)'.format(
-                len(channel_id_raw))
+        if channel_id_type == "tls-unique":
+            assert (
+                len(channel_id_raw) == 32
+            ), "unexpected TLS transport channel ID length (was {}, but expected 32)".format(
+                len(channel_id_raw)
+            )
 
             # with TLS channel binding of type "tls-unique", the message to be signed by the client actually
             # is the XOR of the challenge and the TLS channel ID
@@ -426,10 +468,10 @@ if HAS_CRYPTOSIGN:
 
         def process(signature_raw):
             # convert the raw signature into a hex encode value (unicode string)
-            signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
+            signature_hex = binascii.b2a_hex(signature_raw).decode("ascii")
 
             # we return the concatenation of the signature and the message signed (96 bytes)
-            data_hex = binascii.b2a_hex(data).decode('ascii')
+            data_hex = binascii.b2a_hex(data).decode("ascii")
 
             sig = signature_hex + data_hex
             txaio.resolve(d2, sig)
@@ -444,12 +486,23 @@ if HAS_CRYPTOSIGN:
         public key usable for verification (but can't be used for signing).
         """
 
-        def __init__(self, key, can_sign: bool, security_module: Optional[ISecurityModule] = None,
-                     key_no: Optional[int] = None, comment: Optional[str] = None) -> None:
-            if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
+        def __init__(
+            self,
+            key,
+            can_sign: bool,
+            security_module: Optional[ISecurityModule] = None,
+            key_no: Optional[int] = None,
+            comment: Optional[str] = None,
+        ) -> None:
+            if not (
+                isinstance(key, signing.VerifyKey)
+                or isinstance(key, signing.SigningKey)
+            ):
                 raise Exception("invalid type {} for key".format(type(key)))
 
-            assert (can_sign and isinstance(key, signing.SigningKey)) or (not can_sign and isinstance(key, signing.VerifyKey))
+            assert (can_sign and isinstance(key, signing.SigningKey)) or (
+                not can_sign and isinstance(key, signing.VerifyKey)
+            )
             self._key = key
             self._can_sign = can_sign
             self._security_module = security_module
@@ -457,7 +510,7 @@ if HAS_CRYPTOSIGN:
             self._comment = comment
 
         @property
-        def security_module(self) -> Optional['ISecurityModule']:
+        def security_module(self) -> Optional["ISecurityModule"]:
             """
             Implements :meth:`autobahn.wamp.interfaces.IKey.security_module`.
             """
@@ -482,7 +535,7 @@ if HAS_CRYPTOSIGN:
             """
             Implements :meth:`autobahn.wamp.interfaces.IKey.key_type`.
             """
-            return 'cryptosign'
+            return "cryptosign"
 
         @property
         def can_sign(self) -> bool:
@@ -509,13 +562,21 @@ if HAS_CRYPTOSIGN:
             # the signature
             return txaio.create_future_success(sig.signature)
 
-        def sign_challenge(self, challenge: Challenge, channel_id: Optional[bytes] = None,
-                           channel_id_type: Optional[str] = None) -> bytes:
+        def sign_challenge(
+            self,
+            challenge: Challenge,
+            channel_id: Optional[bytes] = None,
+            channel_id_type: Optional[str] = None,
+        ) -> bytes:
             """
             Implements :meth:`autobahn.wamp.interfaces.ICryptosignKey.sign_challenge`.
             """
-            assert challenge.method in ['cryptosign', 'cryptosign-proxy'], \
-                'unexpected cryptosign challenge with method "{}"'.format(challenge.method)
+            assert challenge.method in [
+                "cryptosign",
+                "cryptosign-proxy",
+            ], 'unexpected cryptosign challenge with method "{}"'.format(
+                challenge.method
+            )
 
             data = _format_challenge(challenge, channel_id, channel_id_type)
 
@@ -536,28 +597,38 @@ if HAS_CRYPTOSIGN:
             if binary:
                 return key.encode()
             else:
-                return key.encode(encoder=encoding.HexEncoder).decode('ascii')
+                return key.encode(encoder=encoding.HexEncoder).decode("ascii")
 
         @classmethod
-        def from_pubkey(cls, pubkey: bytes, comment: Optional[str] = None) -> 'CryptosignKey':
+        def from_pubkey(
+            cls, pubkey: bytes, comment: Optional[str] = None
+        ) -> "CryptosignKey":
             if not (comment is None or type(comment) == str):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
             if type(pubkey) != bytes:
-                raise ValueError("invalid key type {} (expected binary)".format(type(pubkey)))
+                raise ValueError(
+                    "invalid key type {} (expected binary)".format(type(pubkey))
+                )
 
             if len(pubkey) != 32:
-                raise ValueError("invalid key length {} (expected 32)".format(len(pubkey)))
+                raise ValueError(
+                    "invalid key length {} (expected 32)".format(len(pubkey))
+                )
 
             return cls(key=signing.VerifyKey(pubkey), can_sign=False, comment=comment)
 
         @classmethod
-        def from_bytes(cls, key: bytes, comment: Optional[str] = None) -> 'CryptosignKey':
+        def from_bytes(
+            cls, key: bytes, comment: Optional[str] = None
+        ) -> "CryptosignKey":
             if not (comment is None or type(comment) == str):
                 raise ValueError("invalid type {} for comment".format(type(comment)))
 
             if type(key) != bytes:
-                raise ValueError("invalid key type {} (expected binary)".format(type(key)))
+                raise ValueError(
+                    "invalid key type {} (expected binary)".format(type(key))
+                )
 
             if len(key) != 32:
                 raise ValueError("invalid key length {} (expected 32)".format(len(key)))
@@ -565,7 +636,9 @@ if HAS_CRYPTOSIGN:
             return cls(key=signing.SigningKey(key), can_sign=True, comment=comment)
 
         @classmethod
-        def from_file(cls, filename: str, comment: Optional[str] = None) -> 'CryptosignKey':
+        def from_file(
+            cls, filename: str, comment: Optional[str] = None
+        ) -> "CryptosignKey":
             """
             Load an Ed25519 (private) signing key (actually, the seed for the key) from a raw file of 32 bytes length.
             This can be any random byte sequence, such as generated from Python code like
@@ -578,38 +651,38 @@ if HAS_CRYPTOSIGN:
 
             :param filename: Filename of the key.
             :param comment: Comment for key (optional).
-           """
+            """
             if not (comment is None or type(comment) == str):
                 raise Exception("invalid type {} for comment".format(type(comment)))
 
             if type(filename) != str:
                 raise Exception("invalid type {} for filename".format(filename))
 
-            with open(filename, 'rb') as f:
+            with open(filename, "rb") as f:
                 key_data = f.read()
 
             return cls.from_bytes(key_data, comment=comment)
 
         @classmethod
-        def from_ssh_file(cls, filename: str) -> 'CryptosignKey':
+        def from_ssh_file(cls, filename: str) -> "CryptosignKey":
             """
             Load an Ed25519 key from a SSH key file. The key file can be a (private) signing
             key (from a SSH private key file) or a (public) verification key (from a SSH
             public key file). A private key file must be passphrase-less.
             """
 
-            with open(filename, 'rb') as f:
-                key_data = f.read().decode('utf-8').strip()
+            with open(filename, "rb") as f:
+                key_data = f.read().decode("utf-8").strip()
             return cls.from_ssh_bytes(key_data)
 
         @classmethod
-        def from_ssh_bytes(cls, key_data: str) -> 'CryptosignKey':
+        def from_ssh_bytes(cls, key_data: str) -> "CryptosignKey":
             """
             Load an Ed25519 key from SSH key file. The key file can be a (private) signing
             key (from a SSH private key file) or a (public) verification key (from a SSH
             public key file). A private key file must be passphrase-less.
             """
-            SSH_BEGIN = '-----BEGIN OPENSSH PRIVATE KEY-----'
+            SSH_BEGIN = "-----BEGIN OPENSSH PRIVATE KEY-----"
             if key_data.startswith(SSH_BEGIN):
                 # OpenSSH private key
                 key_data, comment = _read_ssh_ed25519_privkey(key_data)
@@ -624,7 +697,7 @@ if HAS_CRYPTOSIGN:
             return cls(key=key, can_sign=can_sign, comment=comment)
 
         @classmethod
-        def from_seedphrase(cls, seedphrase: str, index: int = 0) -> 'CryptosignKey':
+        def from_seedphrase(cls, seedphrase: str, index: int = 0) -> "CryptosignKey":
             """
             Create a private key from the given BIP-39 mnemonic seed phrase and index,
             which can be used to sign and create signatures.
@@ -648,7 +721,7 @@ if HAS_CRYPTOSIGN:
             return key
 
         @classmethod
-        def from_keyfile(cls, keyfile: str) -> 'CryptosignKey':
+        def from_keyfile(cls, keyfile: str) -> "CryptosignKey":
             """
             Create a public or private key from reading the given public or private key file.
 
@@ -684,13 +757,19 @@ if HAS_CRYPTOSIGN:
             #
             data = parse_keyfile(keyfile)
 
-            privkey_ed25519_hex = data.get('private-key-ed25519', None)
+            privkey_ed25519_hex = data.get("private-key-ed25519", None)
             if privkey_ed25519_hex is None:
-                pubkey_ed25519_hex = data.get('public-key-ed25519', None)
+                pubkey_ed25519_hex = data.get("public-key-ed25519", None)
                 if pubkey_ed25519_hex is None:
-                    raise RuntimeError('neither "private-key-ed25519" nor "public-key-ed25519" found in keyfile {}'.format(keyfile))
+                    raise RuntimeError(
+                        'neither "private-key-ed25519" nor "public-key-ed25519" found in keyfile {}'.format(
+                            keyfile
+                        )
+                    )
                 else:
-                    return CryptosignKey.from_pubkey(binascii.a2b_hex(pubkey_ed25519_hex))
+                    return CryptosignKey.from_pubkey(
+                        binascii.a2b_hex(pubkey_ed25519_hex)
+                    )
             else:
                 return CryptosignKey.from_bytes(binascii.a2b_hex(privkey_ed25519_hex))
 
@@ -700,42 +779,41 @@ if HAS_CRYPTOSIGN:
         """
         WAMP-Cryptosign authextra object.
         """
+
         __slots__ = [
-            '_pubkey',
-            '_trustroot',
-            '_challenge',
-            '_channel_binding',
-            '_channel_id',
-            '_realm',
-            '_chain_id',
-            '_block_no',
-            '_delegate',
-            '_seeder',
-            '_bandwidth',
-            '_signature',
+            "_pubkey",
+            "_trustroot",
+            "_challenge",
+            "_channel_binding",
+            "_channel_id",
+            "_realm",
+            "_chain_id",
+            "_block_no",
+            "_delegate",
+            "_seeder",
+            "_bandwidth",
+            "_signature",
         ]
 
-        def __init__(self,
-                     pubkey: Optional[bytes] = None,
-                     challenge: Optional[bytes] = None,
-                     channel_binding: Optional[str] = None,
-                     channel_id: Optional[bytes] = None,
-
-                     # domain address, certificates are verified against owner of the domain
-                     trustroot: Optional[bytes] = None,
-
-                     # FIXME: add delegate address
-                     # FIXME: add certificates
-                     # FIXME: remove reservation
-                     realm: Optional[bytes] = None,
-                     chain_id: Optional[int] = None,
-                     block_no: Optional[int] = None,
-                     delegate: Optional[bytes] = None,
-                     seeder: Optional[bytes] = None,
-                     bandwidth: Optional[int] = None,
-
-                     signature: Optional[bytes] = None,
-                     ):
+        def __init__(
+            self,
+            pubkey: Optional[bytes] = None,
+            challenge: Optional[bytes] = None,
+            channel_binding: Optional[str] = None,
+            channel_id: Optional[bytes] = None,
+            # domain address, certificates are verified against owner of the domain
+            trustroot: Optional[bytes] = None,
+            # FIXME: add delegate address
+            # FIXME: add certificates
+            # FIXME: remove reservation
+            realm: Optional[bytes] = None,
+            chain_id: Optional[int] = None,
+            block_no: Optional[int] = None,
+            delegate: Optional[bytes] = None,
+            seeder: Optional[bytes] = None,
+            bandwidth: Optional[int] = None,
+            signature: Optional[bytes] = None,
+        ):
             if pubkey:
                 assert len(pubkey) == 32
             if trustroot:
@@ -743,7 +821,7 @@ if HAS_CRYPTOSIGN:
             if challenge:
                 assert len(challenge) == 32
             if channel_binding:
-                assert channel_binding in ['tls-unique']
+                assert channel_binding in ["tls-unique"]
             if channel_id:
                 assert len(channel_id) == 32
             if realm:
@@ -800,7 +878,7 @@ if HAS_CRYPTOSIGN:
 
         @channel_binding.setter
         def channel_binding(self, value: Optional[str]):
-            assert value is None or value in ['tls-unique']
+            assert value is None or value in ["tls-unique"]
             self._channel_binding = value
 
         @property
@@ -876,102 +954,166 @@ if HAS_CRYPTOSIGN:
             self._signature = value
 
         @staticmethod
-        def parse(data: Dict[str, Any]) -> 'CryptosignAuthextra':
+        def parse(data: Dict[str, Any]) -> "CryptosignAuthextra":
             obj = CryptosignAuthextra()
 
-            pubkey = data.get('pubkey', None)
+            pubkey = data.get("pubkey", None)
             if pubkey is not None:
                 if type(pubkey) != str:
-                    raise ValueError('invalid type {} for pubkey'.format(type(pubkey)))
+                    raise ValueError("invalid type {} for pubkey".format(type(pubkey)))
                 if len(pubkey) != 32 * 2:
-                    raise ValueError('invalid length {} of pubkey'.format(len(pubkey)))
+                    raise ValueError("invalid length {} of pubkey".format(len(pubkey)))
                 obj._pubkey = a2b_hex(pubkey)
 
-            challenge = data.get('challenge', None)
+            challenge = data.get("challenge", None)
             if challenge is not None:
                 if type(challenge) != str:
-                    raise ValueError('invalid type {} for challenge'.format(type(challenge)))
+                    raise ValueError(
+                        "invalid type {} for challenge".format(type(challenge))
+                    )
                 if len(challenge) != 32 * 2:
-                    raise ValueError('invalid length {} of challenge'.format(len(challenge)))
+                    raise ValueError(
+                        "invalid length {} of challenge".format(len(challenge))
+                    )
                 obj._challenge = a2b_hex(challenge)
 
-            channel_binding = data.get('channel_binding', None)
+            channel_binding = data.get("channel_binding", None)
             if channel_binding is not None:
                 if type(channel_binding) != str:
-                    raise ValueError('invalid type {} for channel_binding'.format(type(channel_binding)))
-                if channel_binding not in ['tls-unique']:
-                    raise ValueError('invalid value "{}" for channel_binding'.format(channel_binding))
+                    raise ValueError(
+                        "invalid type {} for channel_binding".format(
+                            type(channel_binding)
+                        )
+                    )
+                if channel_binding not in ["tls-unique"]:
+                    raise ValueError(
+                        'invalid value "{}" for channel_binding'.format(channel_binding)
+                    )
                 obj._channel_binding = channel_binding
 
-            channel_id = data.get('channel_id', None)
+            channel_id = data.get("channel_id", None)
             if channel_id is not None:
                 if type(channel_id) != str:
-                    raise ValueError('invalid type {} for channel_id'.format(type(channel_id)))
+                    raise ValueError(
+                        "invalid type {} for channel_id".format(type(channel_id))
+                    )
                 if len(channel_id) != 32 * 2:
-                    raise ValueError('invalid length {} of channel_id'.format(len(channel_id)))
+                    raise ValueError(
+                        "invalid length {} of channel_id".format(len(channel_id))
+                    )
                 obj._channel_id = a2b_hex(channel_id)
 
-            trustroot = data.get('trustroot', None)
+            trustroot = data.get("trustroot", None)
             if trustroot is not None:
                 if type(trustroot) != str:
-                    raise ValueError('invalid type {} for trustroot - expected a string'.format(type(trustroot)))
+                    raise ValueError(
+                        "invalid type {} for trustroot - expected a string".format(
+                            type(trustroot)
+                        )
+                    )
                 if not _URI_PAT_REALM_NAME_ETH.match(trustroot):
-                    raise ValueError('invalid value "{}" for trustroot - expected an Ethereum address'.format(type(trustroot)))
+                    raise ValueError(
+                        'invalid value "{}" for trustroot - expected an Ethereum address'.format(
+                            type(trustroot)
+                        )
+                    )
                 obj._trustroot = a2b_hex(trustroot[2:])
 
-            reservation = data.get('reservation', None)
+            reservation = data.get("reservation", None)
             if reservation is not None:
                 if type(reservation) != dict:
-                    raise ValueError('invalid type {} for reservation'.format(type(reservation)))
+                    raise ValueError(
+                        "invalid type {} for reservation".format(type(reservation))
+                    )
 
-                chain_id = reservation.get('chain_id', None)
+                chain_id = reservation.get("chain_id", None)
                 if chain_id is not None:
                     if type(chain_id) != int:
-                        raise ValueError('invalid type {} for reservation.chain_id - expected an integer'.format(type(chain_id)))
+                        raise ValueError(
+                            "invalid type {} for reservation.chain_id - expected an integer".format(
+                                type(chain_id)
+                            )
+                        )
                     obj._chain_id = chain_id
 
-                block_no = reservation.get('block_no', None)
+                block_no = reservation.get("block_no", None)
                 if block_no is not None:
                     if type(block_no) != int:
-                        raise ValueError('invalid type {} for reservation.block_no - expected an integer'.format(type(block_no)))
+                        raise ValueError(
+                            "invalid type {} for reservation.block_no - expected an integer".format(
+                                type(block_no)
+                            )
+                        )
                     obj._block_no = block_no
 
-                realm = reservation.get('realm', None)
+                realm = reservation.get("realm", None)
                 if realm is not None:
                     if type(realm) != str:
-                        raise ValueError('invalid type {} for reservation.realm - expected a string'.format(type(realm)))
+                        raise ValueError(
+                            "invalid type {} for reservation.realm - expected a string".format(
+                                type(realm)
+                            )
+                        )
                     if not _URI_PAT_REALM_NAME_ETH.match(realm):
-                        raise ValueError('invalid value "{}" for reservation.realm - expected an Ethereum address'.format(type(realm)))
+                        raise ValueError(
+                            'invalid value "{}" for reservation.realm - expected an Ethereum address'.format(
+                                type(realm)
+                            )
+                        )
                     obj._realm = a2b_hex(realm[2:])
 
-                delegate = reservation.get('delegate', None)
+                delegate = reservation.get("delegate", None)
                 if delegate is not None:
                     if type(delegate) != str:
-                        raise ValueError('invalid type {} for reservation.delegate - expected a string'.format(type(delegate)))
+                        raise ValueError(
+                            "invalid type {} for reservation.delegate - expected a string".format(
+                                type(delegate)
+                            )
+                        )
                     if not _URI_PAT_REALM_NAME_ETH.match(delegate):
-                        raise ValueError('invalid value "{}" for reservation.delegate - expected an Ethereum address'.format(type(delegate)))
+                        raise ValueError(
+                            'invalid value "{}" for reservation.delegate - expected an Ethereum address'.format(
+                                type(delegate)
+                            )
+                        )
                     obj._delegate = a2b_hex(delegate[2:])
 
-                seeder = reservation.get('seeder', None)
+                seeder = reservation.get("seeder", None)
                 if seeder is not None:
                     if type(seeder) != str:
-                        raise ValueError('invalid type {} for reservation.seeder - expected a string'.format(type(seeder)))
+                        raise ValueError(
+                            "invalid type {} for reservation.seeder - expected a string".format(
+                                type(seeder)
+                            )
+                        )
                     if not _URI_PAT_REALM_NAME_ETH.match(seeder):
-                        raise ValueError('invalid value "{}" for reservation.seeder - expected an Ethereum address'.format(type(seeder)))
+                        raise ValueError(
+                            'invalid value "{}" for reservation.seeder - expected an Ethereum address'.format(
+                                type(seeder)
+                            )
+                        )
                     obj._seeder = a2b_hex(seeder[2:])
 
-                bandwidth = reservation.get('bandwidth', None)
+                bandwidth = reservation.get("bandwidth", None)
                 if bandwidth is not None:
                     if type(bandwidth) != int:
-                        raise ValueError('invalid type {} for reservation.bandwidth - expected an integer'.format(type(bandwidth)))
+                        raise ValueError(
+                            "invalid type {} for reservation.bandwidth - expected an integer".format(
+                                type(bandwidth)
+                            )
+                        )
                     obj._bandwidth = bandwidth
 
-            signature = data.get('signature', None)
+            signature = data.get("signature", None)
             if signature is not None:
                 if type(signature) != str:
-                    raise ValueError('invalid type {} for signature'.format(type(signature)))
+                    raise ValueError(
+                        "invalid type {} for signature".format(type(signature))
+                    )
                 if len(signature) != 65 * 2:
-                    raise ValueError('invalid length {} of signature'.format(len(signature)))
+                    raise ValueError(
+                        "invalid length {} of signature".format(len(signature))
+                    )
                 obj._signature = a2b_hex(signature)
 
             return obj
@@ -982,37 +1124,39 @@ if HAS_CRYPTOSIGN:
             # FIXME: marshal check-summed eth addresses
 
             if self._pubkey is not None:
-                res['pubkey'] = b2a_hex(self._pubkey).decode()
+                res["pubkey"] = b2a_hex(self._pubkey).decode()
 
             if self._challenge is not None:
-                res['challenge'] = b2a_hex(self._challenge).decode()
+                res["challenge"] = b2a_hex(self._challenge).decode()
             if self._channel_binding is not None:
-                res['channel_binding'] = self._channel_binding
+                res["channel_binding"] = self._channel_binding
             if self._channel_id is not None:
-                res['channel_id'] = b2a_hex(self._channel_id).decode()
+                res["channel_id"] = b2a_hex(self._channel_id).decode()
 
             if self._trustroot is not None:
-                res['trustroot'] = '0x' + b2a_hex(self._trustroot).decode()
+                res["trustroot"] = "0x" + b2a_hex(self._trustroot).decode()
 
             reservation = {}
             if self._chain_id is not None:
-                reservation['chain_id'] = self._chain_id
+                reservation["chain_id"] = self._chain_id
             if self._block_no is not None:
-                reservation['block_no'] = self._block_no
+                reservation["block_no"] = self._block_no
             if self._realm is not None:
-                reservation['realm'] = '0x' + b2a_hex(self._realm).decode()
+                reservation["realm"] = "0x" + b2a_hex(self._realm).decode()
             if self._delegate is not None:
-                reservation['delegate'] = '0x' + b2a_hex(self._delegate).decode()
+                reservation["delegate"] = "0x" + b2a_hex(self._delegate).decode()
             if self._seeder is not None:
-                reservation['seeder'] = '0x' + b2a_hex(self._seeder).decode()
+                reservation["seeder"] = "0x" + b2a_hex(self._seeder).decode()
             if self._bandwidth is not None:
-                reservation['bandwidth'] = self._bandwidth
+                reservation["bandwidth"] = self._bandwidth
             if reservation:
-                res['reservation'] = reservation
+                res["reservation"] = reservation
 
             if self._signature is not None:
-                res['signature'] = b2a_hex(self._signature).decode()
+                res["signature"] = b2a_hex(self._signature).decode()
 
             return res
 
-    __all__.extend(['CryptosignKey', 'format_challenge', 'sign_challenge', 'CryptosignAuthextra'])
+    __all__.extend(
+        ["CryptosignKey", "format_challenge", "sign_challenge", "CryptosignAuthextra"]
+    )

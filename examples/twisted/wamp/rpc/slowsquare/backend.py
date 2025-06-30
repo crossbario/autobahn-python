@@ -43,19 +43,19 @@ class Component(ApplicationSession):
         def square(x):
             return x * x
 
-        yield self.register(square, 'com.math.square')
+        yield self.register(square, "com.math.square")
 
         @inlineCallbacks
         def slowsquare(x, delay=1):
             yield sleep(delay)
             return x * x
 
-        yield self.register(slowsquare, 'com.math.slowsquare')
+        yield self.register(slowsquare, "com.math.slowsquare")
 
         print("procedures registered")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

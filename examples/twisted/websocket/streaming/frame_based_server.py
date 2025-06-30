@@ -27,13 +27,14 @@
 import hashlib
 from twisted.internet import reactor
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol, \
-    listenWS
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    listenWS,
+)
 
 
 class FrameBasedHashServerProtocol(WebSocketServerProtocol):
-
     """
     Frame-based WebSockets server that computes a running SHA-256 for message
     data received. It will respond after every frame received with the digest
@@ -51,22 +52,29 @@ class FrameBasedHashServerProtocol(WebSocketServerProtocol):
             l += len(data)
             self.sha256.update(data)
         digest = self.sha256.hexdigest()
-        print("Received frame with payload length {}, compute digest: {}".format(l, digest))
-        self.sendMessage(digest.encode('utf8'))
+        print(
+            "Received frame with payload length {}, compute digest: {}".format(
+                l, digest
+            )
+        )
+        self.sendMessage(digest.encode("utf8"))
 
     def onMessageEnd(self):
         self.sha256 = None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = FrameBasedHashServerProtocol
 
     enableCompression = False
     if enableCompression:
-        from autobahn.websocket.compress import PerMessageDeflateOffer, \
-            PerMessageDeflateOfferAccept
+        from autobahn.websocket.compress import (
+            PerMessageDeflateOffer,
+            PerMessageDeflateOfferAccept,
+        )
+
         # Function to accept offers from the client ..
 
         def accept(offers):

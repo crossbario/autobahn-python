@@ -28,12 +28,10 @@ import wx
 import json
 from pprint import pprint
 
-from autobahn.twisted.websocket import WebSocketClientProtocol, \
-    WebSocketClientFactory
+from autobahn.twisted.websocket import WebSocketClientProtocol, WebSocketClientFactory
 
 
 class MyFrame(wx.Frame):
-
     """
     Our UI frame to show.
 
@@ -77,13 +75,12 @@ class MyFrame(wx.Frame):
         if self._app._factory:
             proto = self._app._factory._proto
             if proto:
-                evt = {'x': pos.x, 'y': pos.y}
-                msg = json.dumps(evt).encode('utf8')
+                evt = {"x": pos.x, "y": pos.y}
+                msg = json.dumps(evt).encode("utf8")
                 proto.sendMessage(msg)
 
 
 class MyClientProtocol(WebSocketClientProtocol):
-
     """
     Our protocol for WebSocket client connections.
     """
@@ -106,7 +103,7 @@ class MyClientProtocol(WebSocketClientProtocol):
         if isBinary:
             print("Binary message received: {0} bytes".format(len(payload)))
         else:
-            print("Text message received: {0}".format(payload.decode('utf8')))
+            print("Text message received: {0}".format(payload.decode("utf8")))
 
         self._received += 1
         frame = self.factory._app._frame
@@ -124,10 +121,10 @@ class MyClientProtocol(WebSocketClientProtocol):
 
 
 class MyClientFactory(WebSocketClientFactory):
-
     """
     Our factory for WebSocket client connections.
     """
+
     protocol = MyClientProtocol
 
     def __init__(self, url, app):
@@ -136,11 +133,12 @@ class MyClientFactory(WebSocketClientFactory):
         self._proto = None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     import sys
 
     from twisted.internet import wxreactor
+
     wxreactor.install()
     from twisted.internet import reactor
 

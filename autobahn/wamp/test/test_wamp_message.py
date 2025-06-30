@@ -42,252 +42,334 @@ class TestIds(unittest.TestCase):
             self.assertEqual(val, message.check_or_raise_id(val))
 
     def test_invalid_ids(self):
-        for val in [-1, -9007199254740992, None, b"", b"abc", "", "abc", 0.9, Foo(), False, True, [], {}]:
+        for val in [
+            -1,
+            -9007199254740992,
+            None,
+            b"",
+            b"abc",
+            "",
+            "abc",
+            0.9,
+            Foo(),
+            False,
+            True,
+            [],
+            {},
+        ]:
             self.assertRaises(ProtocolError, message.check_or_raise_id, val)
 
 
 class TestUris(unittest.TestCase):
 
     def test_valid_uris_loose_nonempty(self):
-        for u in ["com.myapp.topic1",
-                  "com.myapp.product.123",
-                  "com.myapp.product.1.delete",
-                  "Com-star.MyApp.**+$for",
-                  "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5",
-                  "hello\x24world",
-                  "hello\xC2\xA2world",
-                  "hello\xE2\x82\xACworld",
-                  "hello\xF0\xA4\xAD\xA2world",
-                  ]:
+        for u in [
+            "com.myapp.topic1",
+            "com.myapp.product.123",
+            "com.myapp.product.1.delete",
+            "Com-star.MyApp.**+$for",
+            "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5",
+            "hello\x24world",
+            "hello\xc2\xa2world",
+            "hello\xe2\x82\xacworld",
+            "hello\xf0\xa4\xad\xa2world",
+        ]:
             self.assertEqual(u, message.check_or_raise_uri(u))
 
     def test_invalid_uris_loose_nonempty(self):
-        for u in [0,
-                  None,
-                  True,
-                  False,
-                  0.8,
-                  b"abc",
-                  Foo(),
-                  "",
-                  ".",
-                  "com.",
-                  "com..product",
-                  "com.my app.product",
-                  "com.my\tapp.product",
-                  "com.my\napp.product",
-                  "com.myapp.product#",
-                  "com.#.product",
-                  ]:
+        for u in [
+            0,
+            None,
+            True,
+            False,
+            0.8,
+            b"abc",
+            Foo(),
+            "",
+            ".",
+            "com.",
+            "com..product",
+            "com.my app.product",
+            "com.my\tapp.product",
+            "com.my\napp.product",
+            "com.myapp.product#",
+            "com.#.product",
+        ]:
             self.assertRaises(InvalidUriError, message.check_or_raise_uri, u)
 
     def test_valid_uris_loose_empty(self):
-        for u in ["com.myapp.topic1",
-                  "com.myapp..123",
-                  "com.myapp.product.1.",
-                  "com.",
-                  ".",
-                  "",
-                  "Com-star.MyApp.**+$for..foo",
-                  "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5..foo",
-                  "hello\x24world..foo",
-                  "hello\xC2\xA2world..foo",
-                  "hello\xE2\x82\xACworld..foo",
-                  "hello\xF0\xA4\xAD\xA2world..foo",
-                  ]:
-            self.assertEqual(u, message.check_or_raise_uri(u, allow_empty_components=True))
+        for u in [
+            "com.myapp.topic1",
+            "com.myapp..123",
+            "com.myapp.product.1.",
+            "com.",
+            ".",
+            "",
+            "Com-star.MyApp.**+$for..foo",
+            "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5..foo",
+            "hello\x24world..foo",
+            "hello\xc2\xa2world..foo",
+            "hello\xe2\x82\xacworld..foo",
+            "hello\xf0\xa4\xad\xa2world..foo",
+        ]:
+            self.assertEqual(
+                u, message.check_or_raise_uri(u, allow_empty_components=True)
+            )
 
     def test_invalid_uris_loose_empty(self):
-        for u in [0,
-                  None,
-                  True,
-                  False,
-                  0.8,
-                  b"abc",
-                  Foo(),
-                  "com.my app.product",
-                  "com.my\tapp.product",
-                  "com.my\napp.product",
-                  "com.myapp.product#",
-                  "com.#.product",
-                  ]:
-            self.assertRaises(InvalidUriError, message.check_or_raise_uri, u, allow_empty_components=True)
+        for u in [
+            0,
+            None,
+            True,
+            False,
+            0.8,
+            b"abc",
+            Foo(),
+            "com.my app.product",
+            "com.my\tapp.product",
+            "com.my\napp.product",
+            "com.myapp.product#",
+            "com.#.product",
+        ]:
+            self.assertRaises(
+                InvalidUriError,
+                message.check_or_raise_uri,
+                u,
+                allow_empty_components=True,
+            )
 
     def test_valid_uris_strict_nonempty(self):
-        for u in ["com.myapp.topic1",
-                  "com.myapp.product.123",
-                  "com.myapp.product.1.delete",
-                  ]:
+        for u in [
+            "com.myapp.topic1",
+            "com.myapp.product.123",
+            "com.myapp.product.1.delete",
+        ]:
             self.assertEqual(u, message.check_or_raise_uri(u, strict=True))
 
     def test_invalid_uris_strict_nonempty(self):
-        for u in [0,
-                  None,
-                  True,
-                  False,
-                  0.8,
-                  b"abc",
-                  Foo(),
-                  "",
-                  ".",
-                  "com.",
-                  "com..product",
-                  "com.my app.product",
-                  "com.my\tapp.product",
-                  "com.my\napp.product",
-                  "com.myapp.product#",
-                  "com.#.product",
-                  "Com-star.MyApp.**+$for",
-                  "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5",
-                  "hello\x24world",
-                  "hello\xC2\xA2world",
-                  "hello\xE2\x82\xACworld",
-                  "hello\xF0\xA4\xAD\xA2world",
-                  ]:
-            self.assertRaises(InvalidUriError, message.check_or_raise_uri, u, strict=True)
+        for u in [
+            0,
+            None,
+            True,
+            False,
+            0.8,
+            b"abc",
+            Foo(),
+            "",
+            ".",
+            "com.",
+            "com..product",
+            "com.my app.product",
+            "com.my\tapp.product",
+            "com.my\napp.product",
+            "com.myapp.product#",
+            "com.#.product",
+            "Com-star.MyApp.**+$for",
+            "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5",
+            "hello\x24world",
+            "hello\xc2\xa2world",
+            "hello\xe2\x82\xacworld",
+            "hello\xf0\xa4\xad\xa2world",
+        ]:
+            self.assertRaises(
+                InvalidUriError, message.check_or_raise_uri, u, strict=True
+            )
 
     def test_valid_uris_strict_empty(self):
-        for u in ["com.myapp.topic1",
-                  "com.myapp..123",
-                  "com.myapp.product.1.",
-                  "com.",
-                  ".",
-                  "",
-                  ]:
-            self.assertEqual(u, message.check_or_raise_uri(u, strict=True, allow_empty_components=True))
+        for u in [
+            "com.myapp.topic1",
+            "com.myapp..123",
+            "com.myapp.product.1.",
+            "com.",
+            ".",
+            "",
+        ]:
+            self.assertEqual(
+                u,
+                message.check_or_raise_uri(u, strict=True, allow_empty_components=True),
+            )
 
     def test_invalid_uris_strict_empty(self):
-        for u in [0,
-                  None,
-                  True,
-                  False,
-                  0.8,
-                  b"abc",
-                  Foo(),
-                  "com.my app.product",
-                  "com.my\tapp.product",
-                  "com.my\napp.product",
-                  "com.myapp.product#",
-                  "com.#.product",
-                  "Com-star.MyApp.**+$for..foo",
-                  "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5..foo",
-                  "hello\x24world..foo",
-                  "hello\xC2\xA2world..foo",
-                  "hello\xE2\x82\xACworld..foo",
-                  "hello\xF0\xA4\xAD\xA2world..foo",
-                  ]:
-            self.assertRaises(InvalidUriError, message.check_or_raise_uri, u, strict=True, allow_empty_components=True)
+        for u in [
+            0,
+            None,
+            True,
+            False,
+            0.8,
+            b"abc",
+            Foo(),
+            "com.my app.product",
+            "com.my\tapp.product",
+            "com.my\napp.product",
+            "com.myapp.product#",
+            "com.#.product",
+            "Com-star.MyApp.**+$for..foo",
+            "\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5..foo",
+            "hello\x24world..foo",
+            "hello\xc2\xa2world..foo",
+            "hello\xe2\x82\xacworld..foo",
+            "hello\xf0\xa4\xad\xa2world..foo",
+        ]:
+            self.assertRaises(
+                InvalidUriError,
+                message.check_or_raise_uri,
+                u,
+                strict=True,
+                allow_empty_components=True,
+            )
 
 
 class TestErrorMessage(unittest.TestCase):
 
     def test_ctor(self):
-        e = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1')
+        e = message.Error(message.Call.MESSAGE_TYPE, 123456, "com.myapp.error1")
         msg = e.marshal()
         self.assertEqual(len(msg), 5)
         self.assertEqual(msg[0], message.Error.MESSAGE_TYPE)
         self.assertEqual(msg[1], message.Call.MESSAGE_TYPE)
         self.assertEqual(msg[2], 123456)
         self.assertEqual(msg[3], {})
-        self.assertEqual(msg[4], 'com.myapp.error1')
+        self.assertEqual(msg[4], "com.myapp.error1")
 
-        e = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1', args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'})
+        e = message.Error(
+            message.Call.MESSAGE_TYPE,
+            123456,
+            "com.myapp.error1",
+            args=[1, 2, 3],
+            kwargs={"foo": 23, "bar": "hello"},
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 7)
         self.assertEqual(msg[0], message.Error.MESSAGE_TYPE)
         self.assertEqual(msg[1], message.Call.MESSAGE_TYPE)
         self.assertEqual(msg[2], 123456)
         self.assertEqual(msg[3], {})
-        self.assertEqual(msg[4], 'com.myapp.error1')
+        self.assertEqual(msg[4], "com.myapp.error1")
         self.assertEqual(msg[5], [1, 2, 3])
-        self.assertEqual(msg[6], {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg[6], {"foo": 23, "bar": "hello"})
 
     def test_parse_and_marshal(self):
-        wmsg = [message.Error.MESSAGE_TYPE, message.Call.MESSAGE_TYPE, 123456, {}, 'com.myapp.error1']
+        wmsg = [
+            message.Error.MESSAGE_TYPE,
+            message.Call.MESSAGE_TYPE,
+            123456,
+            {},
+            "com.myapp.error1",
+        ]
         msg = message.Error.parse(wmsg)
         self.assertIsInstance(msg, message.Error)
         self.assertEqual(msg.request_type, message.Call.MESSAGE_TYPE)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.error, 'com.myapp.error1')
+        self.assertEqual(msg.error, "com.myapp.error1")
         self.assertEqual(msg.args, None)
         self.assertEqual(msg.kwargs, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Error.MESSAGE_TYPE, message.Call.MESSAGE_TYPE, 123456, {}, 'com.myapp.error1', [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+        wmsg = [
+            message.Error.MESSAGE_TYPE,
+            message.Call.MESSAGE_TYPE,
+            123456,
+            {},
+            "com.myapp.error1",
+            [1, 2, 3],
+            {"foo": 23, "bar": "hello"},
+        ]
         msg = message.Error.parse(wmsg)
         self.assertIsInstance(msg, message.Error)
         self.assertEqual(msg.request_type, message.Call.MESSAGE_TYPE)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.error, 'com.myapp.error1')
+        self.assertEqual(msg.error, "com.myapp.error1")
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg.kwargs, {"foo": 23, "bar": "hello"})
         self.assertEqual(msg.marshal(), wmsg)
 
 
 class TestSubscribeMessage(unittest.TestCase):
 
     def test_ctor(self):
-        e = message.Subscribe(123456, 'com.myapp.topic1')
+        e = message.Subscribe(123456, "com.myapp.topic1")
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Subscribe.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
-        self.assertEqual(msg[3], 'com.myapp.topic1')
+        self.assertEqual(msg[3], "com.myapp.topic1")
 
-        e = message.Subscribe(123456, 'com.myapp.topic1', match=message.Subscribe.MATCH_PREFIX)
+        e = message.Subscribe(
+            123456, "com.myapp.topic1", match=message.Subscribe.MATCH_PREFIX
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Subscribe.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
-        self.assertEqual(msg[2], {'match': 'prefix'})
-        self.assertEqual(msg[3], 'com.myapp.topic1')
+        self.assertEqual(msg[2], {"match": "prefix"})
+        self.assertEqual(msg[3], "com.myapp.topic1")
 
     def test_parse_and_marshal(self):
-        wmsg = [message.Subscribe.MESSAGE_TYPE, 123456, {}, 'com.myapp.topic1']
+        wmsg = [message.Subscribe.MESSAGE_TYPE, 123456, {}, "com.myapp.topic1"]
         msg = message.Subscribe.parse(wmsg)
         self.assertIsInstance(msg, message.Subscribe)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.topic, 'com.myapp.topic1')
+        self.assertEqual(msg.topic, "com.myapp.topic1")
         self.assertEqual(msg.match, message.Subscribe.MATCH_EXACT)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Subscribe.MESSAGE_TYPE, 123456, {'match': 'prefix'}, 'com.myapp.topic1']
+        wmsg = [
+            message.Subscribe.MESSAGE_TYPE,
+            123456,
+            {"match": "prefix"},
+            "com.myapp.topic1",
+        ]
         msg = message.Subscribe.parse(wmsg)
         self.assertIsInstance(msg, message.Subscribe)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.topic, 'com.myapp.topic1')
+        self.assertEqual(msg.topic, "com.myapp.topic1")
         self.assertEqual(msg.match, message.Subscribe.MATCH_PREFIX)
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_get_retained_default_false(self):
-        wmsg = [message.Subscribe.MESSAGE_TYPE, 123456, {'match': 'prefix'}, 'com.myapp.topic1']
+        wmsg = [
+            message.Subscribe.MESSAGE_TYPE,
+            123456,
+            {"match": "prefix"},
+            "com.myapp.topic1",
+        ]
         msg = message.Subscribe.parse(wmsg)
         self.assertIsInstance(msg, message.Subscribe)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.topic, 'com.myapp.topic1')
+        self.assertEqual(msg.topic, "com.myapp.topic1")
         self.assertEqual(msg.get_retained, None)
         self.assertNotEqual(msg.get_retained, True)
         self.assertEqual(msg.match, message.Subscribe.MATCH_PREFIX)
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_get_retained_explicit_false(self):
-        wmsg = [message.Subscribe.MESSAGE_TYPE, 123456, {'match': 'prefix', 'get_retained': False}, 'com.myapp.topic1']
+        wmsg = [
+            message.Subscribe.MESSAGE_TYPE,
+            123456,
+            {"match": "prefix", "get_retained": False},
+            "com.myapp.topic1",
+        ]
         msg = message.Subscribe.parse(wmsg)
         self.assertIsInstance(msg, message.Subscribe)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.topic, 'com.myapp.topic1')
+        self.assertEqual(msg.topic, "com.myapp.topic1")
         self.assertEqual(msg.get_retained, False)
         self.assertNotEqual(msg.get_retained, True)
         self.assertEqual(msg.match, message.Subscribe.MATCH_PREFIX)
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_get_retained_explicit_true(self):
-        wmsg = [message.Subscribe.MESSAGE_TYPE, 123456, {'match': 'prefix', 'get_retained': True}, 'com.myapp.topic1']
+        wmsg = [
+            message.Subscribe.MESSAGE_TYPE,
+            123456,
+            {"match": "prefix", "get_retained": True},
+            "com.myapp.topic1",
+        ]
         msg = message.Subscribe.parse(wmsg)
         self.assertIsInstance(msg, message.Subscribe)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.topic, 'com.myapp.topic1')
+        self.assertEqual(msg.topic, "com.myapp.topic1")
         self.assertEqual(msg.get_retained, True)
         self.assertEqual(msg.match, message.Subscribe.MATCH_PREFIX)
         self.assertEqual(msg.marshal(), wmsg)
@@ -345,14 +427,18 @@ class TestUnsubscribedMessage(unittest.TestCase):
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Unsubscribed.MESSAGE_TYPE)
         self.assertEqual(msg[1], 0)
-        self.assertEqual(msg[2], {'subscription': 123456})
+        self.assertEqual(msg[2], {"subscription": 123456})
 
-        e = message.Unsubscribed(0, subscription=123456, reason="wamp.subscription.revoked")
+        e = message.Unsubscribed(
+            0, subscription=123456, reason="wamp.subscription.revoked"
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Unsubscribed.MESSAGE_TYPE)
         self.assertEqual(msg[1], 0)
-        self.assertEqual(msg[2], {'subscription': 123456, 'reason': "wamp.subscription.revoked"})
+        self.assertEqual(
+            msg[2], {"subscription": 123456, "reason": "wamp.subscription.revoked"}
+        )
 
     def test_parse_and_marshal(self):
         wmsg = [message.Unsubscribed.MESSAGE_TYPE, 123456]
@@ -363,7 +449,7 @@ class TestUnsubscribedMessage(unittest.TestCase):
         self.assertEqual(msg.reason, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Unsubscribed.MESSAGE_TYPE, 0, {'subscription': 123456}]
+        wmsg = [message.Unsubscribed.MESSAGE_TYPE, 0, {"subscription": 123456}]
         msg = message.Unsubscribed.parse(wmsg)
         self.assertIsInstance(msg, message.Unsubscribed)
         self.assertEqual(msg.request, 0)
@@ -371,7 +457,11 @@ class TestUnsubscribedMessage(unittest.TestCase):
         self.assertEqual(msg.reason, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Unsubscribed.MESSAGE_TYPE, 0, {'subscription': 123456, 'reason': "wamp.subscription.revoked"}]
+        wmsg = [
+            message.Unsubscribed.MESSAGE_TYPE,
+            0,
+            {"subscription": 123456, "reason": "wamp.subscription.revoked"},
+        ]
         msg = message.Unsubscribed.parse(wmsg)
         self.assertIsInstance(msg, message.Unsubscribed)
         self.assertEqual(msg.request, 0)
@@ -383,38 +473,51 @@ class TestUnsubscribedMessage(unittest.TestCase):
 class TestPublishMessage(unittest.TestCase):
 
     def test_ctor(self):
-        e = message.Publish(123456, 'com.myapp.topic1')
+        e = message.Publish(123456, "com.myapp.topic1")
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Publish.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
-        self.assertEqual(msg[3], 'com.myapp.topic1')
+        self.assertEqual(msg[3], "com.myapp.topic1")
 
-        e = message.Publish(123456, 'com.myapp.topic1', args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'})
+        e = message.Publish(
+            123456,
+            "com.myapp.topic1",
+            args=[1, 2, 3],
+            kwargs={"foo": 23, "bar": "hello"},
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Publish.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
-        self.assertEqual(msg[3], 'com.myapp.topic1')
+        self.assertEqual(msg[3], "com.myapp.topic1")
         self.assertEqual(msg[4], [1, 2, 3])
-        self.assertEqual(msg[5], {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg[5], {"foo": 23, "bar": "hello"})
 
-        e = message.Publish(123456, 'com.myapp.topic1', exclude_me=False, exclude=[300], eligible=[100, 200, 300])
+        e = message.Publish(
+            123456,
+            "com.myapp.topic1",
+            exclude_me=False,
+            exclude=[300],
+            eligible=[100, 200, 300],
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Publish.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
-        self.assertEqual(msg[2], {'exclude_me': False, 'exclude': [300], 'eligible': [100, 200, 300]})
-        self.assertEqual(msg[3], 'com.myapp.topic1')
+        self.assertEqual(
+            msg[2], {"exclude_me": False, "exclude": [300], "eligible": [100, 200, 300]}
+        )
+        self.assertEqual(msg[3], "com.myapp.topic1")
 
     def test_parse_and_marshal(self):
-        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {}, 'com.myapp.topic1']
+        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {}, "com.myapp.topic1"]
         msg = message.Publish.parse(wmsg)
         self.assertIsInstance(msg, message.Publish)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.topic, 'com.myapp.topic1')
+        self.assertEqual(msg.topic, "com.myapp.topic1")
         self.assertEqual(msg.args, None)
         self.assertEqual(msg.kwargs, None)
         self.assertEqual(msg.exclude_me, None)
@@ -422,23 +525,35 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg.eligible, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {}, 'com.myapp.topic1', [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+        wmsg = [
+            message.Publish.MESSAGE_TYPE,
+            123456,
+            {},
+            "com.myapp.topic1",
+            [1, 2, 3],
+            {"foo": 23, "bar": "hello"},
+        ]
         msg = message.Publish.parse(wmsg)
         self.assertIsInstance(msg, message.Publish)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.topic, 'com.myapp.topic1')
+        self.assertEqual(msg.topic, "com.myapp.topic1")
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg.kwargs, {"foo": 23, "bar": "hello"})
         self.assertEqual(msg.exclude_me, None)
         self.assertEqual(msg.exclude, None)
         self.assertEqual(msg.eligible, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {'exclude_me': False, 'exclude': [300], 'eligible': [100, 200, 300]}, 'com.myapp.topic1']
+        wmsg = [
+            message.Publish.MESSAGE_TYPE,
+            123456,
+            {"exclude_me": False, "exclude": [300], "eligible": [100, 200, 300]},
+            "com.myapp.topic1",
+        ]
         msg = message.Publish.parse(wmsg)
         self.assertIsInstance(msg, message.Publish)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.topic, 'com.myapp.topic1')
+        self.assertEqual(msg.topic, "com.myapp.topic1")
         self.assertEqual(msg.args, None)
         self.assertEqual(msg.kwargs, None)
         self.assertEqual(msg.exclude_me, False)
@@ -450,7 +565,12 @@ class TestPublishMessage(unittest.TestCase):
         """
         Retain, when not specified, is False-y by default.
         """
-        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {'exclude_me': False, 'exclude': [300], 'eligible': [100, 200, 300]}, 'com.myapp.topic1']
+        wmsg = [
+            message.Publish.MESSAGE_TYPE,
+            123456,
+            {"exclude_me": False, "exclude": [300], "eligible": [100, 200, 300]},
+            "com.myapp.topic1",
+        ]
         msg = message.Publish.parse(wmsg)
         self.assertIsInstance(msg, message.Publish)
         self.assertEqual(msg.retain, None)
@@ -461,7 +581,17 @@ class TestPublishMessage(unittest.TestCase):
         """
         Retain, when specified as False, shows up in the message.
         """
-        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {'exclude_me': False, 'retain': False, 'exclude': [300], 'eligible': [100, 200, 300]}, 'com.myapp.topic1']
+        wmsg = [
+            message.Publish.MESSAGE_TYPE,
+            123456,
+            {
+                "exclude_me": False,
+                "retain": False,
+                "exclude": [300],
+                "eligible": [100, 200, 300],
+            },
+            "com.myapp.topic1",
+        ]
         msg = message.Publish.parse(wmsg)
         self.assertIsInstance(msg, message.Publish)
         self.assertEqual(msg.retain, False)
@@ -472,7 +602,17 @@ class TestPublishMessage(unittest.TestCase):
         """
         Retain, when specified as True, shows up in the message.
         """
-        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {'exclude_me': False, 'retain': True, 'exclude': [300], 'eligible': [100, 200, 300]}, 'com.myapp.topic1']
+        wmsg = [
+            message.Publish.MESSAGE_TYPE,
+            123456,
+            {
+                "exclude_me": False,
+                "retain": True,
+                "exclude": [300],
+                "eligible": [100, 200, 300],
+            },
+            "com.myapp.topic1",
+        ]
         msg = message.Publish.parse(wmsg)
         self.assertIsInstance(msg, message.Publish)
         self.assertEqual(msg.retain, True)
@@ -510,7 +650,9 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {})
 
-        e = message.Event(123456, 789123, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'})
+        e = message.Event(
+            123456, 789123, args=[1, 2, 3], kwargs={"foo": 23, "bar": "hello"}
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Event.MESSAGE_TYPE)
@@ -518,7 +660,7 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {})
         self.assertEqual(msg[4], [1, 2, 3])
-        self.assertEqual(msg[5], {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg[5], {"foo": 23, "bar": "hello"})
 
         e = message.Event(123456, 789123, publisher=300)
         msg = e.marshal()
@@ -526,7 +668,7 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg[0], message.Event.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], 789123)
-        self.assertEqual(msg[3], {'publisher': 300})
+        self.assertEqual(msg[3], {"publisher": 300})
 
     def test_parse_and_marshal(self):
         wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {}]
@@ -539,17 +681,24 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg.publisher, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {}, [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+        wmsg = [
+            message.Event.MESSAGE_TYPE,
+            123456,
+            789123,
+            {},
+            [1, 2, 3],
+            {"foo": 23, "bar": "hello"},
+        ]
         msg = message.Event.parse(wmsg)
         self.assertIsInstance(msg, message.Event)
         self.assertEqual(msg.subscription, 123456)
         self.assertEqual(msg.publication, 789123)
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg.kwargs, {"foo": 23, "bar": "hello"})
         self.assertEqual(msg.publisher, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {'publisher': 300}]
+        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {"publisher": 300}]
         msg = message.Event.parse(wmsg)
         self.assertIsInstance(msg, message.Event)
         self.assertEqual(msg.subscription, 123456)
@@ -568,7 +717,7 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_retained_explicit_false(self):
-        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {'retained': False}]
+        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {"retained": False}]
         msg = message.Event.parse(wmsg)
         self.assertIsInstance(msg, message.Event)
         self.assertEqual(msg.retained, False)
@@ -576,7 +725,7 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_retained_explicit_true(self):
-        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {'retained': True}]
+        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {"retained": True}]
         msg = message.Event.parse(wmsg)
         self.assertIsInstance(msg, message.Event)
         self.assertEqual(msg.retained, True)
@@ -586,30 +735,30 @@ class TestEventMessage(unittest.TestCase):
 class TestRegisterMessage(unittest.TestCase):
 
     def test_ctor(self):
-        e = message.Register(123456, 'com.myapp.procedure1')
+        e = message.Register(123456, "com.myapp.procedure1")
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Register.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
-        self.assertEqual(msg[3], 'com.myapp.procedure1')
+        self.assertEqual(msg[3], "com.myapp.procedure1")
 
-        e = message.Register(123456, 'com.myapp.procedure1', match='wildcard')
+        e = message.Register(123456, "com.myapp.procedure1", match="wildcard")
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Register.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
-        self.assertEqual(msg[2], {'match': 'wildcard'})
-        self.assertEqual(msg[3], 'com.myapp.procedure1')
+        self.assertEqual(msg[2], {"match": "wildcard"})
+        self.assertEqual(msg[3], "com.myapp.procedure1")
 
     def test_ctor_reregister(self):
-        e = message.Register(123456, 'com.myapp.procedure1', force_reregister=True)
+        e = message.Register(123456, "com.myapp.procedure1", force_reregister=True)
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Register.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
-        self.assertEqual(msg[2], {'force_reregister': True})
-        self.assertEqual(msg[3], 'com.myapp.procedure1')
+        self.assertEqual(msg[2], {"force_reregister": True})
+        self.assertEqual(msg[3], "com.myapp.procedure1")
 
         e2 = message.Register.parse(msg)
         str(e2)
@@ -618,8 +767,8 @@ class TestRegisterMessage(unittest.TestCase):
         msg = [
             message.Register.MESSAGE_TYPE,
             123456,
-            {'force_reregister': 'truthy'},
-            'com.myapp.procedure1',
+            {"force_reregister": "truthy"},
+            "com.myapp.procedure1",
         ]
 
         with self.assertRaises(ProtocolError) as ctx:
@@ -627,20 +776,25 @@ class TestRegisterMessage(unittest.TestCase):
         self.assertIn("invalid type", str(ctx.exception))
 
     def test_parse_and_marshal(self):
-        wmsg = [message.Register.MESSAGE_TYPE, 123456, {}, 'com.myapp.procedure1']
+        wmsg = [message.Register.MESSAGE_TYPE, 123456, {}, "com.myapp.procedure1"]
         msg = message.Register.parse(wmsg)
         self.assertIsInstance(msg, message.Register)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.procedure, 'com.myapp.procedure1')
-        self.assertEqual(msg.match, 'exact')
+        self.assertEqual(msg.procedure, "com.myapp.procedure1")
+        self.assertEqual(msg.match, "exact")
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Register.MESSAGE_TYPE, 123456, {'match': 'wildcard'}, 'com.myapp.procedure1']
+        wmsg = [
+            message.Register.MESSAGE_TYPE,
+            123456,
+            {"match": "wildcard"},
+            "com.myapp.procedure1",
+        ]
         msg = message.Register.parse(wmsg)
         self.assertIsInstance(msg, message.Register)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.procedure, 'com.myapp.procedure1')
-        self.assertEqual(msg.match, 'wildcard')
+        self.assertEqual(msg.procedure, "com.myapp.procedure1")
+        self.assertEqual(msg.match, "wildcard")
         self.assertEqual(msg.marshal(), wmsg)
 
 
@@ -696,14 +850,18 @@ class TestUnregisteredMessage(unittest.TestCase):
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Unregistered.MESSAGE_TYPE)
         self.assertEqual(msg[1], 0)
-        self.assertEqual(msg[2], {'registration': 123456})
+        self.assertEqual(msg[2], {"registration": 123456})
 
-        e = message.Unregistered(0, registration=123456, reason="wamp.registration.revoked")
+        e = message.Unregistered(
+            0, registration=123456, reason="wamp.registration.revoked"
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Unregistered.MESSAGE_TYPE)
         self.assertEqual(msg[1], 0)
-        self.assertEqual(msg[2], {'registration': 123456, 'reason': "wamp.registration.revoked"})
+        self.assertEqual(
+            msg[2], {"registration": 123456, "reason": "wamp.registration.revoked"}
+        )
 
     def test_parse_and_marshal(self):
         wmsg = [message.Unregistered.MESSAGE_TYPE, 123456]
@@ -714,7 +872,7 @@ class TestUnregisteredMessage(unittest.TestCase):
         self.assertEqual(msg.reason, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Unregistered.MESSAGE_TYPE, 0, {'registration': 123456}]
+        wmsg = [message.Unregistered.MESSAGE_TYPE, 0, {"registration": 123456}]
         msg = message.Unregistered.parse(wmsg)
         self.assertIsInstance(msg, message.Unregistered)
         self.assertEqual(msg.request, 0)
@@ -722,7 +880,11 @@ class TestUnregisteredMessage(unittest.TestCase):
         self.assertEqual(msg.reason, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Unregistered.MESSAGE_TYPE, 0, {'registration': 123456, 'reason': "wamp.registration.revoked"}]
+        wmsg = [
+            message.Unregistered.MESSAGE_TYPE,
+            0,
+            {"registration": 123456, "reason": "wamp.registration.revoked"},
+        ]
         msg = message.Unregistered.parse(wmsg)
         self.assertIsInstance(msg, message.Unregistered)
         self.assertEqual(msg.request, 0)
@@ -734,58 +896,75 @@ class TestUnregisteredMessage(unittest.TestCase):
 class TestCallMessage(unittest.TestCase):
 
     def test_ctor(self):
-        e = message.Call(123456, 'com.myapp.procedure1')
+        e = message.Call(123456, "com.myapp.procedure1")
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Call.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
-        self.assertEqual(msg[3], 'com.myapp.procedure1')
+        self.assertEqual(msg[3], "com.myapp.procedure1")
 
-        e = message.Call(123456, 'com.myapp.procedure1', args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'})
+        e = message.Call(
+            123456,
+            "com.myapp.procedure1",
+            args=[1, 2, 3],
+            kwargs={"foo": 23, "bar": "hello"},
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Call.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
-        self.assertEqual(msg[3], 'com.myapp.procedure1')
+        self.assertEqual(msg[3], "com.myapp.procedure1")
         self.assertEqual(msg[4], [1, 2, 3])
-        self.assertEqual(msg[5], {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg[5], {"foo": 23, "bar": "hello"})
 
-        e = message.Call(123456, 'com.myapp.procedure1', timeout=10000)
+        e = message.Call(123456, "com.myapp.procedure1", timeout=10000)
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Call.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
-        self.assertEqual(msg[2], {'timeout': 10000})
-        self.assertEqual(msg[3], 'com.myapp.procedure1')
+        self.assertEqual(msg[2], {"timeout": 10000})
+        self.assertEqual(msg[3], "com.myapp.procedure1")
 
     def test_parse_and_marshal(self):
-        wmsg = [message.Call.MESSAGE_TYPE, 123456, {}, 'com.myapp.procedure1']
+        wmsg = [message.Call.MESSAGE_TYPE, 123456, {}, "com.myapp.procedure1"]
         msg = message.Call.parse(wmsg)
         self.assertIsInstance(msg, message.Call)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.procedure, 'com.myapp.procedure1')
+        self.assertEqual(msg.procedure, "com.myapp.procedure1")
         self.assertEqual(msg.args, None)
         self.assertEqual(msg.kwargs, None)
         self.assertEqual(msg.timeout, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Call.MESSAGE_TYPE, 123456, {}, 'com.myapp.procedure1', [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+        wmsg = [
+            message.Call.MESSAGE_TYPE,
+            123456,
+            {},
+            "com.myapp.procedure1",
+            [1, 2, 3],
+            {"foo": 23, "bar": "hello"},
+        ]
         msg = message.Call.parse(wmsg)
         self.assertIsInstance(msg, message.Call)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.procedure, 'com.myapp.procedure1')
+        self.assertEqual(msg.procedure, "com.myapp.procedure1")
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg.kwargs, {"foo": 23, "bar": "hello"})
         self.assertEqual(msg.timeout, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Call.MESSAGE_TYPE, 123456, {'timeout': 10000}, 'com.myapp.procedure1']
+        wmsg = [
+            message.Call.MESSAGE_TYPE,
+            123456,
+            {"timeout": 10000},
+            "com.myapp.procedure1",
+        ]
         msg = message.Call.parse(wmsg)
         self.assertIsInstance(msg, message.Call)
         self.assertEqual(msg.request, 123456)
-        self.assertEqual(msg.procedure, 'com.myapp.procedure1')
+        self.assertEqual(msg.procedure, "com.myapp.procedure1")
         self.assertEqual(msg.args, None)
         self.assertEqual(msg.kwargs, None)
         self.assertEqual(msg.timeout, 10000)
@@ -807,7 +986,7 @@ class TestCancelMessage(unittest.TestCase):
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Cancel.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
-        self.assertEqual(msg[2], {'mode': message.Cancel.KILL})
+        self.assertEqual(msg[2], {"mode": message.Cancel.KILL})
 
     def test_parse_and_marshal(self):
         wmsg = [message.Cancel.MESSAGE_TYPE, 123456, {}]
@@ -817,7 +996,7 @@ class TestCancelMessage(unittest.TestCase):
         self.assertEqual(msg.mode, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Cancel.MESSAGE_TYPE, 123456, {'mode': message.Cancel.KILL}]
+        wmsg = [message.Cancel.MESSAGE_TYPE, 123456, {"mode": message.Cancel.KILL}]
         msg = message.Cancel.parse(wmsg)
         self.assertIsInstance(msg, message.Cancel)
         self.assertEqual(msg.request, 123456)
@@ -835,21 +1014,21 @@ class TestResultMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
 
-        e = message.Result(123456, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'})
+        e = message.Result(123456, args=[1, 2, 3], kwargs={"foo": 23, "bar": "hello"})
         msg = e.marshal()
         self.assertEqual(len(msg), 5)
         self.assertEqual(msg[0], message.Result.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], [1, 2, 3])
-        self.assertEqual(msg[4], {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg[4], {"foo": 23, "bar": "hello"})
 
         e = message.Result(123456, progress=True)
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Result.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
-        self.assertEqual(msg[2], {'progress': True})
+        self.assertEqual(msg[2], {"progress": True})
 
     def test_parse_and_marshal(self):
         wmsg = [message.Result.MESSAGE_TYPE, 123456, {}]
@@ -861,16 +1040,22 @@ class TestResultMessage(unittest.TestCase):
         self.assertEqual(msg.progress, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Result.MESSAGE_TYPE, 123456, {}, [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+        wmsg = [
+            message.Result.MESSAGE_TYPE,
+            123456,
+            {},
+            [1, 2, 3],
+            {"foo": 23, "bar": "hello"},
+        ]
         msg = message.Result.parse(wmsg)
         self.assertIsInstance(msg, message.Result)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg.kwargs, {"foo": 23, "bar": "hello"})
         self.assertEqual(msg.progress, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Result.MESSAGE_TYPE, 123456, {'progress': True}]
+        wmsg = [message.Result.MESSAGE_TYPE, 123456, {"progress": True}]
         msg = message.Result.parse(wmsg)
         self.assertIsInstance(msg, message.Result)
         self.assertEqual(msg.request, 123456)
@@ -891,7 +1076,9 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {})
 
-        e = message.Invocation(123456, 789123, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'})
+        e = message.Invocation(
+            123456, 789123, args=[1, 2, 3], kwargs={"foo": 23, "bar": "hello"}
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Invocation.MESSAGE_TYPE)
@@ -899,7 +1086,7 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {})
         self.assertEqual(msg[4], [1, 2, 3])
-        self.assertEqual(msg[5], {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg[5], {"foo": 23, "bar": "hello"})
 
         e = message.Invocation(123456, 789123, timeout=10000)
         msg = e.marshal()
@@ -907,7 +1094,7 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg[0], message.Invocation.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], 789123)
-        self.assertEqual(msg[3], {'timeout': 10000})
+        self.assertEqual(msg[3], {"timeout": 10000})
 
     def test_parse_and_marshal(self):
         wmsg = [message.Invocation.MESSAGE_TYPE, 123456, 789123, {}]
@@ -920,17 +1107,24 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg.timeout, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Invocation.MESSAGE_TYPE, 123456, 789123, {}, [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+        wmsg = [
+            message.Invocation.MESSAGE_TYPE,
+            123456,
+            789123,
+            {},
+            [1, 2, 3],
+            {"foo": 23, "bar": "hello"},
+        ]
         msg = message.Invocation.parse(wmsg)
         self.assertIsInstance(msg, message.Invocation)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.registration, 789123)
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg.kwargs, {"foo": 23, "bar": "hello"})
         self.assertEqual(msg.timeout, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Invocation.MESSAGE_TYPE, 123456, 789123, {'timeout': 10000}]
+        wmsg = [message.Invocation.MESSAGE_TYPE, 123456, 789123, {"timeout": 10000}]
         msg = message.Invocation.parse(wmsg)
         self.assertIsInstance(msg, message.Invocation)
         self.assertEqual(msg.request, 123456)
@@ -956,7 +1150,7 @@ class TestInterruptMessage(unittest.TestCase):
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Interrupt.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
-        self.assertEqual(msg[2], {'mode': message.Interrupt.KILL})
+        self.assertEqual(msg[2], {"mode": message.Interrupt.KILL})
 
     def test_parse_and_marshal(self):
         wmsg = [message.Interrupt.MESSAGE_TYPE, 123456, {}]
@@ -966,7 +1160,11 @@ class TestInterruptMessage(unittest.TestCase):
         self.assertEqual(msg.mode, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Interrupt.MESSAGE_TYPE, 123456, {'mode': message.Interrupt.KILL}]
+        wmsg = [
+            message.Interrupt.MESSAGE_TYPE,
+            123456,
+            {"mode": message.Interrupt.KILL},
+        ]
         msg = message.Interrupt.parse(wmsg)
         self.assertIsInstance(msg, message.Interrupt)
         self.assertEqual(msg.request, 123456)
@@ -984,21 +1182,21 @@ class TestYieldMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
 
-        e = message.Yield(123456, args=[1, 2, 3], kwargs={'foo': 23, 'bar': 'hello'})
+        e = message.Yield(123456, args=[1, 2, 3], kwargs={"foo": 23, "bar": "hello"})
         msg = e.marshal()
         self.assertEqual(len(msg), 5)
         self.assertEqual(msg[0], message.Yield.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], [1, 2, 3])
-        self.assertEqual(msg[4], {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg[4], {"foo": 23, "bar": "hello"})
 
         e = message.Yield(123456, progress=True)
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Yield.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
-        self.assertEqual(msg[2], {'progress': True})
+        self.assertEqual(msg[2], {"progress": True})
 
     def test_parse_and_marshal(self):
         wmsg = [message.Yield.MESSAGE_TYPE, 123456, {}]
@@ -1010,16 +1208,22 @@ class TestYieldMessage(unittest.TestCase):
         self.assertEqual(msg.progress, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Yield.MESSAGE_TYPE, 123456, {}, [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+        wmsg = [
+            message.Yield.MESSAGE_TYPE,
+            123456,
+            {},
+            [1, 2, 3],
+            {"foo": 23, "bar": "hello"},
+        ]
         msg = message.Yield.parse(wmsg)
         self.assertIsInstance(msg, message.Yield)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {'foo': 23, 'bar': 'hello'})
+        self.assertEqual(msg.kwargs, {"foo": 23, "bar": "hello"})
         self.assertEqual(msg.progress, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Yield.MESSAGE_TYPE, 123456, {'progress': True}]
+        wmsg = [message.Yield.MESSAGE_TYPE, 123456, {"progress": True}]
         msg = message.Yield.parse(wmsg)
         self.assertIsInstance(msg, message.Yield)
         self.assertEqual(msg.request, 123456)
@@ -1032,71 +1236,129 @@ class TestYieldMessage(unittest.TestCase):
 class TestHelloMessage(unittest.TestCase):
 
     def test_ctor(self):
-        e = message.Hello("realm1", {'publisher': role.RolePublisherFeatures()})
+        e = message.Hello("realm1", {"publisher": role.RolePublisherFeatures()})
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
         self.assertEqual(msg[1], "realm1")
-        self.assertEqual(msg[2], {'roles': {'publisher': {}}})
+        self.assertEqual(msg[2], {"roles": {"publisher": {}}})
 
-        e = message.Hello("realm1", {'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)})
+        e = message.Hello(
+            "realm1",
+            {
+                "publisher": role.RolePublisherFeatures(
+                    subscriber_blackwhite_listing=True
+                )
+            },
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
         self.assertEqual(msg[1], "realm1")
-        self.assertEqual(msg[2], {'roles': {'publisher': {'features': {'subscriber_blackwhite_listing': True}}}})
+        self.assertEqual(
+            msg[2],
+            {
+                "roles": {
+                    "publisher": {"features": {"subscriber_blackwhite_listing": True}}
+                }
+            },
+        )
 
-        e = message.Hello("realm1", {'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)}, resumable=True)
+        e = message.Hello(
+            "realm1",
+            {
+                "publisher": role.RolePublisherFeatures(
+                    subscriber_blackwhite_listing=True
+                )
+            },
+            resumable=True,
+        )
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
         self.assertEqual(msg[1], "realm1")
-        self.assertEqual(msg[2], {'roles': {'publisher': {'features': {'subscriber_blackwhite_listing': True}}}, 'resumable': True})
+        self.assertEqual(
+            msg[2],
+            {
+                "roles": {
+                    "publisher": {"features": {"subscriber_blackwhite_listing": True}}
+                },
+                "resumable": True,
+            },
+        )
 
     def test_parse_and_marshal(self):
-        wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {'roles': {'publisher': {}}}]
+        wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {"roles": {"publisher": {}}}]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
         self.assertEqual(msg.realm, "realm1")
-        self.assertEqual(msg.roles, {'publisher': role.RolePublisherFeatures()})
+        self.assertEqual(msg.roles, {"publisher": role.RolePublisherFeatures()})
         self.assertEqual(msg.resumable, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {'roles': {'publisher': {'features': {'subscriber_blackwhite_listing': True}}}}]
+        wmsg = [
+            message.Hello.MESSAGE_TYPE,
+            "realm1",
+            {
+                "roles": {
+                    "publisher": {"features": {"subscriber_blackwhite_listing": True}}
+                }
+            },
+        ]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
         self.assertEqual(msg.realm, "realm1")
-        self.assertEqual(msg.roles, {'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)})
+        self.assertEqual(
+            msg.roles,
+            {
+                "publisher": role.RolePublisherFeatures(
+                    subscriber_blackwhite_listing=True
+                )
+            },
+        )
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {'roles': {'publisher': {}}, 'resumable': False}]
+        wmsg = [
+            message.Hello.MESSAGE_TYPE,
+            "realm1",
+            {"roles": {"publisher": {}}, "resumable": False},
+        ]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
         self.assertEqual(msg.realm, "realm1")
-        self.assertEqual(msg.roles, {'publisher': role.RolePublisherFeatures()})
+        self.assertEqual(msg.roles, {"publisher": role.RolePublisherFeatures()})
         self.assertEqual(msg.resumable, False)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {'roles': {'publisher': {}}, 'resumable': True, 'resume-session': 1234, 'resume-token': "dsjgsg"}]
+        wmsg = [
+            message.Hello.MESSAGE_TYPE,
+            "realm1",
+            {
+                "roles": {"publisher": {}},
+                "resumable": True,
+                "resume-session": 1234,
+                "resume-token": "dsjgsg",
+            },
+        ]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
         self.assertEqual(msg.realm, "realm1")
-        self.assertEqual(msg.roles, {'publisher': role.RolePublisherFeatures()})
+        self.assertEqual(msg.roles, {"publisher": role.RolePublisherFeatures()})
         self.assertEqual(msg.resumable, True)
         self.assertEqual(msg.resume_session, 1234)
         self.assertEqual(msg.resume_token, "dsjgsg")
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_str(self):
-        e = message.Hello("realm1", {'publisher': role.RolePublisherFeatures()})
+        e = message.Hello("realm1", {"publisher": role.RolePublisherFeatures()})
         self.assertIsInstance(str(e), str)
 
 
 class TestGoodbyeMessage(unittest.TestCase):
 
     def test_ctor(self):
-        reason = 'wamp.error.system_shutdown'
-        reason_msg = 'The host is shutting down now.'
+        reason = "wamp.error.system_shutdown"
+        reason_msg = "The host is shutting down now."
 
         e = message.Goodbye()
         msg = e.marshal()
@@ -1116,12 +1378,12 @@ class TestGoodbyeMessage(unittest.TestCase):
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
-        self.assertEqual(msg[1], {'message': reason_msg})
+        self.assertEqual(msg[1], {"message": reason_msg})
         self.assertEqual(msg[2], reason)
 
     def test_parse_and_marshal(self):
-        reason = 'wamp.error.system_shutdown'
-        reason_msg = 'The host is shutting down now.'
+        reason = "wamp.error.system_shutdown"
+        reason_msg = "The host is shutting down now."
 
         wmsg = [message.Goodbye.MESSAGE_TYPE]
         self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
@@ -1129,7 +1391,7 @@ class TestGoodbyeMessage(unittest.TestCase):
         wmsg = [message.Goodbye.MESSAGE_TYPE, reason]
         self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
 
-        wmsg = [message.Goodbye.MESSAGE_TYPE, {'message': 100}, reason]
+        wmsg = [message.Goodbye.MESSAGE_TYPE, {"message": 100}, reason]
         self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
 
         wmsg = [message.Goodbye.MESSAGE_TYPE, {}, reason]
@@ -1139,7 +1401,7 @@ class TestGoodbyeMessage(unittest.TestCase):
         self.assertEqual(msg.message, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Goodbye.MESSAGE_TYPE, {'message': reason_msg}, reason]
+        wmsg = [message.Goodbye.MESSAGE_TYPE, {"message": reason_msg}, reason]
         msg = message.Goodbye.parse(wmsg)
         self.assertIsInstance(msg, message.Goodbye)
         self.assertEqual(msg.reason, reason)
@@ -1147,5 +1409,8 @@ class TestGoodbyeMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_str(self):
-        e = message.Goodbye(reason='wamp.error.system_shutdown', message='The host is shutting down now.')
+        e = message.Goodbye(
+            reason="wamp.error.system_shutdown",
+            message="The host is shutting down now.",
+        )
         self.assertIsInstance(str(e), str)

@@ -29,8 +29,10 @@ try:
     # use Cython implementation of XorMasker validator if available
 
     from wsaccel.xormask import XorMaskerNull
+
     # noinspection PyUnresolvedReferences
     from wsaccel.xormask import createXorMasker
+
     create_xor_masker = createXorMasker
 
 except ImportError:
@@ -50,7 +52,7 @@ except ImportError:
 
     class XorMaskerNull(object):
 
-        __slots__ = ('_ptr',)
+        __slots__ = ("_ptr",)
 
         # noinspection PyUnusedLocal
         def __init__(self, mask=None):
@@ -68,12 +70,12 @@ except ImportError:
 
     class XorMaskerSimple(object):
 
-        __slots__ = ('_ptr', '_msk')
+        __slots__ = ("_ptr", "_msk")
 
         def __init__(self, mask):
             assert len(mask) == 4
             self._ptr = 0
-            self._msk = array('B', mask)
+            self._msk = array("B", mask)
 
         def pointer(self):
             return self._ptr
@@ -83,7 +85,7 @@ except ImportError:
 
         def process(self, data):
             dlen = len(data)
-            payload = array('B', data)
+            payload = array("B", data)
             for k in xrange(dlen):
                 payload[k] ^= self._msk[self._ptr & 3]
                 self._ptr += 1
@@ -91,12 +93,12 @@ except ImportError:
 
     class XorMaskerShifted1(object):
 
-        __slots__ = ('_ptr', '_mskarray')
+        __slots__ = ("_ptr", "_mskarray")
 
         def __init__(self, mask):
             assert len(mask) == 4
             self._ptr = 0
-            self._mskarray = [array('B'), array('B'), array('B'), array('B')]
+            self._mskarray = [array("B"), array("B"), array("B"), array("B")]
             for j in xrange(4):
                 self._mskarray[0].append(mask[j & 3])
                 self._mskarray[1].append(mask[(j + 1) & 3])
@@ -111,7 +113,7 @@ except ImportError:
 
         def process(self, data):
             dlen = len(data)
-            payload = array('B', data)
+            payload = array("B", data)
             msk = self._mskarray[self._ptr & 3]
             for k in xrange(dlen):
                 payload[k] ^= msk[k & 3]

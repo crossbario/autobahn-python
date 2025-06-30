@@ -1,5 +1,3 @@
-
-
 from autobahn.asyncio.component import Component, run
 from autobahn.wamp.types import RegisterOptions
 
@@ -9,7 +7,7 @@ import ssl
 
 context = ssl.create_default_context(
     purpose=ssl.Purpose.SERVER_AUTH,
-    cafile='../../../router/.crossbar/server.crt',
+    cafile="../../../router/.crossbar/server.crt",
 )
 component = Component(
     transports=[
@@ -24,7 +22,7 @@ component = Component(
             },
             "options": {
                 "open_handshake_timeout": 100,
-            }
+            },
         },
     ],
     realm="crossbardemo",
@@ -38,7 +36,7 @@ def join(session, details):
 
 @component.register(
     "example.foo",
-    options=RegisterOptions(details_arg='details'),
+    options=RegisterOptions(details_arg="details"),
 )
 async def foo(*args, **kw):
     print("foo({}, {})".format(args, kw))

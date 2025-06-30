@@ -39,17 +39,17 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             print("publish: com.myapp.topic1", counter)
-            self.publish('com.myapp.topic1', counter)
+            self.publish("com.myapp.topic1", counter)
             counter += 1
             await asyncio.sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # see README; this way everything accesses same cert-files
-    cert_path = '../../../../twisted/wamp/pubsub/tls/server.crt'
+    cert_path = "../../../../twisted/wamp/pubsub/tls/server.crt"
     print(cert_path)
     # create an ssl.Context using just our self-signed cert as the CA certificates
-    options = ssl.create_default_context(cadata=open(cert_path, 'r').read())
+    options = ssl.create_default_context(cadata=open(cert_path, "r").read())
     # ...which we pass as "ssl=" to ApplicationRunner (passed to loop.create_connection)
     runner = ApplicationRunner(
         environ.get("AUTOBAHN_DEMO_ROUTER", "wss://127.0.0.1:8083/ws"),

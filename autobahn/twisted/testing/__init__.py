@@ -30,14 +30,15 @@
 try:
     from twisted.internet.interfaces import IHostnameResolver
 except ImportError:
-    raise ImportError(
-        "Twisted 17.1.0 or later required for autobahn.twisted.testing"
-    )
+    raise ImportError("Twisted 17.1.0 or later required for autobahn.twisted.testing")
 
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address
-from twisted.internet._resolver import HostResolution  # "internal" class, but it's simple
+from twisted.internet._resolver import (
+    HostResolution,
+)  # "internal" class, but it's simple
 from twisted.internet.interfaces import ISSLTransport
+
 try:
     from twisted.internet.testing import MemoryReactorClock
 except ImportError:
@@ -53,9 +54,9 @@ from autobahn.twisted.websocket import WebSocketServerFactory
 
 
 __all__ = (
-    'create_pumper',
-    'create_memory_agent',
-    'MemoryReactorClockResolver',
+    "create_pumper",
+    "create_memory_agent",
+    "MemoryReactorClockResolver",
 )
 
 
@@ -68,7 +69,7 @@ class _StaticTestResolver(object):
         resolution = HostResolution(hostName)
         receiver.resolutionBegan(resolution)
         receiver.addressResolved(
-            IPv4Address('TCP', '127.0.0.1', 31337 if portNumber == 0 else portNumber)
+            IPv4Address("TCP", "127.0.0.1", 31337 if portNumber == 0 else portNumber)
         )
         receiver.resolutionComplete()
 
@@ -121,17 +122,20 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
 
         # call our "real" agent
         real_client_protocol = self._agent.open(
-            transport_config, options,
+            transport_config,
+            options,
             protocol_class=protocol_class,
         )
 
         if is_secure:
-            host, port, factory, context_factory, timeout, bindAddress = self._reactor.sslClients[-1]
+            host, port, factory, context_factory, timeout, bindAddress = (
+                self._reactor.sslClients[-1]
+            )
         else:
             host, port, factory, timeout, bindAddress = self._reactor.tcpClients[-1]
 
-        server_address = IPv4Address('TCP', '127.0.0.1', port)
-        client_address = IPv4Address('TCP', '127.0.0.1', 31337)
+        server_address = IPv4Address("TCP", "127.0.0.1", port)
+        client_address = IPv4Address("TCP", "127.0.0.1", 31337)
 
         server_protocol = self._server_protocol()
         # the protocol could already have a factory
@@ -139,24 +143,32 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
             server_protocol.factory = WebSocketServerFactory()
 
         server_transport = iosim.FakeTransport(
-            server_protocol, isServer=True,
-            hostAddress=server_address, peerAddress=client_address)
+            server_protocol,
+            isServer=True,
+            hostAddress=server_address,
+            peerAddress=client_address,
+        )
         clientProtocol = factory.buildProtocol(None)
         client_transport = iosim.FakeTransport(
-            clientProtocol, isServer=False,
-            hostAddress=client_address, peerAddress=server_address)
+            clientProtocol,
+            isServer=False,
+            hostAddress=client_address,
+            peerAddress=server_address,
+        )
 
         if is_secure:
             directlyProvides(server_transport, ISSLTransport)
             directlyProvides(client_transport, ISSLTransport)
 
         pump = iosim.connect(
-            server_protocol, server_transport, clientProtocol, client_transport)
+            server_protocol, server_transport, clientProtocol, client_transport
+        )
         self._pumper.add(pump)
 
         def add_mapping(proto):
             self._servers[proto] = server_protocol
             return proto
+
         real_client_protocol.addCallback(add_mapping)
         return real_client_protocol
 
@@ -186,6 +198,7 @@ class _Kalamazoo(object):
         self._pumping = False
         self._waiting_for_stop = []
         from twisted.internet import reactor as global_reactor
+
         self._global_reactor = global_reactor
 
     def add(self, p):

@@ -46,10 +46,12 @@ class Component(ApplicationSession):
                 await asyncio.sleep(1 * n)
             return n
 
-        await self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg='details'))
+        await self.register(
+            longop, "com.myapp.longop", RegisterOptions(details_arg="details")
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

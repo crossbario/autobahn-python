@@ -26,7 +26,7 @@
 
 import os
 
-if os.environ.get('USE_TWISTED', False):
+if os.environ.get("USE_TWISTED", False):
     from twisted.trial import unittest
 
     from autobahn.wamp.websocket import WampWebSocketProtocol

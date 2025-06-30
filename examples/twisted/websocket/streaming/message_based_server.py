@@ -27,13 +27,14 @@
 import hashlib
 from twisted.internet import reactor
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol, \
-    listenWS
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    listenWS,
+)
 
 
 class MessageBasedHashServerProtocol(WebSocketServerProtocol):
-
     """
     Message-based WebSockets server that computes a SHA-256 for every
     message it receives and sends back the computed digest.
@@ -43,11 +44,11 @@ class MessageBasedHashServerProtocol(WebSocketServerProtocol):
         sha256 = hashlib.sha256()
         sha256.update(payload)
         digest = sha256.hexdigest()
-        self.sendMessage(digest.encode('utf8'))
+        self.sendMessage(digest.encode("utf8"))
         print("Sent digest for message: {}".format(digest))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = MessageBasedHashServerProtocol
     listenWS(factory)

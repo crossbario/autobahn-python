@@ -45,13 +45,14 @@ class Component(Session):
         for topic in ["com.example.history", "com.example.no_history_here"]:
             print("publishing '{}' as retained event".format(topic))
             pub = yield self.publish(
-                topic, "some data, topic was '{}'".format(topic),
+                topic,
+                "some data, topic was '{}'".format(topic),
                 options=PublishOptions(retain=True, acknowledge=True),
             )
             print("published: {}".format(pub))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     runner = ApplicationRunner(
         environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
         "crossbardemo",

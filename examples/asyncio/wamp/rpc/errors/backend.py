@@ -57,23 +57,25 @@ class Component(ApplicationSession):
                 # this also will raise, if x < 0
                 return math.sqrt(x)
 
-        await self.register(sqrt, 'com.myapp.sqrt')
+        await self.register(sqrt, "com.myapp.sqrt")
 
         # raising WAMP application exceptions
         ##
         def checkname(name):
-            if name in ['foo', 'bar']:
+            if name in ["foo", "bar"]:
                 raise ApplicationError("com.myapp.error.reserved")
 
             if name.lower() != name.upper():
                 # forward positional arguments in exceptions
-                raise ApplicationError("com.myapp.error.mixed_case", name.lower(), name.upper())
+                raise ApplicationError(
+                    "com.myapp.error.mixed_case", name.lower(), name.upper()
+                )
 
             if len(name) < 3 or len(name) > 10:
                 # forward keyword arguments in exceptions
                 raise ApplicationError("com.myapp.error.invalid_length", min=3, max=10)
 
-        await self.register(checkname, 'com.myapp.checkname')
+        await self.register(checkname, "com.myapp.checkname")
 
         # defining and automapping WAMP application exceptions
         ##
@@ -83,10 +85,10 @@ class Component(ApplicationSession):
             if a < b:
                 raise AppError1(b - a)
 
-        await self.register(compare, 'com.myapp.compare')
+        await self.register(compare, "com.myapp.compare")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

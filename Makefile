@@ -143,7 +143,7 @@ test_nvx:
 	USE_TWISTED=1 trial autobahn.nvx.test.test_utf8validator
 
 test_styleguide:
-	flake8 --statistics --max-line-length=119 -qq autobahn
+	flake8 --statistics -qq autobahn
 
 # direct test via pytest (only here because of setuptools test integration)
 test_pytest:

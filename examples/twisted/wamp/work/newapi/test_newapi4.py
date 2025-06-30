@@ -13,10 +13,10 @@ def make_session(config):
         def add2(a, b):
             return a + b
 
-        yield session.register(add2, 'com.example.add2')
+        yield session.register(add2, "com.example.add2")
 
         try:
-            res = yield session.call('com.example.add2', 2, 3)
+            res = yield session.call("com.example.add2", 2, 3)
             print("result: {}".format(res))
         except Exception as e:
             print("error: {}".format(e))
@@ -24,11 +24,11 @@ def make_session(config):
             session.leave()
 
     session = Session(config=config)
-    session.on('join', on_join)
+    session.on("join", on_join)
     return session
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     session = make_session()
     connection = Connection()
