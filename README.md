@@ -3,13 +3,15 @@
 WebSocket & WAMP for Python on Twisted and asyncio.
 
 [![Version](https://img.shields.io/pypi/v/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
-[![CI Test Status](https://github.com/crossbario/autobahn-python/workflows/main/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Amain)
+[![Test](https://github.com/crossbario/autobahn-python/workflows/main/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Amain)
+[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat)](https://autobahn.readthedocs.io/en/latest/)
+<!--
 [![CI Deploy Status](https://github.com/crossbario/autobahn-python/workflows/deploy/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Adeploy)
 [![CI Docker Status](https://github.com/crossbario/autobahn-python/workflows/docker/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Adocker)
 [![CI EXE Status](https://github.com/crossbario/autobahn-python/workflows/pyinstaller/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Apyinstaller)
-[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat)](https://autobahn.readthedocs.io/en/latest/)
 [![Docker
 Images](https://img.shields.io/badge/download-docker-blue.svg?style=flat)](https://hub.docker.com/r/crossbario/autobahn-python/)
+-->
 
 ---
 
@@ -96,37 +98,33 @@ version v21.2.1 supported Python 3.6+.
 
 ## AI Policy
 
-Important
+> **IMPORTANT: A Note on Upcoming Policy Changes Regarding AI-Assisted Content**
+>
+> Up to and including release **v25.6.1**, this project contains no code
+> or documentation generated with the assistance of AI tools. This version
+> represents the final release under our historical contribution policy.
+> Starting with future versions (*after* release v25.6.1), our contribution policy
+> will change. Subsequent releases **MAY** contain code or documentation
+> created with AI assistance.
 
-**A Note on Upcoming Policy Changes Regarding AI-Assisted
-Content**
+We urge all users and contributors to review our [AI
+Policy](https://github.com/crossbario/autobahn-python/blob/master/AI_POLICY.md).
+This document details:
 
-Up to and including version **v25.6.1**, this project contains no
-code or documentation generated with the assistance of AI tools.
-This version represents the final release under our historical
-contribution policy.
+-   The rules and warranties required for all future contributions.
+-   The potential intellectual property implications for the project and
+    its users.
 
-Starting with future versions (after v25.6.1), our contribution
-policy will change. Subsequent releases **MAY** contain code or
-documentation created with AI assistance.
-
-We urge all users and contributors to review our
-[AI Policy](AI_POLICY.rst). This document details:
-
-- The rules and warranties required for all future contributions.
-- The potential intellectual property implications for the
-  project and its users.
-
-This policy was established following an open community
-discussion, which you can review on
-<span class="title-ref">GitHub issue \#1663
-&lt;https://github.com/crossbario/autobahn-python/issues/1663&gt;</span>.
+This policy was established following an open community discussion,
+which you can review on [GitHub issue
+\#1663](https://github.com/crossbario/autobahn-python/issues/1663).
 
 We are providing this transparent notice to enable you to make an
-informed decision. If our new AI policy is incompatible with your
-own (or your organization's) development practices or risk
-tolerance, please take this into consideration when deciding
-whether to upgrade beyond version v25.6.1.
+informed decision. If our new AI policy is incompatible with your own
+(or your organization's) development practices or risk tolerance, please
+take this into consideration when deciding whether to upgrade beyond
+version v25.6.1.
+
 
 ## Show me some code
 

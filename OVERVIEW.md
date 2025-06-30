@@ -112,8 +112,9 @@ repositories:_
 | File                                      | Format | Purpose                             | Where Rendered / Used |
 | ----------------------------------------- | ------ | ----------------------------------- | --------------------- |
 | OVERVIEW.md                               | MD     | Project Overview - _this_ file      | GitHub, Sphinx (MyST) |
-| AI_AUDIT_PROCESS.md                       | MD     | Hard-evidence audit process         | GitHub, Sphinx (MyST) |
 | AI_POLICY.md                              | MD     | AI policy for contributors          | GitHub, Sphinx (MyST) |
+| AI_AUDIT_PROCESS.md                       | MD     | Hard-evidence audit process         | GitHub, Sphinx (MyST) |
+| AI_AUDIT_PROCESS_REVIEW.md                | MD     | Hard-evidence audit process review  | GitHub, Sphinx (MyST) |
 | CLAUDE.md                                 | MD     | AI policy for AI assistants         | Used by AI assistants |
 | .github/pull_request_template.md          | MD     | GitHub pull request template        | GitHub UI             |
 | .github/ISSUE_TEMPLATE/config.yml         | MD     | GitHub issue template configuration | GitHub UI             |

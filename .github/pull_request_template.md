@@ -13,24 +13,24 @@ Closes or relates to #
 ## Checklist
 
 - [ ] I have referenced relevant issue numbers above
-- [ ] I have performed a self-review of my code
-- [ ] I have added tests that prove my fix is effective or that
-      my feature works
-- [ ] I have added necessary documentation (if appropriate)
-- [ ] My code follows the style guidelines of this project
+- [ ] I have performed a self-review of my code and it follows
+      the style guidelines of this project
+- [ ] I have added new or used existing tests that prove my fix
+      is effective or that my feature works
+- [ ] I have added necessary documentation (if appropriate) and
+      updated the changelog
+- [ ] I have added an AI assistance disclosure file (required!)
+      in this PR
 
 ---
 
-## AI Assistance Disclosure
+## AI Assistance Disclosure File
 
 :warning: **Required for this PR:** You MUST include a disclosure
-file at `.audit/<branch-name>.md` right in this PR. Submitting
-code generated _primarily_ by AI, or for which you cannot claim
-_human authorship_, is not permitted. See
-[AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md)
-for details. The disclosure file must **follow the exact format
-and content** as described below. _Your PR will not be accepted
-without a disclosure file._
+file at `.audit/<branch-name>.md` right in this PR. The
+disclosure file must **follow the exact format and content** as
+described below. _Your PR will not be accepted without a
+disclosure file._
 
 **Example 1** file contents of your disclosure file
 `.audit/<branch-name>.md`:
@@ -65,6 +65,13 @@ Date: YYYY-MM-DD
 Related issue(s): #issue-number
 Branch: branch-name
 ```
+
+---
+
+Submitting code generated _primarily_ by AI, or for which you
+cannot claim _human authorship_, is not permitted. See
+[AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md)
+for details.
 
 **Example 1 OR Example 2** show the only valid two variants. You
 cannot have both or none of the first two marks checked, and you
