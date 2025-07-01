@@ -25,10 +25,10 @@
 ###############################################################################
 
 from os import environ
+
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
@@ -41,7 +41,7 @@ class Component(ApplicationSession):
     @inlineCallbacks
     def test(self):
         self.received = 0
-        self.sub = yield self.subscribe(self.on_event, 'com.myapp.topic1')
+        self.sub = yield self.subscribe(self.on_event, "com.myapp.topic1")
         print("Subscribed with subscription ID {}".format(self.sub.id))
 
     @inlineCallbacks
@@ -68,7 +68,7 @@ class Component(ApplicationSession):
         reactor.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

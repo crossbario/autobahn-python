@@ -26,30 +26,37 @@
 
 import sys
 
+from autobahn.twisted.resource import WebSocketResource
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    listenWS,
+)
 from twisted.internet import reactor, ssl
 from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol, \
-    listenWS
-
-from autobahn.twisted.resource import WebSocketResource
-
 
 class PingServerProtocol(WebSocketServerProtocol):
-
     def doPing(self):
         if self.run:
             self.sendPing()
             self.factory.pingsSent[self.peer] += 1
-            print("Ping sent to {} - {}".format(self.peer, self.factory.pingsSent[self.peer]))
+            print(
+                "Ping sent to {} - {}".format(
+                    self.peer, self.factory.pingsSent[self.peer]
+                )
+            )
             reactor.callLater(1, self.doPing)
 
     def onPong(self, payload):
         self.factory.pongsReceived[self.peer] += 1
-        print("Pong received from {} - {}".format(self.peer, self.factory.pongsReceived[self.peer]))
+        print(
+            "Pong received from {} - {}".format(
+                self.peer, self.factory.pongsReceived[self.peer]
+            )
+        )
 
     def onOpen(self):
         self.factory.pingsSent[self.peer] = 0
@@ -62,19 +69,18 @@ class PingServerProtocol(WebSocketServerProtocol):
 
 
 class PingServerFactory(WebSocketServerFactory):
-
     def __init__(self, uri):
         WebSocketServerFactory.__init__(self, uri)
         self.pingsSent = {}
         self.pongsReceived = {}
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     log.startLogging(sys.stdout)
 
-    contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
-                                                      'keys/server.crt')
+    contextFactory = ssl.DefaultOpenSSLContextFactory(
+        "keys/server.key", "keys/server.crt"
+    )
 
     factory = PingServerFactory("wss://127.0.0.1:9000")
 

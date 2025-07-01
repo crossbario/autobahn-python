@@ -31,19 +31,15 @@ from functools import partial
 
 import txaio
 
-from autobahn.util import ObservableMixin
-from autobahn.websocket.util import parse_url as parse_ws_url
 from autobahn.rawsocket.util import parse_url as parse_rs_url
-
-from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
-from autobahn.wamp.exception import SessionNotReady, ApplicationError
-from autobahn.wamp.auth import create_authenticator, IAuthenticator
+from autobahn.util import ObservableMixin
+from autobahn.wamp.auth import IAuthenticator, create_authenticator
+from autobahn.wamp.exception import ApplicationError, SessionNotReady
 from autobahn.wamp.serializer import SERID_TO_SER
+from autobahn.wamp.types import ComponentConfig, RegisterOptions, SubscribeOptions
+from autobahn.websocket.util import parse_url as parse_ws_url
 
-
-__all__ = (
-    'Component'
-)
+__all__ = "Component"
 
 
 def _validate_endpoint(endpoint, check_native_endpoint=None):
@@ -53,9 +49,7 @@ def _validate_endpoint(endpoint, check_native_endpoint=None):
     if check_native_endpoint:
         check_native_endpoint(endpoint)
     elif not isinstance(endpoint, dict):
-        raise ValueError(
-            "'endpoint' must be a dict"
-        )
+        raise ValueError("'endpoint' must be a dict")
 
     # note, we're falling through here -- check_native_endpoint can
     # disallow or allow dict-based config as it likes, but if it
@@ -65,42 +59,38 @@ def _validate_endpoint(endpoint, check_native_endpoint=None):
     if isinstance(endpoint, dict):
         # XXX what about filling in anything missing from the URL? Or
         # is that only for when *nothing* is provided for endpoint?
-        if 'type' not in endpoint:
+        if "type" not in endpoint:
             # could maybe just make tcp the default?
             raise ValueError("'type' required in endpoint configuration")
-        if endpoint['type'] not in ['tcp', 'unix']:
-            raise ValueError('invalid type "{}" in endpoint'.format(endpoint['type']))
+        if endpoint["type"] not in ["tcp", "unix"]:
+            raise ValueError('invalid type "{}" in endpoint'.format(endpoint["type"]))
 
         for k in endpoint.keys():
-            if k not in ['type', 'host', 'port', 'path', 'tls', 'timeout', 'version']:
-                raise ValueError(
-                    "Invalid key '{}' in endpoint configuration".format(k)
-                )
+            if k not in ["type", "host", "port", "path", "tls", "timeout", "version"]:
+                raise ValueError("Invalid key '{}' in endpoint configuration".format(k))
 
-        if endpoint['type'] == 'tcp':
-            for k in ['host', 'port']:
+        if endpoint["type"] == "tcp":
+            for k in ["host", "port"]:
                 if k not in endpoint:
-                    raise ValueError(
-                        "'{}' required in 'tcp' endpoint config".format(k)
-                    )
-            for k in ['path']:
+                    raise ValueError("'{}' required in 'tcp' endpoint config".format(k))
+            for k in ["path"]:
                 if k in endpoint:
                     raise ValueError(
                         "'{}' not valid in 'tcp' endpoint config".format(k)
                     )
-        elif endpoint['type'] == 'unix':
-            for k in ['path']:
+        elif endpoint["type"] == "unix":
+            for k in ["path"]:
                 if k not in endpoint:
                     raise ValueError(
                         "'{}' required for 'unix' endpoint config".format(k)
                     )
-            for k in ['host', 'port', 'tls']:
+            for k in ["host", "port", "tls"]:
                 if k in endpoint:
                     raise ValueError(
                         "'{}' not valid in 'unix' endpoint config".format(k)
                     )
         else:
-            assert False, 'should not arrive here'
+            assert False, "should not arrive here"
 
 
 def _create_transport(index, transport, check_native_endpoint=None):
@@ -115,149 +105,160 @@ def _create_transport(index, transport, check_native_endpoint=None):
     :raises: ValueError on invalid configuration
     """
     if type(transport) != dict:
-        raise ValueError('invalid type {} for transport configuration - must be a dict'.format(type(transport)))
+        raise ValueError(
+            "invalid type {} for transport configuration - must be a dict".format(
+                type(transport)
+            )
+        )
 
     valid_transport_keys = [
-        'type', 'url', 'endpoint', 'serializer', 'serializers', 'options',
-        'max_retries', 'max_retry_delay', 'initial_retry_delay',
-        'retry_delay_growth', 'retry_delay_jitter', 'proxy', 'headers'
+        "type",
+        "url",
+        "endpoint",
+        "serializer",
+        "serializers",
+        "options",
+        "max_retries",
+        "max_retry_delay",
+        "initial_retry_delay",
+        "retry_delay_growth",
+        "retry_delay_jitter",
+        "proxy",
+        "headers",
     ]
     for k in transport.keys():
         if k not in valid_transport_keys:
-            raise ValueError(
-                "'{}' is not a valid configuration item".format(k)
-            )
+            raise ValueError("'{}' is not a valid configuration item".format(k))
 
-    kind = 'websocket'
-    if 'type' in transport:
-        if transport['type'] not in ['websocket', 'rawsocket']:
-            raise ValueError('Invalid transport type {}'.format(transport['type']))
-        kind = transport['type']
+    kind = "websocket"
+    if "type" in transport:
+        if transport["type"] not in ["websocket", "rawsocket"]:
+            raise ValueError("Invalid transport type {}".format(transport["type"]))
+        kind = transport["type"]
     else:
-        transport['type'] = 'websocket'
+        transport["type"] = "websocket"
 
-    if 'proxy' in transport and kind != 'websocket':
-        raise ValueError(
-            "proxy= only supported for type=websocket transports"
-        )
+    if "proxy" in transport and kind != "websocket":
+        raise ValueError("proxy= only supported for type=websocket transports")
     proxy = transport.get("proxy", None)
     if proxy is not None:
         for k in proxy.keys():
-            if k not in ['host', 'port']:
-                raise ValueError(
-                    "Unknown key '{}' in proxy config".format(k)
-                )
-        for k in ['host', 'port']:
+            if k not in ["host", "port"]:
+                raise ValueError("Unknown key '{}' in proxy config".format(k))
+        for k in ["host", "port"]:
             if k not in proxy:
-                raise ValueError(
-                    "Proxy config requires '{}'".formaT(k)
-                )
+                raise ValueError("Proxy config requires '{}'".formaT(k))
 
     options = dict()
-    if 'options' in transport:
-        options = transport['options']
+    if "options" in transport:
+        options = transport["options"]
         if not isinstance(options, dict):
-            raise ValueError(
-                'options must be a dict, not {}'.format(type(options))
-            )
+            raise ValueError("options must be a dict, not {}".format(type(options)))
 
     headers = transport.get("headers")
 
-    if kind == 'websocket':
-        for key in ['url']:
+    if kind == "websocket":
+        for key in ["url"]:
             if key not in transport:
                 raise ValueError("Transport requires '{}' key".format(key))
         # endpoint not required; we will deduce from URL if it's not provided
         # XXX not in the branch I rebased; can this go away? (is it redundant??)
-        if 'endpoint' not in transport:
-            is_secure, host, port, resource, path, params = parse_ws_url(transport['url'])
+        if "endpoint" not in transport:
+            is_secure, host, port, resource, path, params = parse_ws_url(
+                transport["url"]
+            )
             endpoint_config = {
-                'type': 'tcp',
-                'host': host,
-                'port': port,
-                'tls': is_secure,
+                "type": "tcp",
+                "host": host,
+                "port": port,
+                "tls": is_secure,
             }
         else:
             # note: we're avoiding mutating the incoming "configuration"
             # dict, so this should avoid that too...
-            endpoint_config = transport['endpoint']
+            endpoint_config = transport["endpoint"]
             _validate_endpoint(endpoint_config, check_native_endpoint)
 
-        if 'serializer' in transport:
+        if "serializer" in transport:
             raise ValueError("'serializer' is only for rawsocket; use 'serializers'")
-        if 'serializers' in transport:
-            if not isinstance(transport['serializers'], (list, tuple)):
+        if "serializers" in transport:
+            if not isinstance(transport["serializers"], (list, tuple)):
                 raise ValueError("'serializers' must be a list of strings")
-            if not all([
-                    isinstance(s, (str, str))
-                    for s in transport['serializers']]):
+            if not all([isinstance(s, (str, str)) for s in transport["serializers"]]):
                 raise ValueError("'serializers' must be a list of strings")
             valid_serializers = SERID_TO_SER.keys()
-            for serial in transport['serializers']:
+            for serial in transport["serializers"]:
                 if serial not in valid_serializers:
                     raise ValueError(
                         "Invalid serializer '{}' (expected one of: {})".format(
                             serial,
-                            ', '.join([repr(s) for s in valid_serializers]),
+                            ", ".join([repr(s) for s in valid_serializers]),
                         )
                     )
-        serializer_config = transport.get('serializers', ['cbor', 'json'])
+        serializer_config = transport.get("serializers", ["cbor", "json"])
 
-    elif kind == 'rawsocket':
-        if 'endpoint' not in transport:
-            if transport['url'].startswith('rs'):
+    elif kind == "rawsocket":
+        if "endpoint" not in transport:
+            if transport["url"].startswith("rs"):
                 # # try to parse RawSocket URL ..
-                isSecure, host, port = parse_rs_url(transport['url'])
-            elif transport['url'].startswith('ws'):
+                isSecure, host, port = parse_rs_url(transport["url"])
+            elif transport["url"].startswith("ws"):
                 # try to parse WebSocket URL ..
-                isSecure, host, port, resource, path, params = parse_ws_url(transport['url'])
+                isSecure, host, port, resource, path, params = parse_ws_url(
+                    transport["url"]
+                )
             else:
                 raise RuntimeError()
-            if host == 'unix':
+            if host == "unix":
                 # here, "port" is actually holding the path on the host, eg "/tmp/file.sock"
                 endpoint_config = {
-                    'type': 'unix',
-                    'path': port,
+                    "type": "unix",
+                    "path": port,
                 }
             else:
                 endpoint_config = {
-                    'type': 'tcp',
-                    'host': host,
-                    'port': port,
+                    "type": "tcp",
+                    "host": host,
+                    "port": port,
                 }
         else:
-            endpoint_config = transport['endpoint']
-        if 'serializers' in transport:
+            endpoint_config = transport["endpoint"]
+        if "serializers" in transport:
             raise ValueError("'serializers' is only for websocket; use 'serializer'")
         if headers is not None:
             raise ValueError("'headers' not supported for rawsocket transport")
         # always a list; len == 1 for rawsocket
-        if 'serializer' in transport:
-            if not isinstance(transport['serializer'], (str, str)):
+        if "serializer" in transport:
+            if not isinstance(transport["serializer"], (str, str)):
                 raise ValueError("'serializer' must be a string")
-            serializer_config = [transport['serializer']]
+            serializer_config = [transport["serializer"]]
         else:
-            serializer_config = ['cbor']
+            serializer_config = ["cbor"]
 
     else:
-        assert False, 'should not arrive here'
+        assert False, "should not arrive here"
 
     kw = {}
-    for key in ['max_retries', 'max_retry_delay', 'initial_retry_delay',
-                'retry_delay_growth', 'retry_delay_jitter']:
+    for key in [
+        "max_retries",
+        "max_retry_delay",
+        "initial_retry_delay",
+        "retry_delay_growth",
+        "retry_delay_jitter",
+    ]:
         if key in transport:
             kw[key] = transport[key]
 
     return _Transport(
         index,
         kind=kind,
-        url=transport.get('url', None),
+        url=transport.get("url", None),
         endpoint=endpoint_config,
         serializers=serializer_config,
         proxy=proxy,
         options=options,
         headers=headers,
-        **kw
+        **kw,
     )
 
 
@@ -266,17 +267,23 @@ class _Transport(object):
     Thin-wrapper for WAMP transports used by a Connection.
     """
 
-    def __init__(self, idx, kind, url, endpoint, serializers,
-                 max_retries=-1,
-                 max_retry_delay=300,
-                 initial_retry_delay=1.5,
-                 retry_delay_growth=1.5,
-                 retry_delay_jitter=0.1,
-                 proxy=None,
-                 options=None,
-                 headers=None):
-        """
-        """
+    def __init__(
+        self,
+        idx,
+        kind,
+        url,
+        endpoint,
+        serializers,
+        max_retries=-1,
+        max_retry_delay=300,
+        initial_retry_delay=1.5,
+        retry_delay_growth=1.5,
+        retry_delay_jitter=0.1,
+        proxy=None,
+        options=None,
+        headers=None,
+    ):
+        """ """
         if options is None:
             options = dict()
         self.idx = idx
@@ -288,10 +295,8 @@ class _Transport(object):
         self.headers = headers
 
         self.serializers = serializers
-        if self.type == 'rawsocket' and len(serializers) != 1:
-            raise ValueError(
-                "'rawsocket' transport requires exactly one serializer"
-            )
+        if self.type == "rawsocket" and len(serializers) != 1:
+            raise ValueError("'rawsocket' transport requires exactly one serializer")
 
         self.max_retries = max_retries
         self.max_retry_delay = max_retry_delay
@@ -335,10 +340,12 @@ class _Transport(object):
             # if we never tried before, try immediately
             return 0
         elif self.max_retries != -1 and self.connect_attempts >= self.max_retries + 1:
-            raise RuntimeError('max reconnects reached')
+            raise RuntimeError("max reconnects reached")
         else:
             self.retry_delay = self.retry_delay * self.retry_delay_growth
-            self.retry_delay = random.normalvariate(self.retry_delay, self.retry_delay * self.retry_delay_jitter)
+            self.retry_delay = random.normalvariate(
+                self.retry_delay, self.retry_delay * self.retry_delay_jitter
+            )
             if self.retry_delay > self.max_retry_delay:
                 self.retry_delay = self.max_retry_delay
             return self.retry_delay
@@ -348,13 +355,14 @@ class _Transport(object):
         returns a human-readable description of the endpoint
         """
         if isinstance(self.endpoint, dict):
-            return self.endpoint['type']
+            return self.endpoint["type"]
         return repr(self.endpoint)
 
 
 # this could probably implement twisted.application.service.IService
 # if we wanted; or via an adapter...which just adds a startService()
 # and stopService() [latter can be async]
+
 
 class Component(ObservableMixin):
     """
@@ -383,11 +391,14 @@ class Component(ObservableMixin):
         assert options is None or isinstance(options, SubscribeOptions)
 
         def decorator(fn):
-
             def do_subscription(session, details):
-                return session.subscribe(fn, topic=topic, options=options, check_types=check_types)
-            self.on('join', do_subscription)
+                return session.subscribe(
+                    fn, topic=topic, options=options, check_types=check_types
+                )
+
+            self.on("join", do_subscription)
             return fn
+
         return decorator
 
     def register(self, uri, options=None, check_types=False):
@@ -406,15 +417,27 @@ class Component(ObservableMixin):
         assert options is None or isinstance(options, RegisterOptions)
 
         def decorator(fn):
-
             def do_registration(session, details):
-                return session.register(fn, procedure=uri, options=options, check_types=check_types)
-            self.on('join', do_registration)
+                return session.register(
+                    fn, procedure=uri, options=options, check_types=check_types
+                )
+
+            self.on("join", do_registration)
             return fn
+
         return decorator
 
-    def __init__(self, main=None, transports=None, config=None, realm='realm1', extra=None,
-                 authentication=None, session_factory=None, is_fatal=None):
+    def __init__(
+        self,
+        main=None,
+        transports=None,
+        config=None,
+        realm="realm1",
+        extra=None,
+        authentication=None,
+        session_factory=None,
+        is_fatal=None,
+    ):
         """
         :param main: After a transport has been connected and a session
             has been established and joined to a realm, this (async)
@@ -472,13 +495,13 @@ class Component(ObservableMixin):
         """
         self.set_valid_events(
             [
-                'start',        # fired by base class
-                'connect',      # fired by ApplicationSession
-                'join',         # fired by ApplicationSession
-                'ready',        # fired by ApplicationSession
-                'leave',        # fired by ApplicationSession
-                'disconnect',   # fired by ApplicationSession
-                'connectfailure',   # fired by base class
+                "start",  # fired by base class
+                "connect",  # fired by ApplicationSession
+                "join",  # fired by ApplicationSession
+                "ready",  # fired by ApplicationSession
+                "leave",  # fired by ApplicationSession
+                "disconnect",  # fired by ApplicationSession
+                "connectfailure",  # fired by base class
             ]
         )
 
@@ -492,15 +515,15 @@ class Component(ObservableMixin):
 
         # use WAMP-over-WebSocket to localhost when no transport is specified at all
         if transports is None:
-            transports = 'ws://127.0.0.1:8080/ws'
+            transports = "ws://127.0.0.1:8080/ws"
 
         # allows to provide a URL instead of a list of transports
         if isinstance(transports, (str, str)):
             url = transports
             # 'endpoint' will get filled in by parsing the 'url'
             transport = {
-                'type': 'websocket',
-                'url': url,
+                "type": "websocket",
+                "url": url,
             }
             transports = [transport]
 
@@ -518,8 +541,8 @@ class Component(ObservableMixin):
             # allows to provide a URL instead of transport dict
             if type(transport) == str:
                 _transport = {
-                    'type': 'websocket',
-                    'url': transport,
+                    "type": "websocket",
+                    "url": transport,
                 }
             else:
                 _transport = transport
@@ -585,6 +608,7 @@ class Component(ObservableMixin):
             """
             self._done_f = None
             return arg
+
         txaio.add_callbacks(self._done_f, _reset, _reset)
 
         # Create a generator of transports that .can_reconnect()
@@ -616,8 +640,10 @@ class Component(ObservableMixin):
                 # if txaio.using_asyncio and isinstance(fail.value, asyncio.CancelledError):
                 #     unrecoverable_error = True
 
-                self.log.debug('component failed: {error}', error=txaio.failure_message(fail))
-                self.log.debug('{tb}', tb=txaio.failure_format_traceback(fail))
+                self.log.debug(
+                    "component failed: {error}", error=txaio.failure_message(fail)
+                )
+                self.log.debug("{tb}", tb=txaio.failure_format_traceback(fail))
                 # If this is a "fatal error" that will never work,
                 # we bail out now
                 if isinstance(fail.value, ApplicationError):
@@ -626,7 +652,10 @@ class Component(ObservableMixin):
                 elif isinstance(fail.value, OSError):
                     # failed to connect entirely, like nobody
                     # listening etc.
-                    self.log.info("Connection failed with OS error: {msg}", msg=txaio.failure_message(fail))
+                    self.log.info(
+                        "Connection failed with OS error: {msg}",
+                        msg=txaio.failure_message(fail),
+                    )
 
                 elif self._is_ssl_error(fail.value):
                     # Quoting pyOpenSSL docs: "Whenever
@@ -643,7 +672,7 @@ class Component(ObservableMixin):
                     self.log.error("TLS failure: {reason}", reason=ssl_reason)
                 else:
                     self.log.error(
-                        'Connection failed: {error}',
+                        "Connection failed: {error}",
                         error=txaio.failure_message(fail),
                     )
 
@@ -664,11 +693,11 @@ class Component(ObservableMixin):
                 # (or in addition to?) self it could .failed() the
                 # transport and we could do away with the is_fatal
                 # listener?
-                handler_f = self.fire('connectfailure', self, fail.value)
+                handler_f = self.fire("connectfailure", self, fail.value)
                 txaio.add_callbacks(
                     handler_f,
                     lambda _: txaio.reject(chain_f, fail),
-                    lambda _: txaio.reject(chain_f, fail)
+                    lambda _: txaio.reject(chain_f, fail),
                 )
                 return chain_f
 
@@ -681,12 +710,13 @@ class Component(ObservableMixin):
 
             connect_f = txaio.as_future(
                 self._connect_once,
-                loop, transport_candidate[0],
+                loop,
+                transport_candidate[0],
             )
             txaio.add_callbacks(connect_f, session_done, connect_error)
 
         def transport_check(_):
-            self.log.debug('Entering re-connect loop')
+            self.log.debug("Entering re-connect loop")
 
             if not self._can_reconnect():
                 err_msg = "Component failed: Exhausted all transport connect attempts"
@@ -698,7 +728,6 @@ class Component(ObservableMixin):
                     return
 
             while True:
-
                 transport = next(transport_gen)
 
                 if transport.can_reconnect():
@@ -717,7 +746,7 @@ class Component(ObservableMixin):
             txaio.add_callbacks(self._delay_f, attempt_connect, error)
 
         # issue our first event, then start reconnect loop
-        start_f = self.fire('start', loop, self)
+        start_f = self.fire("start", loop, self)
         txaio.add_callbacks(start_f, transport_check, error)
         return self._done_f
 
@@ -738,7 +767,6 @@ class Component(ObservableMixin):
         return txaio.create_future_success(None)
 
     def _connect_once(self, reactor, transport):
-
         self.log.info(
             'connecting once using transport type "{transport_type}" '
             'over endpoint "{endpoint_desc}"',
@@ -783,14 +811,18 @@ class Component(ObservableMixin):
                         details=details,
                     )
                     if not txaio.is_called(done):
-                        if details.reason in ["wamp.close.normal", "wamp.close.goodbye_and_out"]:
+                        if details.reason in [
+                            "wamp.close.normal",
+                            "wamp.close.goodbye_and_out",
+                        ]:
                             txaio.resolve(done, None)
                         else:
                             f = txaio.create_failure(
                                 ApplicationError(details.reason, details.message)
                             )
                             txaio.reject(done, f)
-                session.on('leave', on_leave)
+
+                session.on("leave", on_leave)
 
                 # if we were given a "main" procedure, we run through
                 # it completely (i.e. until its Deferred fires) and
@@ -811,15 +843,18 @@ class Component(ObservableMixin):
                                 # someone may have already called
                                 # leave()
                                 pass
+
                         txaio.call_later(0, leave)
 
                     def main_error(err):
                         self.log.debug("main_error: {err}", err=err)
                         txaio.reject(done, err)
                         session.disconnect()
+
                     txaio.add_callbacks(d, main_success, main_error)
+
                 if self._entry is not None:
-                    session.on('join', on_join)
+                    session.on("join", on_join)
 
                 # listen on disconnect events. Note that in case we
                 # had a "main" procedure, we could have already
@@ -831,14 +866,13 @@ class Component(ObservableMixin):
                     )
                     if not txaio.is_called(done):
                         if not was_clean:
-                            self.log.warn(
-                                "Session disconnected uncleanly"
-                            )
+                            self.log.warn("Session disconnected uncleanly")
                         else:
                             # eg the session has left the realm, and the transport was properly
                             # shut down. successfully finish the connection
                             txaio.resolve(done, None)
-                session.on('disconnect', on_disconnect)
+
+                session.on("disconnect", on_disconnect)
 
                 # return the fresh session object
                 return session
@@ -847,7 +881,10 @@ class Component(ObservableMixin):
 
         d = txaio.as_future(
             self._connect_transport,
-            reactor, transport, create_session, done,
+            reactor,
+            transport,
+            create_session,
+            done,
         )
 
         def on_error(err):
@@ -862,6 +899,7 @@ class Component(ObservableMixin):
             # upstream yet
             if not txaio.is_called(done):
                 txaio.reject(done, err)
+
         txaio.add_callbacks(d, None, on_error)
 
         return done
@@ -876,37 +914,37 @@ class Component(ObservableMixin):
            def joined(session, details):
                print("Session {} joined: {}".format(session, details))
         """
-        self.on('join', fn)
+        self.on("join", fn)
 
     def on_leave(self, fn):
         """
         A decorator as a shortcut for listening for 'leave' events.
         """
-        self.on('leave', fn)
+        self.on("leave", fn)
 
     def on_connect(self, fn):
         """
         A decorator as a shortcut for listening for 'connect' events.
         """
-        self.on('connect', fn)
+        self.on("connect", fn)
 
     def on_disconnect(self, fn):
         """
         A decorator as a shortcut for listening for 'disconnect' events.
         """
-        self.on('disconnect', fn)
+        self.on("disconnect", fn)
 
     def on_ready(self, fn):
         """
         A decorator as a shortcut for listening for 'ready' events.
         """
-        self.on('ready', fn)
+        self.on("ready", fn)
 
     def on_connectfailure(self, fn):
         """
         A decorator as a shortcut for listening for 'connectfailure' events.
         """
-        self.on('connectfailure', fn)
+        self.on("connectfailure", fn)
 
 
 def _run(reactor, components, done_callback=None):
@@ -928,15 +966,16 @@ def _run(reactor, components, done_callback=None):
 
     if type(components) != list:
         raise ValueError(
-            '"components" must be a list of Component objects - encountered'
-            ' {0}'.format(type(components))
+            '"components" must be a list of Component objects - encountered {0}'.format(
+                type(components)
+            )
         )
 
     for c in components:
         if not isinstance(c, Component):
             raise ValueError(
                 '"components" must be a list of Component objects - encountered'
-                'item of type {0}'.format(type(c))
+                "item of type {0}".format(type(c))
             )
 
     # validation complete; proceed with startup
@@ -975,9 +1014,11 @@ def _run(reactor, components, done_callback=None):
     done_d = txaio.gather(dl, consume_exceptions=False)
 
     if done_callback:
+
         def all_done(arg):
             log.debug("All components ended; stopping reactor")
             done_callback(reactor, arg)
+
         txaio.add_callbacks(done_d, all_done, all_done)
 
     return done_d

@@ -25,24 +25,21 @@
 ###############################################################################
 
 import argparse
-
-import sys
 import platform
+import sys
 
 import txaio
+
 txaio.use_twisted()
 
-from twisted.internet import reactor
-
 import autobahn
-
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
+from autobahn.websocket.compress import (
+    PerMessageDeflateOffer,
+    PerMessageDeflateOfferAccept,
+)
 from autobahn.websocket.util import parse_url
-
-from autobahn.twisted.websocket import WebSocketServerProtocol, \
-    WebSocketServerFactory
-
-from autobahn.websocket.compress import PerMessageDeflateOffer, \
-    PerMessageDeflateOfferAccept
+from twisted.internet import reactor
 
 # FIXME: streaming mode API is currently incompatible with permessage-deflate!
 USE_STREAMING_TESTEE = False
@@ -81,7 +78,6 @@ class StreamingTesteeServerProtocol(WebSocketServerProtocol):
 
 
 class TesteeServerFactory(WebSocketServerFactory):
-
     log = txaio.make_logger()
 
     if USE_STREAMING_TESTEE:
@@ -91,7 +87,9 @@ class TesteeServerFactory(WebSocketServerFactory):
 
     def __init__(self, url):
         testee_ident = autobahn.twisted.__ident__
-        self.log.info("Testee identification: {testee_ident}", testee_ident=testee_ident)
+        self.log.info(
+            "Testee identification: {testee_ident}", testee_ident=testee_ident
+        )
         WebSocketServerFactory.__init__(self, url, server=testee_ident)
 
         self.setProtocolOptions(failByDrop=False)  # spec conformance
@@ -109,11 +107,22 @@ class TesteeServerFactory(WebSocketServerFactory):
             self.setProtocolOptions(perMessageCompressionAccept=accept)
 
 
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Autobahn Testee Server (Twisted)')
-    parser.add_argument('--url', dest='url', type=str, default='ws://127.0.0.1:9001', help='The WebSocket fuzzing server URL.')
-    parser.add_argument('--loglevel', dest='loglevel', type=str, default='info', help='Log level, eg "info" or "debug".')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Autobahn Testee Server (Twisted)")
+    parser.add_argument(
+        "--url",
+        dest="url",
+        type=str,
+        default="ws://127.0.0.1:9001",
+        help="The WebSocket fuzzing server URL.",
+    )
+    parser.add_argument(
+        "--loglevel",
+        dest="loglevel",
+        type=str,
+        default="info",
+        help='Log level, eg "info" or "debug".',
+    )
 
     options = parser.parse_args()
 

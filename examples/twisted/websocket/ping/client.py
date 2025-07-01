@@ -26,16 +26,16 @@
 
 import sys
 
+from autobahn.twisted.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    connectWS,
+)
 from twisted.internet import reactor
 from twisted.python import log
 
-from autobahn.twisted.websocket import WebSocketClientFactory, \
-    WebSocketClientProtocol, \
-    connectWS
-
 
 class PingClientProtocol(WebSocketClientProtocol):
-
     def onOpen(self):
         self.pingsReceived = 0
         self.pongsSent = 0
@@ -51,8 +51,7 @@ class PingClientProtocol(WebSocketClientProtocol):
         print("Pong sent to {} - {}".format(self.peer, self.pongsSent))
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     log.startLogging(sys.stdout)
 
     if len(sys.argv) < 2:

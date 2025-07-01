@@ -25,9 +25,9 @@
 ###############################################################################
 
 from os import environ
-from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):
@@ -55,15 +55,15 @@ class Component(ApplicationSession):
         def arglen(*args, **kwargs):
             return [len(args), len(kwargs)]
 
-        yield self.register(ping, 'com.arguments.ping')
-        yield self.register(add2, 'com.arguments.add2')
-        yield self.register(stars, 'com.arguments.stars')
-        yield self.register(orders, 'com.arguments.orders')
-        yield self.register(arglen, 'com.arguments.arglen')
+        yield self.register(ping, "com.arguments.ping")
+        yield self.register(add2, "com.arguments.add2")
+        yield self.register(stars, "com.arguments.stars")
+        yield self.register(orders, "com.arguments.orders")
+        yield self.register(arglen, "com.arguments.arglen")
         print("Procedures registered; ready for frontend.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

@@ -25,11 +25,11 @@
 ###############################################################################
 
 from os import environ
-from twisted.internet.defer import inlineCallbacks
 
-from autobahn.wamp.types import PublishOptions
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.types import PublishOptions
+from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):
@@ -44,17 +44,15 @@ class Component(ApplicationSession):
         def on_event(i):
             print("Got event: {}".format(i))
 
-        yield self.subscribe(on_event, 'com.myapp.topic1')
+        yield self.subscribe(on_event, "com.myapp.topic1")
 
         counter = 0
         while True:
             print("publish: com.myapp.topic1", counter)
-            pub_options = PublishOptions(
-                acknowledge=True,
-                exclude_me=False
-            )
+            pub_options = PublishOptions(acknowledge=True, exclude_me=False)
             publication = yield self.publish(
-                'com.myapp.topic1', counter,
+                "com.myapp.topic1",
+                counter,
                 options=pub_options,
             )
             print("Published with publication ID {}".format(publication.id))
@@ -62,7 +60,7 @@ class Component(ApplicationSession):
             yield sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

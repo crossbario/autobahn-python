@@ -1,5 +1,3 @@
-
-
 from autobahn.twisted.websocket import create_client_agent
 from twisted.internet import task
 
@@ -19,7 +17,8 @@ async def main(reactor):
 
     def got_message(*args, **kw):
         print("on_message: args={} kwargs={}".format(args, kw))
-    proto.on('message', got_message)
+
+    proto.on("message", got_message)
 
     await proto.is_open
 
@@ -33,4 +32,5 @@ async def main(reactor):
 
 if __name__ == "__main__":
     from twisted.internet.defer import ensureDeferred
+
     task.react(lambda r: ensureDeferred(main(r)))

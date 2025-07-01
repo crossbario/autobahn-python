@@ -30,20 +30,19 @@ from autobahn import util
 from autobahn.wamp.exception import ProtocolError
 
 __all__ = (
-    'RoleFeatures',
-    'RoleBrokerFeatures',
-    'RoleSubscriberFeatures',
-    'RolePublisherFeatures',
-    'RoleDealerFeatures',
-    'RoleCallerFeatures',
-    'RoleCalleeFeatures',
-    'ROLE_NAME_TO_CLASS',
-    'DEFAULT_CLIENT_ROLES',
+    "DEFAULT_CLIENT_ROLES",
+    "ROLE_NAME_TO_CLASS",
+    "RoleBrokerFeatures",
+    "RoleCalleeFeatures",
+    "RoleCallerFeatures",
+    "RoleDealerFeatures",
+    "RoleFeatures",
+    "RolePublisherFeatures",
+    "RoleSubscriberFeatures",
 )
 
 
 class RoleFeatures(util.EqualityMixin):
-
     """
     Base class for WAMP role features.
     """
@@ -58,40 +57,47 @@ class RoleFeatures(util.EqualityMixin):
         for k, v in self.__dict__.items():
             if v is not None:
                 configured_options[k] = v
-        return "{0}({1})".format(self.ROLE, ", ".join([k + '=' + str(v)
-                                                       for k, v in configured_options.items()]))
+        return "{0}({1})".format(
+            self.ROLE,
+            ", ".join([k + "=" + str(v) for k, v in configured_options.items()]),
+        )
 
     def _check_all_bool(self):
         # check feature attributes
         for k in self.__dict__:
-            if not k.startswith('_') and k != 'ROLE':
+            if not k.startswith("_") and k != "ROLE":
                 if getattr(self, k) is not None and type(getattr(self, k)) != bool:
-                    raise ProtocolError("invalid type {0} for feature '{1}' for role '{2}'".format(getattr(self, k), k, self.ROLE))
+                    raise ProtocolError(
+                        "invalid type {0} for feature '{1}' for role '{2}'".format(
+                            getattr(self, k), k, self.ROLE
+                        )
+                    )
 
 
 class RoleBrokerFeatures(RoleFeatures):
-
     """
     WAMP broker role features.
     """
 
-    ROLE = 'broker'
+    ROLE = "broker"
 
-    def __init__(self,
-                 publisher_identification=None,
-                 publication_trustlevels=None,
-                 pattern_based_subscription=None,
-                 session_meta_api=None,
-                 subscription_meta_api=None,
-                 subscriber_blackwhite_listing=None,
-                 publisher_exclusion=None,
-                 subscription_revocation=None,
-                 event_history=None,
-                 payload_transparency=None,
-                 x_acknowledged_event_delivery=None,
-                 payload_encryption_cryptobox=None,
-                 event_retention=None,
-                 **kwargs):
+    def __init__(
+        self,
+        publisher_identification=None,
+        publication_trustlevels=None,
+        pattern_based_subscription=None,
+        session_meta_api=None,
+        subscription_meta_api=None,
+        subscriber_blackwhite_listing=None,
+        publisher_exclusion=None,
+        subscription_revocation=None,
+        event_history=None,
+        payload_transparency=None,
+        x_acknowledged_event_delivery=None,
+        payload_encryption_cryptobox=None,
+        event_retention=None,
+        **kwargs,
+    ):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
         self.pattern_based_subscription = pattern_based_subscription
@@ -109,22 +115,23 @@ class RoleBrokerFeatures(RoleFeatures):
 
 
 class RoleSubscriberFeatures(RoleFeatures):
-
     """
     WAMP subscriber role features.
     """
 
-    ROLE = 'subscriber'
+    ROLE = "subscriber"
 
-    def __init__(self,
-                 publisher_identification=None,
-                 publication_trustlevels=None,
-                 pattern_based_subscription=None,
-                 subscription_revocation=None,
-                 event_history=None,
-                 payload_transparency=None,
-                 payload_encryption_cryptobox=None,
-                 **kwargs):
+    def __init__(
+        self,
+        publisher_identification=None,
+        publication_trustlevels=None,
+        pattern_based_subscription=None,
+        subscription_revocation=None,
+        event_history=None,
+        payload_transparency=None,
+        payload_encryption_cryptobox=None,
+        **kwargs,
+    ):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
         self.pattern_based_subscription = pattern_based_subscription
@@ -136,21 +143,22 @@ class RoleSubscriberFeatures(RoleFeatures):
 
 
 class RolePublisherFeatures(RoleFeatures):
-
     """
     WAMP publisher role features.
     """
 
-    ROLE = 'publisher'
+    ROLE = "publisher"
 
-    def __init__(self,
-                 publisher_identification=None,
-                 subscriber_blackwhite_listing=None,
-                 publisher_exclusion=None,
-                 payload_transparency=None,
-                 x_acknowledged_event_delivery=None,
-                 payload_encryption_cryptobox=None,
-                 **kwargs):
+    def __init__(
+        self,
+        publisher_identification=None,
+        subscriber_blackwhite_listing=None,
+        publisher_exclusion=None,
+        payload_transparency=None,
+        x_acknowledged_event_delivery=None,
+        payload_encryption_cryptobox=None,
+        **kwargs,
+    ):
         self.publisher_identification = publisher_identification
         self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
         self.publisher_exclusion = publisher_exclusion
@@ -161,28 +169,29 @@ class RolePublisherFeatures(RoleFeatures):
 
 
 class RoleDealerFeatures(RoleFeatures):
-
     """
     WAMP dealer role features.
     """
 
-    ROLE = 'dealer'
+    ROLE = "dealer"
 
-    def __init__(self,
-                 caller_identification=None,
-                 call_trustlevels=None,
-                 pattern_based_registration=None,
-                 session_meta_api=None,
-                 registration_meta_api=None,
-                 shared_registration=None,
-                 call_timeout=None,
-                 call_canceling=None,
-                 progressive_call_results=None,
-                 registration_revocation=None,
-                 payload_transparency=None,
-                 testament_meta_api=None,
-                 payload_encryption_cryptobox=None,
-                 **kwargs):
+    def __init__(
+        self,
+        caller_identification=None,
+        call_trustlevels=None,
+        pattern_based_registration=None,
+        session_meta_api=None,
+        registration_meta_api=None,
+        shared_registration=None,
+        call_timeout=None,
+        call_canceling=None,
+        progressive_call_results=None,
+        registration_revocation=None,
+        payload_transparency=None,
+        testament_meta_api=None,
+        payload_encryption_cryptobox=None,
+        **kwargs,
+    ):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
         self.pattern_based_registration = pattern_based_registration
@@ -200,21 +209,22 @@ class RoleDealerFeatures(RoleFeatures):
 
 
 class RoleCallerFeatures(RoleFeatures):
-
     """
     WAMP caller role features.
     """
 
-    ROLE = 'caller'
+    ROLE = "caller"
 
-    def __init__(self,
-                 caller_identification=None,
-                 call_timeout=None,
-                 call_canceling=None,
-                 progressive_call_results=None,
-                 payload_transparency=None,
-                 payload_encryption_cryptobox=None,
-                 **kwargs):
+    def __init__(
+        self,
+        caller_identification=None,
+        call_timeout=None,
+        call_canceling=None,
+        progressive_call_results=None,
+        payload_transparency=None,
+        payload_encryption_cryptobox=None,
+        **kwargs,
+    ):
         self.caller_identification = caller_identification
         self.call_timeout = call_timeout
         self.call_canceling = call_canceling
@@ -225,25 +235,26 @@ class RoleCallerFeatures(RoleFeatures):
 
 
 class RoleCalleeFeatures(RoleFeatures):
-
     """
     WAMP callee role features.
     """
 
-    ROLE = 'callee'
+    ROLE = "callee"
 
-    def __init__(self,
-                 caller_identification=None,
-                 call_trustlevels=None,
-                 pattern_based_registration=None,
-                 shared_registration=None,
-                 call_timeout=None,
-                 call_canceling=None,
-                 progressive_call_results=None,
-                 registration_revocation=None,
-                 payload_transparency=None,
-                 payload_encryption_cryptobox=None,
-                 **kwargs):
+    def __init__(
+        self,
+        caller_identification=None,
+        call_trustlevels=None,
+        pattern_based_registration=None,
+        shared_registration=None,
+        call_timeout=None,
+        call_canceling=None,
+        progressive_call_results=None,
+        registration_revocation=None,
+        payload_transparency=None,
+        payload_encryption_cryptobox=None,
+        **kwargs,
+    ):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
         self.pattern_based_registration = pattern_based_registration
@@ -259,25 +270,25 @@ class RoleCalleeFeatures(RoleFeatures):
 
 # map of role names to role class
 ROLE_NAME_TO_CLASS = {
-    'broker': RoleBrokerFeatures,
-    'subscriber': RoleSubscriberFeatures,
-    'publisher': RolePublisherFeatures,
-    'dealer': RoleDealerFeatures,
-    'caller': RoleCallerFeatures,
-    'callee': RoleCalleeFeatures,
+    "broker": RoleBrokerFeatures,
+    "subscriber": RoleSubscriberFeatures,
+    "publisher": RolePublisherFeatures,
+    "dealer": RoleDealerFeatures,
+    "caller": RoleCallerFeatures,
+    "callee": RoleCalleeFeatures,
 }
 
 
 # default role features for client roles supported
 DEFAULT_CLIENT_ROLES = {
-    'subscriber': RoleSubscriberFeatures(
+    "subscriber": RoleSubscriberFeatures(
         publisher_identification=True,
         pattern_based_subscription=True,
         subscription_revocation=True,
         payload_transparency=True,
         payload_encryption_cryptobox=True,
     ),
-    'publisher': RolePublisherFeatures(
+    "publisher": RolePublisherFeatures(
         publisher_identification=True,
         subscriber_blackwhite_listing=True,
         publisher_exclusion=True,
@@ -285,14 +296,14 @@ DEFAULT_CLIENT_ROLES = {
         x_acknowledged_event_delivery=True,
         payload_encryption_cryptobox=True,
     ),
-    'caller': RoleCallerFeatures(
+    "caller": RoleCallerFeatures(
         caller_identification=True,
         progressive_call_results=True,
         payload_transparency=True,
         payload_encryption_cryptobox=True,
         call_canceling=True,
     ),
-    'callee': RoleCalleeFeatures(
+    "callee": RoleCalleeFeatures(
         caller_identification=True,
         pattern_based_registration=True,
         shared_registration=True,

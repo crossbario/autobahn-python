@@ -24,12 +24,10 @@
 #
 ###############################################################################
 
-from autobahn.twisted.websocket import WebSocketServerProtocol, \
-    WebSocketServerFactory
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 
 class MyServerProtocol(WebSocketServerProtocol):
-
     def onConnect(self, request):
         print("Client connecting: {0}".format(request.peer))
 
@@ -40,7 +38,7 @@ class MyServerProtocol(WebSocketServerProtocol):
         if isBinary:
             print("Binary message received: {0} bytes".format(len(payload)))
         else:
-            print("Text message received: {0}".format(payload.decode('utf8')))
+            print("Text message received: {0}".format(payload.decode("utf8")))
 
         # echo back message verbatim
         self.sendMessage(payload, isBinary)
@@ -49,12 +47,11 @@ class MyServerProtocol(WebSocketServerProtocol):
         print("WebSocket connection closed: {0}".format(reason))
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     import sys
 
-    from twisted.python import log
     from twisted.internet import reactor
+    from twisted.python import log
 
     log.startLogging(sys.stdout)
 

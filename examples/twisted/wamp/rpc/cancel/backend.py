@@ -24,46 +24,44 @@
 #
 ###############################################################################
 
-from twisted.internet.defer import inlineCallbacks
-
 from autobahn.twisted.wamp import ApplicationSession
-
+from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):
-   """
-   An application component providing procedures with different kinds of arguments.
-   """
+    """
+    An application component providing procedures with different kinds of arguments.
+    """
 
-   @inlineCallbacks
-   def onJoin(self, details):
-      print("session attached")
+    @inlineCallbacks
+    def onJoin(self, details):
+        print("session attached")
 
-      def ping():
-         return
+        def ping():
+            return
 
-      def add2(a, b):
-         return a + b
+        def add2(a, b):
+            return a + b
 
-      def stars(nick = "somebody", stars = 0):
-         return "{} starred {}x".format(nick, stars)
+        def stars(nick="somebody", stars=0):
+            return "{} starred {}x".format(nick, stars)
 
-      def orders(product, limit = 5):
-         return ["Product {}".format(i) for i in range(50)][:limit]
+        def orders(product, limit=5):
+            return ["Product {}".format(i) for i in range(50)][:limit]
 
-      def arglen(*args, **kwargs):
-         return [len(args), len(kwargs)]
+        def arglen(*args, **kwargs):
+            return [len(args), len(kwargs)]
 
-      yield self.register(ping, 'com.arguments.ping')
-      yield self.register(add2, 'com.arguments.add2')
-      yield self.register(stars, 'com.arguments.stars')
-      yield self.register(orders, 'com.arguments.orders')
-      yield self.register(arglen, 'com.arguments.arglen')
-      print("procedures registered")
+        yield self.register(ping, "com.arguments.ping")
+        yield self.register(add2, "com.arguments.add2")
+        yield self.register(stars, "com.arguments.stars")
+        yield self.register(orders, "com.arguments.orders")
+        yield self.register(arglen, "com.arguments.arglen")
+        print("procedures registered")
 
 
+if __name__ == "__main__":
+    from autobahn.twisted.wamp import ApplicationRunner
 
-if __name__ == '__main__':
-   from autobahn.twisted.wamp import ApplicationRunner
-   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
-   runner.run(Component)
+    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+    runner.run(Component)

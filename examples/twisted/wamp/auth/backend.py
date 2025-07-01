@@ -25,10 +25,10 @@
 ###############################################################################
 
 from os import environ
+
+from autobahn.twisted.wamp import ApplicationRunner, Session
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-
-from autobahn.twisted.wamp import Session, ApplicationRunner
 
 
 class Component(Session):
@@ -41,7 +41,7 @@ class Component(Session):
         return self.leave()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     runner = ApplicationRunner(
         environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
         "crossbardemo",
@@ -49,8 +49,7 @@ if __name__ == '__main__':
 
     def make(config):
         session = Component(config)
-        session.add_authenticator(
-            "wampcra", authid='username', secret='p4ssw0rd'
-        )
+        session.add_authenticator("wampcra", authid="username", secret="p4ssw0rd")
         return session
+
     runner.run(make)

@@ -1,31 +1,26 @@
+from os.path import join, split
 
+from OpenSSL import crypto
 
 from autobahn.twisted.component import Component, run
 from autobahn.twisted.util import sleep
 from autobahn.wamp.types import RegisterOptions
-from twisted.internet.defer import inlineCallbacks
 from twisted.internet._sslverify import OpenSSLCertificateAuthorities
-from twisted.internet.ssl import CertificateOptions
-from twisted.internet.ssl import optionsForClientTLS, Certificate
-from OpenSSL import crypto
-from os.path import join, split
+from twisted.internet.defer import inlineCallbacks
+from twisted.internet.ssl import Certificate, CertificateOptions, optionsForClientTLS
 
-
-examples_dir = join(split(__file__)[0], '..', '..', '..')
-cert_fname = join(examples_dir, 'router', '.crossbar', 'server.crt')
+examples_dir = join(split(__file__)[0], "..", "..", "..")
+cert_fname = join(examples_dir, "router", ".crossbar", "server.crt")
 if False:
-    cert = crypto.load_certificate(
-        crypto.FILETYPE_PEM,
-        open(cert_fname, 'r').read()
-    )
+    cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(cert_fname, "r").read())
     # tell Twisted to use just the one certificate we loaded to verify connections
     options = CertificateOptions(
         trustRoot=OpenSSLCertificateAuthorities([cert]),
     )
 else:
-    cert = Certificate.loadPEM(open(cert_fname, 'r').read())
+    cert = Certificate.loadPEM(open(cert_fname, "r").read())
     options = optionsForClientTLS(
-        hostname='localhost',
+        hostname="localhost",
         trustRoot=cert,
     )
 
@@ -38,15 +33,15 @@ component = Component(
                 "type": "tcp",
                 "host": "localhost",
                 "port": 8080,
-#                "tls": options,
-#                "tls": {
-#                    "hostname": "localhost",
-#                    "trust_root": cert_fname,
-#                },
+                #                "tls": options,
+                #                "tls": {
+                #                    "hostname": "localhost",
+                #                    "trust_root": cert_fname,
+                #                },
             },
             "options": {
                 "open_handshake_timeout": 100,
-            }
+            },
         },
     ],
     realm="crossbardemo",
@@ -63,7 +58,7 @@ def join(session, details):
 
 @component.register(
     "example.foo",
-    options=RegisterOptions(details_arg='details'),
+    options=RegisterOptions(details_arg="details"),
 )
 @inlineCallbacks
 def foo(*args, **kw):

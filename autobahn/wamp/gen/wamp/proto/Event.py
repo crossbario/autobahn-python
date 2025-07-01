@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Event(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class Event(object):
     def GetRootAsEvent(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # Event
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,21 +31,27 @@ class Event(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Event
     def Subscription(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Event
     def Publication(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Positional values for application-defined event payload.
@@ -51,7 +60,10 @@ class Event(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(
+                flatbuffers.number_types.Uint8Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
+            )
         return 0
 
     # Event
@@ -79,7 +91,10 @@ class Event(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(
+                flatbuffers.number_types.Uint8Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
+            )
         return 0
 
     # Event
@@ -107,7 +122,10 @@ class Event(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(
+                flatbuffers.number_types.Uint8Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
+            )
         return 0
 
     # Event
@@ -148,7 +166,10 @@ class Event(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(
+                flatbuffers.number_types.Uint8Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
+            )
         return 0
 
     # Event
@@ -174,7 +195,9 @@ class Event(object):
     def Publisher(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Event
@@ -202,7 +225,9 @@ class Event(object):
     def Retained(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # Event
@@ -216,7 +241,9 @@ class Event(object):
     def Acknowledge(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(34))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # Event
@@ -226,6 +253,7 @@ class Event(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
             from wamp.proto.Principal import Principal
+
             obj = Principal()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -243,75 +271,212 @@ class Event(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(36))
         return o == 0
 
-def EventStart(builder): builder.StartObject(17)
+
+def EventStart(builder):
+    builder.StartObject(17)
+
+
 def Start(builder):
     return EventStart(builder)
-def EventAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+
+
+def EventAddSession(builder, session):
+    builder.PrependUint64Slot(0, session, 0)
+
+
 def AddSession(builder, session):
     return EventAddSession(builder, session)
-def EventAddSubscription(builder, subscription): builder.PrependUint64Slot(1, subscription, 0)
+
+
+def EventAddSubscription(builder, subscription):
+    builder.PrependUint64Slot(1, subscription, 0)
+
+
 def AddSubscription(builder, subscription):
     return EventAddSubscription(builder, subscription)
-def EventAddPublication(builder, publication): builder.PrependUint64Slot(2, publication, 0)
+
+
+def EventAddPublication(builder, publication):
+    builder.PrependUint64Slot(2, publication, 0)
+
+
 def AddPublication(builder, publication):
     return EventAddPublication(builder, publication)
-def EventAddArgs(builder, args): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(args), 0)
+
+
+def EventAddArgs(builder, args):
+    builder.PrependUOffsetTRelativeSlot(
+        3, flatbuffers.number_types.UOffsetTFlags.py_type(args), 0
+    )
+
+
 def AddArgs(builder, args):
     return EventAddArgs(builder, args)
-def EventStartArgsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+
+
+def EventStartArgsVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
 def StartArgsVector(builder, numElems):
     return EventStartArgsVector(builder, numElems)
-def EventAddKwargs(builder, kwargs): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(kwargs), 0)
+
+
+def EventAddKwargs(builder, kwargs):
+    builder.PrependUOffsetTRelativeSlot(
+        4, flatbuffers.number_types.UOffsetTFlags.py_type(kwargs), 0
+    )
+
+
 def AddKwargs(builder, kwargs):
     return EventAddKwargs(builder, kwargs)
-def EventStartKwargsVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+
+
+def EventStartKwargsVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
 def StartKwargsVector(builder, numElems):
     return EventStartKwargsVector(builder, numElems)
-def EventAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+
+
+def EventAddPayload(builder, payload):
+    builder.PrependUOffsetTRelativeSlot(
+        5, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0
+    )
+
+
 def AddPayload(builder, payload):
     return EventAddPayload(builder, payload)
-def EventStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+
+
+def EventStartPayloadVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
 def StartPayloadVector(builder, numElems):
     return EventStartPayloadVector(builder, numElems)
-def EventAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(6, encAlgo, 0)
+
+
+def EventAddEncAlgo(builder, encAlgo):
+    builder.PrependUint8Slot(6, encAlgo, 0)
+
+
 def AddEncAlgo(builder, encAlgo):
     return EventAddEncAlgo(builder, encAlgo)
-def EventAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(7, encSerializer, 0)
+
+
+def EventAddEncSerializer(builder, encSerializer):
+    builder.PrependUint8Slot(7, encSerializer, 0)
+
+
 def AddEncSerializer(builder, encSerializer):
     return EventAddEncSerializer(builder, encSerializer)
-def EventAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+
+
+def EventAddEncKey(builder, encKey):
+    builder.PrependUOffsetTRelativeSlot(
+        8, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0
+    )
+
+
 def AddEncKey(builder, encKey):
     return EventAddEncKey(builder, encKey)
-def EventStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+
+
+def EventStartEncKeyVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
 def StartEncKeyVector(builder, numElems):
     return EventStartEncKeyVector(builder, numElems)
-def EventAddPublisher(builder, publisher): builder.PrependUint64Slot(9, publisher, 0)
+
+
+def EventAddPublisher(builder, publisher):
+    builder.PrependUint64Slot(9, publisher, 0)
+
+
 def AddPublisher(builder, publisher):
     return EventAddPublisher(builder, publisher)
-def EventAddPublisherAuthid(builder, publisherAuthid): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(publisherAuthid), 0)
+
+
+def EventAddPublisherAuthid(builder, publisherAuthid):
+    builder.PrependUOffsetTRelativeSlot(
+        10, flatbuffers.number_types.UOffsetTFlags.py_type(publisherAuthid), 0
+    )
+
+
 def AddPublisherAuthid(builder, publisherAuthid):
     return EventAddPublisherAuthid(builder, publisherAuthid)
-def EventAddPublisherAuthrole(builder, publisherAuthrole): builder.PrependUOffsetTRelativeSlot(11, flatbuffers.number_types.UOffsetTFlags.py_type(publisherAuthrole), 0)
+
+
+def EventAddPublisherAuthrole(builder, publisherAuthrole):
+    builder.PrependUOffsetTRelativeSlot(
+        11, flatbuffers.number_types.UOffsetTFlags.py_type(publisherAuthrole), 0
+    )
+
+
 def AddPublisherAuthrole(builder, publisherAuthrole):
     return EventAddPublisherAuthrole(builder, publisherAuthrole)
-def EventAddTopic(builder, topic): builder.PrependUOffsetTRelativeSlot(12, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0)
+
+
+def EventAddTopic(builder, topic):
+    builder.PrependUOffsetTRelativeSlot(
+        12, flatbuffers.number_types.UOffsetTFlags.py_type(topic), 0
+    )
+
+
 def AddTopic(builder, topic):
     return EventAddTopic(builder, topic)
-def EventAddRetained(builder, retained): builder.PrependBoolSlot(13, retained, 0)
+
+
+def EventAddRetained(builder, retained):
+    builder.PrependBoolSlot(13, retained, 0)
+
+
 def AddRetained(builder, retained):
     return EventAddRetained(builder, retained)
-def EventAddTransactionHash(builder, transactionHash): builder.PrependUOffsetTRelativeSlot(14, flatbuffers.number_types.UOffsetTFlags.py_type(transactionHash), 0)
+
+
+def EventAddTransactionHash(builder, transactionHash):
+    builder.PrependUOffsetTRelativeSlot(
+        14, flatbuffers.number_types.UOffsetTFlags.py_type(transactionHash), 0
+    )
+
+
 def AddTransactionHash(builder, transactionHash):
     return EventAddTransactionHash(builder, transactionHash)
-def EventAddAcknowledge(builder, acknowledge): builder.PrependBoolSlot(15, acknowledge, 0)
+
+
+def EventAddAcknowledge(builder, acknowledge):
+    builder.PrependBoolSlot(15, acknowledge, 0)
+
+
 def AddAcknowledge(builder, acknowledge):
     return EventAddAcknowledge(builder, acknowledge)
-def EventAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(16, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+
+
+def EventAddForwardFor(builder, forwardFor):
+    builder.PrependUOffsetTRelativeSlot(
+        16, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0
+    )
+
+
 def AddForwardFor(builder, forwardFor):
     return EventAddForwardFor(builder, forwardFor)
-def EventStartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+
+
+def EventStartForwardForVector(builder, numElems):
+    return builder.StartVector(8, numElems, 8)
+
+
 def StartForwardForVector(builder, numElems):
     return EventStartForwardForVector(builder, numElems)
-def EventEnd(builder): return builder.EndObject()
+
+
+def EventEnd(builder):
+    return builder.EndObject()
+
+
 def End(builder):
     return EventEnd(builder)

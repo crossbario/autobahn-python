@@ -26,38 +26,38 @@
 
 import sys
 
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    listenWS,
+)
+from autobahn.websocket.compress import *
 from twisted.internet import reactor
 from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol, \
-    listenWS
-
-from autobahn.websocket.compress import *
-
 
 class EchoServerProtocol(WebSocketServerProtocol):
-
     def onConnect(self, request):
         print("WebSocket connection request by {}".format(request.peer))
 
     def onOpen(self):
-        print("WebSocket extensions in use: {}".format(self.websocket_extensions_in_use))
+        print(
+            "WebSocket extensions in use: {}".format(self.websocket_extensions_in_use)
+        )
 
     def onMessage(self, payload, isBinary):
         self.sendMessage(payload, isBinary)
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     log.startLogging(sys.stdout)
 
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = EchoServerProtocol
 
-#   factory.setProtocolOptions(autoFragmentSize = 4)
+    #   factory.setProtocolOptions(autoFragmentSize = 4)
 
     # Enable WebSocket extension "permessage-deflate". This is all you
     # need to do (unless you know what you are doing .. see below)!
@@ -85,7 +85,9 @@ if __name__ == '__main__':
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
                 if offer.acceptNoContextTakeover:
-                    return PerMessageDeflateOfferAccept(offer, requestNoContextTakeover=True)
+                    return PerMessageDeflateOfferAccept(
+                        offer, requestNoContextTakeover=True
+                    )
 
     # permessage-deflate, server requests the client to do no
     # context takeover, and does not context takeover also
@@ -93,7 +95,9 @@ if __name__ == '__main__':
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
                 if offer.acceptNoContextTakeover:
-                    return PerMessageDeflateOfferAccept(offer, requestNoContextTakeover=True, noContextTakeover=True)
+                    return PerMessageDeflateOfferAccept(
+                        offer, requestNoContextTakeover=True, noContextTakeover=True
+                    )
 
     # permessage-deflate, server requests the client to do use
     # max window bits specified
@@ -101,13 +105,14 @@ if __name__ == '__main__':
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
                 if offer.acceptMaxWindowBits:
-                    return PerMessageDeflateOfferAccept(offer, request_max_window_bits=8)
+                    return PerMessageDeflateOfferAccept(
+                        offer, request_max_window_bits=8
+                    )
 
-
-#   factory.setProtocolOptions(perMessageCompressionAccept = accept0)
-#   factory.setProtocolOptions(perMessageCompressionAccept = accept1)
-#   factory.setProtocolOptions(perMessageCompressionAccept = accept2)
-#   factory.setProtocolOptions(perMessageCompressionAccept = accept3)
+    #   factory.setProtocolOptions(perMessageCompressionAccept = accept0)
+    #   factory.setProtocolOptions(perMessageCompressionAccept = accept1)
+    #   factory.setProtocolOptions(perMessageCompressionAccept = accept2)
+    #   factory.setProtocolOptions(perMessageCompressionAccept = accept3)
     factory.setProtocolOptions(perMessageCompressionAccept=accept4)
 
     listenWS(factory)

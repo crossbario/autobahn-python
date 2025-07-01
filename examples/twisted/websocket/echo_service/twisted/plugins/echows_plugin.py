@@ -26,7 +26,6 @@
 
 from twisted.application.service import ServiceMaker
 
-serviceMaker = ServiceMaker('echows',
-                            'echows.main',
-                            'Autobahn WebSocket Echo Service',
-                            'echows')
+serviceMaker = ServiceMaker(
+    "echows", "echows.main", "Autobahn WebSocket Echo Service", "echows"
+)

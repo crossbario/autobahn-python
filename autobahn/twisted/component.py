@@ -28,18 +28,22 @@
 from functools import wraps
 from typing import List
 
-from twisted.internet.interfaces import IStreamClientEndpoint
-from twisted.internet.endpoints import UNIXClientEndpoint
-from twisted.internet.endpoints import TCP4ClientEndpoint
-from twisted.python.failure import Failure
+from twisted.internet.endpoints import TCP4ClientEndpoint, UNIXClientEndpoint
 from twisted.internet.error import ReactorNotRunning
+from twisted.internet.interfaces import IStreamClientEndpoint
+from twisted.python.failure import Failure
 
 try:
     _TLS = True
-    from twisted.internet.endpoints import SSL4ClientEndpoint
-    from twisted.internet.ssl import optionsForClientTLS, CertificateOptions, Certificate
-    from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
     from OpenSSL import SSL
+
+    from twisted.internet.endpoints import SSL4ClientEndpoint
+    from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
+    from twisted.internet.ssl import (
+        Certificate,
+        CertificateOptions,
+        optionsForClientTLS,
+    )
 except ImportError:
     _TLS = False
     # there's no optionsForClientTLS in older Twisteds or we might be
@@ -47,15 +51,16 @@ except ImportError:
 
 import txaio
 
-from autobahn.twisted.websocket import WampWebSocketClientFactory
 from autobahn.twisted.rawsocket import WampRawSocketClientFactory
-
-from autobahn.wamp import component
-
 from autobahn.twisted.wamp import Session
-from autobahn.wamp.serializer import create_transport_serializers, create_transport_serializer
+from autobahn.twisted.websocket import WampWebSocketClientFactory
+from autobahn.wamp import component
+from autobahn.wamp.serializer import (
+    create_transport_serializer,
+    create_transport_serializers,
+)
 
-__all__ = ('Component', 'run')
+__all__ = ("Component", "run")
 
 
 def _unique_list(seq):
@@ -67,15 +72,15 @@ def _unique_list(seq):
 
 
 def _camel_case_from_snake_case(snake):
-    parts = snake.split('_')
-    return parts[0] + ''.join(s.capitalize() for s in parts[1:])
+    parts = snake.split("_")
+    return parts[0] + "".join(s.capitalize() for s in parts[1:])
 
 
 def _create_transport_factory(reactor, transport, session_factory):
     """
     Create a WAMP-over-XXX transport factory.
     """
-    if transport.type == 'websocket':
+    if transport.type == "websocket":
         serializers = create_transport_serializers(transport)
         factory = WampWebSocketClientFactory(
             session_factory,
@@ -84,12 +89,12 @@ def _create_transport_factory(reactor, transport, session_factory):
             proxy=transport.proxy,  # either None or a dict with host, port
         )
 
-    elif transport.type == 'rawsocket':
+    elif transport.type == "rawsocket":
         serializer = create_transport_serializer(transport.serializers[0])
         factory = WampRawSocketClientFactory(session_factory, serializer=serializer)
 
     else:
-        assert(False), 'should not arrive here'
+        assert False, "should not arrive here"
 
     # set the options one at a time so we can give user better feedback
     for k, v in transport.options.items():
@@ -100,9 +105,7 @@ def _create_transport_factory(reactor, transport, session_factory):
             # until everything internally is upgraded from
             # camelCase
             try:
-                factory.setProtocolOptions(
-                    **{_camel_case_from_snake_case(k): v}
-                )
+                factory.setProtocolOptions(**{_camel_case_from_snake_case(k): v})
             except (TypeError, KeyError):
                 raise ValueError(
                     "Unknown {} transport option: {}={}".format(transport.type, k, v)
@@ -118,30 +121,47 @@ def _create_transport_endpoint(reactor, endpoint_config):
         endpoint = IStreamClientEndpoint(endpoint_config)
     else:
         # create a connecting TCP socket
-        if endpoint_config['type'] == 'tcp':
-
-            version = endpoint_config.get('version', 4)
+        if endpoint_config["type"] == "tcp":
+            version = endpoint_config.get("version", 4)
             if version not in [4, 6]:
-                raise ValueError('invalid IP version {} in client endpoint configuration'.format(version))
+                raise ValueError(
+                    "invalid IP version {} in client endpoint configuration".format(
+                        version
+                    )
+                )
 
-            host = endpoint_config['host']
+            host = endpoint_config["host"]
             if type(host) != str:
-                raise ValueError('invalid type {} for host in client endpoint configuration'.format(type(host)))
+                raise ValueError(
+                    "invalid type {} for host in client endpoint configuration".format(
+                        type(host)
+                    )
+                )
 
-            port = endpoint_config['port']
+            port = endpoint_config["port"]
             if type(port) != int:
-                raise ValueError('invalid type {} for port in client endpoint configuration'.format(type(port)))
+                raise ValueError(
+                    "invalid type {} for port in client endpoint configuration".format(
+                        type(port)
+                    )
+                )
 
-            timeout = endpoint_config.get('timeout', 10)  # in seconds
+            timeout = endpoint_config.get("timeout", 10)  # in seconds
             if type(timeout) != int:
-                raise ValueError('invalid type {} for timeout in client endpoint configuration'.format(type(timeout)))
+                raise ValueError(
+                    "invalid type {} for timeout in client endpoint configuration".format(
+                        type(timeout)
+                    )
+                )
 
-            tls = endpoint_config.get('tls', None)
+            tls = endpoint_config.get("tls", None)
 
             # create a TLS enabled connecting TCP socket
             if tls:
                 if not _TLS:
-                    raise RuntimeError('TLS configured in transport, but TLS support is not installed (eg OpenSSL?)')
+                    raise RuntimeError(
+                        "TLS configured in transport, but TLS support is not installed (eg OpenSSL?)"
+                    )
 
                 # FIXME: create TLS context from configuration
                 if IOpenSSLClientConnectionCreator.providedBy(tls):
@@ -151,14 +171,20 @@ def _create_transport_endpoint(reactor, endpoint_config):
                 elif isinstance(tls, dict):
                     for k in tls.keys():
                         if k not in ["hostname", "trust_root"]:
-                            raise ValueError("Invalid key '{}' in 'tls' config".format(k))
-                    hostname = tls.get('hostname', host)
+                            raise ValueError(
+                                "Invalid key '{}' in 'tls' config".format(k)
+                            )
+                    hostname = tls.get("hostname", host)
                     if type(hostname) != str:
-                        raise ValueError('invalid type {} for hostname in TLS client endpoint configuration'.format(hostname))
+                        raise ValueError(
+                            "invalid type {} for hostname in TLS client endpoint configuration".format(
+                                hostname
+                            )
+                        )
                     trust_root = None
                     cert_fname = tls.get("trust_root", None)
                     if cert_fname is not None:
-                        trust_root = Certificate.loadPEM(open(cert_fname, 'r').read())
+                        trust_root = Certificate.loadPEM(open(cert_fname, "r").read())
                     context = optionsForClientTLS(hostname, trustRoot=trust_root)
 
                 elif isinstance(tls, CertificateOptions):
@@ -168,15 +194,21 @@ def _create_transport_endpoint(reactor, endpoint_config):
                     context = optionsForClientTLS(host)
 
                 else:
-                    raise RuntimeError('unknown type {} for "tls" configuration in transport'.format(type(tls)))
+                    raise RuntimeError(
+                        'unknown type {} for "tls" configuration in transport'.format(
+                            type(tls)
+                        )
+                    )
 
                 if version == 4:
-                    endpoint = SSL4ClientEndpoint(reactor, host, port, context, timeout=timeout)
+                    endpoint = SSL4ClientEndpoint(
+                        reactor, host, port, context, timeout=timeout
+                    )
                 elif version == 6:
                     # there is no SSL6ClientEndpoint!
-                    raise RuntimeError('TLS on IPv6 not implemented')
+                    raise RuntimeError("TLS on IPv6 not implemented")
                 else:
-                    assert(False), 'should not arrive here'
+                    assert False, "should not arrive here"
 
             # create a non-TLS connecting TCP socket
             else:
@@ -185,6 +217,7 @@ def _create_transport_endpoint(reactor, endpoint_config):
                     # self.log.info("{host} appears to be a Tor endpoint", host=host)
                     try:
                         import txtorcon
+
                         endpoint = txtorcon.TorClientEndpoint(host, port)
                     except ImportError:
                         raise RuntimeError(
@@ -198,19 +231,21 @@ def _create_transport_endpoint(reactor, endpoint_config):
                     try:
                         from twisted.internet.endpoints import TCP6ClientEndpoint
                     except ImportError:
-                        raise RuntimeError('IPv6 is not supported (please upgrade Twisted)')
+                        raise RuntimeError(
+                            "IPv6 is not supported (please upgrade Twisted)"
+                        )
                     endpoint = TCP6ClientEndpoint(reactor, host, port, timeout=timeout)
                 else:
-                    assert(False), 'should not arrive here'
+                    assert False, "should not arrive here"
 
         # create a connecting Unix domain socket
-        elif endpoint_config['type'] == 'unix':
-            path = endpoint_config['path']
-            timeout = int(endpoint_config.get('timeout', 10))  # in seconds
+        elif endpoint_config["type"] == "unix":
+            path = endpoint_config["path"]
+            timeout = int(endpoint_config.get("timeout", 10))  # in seconds
             endpoint = UNIXClientEndpoint(reactor, path, timeout=timeout)
 
         else:
-            assert(False), 'should not arrive here'
+            assert False, "should not arrive here"
 
     return endpoint
 
@@ -247,8 +282,8 @@ class Component(component.Component):
         if IStreamClientEndpoint.providedBy(endpoint):
             pass
         elif isinstance(endpoint, dict):
-            if 'tls' in endpoint:
-                tls = endpoint['tls']
+            if "tls" in endpoint:
+                tls = endpoint["tls"]
                 if isinstance(tls, (dict, bool)):
                     pass
                 elif IOpenSSLClientConnectionCreator.providedBy(tls):
@@ -274,7 +309,9 @@ class Component(component.Component):
             should signal upon error if it is not done yet (XXX maybe an
             "on_error" callable instead?)
         """
-        transport_factory = _create_transport_factory(reactor, transport, session_factory)
+        transport_factory = _create_transport_factory(
+            reactor, transport, session_factory
+        )
         if transport.proxy:
             transport_endpoint = _create_transport_endpoint(
                 reactor,
@@ -282,14 +319,13 @@ class Component(component.Component):
                     "type": "tcp",
                     "host": transport.proxy["host"],
                     "port": transport.proxy["port"],
-                }
+                },
             )
         else:
             transport_endpoint = _create_transport_endpoint(reactor, transport.endpoint)
         d = transport_endpoint.connect(transport_factory)
 
         def on_connect_success(proto):
-
             # if e.g. an SSL handshake fails, we will have
             # successfully connected (i.e. get here) but need to
             # 'listen' for the "connectionLost" from the underlying
@@ -304,6 +340,7 @@ class Component(component.Component):
                 if not txaio.is_called(done):
                     txaio.reject(done, fail)
                 return rtn
+
             proto.connectionLost = lost
 
         def on_connect_failure(err):
@@ -335,7 +372,9 @@ class Component(component.Component):
         return self._start(loop=reactor)
 
 
-def run(components: List[Component], log_level: str = 'info', stop_at_close: bool = True):
+def run(
+    components: List[Component], log_level: str = "info", stop_at_close: bool = True
+):
     """
     High-level API to run a series of components.
 
@@ -366,14 +405,16 @@ def run(components: List[Component], log_level: str = 'info', stop_at_close: boo
     log = txaio.make_logger()
 
     if stop_at_close:
+
         def done_callback(reactor, arg):
             if isinstance(arg, Failure):
-                log.error('Something went wrong: {log_failure}', failure=arg)
+                log.error("Something went wrong: {log_failure}", failure=arg)
                 try:
-                    log.warn('Stopping reactor ..')
+                    log.warn("Stopping reactor ..")
                     reactor.stop()
                 except ReactorNotRunning:
                     pass
+
     else:
         done_callback = None
 

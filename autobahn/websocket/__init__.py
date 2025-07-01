@@ -25,17 +25,24 @@
 ###############################################################################
 
 
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, \
-    ConnectionAccept, ConnectionDeny, Message, IncomingMessage, OutgoingMessage
 from autobahn.websocket.interfaces import IWebSocketChannel
+from autobahn.websocket.types import (
+    ConnectionAccept,
+    ConnectionDeny,
+    ConnectionRequest,
+    ConnectionResponse,
+    IncomingMessage,
+    Message,
+    OutgoingMessage,
+)
 
 __all__ = (
-    'IWebSocketChannel',
-    'Message',
-    'IncomingMessage',
-    'OutgoingMessage',
-    'ConnectionRequest',
-    'ConnectionResponse',
-    'ConnectionAccept',
-    'ConnectionDeny',
+    "ConnectionAccept",
+    "ConnectionDeny",
+    "ConnectionRequest",
+    "ConnectionResponse",
+    "IWebSocketChannel",
+    "IncomingMessage",
+    "Message",
+    "OutgoingMessage",
 )

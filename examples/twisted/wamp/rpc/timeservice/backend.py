@@ -24,12 +24,11 @@
 #
 ###############################################################################
 
-from os import environ
 import datetime
+from os import environ
 
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
 from twisted.internet.defer import inlineCallbacks
-
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
@@ -46,14 +45,14 @@ class Component(ApplicationSession):
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         try:
-            yield self.register(utcnow, 'com.timeservice.now')
+            yield self.register(utcnow, "com.timeservice.now")
         except Exception as e:
             print("failed to register procedure: {}".format(e))
         else:
             print("procedure registered")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

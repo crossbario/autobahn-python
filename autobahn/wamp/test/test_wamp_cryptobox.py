@@ -24,14 +24,13 @@
 #
 ###############################################################################
 
-from autobahn.wamp import cryptobox
-
 import unittest
 
+from autobahn.wamp import cryptobox
 
-@unittest.skipIf(not cryptobox.HAS_CRYPTOBOX, 'no cryptobox support present')
+
+@unittest.skipIf(not cryptobox.HAS_CRYPTOBOX, "no cryptobox support present")
 class TestCryptoBox(unittest.TestCase):
-
     def test_create_keyring(self):
         kr = cryptobox.KeyRing()
         assert kr

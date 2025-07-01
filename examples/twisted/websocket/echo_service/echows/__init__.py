@@ -26,6 +26,7 @@
 
 try:
     import pkg_resources
+
     version = pkg_resources.require("echows")[0].version
 except:
     version = "?.?.?"

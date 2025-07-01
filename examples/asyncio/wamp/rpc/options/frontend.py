@@ -26,8 +26,9 @@
 
 import asyncio
 from os import environ
-from autobahn.wamp.types import CallOptions, RegisterOptions, PublishOptions
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.types import CallOptions, PublishOptions, RegisterOptions
 
 
 class Component(ApplicationSession):
@@ -36,14 +37,13 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         def on_event(val):
             print("Someone requested to square non-positive: {}".format(val))
 
-        await self.subscribe(on_event, 'com.myapp.square_on_nonpositive')
+        await self.subscribe(on_event, "com.myapp.square_on_nonpositive")
 
         for val in [2, 0, -2]:
-            res = await self.call('com.myapp.square', val, options=CallOptions())
+            res = await self.call("com.myapp.square", val, options=CallOptions())
             print("Squared {} = {}".format(val, res))
 
         await self.leave()
@@ -52,7 +52,7 @@ class Component(ApplicationSession):
         asyncio.get_event_loop().stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

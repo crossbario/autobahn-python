@@ -25,14 +25,13 @@
 ###############################################################################
 
 from os import environ
-from twisted.internet.defer import inlineCallbacks
 
-from autobahn.wamp.types import RegisterOptions, PublishOptions
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.types import PublishOptions, RegisterOptions
+from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):
-
     """
     An application component providing procedures with
     different kinds of arguments.
@@ -46,21 +45,23 @@ class Component(ApplicationSession):
             print("square called from: {}".format(details.caller))
 
             if val < 0:
-                self.publish('com.myapp.square_on_nonpositive', val)
+                self.publish("com.myapp.square_on_nonpositive", val)
             elif val == 0:
                 if details.caller:
                     options = PublishOptions(exclude=[details.caller])
                 else:
                     options = None
-                self.publish('com.myapp.square_on_nonpositive', val, options=options)
+                self.publish("com.myapp.square_on_nonpositive", val, options=options)
             return val * val
 
-        yield self.register(square, 'com.myapp.square', RegisterOptions(details_arg='details'))
+        yield self.register(
+            square, "com.myapp.square", RegisterOptions(details_arg="details")
+        )
 
         print("procedure registered")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

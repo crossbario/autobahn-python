@@ -24,25 +24,24 @@
 #
 ###############################################################################
 
+import decimal
+import math
 import os
+import platform
 import re
 import struct
-import platform
-import math
-import decimal
-from binascii import b2a_hex, a2b_hex
-from typing import Optional, List, Tuple
+from binascii import a2b_hex, b2a_hex
+from typing import List, Optional, Tuple
 
 from txaio import time_ns
-from autobahn.wamp.interfaces import IObjectSerializer, ISerializer, IMessage
-from autobahn.wamp.exception import ProtocolError
+
 from autobahn.wamp import message
+from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.interfaces import IMessage, IObjectSerializer, ISerializer
 
 # note: __all__ must be a list here, since we dynamically
 # extend it depending on availability of more serializers
-__all__ = ['Serializer',
-           'JsonObjectSerializer',
-           'JsonSerializer']
+__all__ = ["JsonObjectSerializer", "JsonSerializer", "Serializer"]
 
 
 SERID_TO_OBJSER = {}
@@ -86,7 +85,7 @@ class Serializer(object):
         message.Unregistered.MESSAGE_TYPE: message.Unregistered,
         message.Invocation.MESSAGE_TYPE: message.Invocation,
         message.Interrupt.MESSAGE_TYPE: message.Interrupt,
-        message.Yield.MESSAGE_TYPE: message.Yield
+        message.Yield.MESSAGE_TYPE: message.Yield,
     }
     """
     Mapping of WAMP message type codes to WAMP message classes.
@@ -168,10 +167,10 @@ class Serializer(object):
             will be invoked with a single positional argument: the accumulated statistics before the reset.
         :type callback: callable
         """
-        assert(rated_messages is None or type(rated_messages) == int)
-        assert(duration is None or type(duration) == int)
-        assert(rated_messages or duration)
-        assert(callable(callback))
+        assert rated_messages is None or type(rated_messages) == int
+        assert duration is None or type(duration) == int
+        assert rated_messages or duration
+        assert callable(callback)
 
         self._autoreset_rated_messages = rated_messages
         self._autoreset_duration = duration
@@ -207,37 +206,38 @@ class Serializer(object):
 
         :rtype: dict
         """
-        assert(type(reset) == bool)
-        assert(type(details) == bool)
+        assert type(reset) == bool
+        assert type(details) == bool
 
         self._stats_cycle += 1
 
         if details:
             data = {
-                'cycle': self._stats_cycle,
-                'serializer': self.SERIALIZER_ID,
-                'timestamp': self._stats_reset,
-                'duration': time_ns() - self._stats_reset,
-                'serialized': {
-                    'bytes': self._serialized_bytes,
-                    'messages': self._serialized_messages,
-                    'rated_messages': self._serialized_rated_messages,
+                "cycle": self._stats_cycle,
+                "serializer": self.SERIALIZER_ID,
+                "timestamp": self._stats_reset,
+                "duration": time_ns() - self._stats_reset,
+                "serialized": {
+                    "bytes": self._serialized_bytes,
+                    "messages": self._serialized_messages,
+                    "rated_messages": self._serialized_rated_messages,
                 },
-                'unserialized': {
-                    'bytes': self._unserialized_bytes,
-                    'messages': self._unserialized_messages,
-                    'rated_messages': self._unserialized_rated_messages,
-                }
+                "unserialized": {
+                    "bytes": self._unserialized_bytes,
+                    "messages": self._unserialized_messages,
+                    "rated_messages": self._unserialized_rated_messages,
+                },
             }
         else:
             data = {
-                'cycle': self._stats_cycle,
-                'serializer': self.SERIALIZER_ID,
-                'timestamp': self._stats_reset,
-                'duration': time_ns() - self._stats_reset,
-                'bytes': self._serialized_bytes + self._unserialized_bytes,
-                'messages': self._serialized_messages + self._unserialized_messages,
-                'rated_messages': self._serialized_rated_messages + self._unserialized_rated_messages,
+                "cycle": self._stats_cycle,
+                "serializer": self.SERIALIZER_ID,
+                "timestamp": self._stats_reset,
+                "duration": time_ns() - self._stats_reset,
+                "bytes": self._serialized_bytes + self._unserialized_bytes,
+                "messages": self._serialized_messages + self._unserialized_messages,
+                "rated_messages": self._serialized_rated_messages
+                + self._unserialized_rated_messages,
             }
         if reset:
             self._serialized_bytes = 0
@@ -258,37 +258,57 @@ class Serializer(object):
         # maintain statistics for serialized WAMP message data
         self._serialized_bytes += len(data)
         self._serialized_messages += 1
-        self._serialized_rated_messages += int(math.ceil(float(len(data)) / self.RATED_MESSAGE_SIZE))
+        self._serialized_rated_messages += int(
+            math.ceil(float(len(data)) / self.RATED_MESSAGE_SIZE)
+        )
 
         # maybe auto-reset and trigger user callback ..
-        if self._autoreset_callback and ((self._autoreset_duration and (time_ns() - self._stats_reset) >= self._autoreset_duration) or (self._autoreset_rated_messages and self.stats_rated_messages() >= self._autoreset_rated_messages)):
+        if self._autoreset_callback and (
+            (
+                self._autoreset_duration
+                and (time_ns() - self._stats_reset) >= self._autoreset_duration
+            )
+            or (
+                self._autoreset_rated_messages
+                and self.stats_rated_messages() >= self._autoreset_rated_messages
+            )
+        ):
             stats = self.stats(reset=True)
             self._autoreset_callback(stats)
 
         return data, is_binary
 
-    def unserialize(self, payload: bytes, isBinary: Optional[bool] = None) -> List[IMessage]:
+    def unserialize(
+        self, payload: bytes, isBinary: Optional[bool] = None
+    ) -> List[IMessage]:
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
         """
         if isBinary is not None:
             if isBinary != self._serializer.BINARY:
                 raise ProtocolError(
-                    "invalid serialization of WAMP message (binary {0}, but expected {1})".format(isBinary,
-                                                                                                  self._serializer.BINARY))
+                    "invalid serialization of WAMP message (binary {0}, but expected {1})".format(
+                        isBinary, self._serializer.BINARY
+                    )
+                )
         try:
             raw_msgs = self._serializer.unserialize(payload)
         except Exception as e:
-            raise ProtocolError("invalid serialization of WAMP message: {0} {1}".format(type(e).__name__, e))
+            raise ProtocolError(
+                "invalid serialization of WAMP message: {0} {1}".format(
+                    type(e).__name__, e
+                )
+            )
 
-        if self._serializer.NAME == 'flatbuffers':
+        if self._serializer.NAME == "flatbuffers":
             msgs = raw_msgs
         else:
             msgs = []
             for raw_msg in raw_msgs:
-
                 if type(raw_msg) != list:
-                    raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
+                    raise ProtocolError(
+                        "invalid type {0} for WAMP message".format(type(raw_msg))
+                    )
 
                 if len(raw_msg) == 0:
                     raise ProtocolError("missing message type in WAMP message")
@@ -296,12 +316,18 @@ class Serializer(object):
                 message_type = raw_msg[0]
 
                 if type(message_type) != int:
-                    raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
+                    raise ProtocolError(
+                        "invalid type {0} for WAMP message type".format(
+                            type(message_type)
+                        )
+                    )
 
                 Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
                 if Klass is None:
-                    raise ProtocolError("invalid WAMP message type {0}".format(message_type))
+                    raise ProtocolError(
+                        "invalid WAMP message type {0}".format(message_type)
+                    )
 
                 # this might again raise `ProtocolError` ..
                 msg = Klass.parse(raw_msg)
@@ -311,10 +337,21 @@ class Serializer(object):
         # maintain statistics for unserialized WAMP message data
         self._unserialized_bytes += len(payload)
         self._unserialized_messages += len(msgs)
-        self._unserialized_rated_messages += int(math.ceil(float(len(payload)) / self.RATED_MESSAGE_SIZE))
+        self._unserialized_rated_messages += int(
+            math.ceil(float(len(payload)) / self.RATED_MESSAGE_SIZE)
+        )
 
         # maybe auto-reset and trigger user callback ..
-        if self._autoreset_callback and ((self._autoreset_duration and (time_ns() - self._stats_reset) >= self._autoreset_duration) or (self._autoreset_rated_messages and self.stats_rated_messages() >= self._autoreset_rated_messages)):
+        if self._autoreset_callback and (
+            (
+                self._autoreset_duration
+                and (time_ns() - self._stats_reset) >= self._autoreset_duration
+            )
+            or (
+                self._autoreset_rated_messages
+                and self.stats_rated_messages() >= self._autoreset_rated_messages
+            )
+        ):
             stats = self.stats(reset=True)
             self._autoreset_callback(stats)
 
@@ -322,13 +359,15 @@ class Serializer(object):
 
 
 # JSON serialization is always supported
-_USE_UJSON = 'AUTOBAHN_USE_UJSON' in os.environ
+_USE_UJSON = "AUTOBAHN_USE_UJSON" in os.environ
 if _USE_UJSON:
     try:
         import ujson
+
         _USE_UJSON = True
     except ImportError:
         import json
+
         _USE_UJSON = False
 else:
     import json
@@ -336,7 +375,9 @@ else:
 
 if _USE_UJSON:
     # ujson doesn't support plugging into the JSON string parsing machinery ..
-    print('WARNING: Autobahn is using ujson accelerated JSON module - will run faster,\nbut only on CPython and will loose ability to transport binary payload transparently!')
+    print(
+        "WARNING: Autobahn is using ujson accelerated JSON module - will run faster,\nbut only on CPython and will loose ability to transport binary payload transparently!"
+    )
     _loads = ujson.loads
     _dumps = ujson.dumps
     _json = ujson
@@ -345,11 +386,10 @@ else:
     import base64
 
     class _WAMPJsonEncoder(json.JSONEncoder):
-
         def __init__(self, *args, **kwargs):
-            if 'use_binary_hex_encoding' in kwargs:
-                self._use_binary_hex_encoding = kwargs['use_binary_hex_encoding']
-                del kwargs['use_binary_hex_encoding']
+            if "use_binary_hex_encoding" in kwargs:
+                self._use_binary_hex_encoding = kwargs["use_binary_hex_encoding"]
+                del kwargs["use_binary_hex_encoding"]
             else:
                 self._use_binary_hex_encoding = False
             json.JSONEncoder.__init__(self, *args, **kwargs)
@@ -357,9 +397,9 @@ else:
         def default(self, obj):
             if isinstance(obj, bytes):
                 if self._use_binary_hex_encoding:
-                    return '0x' + b2a_hex(obj).decode('ascii')
+                    return "0x" + b2a_hex(obj).decode("ascii")
                 else:
-                    return '\x00' + base64.b64encode(obj).decode('ascii')
+                    return "\x00" + base64.b64encode(obj).decode("ascii")
             elif isinstance(obj, decimal.Decimal):
                 return str(obj)
             else:
@@ -372,28 +412,27 @@ else:
     from json import scanner
     from json.decoder import scanstring
 
-    _DEC_MATCH = re.compile(r'^[\+\-E\.0-9]+$')
+    _DEC_MATCH = re.compile(r"^[\+\-E\.0-9]+$")
 
     class _WAMPJsonDecoder(json.JSONDecoder):
-
         def __init__(self, *args, **kwargs):
-            if 'use_binary_hex_encoding' in kwargs:
-                self._use_binary_hex_encoding = kwargs['use_binary_hex_encoding']
-                del kwargs['use_binary_hex_encoding']
+            if "use_binary_hex_encoding" in kwargs:
+                self._use_binary_hex_encoding = kwargs["use_binary_hex_encoding"]
+                del kwargs["use_binary_hex_encoding"]
             else:
                 self._use_binary_hex_encoding = False
 
-            if 'use_decimal_from_str' in kwargs:
-                self._use_decimal_from_str = kwargs['use_decimal_from_str']
-                del kwargs['use_decimal_from_str']
+            if "use_decimal_from_str" in kwargs:
+                self._use_decimal_from_str = kwargs["use_decimal_from_str"]
+                del kwargs["use_decimal_from_str"]
             else:
                 self._use_decimal_from_str = False
 
-            if 'use_decimal_from_float' in kwargs:
-                self._use_decimal_from_float = kwargs['use_decimal_from_float']
-                del kwargs['use_decimal_from_float']
+            if "use_decimal_from_float" in kwargs:
+                self._use_decimal_from_float = kwargs["use_decimal_from_float"]
+                del kwargs["use_decimal_from_float"]
                 if self._use_decimal_from_float:
-                    kwargs['parse_float'] = decimal.Decimal
+                    kwargs["parse_float"] = decimal.Decimal
             else:
                 self._use_decimal_from_str = False
 
@@ -402,11 +441,11 @@ else:
             def _parse_string(*args, **kwargs):
                 s, idx = scanstring(*args, **kwargs)
                 if self._use_binary_hex_encoding:
-                    if s and s[0:2] == '0x':
+                    if s and s[0:2] == "0x":
                         s = a2b_hex(s[2:])
                         return s, idx
                 else:
-                    if s and s[0] == '\x00':
+                    if s and s[0] == "\x00":
                         s = base64.b64decode(s[1:])
                         return s, idx
                 if self._use_decimal_from_str and _DEC_MATCH.match(s):
@@ -426,36 +465,50 @@ else:
             # not the C version, as the latter won't work
             # self.scan_once = scanner.make_scanner(self)
 
-    def _loads(s, use_binary_hex_encoding=False, use_decimal_from_str=False, use_decimal_from_float=False):
-        return json.loads(s,
-                          use_binary_hex_encoding=use_binary_hex_encoding,
-                          use_decimal_from_str=use_decimal_from_str,
-                          use_decimal_from_float=use_decimal_from_float,
-                          cls=_WAMPJsonDecoder)
+    def _loads(
+        s,
+        use_binary_hex_encoding=False,
+        use_decimal_from_str=False,
+        use_decimal_from_float=False,
+    ):
+        return json.loads(
+            s,
+            use_binary_hex_encoding=use_binary_hex_encoding,
+            use_decimal_from_str=use_decimal_from_str,
+            use_decimal_from_float=use_decimal_from_float,
+            cls=_WAMPJsonDecoder,
+        )
 
     def _dumps(obj, use_binary_hex_encoding=False):
-        return json.dumps(obj,
-                          separators=(',', ':'),
-                          ensure_ascii=False,
-                          sort_keys=False,
-                          use_binary_hex_encoding=use_binary_hex_encoding,
-                          cls=_WAMPJsonEncoder)
+        return json.dumps(
+            obj,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            sort_keys=False,
+            use_binary_hex_encoding=use_binary_hex_encoding,
+            cls=_WAMPJsonEncoder,
+        )
 
     _json = json
 
 
 class JsonObjectSerializer(object):
-
     JSON_MODULE = _json
     """
     The JSON module used (now only stdlib).
     """
 
-    NAME = 'json'
+    NAME = "json"
 
     BINARY = False
 
-    def __init__(self, batched=False, use_binary_hex_encoding=False, use_decimal_from_str=False, use_decimal_from_float=False):
+    def __init__(
+        self,
+        batched=False,
+        use_binary_hex_encoding=False,
+        use_decimal_from_str=False,
+        use_decimal_from_float=False,
+    ):
         """
 
         :param batched: Flag that controls whether serializer operates in batched mode.
@@ -480,9 +533,9 @@ class JsonObjectSerializer(object):
         """
         s = _dumps(obj, use_binary_hex_encoding=self._use_binary_hex_encoding)
         if isinstance(s, str):
-            s = s.encode('utf8')
+            s = s.encode("utf8")
         if self._batched:
-            return s + b'\30'
+            return s + b"\30"
         else:
             return s
 
@@ -491,15 +544,20 @@ class JsonObjectSerializer(object):
         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
         """
         if self._batched:
-            chunks = payload.split(b'\30')[:-1]
+            chunks = payload.split(b"\30")[:-1]
         else:
             chunks = [payload]
         if len(chunks) == 0:
             raise Exception("batch format error")
-        return [_loads(data.decode('utf8'),
-                       use_binary_hex_encoding=self._use_binary_hex_encoding,
-                       use_decimal_from_str=self._use_decimal_from_str,
-                       use_decimal_from_float=self._use_decimal_from_float) for data in chunks]
+        return [
+            _loads(
+                data.decode("utf8"),
+                use_binary_hex_encoding=self._use_binary_hex_encoding,
+                use_decimal_from_str=self._use_decimal_from_str,
+                use_decimal_from_float=self._use_decimal_from_float,
+            )
+            for data in chunks
+        ]
 
 
 IObjectSerializer.register(JsonObjectSerializer)
@@ -507,7 +565,6 @@ SERID_TO_OBJSER[JsonObjectSerializer.NAME] = JsonObjectSerializer
 
 
 class JsonSerializer(Serializer):
-
     SERIALIZER_ID = "json"
     """
     ID used as part of the WebSocket subprotocol name to identify the
@@ -526,16 +583,23 @@ class JsonSerializer(Serializer):
     WAMP-over-Longpoll HTTP fallback.
     """
 
-    def __init__(self, batched=False, use_binary_hex_encoding=False, use_decimal_from_str=False):
+    def __init__(
+        self, batched=False, use_binary_hex_encoding=False, use_decimal_from_str=False
+    ):
         """
         Ctor.
 
         :param batched: Flag to control whether to put this serialized into batched mode.
         :type batched: bool
         """
-        Serializer.__init__(self, JsonObjectSerializer(batched=batched,
-                                                       use_binary_hex_encoding=use_binary_hex_encoding,
-                                                       use_decimal_from_str=use_decimal_from_str))
+        Serializer.__init__(
+            self,
+            JsonObjectSerializer(
+                batched=batched,
+                use_binary_hex_encoding=use_binary_hex_encoding,
+                use_decimal_from_str=use_decimal_from_str,
+            ),
+        )
         if batched:
             self.SERIALIZER_ID = "json.batched"
 
@@ -545,7 +609,9 @@ SERID_TO_SER[JsonSerializer.SERIALIZER_ID] = JsonSerializer
 
 
 _HAS_MSGPACK = False
-_USE_UMSGPACK = platform.python_implementation() == 'PyPy' or 'AUTOBAHN_USE_UMSGPACK' in os.environ
+_USE_UMSGPACK = (
+    platform.python_implementation() == "PyPy" or "AUTOBAHN_USE_UMSGPACK" in os.environ
+)
 
 if not _USE_UMSGPACK:
     try:
@@ -580,8 +646,7 @@ else:
 if _HAS_MSGPACK:
 
     class MsgPackObjectSerializer(object):
-
-        NAME = 'msgpack'
+        NAME = "msgpack"
 
         MSGPACK_MODULE = _msgpack
 
@@ -621,12 +686,12 @@ if _HAS_MSGPACK:
                     # read message length prefix
                     if i + 4 > N:
                         raise Exception("batch format error [1]")
-                    l = struct.unpack("!L", payload[i:i + 4])[0]
+                    l = struct.unpack("!L", payload[i : i + 4])[0]
 
                     # read message data
                     if i + 4 + l > N:
                         raise Exception("batch format error [2]")
-                    data = payload[i + 4:i + 4 + l]
+                    data = payload[i + 4 : i + 4 + l]
 
                     # append parsed raw message
                     msgs.append(_unpackb(data))
@@ -644,11 +709,10 @@ if _HAS_MSGPACK:
 
     IObjectSerializer.register(MsgPackObjectSerializer)
 
-    __all__.append('MsgPackObjectSerializer')
+    __all__.append("MsgPackObjectSerializer")
     SERID_TO_OBJSER[MsgPackObjectSerializer.NAME] = MsgPackObjectSerializer
 
     class MsgPackSerializer(Serializer):
-
         SERIALIZER_ID = "msgpack"
         """
         ID used as part of the WebSocket subprotocol name to identify the
@@ -681,7 +745,7 @@ if _HAS_MSGPACK:
     ISerializer.register(MsgPackSerializer)
     SERID_TO_SER[MsgPackSerializer.SERIALIZER_ID] = MsgPackSerializer
 
-    __all__.append('MsgPackSerializer')
+    __all__.append("MsgPackSerializer")
 
 
 _HAS_CBOR = False
@@ -709,7 +773,7 @@ if _HAS_CBOR:
         `RFC7049 section 2.4.3 <https://datatracker.ietf.org/doc/html/rfc7049#section-2.4.3>`_.
         """
 
-        NAME = 'cbor'
+        NAME = "cbor"
 
         CBOR_MODULE = _cbor
 
@@ -749,12 +813,12 @@ if _HAS_CBOR:
                     # read message length prefix
                     if i + 4 > N:
                         raise Exception("batch format error [1]")
-                    l = struct.unpack("!L", payload[i:i + 4])[0]
+                    l = struct.unpack("!L", payload[i : i + 4])[0]
 
                     # read message data
                     if i + 4 + l > N:
                         raise Exception("batch format error [2]")
-                    data = payload[i + 4:i + 4 + l]
+                    data = payload[i + 4 : i + 4 + l]
 
                     # append parsed raw message
                     msgs.append(_cbor_loads(data))
@@ -773,10 +837,9 @@ if _HAS_CBOR:
     IObjectSerializer.register(CBORObjectSerializer)
     SERID_TO_OBJSER[CBORObjectSerializer.NAME] = CBORObjectSerializer
 
-    __all__.append('CBORObjectSerializer')
+    __all__.append("CBORObjectSerializer")
 
     class CBORSerializer(Serializer):
-
         SERIALIZER_ID = "cbor"
         """
         ID used as part of the WebSocket subprotocol name to identify the
@@ -809,7 +872,7 @@ if _HAS_CBOR:
     ISerializer.register(CBORSerializer)
     SERID_TO_SER[CBORSerializer.SERIALIZER_ID] = CBORSerializer
 
-    __all__.append('CBORSerializer')
+    __all__.append("CBORSerializer")
 
 
 # UBJSON serialization depends on the `py-ubjson` package being available
@@ -823,8 +886,7 @@ else:
     # print('Notice: Autobahn is using ubjson module for UBJSON serialization')
 
     class UBJSONObjectSerializer(object):
-
-        NAME = 'ubjson'
+        NAME = "ubjson"
 
         UBJSON_MODULE = ubjson
 
@@ -864,12 +926,12 @@ else:
                     # read message length prefix
                     if i + 4 > N:
                         raise Exception("batch format error [1]")
-                    l = struct.unpack("!L", payload[i:i + 4])[0]
+                    l = struct.unpack("!L", payload[i : i + 4])[0]
 
                     # read message data
                     if i + 4 + l > N:
                         raise Exception("batch format error [2]")
-                    data = payload[i + 4:i + 4 + l]
+                    data = payload[i + 4 : i + 4 + l]
 
                     # append parsed raw message
                     msgs.append(ubjson.loadb(data))
@@ -888,10 +950,9 @@ else:
     IObjectSerializer.register(UBJSONObjectSerializer)
     SERID_TO_OBJSER[UBJSONObjectSerializer.NAME] = UBJSONObjectSerializer
 
-    __all__.append('UBJSONObjectSerializer')
+    __all__.append("UBJSONObjectSerializer")
 
     class UBJSONSerializer(Serializer):
-
         SERIALIZER_ID = "ubjson"
         """
         ID used as part of the WebSocket subprotocol name to identify the
@@ -924,7 +985,7 @@ else:
     ISerializer.register(UBJSONSerializer)
     SERID_TO_SER[UBJSONSerializer.SERIALIZER_ID] = UBJSONSerializer
 
-    __all__.append('UBJSONSerializer')
+    __all__.append("UBJSONSerializer")
 
 
 _HAS_FLATBUFFERS = False
@@ -940,8 +1001,7 @@ else:
 if _HAS_FLATBUFFERS:
 
     class FlatBuffersObjectSerializer(object):
-
-        NAME = 'flatbuffers'
+        NAME = "flatbuffers"
 
         FLATBUFFERS_MODULE = flatbuffers
 
@@ -961,7 +1021,9 @@ if _HAS_FLATBUFFERS:
             :param batched: Flag that controls whether serializer operates in batched mode.
             :type batched: bool
             """
-            assert not batched, 'WAMP-FlatBuffers serialization does not support message batching currently'
+            assert not batched, (
+                "WAMP-FlatBuffers serialization does not support message batching currently"
+            )
             self._batched = batched
 
         def serialize(self, obj):
@@ -985,15 +1047,18 @@ if _HAS_FLATBUFFERS:
                 msg = wamp_klass(from_fbs=fbs_msg)
                 return [msg]
             else:
-                raise NotImplementedError('message type {} not yet implemented for WAMP-FlatBuffers'.format(msg_type))
+                raise NotImplementedError(
+                    "message type {} not yet implemented for WAMP-FlatBuffers".format(
+                        msg_type
+                    )
+                )
 
     IObjectSerializer.register(FlatBuffersObjectSerializer)
 
-    __all__.append('FlatBuffersObjectSerializer')
+    __all__.append("FlatBuffersObjectSerializer")
     SERID_TO_OBJSER[FlatBuffersObjectSerializer.NAME] = FlatBuffersObjectSerializer
 
     class FlatBuffersSerializer(Serializer):
-
         SERIALIZER_ID = "flatbuffers"
         """
         ID used as part of the WebSocket subprotocol name to identify the
@@ -1025,21 +1090,25 @@ if _HAS_FLATBUFFERS:
     ISerializer.register(FlatBuffersSerializer)
     SERID_TO_SER[FlatBuffersSerializer.SERIALIZER_ID] = FlatBuffersSerializer
 
-    __all__.append('FlatBuffersSerializer')
+    __all__.append("FlatBuffersSerializer")
 
 
 def create_transport_serializer(serializer_id):
     batched = False
-    if '.' in serializer_id:
-        l = serializer_id.split('.')
+    if "." in serializer_id:
+        l = serializer_id.split(".")
         serializer_id = l[0]
-        if len(l) > 1 and l[1] == 'batched':
+        if len(l) > 1 and l[1] == "batched":
             batched = True
 
     if serializer_id in SERID_TO_SER:
         return SERID_TO_SER[serializer_id](batched=batched)
     else:
-        raise RuntimeError('could not create serializer for "{}" (available: {})'.format(serializer_id, sorted(SERID_TO_SER.keys())))
+        raise RuntimeError(
+            'could not create serializer for "{}" (available: {})'.format(
+                serializer_id, sorted(SERID_TO_SER.keys())
+            )
+        )
 
 
 def create_transport_serializers(transport):

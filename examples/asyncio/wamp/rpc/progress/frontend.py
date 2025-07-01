@@ -26,8 +26,9 @@
 
 import asyncio
 from os import environ
+
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 from autobahn.wamp.types import CallOptions, RegisterOptions
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
@@ -36,11 +37,12 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         def on_progress(i):
             print("Progress: {}".format(i))
 
-        res = await self.call('com.myapp.longop', 3, options=CallOptions(on_progress=on_progress))
+        res = await self.call(
+            "com.myapp.longop", 3, options=CallOptions(on_progress=on_progress)
+        )
 
         print("Final: {}".format(res))
 
@@ -50,7 +52,7 @@ class Component(ApplicationSession):
         asyncio.get_event_loop().stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

@@ -24,7 +24,7 @@
 #
 ###############################################################################
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 LONGDESC = """
 A WebSocket echo service implemented as a Twisted service and
@@ -32,17 +32,16 @@ deployed as a twistd plugin.
 """
 
 setup(
-    name='echows',
-    version='0.1.0',
-    description='Autobahn WebSocket Echo Service',
+    name="echows",
+    version="0.1.0",
+    description="Autobahn WebSocket Echo Service",
     long_description=LONGDESC,
-    author='Crossbar.io Technologies GmbH',
-    url='http://crossbar.io/autobahn',
-    platforms=('Any'),
-    install_requires=['Twisted>=Twisted-12.2',
-                      'Autobahn>=0.5.9'],
-    packages=find_packages() + ['twisted.plugins'],
+    author="Crossbar.io Technologies GmbH",
+    url="http://crossbar.io/autobahn",
+    platforms=("Any"),
+    install_requires=["Twisted>=Twisted-12.2", "Autobahn>=0.5.9"],
+    packages=find_packages() + ["twisted.plugins"],
     # packages = ['echows', 'twisted.plugins'],
     include_package_data=True,
-    zip_safe=False
+    zip_safe=False,
 )

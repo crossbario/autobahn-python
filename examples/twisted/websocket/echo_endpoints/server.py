@@ -24,26 +24,22 @@
 #
 ###############################################################################
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
-
     """
     Example WebSocket server protocol. This is where you define your application
     specific protocol and logic.
     """
 
     def onMessage(self, payload, isBinary):
-
         # just echo any WebSocket message received back to client
         ##
         self.sendMessage(payload, isBinary)
 
 
 class EchoServerFactory(WebSocketServerFactory):
-
     """
     Example WebSocket server factory. This creates new instances of our protocol
     for each client connecting.
@@ -52,29 +48,38 @@ class EchoServerFactory(WebSocketServerFactory):
     protocol = EchoServerProtocol
 
 
-if __name__ == '__main__':
-
-    import sys
+if __name__ == "__main__":
     import argparse
+    import sys
 
-    from twisted.python import log
     from twisted.internet.endpoints import serverFromString
+    from twisted.python import log
 
     # parse command line arguments
     ##
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-d", "--debug", action="store_true",
-                        help="Enable debug output.")
+    parser.add_argument(
+        "-d", "--debug", action="store_true", help="Enable debug output."
+    )
 
-    parser.add_argument("--websocket", default="tcp:9000",
-                        help='WebSocket server Twisted endpoint descriptor, e.g. "tcp:9000" or "unix:/tmp/mywebsocket".')
+    parser.add_argument(
+        "--websocket",
+        default="tcp:9000",
+        help='WebSocket server Twisted endpoint descriptor, e.g. "tcp:9000" or "unix:/tmp/mywebsocket".',
+    )
 
-    parser.add_argument("--wsurl", default="ws://127.0.0.1:9000",
-                        help='WebSocket URL (must suit the endpoint), e.g. ws://127.0.0.1:9000.')
+    parser.add_argument(
+        "--wsurl",
+        default="ws://127.0.0.1:9000",
+        help="WebSocket URL (must suit the endpoint), e.g. ws://127.0.0.1:9000.",
+    )
 
-    parser.add_argument("--web", default="tcp:8080",
-                        help='Web server endpoint descriptor, e.g. "tcp:8080".')
+    parser.add_argument(
+        "--web",
+        default="tcp:8080",
+        help='Web server endpoint descriptor, e.g. "tcp:8080".',
+    )
 
     args = parser.parse_args()
 
@@ -83,6 +88,7 @@ if __name__ == '__main__':
 
     # we use an Autobahn utility to install the "best" available Twisted reactor
     from autobahn.twisted.choosereactor import install_reactor
+
     reactor = install_reactor()
     print("Running on reactor {}".format(reactor))
 

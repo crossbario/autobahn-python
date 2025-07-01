@@ -27,25 +27,25 @@
 import os
 import struct
 
-
-if os.environ.get('USE_TWISTED', False):
-    from twisted.trial import unittest
-    from twisted.internet.address import IPv4Address
-    from twisted.internet.task import Clock
-
-    from autobahn.twisted.websocket import WebSocketServerProtocol
-    from autobahn.twisted.websocket import WebSocketServerFactory
-    from autobahn.twisted.websocket import WebSocketClientProtocol
-    from autobahn.twisted.websocket import WebSocketClientFactory
-    from autobahn.websocket.compress_deflate import PerMessageDeflate
-    from autobahn.testutil import FakeTransport
-
+if os.environ.get("USE_TWISTED", False):
+    from base64 import b64decode
     from unittest.mock import MagicMock, patch
+
     from txaio.testutil import replace_loop
 
-    from base64 import b64decode
+    from autobahn.testutil import FakeTransport
+    from autobahn.twisted.websocket import (
+        WebSocketClientFactory,
+        WebSocketClientProtocol,
+        WebSocketServerFactory,
+        WebSocketServerProtocol,
+    )
+    from autobahn.websocket.compress_deflate import PerMessageDeflate
+    from twisted.internet.address import IPv4Address
+    from twisted.internet.task import Clock
+    from twisted.trial import unittest
 
-    @patch('base64.b64encode')
+    @patch("base64.b64encode")
     def create_client_frame(b64patch, **kwargs):
         """
         Kind-of hack-y; maybe better to re-factor the Protocol to have a
@@ -57,12 +57,12 @@ if os.environ.get('USE_TWISTED', False):
 
         # only real way to inject a "known" secret-key for the headers
         # to line up... :/
-        b64patch.return_value = b'QIatSt9QkZPyS4QQfdufO8TgkL0='
+        b64patch.return_value = b"QIatSt9QkZPyS4QQfdufO8TgkL0="
 
-        factory = WebSocketClientFactory(protocols=['wamp.2.json'])
+        factory = WebSocketClientFactory(protocols=["wamp.2.json"])
         factory.protocol = WebSocketClientProtocol
         factory.doStart()
-        proto = factory.buildProtocol(IPv4Address('TCP', '127.0.0.9', 65534))
+        proto = factory.buildProtocol(IPv4Address("TCP", "127.0.0.9", 65534))
         proto.transport = FakeTransport()
         proto.connectionMade()
         proto.data = mock_handshake_server
@@ -72,18 +72,18 @@ if os.environ.get('USE_TWISTED', False):
 
         def collect(d, *args):
             data.append(d)
+
         proto.sendData = collect
 
         proto.sendFrame(**kwargs)
-        return b''.join(data)
+        return b"".join(data)
 
     # beware the evils of line-endings...
-    mock_handshake_client = b'GET / HTTP/1.1\r\nUser-Agent: AutobahnPython/0.10.2\r\nHost: localhost:80\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nSec-WebSocket-Key: 6Jid6RgXpH0RVegaNSs/4g==\r\nSec-WebSocket-Protocol: wamp.2.json\r\nSec-WebSocket-Version: 13\r\n\r\n'
+    mock_handshake_client = b"GET / HTTP/1.1\r\nUser-Agent: AutobahnPython/0.10.2\r\nHost: localhost:80\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nSec-WebSocket-Key: 6Jid6RgXpH0RVegaNSs/4g==\r\nSec-WebSocket-Protocol: wamp.2.json\r\nSec-WebSocket-Version: 13\r\n\r\n"
 
     mock_handshake_server = b'HTTP/1.1 101 Switching Protocols\r\nServer: AutobahnPython/0.10.2\r\nX-Powered-By: AutobahnPython/0.10.2\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Protocol: wamp.2.json\r\nSec-WebSocket-Accept: QIatSt9QkZPyS4QQfdufO8TgkL0=\r\n\r\n\x81~\x02\x19[1,"crossbar",{"roles":{"subscriber":{"features":{"publisher_identification":true,"pattern_based_subscription":true,"subscription_revocation":true}},"publisher":{"features":{"publisher_identification":true,"publisher_exclusion":true,"subscriber_blackwhite_listing":true}},"caller":{"features":{"caller_identification":true,"progressive_call_results":true}},"callee":{"features":{"progressive_call_results":true,"pattern_based_registration":true,"registration_revocation":true,"shared_registration":true,"caller_identification":true}}}}]\x18'
 
     class TestDeflate(unittest.TestCase):
-
         def test_max_size(self):
             decoder = PerMessageDeflate(
                 is_server=False,
@@ -96,7 +96,9 @@ if os.environ.get('USE_TWISTED', False):
             )
 
             # 2000 'x' characters compressed
-            compressed_data = b'\xab\xa8\x18\x05\xa3`\x14\x8c\x82Q0\nF\xc1P\x07\x00\xcf@\xa9\xae'
+            compressed_data = (
+                b"\xab\xa8\x18\x05\xa3`\x14\x8c\x82Q0\nF\xc1P\x07\x00\xcf@\xa9\xae"
+            )
 
             decoder.start_decompress_message()
             data = decoder.decompress_message_data(compressed_data)
@@ -116,7 +118,9 @@ if os.environ.get('USE_TWISTED', False):
             )
 
             # 2000 'x' characters compressed
-            compressed_data = b'\xab\xa8\x18\x05\xa3`\x14\x8c\x82Q0\nF\xc1P\x07\x00\xcf@\xa9\xae'
+            compressed_data = (
+                b"\xab\xa8\x18\x05\xa3`\x14\x8c\x82Q0\nF\xc1P\x07\x00\xcf@\xa9\xae"
+            )
 
             decoder.start_decompress_message()
             data = decoder.decompress_message_data(compressed_data)
@@ -125,11 +129,13 @@ if os.environ.get('USE_TWISTED', False):
 
     class TestClient(unittest.TestCase):
         def setUp(self):
-            self.factory = WebSocketClientFactory(protocols=['wamp.2.json'])
+            self.factory = WebSocketClientFactory(protocols=["wamp.2.json"])
             self.factory.protocol = WebSocketClientProtocol
             self.factory.doStart()
 
-            self.proto = self.factory.buildProtocol(IPv4Address('TCP', '127.0.0.1', 65534))
+            self.proto = self.factory.buildProtocol(
+                IPv4Address("TCP", "127.0.0.1", 65534)
+            )
             self.transport = FakeTransport()
             self.proto.transport = self.transport
             self.proto.connectionMade()
@@ -161,7 +167,7 @@ if os.environ.get('USE_TWISTED', False):
                 self.proto.factory._log = print
 
             # get to STATE_OPEN
-            self.proto.websocket_key = b64decode('6Jid6RgXpH0RVegaNSs/4g==')
+            self.proto.websocket_key = b64decode("6Jid6RgXpH0RVegaNSs/4g==")
             self.proto.data = mock_handshake_server
             self.proto.processHandshake()
             self.assertEqual(self.proto.state, WebSocketServerProtocol.STATE_OPEN)
@@ -174,8 +180,12 @@ if os.environ.get('USE_TWISTED', False):
 
                 # check we scheduled a call
                 self.assertEqual(len(reactor.calls), 1)
-                self.assertEqual(reactor.calls[0].func, self.proto.onServerConnectionDropTimeout)
-                self.assertEqual(reactor.calls[0].getTime(), self.proto.serverConnectionDropTimeout)
+                self.assertEqual(
+                    reactor.calls[0].func, self.proto.onServerConnectionDropTimeout
+                )
+                self.assertEqual(
+                    reactor.calls[0].getTime(), self.proto.serverConnectionDropTimeout
+                )
 
                 # now, advance the clock past the call (and thereby
                 # execute it)
@@ -188,11 +198,13 @@ if os.environ.get('USE_TWISTED', False):
 
     class TestPing(unittest.TestCase):
         def setUp(self):
-            self.factory = WebSocketServerFactory(protocols=['wamp.2.json'])
+            self.factory = WebSocketServerFactory(protocols=["wamp.2.json"])
             self.factory.protocol = WebSocketServerProtocol
             self.factory.doStart()
 
-            self.proto = self.factory.buildProtocol(IPv4Address('TCP', '127.0.0.1', 65534))
+            self.proto = self.factory.buildProtocol(
+                IPv4Address("TCP", "127.0.0.1", 65534)
+            )
             self.transport = MagicMock()
             self.proto.transport = self.transport
             self.proto.connectionMade()
@@ -232,7 +244,9 @@ if os.environ.get('USE_TWISTED', False):
                 reactor.advance(self.proto.closeHandshakeTimeout + 1)
 
                 # we should have called abortConnection
-                self.assertEqual("call.abortConnection()", str(self.proto.transport.method_calls[-1]))
+                self.assertEqual(
+                    "call.abortConnection()", str(self.proto.transport.method_calls[-1])
+                )
                 self.assertTrue(self.proto.transport.abortConnection.called)
                 # ...too "internal" for an assert?
                 self.assertEqual(self.proto.state, WebSocketServerProtocol.STATE_CLOSED)
@@ -309,7 +323,9 @@ if os.environ.get('USE_TWISTED', False):
                 # message; now we just blindly inject our own reply
                 # with a PONG frame
 
-                frame = create_client_frame(opcode=10, payload=self.proto.autoPingPending)
+                frame = create_client_frame(
+                    opcode=10, payload=self.proto.autoPingPending
+                )
                 self.proto.data = frame
                 # really needed twice; does header first, then rest
                 self.proto.processData()

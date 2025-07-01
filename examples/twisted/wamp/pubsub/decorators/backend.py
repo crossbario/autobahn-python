@@ -25,14 +25,13 @@
 ###############################################################################
 
 from os import environ
-from twisted.internet.defer import inlineCallbacks
 
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):
-
     """
     An application component that publishes an event every second.
     """
@@ -43,16 +42,16 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             print("publish: com.myapp.topic1", counter)
-            self.publish('com.myapp.topic1', counter)
+            self.publish("com.myapp.topic1", counter)
 
             print("publish: com.myapp.topic2")
-            self.publish('com.myapp.topic2', "Hello world.")
+            self.publish("com.myapp.topic2", "Hello world.")
 
             counter += 1
             yield sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

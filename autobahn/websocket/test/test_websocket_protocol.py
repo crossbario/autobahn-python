@@ -26,24 +26,25 @@
 
 import os
 import unittest
-from hashlib import sha1
 from base64 import b64encode
+from hashlib import sha1
 from unittest.mock import Mock
 
 import txaio
 
-from autobahn.websocket.protocol import WebSocketServerProtocol
-from autobahn.websocket.protocol import WebSocketServerFactory
-from autobahn.websocket.protocol import WebSocketClientProtocol
-from autobahn.websocket.protocol import WebSocketClientFactory
-from autobahn.websocket.protocol import WebSocketProtocol
-from autobahn.websocket.types import ConnectingRequest
 from autobahn.testutil import FakeTransport
 from autobahn.wamp.types import TransportDetails
+from autobahn.websocket.protocol import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    WebSocketProtocol,
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+)
+from autobahn.websocket.types import ConnectingRequest
 
 
 class WebSocketClientProtocolTests(unittest.TestCase):
-
     def setUp(self):
         t = FakeTransport()
         f = WebSocketClientFactory()
@@ -63,10 +64,10 @@ class WebSocketClientProtocolTests(unittest.TestCase):
 
     def tearDown(self):
         for call in [
-                self.protocol.autoPingPendingCall,
-                self.protocol.autoPingTimeoutCall,
-                self.protocol.openHandshakeTimeoutCall,
-                self.protocol.closeHandshakeTimeoutCall,
+            self.protocol.autoPingPendingCall,
+            self.protocol.autoPingTimeoutCall,
+            self.protocol.openHandshakeTimeoutCall,
+            self.protocol.closeHandshakeTimeoutCall,
         ]:
             if call is not None:
                 call.cancel()
@@ -76,7 +77,7 @@ class WebSocketClientProtocolTests(unittest.TestCase):
         self.protocol.websocket_protocols = [Mock()]
         self.protocol.websocket_extensions = []
         self.protocol._onOpen = lambda: None
-        self.protocol._wskey = '0' * 24
+        self.protocol._wskey = "0" * 24
         self.protocol.peer = Mock()
 
         # usually provided by the Twisted or asyncio specific
@@ -98,7 +99,9 @@ class WebSocketClientProtocolTests(unittest.TestCase):
             b"HTTP/1.1 101 Switching Protocols\x0d\x0a"
             b"Upgrade: websocket\x0d\x0a"
             b"Connection: upgrade\x0d\x0a"
-            b"Sec-Websocket-Accept: " + b64encode(sha1(key).digest()) + b"\x0d\x0a\x0d\x0a"
+            b"Sec-Websocket-Accept: "
+            + b64encode(sha1(key).digest())
+            + b"\x0d\x0a\x0d\x0a"
         )
         self.protocol.processHandshake()
 
@@ -109,6 +112,7 @@ class WebSocketServerProtocolTests(unittest.TestCase):
     """
     Tests for autobahn.websocket.protocol.WebSocketProtocol.
     """
+
     def setUp(self):
         t = FakeTransport()
         f = WebSocketServerFactory()
@@ -127,10 +131,10 @@ class WebSocketServerProtocolTests(unittest.TestCase):
 
     def tearDown(self):
         for call in [
-                self.protocol.autoPingPendingCall,
-                self.protocol.autoPingTimeoutCall,
-                self.protocol.openHandshakeTimeoutCall,
-                self.protocol.closeHandshakeTimeoutCall,
+            self.protocol.autoPingPendingCall,
+            self.protocol.autoPingTimeoutCall,
+            self.protocol.openHandshakeTimeoutCall,
+            self.protocol.closeHandshakeTimeoutCall,
         ]:
             if call is not None:
                 call.cancel()
@@ -142,7 +146,7 @@ class WebSocketServerProtocolTests(unittest.TestCase):
         self.protocol.websocket_protocols = [proto]
         self.protocol.websocket_extensions = []
         self.protocol._onOpen = lambda: None
-        self.protocol._wskey = '0' * 24
+        self.protocol._wskey = "0" * 24
         self.protocol.succeedHandshake(proto)
 
         self.assertTrue(self.protocol.autoPingPendingCall is not None)
@@ -184,8 +188,7 @@ class WebSocketServerProtocolTests(unittest.TestCase):
         self.protocol.sendClose(code=1000, reason="abc" * 1000)
 
         # We closed properly
-        self.assertEqual(self.transport._written[2:],
-                         b"\x03\xe8" + (b"abc" * 41))
+        self.assertEqual(self.transport._written[2:], b"\x03\xe8" + (b"abc" * 41))
         self.assertEqual(self.protocol.state, self.protocol.STATE_CLOSING)
 
     def test_sendClose_reason_with_no_code(self):
@@ -229,20 +232,26 @@ class WebSocketServerProtocolTests(unittest.TestCase):
 
     def test_interpolate_server_status_template(self):
         from autobahn.websocket.protocol import _SERVER_STATUS_TEMPLATE
-        s = _SERVER_STATUS_TEMPLATE.format(None, '0.0.0')
+
+        s = _SERVER_STATUS_TEMPLATE.format(None, "0.0.0")
         self.assertEqual(type(s), str)
         self.assertTrue(len(s) > 0)
 
 
-if os.environ.get('USE_TWISTED', False):
+if os.environ.get("USE_TWISTED", False):
+
     class TwistedProtocolTests(unittest.TestCase):
         """
         Tests which require a specific framework's protocol class to work
         (in this case, using Twisted)
         """
+
         def setUp(self):
-            from autobahn.twisted.websocket import WebSocketServerProtocol
-            from autobahn.twisted.websocket import WebSocketServerFactory
+            from autobahn.twisted.websocket import (
+                WebSocketServerFactory,
+                WebSocketServerProtocol,
+            )
+
             t = FakeTransport()
             f = WebSocketServerFactory()
             p = WebSocketServerProtocol()
@@ -258,10 +267,10 @@ if os.environ.get('USE_TWISTED', False):
 
         def tearDown(self):
             for call in [
-                    self.protocol.autoPingPendingCall,
-                    self.protocol.autoPingTimeoutCall,
-                    self.protocol.openHandshakeTimeoutCall,
-                    self.protocol.closeHandshakeTimeoutCall,
+                self.protocol.autoPingPendingCall,
+                self.protocol.autoPingTimeoutCall,
+                self.protocol.openHandshakeTimeoutCall,
+                self.protocol.closeHandshakeTimeoutCall,
             ]:
                 if call is not None:
                     call.cancel()

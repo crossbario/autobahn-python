@@ -25,9 +25,10 @@
 ###############################################################################
 
 import unittest
-
 from unittest.mock import patch
+
 from zope.interface import implementer
+
 from twisted.internet.interfaces import IReactorTime
 
 
@@ -36,6 +37,7 @@ class FakeReactor(object):
     """
     This just fakes out enough reactor methods so .run() can work.
     """
+
     stop_called = False
 
     def __init__(self, to_raise):
@@ -62,9 +64,9 @@ class TestWampTwistedRunner(unittest.TestCase):
     # presumably it's messing up some global state that both tests
     # implicitly depend on ...
 
-    @patch('txaio.use_twisted')
-    @patch('txaio.start_logging')
-    @patch('txaio.config')
+    @patch("txaio.use_twisted")
+    @patch("txaio.start_logging")
+    @patch("txaio.config")
     def test_connect_error(self, *args):
         """
         Ensure the runner doesn't swallow errors and that it exits the
@@ -72,19 +74,22 @@ class TestWampTwistedRunner(unittest.TestCase):
         """
         try:
             from autobahn.twisted.wamp import ApplicationRunner
-            from twisted.internet.error import ConnectionRefusedError
+
             # the 'reactor' member doesn't exist until we import it
             from twisted.internet import reactor  # noqa: F401
+            from twisted.internet.error import ConnectionRefusedError
         except ImportError:
-            raise unittest.SkipTest('No twisted')
+            raise unittest.SkipTest("No twisted")
 
-        runner = ApplicationRunner('ws://localhost:1', 'realm')
+        runner = ApplicationRunner("ws://localhost:1", "realm")
         exception = ConnectionRefusedError("It's a trap!")
 
-        with patch('twisted.internet.reactor', FakeReactor(exception)) as mockreactor:
+        with patch("twisted.internet.reactor", FakeReactor(exception)) as mockreactor:
             self.assertRaises(
                 ConnectionRefusedError,
                 # pass a no-op session-creation method
-                runner.run, lambda _: None, start_reactor=True
+                runner.run,
+                lambda _: None,
+                start_reactor=True,
             )
             self.assertTrue(mockreactor.stop_called)

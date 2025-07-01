@@ -26,21 +26,19 @@
 
 import shelve
 
-from twisted.internet.defer import inlineCallbacks
-
 from autobahn import wamp
 from autobahn.twisted.wamp import ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class KeyValueStore(ApplicationSession):
-
     """
     Simple, persistent key-value store.
     """
 
     @inlineCallbacks
     def onJoin(self, details):
-        self.store = shelve.open("keyvalue", flag='c', writeback=False)
+        self.store = shelve.open("keyvalue", flag="c", writeback=False)
         yield self.register(self)
         print("Ok, keyvalue-store procedures registered!")
 
@@ -72,38 +70,49 @@ class KeyValueStore(ApplicationSession):
         return self.store.keys()
 
 
-if __name__ == '__main__':
-
-    import sys
+if __name__ == "__main__":
     import argparse
+    import sys
 
     # parse command line arguments
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--web", type=int, default=8080,
-                        help='Web port to use for embedded Web server. Use 0 to disable.')
+    parser.add_argument(
+        "--web",
+        type=int,
+        default=8080,
+        help="Web port to use for embedded Web server. Use 0 to disable.",
+    )
 
-    parser.add_argument("--router", type=str, default=None,
-                        help='If given, connect to this WAMP router. Else run an embedded router on 9000.')
+    parser.add_argument(
+        "--router",
+        type=str,
+        default=None,
+        help="If given, connect to this WAMP router. Else run an embedded router on 9000.",
+    )
 
     args = parser.parse_args()
 
     from twisted.python import log
+
     log.startLogging(sys.stdout)
 
     # import Twisted reactor
     from twisted.internet import reactor
+
     print("Using Twisted reactor {0}".format(reactor.__class__))
 
     # create embedded web server for static files
     if args.web:
         from twisted.web.server import Site
         from twisted.web.static import File
+
         reactor.listenTCP(args.web, Site(File(".")))
 
     # run WAMP application component
     from autobahn.twisted.wamp import ApplicationRunner
-    router = args.router or 'ws://127.0.0.1:9000'
+
+    router = args.router or "ws://127.0.0.1:9000"
 
     runner = ApplicationRunner(router, "realm1", standalone=not args.router)
 

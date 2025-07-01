@@ -1,13 +1,15 @@
 import asyncio
-import sys
 import logging
 import os.path
-log = logging.getLogger('frontend')
+import sys
 
-sys.path = [os.path.join(os.path.dirname(__file__), '../../../..')]+sys.path
+log = logging.getLogger("frontend")
+
+sys.path = [os.path.join(os.path.dirname(__file__), "../../../..")] + sys.path
+
+from runner import ApplicationRunnerRawSocket
 
 from autobahn.asyncio.wamp import ApplicationSession
-from runner import ApplicationRunnerRawSocket
 from autobahn.wamp import ApplicationError
 
 
@@ -17,13 +19,14 @@ class MyComponent(ApplicationSession):
         # (any session that .publish()es to this topic).
         def onevent(msg):
             log.info("Got event: {}".format(msg))
-        await self.subscribe(onevent, 'com.myapp.hello')
+
+        await self.subscribe(onevent, "com.myapp.hello")
 
         # call a remote procedure.
         count = 0
         while True:
             try:
-                res = await self.call('com.myapp.add2', count, count+1)
+                res = await self.call("com.myapp.add2", count, count + 1)
                 log.info("Got result: {}".format(res))
             except ApplicationError:
                 pass
@@ -32,11 +35,9 @@ class MyComponent(ApplicationSession):
             await asyncio.sleep(2)
 
 
-if __name__ == '__main__':
-    level = 'info'
-    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-        level = 'debug'
-    runner = ApplicationRunnerRawSocket(
-        "tcp://localhost:9090",
-        "realm1")
+if __name__ == "__main__":
+    level = "info"
+    if len(sys.argv) > 1 and sys.argv[1] == "debug":
+        level = "debug"
+    runner = ApplicationRunnerRawSocket("tcp://localhost:9090", "realm1")
     runner.run(MyComponent, logging_level=level)

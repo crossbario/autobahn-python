@@ -24,9 +24,10 @@
 #
 ###############################################################################
 
+from urllib import parse as urlparse
+
 from autobahn.util import public
 
-from urllib import parse as urlparse
 # The Python urlparse module currently does not contain the ws/wss
 # schemes, so we add those dynamically (which is a hack of course).
 #
@@ -78,7 +79,7 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     # assert type(hostname) == str
     assert type(isSecure) == bool
 
-    if hostname == 'unix':
+    if hostname == "unix":
         netloc = "unix:%s" % port
     else:
         assert port is None or (type(port) == int and port in range(0, 65535))
@@ -137,13 +138,19 @@ def parse_url(url):
     parsed = urlparse.urlparse(url)
 
     if parsed.scheme not in ["ws", "wss"]:
-        raise ValueError("invalid WebSocket URL: protocol scheme '{}' is not for WebSocket".format(parsed.scheme))
+        raise ValueError(
+            "invalid WebSocket URL: protocol scheme '{}' is not for WebSocket".format(
+                parsed.scheme
+            )
+        )
 
     if not parsed.hostname or parsed.hostname == "":
         raise ValueError("invalid WebSocket URL: missing hostname")
 
     if parsed.fragment is not None and parsed.fragment != "":
-        raise ValueError("invalid WebSocket URL: non-empty fragment '%s" % parsed.fragment)
+        raise ValueError(
+            "invalid WebSocket URL: non-empty fragment '%s" % parsed.fragment
+        )
 
     if parsed.path is not None and parsed.path != "":
         ppath = parsed.path
@@ -164,7 +171,7 @@ def parse_url(url):
 
         # ws://unix:/tmp/file.sock => unix:/tmp/file.sock => /tmp/file.sock
         fp = parsed.netloc + parsed.path
-        uds_path = fp.split(':')[1]
+        uds_path = fp.split(":")[1]
 
         # note: we don't interpret "path" in any further way: it needs to be
         # a path on the local host with a listening Unix domain sockets at the other end ..

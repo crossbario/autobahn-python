@@ -24,15 +24,13 @@
 #
 ###############################################################################
 
-import os
-import unittest
-import random
 import decimal
+import os
+import random
+import unittest
 from decimal import Decimal
 
-from autobahn.wamp import message
-from autobahn.wamp import role
-from autobahn.wamp import serializer
+from autobahn.wamp import message, role, serializer
 
 
 def generate_test_messages():
@@ -43,25 +41,42 @@ def generate_test_messages():
     This list of WAMP message does not contain any binary app payloads!
     """
     some_bytes = os.urandom(32)
-    some_unicode = '\u3053\u3093\u306b\u3061\u306f\u4e16\u754c'
+    some_unicode = "\u3053\u3093\u306b\u3061\u306f\u4e16\u754c"
 
-    some_uri = 'com.myapp.foobar'
-    some_unicode_uri = 'com.myapp.\u4f60\u597d\u4e16\u754c.baz'
+    some_uri = "com.myapp.foobar"
+    some_unicode_uri = "com.myapp.\u4f60\u597d\u4e16\u754c.baz"
 
-    some_args = [1, 2, 3, 'hello', some_bytes, some_unicode, {'foo': 23, 'bar': 'hello', 'baz': some_bytes, 'moo': some_unicode}]
-    some_kwargs = {'foo': 23, 'bar': 'hello', 'baz': some_bytes, 'moo': some_unicode, 'arr': some_args}
+    some_args = [
+        1,
+        2,
+        3,
+        "hello",
+        some_bytes,
+        some_unicode,
+        {"foo": 23, "bar": "hello", "baz": some_bytes, "moo": some_unicode},
+    ]
+    some_kwargs = {
+        "foo": 23,
+        "bar": "hello",
+        "baz": some_bytes,
+        "moo": some_unicode,
+        "arr": some_args,
+    }
 
     msgs = [
-        message.Hello("realm1", {'subscriber': role.RoleSubscriberFeatures()}),
-        message.Hello("realm1", {'publisher': role.RolePublisherFeatures()}),
-        message.Hello("realm1", {'caller': role.RoleCallerFeatures()}),
-        message.Hello("realm1", {'callee': role.RoleCalleeFeatures()}),
-        message.Hello("realm1", {
-            'subscriber': role.RoleSubscriberFeatures(),
-            'publisher': role.RolePublisherFeatures(),
-            'caller': role.RoleCallerFeatures(),
-            'callee': role.RoleCalleeFeatures(),
-        }),
+        message.Hello("realm1", {"subscriber": role.RoleSubscriberFeatures()}),
+        message.Hello("realm1", {"publisher": role.RolePublisherFeatures()}),
+        message.Hello("realm1", {"caller": role.RoleCallerFeatures()}),
+        message.Hello("realm1", {"callee": role.RoleCalleeFeatures()}),
+        message.Hello(
+            "realm1",
+            {
+                "subscriber": role.RoleSubscriberFeatures(),
+                "publisher": role.RolePublisherFeatures(),
+                "caller": role.RoleCallerFeatures(),
+                "callee": role.RoleCalleeFeatures(),
+            },
+        ),
         message.Goodbye(),
         message.Yield(123456),
         message.Yield(123456, args=some_args),
@@ -96,11 +111,11 @@ def generate_test_messages():
         message.Unregister(123456, 789123),
         message.Registered(123456, 789123),
         message.Register(123456, some_uri),
-        message.Register(123456, some_uri, match='prefix'),
-        message.Register(123456, some_uri, invoke='roundrobin'),
+        message.Register(123456, some_uri, match="prefix"),
+        message.Register(123456, some_uri, invoke="roundrobin"),
         message.Register(123456, some_unicode_uri),
-        message.Register(123456, some_unicode_uri, match='prefix'),
-        message.Register(123456, some_unicode_uri, invoke='roundrobin'),
+        message.Register(123456, some_unicode_uri, match="prefix"),
+        message.Register(123456, some_unicode_uri, invoke="roundrobin"),
         message.Event(123456, 789123),
         message.Event(123456, 789123, args=some_args),
         message.Event(123456, 789123, args=[], kwargs=some_kwargs),
@@ -111,27 +126,59 @@ def generate_test_messages():
         message.Publish(123456, some_uri, args=some_args),
         message.Publish(123456, some_uri, args=[], kwargs=some_kwargs),
         message.Publish(123456, some_uri, args=some_args, kwargs=some_kwargs),
-        message.Publish(123456, some_uri, exclude_me=False, exclude=[300], eligible=[100, 200, 300]),
+        message.Publish(
+            123456, some_uri, exclude_me=False, exclude=[300], eligible=[100, 200, 300]
+        ),
         message.Publish(123456, some_unicode_uri),
         message.Publish(123456, some_unicode_uri, args=some_args),
         message.Publish(123456, some_unicode_uri, args=[], kwargs=some_kwargs),
         message.Publish(123456, some_unicode_uri, args=some_args, kwargs=some_kwargs),
-        message.Publish(123456, some_unicode_uri, exclude_me=False, exclude=[300], eligible=[100, 200, 300]),
+        message.Publish(
+            123456,
+            some_unicode_uri,
+            exclude_me=False,
+            exclude=[300],
+            eligible=[100, 200, 300],
+        ),
         message.Unsubscribed(123456),
         message.Unsubscribe(123456, 789123),
         message.Subscribed(123456, 789123),
         message.Subscribe(123456, some_uri),
         message.Subscribe(123456, some_uri, match=message.Subscribe.MATCH_PREFIX),
         message.Subscribe(123456, some_unicode_uri),
-        message.Subscribe(123456, some_unicode_uri, match=message.Subscribe.MATCH_PREFIX),
+        message.Subscribe(
+            123456, some_unicode_uri, match=message.Subscribe.MATCH_PREFIX
+        ),
         message.Error(message.Call.MESSAGE_TYPE, 123456, some_uri),
         message.Error(message.Call.MESSAGE_TYPE, 123456, some_uri, args=some_args),
-        message.Error(message.Call.MESSAGE_TYPE, 123456, some_uri, args=[], kwargs=some_kwargs),
-        message.Error(message.Call.MESSAGE_TYPE, 123456, some_uri, args=some_args, kwargs=some_kwargs),
+        message.Error(
+            message.Call.MESSAGE_TYPE, 123456, some_uri, args=[], kwargs=some_kwargs
+        ),
+        message.Error(
+            message.Call.MESSAGE_TYPE,
+            123456,
+            some_uri,
+            args=some_args,
+            kwargs=some_kwargs,
+        ),
         message.Error(message.Call.MESSAGE_TYPE, 123456, some_unicode_uri),
-        message.Error(message.Call.MESSAGE_TYPE, 123456, some_unicode_uri, args=some_args),
-        message.Error(message.Call.MESSAGE_TYPE, 123456, some_unicode_uri, args=[], kwargs=some_kwargs),
-        message.Error(message.Call.MESSAGE_TYPE, 123456, some_unicode_uri, args=some_args, kwargs=some_kwargs),
+        message.Error(
+            message.Call.MESSAGE_TYPE, 123456, some_unicode_uri, args=some_args
+        ),
+        message.Error(
+            message.Call.MESSAGE_TYPE,
+            123456,
+            some_unicode_uri,
+            args=[],
+            kwargs=some_kwargs,
+        ),
+        message.Error(
+            message.Call.MESSAGE_TYPE,
+            123456,
+            some_unicode_uri,
+            args=some_args,
+            kwargs=some_kwargs,
+        ),
         message.Result(123456),
         message.Result(123456, args=some_args),
         message.Result(123456, args=some_args, kwargs=some_kwargs),
@@ -148,17 +195,21 @@ def generate_test_messages_binary():
     would be even hackier.
     """
     msgs = []
-    for binary in [b'',
-                   b'\x00',
-                   b'\30',
-                   os.urandom(4),
-                   os.urandom(16),
-                   os.urandom(128),
-                   os.urandom(256),
-                   os.urandom(512),
-                   os.urandom(1024)]:
+    for binary in [
+        b"",
+        b"\x00",
+        b"\30",
+        os.urandom(4),
+        os.urandom(16),
+        os.urandom(128),
+        os.urandom(256),
+        os.urandom(512),
+        os.urandom(1024),
+    ]:
         msgs.append(message.Event(123456, 789123, args=[binary]))
-        msgs.append(message.Event(123456, 789123, args=[binary], kwargs={'foo': binary}))
+        msgs.append(
+            message.Event(123456, 789123, args=[binary], kwargs={"foo": binary})
+        )
     return [(True, msg) for msg in msgs]
 
 
@@ -166,7 +217,9 @@ def create_serializers(decimal_support=False):
     _serializers = []
 
     _serializers.append(serializer.JsonSerializer(use_decimal_from_str=decimal_support))
-    _serializers.append(serializer.JsonSerializer(batched=True, use_decimal_from_str=decimal_support))
+    _serializers.append(
+        serializer.JsonSerializer(batched=True, use_decimal_from_str=decimal_support)
+    )
 
     _serializers.append(serializer.CBORSerializer())
     _serializers.append(serializer.CBORSerializer(batched=True))
@@ -189,20 +242,23 @@ def create_serializers(decimal_support=False):
 
 
 class TestFlatBuffersSerializer(unittest.TestCase):
-
     def test_basic(self):
         messages = [
-            message.Event(123456,
-                          789123,
-                          args=[1, 2, 3],
-                          kwargs={'foo': 23, 'bar': 'hello'},
-                          publisher=666,
-                          retained=True),
-            message.Publish(123456,
-                            'com.example.topic1',
-                            args=[1, 2, 3],
-                            kwargs={'foo': 23, 'bar': 'hello'},
-                            retain=True)
+            message.Event(
+                123456,
+                789123,
+                args=[1, 2, 3],
+                kwargs={"foo": 23, "bar": "hello"},
+                publisher=666,
+                retained=True,
+            ),
+            message.Publish(
+                123456,
+                "com.example.topic1",
+                args=[1, 2, 3],
+                kwargs={"foo": 23, "bar": "hello"},
+                retain=True,
+            ),
         ]
 
         ser = serializer.FlatBuffersSerializer()
@@ -210,7 +266,6 @@ class TestFlatBuffersSerializer(unittest.TestCase):
         # from pprint import pprint
 
         for msg in messages:
-
             # serialize message
             payload, binary = ser.serialize(msg)
 
@@ -237,6 +292,7 @@ class TestDecimalSerializer(unittest.TestCase):
     https://developer.nvidia.com/blog/implementing-high-precision-decimal-arithmetic-with-cuda-int128/
     https://github.com/johnmcfarlane/cnl
     """
+
     def setUp(self) -> None:
         self._test_serializers = create_serializers(decimal_support=True)
 
@@ -244,62 +300,74 @@ class TestDecimalSerializer(unittest.TestCase):
         decimal.getcontext().prec = 76
 
         self._test_messages_no_dec = [
-            (True,
-             {
-                 'a': random.random(),
-                 'b': random.randint(0, 2 ** 53),
-                 'c': random.randint(0, 2 ** 64),
-                 'd': random.randint(0, 2 ** 128),
-                 'e': random.randint(0, 2 ** 256),
-                 # float64: 52 binary digits, precision of 15-17 significant decimal digits
-                 'f': 0.12345678901234567,
-                 'g': 0.8765432109876545,
-                 'y': os.urandom(8),
-                 'z': [
-                     -1,
-                     0,
-                     1,
-                     True,
-                     None,
-                     0.12345678901234567,
-                     0.8765432109876545,
-                     os.urandom(8)
-                 ]
-             })
+            (
+                True,
+                {
+                    "a": random.random(),
+                    "b": random.randint(0, 2**53),
+                    "c": random.randint(0, 2**64),
+                    "d": random.randint(0, 2**128),
+                    "e": random.randint(0, 2**256),
+                    # float64: 52 binary digits, precision of 15-17 significant decimal digits
+                    "f": 0.12345678901234567,
+                    "g": 0.8765432109876545,
+                    "y": os.urandom(8),
+                    "z": [
+                        -1,
+                        0,
+                        1,
+                        True,
+                        None,
+                        0.12345678901234567,
+                        0.8765432109876545,
+                        os.urandom(8),
+                    ],
+                },
+            )
         ]
         self._test_messages_dec = [
-            (True,
-             {
-                 'a': random.random(),
-                 'b': random.randint(0, 2 ** 53),
-                 'c': random.randint(0, 2 ** 64),
-                 'd': random.randint(0, 2 ** 128),
-                 'e': random.randint(0, 2 ** 256),
-                 # float64: 52 binary digits, precision of 15-17 significant decimal digits
-                 'f': 0.12345678901234567,
-                 'g': 0.8765432109876545,
-                 # decimal128: precision of 38 significant decimal digits
-                 'h': Decimal('0.1234567890123456789012345678901234567'),
-                 'i': Decimal('0.8765432109876543210987654321098765434'),
-                 # decimal256: precision of 76 significant decimal digits
-                 'j': Decimal('0.123456789012345678901234567890123456701234567890123456789012345678901234567'),
-                 'k': Decimal('0.876543210987654321098765432109876543298765432109876543210987654321098765434'),
-                 'y': os.urandom(8),
-                 'z': [
-                     -1,
-                     0,
-                     1,
-                     True,
-                     None,
-                     0.12345678901234567,
-                     0.8765432109876545,
-                     Decimal('0.1234567890123456789012345678901234567'),
-                     Decimal('0.8765432109876543210987654321098765434'),
-                     Decimal('0.123456789012345678901234567890123456701234567890123456789012345678901234567'),
-                     Decimal('0.876543210987654321098765432109876543298765432109876543210987654321098765434'),
-                     os.urandom(8)
-                 ]
-             })
+            (
+                True,
+                {
+                    "a": random.random(),
+                    "b": random.randint(0, 2**53),
+                    "c": random.randint(0, 2**64),
+                    "d": random.randint(0, 2**128),
+                    "e": random.randint(0, 2**256),
+                    # float64: 52 binary digits, precision of 15-17 significant decimal digits
+                    "f": 0.12345678901234567,
+                    "g": 0.8765432109876545,
+                    # decimal128: precision of 38 significant decimal digits
+                    "h": Decimal("0.1234567890123456789012345678901234567"),
+                    "i": Decimal("0.8765432109876543210987654321098765434"),
+                    # decimal256: precision of 76 significant decimal digits
+                    "j": Decimal(
+                        "0.123456789012345678901234567890123456701234567890123456789012345678901234567"
+                    ),
+                    "k": Decimal(
+                        "0.876543210987654321098765432109876543298765432109876543210987654321098765434"
+                    ),
+                    "y": os.urandom(8),
+                    "z": [
+                        -1,
+                        0,
+                        1,
+                        True,
+                        None,
+                        0.12345678901234567,
+                        0.8765432109876545,
+                        Decimal("0.1234567890123456789012345678901234567"),
+                        Decimal("0.8765432109876543210987654321098765434"),
+                        Decimal(
+                            "0.123456789012345678901234567890123456701234567890123456789012345678901234567"
+                        ),
+                        Decimal(
+                            "0.876543210987654321098765432109876543298765432109876543210987654321098765434"
+                        ),
+                        os.urandom(8),
+                    ],
+                },
+            )
         ]
 
     def test_json_no_decimal(self):
@@ -310,7 +378,7 @@ class TestDecimalSerializer(unittest.TestCase):
         for contains_binary, obj in self._test_messages_no_dec:
             _obj = ser.unserialize(ser.serialize(obj))[0]
             self.assertEqual(obj, _obj)
-            self.assertEqual(1.0000000000000002, _obj['f'] + _obj['g'])
+            self.assertEqual(1.0000000000000002, _obj["f"] + _obj["g"])
 
     def test_json_decimal(self):
         """
@@ -320,14 +388,24 @@ class TestDecimalSerializer(unittest.TestCase):
         for contains_binary, obj in self._test_messages_dec:
             _obj = ser.unserialize(ser.serialize(obj))[0]
             self.assertEqual(obj, _obj)
-            self.assertEqual(1.0000000000000002, _obj['f'] + _obj['g'])
-            self.assertEqual(Decimal('1.0000000000000000000000000000000000001'), _obj['h'] + _obj['i'])
-            self.assertEqual(Decimal('1.000000000000000000000000000000000000000000000000000000000000000000000000001'), _obj['j'] + _obj['k'])
+            self.assertEqual(1.0000000000000002, _obj["f"] + _obj["g"])
+            self.assertEqual(
+                Decimal("1.0000000000000000000000000000000000001"),
+                _obj["h"] + _obj["i"],
+            )
+            self.assertEqual(
+                Decimal(
+                    "1.000000000000000000000000000000000000000000000000000000000000000000000000001"
+                ),
+                _obj["j"] + _obj["k"],
+            )
 
     def test_roundtrip_msg(self):
         for wamp_ser in self._test_serializers:
             ser = wamp_ser._serializer
-            for contains_binary, msg in self._test_messages_no_dec + self._test_messages_dec:
+            for contains_binary, msg in (
+                self._test_messages_no_dec + self._test_messages_dec
+            ):
                 payload = ser.serialize(msg)
                 msg2 = ser.unserialize(payload)
                 self.assertEqual(msg, msg2[0])
@@ -335,7 +413,9 @@ class TestDecimalSerializer(unittest.TestCase):
     def test_crosstrip_msg(self):
         for wamp_ser1 in self._test_serializers:
             ser1 = wamp_ser1._serializer
-            for contains_binary, msg in self._test_messages_no_dec + self._test_messages_dec:
+            for contains_binary, msg in (
+                self._test_messages_no_dec + self._test_messages_dec
+            ):
                 payload1 = ser1.serialize(msg)
                 msg1 = ser1.unserialize(payload1)
                 msg1 = msg1[0]
@@ -349,7 +429,6 @@ class TestDecimalSerializer(unittest.TestCase):
 
 
 class TestSerializer(unittest.TestCase):
-
     def setUp(self):
         self._test_messages = generate_test_messages() + generate_test_messages_binary()
         self._test_serializers = create_serializers()
@@ -360,8 +439,18 @@ class TestSerializer(unittest.TestCase):
         Test deep object equality assert (because I am paranoid).
         """
         v = os.urandom(10)
-        o1 = [1, 2, {'foo': 'bar', 'bar': v, 'baz': [9, 3, 2], 'goo': {'moo': [1, 2, 3]}}, v]
-        o2 = [1, 2, {'goo': {'moo': [1, 2, 3]}, 'bar': v, 'baz': [9, 3, 2], 'foo': 'bar'}, v]
+        o1 = [
+            1,
+            2,
+            {"foo": "bar", "bar": v, "baz": [9, 3, 2], "goo": {"moo": [1, 2, 3]}},
+            v,
+        ]
+        o2 = [
+            1,
+            2,
+            {"goo": {"moo": [1, 2, 3]}, "bar": v, "baz": [9, 3, 2], "foo": "bar"},
+            v,
+        ]
         self.assertEqual(o1, o2)
 
     def test_roundtrip_msg(self):
@@ -369,9 +458,7 @@ class TestSerializer(unittest.TestCase):
         Test round-tripping over each serializer.
         """
         for ser in self._test_serializers:
-
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser.serialize(msg)
 
@@ -386,9 +473,7 @@ class TestSerializer(unittest.TestCase):
         Test cross-tripping over 2 serializers (as is done by WAMP routers).
         """
         for ser1 in self._test_serializers:
-
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser1.serialize(msg)
 
@@ -397,7 +482,6 @@ class TestSerializer(unittest.TestCase):
                 msg1 = msg1[0]
 
                 for ser2 in self._test_serializers:
-
                     # serialize message
                     payload, binary = ser2.serialize(msg1)
 
@@ -413,12 +497,10 @@ class TestSerializer(unittest.TestCase):
         Test message serialization caching.
         """
         for contains_binary, msg in self._test_messages:
-
             # message serialization cache is initially empty
             self.assertEqual(msg._serialized, {})
 
             for ser in self._test_serializers:
-
                 # verify message serialization is not yet cached
                 self.assertFalse(ser._serializer in msg._serialized)
                 payload, binary = ser.serialize(msg)
@@ -437,25 +519,22 @@ class TestSerializer(unittest.TestCase):
         Test initial serializer stats are indeed empty.
         """
         for ser in self._test_serializers:
-
             stats = ser.stats(details=True)
 
-            self.assertEqual(stats['serialized']['bytes'], 0)
-            self.assertEqual(stats['serialized']['messages'], 0)
-            self.assertEqual(stats['serialized']['rated_messages'], 0)
+            self.assertEqual(stats["serialized"]["bytes"], 0)
+            self.assertEqual(stats["serialized"]["messages"], 0)
+            self.assertEqual(stats["serialized"]["rated_messages"], 0)
 
-            self.assertEqual(stats['unserialized']['bytes'], 0)
-            self.assertEqual(stats['unserialized']['messages'], 0)
-            self.assertEqual(stats['unserialized']['rated_messages'], 0)
+            self.assertEqual(stats["unserialized"]["bytes"], 0)
+            self.assertEqual(stats["unserialized"]["messages"], 0)
+            self.assertEqual(stats["unserialized"]["rated_messages"], 0)
 
     def test_serialize_stats(self):
         """
         Test serializer stats are non-empty after serializing/unserializing messages.
         """
         for ser in self._test_serializers:
-
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser.serialize(msg)
 
@@ -464,18 +543,16 @@ class TestSerializer(unittest.TestCase):
 
             stats = ser.stats(details=False)
 
-            self.assertTrue(stats['bytes'] > 0)
-            self.assertTrue(stats['messages'] > 0)
-            self.assertTrue(stats['rated_messages'] > 0)
+            self.assertTrue(stats["bytes"] > 0)
+            self.assertTrue(stats["messages"] > 0)
+            self.assertTrue(stats["rated_messages"] > 0)
 
     def test_serialize_stats_with_details(self):
         """
         Test serializer stats - with details - are non-empty after serializing/unserializing messages.
         """
         for ser in self._test_serializers:
-
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser.serialize(msg)
 
@@ -487,26 +564,31 @@ class TestSerializer(unittest.TestCase):
             # {'serialized': {'bytes': 7923, 'messages': 59, 'rated_messages': 69}, 'unserialized': {'bytes': 7923, 'messages': 59, 'rated_messages': 69}}
             # print(stats)
 
-            self.assertTrue(stats['serialized']['bytes'] > 0)
-            self.assertTrue(stats['serialized']['messages'] > 0)
-            self.assertTrue(stats['serialized']['rated_messages'] > 0)
+            self.assertTrue(stats["serialized"]["bytes"] > 0)
+            self.assertTrue(stats["serialized"]["messages"] > 0)
+            self.assertTrue(stats["serialized"]["rated_messages"] > 0)
 
-            self.assertTrue(stats['unserialized']['bytes'] > 0)
-            self.assertTrue(stats['unserialized']['messages'] > 0)
-            self.assertTrue(stats['unserialized']['rated_messages'] > 0)
+            self.assertTrue(stats["unserialized"]["bytes"] > 0)
+            self.assertTrue(stats["unserialized"]["messages"] > 0)
+            self.assertTrue(stats["unserialized"]["rated_messages"] > 0)
 
-            self.assertEqual(stats['serialized']['bytes'], stats['unserialized']['bytes'])
-            self.assertEqual(stats['serialized']['messages'], stats['unserialized']['messages'])
-            self.assertEqual(stats['serialized']['rated_messages'], stats['unserialized']['rated_messages'])
+            self.assertEqual(
+                stats["serialized"]["bytes"], stats["unserialized"]["bytes"]
+            )
+            self.assertEqual(
+                stats["serialized"]["messages"], stats["unserialized"]["messages"]
+            )
+            self.assertEqual(
+                stats["serialized"]["rated_messages"],
+                stats["unserialized"]["rated_messages"],
+            )
 
     def test_reset_stats(self):
         """
         Test serializer stats are reset after fetching stats - depending on option.
         """
         for ser in self._test_serializers:
-
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser.serialize(msg)
 
@@ -516,13 +598,13 @@ class TestSerializer(unittest.TestCase):
             ser.stats()
             stats = ser.stats(details=True)
 
-            self.assertEqual(stats['serialized']['bytes'], 0)
-            self.assertEqual(stats['serialized']['messages'], 0)
-            self.assertEqual(stats['serialized']['rated_messages'], 0)
+            self.assertEqual(stats["serialized"]["bytes"], 0)
+            self.assertEqual(stats["serialized"]["messages"], 0)
+            self.assertEqual(stats["serialized"]["rated_messages"], 0)
 
-            self.assertEqual(stats['unserialized']['bytes'], 0)
-            self.assertEqual(stats['unserialized']['messages'], 0)
-            self.assertEqual(stats['unserialized']['rated_messages'], 0)
+            self.assertEqual(stats["unserialized"]["bytes"], 0)
+            self.assertEqual(stats["unserialized"]["messages"], 0)
+            self.assertEqual(stats["unserialized"]["rated_messages"], 0)
 
     def test_auto_stats(self):
         """
@@ -531,14 +613,13 @@ class TestSerializer(unittest.TestCase):
         for ser in self._test_serializers:
 
             def on_stats(stats):
-                self.assertTrue(stats['bytes'] > 0)
-                self.assertTrue(stats['messages'] > 0)
-                self.assertTrue(stats['rated_messages'] > 0)
+                self.assertTrue(stats["bytes"] > 0)
+                self.assertTrue(stats["messages"] > 0)
+                self.assertTrue(stats["rated_messages"] > 0)
 
             ser.set_stats_autoreset(10, 0, on_stats)
 
             for contains_binary, msg in self._test_messages:
-
                 # serialize message
                 payload, binary = ser.serialize(msg)
 

@@ -25,29 +25,24 @@
 ###############################################################################
 
 import os
+
 import pkg_resources
 
-from twisted.python import log
-from twisted.internet import reactor
+from autobahn.resource import WebSocketResource
+from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 from twisted.application import service
-
+from twisted.internet import reactor
+from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol
-
-from autobahn.resource import WebSocketResource
-
 
 class EchoServerProtocol(WebSocketServerProtocol):
-
     def onMessage(self, msg, binary):
         self.sendMessage(msg, binary)
 
 
 class EchoService(service.Service):
-
     """
     WebSocket Echo service - this runs a Twisted Web site with a WebSocket
     echo server running under path "/ws".
@@ -57,7 +52,6 @@ class EchoService(service.Service):
         self.port = port
 
     def startService(self):
-
         factory = WebSocketServerFactory("ws://127.0.0.1:%d" % self.port)
         factory.protocol = EchoServerProtocol
 

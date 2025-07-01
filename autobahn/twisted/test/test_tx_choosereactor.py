@@ -28,13 +28,11 @@ import sys
 from unittest.mock import Mock
 
 import twisted.internet
-from twisted.trial import unittest
-
 from autobahn.twisted import choosereactor
+from twisted.trial import unittest
 
 
 class ChooseReactorTests(unittest.TestCase):
-
     def patch_reactor(self, name, new_reactor):
         """
         Patch ``name`` so that Twisted will grab a fake reactor instead of
@@ -43,8 +41,10 @@ class ChooseReactorTests(unittest.TestCase):
         if hasattr(twisted.internet, name):
             self.patch(twisted.internet, name, new_reactor)
         else:
+
             def _cleanup():
                 delattr(twisted.internet, name)
+
             setattr(twisted.internet, name, new_reactor)
 
     def patch_modules(self):
@@ -97,8 +97,8 @@ class ChooseReactorTests(unittest.TestCase):
         """
         ``install_optimal_reactor`` will install IOCPReactor on Windows.
         """
-        if sys.platform != 'win32':
-            raise unittest.SkipTest('unit test requires Windows')
+        if sys.platform != "win32":
+            raise unittest.SkipTest("unit test requires Windows")
 
         reactor_mock = Mock()
         self.patch_reactor("iocpreactor", reactor_mock)

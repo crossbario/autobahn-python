@@ -2,6 +2,7 @@
 
 # namespace: proto
 
+
 class AuthMethod(object):
     ANONYMOUS = 0
     COOKIE = 1

@@ -1,7 +1,118 @@
-[tool.black]
-# Black configuration: Python code files
-line-length = 119
+[project]
+name = "autobahn"
+version = "20.6.1"
+description = "WebSocket client & server library, WAMP real-time framework"
+readme = "README.md"
+requires-python = ">=3.10"
 
 [tool.rstfmt]
 # rstfmt configuration: ReST (Sphinx) doc files
 width = 65
+
+[tool.ruff]
+# Same as Black.
+line-length = 88
+indent-width = 4
+
+target-version = "py312"  # Adjust to your Python version
+
+[tool.ruff.lint]
+
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = ["E4", "E7", "E9", "F"]
+
+# --- Files and Directories to Ignore ---
+# Exclude auto-generated files and compatibility layers.
+exclude = [
+    ".tox",
+    ".git",
+    "__pycache__",
+    "autobahn/wamp/message_fbs.py",
+    "autobahn/wamp/gen/*",
+]
+
+# --- Violations to Ignore ---
+# This is our "technical debt" list.
+# We should aim to remove codes from this list over time.
+ignore = [
+    # E275: missing whitespace after keyword
+    "E275",
+    # F401 [*] X imported but unused
+    "F401",
+    # E402: module level import not at top of file
+    "E402",
+    # F403 X used; unable to detect undefined names
+    "F403",
+    # F405 X may be undefined, or defined from star imports
+    "F405",
+    # E501: line too long (handled by max-line-length)
+    # E501 is often ignored if you use an autoformatter like `black`.
+    "E501",
+    # F706 `return` statement outside of a function/method
+    "F706",
+    # E713 [*] Test for membership should be `not in`
+    "E713",
+    # E721: do not compare types, use 'isinstance()'
+    "E721",
+    # E722: do not use bare 'except'
+    "E722",
+    # E741: ambiguous variable name (e.g., 'l', 'I', 'O')
+    "E741",
+    # N801: class names should use CapWords
+    "N801",
+    # N802: function name should be lowercase
+    "N802",
+    # N803: argument name should be lowercase
+    "N803",
+    # N805: first argument of classmethod should be named 'cls'
+    "N805",
+    # N806: variable in function should be lowercase
+    "N806",
+    # F811 Redefinition of unused X from line Y
+    "F811",
+    # N815: variable in class scope should not be mixedCase
+    "N815",
+    # N818: exception name should end with 'Error'
+    "N818",
+    # F821 Undefined name X
+    "F821",
+    # F841 Local variable X is assigned to but never used
+    "F841",
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"  # Accepts: "google", "numpy", or "pep257".

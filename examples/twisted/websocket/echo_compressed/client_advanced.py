@@ -26,20 +26,19 @@
 
 import sys
 
+from autobahn.twisted.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    connectWS,
+)
+from autobahn.websocket.compress import *
 from twisted.internet import reactor
 from twisted.python import log
 
-from autobahn.twisted.websocket import WebSocketClientFactory, \
-    WebSocketClientProtocol, \
-    connectWS
-
-from autobahn.websocket.compress import *
-
 
 class EchoClientProtocol(WebSocketClientProtocol):
-
     def onConnect(self, response):
-        print "WebSocket extensions in use: %s" % response.extensions
+        print("WebSocket extensions in use: %s" % response.extensions)
 
     def sendHello(self):
         self.sendMessage("Hello, world!" * 100)
@@ -49,14 +48,13 @@ class EchoClientProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            print("Text message received: {}".format(payload.decode('utf8')))
+            print("Text message received: {}".format(payload.decode("utf8")))
         reactor.callLater(1, self.sendHello)
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Need the WebSocket server address, i.e. ws://127.0.0.1:9000"
+        print("Need the WebSocket server address, i.e. ws://127.0.0.1:9000")
         sys.exit(1)
 
     log.startLogging(sys.stdout)
@@ -72,18 +70,24 @@ if __name__ == '__main__':
 
     # this is just what the default constructor for PerMessageDeflateOffer
     # creates anyway
-    offers1 = [PerMessageDeflateOffer(acceptNoContextTakeover=True,
-                                      acceptMaxWindowBits=True,
-                                      requestNoContextTakeover=False,
-                                      request_max_window_bits=0)]
+    offers1 = [
+        PerMessageDeflateOffer(
+            acceptNoContextTakeover=True,
+            acceptMaxWindowBits=True,
+            requestNoContextTakeover=False,
+            request_max_window_bits=0,
+        )
+    ]
 
     # request the server to use a sliding window of 2^8 bytes
     offers2 = [PerMessageDeflateOffer(True, True, False, 8)]
 
     # request the server to use a sliding window of 2^8 bytes, but let the
     # server fall back to "standard" if server does not support the setting
-    offers3 = [PerMessageDeflateOffer(True, True, False, 8),
-               PerMessageDeflateOffer(True, True, False, 0)]
+    offers3 = [
+        PerMessageDeflateOffer(True, True, False, 8),
+        PerMessageDeflateOffer(True, True, False, 0),
+    ]
 
     # request "no context takeover", accept the same, but deny setting
     # a sliding window. no fallback!
@@ -93,7 +97,7 @@ if __name__ == '__main__':
     # note that the first 2 are currently not even in an RFC draft
     #
     offers5 = []
-    if 'permessage-snappy' in PERMESSAGE_COMPRESSION_EXTENSION:
+    if "permessage-snappy" in PERMESSAGE_COMPRESSION_EXTENSION:
         # this require snappy to be installed
         offers5.append(PerMessageSnappyOffer())
     offers5.append(PerMessageBzip2Offer(True, 1))

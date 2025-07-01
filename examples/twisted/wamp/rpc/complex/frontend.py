@@ -25,10 +25,10 @@
 ###############################################################################
 
 from os import environ
+
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
@@ -41,10 +41,10 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
 
-        res = yield self.call('com.myapp.add_complex', 2, 3, 4, 5)
-        print("Result: {} + {}i".format(res.kwresults['c'], res.kwresults['ci']))
+        res = yield self.call("com.myapp.add_complex", 2, 3, 4, 5)
+        print("Result: {} + {}i".format(res.kwresults["c"], res.kwresults["ci"]))
 
-        res = yield self.call('com.myapp.split_name', 'Homer Simpson')
+        res = yield self.call("com.myapp.split_name", "Homer Simpson")
         print("Forname: {}, Surname: {}".format(res.results[0], res.results[1]))
 
         self.leave()
@@ -54,7 +54,7 @@ class Component(ApplicationSession):
         reactor.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

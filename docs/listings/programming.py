@@ -22,16 +22,16 @@ component = Component(
             # you can set various websocket options here if you want
             "options": {
                 "open_handshake_timeout": 100,
-            }
+            },
         },
     ],
     # authentication can also be configured (this will only work on
     # the demo router on the first transport above)
     authentication={
         "cryptosign": {
-            'authid': 'alice',
+            "authid": "alice",
             # this key should be loaded from disk, database etc never burned into code like this...
-            'privkey': '6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c',
+            "privkey": "6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c",
         }
     },
     # must provide a realm
@@ -52,7 +52,7 @@ def join(session, details):
 
 @component.register(
     "example.foo",
-    options=RegisterOptions(details_arg='details'),
+    options=RegisterOptions(details_arg="details"),
 )
 @inlineCallbacks
 def foo(*args, **kw):

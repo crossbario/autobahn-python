@@ -23,24 +23,23 @@
 # THE SOFTWARE.
 #
 ###############################################################################
-import inspect
-import os
-import time
-import struct
-import sys
-import re
 import base64
-import math
-import random
 import binascii
+import inspect
+import math
+import os
+import random
+import re
 import socket
+import struct
 import subprocess
+import sys
+import time
+from array import array
 from collections import OrderedDict
-
-from typing import Optional
 from datetime import datetime, timedelta
 from pprint import pformat
-from array import array
+from typing import Optional
 
 import txaio
 
@@ -51,35 +50,37 @@ except ImportError:
     _TLS = False
 
 
-__all__ = ("public",
-           "encode_truncate",
-           "xor",
-           "utcnow",
-           "utcstr",
-           "id",
-           "rid",
-           "newid",
-           "rtime",
-           "Stopwatch",
-           "Tracker",
-           "EqualityMixin",
-           "ObservableMixin",
-           "IdGenerator",
-           "generate_token",
-           "generate_activation_code",
-           "generate_serial_number",
-           "generate_user_password",
-           "machine_id",
-           'parse_keyfile',
-           'write_keyfile',
-           "hl",
-           "hltype",
-           "hlid",
-           "hluserid",
-           "hlval",
-           "hlcontract",
-           "with_0x",
-           "without_0x")
+__all__ = (
+    "EqualityMixin",
+    "IdGenerator",
+    "ObservableMixin",
+    "Stopwatch",
+    "Tracker",
+    "encode_truncate",
+    "generate_activation_code",
+    "generate_serial_number",
+    "generate_token",
+    "generate_user_password",
+    "hl",
+    "hlcontract",
+    "hlid",
+    "hltype",
+    "hluserid",
+    "hlval",
+    "id",
+    "machine_id",
+    "newid",
+    "parse_keyfile",
+    "public",
+    "rid",
+    "rtime",
+    "utcnow",
+    "utcstr",
+    "with_0x",
+    "without_0x",
+    "write_keyfile",
+    "xor",
+)
 
 
 def public(obj):
@@ -97,7 +98,7 @@ def public(obj):
 
 
 @public
-def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
+def encode_truncate(text, limit, encoding="utf8", return_encoded=True):
     """
     Given a string, return a truncated version of the string such that
     the UTF8 encoding of the string is smaller than the given limit.
@@ -119,9 +120,9 @@ def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
     :returns: The truncated string.
     :rtype: str or bytes
     """
-    assert(text is None or type(text) == str)
-    assert(type(limit) == int)
-    assert(limit >= 0)
+    assert text is None or type(text) == str
+    assert type(limit) == int
+    assert limit >= 0
 
     if text is None:
         return
@@ -136,7 +137,7 @@ def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
 
         # decode back, ignoring errors that result from truncation
         # in the middle of multi-byte encodings
-        text = s.decode(encoding, 'ignore')
+        text = s.decode(encoding, "ignore")
 
         if return_encoded:
             s = text.encode(encoding)
@@ -162,10 +163,14 @@ def xor(d1: bytes, d2: bytes) -> bytes:
     if type(d2) != bytes:
         raise Exception("invalid type {} for d2 - must be binary".format(type(d2)))
     if len(d1) != len(d2):
-        raise Exception("cannot XOR binary string of differing length ({} != {})".format(len(d1), len(d2)))
+        raise Exception(
+            "cannot XOR binary string of differing length ({} != {})".format(
+                len(d1), len(d2)
+            )
+        )
 
-    d1 = array('B', d1)
-    d2 = array('B', d2)
+    d1 = array("B", d1)
+    d2 = array("B", d2)
 
     for i in range(len(d1)):
         d1[i] ^= d2[i]
@@ -192,7 +197,7 @@ def utcstr(ts=None):
     :returns: Timestamp formatted in ISO 8601 format.
     :rtype: str
     """
-    assert(ts is None or isinstance(ts, datetime))
+    assert ts is None or isinstance(ts, datetime)
     if ts is None:
         ts = datetime.utcnow()
     return "{0}Z".format(ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3])
@@ -298,7 +303,7 @@ def rid():
     :returns: A random integer ID.
     :rtype: int
     """
-    return struct.unpack(">Q", os.urandom(8))[0] & _WAMP_ID_MASK or 2 ** 53
+    return struct.unpack(">Q", os.urandom(8))[0] & _WAMP_ID_MASK or 2**53
 
 
 # noinspection PyShadowingBuiltins
@@ -335,8 +340,8 @@ def newid(length=16):
     :returns: A random string ID.
     :rtype: str
     """
-    l = int(math.ceil(float(length) * 6. / 8.))
-    return base64.b64encode(os.urandom(l))[:length].decode('ascii')
+    l = int(math.ceil(float(length) * 6.0 / 8.0))
+    return base64.b64encode(os.urandom(l))[:length].decode("ascii")
 
 
 # a standard base36 character set
@@ -344,12 +349,12 @@ def newid(length=16):
 
 # we take out the following 9 chars (leaving 27), because there
 # is visual ambiguity: 0/O/D, 1/I, 8/B, 2/Z
-DEFAULT_TOKEN_CHARS = '345679ACEFGHJKLMNPQRSTUVWXY'
+DEFAULT_TOKEN_CHARS = "345679ACEFGHJKLMNPQRSTUVWXY"
 """
 Default set of characters to create rtokens from.
 """
 
-DEFAULT_ZBASE32_CHARS = '13456789abcdefghijkmnopqrstuwxyz'
+DEFAULT_ZBASE32_CHARS = "13456789abcdefghijkmnopqrstuwxyz"
 """
 Our choice of confusing characters to eliminate is: `0', `l', `v', and `2'.  Our
 reasoning is that `0' is potentially mistaken for `o', that `l' is potentially
@@ -367,11 +372,13 @@ Delta" and telephone operators' "Is that 'd' as in 'dog'?".
 
 
 @public
-def generate_token(char_groups: int,
-                   chars_per_group: int,
-                   chars: Optional[str] = None,
-                   sep: Optional[str] = None,
-                   lower_case: Optional[bool] = False) -> str:
+def generate_token(
+    char_groups: int,
+    chars_per_group: int,
+    chars: Optional[str] = None,
+    sep: Optional[str] = None,
+    lower_case: Optional[bool] = False,
+) -> str:
     """
     Generate cryptographically strong tokens, which are strings like `M6X5-YO5W-T5IK`.
     These can be used e.g. for used-only-once activation tokens or the like.
@@ -409,17 +416,21 @@ def generate_token(char_groups: int,
 
     :returns: The generated token.
     """
-    assert(type(char_groups) == int)
-    assert(type(chars_per_group) == int)
-    assert(chars is None or type(chars) == str), 'chars must be str, was {}'.format(type(chars))
+    assert type(char_groups) == int
+    assert type(chars_per_group) == int
+    assert chars is None or type(chars) == str, "chars must be str, was {}".format(
+        type(chars)
+    )
     chars = chars or DEFAULT_TOKEN_CHARS
     if lower_case:
         chars = chars.lower()
-    sep = sep or '-'
+    sep = sep or "-"
     rng = random.SystemRandom()
-    token_value = ''.join(rng.choice(chars) for _ in range(char_groups * chars_per_group))
+    token_value = "".join(
+        rng.choice(chars) for _ in range(char_groups * chars_per_group)
+    )
     if chars_per_group > 1:
-        return sep.join(map(''.join, zip(*[iter(token_value)] * chars_per_group)))
+        return sep.join(map("".join, zip(*[iter(token_value)] * chars_per_group)))
     else:
         return token_value
 
@@ -433,10 +444,24 @@ def generate_activation_code():
     :returns: The generated activation code.
     :rtype: str
     """
-    return generate_token(char_groups=3, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep='-', lower_case=False)
+    return generate_token(
+        char_groups=3,
+        chars_per_group=4,
+        chars=DEFAULT_TOKEN_CHARS,
+        sep="-",
+        lower_case=False,
+    )
 
 
-_PAT_ACTIVATION_CODE = re.compile('^([' + DEFAULT_TOKEN_CHARS + ']{4,4})-([' + DEFAULT_TOKEN_CHARS + ']{4,4})-([' + DEFAULT_TOKEN_CHARS + ']{4,4})$')
+_PAT_ACTIVATION_CODE = re.compile(
+    "^(["
+    + DEFAULT_TOKEN_CHARS
+    + "]{4,4})-(["
+    + DEFAULT_TOKEN_CHARS
+    + "]{4,4})-(["
+    + DEFAULT_TOKEN_CHARS
+    + "]{4,4})$"
+)
 
 
 @public
@@ -464,7 +489,13 @@ def generate_user_password():
     :returns: The generated password.
     :rtype: str
     """
-    return generate_token(char_groups=16, chars_per_group=1, chars=DEFAULT_ZBASE32_CHARS, sep='-', lower_case=True)
+    return generate_token(
+        char_groups=16,
+        chars_per_group=1,
+        chars=DEFAULT_ZBASE32_CHARS,
+        sep="-",
+        lower_case=True,
+    )
 
 
 @public
@@ -476,13 +507,19 @@ def generate_serial_number():
     :returns: The generated serial number / product code.
     :rtype: str
     """
-    return generate_token(char_groups=6, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep='-', lower_case=False)
+    return generate_token(
+        char_groups=6,
+        chars_per_group=4,
+        chars=DEFAULT_TOKEN_CHARS,
+        sep="-",
+        lower_case=False,
+    )
 
 
 # Select the most precise walltime measurement function available
 # on the platform
 #
-if sys.platform.startswith('win'):
+if sys.platform.startswith("win"):
     # On Windows, this function returns wall-clock seconds elapsed since the
     # first call to this function, as a floating point number, based on the
     # Win32 function QueryPerformanceCounter(). The resolution is typically
@@ -601,8 +638,7 @@ class Tracker(object):
     """
 
     def __init__(self, tracker, tracked):
-        """
-        """
+        """ """
         self.tracker = tracker
         self.tracked = tracked
         self._timings = {}
@@ -636,11 +672,11 @@ class Tracker(object):
             d = self._timings[end_key] - self._timings[start_key]
             if formatted:
                 if d < 0.00001:  # 10us
-                    s = "%d ns" % round(d * 1000000000.)
+                    s = "%d ns" % round(d * 1000000000.0)
                 elif d < 0.01:  # 10ms
-                    s = "%d us" % round(d * 1000000.)
+                    s = "%d us" % round(d * 1000000.0)
                 elif d < 10:  # 10s
-                    s = "%d ms" % round(d * 1000.)
+                    s = "%d ms" % round(d * 1000.0)
                 else:
                     s = "%d s" % round(d)
                 return s.rjust(8)
@@ -664,7 +700,7 @@ class Tracker(object):
         """
         elapsed = self[key]
         if elapsed is None:
-            raise KeyError("No such key \"%s\"." % elapsed)
+            raise KeyError('No such key "%s".' % elapsed)
         return self._dt_offset + timedelta(seconds=elapsed)
 
     def __getitem__(self, key):
@@ -704,7 +740,7 @@ class EqualityMixin(object):
             return False
         # we only want the actual message data attributes (not eg _serialize)
         for k in self.__dict__:
-            if not k.startswith('_'):
+            if not k.startswith("_"):
                 if not self.__dict__[k] == other.__dict__[k]:
                     return False
         return True
@@ -739,7 +775,10 @@ def wildcards2patterns(wildcards):
     # match. Without this, e.g. a prefix will match:
     # re.match('.*good\\.com', 'good.com.evil.com')  # match!
     # re.match('.*good\\.com$', 'good.com.evil.com') # no match!
-    return [re.compile('^' + wc.replace('.', r'\.').replace('*', '.*') + '$') for wc in wildcards]
+    return [
+        re.compile("^" + wc.replace(".", r"\.").replace("*", ".*") + "$")
+        for wc in wildcards
+    ]
 
 
 class ObservableMixin(object):
@@ -779,7 +818,7 @@ class ObservableMixin(object):
             raise RuntimeError(
                 "Invalid event '{event}'. Expected one of: {events}".format(
                     event=event,
-                    events=', '.join(self._valid_events),
+                    events=", ".join(self._valid_events),
                 )
             )
 
@@ -868,13 +907,14 @@ class _LazyHexFormatter(object):
             octets=_LazyHexFormatter(os.urandom(32)),
         )
     """
-    __slots__ = ('obj',)
+
+    __slots__ = ("obj",)
 
     def __init__(self, obj):
         self.obj = obj
 
     def __str__(self):
-        return binascii.hexlify(self.obj).decode('ascii')
+        return binascii.hexlify(self.obj).decode("ascii")
 
 
 def _is_tls_error(instance):
@@ -912,14 +952,17 @@ def machine_id() -> str:
     if platform.isLinux():
         try:
             # why this? see: http://0pointer.de/blog/projects/ids.html
-            with open('/var/lib/dbus/machine-id', 'r') as f:
+            with open("/var/lib/dbus/machine-id", "r") as f:
                 return f.read().strip()
         except:
             # Non-dbus using Linux, get a hostname
             return socket.gethostname()
     elif platform.isMacOSX():
         import plistlib
-        plist_data = subprocess.check_output(["ioreg", "-rd1", "-c", "IOPlatformExpertDevice", "-a"])
+
+        plist_data = subprocess.check_output(
+            ["ioreg", "-rd1", "-c", "IOPlatformExpertDevice", "-a"]
+        )
         return plistlib.loads(plist_data)[0]["IOPlatformSerialNumber"]
     else:
         return socket.gethostname()
@@ -927,14 +970,15 @@ def machine_id() -> str:
 
 try:
     import click
+
     _HAS_CLICK = True
 except ImportError:
     _HAS_CLICK = False
 
 
-def hl(text, bold=False, color='yellow'):
+def hl(text, bold=False, color="yellow"):
     if not isinstance(text, str):
-        text = '{}'.format(text)
+        text = "{}".format(text)
     if _HAS_CLICK:
         return click.style(text, fg=color, bold=bold)
     else:
@@ -943,46 +987,48 @@ def hl(text, bold=False, color='yellow'):
 
 def _qn(obj):
     if inspect.isclass(obj) or inspect.isfunction(obj) or inspect.ismethod(obj):
-        qn = '{}.{}'.format(obj.__module__, obj.__qualname__)
+        qn = "{}.{}".format(obj.__module__, obj.__qualname__)
     else:
-        qn = 'unknown'
+        qn = "unknown"
     return qn
 
 
 def hltype(obj):
-    qn = _qn(obj).split('.')
-    text = hl(qn[0], color='yellow', bold=True) + hl('.' + '.'.join(qn[1:]), color='yellow', bold=False)
-    return '<' + text + '>'
+    qn = _qn(obj).split(".")
+    text = hl(qn[0], color="yellow", bold=True) + hl(
+        "." + ".".join(qn[1:]), color="yellow", bold=False
+    )
+    return "<" + text + ">"
 
 
 def hlid(oid):
-    return hl('{}'.format(oid), color='blue', bold=True)
+    return hl("{}".format(oid), color="blue", bold=True)
 
 
 def hluserid(oid):
     if not isinstance(oid, str):
-        oid = '{}'.format(oid)
-    return hl('"{}"'.format(oid), color='yellow', bold=True)
+        oid = "{}".format(oid)
+    return hl('"{}"'.format(oid), color="yellow", bold=True)
 
 
-def hlval(val, color='white', bold=True):
-    return hl('{}'.format(val), color=color, bold=bold)
+def hlval(val, color="white", bold=True):
+    return hl("{}".format(val), color=color, bold=bold)
 
 
 def hlcontract(oid):
     if not isinstance(oid, str):
-        oid = '{}'.format(oid)
-    return hl('<{}>'.format(oid), color='magenta', bold=True)
+        oid = "{}".format(oid)
+    return hl("<{}>".format(oid), color="magenta", bold=True)
 
 
 def with_0x(address):
-    if address and not address.startswith('0x'):
-        return '0x{address}'.format(address=address)
+    if address and not address.startswith("0x"):
+        return "0x{address}".format(address=address)
     return address
 
 
 def without_0x(address):
-    if address and address.startswith('0x'):
+    if address and address.startswith("0x"):
         return address[2:]
     return address
 
@@ -991,11 +1037,11 @@ def write_keyfile(filepath, tags, msg):
     """
     Internal helper, write the given tags to the given file-
     """
-    with open(filepath, 'w') as f:
+    with open(filepath, "w") as f:
         f.write(msg)
-        for (tag, value) in tags.items():
+        for tag, value in tags.items():
             if value:
-                f.write('{}: {}\n'.format(tag, value))
+                f.write("{}: {}\n".format(tag, value))
 
 
 def parse_keyfile(key_path: str, private: bool = True) -> OrderedDict:
@@ -1008,37 +1054,39 @@ def parse_keyfile(key_path: str, private: bool = True) -> OrderedDict:
 
     allowed_tags = [
         # common tags
-        'public-key-ed25519',
-        'public-adr-eth',
-        'created-at',
-        'creator',
-
+        "public-key-ed25519",
+        "public-adr-eth",
+        "created-at",
+        "creator",
         # user profile
-        'user-id',
-
+        "user-id",
         # node profile
-        'machine-id',
-        'node-authid',
-        'node-cluster-ip',
+        "machine-id",
+        "node-authid",
+        "node-cluster-ip",
     ]
 
     if private:
         # private key file tags
-        allowed_tags.extend(['private-key-ed25519', 'private-key-eth'])
+        allowed_tags.extend(["private-key-ed25519", "private-key-eth"])
 
     tags = OrderedDict()  # type: ignore
-    with open(key_path, 'r') as key_file:
+    with open(key_path, "r") as key_file:
         got_blankline = False
         for line in key_file.readlines():
-            if line.strip() == '':
+            if line.strip() == "":
                 got_blankline = True
             elif got_blankline:
-                tag, value = line.split(':', 1)
+                tag, value = line.split(":", 1)
                 tag = tag.strip().lower()
                 value = value.strip()
                 if tag not in allowed_tags:
-                    raise Exception("Invalid tag '{}' in key file {}".format(tag, key_path))
+                    raise Exception(
+                        "Invalid tag '{}' in key file {}".format(tag, key_path)
+                    )
                 if tag in tags:
-                    raise Exception("Duplicate tag '{}' in key file {}".format(tag, key_path))
+                    raise Exception(
+                        "Duplicate tag '{}' in key file {}".format(tag, key_path)
+                    )
                 tags[tag] = value
     return tags

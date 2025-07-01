@@ -24,25 +24,21 @@
 #
 ###############################################################################
 
-import uuid
 import sys
-
-from twisted.python import log
-from twisted.internet import reactor
-from twisted.web.server import Site
-from twisted.web.wsgi import WSGIResource
+import uuid
 
 from flask import Flask, render_template
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol
-
 from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
+from twisted.internet import reactor
+from twisted.python import log
+from twisted.web.server import Site
+from twisted.web.wsgi import WSGIResource
 
 
 # Our WebSocket Server protocol
 class EchoServerProtocol(WebSocketServerProtocol):
-
     def onMessage(self, payload, isBinary):
         self.sendMessage(payload, isBinary)
 
@@ -52,13 +48,12 @@ app = Flask(__name__)
 app.secret_key = str(uuid.uuid4())
 
 
-@app.route('/')
+@app.route("/")
 def page_home():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
 if __name__ == "__main__":
-
     log.startLogging(sys.stdout)
 
     # create a Twisted Web resource for our WebSocket server
@@ -71,7 +66,7 @@ if __name__ == "__main__":
 
     # create a root resource serving everything via WSGI/Flask, but
     # the path "/ws" served by our WebSocket stuff
-    rootResource = WSGIRootResource(wsgiResource, {b'ws': wsResource})
+    rootResource = WSGIRootResource(wsgiResource, {b"ws": wsResource})
 
     # create a Twisted Web Site and run everything
     site = Site(rootResource)

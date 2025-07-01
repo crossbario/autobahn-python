@@ -1,8 +1,6 @@
-
-
 from autobahn.asyncio.component import Component, run
-from autobahn.wamp.types import RegisterOptions
 from autobahn.wamp.exception import ApplicationError
+from autobahn.wamp.types import RegisterOptions
 
 
 async def main(reactor, session):
@@ -15,15 +13,17 @@ async def main(reactor, session):
         print("registering 'com.foo.private' failed as expected: {}".format(e.error))
 
     res = await session.register(
-        lambda: None, "should.work",
-        options=RegisterOptions(match='exact'),
+        lambda: None,
+        "should.work",
+        options=RegisterOptions(match="exact"),
     )
     print("registered 'should.work' with id {}".format(res.id))
 
     try:
         res = await session.register(
-            lambda: None, "prefix.fail.",
-            options=RegisterOptions(match='prefix'),
+            lambda: None,
+            "prefix.fail.",
+            options=RegisterOptions(match="prefix"),
         )
         print("\n\nshould have failed\n\n")
     except ApplicationError as e:
@@ -46,7 +46,7 @@ component = Component(
             "authrole": "dynamic_authed",
             "secret": "p4ssw0rd",
         }
-    }
+    },
 )
 
 

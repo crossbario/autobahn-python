@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Map(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class Map(object):
     def GetRootAsMap(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # Map
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -38,15 +41,38 @@ class Map(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def MapStart(builder): builder.StartObject(2)
+
+def MapStart(builder):
+    builder.StartObject(2)
+
+
 def Start(builder):
     return MapStart(builder)
-def MapAddKey(builder, key): builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(key), 0)
+
+
+def MapAddKey(builder, key):
+    builder.PrependUOffsetTRelativeSlot(
+        0, flatbuffers.number_types.UOffsetTFlags.py_type(key), 0
+    )
+
+
 def AddKey(builder, key):
     return MapAddKey(builder, key)
-def MapAddValue(builder, value): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(value), 0)
+
+
+def MapAddValue(builder, value):
+    builder.PrependUOffsetTRelativeSlot(
+        1, flatbuffers.number_types.UOffsetTFlags.py_type(value), 0
+    )
+
+
 def AddValue(builder, value):
     return MapAddValue(builder, value)
-def MapEnd(builder): return builder.EndObject()
+
+
+def MapEnd(builder):
+    return builder.EndObject()
+
+
 def End(builder):
     return MapEnd(builder)

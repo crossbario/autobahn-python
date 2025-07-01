@@ -27,12 +27,11 @@
 import math
 from os import environ
 
+from autobahn import wamp
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.exception import ApplicationError
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-
-from autobahn import wamp
-from autobahn.wamp.exception import ApplicationError
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 @wamp.error("com.myapp.error1")
@@ -56,7 +55,7 @@ class Component(ApplicationSession):
         ##
         for x in [2, 0, -2]:
             try:
-                res = yield self.call('com.myapp.sqrt', x)
+                res = yield self.call("com.myapp.sqrt", x)
             except Exception as e:
                 print("Error: {} {}".format(e, e.args))
             else:
@@ -64,9 +63,9 @@ class Component(ApplicationSession):
 
         # catching WAMP application exceptions
         ##
-        for name in ['foo', 'a', '*' * 11, 'Hello']:
+        for name in ["foo", "a", "*" * 11, "Hello"]:
             try:
-                res = yield self.call('com.myapp.checkname', name)
+                res = yield self.call("com.myapp.checkname", name)
             except ApplicationError as e:
                 print("Error: {} {} {} {}".format(e, e.error, e.args, e.kwargs))
             else:
@@ -77,7 +76,7 @@ class Component(ApplicationSession):
         self.define(AppError1)
 
         try:
-            yield self.call('com.myapp.compare', 3, 17)
+            yield self.call("com.myapp.compare", 3, 17)
         except AppError1 as e:
             print("Compare Error: {}".format(e))
 
@@ -89,7 +88,7 @@ class Component(ApplicationSession):
         reactor.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

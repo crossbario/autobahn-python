@@ -40,4 +40,6 @@ def randomByteString(len):
     Generate a string of random bytes.
     """
     ll = int(len / 8 + int(len % 8 > 0))
-    return b''.join([struct.pack("!Q", random.getrandbits(64)) for _ in xrange(0, ll)])[:len]
+    return b"".join([struct.pack("!Q", random.getrandbits(64)) for _ in xrange(0, ll)])[
+        :len
+    ]

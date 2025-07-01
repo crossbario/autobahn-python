@@ -25,27 +25,34 @@
 ###############################################################################
 
 import os
+import random
 import sys
 import unittest
-
 import uuid
-import random
-from nacl import utils, public
+
+from nacl import public, utils
 
 from autobahn import util
 
 
-@unittest.skipIf(not ('AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS' in os.environ and os.environ['AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS']), 'entropy depletion tests not enabled (env var AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS not set)')
-@unittest.skipIf(not sys.platform.startswith('linux'), 'entropy depletion tests only available on Linux')
+@unittest.skipIf(
+    not (
+        "AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS" in os.environ
+        and os.environ["AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS"]
+    ),
+    "entropy depletion tests not enabled (env var AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS not set)",
+)
+@unittest.skipIf(
+    not sys.platform.startswith("linux"),
+    "entropy depletion tests only available on Linux",
+)
 class TestEntropy(unittest.TestCase):
-
     def test_non_depleting(self):
         res = {}
 
-        with open('/dev/urandom', 'rb') as rng:
+        with open("/dev/urandom", "rb") as rng:
             for i in range(1000):
                 for j in range(100):
-
                     # "reseed" (seems pointless, but ..)
                     random.seed()
 
@@ -72,7 +79,7 @@ class TestEntropy(unittest.TestCase):
                 d = rng.read(1000)  # noqa
 
                 # check available entropy
-                with open('/proc/sys/kernel/random/entropy_avail', 'r') as ent:
+                with open("/proc/sys/kernel/random/entropy_avail", "r") as ent:
                     ea = int(ent.read()) // 100
                     if ea not in res:
                         res[ea] = 0
@@ -80,23 +87,22 @@ class TestEntropy(unittest.TestCase):
 
         skeys = sorted(res.keys())
 
-        print('\nsystem entropy depletion stats:')
+        print("\nsystem entropy depletion stats:")
         for k in skeys:
-            print('{}: {}'.format(k, res[k]))
+            print("{}: {}".format(k, res[k]))
 
         self.assertTrue(skeys[0] > 0)
 
     def test_depleting(self):
         res = {}
 
-        with open('/dev/random', 'rb') as rng:
+        with open("/dev/random", "rb") as rng:
             for i in range(10000):
-
                 # direct procfs access to "real" RNG
                 d = rng.read(1000)  # noqa
 
                 # check available entropy
-                with open('/proc/sys/kernel/random/entropy_avail', 'r') as ent:
+                with open("/proc/sys/kernel/random/entropy_avail", "r") as ent:
                     ea = int(ent.read()) // 100
                     if ea not in res:
                         res[ea] = 0
@@ -104,8 +110,8 @@ class TestEntropy(unittest.TestCase):
 
         skeys = sorted(res.keys())
 
-        print('\nsystem entropy depletion stats:')
+        print("\nsystem entropy depletion stats:")
         for k in skeys:
-            print('{}: {}'.format(k, res[k]))
+            print("{}: {}".format(k, res[k]))
 
         self.assertTrue(skeys[0] == 0)

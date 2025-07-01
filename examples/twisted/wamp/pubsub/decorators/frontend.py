@@ -25,16 +25,15 @@
 ###############################################################################
 
 from os import environ
+
+from autobahn import wamp
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.failure import Failure
 
-from autobahn import wamp
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
-
 
 class Component(ApplicationSession):
-
     """
     An application component that subscribes and receives events,
     and stop after having received 5 events.
@@ -53,11 +52,11 @@ class Component(ApplicationSession):
             if isinstance(sub, Failure):
                 print("subscribe failed:", sub.getErrorMessage())
 
-    @wamp.subscribe('com.myapp.topic1')
+    @wamp.subscribe("com.myapp.topic1")
     def onEvent1(self, i):
         print("Got event on topic1: {}".format(i))
 
-    @wamp.subscribe('com.myapp.topic2')
+    @wamp.subscribe("com.myapp.topic2")
     def onEvent2(self, msg):
         print("Got event on topic2: {}".format(msg))
 
@@ -66,7 +65,7 @@ class Component(ApplicationSession):
         reactor.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

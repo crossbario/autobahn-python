@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class SubscriberFeatures(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class SubscriberFeatures(object):
     def GetRootAsSubscriberFeatures(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # SubscriberFeatures
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,85 +31,162 @@ class SubscriberFeatures(object):
     def PublisherIdentification(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # SubscriberFeatures
     def PatternBasedSubscription(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # SubscriberFeatures
     def PublicationTrustlevels(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # SubscriberFeatures
     def SubscriptionRevocation(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # SubscriberFeatures
     def EventHistory(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # SubscriberFeatures
     def AcknowledgeSubscriberReceived(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # SubscriberFeatures
     def PayloadTransparency(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # SubscriberFeatures
     def PayloadEncryptionCryptobox(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
-def SubscriberFeaturesStart(builder): builder.StartObject(8)
+
+def SubscriberFeaturesStart(builder):
+    builder.StartObject(8)
+
+
 def Start(builder):
     return SubscriberFeaturesStart(builder)
-def SubscriberFeaturesAddPublisherIdentification(builder, publisherIdentification): builder.PrependBoolSlot(0, publisherIdentification, 0)
+
+
+def SubscriberFeaturesAddPublisherIdentification(builder, publisherIdentification):
+    builder.PrependBoolSlot(0, publisherIdentification, 0)
+
+
 def AddPublisherIdentification(builder, publisherIdentification):
-    return SubscriberFeaturesAddPublisherIdentification(builder, publisherIdentification)
-def SubscriberFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription): builder.PrependBoolSlot(1, patternBasedSubscription, 0)
+    return SubscriberFeaturesAddPublisherIdentification(
+        builder, publisherIdentification
+    )
+
+
+def SubscriberFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription):
+    builder.PrependBoolSlot(1, patternBasedSubscription, 0)
+
+
 def AddPatternBasedSubscription(builder, patternBasedSubscription):
-    return SubscriberFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription)
-def SubscriberFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels): builder.PrependBoolSlot(2, publicationTrustlevels, 0)
+    return SubscriberFeaturesAddPatternBasedSubscription(
+        builder, patternBasedSubscription
+    )
+
+
+def SubscriberFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels):
+    builder.PrependBoolSlot(2, publicationTrustlevels, 0)
+
+
 def AddPublicationTrustlevels(builder, publicationTrustlevels):
     return SubscriberFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels)
-def SubscriberFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation): builder.PrependBoolSlot(3, subscriptionRevocation, 0)
+
+
+def SubscriberFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation):
+    builder.PrependBoolSlot(3, subscriptionRevocation, 0)
+
+
 def AddSubscriptionRevocation(builder, subscriptionRevocation):
     return SubscriberFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation)
-def SubscriberFeaturesAddEventHistory(builder, eventHistory): builder.PrependBoolSlot(4, eventHistory, 0)
+
+
+def SubscriberFeaturesAddEventHistory(builder, eventHistory):
+    builder.PrependBoolSlot(4, eventHistory, 0)
+
+
 def AddEventHistory(builder, eventHistory):
     return SubscriberFeaturesAddEventHistory(builder, eventHistory)
-def SubscriberFeaturesAddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived): builder.PrependBoolSlot(5, acknowledgeSubscriberReceived, 0)
+
+
+def SubscriberFeaturesAddAcknowledgeSubscriberReceived(
+    builder, acknowledgeSubscriberReceived
+):
+    builder.PrependBoolSlot(5, acknowledgeSubscriberReceived, 0)
+
+
 def AddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived):
-    return SubscriberFeaturesAddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived)
-def SubscriberFeaturesAddPayloadTransparency(builder, payloadTransparency): builder.PrependBoolSlot(6, payloadTransparency, 0)
+    return SubscriberFeaturesAddAcknowledgeSubscriberReceived(
+        builder, acknowledgeSubscriberReceived
+    )
+
+
+def SubscriberFeaturesAddPayloadTransparency(builder, payloadTransparency):
+    builder.PrependBoolSlot(6, payloadTransparency, 0)
+
+
 def AddPayloadTransparency(builder, payloadTransparency):
     return SubscriberFeaturesAddPayloadTransparency(builder, payloadTransparency)
-def SubscriberFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox): builder.PrependBoolSlot(7, payloadEncryptionCryptobox, 0)
+
+
+def SubscriberFeaturesAddPayloadEncryptionCryptobox(
+    builder, payloadEncryptionCryptobox
+):
+    builder.PrependBoolSlot(7, payloadEncryptionCryptobox, 0)
+
+
 def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    return SubscriberFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
-def SubscriberFeaturesEnd(builder): return builder.EndObject()
+    return SubscriberFeaturesAddPayloadEncryptionCryptobox(
+        builder, payloadEncryptionCryptobox
+    )
+
+
+def SubscriberFeaturesEnd(builder):
+    return builder.EndObject()
+
+
 def End(builder):
     return SubscriberFeaturesEnd(builder)

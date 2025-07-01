@@ -26,12 +26,13 @@
 
 from ranstring import randomByteString
 from zope.interface import implementer
-from twisted.internet import reactor, interfaces
 
-from autobahn.twisted.websocket import WebSocketClientFactory, \
-    WebSocketClientProtocol, \
-    connectWS
-
+from autobahn.twisted.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    connectWS,
+)
+from twisted.internet import interfaces, reactor
 
 # 2^63 - This is the maximum imposed by the WS protocol
 FRAME_SIZE = 0x7FFFFFFFFFFFFFFF
@@ -39,7 +40,6 @@ FRAME_SIZE = 0x7FFFFFFFFFFFFFFF
 
 @implementer(interfaces.IPushProducer)
 class RandomByteStreamProducer:
-
     """
     A Twisted Push Producer generating a stream of random octets sending out data
     in a WebSockets message frame.
@@ -72,7 +72,6 @@ class RandomByteStreamProducer:
 
 
 class StreamingProducerHashClientProtocol(WebSocketClientProtocol):
-
     """
     Streaming WebSockets client that generates stream of random octets
     sent to streaming WebSockets server, which computes a running SHA-256,
@@ -89,12 +88,15 @@ class StreamingProducerHashClientProtocol(WebSocketClientProtocol):
         producer.resumeProducing()
 
     def onMessage(self, payload, isBinary):
-        print("Digest for batch {} computed by server: {}".format(self.count, payload.decode('utf8')))
+        print(
+            "Digest for batch {} computed by server: {}".format(
+                self.count, payload.decode("utf8")
+            )
+        )
         self.count += 1
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     factory = WebSocketClientFactory("ws://127.0.0.1:9000")
     factory.protocol = StreamingProducerHashClientProtocol
     connectWS(factory)

@@ -27,10 +27,10 @@
 # this module is available as the 'wamp' command-line tool or as
 # 'python -m autobahn'
 
-import os
-import sys
 import argparse
 import json
+import os
+import sys
 from copy import copy
 
 try:
@@ -40,15 +40,14 @@ except ImportError:
     print("  pip install autobahn[twisted]")
     sys.exit(1)
 
-from twisted.internet.defer import Deferred, inlineCallbacks
-from twisted.internet.task import react
-from twisted.internet.protocol import ProcessProtocol
+import txaio
 
 from autobahn.wamp.exception import ApplicationError
-from autobahn.wamp.types import PublishOptions
-from autobahn.wamp.types import SubscribeOptions
+from autobahn.wamp.types import PublishOptions, SubscribeOptions
+from twisted.internet.defer import Deferred, inlineCallbacks
+from twisted.internet.protocol import ProcessProtocol
+from twisted.internet.task import react
 
-import txaio
 txaio.use_twisted()
 
 
@@ -64,40 +63,43 @@ txaio.use_twisted()
 
 top = argparse.ArgumentParser(prog="wamp")
 top.add_argument(
-    '--url',
-    action='store',
-    help='A WAMP URL to connect to, like ws://127.0.0.1:8080/ws or rs://localhost:1234',
+    "--url",
+    action="store",
+    help="A WAMP URL to connect to, like ws://127.0.0.1:8080/ws or rs://localhost:1234",
     required=True,
 )
 top.add_argument(
-    '--realm', '-r',
-    action='store',
-    help='The realm to join',
-    default='default',
+    "--realm",
+    "-r",
+    action="store",
+    help="The realm to join",
+    default="default",
 )
 top.add_argument(
-    '--private-key', '-k',
-    action='store',
-    help='Hex-encoded private key (via WAMP_PRIVATE_KEY if not provided here)',
-    default=os.environ.get('WAMP_PRIVATE_KEY', None),
+    "--private-key",
+    "-k",
+    action="store",
+    help="Hex-encoded private key (via WAMP_PRIVATE_KEY if not provided here)",
+    default=os.environ.get("WAMP_PRIVATE_KEY", None),
 )
 top.add_argument(
-    '--authid',
-    action='store',
-    help='The authid to use, if authenticating',
+    "--authid",
+    action="store",
+    help="The authid to use, if authenticating",
     default=None,
 )
 top.add_argument(
-    '--authrole',
-    action='store',
-    help='The role to use, if authenticating',
+    "--authrole",
+    action="store",
+    help="The role to use, if authenticating",
     default=None,
 )
 top.add_argument(
-    '--max-failures', '-m',
-    action='store',
+    "--max-failures",
+    "-m",
+    action="store",
     type=int,
-    help='Failures before giving up (0 forever)',
+    help="Failures before giving up (0 forever)",
     default=0,
 )
 sub = top.add_subparsers(
@@ -107,96 +109,80 @@ sub = top.add_subparsers(
 
 
 call = sub.add_parser(
-    'call',
-    help='Do a WAMP call() and print any results',
+    "call",
+    help="Do a WAMP call() and print any results",
 )
+call.add_argument("uri", type=str, help="A WAMP URI to call")
 call.add_argument(
-    'uri',
-    type=str,
-    help="A WAMP URI to call"
-)
-call.add_argument(
-    'call_args',
-    nargs='*',
+    "call_args",
+    nargs="*",
     help="All additional arguments are positional args",
 )
 call.add_argument(
-    '--keyword',
+    "--keyword",
     nargs=2,
-    action='append',
+    action="append",
     help="Specify a keyword argument to send: name value",
 )
 
 
 publish = sub.add_parser(
-    'publish',
-    help='Do a WAMP publish() with the given args, kwargs',
+    "publish",
+    help="Do a WAMP publish() with the given args, kwargs",
 )
+publish.add_argument("uri", type=str, help="A WAMP URI to publish")
 publish.add_argument(
-    'uri',
-    type=str,
-    help="A WAMP URI to publish"
-)
-publish.add_argument(
-    'publish_args',
-    nargs='*',
+    "publish_args",
+    nargs="*",
     help="All additional arguments are positional args",
 )
 publish.add_argument(
-    '--keyword',
+    "--keyword",
     nargs=2,
-    action='append',
+    action="append",
     help="Specify a keyword argument to send: name value",
 )
 
 
 register = sub.add_parser(
-    'register',
-    help='Do a WAMP register() and run a command when called',
+    "register",
+    help="Do a WAMP register() and run a command when called",
 )
+register.add_argument("uri", type=str, help="A WAMP URI to call")
 register.add_argument(
-    'uri',
-    type=str,
-    help="A WAMP URI to call"
-)
-register.add_argument(
-    '--times',
+    "--times",
     type=int,
     default=0,
     help="Listen for this number of events, then exit. Default: forever",
 )
 register.add_argument(
-    'command',
+    "command",
     type=str,
-    nargs='*',
+    nargs="*",
     help=(
         "Takes one or more args: the executable to call, and any positional "
         "arguments. As well, the following environment variables are set: "
         "WAMP_ARGS, WAMP_KWARGS and _JSON variants."
-    )
+    ),
 )
 
 
 subscribe = sub.add_parser(
-    'subscribe',
-    help='Do a WAMP subscribe() and print one line of JSON per event',
+    "subscribe",
+    help="Do a WAMP subscribe() and print one line of JSON per event",
 )
+subscribe.add_argument("uri", type=str, help="A WAMP URI to call")
 subscribe.add_argument(
-    'uri',
-    type=str,
-    help="A WAMP URI to call"
-)
-subscribe.add_argument(
-    '--times',
+    "--times",
     type=int,
     default=0,
     help="Listen for this number of events, then exit. Default: forever",
 )
 subscribe.add_argument(
-    '--match',
+    "--match",
     type=str,
-    default='exact',
-    choices=['exact', 'prefix'],
+    default="exact",
+    choices=["exact", "prefix"],
     help="Massed in the SubscribeOptions, how to match the URI",
 )
 
@@ -206,14 +192,12 @@ def _create_component(options):
     Configure and return a Component instance according to the given
     `options`
     """
-    if options.url.startswith('ws://'):
-        kind = 'websocket'
-    elif options.url.startswith('rs://'):
-        kind = 'rawsocket'
+    if options.url.startswith("ws://"):
+        kind = "websocket"
+    elif options.url.startswith("rs://"):
+        kind = "rawsocket"
     else:
-        raise ValueError(
-            "URL should start with ws:// or rs://"
-        )
+        raise ValueError("URL should start with ws:// or rs://")
 
     authentication = dict()
     if options.private_key:
@@ -228,10 +212,12 @@ def _create_component(options):
         }
 
     return Component(
-        transports=[{
-            "type": kind,
-            "url": options.url,
-        }],
+        transports=[
+            {
+                "type": kind,
+                "url": options.url,
+            }
+        ],
         authentication=authentication if authentication else None,
         realm=options.realm,
     )
@@ -242,10 +228,7 @@ def do_call(reactor, session, options):
     call_args = list(options.call_args)
     call_kwargs = dict()
     if options.keyword is not None:
-        call_kwargs = {
-            k: v
-            for k, v in options.keyword
-        }
+        call_kwargs = {k: v for k, v in options.keyword}
 
     results = yield session.call(options.uri, *call_args, **call_kwargs)
     print("result: {}".format(results))
@@ -254,16 +237,15 @@ def do_call(reactor, session, options):
 @inlineCallbacks
 def do_publish(reactor, session, options):
     publish_args = list(options.publish_args)
-    publish_kwargs = {} if options.keyword is None else {
-        k: v
-        for k, v in options.keyword
-    }
+    publish_kwargs = (
+        {} if options.keyword is None else {k: v for k, v in options.keyword}
+    )
 
     yield session.publish(
         options.uri,
         *publish_args,
         options=PublishOptions(acknowledge=True),
-        **publish_kwargs
+        **publish_kwargs,
     )
 
 
@@ -280,10 +262,10 @@ def do_register(reactor, session, options):
     def called(*args, **kw):
         print("called: args={}, kwargs={}".format(args, kw), file=sys.stderr)
         env = copy(os.environ)
-        env['WAMP_ARGS'] = ' '.join(args)
-        env['WAMP_ARGS_JSON'] = json.dumps(args)
-        env['WAMP_KWARGS'] = ' '.join('{}={}'.format(k, v) for k, v in kw.items())
-        env['WAMP_KWARGS_JSON'] = json.dumps(kw)
+        env["WAMP_ARGS"] = " ".join(args)
+        env["WAMP_ARGS_JSON"] = json.dumps(args)
+        env["WAMP_KWARGS"] = " ".join("{}={}".format(k, v) for k, v in kw.items())
+        env["WAMP_KWARGS_JSON"] = json.dumps(kw)
 
         exe = os.path.abspath(options.command[0])
         args = options.command
@@ -291,18 +273,16 @@ def do_register(reactor, session, options):
 
         class DumpOutput(ProcessProtocol):
             def outReceived(self, data):
-                sys.stdout.write(data.decode('utf8'))
+                sys.stdout.write(data.decode("utf8"))
 
             def errReceived(self, data):
-                sys.stderr.write(data.decode('utf8'))
+                sys.stderr.write(data.decode("utf8"))
 
             def processExited(self, reason):
                 done.callback(reason.value.exitCode)
 
         proto = DumpOutput()
-        reactor.spawnProcess(
-            proto, exe, args, env=env, path="."
-        )
+        reactor.spawnProcess(proto, exe, args, env=env, path=".")
         code = yield done
 
         if code != 0:
@@ -328,17 +308,21 @@ def do_subscribe(reactor, session, options):
     @inlineCallbacks
     def published(*args, **kw):
         print(
-            json.dumps({
-                "args": args,
-                "kwargs": kw,
-            })
+            json.dumps(
+                {
+                    "args": args,
+                    "kwargs": kw,
+                }
+            )
         )
         if countdown[0]:
             countdown[0] -= 1
             if countdown[0] <= 0:
                 reactor.callLater(0, all_done.callback, None)
 
-    yield session.subscribe(published, options.uri, options=SubscribeOptions(match=options.match))
+    yield session.subscribe(
+        published, options.uri, options=SubscribeOptions(match=options.match)
+    )
     yield all_done
 
 
@@ -365,7 +349,10 @@ def _real_main(reactor):
     if options.subcommand_name == "register":
         exe = options.command[0]
         if not os.path.isabs(exe):
-            print("Full path to the executable required. Found: {}".format(exe), file=sys.stderr)
+            print(
+                "Full path to the executable required. Found: {}".format(exe),
+                file=sys.stderr,
+            )
             sys.exit(1)
         if not os.path.exists(exe):
             print("Executable not found: {}".format(exe), file=sys.stderr)
@@ -384,11 +371,16 @@ def _real_main(reactor):
     @component.on_join
     @inlineCallbacks
     def _(session, details):
-        print("connected: authrole={} authmethod={}".format(details.authrole, details.authmethod), file=sys.stderr)
+        print(
+            "connected: authrole={} authmethod={}".format(
+                details.authrole, details.authmethod
+            ),
+            file=sys.stderr,
+        )
         try:
             yield command_fn(reactor, session, options)
         except ApplicationError as e:
-            print("\n{}: {}\n".format(e.error, ''.join(e.args)))
+            print("\n{}: {}\n".format(e.error, "".join(e.args)))
             exit_code[0] = 5
         yield session.leave()
 

@@ -25,12 +25,12 @@
 ###############################################################################
 
 from os import environ
+
+from autobahn.twisted.util import sleep
+from autobahn.twisted.wamp import ApplicationRunner, Session
+from autobahn.wamp.types import RegisterOptions, SubscribeOptions
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
-
-from autobahn.twisted.wamp import Session, ApplicationRunner
-from autobahn.wamp.types import SubscribeOptions, RegisterOptions
-from autobahn.twisted.util import sleep
 
 
 class Component(Session):
@@ -45,27 +45,31 @@ class Component(Session):
         def foo(*args, **kw):
             print("foo(): {} {}".format(args, kw))
             return None
+
         reg = yield self.register(
-            foo, 'example.foo',
+            foo,
+            "example.foo",
             options=RegisterOptions(
-                invoke='roundrobin',
-            )
+                invoke="roundrobin",
+            ),
         )
         print("registered example.foo: {}".format(reg))
 
         def bar(*args, **kw):
             print("bar(): {} {}".format(args, kw))
             return None
+
         sub = yield self.subscribe(
-            bar, "example.",
+            bar,
+            "example.",
             options=SubscribeOptions(
                 match="prefix",
-            )
+            ),
         )
         print("subscribed: {}".format(sub))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     runner = ApplicationRunner(
         environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/auth_ws"),
         "crossbardemo",
@@ -73,8 +77,7 @@ if __name__ == '__main__':
 
     def make(config):
         session = Component(config)
-        session.add_authenticator(
-            "wampcra", authid='bob', secret='p4ssw0rd'
-        )
+        session.add_authenticator("wampcra", authid="bob", secret="p4ssw0rd")
         return session
+
     runner.run(make)

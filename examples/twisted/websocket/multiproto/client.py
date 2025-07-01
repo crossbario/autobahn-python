@@ -26,18 +26,18 @@
 
 import sys
 
+from autobahn.twisted.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    connectWS,
+)
 from twisted.internet import reactor
 from twisted.python import log
 
-from autobahn.twisted.websocket import WebSocketClientFactory, \
-    WebSocketClientProtocol, \
-    connectWS
-
 
 class EchoClientProtocol(WebSocketClientProtocol):
-
     def sendHello(self):
-        self.sendMessage("Hello, world!".encode('utf8'))
+        self.sendMessage("Hello, world!".encode("utf8"))
 
     def onOpen(self):
         self.sendHello()
@@ -47,12 +47,11 @@ class EchoClientProtocol(WebSocketClientProtocol):
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            print("Text message received: {}".format(payload.decode('utf8')))
+            print("Text message received: {}".format(payload.decode("utf8")))
         reactor.callLater(1, self.sendHello)
 
 
 class EchoClientFactory(WebSocketClientFactory):
-
     protocol = EchoClientProtocol
 
     def clientConnectionLost(self, connector, reason):
@@ -64,8 +63,7 @@ class EchoClientFactory(WebSocketClientFactory):
         reactor.stop()
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Need the WebSocket server address, i.e. ws://127.0.0.1:9000/echo1")
         sys.exit(1)

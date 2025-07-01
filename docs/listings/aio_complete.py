@@ -1,5 +1,6 @@
-from autobahn.asyncio.component import Component, run
 from asyncio import sleep
+
+from autobahn.asyncio.component import Component, run
 from autobahn.wamp.types import RegisterOptions
 
 # to see how this works on the Crossbar.io side, see the example
@@ -21,16 +22,16 @@ component = Component(
             # you can set various websocket options here if you want
             "options": {
                 "open_handshake_timeout": 100,
-            }
+            },
         },
     ],
     # authentication can also be configured (this will only work on
     # the demo router on the first transport above)
     authentication={
         "cryptosign": {
-            'authid': 'alice',
+            "authid": "alice",
             # this key should be loaded from disk, database etc never burned into code like this...
-            'privkey': '6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c',
+            "privkey": "6e3a302aa67d55ffc2059efeb5cf679470b37a26ae9ac18693b56ea3d0cd331c",
         }
     },
     # must provide a realm
@@ -50,7 +51,7 @@ async def join(session, details):
 
 @component.register(
     "example.foo",
-    options=RegisterOptions(details_arg='details'),
+    options=RegisterOptions(details_arg="details"),
 )
 async def foo(*args, **kw):
     print("foo called: {}, {}".format(args, kw))

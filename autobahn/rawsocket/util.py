@@ -25,8 +25,6 @@
 ###############################################################################
 
 
-from autobahn.util import public
-
 # The Python urlparse module currently does not contain the rs/rss
 # schemes, so we add those dynamically (which is a hack of course).
 #
@@ -34,6 +32,8 @@ from autobahn.util import public
 # _all_ our unit tests for WS URLs succeed
 #
 from urllib import parse as urlparse
+
+from autobahn.util import public
 
 wsschemes = ["rs", "rss"]
 urlparse.uses_relative.extend(wsschemes)
@@ -71,8 +71,7 @@ def create_url(hostname, port=None, isSecure=False):
     # assert type(hostname) == str
     assert type(isSecure) == bool
 
-    if hostname == 'unix':
-
+    if hostname == "unix":
         netloc = "unix:%s" % port
     else:
         assert port is None or (type(port) == int and port in range(0, 65535))
@@ -120,23 +119,31 @@ def parse_url(url):
     parsed = urlparse.urlparse(url)
 
     if parsed.scheme not in ["rs", "rss"]:
-        raise Exception("invalid RawSocket URL: protocol scheme '{}' is not for RawSocket".format(parsed.scheme))
+        raise Exception(
+            "invalid RawSocket URL: protocol scheme '{}' is not for RawSocket".format(
+                parsed.scheme
+            )
+        )
 
     if not parsed.hostname or parsed.hostname == "":
         raise Exception("invalid RawSocket URL: missing hostname")
 
     if parsed.query is not None and parsed.query != "":
-        raise Exception("invalid RawSocket URL: non-empty query '{}'".format(parsed.query))
+        raise Exception(
+            "invalid RawSocket URL: non-empty query '{}'".format(parsed.query)
+        )
 
     if parsed.fragment is not None and parsed.fragment != "":
-        raise Exception("invalid RawSocket URL: non-empty fragment '{}'".format(parsed.fragment))
+        raise Exception(
+            "invalid RawSocket URL: non-empty fragment '{}'".format(parsed.fragment)
+        )
 
     if parsed.hostname == "unix":
         # Unix domain sockets sockets
 
         # rs://unix:/tmp/file.sock => unix:/tmp/file.sock => /tmp/file.sock
         fp = parsed.netloc + parsed.path
-        uds_path = fp.split(':')[1]
+        uds_path = fp.split(":")[1]
 
         # note: we don't interpret "uds_path" in any further way: it needs to be
         # a path on the local host with a listening Unix domain sockets at the other end ..
@@ -147,7 +154,9 @@ def parse_url(url):
         # TCP/IP sockets
 
         if parsed.path is not None and parsed.path != "":
-            raise Exception("invalid RawSocket URL: non-empty path '{}'".format(parsed.path))
+            raise Exception(
+                "invalid RawSocket URL: non-empty path '{}'".format(parsed.path)
+            )
 
         if parsed.port is None or parsed.port == "":
             if parsed.scheme == "rs":

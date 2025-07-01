@@ -2,7 +2,7 @@
 
 import os
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     _EVAR = "AUTOBAHN_BUILD_ID"
     _SEARCH = "__build__ = u'00000'"
     _REPLACE = "__build__ = u'{}'"
@@ -16,7 +16,7 @@ if __name__ == '__main__':
         else:
             files.append(os.path.abspath(_version.__file__))
 
-        fn = 'autobahn/_version.py'
+        fn = "autobahn/_version.py"
         if os.path.exists(fn):
             files.append(os.path.abspath(fn))
 
@@ -32,16 +32,22 @@ if __name__ == '__main__':
                 if contents.find(_SEARCH):
                     contents = contents.replace(_SEARCH, build_id_stmt)
                     print(contents)
-                    with open(fn, 'w') as f:
+                    with open(fn, "w") as f:
                         f.write(contents)
                         f.flush()
-                    print('Ok: replaced placeholder build ID in file "{}" with "{}"'.format(fn, build_id_stmt))
+                    print(
+                        'Ok: replaced placeholder build ID in file "{}" with "{}"'.format(
+                            fn, build_id_stmt
+                        )
+                    )
                     done.append(fn)
                 else:
                     if contents.find(build_id_stmt):
                         print('Skipping file "{}": build ID already correct')
                     else:
-                        error_msg = 'Error: could not find search string "{}" to inject build ID in file "{}"'.format(_SEARCH, _version.__file__)
+                        error_msg = 'Error: could not find search string "{}" to inject build ID in file "{}"'.format(
+                            _SEARCH, _version.__file__
+                        )
                         raise Exception(error_msg)
     else:
-        print('Skipping injection of build ID: AUTOBAHN_BUILD_ID not set')
+        print("Skipping injection of build ID: AUTOBAHN_BUILD_ID not set")

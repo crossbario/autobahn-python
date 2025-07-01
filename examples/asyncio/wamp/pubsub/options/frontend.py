@@ -24,11 +24,11 @@
 #
 ###############################################################################
 
+import asyncio
 from os import environ
 
-import asyncio
-from autobahn.wamp.types import PublishOptions, EventDetails, SubscribeOptions
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.types import EventDetails, PublishOptions, SubscribeOptions
 
 
 class Component(ApplicationSession):
@@ -41,18 +41,26 @@ class Component(ApplicationSession):
         self.received = 0
 
         def on_event(i, details=None):
-            print("Got event, publication ID {}, publisher {}: {}".format(details.publication, details.publisher, i))
+            print(
+                "Got event, publication ID {}, publisher {}: {}".format(
+                    details.publication, details.publisher, i
+                )
+            )
             self.received += 1
             if self.received > 5:
                 self.leave()
 
-        await self.subscribe(on_event, 'com.myapp.topic1', options=SubscribeOptions(details_arg='details'))
+        await self.subscribe(
+            on_event,
+            "com.myapp.topic1",
+            options=SubscribeOptions(details_arg="details"),
+        )
 
     def onDisconnect(self):
         asyncio.get_event_loop().stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

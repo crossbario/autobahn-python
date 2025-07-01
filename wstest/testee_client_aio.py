@@ -24,40 +24,43 @@
 #
 ###############################################################################
 
-import asyncio
 import argparse
+import asyncio
 
 import txaio
+
 txaio.use_asyncio()
 
 import autobahn
-
-from autobahn.websocket.util import parse_url
-
+from autobahn.asyncio.websocket import WebSocketClientFactory, WebSocketClientProtocol
+from autobahn.websocket.compress import (
+    PerMessageDeflateOffer,
+    PerMessageDeflateResponse,
+    PerMessageDeflateResponseAccept,
+)
 from autobahn.websocket.protocol import WebSocketProtocol
-from autobahn.asyncio.websocket import WebSocketClientProtocol, \
-    WebSocketClientFactory
-
-from autobahn.websocket.compress import PerMessageDeflateOffer, \
-    PerMessageDeflateResponse, PerMessageDeflateResponseAccept
+from autobahn.websocket.util import parse_url
 
 
 class TesteeClientProtocol(WebSocketClientProtocol):
-
     def onOpen(self):
         if self.factory.endCaseId is None:
             self.log.info("Getting case count ..")
         elif self.factory.currentCaseId <= self.factory.endCaseId:
-            self.log.info("Running test case {case_id}/{last_case_id} as user agent {agent} on peer {peer}",
-                          case_id=self.factory.currentCaseId,
-                          last_case_id=self.factory.endCaseId,
-                          agent=self.factory.agent,
-                          peer=self.peer)
+            self.log.info(
+                "Running test case {case_id}/{last_case_id} as user agent {agent} on peer {peer}",
+                case_id=self.factory.currentCaseId,
+                last_case_id=self.factory.endCaseId,
+                agent=self.factory.agent,
+                peer=self.peer,
+            )
 
     def onMessage(self, msg, binary):
         if self.factory.endCaseId is None:
             self.factory.endCaseId = int(msg)
-            self.log.info("Ok, will run {case_count} cases", case_count=self.factory.endCaseId)
+            self.log.info(
+                "Ok, will run {case_count} cases", case_count=self.factory.endCaseId
+            )
         else:
             if self.state == WebSocketProtocol.STATE_OPEN:
                 self.sendMessage(msg, binary)
@@ -67,7 +70,6 @@ class TesteeClientProtocol(WebSocketClientProtocol):
 
 
 class TesteeClientFactory(WebSocketClientFactory):
-
     protocol = TesteeClientProtocol
 
     def __init__(self, url, agent):
@@ -87,11 +89,22 @@ class TesteeClientFactory(WebSocketClientFactory):
         self.setProtocolOptions(perMessageCompressionAccept=accept)
 
 
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Autobahn Testee Client (asyncio)')
-    parser.add_argument('--url', dest='url', type=str, default='ws://127.0.0.1:9001', help='The WebSocket fuzzing server URL.')
-    parser.add_argument('--loglevel', dest='loglevel', type=str, default='info', help='Log level, eg "info" or "debug".')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Autobahn Testee Client (asyncio)")
+    parser.add_argument(
+        "--url",
+        dest="url",
+        type=str,
+        default="ws://127.0.0.1:9001",
+        help="The WebSocket fuzzing server URL.",
+    )
+    parser.add_argument(
+        "--loglevel",
+        dest="loglevel",
+        type=str,
+        default="info",
+        help='Log level, eg "info" or "debug".',
+    )
 
     options = parser.parse_args()
 
@@ -103,13 +116,12 @@ if __name__ == '__main__':
 
     loop = asyncio.get_event_loop()
 
-    factory.resource = '/getCaseCount'
+    factory.resource = "/getCaseCount"
     factory.endCaseId = None
     factory.currentCaseId = 0
     factory.updateReports = True
 
     while True:
-
         factory._done = txaio.create_future()
         coro = loop.create_connection(factory, host, port)
         loop.run_until_complete(coro)
@@ -117,7 +129,9 @@ if __name__ == '__main__':
 
         factory.currentCaseId += 1
         if factory.currentCaseId <= factory.endCaseId:
-            factory.resource = "/runCase?case={}&agent={}".format(factory.currentCaseId, factory.agent)
+            factory.resource = "/runCase?case={}&agent={}".format(
+                factory.currentCaseId, factory.agent
+            )
         elif factory.updateReports:
             factory.resource = "/updateReports?agent={}".format(factory.agent)
             factory.updateReports = False

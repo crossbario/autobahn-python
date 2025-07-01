@@ -27,13 +27,12 @@
 import jinja2
 from klein import Klein
 
-from twisted.internet.defer import inlineCallbacks
 from autobahn.twisted.wamp import Application
-
+from twisted.internet.defer import inlineCallbacks
 
 # This is our WAMP application
 ##
-wampapp = Application('com.example')
+wampapp = Application("com.example")
 
 
 @wampapp.register()
@@ -46,36 +45,38 @@ def square(x):
 ##
 webapp = Klein()
 webapp.visits = 0
-webapp.templates = jinja2.Environment(loader=jinja2.FileSystemLoader('templates'))
+webapp.templates = jinja2.Environment(loader=jinja2.FileSystemLoader("templates"))
 
 
-@webapp.route('/')
+@webapp.route("/")
 def home(request):
     webapp.visits += 1
-    wampapp.session.publish('com.example.onvisit', visits=webapp.visits)
-    page = webapp.templates.get_template('index.html')
+    wampapp.session.publish("com.example.onvisit", visits=webapp.visits)
+    page = webapp.templates.get_template("index.html")
     return page.render(visits=webapp.visits)
 
 
-@webapp.route('/square/<int:x>')
+@webapp.route("/square/<int:x>")
 @inlineCallbacks
 def square(request, x):
-    result = yield wampapp.session.call('com.example.square', x)
-    page = webapp.templates.get_template('result.html')
+    result = yield wampapp.session.call("com.example.square", x)
+    page = webapp.templates.get_template("result.html")
     return page.render(x=x, result=result)
 
 
-@webapp.route('/square/submit', methods=['POST'])
+@webapp.route("/square/submit", methods=["POST"])
 def square_submit(request):
-    x = int(request.args.get('x', [0])[0])
+    x = int(request.args.get("x", [0])[0])
     return square(request, x)
 
 
 if __name__ == "__main__":
     import sys
+
+    from twisted.internet import reactor
     from twisted.python import log
     from twisted.web.server import Site
-    from twisted.internet import reactor
+
     log.startLogging(sys.stdout)
 
     reactor.listenTCP(8080, Site(webapp.resource()))

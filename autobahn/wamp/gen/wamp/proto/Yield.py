@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Yield(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class Yield(object):
     def GetRootAsYield(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # Yield
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,14 +31,18 @@ class Yield(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Yield
     def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Yield
@@ -43,7 +50,10 @@ class Yield(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(
+                flatbuffers.number_types.Uint8Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
+            )
         return 0
 
     # Yield
@@ -84,7 +94,10 @@ class Yield(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(
+                flatbuffers.number_types.Uint8Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
+            )
         return 0
 
     # Yield
@@ -110,14 +123,18 @@ class Yield(object):
     def Progress(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # Yield
     def Callee(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Yield
@@ -141,6 +158,7 @@ class Yield(object):
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
             from wamp.proto.Principal import Principal
+
             obj = Principal()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -158,51 +176,140 @@ class Yield(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         return o == 0
 
-def YieldStart(builder): builder.StartObject(11)
+
+def YieldStart(builder):
+    builder.StartObject(11)
+
+
 def Start(builder):
     return YieldStart(builder)
-def YieldAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+
+
+def YieldAddSession(builder, session):
+    builder.PrependUint64Slot(0, session, 0)
+
+
 def AddSession(builder, session):
     return YieldAddSession(builder, session)
-def YieldAddRequest(builder, request): builder.PrependUint64Slot(1, request, 0)
+
+
+def YieldAddRequest(builder, request):
+    builder.PrependUint64Slot(1, request, 0)
+
+
 def AddRequest(builder, request):
     return YieldAddRequest(builder, request)
-def YieldAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+
+
+def YieldAddPayload(builder, payload):
+    builder.PrependUOffsetTRelativeSlot(
+        2, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0
+    )
+
+
 def AddPayload(builder, payload):
     return YieldAddPayload(builder, payload)
-def YieldStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+
+
+def YieldStartPayloadVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
 def StartPayloadVector(builder, numElems):
     return YieldStartPayloadVector(builder, numElems)
-def YieldAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(3, encAlgo, 0)
+
+
+def YieldAddEncAlgo(builder, encAlgo):
+    builder.PrependUint8Slot(3, encAlgo, 0)
+
+
 def AddEncAlgo(builder, encAlgo):
     return YieldAddEncAlgo(builder, encAlgo)
-def YieldAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(4, encSerializer, 0)
+
+
+def YieldAddEncSerializer(builder, encSerializer):
+    builder.PrependUint8Slot(4, encSerializer, 0)
+
+
 def AddEncSerializer(builder, encSerializer):
     return YieldAddEncSerializer(builder, encSerializer)
-def YieldAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+
+
+def YieldAddEncKey(builder, encKey):
+    builder.PrependUOffsetTRelativeSlot(
+        5, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0
+    )
+
+
 def AddEncKey(builder, encKey):
     return YieldAddEncKey(builder, encKey)
-def YieldStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+
+
+def YieldStartEncKeyVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
 def StartEncKeyVector(builder, numElems):
     return YieldStartEncKeyVector(builder, numElems)
-def YieldAddProgress(builder, progress): builder.PrependBoolSlot(6, progress, 0)
+
+
+def YieldAddProgress(builder, progress):
+    builder.PrependBoolSlot(6, progress, 0)
+
+
 def AddProgress(builder, progress):
     return YieldAddProgress(builder, progress)
-def YieldAddCallee(builder, callee): builder.PrependUint64Slot(7, callee, 0)
+
+
+def YieldAddCallee(builder, callee):
+    builder.PrependUint64Slot(7, callee, 0)
+
+
 def AddCallee(builder, callee):
     return YieldAddCallee(builder, callee)
-def YieldAddCalleeAuthid(builder, calleeAuthid): builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthid), 0)
+
+
+def YieldAddCalleeAuthid(builder, calleeAuthid):
+    builder.PrependUOffsetTRelativeSlot(
+        8, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthid), 0
+    )
+
+
 def AddCalleeAuthid(builder, calleeAuthid):
     return YieldAddCalleeAuthid(builder, calleeAuthid)
-def YieldAddCalleeAuthrole(builder, calleeAuthrole): builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthrole), 0)
+
+
+def YieldAddCalleeAuthrole(builder, calleeAuthrole):
+    builder.PrependUOffsetTRelativeSlot(
+        9, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthrole), 0
+    )
+
+
 def AddCalleeAuthrole(builder, calleeAuthrole):
     return YieldAddCalleeAuthrole(builder, calleeAuthrole)
-def YieldAddForwardFor(builder, forwardFor): builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+
+
+def YieldAddForwardFor(builder, forwardFor):
+    builder.PrependUOffsetTRelativeSlot(
+        10, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0
+    )
+
+
 def AddForwardFor(builder, forwardFor):
     return YieldAddForwardFor(builder, forwardFor)
-def YieldStartForwardForVector(builder, numElems): return builder.StartVector(8, numElems, 8)
+
+
+def YieldStartForwardForVector(builder, numElems):
+    return builder.StartVector(8, numElems, 8)
+
+
 def StartForwardForVector(builder, numElems):
     return YieldStartForwardForVector(builder, numElems)
-def YieldEnd(builder): return builder.EndObject()
+
+
+def YieldEnd(builder):
+    return builder.EndObject()
+
+
 def End(builder):
     return YieldEnd(builder)
