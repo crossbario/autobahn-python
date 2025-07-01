@@ -1,11 +1,4 @@
-# FIXME:
-# The conflict is caused by:
-# awscli 1.27.50 depends on colorama<0.4.5 and >=0.2.5
-# tox 4.2.8 depends on colorama>=0.4.6
-# awscli>=1.27.50
-# botocore>=1.29.50
 backports.tempfile>=1.0
-black>=25.1.0
 bumpversion>=0.5.3
 codecov>=2.0.15
 humanize>=0.5.1
@@ -13,7 +6,6 @@ mypy>=0.610; python_version >= '3.4' and platform_python_implementation != 'PyPy
 myst_parser>=4.0.1
 passlib
 pep8-naming>=0.3.3
-pip>=9.0.1
 pyenchant>=1.6.6
 pyflakes>=1.0.0
 pyinstaller>=4.2

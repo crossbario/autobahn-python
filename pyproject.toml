@@ -1,6 +1,9 @@
-[tool.black]
-# Black configuration: Python code files
-line-length = 88
+[project]
+name = "autobahn"
+version = "20.6.1"
+description = "WebSocket client & server library, WAMP real-time framework"
+readme = "README.md"
+requires-python = ">=3.10"
 
 [tool.rstfmt]
 # rstfmt configuration: ReST (Sphinx) doc files
