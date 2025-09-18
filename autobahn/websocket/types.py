@@ -25,18 +25,19 @@
 ###############################################################################
 
 from pprint import pformat
+
 from autobahn.util import public
 
 __all__ = (
-    'ConnectionRequest',
-    'ConnectingRequest',
-    'ConnectionResponse',
-    'ConnectionAccept',
-    'ConnectionDeny',
-    'Message',
-    'IncomingMessage',
-    'OutgoingMessage',
-    'Ping',
+    "ConnectingRequest",
+    "ConnectionAccept",
+    "ConnectionDeny",
+    "ConnectionRequest",
+    "ConnectionResponse",
+    "IncomingMessage",
+    "Message",
+    "OutgoingMessage",
+    "Ping",
 )
 
 
@@ -49,18 +50,20 @@ class ConnectionRequest(object):
     """
 
     __slots__ = (
-        'peer',
-        'headers',
-        'host',
-        'path',
-        'params',
-        'version',
-        'origin',
-        'protocols',
-        'extensions'
+        "peer",
+        "headers",
+        "host",
+        "path",
+        "params",
+        "version",
+        "origin",
+        "protocols",
+        "extensions",
     )
 
-    def __init__(self, peer, headers, host, path, params, version, origin, protocols, extensions):
+    def __init__(
+        self, peer, headers, host, path, params, version, origin, protocols, extensions
+    ):
         """
 
         :param peer: Descriptor of the connecting client (e.g. IP address/port
@@ -111,15 +114,17 @@ class ConnectionRequest(object):
         self.extensions = extensions
 
     def __json__(self):
-        return {'peer': self.peer,
-                'headers': self.headers,
-                'host': self.host,
-                'path': self.path,
-                'params': self.params,
-                'version': self.version,
-                'origin': self.origin,
-                'protocols': self.protocols,
-                'extensions': self.extensions}
+        return {
+            "peer": self.peer,
+            "headers": self.headers,
+            "host": self.host,
+            "path": self.path,
+            "params": self.params,
+            "version": self.version,
+            "origin": self.origin,
+            "protocols": self.protocols,
+            "extensions": self.extensions,
+        }
 
     def __str__(self):
         return pformat(self.__json__())
@@ -141,16 +146,25 @@ class ConnectingRequest(object):
     """
 
     __slots__ = (
-        'host',
-        'port',
-        'resource',
-        'headers',
-        'useragent',
-        'origin',
-        'protocols',
+        "host",
+        "port",
+        "resource",
+        "headers",
+        "useragent",
+        "origin",
+        "protocols",
     )
 
-    def __init__(self, host=None, port=None, resource=None, headers=None, useragent=None, origin=None, protocols=None):
+    def __init__(
+        self,
+        host=None,
+        port=None,
+        resource=None,
+        headers=None,
+        useragent=None,
+        origin=None,
+        protocols=None,
+    ):
         """
         Any of the arguments can be `None`, which will provide a useful
         default.
@@ -176,13 +190,13 @@ class ConnectingRequest(object):
 
     def __json__(self):
         return {
-            'host': self.host,
-            'port': self.port,
-            'resource': self.resource,
-            'headers': self.headers,
-            'useragent': self.useragent,
-            'origin': self.origin,
-            'protocols': self.protocols,
+            "host": self.host,
+            "port": self.port,
+            "resource": self.resource,
+            "headers": self.headers,
+            "useragent": self.useragent,
+            "origin": self.origin,
+            "protocols": self.protocols,
         }
 
     def __str__(self):
@@ -197,13 +211,7 @@ class ConnectionResponse(object):
     a WebSocket server has accepted a connection request by a client.
     """
 
-    __slots__ = (
-        'peer',
-        'headers',
-        'version',
-        'protocol',
-        'extensions'
-    )
+    __slots__ = ("peer", "headers", "version", "protocol", "extensions")
 
     def __init__(self, peer, headers, version, protocol, extensions):
         """
@@ -231,11 +239,13 @@ class ConnectionResponse(object):
         self.extensions = extensions
 
     def __json__(self):
-        return {'peer': self.peer,
-                'headers': self.headers,
-                'version': self.version,
-                'protocol': self.protocol,
-                'extensions': self.extensions}
+        return {
+            "peer": self.peer,
+            "headers": self.headers,
+            "version": self.version,
+            "protocol": self.protocol,
+            "extensions": self.extensions,
+        }
 
     def __str__(self):
         return pformat(self.__json__())
@@ -249,7 +259,7 @@ class ConnectionAccept(object):
     select one of the subprotocols announced by the client.
     """
 
-    __slots__ = ('subprotocol', 'headers')
+    __slots__ = ("subprotocol", "headers")
 
     def __init__(self, subprotocol=None, headers=None):
         """
@@ -266,15 +276,15 @@ class ConnectionAccept(object):
             tuple/list.
         :type headers: dict or None
         """
-        assert(subprotocol is None or type(subprotocol) == str)
-        assert(headers is None or type(headers) == dict)
+        assert subprotocol is None or type(subprotocol) == str
+        assert headers is None or type(headers) == dict
         if headers is not None:
             for k, v in headers.items():
-                assert(type(k) == str)
-                assert(type(v) == str or type(v) == list or type(v) == tuple)
+                assert type(k) == str
+                assert type(v) == str or type(v) == list or type(v) == tuple
                 if type(v) == list or type(v) == tuple:
                     for vv in v:
-                        assert(type(vv) == str)
+                        assert type(vv) == str
 
         self.subprotocol = subprotocol
         self.headers = headers
@@ -287,7 +297,7 @@ class ConnectionDeny(Exception):
     during handshake in :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect`.
     """
 
-    __slots__ = ('code', 'reason')
+    __slots__ = ("code", "reason")
 
     BAD_REQUEST = 400
     """
@@ -338,8 +348,8 @@ class ConnectionDeny(Exception):
         :param reason: HTTP error reason.
         :type reason: unicode
         """
-        assert(type(code) == int)
-        assert(reason is None or type(reason) == str)
+        assert type(code) == int
+        assert reason is None or type(reason) == str
 
         self.code = code
         self.reason = reason
@@ -358,7 +368,7 @@ class IncomingMessage(Message):
     An incoming WebSocket message.
     """
 
-    __slots__ = ('payload', 'is_binary')
+    __slots__ = ("payload", "is_binary")
 
     def __init__(self, payload, is_binary=False):
         """
@@ -371,8 +381,8 @@ class IncomingMessage(Message):
             contains UTF-8 encoded text.
         :type is_binary: bool
         """
-        assert(type(payload) == bytes)
-        assert(type(is_binary) == bool)
+        assert type(payload) == bytes
+        assert type(is_binary) == bool
 
         self.payload = payload
         self.is_binary = is_binary
@@ -383,7 +393,7 @@ class OutgoingMessage(Message):
     An outgoing WebSocket message.
     """
 
-    __slots__ = ('payload', 'is_binary', 'skip_compress')
+    __slots__ = ("payload", "is_binary", "skip_compress")
 
     def __init__(self, payload, is_binary=False, skip_compress=False):
         """
@@ -402,9 +412,9 @@ class OutgoingMessage(Message):
             incompressible (e.g. encrypted or already compressed).
         :type skip_compress: bool
         """
-        assert(type(payload) == bytes)
-        assert(type(is_binary) == bool)
-        assert(type(skip_compress) == bool)
+        assert type(payload) == bytes
+        assert type(is_binary) == bool
+        assert type(skip_compress) == bool
 
         self.payload = payload
         self.is_binary = is_binary
@@ -416,7 +426,7 @@ class Ping(object):
     A WebSocket ping message.
     """
 
-    __slots__ = ('payload')
+    __slots__ = "payload"
 
     def __init__(self, payload=None):
         """
@@ -424,10 +434,16 @@ class Ping(object):
         :param payload: The WebSocket ping message payload.
         :type payload: bytes or None
         """
-        assert(payload is None or type(payload) == bytes), \
-            ("invalid type {} for WebSocket ping payload - must be None or bytes".format(type(payload)))
+        assert payload is None or type(payload) == bytes, (
+            "invalid type {} for WebSocket ping payload - must be None or bytes".format(
+                type(payload)
+            )
+        )
         if payload is not None:
-            assert(len(payload) < 126), \
-                ("WebSocket ping payload too long ({} bytes) - must be <= 125 bytes".format(len(payload)))
+            assert len(payload) < 126, (
+                "WebSocket ping payload too long ({} bytes) - must be <= 125 bytes".format(
+                    len(payload)
+                )
+            )
 
         self.payload = payload

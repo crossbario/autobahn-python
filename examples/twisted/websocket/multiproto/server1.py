@@ -26,17 +26,16 @@
 
 import txaio
 
-from twisted.internet import reactor
-
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol, \
-    listenWS
-
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    listenWS,
+)
 from autobahn.websocket.types import ConnectionDeny
+from twisted.internet import reactor
 
 
 class BaseService:
-
     """
     Simple base for our services.
     """
@@ -56,35 +55,31 @@ class BaseService:
 
 
 class Echo1Service(BaseService):
-
     """
     Awesome Echo Service 1.
     """
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            msg = "Echo 1 - {}".format(payload.decode('utf8'))
+            msg = "Echo 1 - {}".format(payload.decode("utf8"))
             print(msg)
-            self.proto.sendMessage(msg.encode('utf8'))
+            self.proto.sendMessage(msg.encode("utf8"))
 
 
 class Echo2Service(BaseService):
-
     """
     Awesome Echo Service 2.
     """
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            msg = "Echo 2 - {}".format(payload.decode('utf8'))
+            msg = "Echo 2 - {}".format(payload.decode("utf8"))
             print(msg)
-            self.proto.sendMessage(msg.encode('utf8'))
+            self.proto.sendMessage(msg.encode("utf8"))
 
 
 class ServiceServerProtocol(WebSocketServerProtocol):
-
-    SERVICEMAP = {'/echo1': Echo1Service,
-                  '/echo2': Echo2Service}
+    SERVICEMAP = {"/echo1": Echo1Service, "/echo2": Echo2Service}
 
     def __init__(self):
         self.service = None
@@ -129,8 +124,7 @@ class ServiceServerProtocol(WebSocketServerProtocol):
             self.service.onClose(wasClean, code, reason)
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = ServiceServerProtocol
     listenWS(factory)

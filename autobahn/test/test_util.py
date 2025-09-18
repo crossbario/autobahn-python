@@ -28,7 +28,12 @@ import os
 import unittest
 from binascii import b2a_hex
 
-from autobahn.util import IdGenerator, parse_activation_code, generate_activation_code, generate_token
+from autobahn.util import (
+    IdGenerator,
+    generate_activation_code,
+    generate_token,
+    parse_activation_code,
+)
 
 
 class TestIdGenerator(unittest.TestCase):
@@ -40,10 +45,10 @@ class TestIdGenerator(unittest.TestCase):
 
     def test_generator_wrap(self):
         g = IdGenerator()
-        g._next = 2 ** 53 - 1  # cheat a little
+        g._next = 2**53 - 1  # cheat a little
 
         v = next(g)
-        self.assertEqual(v, 2 ** 53)
+        self.assertEqual(v, 2**53)
         v = next(g)
         self.assertEqual(v, 1)
 
@@ -51,7 +56,7 @@ class TestIdGenerator(unittest.TestCase):
         for i in range(20):
             code = generate_activation_code()
             parsed_code = parse_activation_code(code)
-            self.assertTupleEqual(tuple(code.split('-')), parsed_code.groups())
+            self.assertTupleEqual(tuple(code.split("-")), parsed_code.groups())
 
     def test_parse_invalid_activation_codes(self):
         for i in range(20):
@@ -61,7 +66,7 @@ class TestIdGenerator(unittest.TestCase):
 
     def test_generate_token(self):
         token = generate_token(5, 4)
-        self.assertEqual(len(token), len('NUAG-UPQJ-MFGA-K5P5-MUGA'))
-        self.assertEqual(len(token.split('-')), 5)
-        for part in token.split('-'):
+        self.assertEqual(len(token), len("NUAG-UPQJ-MFGA-K5P5-MUGA"))
+        self.assertEqual(len(token.split("-")), 5)
+        for part in token.split("-"):
             self.assertEqual(len(part), 4)

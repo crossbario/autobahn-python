@@ -31,13 +31,7 @@ from typing import Optional, Union
 from autobahn.util import public
 from autobahn.wamp.types import RegisterOptions, SubscribeOptions
 
-__all__ = (
-    'Pattern',
-    'register',
-    'subscribe',
-    'error',
-    'convert_starred_uri'
-)
+__all__ = ("Pattern", "convert_starred_uri", "error", "register", "subscribe")
 
 
 def convert_starred_uri(uri: str):
@@ -69,20 +63,20 @@ def convert_starred_uri(uri: str):
     matches a strict superset of the former!). This is one reason we don't use
     starred URIs for WAMP at the protocol level.
     """
-    assert(type(uri) == str)
+    assert type(uri) == str
 
-    cnt_stars = uri.count('*')
+    cnt_stars = uri.count("*")
 
     if cnt_stars == 0:
-        match = 'exact'
+        match = "exact"
 
-    elif cnt_stars == 1 and uri[-1] == '*':
-        match = 'prefix'
+    elif cnt_stars == 1 and uri[-1] == "*":
+        match = "prefix"
         uri = uri[:-1]
 
     else:
-        match = 'wildcard'
-        uri = uri.replace('*', '')
+        match = "wildcard"
+        uri = uri.replace("*", "")
 
     return uri, match
 
@@ -130,8 +124,13 @@ class Pattern(object):
         This pattern is stricter than a general WAMP URI component since a valid Python identifier is required.
     """
 
-    def __init__(self, uri: str, target: int, options: Optional[Union[SubscribeOptions, RegisterOptions]] = None,
-                 check_types: Optional[bool] = None):
+    def __init__(
+        self,
+        uri: str,
+        target: int,
+        options: Optional[Union[SubscribeOptions, RegisterOptions]] = None,
+        check_types: Optional[bool] = None,
+    ):
         """
 
         :param uri: The URI or URI pattern, e.g. ``"com.myapp.product.<product:int>.update"``.
@@ -154,21 +153,23 @@ class Pattern(object):
         :type check_types: bool
 
         """
-        assert (type(uri) == str)
-        assert (len(uri) > 0)
-        assert (target in [Pattern.URI_TARGET_ENDPOINT,
-                           Pattern.URI_TARGET_HANDLER,
-                           Pattern.URI_TARGET_EXCEPTION])
+        assert type(uri) == str
+        assert len(uri) > 0
+        assert target in [
+            Pattern.URI_TARGET_ENDPOINT,
+            Pattern.URI_TARGET_HANDLER,
+            Pattern.URI_TARGET_EXCEPTION,
+        ]
         if target == Pattern.URI_TARGET_ENDPOINT:
-            assert (options is None or type(options) == RegisterOptions)
+            assert options is None or type(options) == RegisterOptions
         elif target == Pattern.URI_TARGET_HANDLER:
-            assert (options is None or type(options) == SubscribeOptions)
+            assert options is None or type(options) == SubscribeOptions
         else:
             options = None
 
-        components = uri.split('.')
+        components = uri.split(".")
 
-        _URI_COMP_CHARS = r'[^\s\.#]+'
+        _URI_COMP_CHARS = r"[^\s\.#]+"
         # _URI_COMP_CHARS = r'[\da-z_]+'
         # _URI_COMP_CHARS = r'[a-z0-9][a-z0-9_\-]*'
 
@@ -181,18 +182,18 @@ class Pattern(object):
             match = Pattern._URI_NAMED_CONVERTED_COMPONENT.match(component)
             if match:
                 name, comp_type = match.groups()
-                if comp_type not in ['str', 'string', 'int', 'suffix']:
+                if comp_type not in ["str", "string", "int", "suffix"]:
                     raise TypeError("invalid URI")
 
-                if comp_type == 'suffix' and i != len(components) - 1:
+                if comp_type == "suffix" and i != len(components) - 1:
                     raise TypeError("invalid URI")
 
                 if name in nc:
                     raise TypeError("invalid URI")
 
-                if comp_type in ['str', 'string', 'suffix']:
+                if comp_type in ["str", "string", "suffix"]:
                     nc[name] = str
-                elif comp_type == 'int':
+                elif comp_type == "int":
                     nc[name] = int
                 else:
                     # should not arrive here
@@ -218,7 +219,7 @@ class Pattern(object):
                 pl.append(component)
                 continue
 
-            if component == '':
+            if component == "":
                 group_count += 1
                 pl.append(r"({})".format(_URI_COMP_CHARS))
                 nc[group_count] = str
@@ -298,7 +299,7 @@ class Pattern(object):
                     kwargs[key] = val
                 return args, kwargs
             else:
-                raise ValueError('no match')
+                raise ValueError("no match")
 
     @public
     def is_endpoint(self):
@@ -332,7 +333,11 @@ class Pattern(object):
 
 
 @public
-def register(uri: Optional[str], options: Optional[RegisterOptions] = None, check_types: Optional[bool] = None):
+def register(
+    uri: Optional[str],
+    options: Optional[RegisterOptions] = None,
+    check_types: Optional[bool] = None,
+):
     """
     Decorator for WAMP procedure endpoints.
 
@@ -351,21 +356,29 @@ def register(uri: Optional[str], options: Optional[RegisterOptions] = None, chec
         returned to the caller (via the router).
     :type check_types: bool
     """
+
     def decorate(f):
-        assert(callable(f))
+        assert callable(f)
         if uri is None:
-            real_uri = '{}'.format(f.__name__)
+            real_uri = "{}".format(f.__name__)
         else:
             real_uri = uri
-        if not hasattr(f, '_wampuris'):
+        if not hasattr(f, "_wampuris"):
             f._wampuris = []
-        f._wampuris.append(Pattern(real_uri, Pattern.URI_TARGET_ENDPOINT, options, check_types))
+        f._wampuris.append(
+            Pattern(real_uri, Pattern.URI_TARGET_ENDPOINT, options, check_types)
+        )
         return f
+
     return decorate
 
 
 @public
-def subscribe(uri: Optional[str], options: Optional[SubscribeOptions] = None, check_types: Optional[bool] = None):
+def subscribe(
+    uri: Optional[str],
+    options: Optional[SubscribeOptions] = None,
+    check_types: Optional[bool] = None,
+):
     """
     Decorator for WAMP event handlers.
 
@@ -384,12 +397,16 @@ def subscribe(uri: Optional[str], options: Optional[SubscribeOptions] = None, ch
         returned to the caller (via the router).
     :type check_types: bool
     """
+
     def decorate(f):
-        assert(callable(f))
-        if not hasattr(f, '_wampuris'):
+        assert callable(f)
+        if not hasattr(f, "_wampuris"):
             f._wampuris = []
-        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER, options, check_types))
+        f._wampuris.append(
+            Pattern(uri, Pattern.URI_TARGET_HANDLER, options, check_types)
+        )
         return f
+
     return decorate
 
 
@@ -398,10 +415,12 @@ def error(uri: str):
     """
     Decorator for WAMP error classes.
     """
+
     def decorate(cls):
-        assert(issubclass(cls, Exception))
-        if not hasattr(cls, '_wampuris'):
+        assert issubclass(cls, Exception)
+        if not hasattr(cls, "_wampuris"):
             cls._wampuris = []
         cls._wampuris.append(Pattern(uri, Pattern.URI_TARGET_EXCEPTION))
         return cls
+
     return decorate

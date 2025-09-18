@@ -26,9 +26,7 @@
 
 from autobahn.util import public
 
-__all__ = (
-    'PayloadExceededError',
-)
+__all__ = ("PayloadExceededError",)
 
 
 @public

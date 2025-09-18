@@ -24,8 +24,8 @@
 #
 ###############################################################################
 
+from crochet import run_in_reactor, setup, wait_for
 from flask import Flask
-from crochet import setup, run_in_reactor, wait_for
 
 # this MUST be called _before_ any Autobahn or Twisted imports!
 setup()
@@ -52,16 +52,17 @@ app = Flask(__name__)
 app._visits = 0
 
 
-@app.route('/')
+@app.route("/")
 def index():
     app._visits += 1
-    publish('com.example.on_visit', app._visits, msg="hello from flask")
+    publish("com.example.on_visit", app._visits, msg="hello from flask")
     return "Visit {}".format(app._visits)
 
 
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
     import logging
+    import sys
+
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
     # this will start the WAMP app on a background thread and setup communication

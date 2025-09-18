@@ -26,13 +26,12 @@
 
 import os
 
-if os.environ.get('USE_TWISTED', False):
-    from autobahn.twisted.util import sleep
+if os.environ.get("USE_TWISTED", False):
     from autobahn.twisted import wamp
-
-    from twisted.trial import unittest
-    from twisted.internet import defer
+    from autobahn.twisted.util import sleep
     from twisted.application import service
+    from twisted.internet import defer
+    from twisted.trial import unittest
 
     class CaseComponent(wamp.ApplicationSession):
         """
@@ -43,7 +42,7 @@ if os.environ.get('USE_TWISTED', False):
 
         def __init__(self, config):
             wamp.ApplicationSession.__init__(self, config)
-            self.test = config.extra['test']
+            self.test = config.extra["test"]
             self.stop = False
             self._logline = 1
             self.finished = False
@@ -56,7 +55,9 @@ if os.environ.get('USE_TWISTED', False):
             else:
                 sargs = "-"
 
-            msg = '= : {0:>3} : {1:<20} : {2}'.format(self._logline, self.__class__.__name__, sargs)
+            msg = "= : {0:>3} : {1:<20} : {2}".format(
+                self._logline, self.__class__.__name__, sargs
+            )
             self._logline += 1
             print(msg)
 
@@ -68,30 +69,26 @@ if os.environ.get('USE_TWISTED', False):
                 print("already finished")
 
     class Case1_Backend(CaseComponent):
-
         @defer.inlineCallbacks
         def onJoin(self, details):
-
             self.log("joined")
 
             def add2(x, y):
                 self.log("add2 invoked: {0}, {1}".format(x, y))
                 return x + y
 
-            yield self.register(add2, 'com.mathservice.add2')
+            yield self.register(add2, "com.mathservice.add2")
             self.log("add2 registered")
 
             self.finish()
 
     class Case1_Frontend(CaseComponent):
-
         @defer.inlineCallbacks
         def onJoin(self, details):
-
             self.log("joined")
 
             try:
-                res = yield self.call('com.mathservice.add2', 2, 3)
+                res = yield self.call("com.mathservice.add2", 2, 3)
             except Exception as e:
                 self.log("call error: {0}".format(e))
             else:
@@ -100,10 +97,8 @@ if os.environ.get('USE_TWISTED', False):
             self.finish()
 
     class Case2_Backend(CaseComponent):
-
         @defer.inlineCallbacks
         def onJoin(self, details):
-
             self.log("joined")
 
             def ping():
@@ -126,57 +121,55 @@ if os.environ.get('USE_TWISTED', False):
                 self.log("arglen() is invoked", args, kwargs)
                 return [len(args), len(kwargs)]
 
-            yield self.register(ping, 'com.arguments.ping')
-            yield self.register(add2, 'com.arguments.add2')
-            yield self.register(stars, 'com.arguments.stars')
-            yield self.register(orders, 'com.arguments.orders')
-            yield self.register(arglen, 'com.arguments.arglen')
+            yield self.register(ping, "com.arguments.ping")
+            yield self.register(add2, "com.arguments.add2")
+            yield self.register(stars, "com.arguments.stars")
+            yield self.register(orders, "com.arguments.orders")
+            yield self.register(arglen, "com.arguments.arglen")
 
             self.log("procedures registered")
 
     class Case2_Frontend(CaseComponent):
-
         @defer.inlineCallbacks
         def onJoin(self, details):
-
             self.log("joined")
 
             yield sleep(1)
 
-            yield self.call('com.arguments.ping')
+            yield self.call("com.arguments.ping")
             self.log("Pinged!")
 
-            res = yield self.call('com.arguments.add2', 2, 3)
+            res = yield self.call("com.arguments.add2", 2, 3)
             self.log("Add2: {0}".format(res))
 
-            starred = yield self.call('com.arguments.stars')
+            starred = yield self.call("com.arguments.stars")
             self.log("Starred 1: {0}".format(starred))
 
-            starred = yield self.call('com.arguments.stars', nick='Homer')
+            starred = yield self.call("com.arguments.stars", nick="Homer")
             self.log("Starred 2: {0}".format(starred))
 
-            starred = yield self.call('com.arguments.stars', stars=5)
+            starred = yield self.call("com.arguments.stars", stars=5)
             self.log("Starred 3: {0}".format(starred))
 
-            starred = yield self.call('com.arguments.stars', nick='Homer', stars=5)
+            starred = yield self.call("com.arguments.stars", nick="Homer", stars=5)
             self.log("Starred 4: {0}".format(starred))
 
-            orders = yield self.call('com.arguments.orders', 'coffee')
+            orders = yield self.call("com.arguments.orders", "coffee")
             self.log("Orders 1: {0}".format(orders))
 
-            orders = yield self.call('com.arguments.orders', 'coffee', limit=10)
+            orders = yield self.call("com.arguments.orders", "coffee", limit=10)
             self.log("Orders 2: {0}".format(orders))
 
-            arglengths = yield self.call('com.arguments.arglen')
+            arglengths = yield self.call("com.arguments.arglen")
             self.log("Arglen 1: {0}".format(arglengths))
 
-            arglengths = yield self.call('com.arguments.arglen', 1, 2, 3)
+            arglengths = yield self.call("com.arguments.arglen", 1, 2, 3)
             self.log("Arglen 1: {0}".format(arglengths))
 
-            arglengths = yield self.call('com.arguments.arglen', a=1, b=2, c=3)
+            arglengths = yield self.call("com.arguments.arglen", a=1, b=2, c=3)
             self.log("Arglen 2: {0}".format(arglengths))
 
-            arglengths = yield self.call('com.arguments.arglen', 1, 2, 3, a=1, b=2, c=3)
+            arglengths = yield self.call("com.arguments.arglen", 1, 2, 3, a=1, b=2, c=3)
             self.log("Arglen 3: {0}".format(arglengths))
 
             self.log("finishing")
@@ -184,10 +177,11 @@ if os.environ.get('USE_TWISTED', False):
             self.finish()
 
     class TestRpc(unittest.TestCase):
-
         if os.environ.get("WAMP_ROUTER_URL") is None:
-            skip = ("Please provide WAMP_ROUTER_URL environment with url to "
-                    "WAMP router to run WAMP integration tests")
+            skip = (
+                "Please provide WAMP_ROUTER_URL environment with url to "
+                "WAMP router to run WAMP integration tests"
+            )
 
         def setUp(self):
             self.url = os.environ.get("WAMP_ROUTER_URL")

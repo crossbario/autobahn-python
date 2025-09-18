@@ -12,9 +12,9 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
 import shlex
+import sys
 import time
 
 try:
@@ -31,9 +31,9 @@ except ImportError:
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('./_extensions'))
-sys.path.insert(0, os.path.abspath('..'))
-sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath("./_extensions"))
+sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("."))
 
 # monkey-patch txaio so that we can "use" both twisted *and* asyncio,
 # at least at import time -- this is so the autodoc stuff can
@@ -42,15 +42,20 @@ sys.path.insert(0, os.path.abspath('.'))
 # interpreter)
 import txaio
 
+
 def use_tx():
-  "monkey-patched for doc-building"
-  from txaio import tx
-  txaio._use_framework(tx)
+    "monkey-patched for doc-building"
+    from txaio import tx
+
+    txaio._use_framework(tx)
+
 
 def use_aio():
-  "monkey-patched for doc-building"
-  from txaio import aio
-  txaio._use_framework(aio)
+    "monkey-patched for doc-building"
+    from txaio import aio
+
+    txaio._use_framework(aio)
+
 
 txaio.use_twisted = use_tx
 txaio.use_asyncio = use_aio
@@ -62,9 +67,11 @@ txaio.use_asyncio = use_aio
 import sphinx.environment
 from docutils.utils import get_source_line
 
+
 def _warn_node(self, msg, node, **kwargs):
-    if not msg.startswith('nonlocal image URI found:'):
-        self._warnfunc(msg, '%s:%s' % get_source_line(node))
+    if not msg.startswith("nonlocal image URI found:"):
+        self._warnfunc(msg, "%s:%s" % get_source_line(node))
+
 
 sphinx.environment.BuildEnvironment.warn_node = _warn_node
 
@@ -76,22 +83,24 @@ except ImportError:
 # http://stackoverflow.com/a/21449475/884770
 # http://www.sphinx-doc.org/en/stable/ext/autodoc.html#event-autodoc-skip-member
 
+
 # app, what, name, obj, skip, options:
 # <sphinx.application.Sphinx object at 0x2b0192ab2f90> class __module__ autobahn.asyncio.websocket True {'show-inheritance': True, 'members': <object object at 0x2b018c791710>, 'undoc-members': True}
 #
 def autodoc_skip_member(app, what, name, obj, skip, options):
     # skip everything that isn't decorated with @autobahn.public or ..
-    if hasattr(obj, '_is_public') and obj._is_public:
+    if hasattr(obj, "_is_public") and obj._is_public:
         if qualname:
             try:
                 qn = qualname(obj)
             except AttributeError as e:
                 print(e)
                 qn = name
-            print('public API: {}.{}'.format(obj.__module__, qn))
+            print("public API: {}.{}".format(obj.__module__, qn))
         return False
     else:
         return True
+
 
 # !! when enabled, only members with "@public" decorator will be rendered in the docs !!
 # def setup(app):
@@ -104,77 +113,80 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
 # If your documentation needs a minimal Sphinx version, state it here.
 # needs_sphinx = '1.0'
 
-autoapi_type = 'python'
-autoapi_dirs = ['../autobahn']
+autoapi_type = "python"
+autoapi_dirs = ["../autobahn"]
 autoapi_ignore = [
-    '*test*',
-    'test_*.py',
-    '../autobahn/test/*',
-    '../autobahn/wamp/test/*',
-    '../autobahn/websocket/test/*',
-    '../autobahn/test/test_*.py',
-    '../autobahn/wamp/test/test_*.py',
-    '../autobahn/websocket/test/test_*.py',
-    'autoapi/autobahn/test/*',
-    'autoapi/autobahn/websocket/test/*',
-    'autoapi/autobahn/wamp/test/*',
+    "*test*",
+    "test_*.py",
+    "../autobahn/test/*",
+    "../autobahn/wamp/test/*",
+    "../autobahn/websocket/test/*",
+    "../autobahn/test/test_*.py",
+    "../autobahn/wamp/test/test_*.py",
+    "../autobahn/websocket/test/test_*.py",
+    "autoapi/autobahn/test/*",
+    "autoapi/autobahn/websocket/test/*",
+    "autoapi/autobahn/wamp/test/*",
 ]
 autoapi_add_toctree_entry = False
-autoapi_options = ['members', 'undoc-members', 'private-members', 'show-inheritance', 'special-members', 'show-module-summary']
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "private-members",
+    "show-inheritance",
+    "special-members",
+    "show-module-summary",
+]
 # autoapi_template_dir = 'docs/autoapi/templates'
 autoapi_python_use_implicit_namespaces = True
 
 
 # Check if we are building on readthedocs
-RTD_BUILD = os.environ.get('READTHEDOCS', None) == 'True'
+RTD_BUILD = os.environ.get("READTHEDOCS", None) == "True"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'myst_parser',
-
+    "myst_parser",
     # https://sphinx-autoapi.readthedocs.io
-    'autoapi.extension',
-
-    'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.ifconfig',
-    'sphinx.ext.todo',
-    'sphinx.ext.doctest',
-
+    "autoapi.extension",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.ifconfig",
+    "sphinx.ext.todo",
+    "sphinx.ext.doctest",
     # Usage:            .. thumbnail:: picture.png
     # Installation:     pip install sphinxcontrib-images
     # Source:           https://github.com/sphinx-contrib/images
-    'sphinxcontrib.images',
-
+    "sphinxcontrib.images",
     #'sphinxcontrib.spelling',
-    'txsphinx'
+    "txsphinx",
 ]
 
 # extensions not available on RTD
 if spelling is not None:
-    extensions.append('sphinxcontrib.spelling')
+    extensions.append("sphinxcontrib.spelling")
 
-spelling_lang = 'en_US'
+spelling_lang = "en_US"
 spelling_show_suggestions = False
-spelling_word_list_filename = 'spelling_wordlist.txt'
+spelling_word_list_filename = "spelling_wordlist.txt"
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The encoding of source files.
-#source_encoding = 'utf-8-sig'
+# source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = 'autobahn'
+project = "autobahn"
 author = "The WAMP/Autobahn/Crossbar.io OSS Project"
 this_year = "{0}".format(time.strftime("%Y"))
 copyright = "2015-{0}, typedef int GmbH (Germany)".format(this_year)
@@ -185,13 +197,13 @@ copyright = "2015-{0}, typedef int GmbH (Germany)".format(this_year)
 #
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 with open(os.path.join(base_dir, "autobahn", "_version.py")) as f:
-   exec(f.read())  # defines __version__
+    exec(f.read())  # defines __version__
 
 version = release = __version__
 
 # The language for content autogenerated by Sphinx. Refer to documentation
 # for a list of supported languages.
-language = 'en'
+language = "en"
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -201,7 +213,7 @@ language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'work', "README.md"]
+exclude_patterns = ["_build", "work", "README.md"]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -219,7 +231,7 @@ exclude_patterns = ['_build', 'work', "README.md"]
 # show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
@@ -287,12 +299,7 @@ html_static_path = []
 # http://stackoverflow.com/a/19007358
 # http://sphinx-doc.org/config.html#confval-html_sidebars
 html_sidebars = {
-    '**': [
-        'globaltoc.html',
-        'relations.html',
-        'sourcelink.html',
-        'searchbox.html'
-    ],
+    "**": ["globaltoc.html", "relations.html", "sourcelink.html", "searchbox.html"],
 }
 
 # Additional templates that should be rendered to pages, maps page names to
@@ -340,14 +347,14 @@ html_sidebars = {
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'autobahndoc'
+htmlhelp_basename = "autobahndoc"
 
 # http://sphinx-doc.org/ext/intersphinx.html
 intersphinx_mapping = {
-   'python': ('https://docs.python.org/3', None),
-   'rtd': ('https://docs.readthedocs.io/en/latest/', None),
-   'txaio': ('https://txaio.readthedocs.io/en/latest/', None),
-   'autobahn': ('https://autobahn.readthedocs.io/en/latest/', None),
+    "python": ("https://docs.python.org/3", None),
+    "rtd": ("https://docs.readthedocs.io/en/latest/", None),
+    "txaio": ("https://txaio.readthedocs.io/en/latest/", None),
+    "autobahn": ("https://autobahn.readthedocs.io/en/latest/", None),
 }
 
 rst_epilog = r"""
@@ -375,7 +382,7 @@ rst_prolog = """
 """
 
 # http://stackoverflow.com/questions/5599254/how-to-use-sphinxs-autodoc-to-document-a-classs-init-self-method
-autoclass_content = 'both'
+autoclass_content = "both"
 
 # http://www.sphinx-doc.org/en/stable/ext/autodoc.html#confval-autodoc_member_order
 # autodoc_member_order = 'bysource'

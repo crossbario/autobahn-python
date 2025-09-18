@@ -24,8 +24,8 @@
 #
 ###############################################################################
 
+from crochet import run_in_reactor, setup, wait_for
 from flask import Flask, request
-from crochet import setup, run_in_reactor, wait_for
 
 # this MUST be called _before_ any Autobahn or Twisted imports!
 setup()
@@ -39,13 +39,13 @@ from autobahn.twisted.wamp import Application  # noqa
 wapp = Application()
 
 
-@wapp.register('com.example.square')
+@wapp.register("com.example.square")
 def square(x):
     print("square() called with {}".format(x))
     return x * x
 
 
-@wapp.register('com.example.slowsquare')
+@wapp.register("com.example.slowsquare")
 def slowsquare(x):
     print("slowsquare() called with {}".format(x))
     yield sleep(2)
@@ -56,12 +56,12 @@ def slowsquare(x):
 #
 @wait_for(timeout=1)
 def call_square(x):
-    return wapp.session.call('com.example.square', x)
+    return wapp.session.call("com.example.square", x)
 
 
 @wait_for(timeout=5)
 def call_slowsquare(x):
-    return wapp.session.call('com.example.slowsquare', x)
+    return wapp.session.call("com.example.slowsquare", x)
 
 
 # our Flask app
@@ -69,23 +69,24 @@ def call_slowsquare(x):
 app = Flask(__name__)
 
 
-@app.route('/square/submit', methods=['POST'])
+@app.route("/square/submit", methods=["POST"])
 def square_submit():
-    x = int(request.form.get('x', 0))
+    x = int(request.form.get("x", 0))
     res = call_square(x)
     return "{} squared is {}".format(x, res)
 
 
-@app.route('/slowsquare/submit', methods=['POST'])
+@app.route("/slowsquare/submit", methods=["POST"])
 def slowsquare_submit():
-    x = int(request.form.get('x', 0))
+    x = int(request.form.get("x", 0))
     res = call_slowsquare(x)
     return "{} squared is {}".format(x, res)
 
 
-if __name__ == '__main__':
-    import sys
+if __name__ == "__main__":
     import logging
+    import sys
+
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
     # this will start the WAMP app on a background thread and setup communication

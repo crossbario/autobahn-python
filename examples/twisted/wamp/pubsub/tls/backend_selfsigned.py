@@ -27,13 +27,13 @@
 from os import environ
 from os.path import join, split
 
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
-
-from twisted.internet.defer import inlineCallbacks
-from twisted.internet._sslverify import OpenSSLCertificateAuthorities
-from twisted.internet.ssl import CertificateOptions
 from OpenSSL import crypto
+
+from autobahn.twisted.util import sleep
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from twisted.internet._sslverify import OpenSSLCertificateAuthorities
+from twisted.internet.defer import inlineCallbacks
+from twisted.internet.ssl import CertificateOptions
 
 
 class Component(ApplicationSession):
@@ -46,19 +46,16 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             print("publish: com.myapp.topic1", counter)
-            yield self.publish('com.myapp.topic1', counter)
+            yield self.publish("com.myapp.topic1", counter)
             counter += 1
             yield sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # load the self-signed cert the server is using
-    examples_dir = join(split(__file__)[0], '..', '..', '..', '..')
-    cert_fname = join(examples_dir, 'router', '.crossbar', 'server.crt')
-    cert = crypto.load_certificate(
-        crypto.FILETYPE_PEM,
-        open(cert_fname, 'r').read()
-    )
+    examples_dir = join(split(__file__)[0], "..", "..", "..", "..")
+    cert_fname = join(examples_dir, "router", ".crossbar", "server.crt")
+    cert = crypto.load_certificate(crypto.FILETYPE_PEM, open(cert_fname, "r").read())
     # tell Twisted to use just the one certificate we loaded to verify connections
     options = CertificateOptions(
         trustRoot=OpenSSLCertificateAuthorities([cert]),

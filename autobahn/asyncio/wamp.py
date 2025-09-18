@@ -28,28 +28,24 @@ import asyncio
 import signal
 
 import txaio
+
 txaio.use_asyncio()  # noqa
 
+from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
+from autobahn.asyncio.websocket import WampWebSocketClientFactory
+from autobahn.rawsocket.util import parse_url as parse_rs_url
 from autobahn.util import public
 from autobahn.wamp import protocol
+from autobahn.wamp.interfaces import ISession, ITransportHandler
 from autobahn.wamp.types import ComponentConfig
-
-from autobahn.websocket.util import parse_url as parse_ws_url
-from autobahn.rawsocket.util import parse_url as parse_rs_url
-
-from autobahn.asyncio.websocket import WampWebSocketClientFactory
-from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
-
-from autobahn.websocket.compress import PerMessageDeflateOffer, \
-    PerMessageDeflateResponse, PerMessageDeflateResponseAccept
-
-from autobahn.wamp.interfaces import ITransportHandler, ISession
-
-__all__ = (
-    'ApplicationSession',
-    'ApplicationSessionFactory',
-    'ApplicationRunner'
+from autobahn.websocket.compress import (
+    PerMessageDeflateOffer,
+    PerMessageDeflateResponse,
+    PerMessageDeflateResponseAccept,
 )
+from autobahn.websocket.util import parse_url as parse_ws_url
+
+__all__ = ("ApplicationRunner", "ApplicationSession", "ApplicationSessionFactory")
 
 
 @public
@@ -98,14 +94,16 @@ class ApplicationRunner(object):
 
     log = txaio.make_logger()
 
-    def __init__(self,
-                 url,
-                 realm=None,
-                 extra=None,
-                 serializers=None,
-                 ssl=None,
-                 proxy=None,
-                 headers=None):
+    def __init__(
+        self,
+        url,
+        realm=None,
+        extra=None,
+        serializers=None,
+        ssl=None,
+        proxy=None,
+        headers=None,
+    ):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -133,11 +131,11 @@ class ApplicationRunner(object):
         :param headers: Additional headers to send (only applies to WAMP-over-WebSocket).
         :type headers: dict
         """
-        assert(type(url) == str)
-        assert(realm is None or type(realm) == str)
-        assert(extra is None or type(extra) == dict)
-        assert(headers is None or type(headers) == dict)
-        assert(proxy is None or type(proxy) == dict)
+        assert type(url) == str
+        assert realm is None or type(realm) == str
+        assert extra is None or type(extra) == dict
+        assert headers is None or type(headers) == dict
+        assert proxy is None or type(proxy) == dict
         self.url = url
         self.realm = realm
         self.extra = extra or dict()
@@ -154,7 +152,7 @@ class ApplicationRunner(object):
         raise NotImplementedError()
 
     @public
-    def run(self, make, start_loop=True, log_level='info'):
+    def run(self, make, start_loop=True, log_level="info"):
         """
         Run the application component. Under the hood, this runs the event
         loop (unless `start_loop=False` is passed) so won't return
@@ -174,22 +172,26 @@ class ApplicationRunner(object):
             (transport, protocol) pair.
         """
         if callable(make):
+
             def create():
                 cfg = ComponentConfig(self.realm, self.extra)
                 try:
                     session = make(cfg)
                 except Exception as e:
-                    self.log.error('ApplicationSession could not be instantiated: {}'.format(e))
+                    self.log.error(
+                        "ApplicationSession could not be instantiated: {}".format(e)
+                    )
                     loop = asyncio.get_event_loop()
                     if loop.is_running():
                         loop.stop()
                     raise
                 else:
                     return session
+
         else:
             create = make
 
-        if self.url.startswith('rs'):
+        if self.url.startswith("rs"):
             # try to parse RawSocket URL ..
             isSecure, host, port = parse_rs_url(self.url)
 
@@ -197,14 +199,22 @@ class ApplicationRunner(object):
             serializer = self.serializers[0] if self.serializers else None
 
             # create a WAMP-over-RawSocket transport client factory
-            transport_factory = WampRawSocketClientFactory(create, serializer=serializer)
+            transport_factory = WampRawSocketClientFactory(
+                create, serializer=serializer
+            )
 
         else:
             # try to parse WebSocket URL ..
             isSecure, host, port, resource, path, params = parse_ws_url(self.url)
 
             # create a WAMP-over-WebSocket transport client factory
-            transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
+            transport_factory = WampWebSocketClientFactory(
+                create,
+                url=self.url,
+                serializers=self.serializers,
+                proxy=self.proxy,
+                headers=self.headers,
+            )
 
             # client WebSocket settings - similar to:
             # - http://crossbar.io/docs/WebSocket-Compression/#production-settings
@@ -219,18 +229,20 @@ class ApplicationRunner(object):
                     return PerMessageDeflateResponseAccept(response)
 
             # set WebSocket options for all client connections
-            transport_factory.setProtocolOptions(maxFramePayloadSize=1048576,
-                                                 maxMessagePayloadSize=1048576,
-                                                 autoFragmentSize=65536,
-                                                 failByDrop=False,
-                                                 openHandshakeTimeout=2.5,
-                                                 closeHandshakeTimeout=1.,
-                                                 tcpNoDelay=True,
-                                                 autoPingInterval=10.,
-                                                 autoPingTimeout=5.,
-                                                 autoPingSize=12,
-                                                 perMessageCompressionOffers=offers,
-                                                 perMessageCompressionAccept=accept)
+            transport_factory.setProtocolOptions(
+                maxFramePayloadSize=1048576,
+                maxMessagePayloadSize=1048576,
+                autoFragmentSize=65536,
+                failByDrop=False,
+                openHandshakeTimeout=2.5,
+                closeHandshakeTimeout=1.0,
+                tcpNoDelay=True,
+                autoPingInterval=10.0,
+                autoPingTimeout=5.0,
+                autoPingSize=12,
+                perMessageCompressionOffers=offers,
+                perMessageCompressionAccept=accept,
+            )
         # SSL context for client connection
         if self.ssl is None:
             ssl = isSecure
@@ -238,8 +250,9 @@ class ApplicationRunner(object):
             if self.ssl and not isSecure:
                 raise RuntimeError(
                     'ssl argument value passed to %s conflicts with the "ws:" '
-                    'prefix of the url argument. Did you mean to use "wss:"?' %
-                    self.__class__.__name__)
+                    'prefix of the url argument. Did you mean to use "wss:"?'
+                    % self.__class__.__name__
+                )
             ssl = self.ssl
 
         # start the client connection
@@ -247,12 +260,12 @@ class ApplicationRunner(object):
         if loop.is_closed() and start_loop:
             asyncio.set_event_loop(asyncio.new_event_loop())
             loop = asyncio.get_event_loop()
-            if hasattr(transport_factory, 'loop'):
+            if hasattr(transport_factory, "loop"):
                 transport_factory.loop = loop
 
         # assure we are using asyncio
         # txaio.use_asyncio()
-        assert txaio._explicit_framework == 'asyncio'
+        assert txaio._explicit_framework == "asyncio"
 
         txaio.config.loop = loop
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)

@@ -32,14 +32,13 @@ from autobahn.wamp.gen.wamp.proto import Message
 from autobahn.wamp.gen.wamp.proto.MessageType import MessageType
 
 __all__ = (
-    'Event',
-    'Message',
-    'MessageType',
+    "Event",
+    "Message",
+    "MessageType",
 )
 
 
 class Event(EventGen.Event):
-
     @classmethod
     def GetRootAsEvent(cls, buf, offset):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
@@ -55,7 +54,7 @@ class Event(EventGen.Event):
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)
-            return memoryview(self._tab.Bytes)[_off:_off+_len]
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
         return None
 
     def KwargsAsBytes(self):
@@ -63,7 +62,7 @@ class Event(EventGen.Event):
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)
-            return memoryview(self._tab.Bytes)[_off:_off+_len]
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
         return None
 
     def PayloadAsBytes(self):
@@ -71,7 +70,7 @@ class Event(EventGen.Event):
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)
-            return memoryview(self._tab.Bytes)[_off:_off+_len]
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
         return None
 
     def EncKeyAsBytes(self):
@@ -79,12 +78,11 @@ class Event(EventGen.Event):
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)
-            return memoryview(self._tab.Bytes)[_off:_off+_len]
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
         return None
 
 
 class Publish(PublishGen.Publish):
-
     @classmethod
     def GetRootAsEvent(cls, buf, offset):
         n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
@@ -100,7 +98,7 @@ class Publish(PublishGen.Publish):
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)
-            return memoryview(self._tab.Bytes)[_off:_off+_len]
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
         return None
 
     def KwargsAsBytes(self):
@@ -108,7 +106,7 @@ class Publish(PublishGen.Publish):
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)
-            return memoryview(self._tab.Bytes)[_off:_off+_len]
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
         return None
 
     def PayloadAsBytes(self):
@@ -116,7 +114,7 @@ class Publish(PublishGen.Publish):
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)
-            return memoryview(self._tab.Bytes)[_off:_off+_len]
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
         return None
 
     def EncKeyAsBytes(self):
@@ -124,6 +122,5 @@ class Publish(PublishGen.Publish):
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)
-            return memoryview(self._tab.Bytes)[_off:_off+_len]
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
         return None
-

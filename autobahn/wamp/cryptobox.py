@@ -27,26 +27,23 @@
 
 from autobahn.util import public
 from autobahn.wamp.interfaces import IPayloadCodec
-from autobahn.wamp.types import EncodedPayload
 from autobahn.wamp.serializer import _dumps as _json_dumps
 from autobahn.wamp.serializer import _loads as _json_loads
+from autobahn.wamp.types import EncodedPayload
 
-__all__ = [
-    'HAS_CRYPTOBOX',
-    'EncodedPayload'
-]
+__all__ = ["HAS_CRYPTOBOX", "EncodedPayload"]
 
 try:
     # try to import everything we need for WAMP-cryptobox
-    from nacl.encoding import Base64Encoder, RawEncoder, HexEncoder
-    from nacl.public import PrivateKey, PublicKey, Box
+    from nacl.encoding import Base64Encoder, HexEncoder, RawEncoder
+    from nacl.public import Box, PrivateKey, PublicKey
     from nacl.utils import random
     from pytrie import StringTrie
 except ImportError:
     HAS_CRYPTOBOX = False
 else:
     HAS_CRYPTOBOX = True
-    __all__.extend(['Key', 'KeyRing'])
+    __all__.extend(["Key", "KeyRing"])
 
 
 if HAS_CRYPTOBOX:
@@ -59,16 +56,24 @@ if HAS_CRYPTOBOX:
         The originator is either a caller or a publisher. The responder is either a callee or subscriber.
         """
 
-        def __init__(self, originator_priv=None, originator_pub=None, responder_priv=None, responder_pub=None):
+        def __init__(
+            self,
+            originator_priv=None,
+            originator_pub=None,
+            responder_priv=None,
+            responder_pub=None,
+        ):
             # the originator private and public keys, as available
             if originator_priv:
-                self.originator_priv = PrivateKey(originator_priv, encoder=Base64Encoder)
+                self.originator_priv = PrivateKey(
+                    originator_priv, encoder=Base64Encoder
+                )
             else:
                 self.originator_priv = None
 
             if self.originator_priv:
                 self.originator_pub = self.originator_priv.public_key
-                assert(originator_pub is None or originator_pub == self.originator_pub)
+                assert originator_pub is None or originator_pub == self.originator_pub
             else:
                 self.originator_pub = PublicKey(originator_pub, encoder=Base64Encoder)
 
@@ -80,7 +85,7 @@ if HAS_CRYPTOBOX:
 
             if self.responder_priv:
                 self.responder_pub = self.responder_priv.public_key
-                assert(responder_pub is None or responder_pub == self.responder_pub)
+                assert responder_pub is None or responder_pub == self.responder_pub
             else:
                 self.responder_pub = PublicKey(responder_pub, encoder=Base64Encoder)
 
@@ -105,13 +110,16 @@ if HAS_CRYPTOBOX:
                 self.responder_box = None
 
             if not (self.originator_box or self.responder_box):
-                raise Exception("insufficient keys provided for at least originator or responder role")
+                raise Exception(
+                    "insufficient keys provided for at least originator or responder role"
+                )
 
     @public
     class SymKey(object):
         """
         Holds a symmetric key for an URI.
         """
+
         def __init__(self, raw=None):
             pass
 
@@ -129,10 +137,16 @@ if HAS_CRYPTOBOX:
 
             Create a new key ring to hold public and private keys mapped from an URI space.
             """
-            assert(default_key is None or isinstance(default_key, Key) or type(default_key == str))
+            assert (
+                default_key is None
+                or isinstance(default_key, Key)
+                or type(default_key == str)
+            )
             self._uri_to_key = StringTrie()
             if type(default_key) == str:
-                default_key = Key(originator_priv=default_key, responder_priv=default_key)
+                default_key = Key(
+                    originator_priv=default_key, responder_priv=default_key
+                )
             self._default_key = default_key
 
         @public
@@ -144,7 +158,7 @@ if HAS_CRYPTOBOX:
             key = PrivateKey.generate()
             priv_key = key.encode(encoder=Base64Encoder)
             pub_key = key.public_key.encode(encoder=Base64Encoder)
-            return priv_key.decode('ascii'), pub_key.decode('ascii')
+            return priv_key.decode("ascii"), pub_key.decode("ascii")
 
         @public
         def generate_key_hex(self):
@@ -155,18 +169,18 @@ if HAS_CRYPTOBOX:
             key = PrivateKey.generate()
             priv_key = key.encode(encoder=HexEncoder)
             pub_key = key.public_key.encode(encoder=HexEncoder)
-            return priv_key.decode('ascii'), pub_key.decode('ascii')
+            return priv_key.decode("ascii"), pub_key.decode("ascii")
 
         @public
         def set_key(self, uri, key):
             """
             Add a key set for a given URI.
             """
-            assert(type(uri) == str)
-            assert(key is None or isinstance(key, Key) or type(key) == str)
+            assert type(uri) == str
+            assert key is None or isinstance(key, Key) or type(key) == str
             if type(key) == str:
                 key = Key(originator_priv=key, responder_priv=key)
-            if uri == '':
+            if uri == "":
                 self._default_key = key
             else:
                 if key is None:
@@ -177,7 +191,7 @@ if HAS_CRYPTOBOX:
 
         @public
         def rotate_key(self, uri):
-            assert(type(uri) == str)
+            assert type(uri) == str
             if uri in self._uri_to_key:
                 self._uri_to_key[uri].rotate()
             else:
@@ -206,10 +220,10 @@ if HAS_CRYPTOBOX:
             Encrypt the given WAMP URI, args and kwargs into an EncodedPayload instance, or None
             if the URI should not be encrypted.
             """
-            assert(type(is_originating) == bool)
-            assert(type(uri) == str)
-            assert(args is None or type(args) in (list, tuple))
-            assert(kwargs is None or type(kwargs) == dict)
+            assert type(is_originating) == bool
+            assert type(uri) == str
+            assert args is None or type(args) in (list, tuple)
+            assert kwargs is None or type(kwargs) == dict
 
             box = self._get_box(is_originating, uri)
 
@@ -218,13 +232,9 @@ if HAS_CRYPTOBOX:
                 # signals that the payload travel unencrypted (normal)
                 return None
 
-            payload = {
-                'uri': uri,
-                'args': args,
-                'kwargs': kwargs
-            }
+            payload = {"uri": uri, "args": args, "kwargs": kwargs}
             nonce = random(Box.NONCE_SIZE)
-            payload_ser = _json_dumps(payload).encode('utf8')
+            payload_ser = _json_dumps(payload).encode("utf8")
 
             payload_encr = box.encrypt(payload_ser, nonce, encoder=RawEncoder)
 
@@ -234,16 +244,18 @@ if HAS_CRYPTOBOX:
             payload_bytes = bytes(payload_encr)
             payload_key = None
 
-            return EncodedPayload(payload_bytes, 'cryptobox', 'json', enc_key=payload_key)
+            return EncodedPayload(
+                payload_bytes, "cryptobox", "json", enc_key=payload_key
+            )
 
         @public
         def decode(self, is_originating, uri, encoded_payload):
             """
             Decrypt the given WAMP URI and EncodedPayload into a tuple ``(uri, args, kwargs)``.
             """
-            assert(type(uri) == str)
-            assert(isinstance(encoded_payload, EncodedPayload))
-            assert(encoded_payload.enc_algo == 'cryptobox')
+            assert type(uri) == str
+            assert isinstance(encoded_payload, EncodedPayload)
+            assert encoded_payload.enc_algo == "cryptobox"
 
             box = self._get_box(is_originating, uri)
 
@@ -252,14 +264,18 @@ if HAS_CRYPTOBOX:
 
             payload_ser = box.decrypt(encoded_payload.payload, encoder=RawEncoder)
 
-            if encoded_payload.enc_serializer != 'json':
-                raise Exception("received encrypted payload, but don't know how to process serializer '{}'".format(encoded_payload.enc_serializer))
+            if encoded_payload.enc_serializer != "json":
+                raise Exception(
+                    "received encrypted payload, but don't know how to process serializer '{}'".format(
+                        encoded_payload.enc_serializer
+                    )
+                )
 
-            payload = _json_loads(payload_ser.decode('utf8'))
+            payload = _json_loads(payload_ser.decode("utf8"))
 
-            uri = payload.get('uri', None)
-            args = payload.get('args', None)
-            kwargs = payload.get('kwargs', None)
+            uri = payload.get("uri", None)
+            args = payload.get("args", None)
+            kwargs = payload.get("kwargs", None)
 
             return uri, args, kwargs
 

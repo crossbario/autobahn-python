@@ -28,23 +28,21 @@ from twisted.internet.protocol import Protocol
 
 
 class HelloServerProtocol(Protocol):
-
     def connectionMade(self):
         print("connectionMade")
-        self.transport.write('how are you?')
+        self.transport.write("how are you?")
 
     def dataReceived(self, data):
         print("dataReceived: {}".format(data))
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     import sys
 
-    from twisted.python import log
     from twisted.internet import reactor
-    from twisted.internet.protocol import Factory
     from twisted.internet.endpoints import serverFromString
+    from twisted.internet.protocol import Factory
+    from twisted.python import log
 
     log.startLogging(sys.stdout)
 

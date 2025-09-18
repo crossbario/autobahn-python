@@ -26,37 +26,31 @@
 
 import sys
 
+from autobahn.twisted.resource import WebSocketResource
+from autobahn.twisted.websocket import WebSocketServerFactory, WebSocketServerProtocol
 from twisted.internet import reactor
 from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import Data
 
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol
-
-from autobahn.twisted.resource import WebSocketResource
-
 
 class Echo1ServerProtocol(WebSocketServerProtocol):
-
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            msg = "Echo 1 - {}".format(payload.decode('utf8'))
+            msg = "Echo 1 - {}".format(payload.decode("utf8"))
             print(msg)
-            self.sendMessage(msg.encode('utf8'))
+            self.sendMessage(msg.encode("utf8"))
 
 
 class Echo2ServerProtocol(WebSocketServerProtocol):
-
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            msg = "Echo 2 - {}".format(payload.decode('utf8'))
+            msg = "Echo 2 - {}".format(payload.decode("utf8"))
             print(msg)
-            self.sendMessage(msg.encode('utf8'))
+            self.sendMessage(msg.encode("utf8"))
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     log.startLogging(sys.stdout)
 
     factory1 = WebSocketServerFactory()

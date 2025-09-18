@@ -40,10 +40,10 @@ def raise_error(*args, **kw):
 
 
 class TestApplicationRunner(unittest.TestCase):
-    @patch('twisted.internet.reactor')
+    @patch("twisted.internet.reactor")
     def test_runner_default(self, fakereactor):
         fakereactor.connectTCP = Mock(side_effect=raise_error)
-        runner = ApplicationRunner('ws://fake:1234/ws', 'dummy realm')
+        runner = ApplicationRunner("ws://fake:1234/ws", "dummy realm")
 
         # we should get "our" RuntimeError when we call run
         self.assertRaises(RuntimeError, runner.run, raise_error)
@@ -52,11 +52,11 @@ class TestApplicationRunner(unittest.TestCase):
         self.assertEqual(fakereactor.run.call_count, 1)
         self.assertEqual(fakereactor.stop.call_count, 1)
 
-    @patch('twisted.internet.reactor')
+    @patch("twisted.internet.reactor")
     @inlineCallbacks
     def test_runner_no_run(self, fakereactor):
         fakereactor.connectTCP = Mock(side_effect=raise_error)
-        runner = ApplicationRunner('ws://fake:1234/ws', 'dummy realm')
+        runner = ApplicationRunner("ws://fake:1234/ws", "dummy realm")
 
         try:
             yield runner.run(raise_error, start_reactor=False)
@@ -71,11 +71,11 @@ class TestApplicationRunner(unittest.TestCase):
         self.assertEqual(fakereactor.run.call_count, 0)
         self.assertEqual(fakereactor.stop.call_count, 0)
 
-    @patch('twisted.internet.reactor')
+    @patch("twisted.internet.reactor")
     def test_runner_no_run_happypath(self, fakereactor):
         proto = Mock()
         fakereactor.connectTCP = Mock(return_value=succeed(proto))
-        runner = ApplicationRunner('ws://fake:1234/ws', 'dummy realm')
+        runner = ApplicationRunner("ws://fake:1234/ws", "dummy realm")
 
         d = runner.run(Mock(), start_reactor=False)
 
@@ -90,25 +90,26 @@ class TestApplicationRunner(unittest.TestCase):
         self.assertEqual(fakereactor.run.call_count, 0)
         self.assertEqual(fakereactor.stop.call_count, 0)
 
-    @patch('twisted.internet.reactor')
+    @patch("twisted.internet.reactor")
     def test_runner_bad_proxy(self, fakereactor):
-        proxy = 'myproxy'
+        proxy = "myproxy"
 
         self.assertRaises(
             AssertionError,
             ApplicationRunner,
-            'ws://fake:1234/ws', 'dummy realm',
-            proxy=proxy
+            "ws://fake:1234/ws",
+            "dummy realm",
+            proxy=proxy,
         )
 
-    @patch('twisted.internet.reactor')
+    @patch("twisted.internet.reactor")
     def test_runner_proxy(self, fakereactor):
         proto = Mock()
         fakereactor.connectTCP = Mock(return_value=succeed(proto))
 
-        proxy = {'host': 'myproxy', 'port': 3128}
+        proxy = {"host": "myproxy", "port": 3128}
 
-        runner = ApplicationRunner('ws://fake:1234/ws', 'dummy realm', proxy=proxy)
+        runner = ApplicationRunner("ws://fake:1234/ws", "dummy realm", proxy=proxy)
 
         d = runner.run(Mock(), start_reactor=False)
 

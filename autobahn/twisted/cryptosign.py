@@ -26,33 +26,31 @@
 
 
 from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN, CryptosignKey
-
 from twisted.internet.defer import inlineCallbacks
 
-__all__ = [
-    'HAS_CRYPTOSIGN_SSHAGENT'
-]
+__all__ = ["HAS_CRYPTOSIGN_SSHAGENT"]
 
 if HAS_CRYPTOSIGN:
     try:
         # WAMP-cryptosign support for SSH agent is currently
         # only available on Twisted (on Python 2)
-        from twisted.internet.protocol import Factory
-        from twisted.internet.endpoints import UNIXClientEndpoint
         from twisted.conch.ssh.agent import SSHAgentClient
+        from twisted.internet.endpoints import UNIXClientEndpoint
+        from twisted.internet.protocol import Factory
     except ImportError:
         # twisted.conch is not yet fully ported to Python 3
         HAS_CRYPTOSIGN_SSHAGENT = False
     else:
         HAS_CRYPTOSIGN_SSHAGENT = True
-        __all__.append('SSHAgentCryptosignKey')
+        __all__.append("SSHAgentCryptosignKey")
 
 
 if HAS_CRYPTOSIGN_SSHAGENT:
-
     import os
+
     from nacl import signing
-    from autobahn.wamp.cryptosign import _read_ssh_ed25519_pubkey, _unpack, _pack
+
+    from autobahn.wamp.cryptosign import _pack, _read_ssh_ed25519_pubkey, _unpack
 
     class SSHAgentCryptosignKey(CryptosignKey):
         """
@@ -79,7 +77,9 @@ if HAS_CRYPTOSIGN_SSHAGENT:
             :type pubkey: unicode
             """
             if not HAS_CRYPTOSIGN_SSHAGENT:
-                raise Exception("SSH agent integration is not supported on this platform")
+                raise Exception(
+                    "SSH agent integration is not supported on this platform"
+                )
 
             pubkey, _ = _read_ssh_ed25519_pubkey(pubkey)
 
@@ -106,12 +106,12 @@ if HAS_CRYPTOSIGN_SSHAGENT:
 
                 for blob, comment in keys:
                     raw = _unpack(blob)
-                    algo = raw[0].decode('utf8')
-                    if algo == 'ssh-ed25519':
+                    algo = raw[0].decode("utf8")
+                    if algo == "ssh-ed25519":
                         algo, _pubkey = raw
                         if _pubkey == pubkey:
                             key_data = _pubkey
-                            key_comment = comment.decode('utf8')
+                            key_comment = comment.decode("utf8")
                             break
 
                 agent.transport.loseConnection()
@@ -139,7 +139,7 @@ if HAS_CRYPTOSIGN_SSHAGENT:
                 # we are now connected to the locally running ssh-agent
                 # that agent might be the openssh-agent, or eg on Ubuntu 14.04 by
                 # default the gnome-keyring / ssh-askpass-gnome application
-                blob = _pack(['ssh-ed25519'.encode(), self.public_key(binary=True)])
+                blob = _pack(["ssh-ed25519".encode(), self.public_key(binary=True)])
 
                 # now ask the agent
                 signature_blob = yield agent.signData(blob, challenge)

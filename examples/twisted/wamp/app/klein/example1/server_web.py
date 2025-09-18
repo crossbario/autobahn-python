@@ -24,27 +24,30 @@
 #
 ###############################################################################
 
-from twisted.internet.defer import inlineCallbacks
 from klein import Klein
+
 from autobahn.twisted.wamp import Application
+from twisted.internet.defer import inlineCallbacks
 
 app = Klein()
 wampapp = Application()
 
 
-@app.route('/square/submit', methods=['POST'])
+@app.route("/square/submit", methods=["POST"])
 @inlineCallbacks
 def square_submit(request):
-    x = int(request.args.get('x', [0])[0])
-    res = yield wampapp.session.call('com.example.square', x)
+    x = int(request.args.get("x", [0])[0])
+    res = yield wampapp.session.call("com.example.square", x)
     return "{} squared is {}".format(x, res)
 
 
 if __name__ == "__main__":
     import sys
+
+    from twisted.internet import reactor
     from twisted.python import log
     from twisted.web.server import Site
-    from twisted.internet import reactor
+
     log.startLogging(sys.stdout)
 
     reactor.listenTCP(8080, Site(app.resource()))

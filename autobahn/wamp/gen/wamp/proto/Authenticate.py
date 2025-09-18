@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Authenticate(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class Authenticate(object):
     def GetRootAsAuthenticate(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # Authenticate
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,7 +31,9 @@ class Authenticate(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Authenticate
@@ -44,23 +49,52 @@ class Authenticate(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.Map import Map
+
             obj = Map()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-def AuthenticateStart(builder): builder.StartObject(3)
+
+def AuthenticateStart(builder):
+    builder.StartObject(3)
+
+
 def Start(builder):
     return AuthenticateStart(builder)
-def AuthenticateAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+
+
+def AuthenticateAddSession(builder, session):
+    builder.PrependUint64Slot(0, session, 0)
+
+
 def AddSession(builder, session):
     return AuthenticateAddSession(builder, session)
-def AuthenticateAddSignature(builder, signature): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(signature), 0)
+
+
+def AuthenticateAddSignature(builder, signature):
+    builder.PrependUOffsetTRelativeSlot(
+        1, flatbuffers.number_types.UOffsetTFlags.py_type(signature), 0
+    )
+
+
 def AddSignature(builder, signature):
     return AuthenticateAddSignature(builder, signature)
-def AuthenticateAddExtra(builder, extra): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0)
+
+
+def AuthenticateAddExtra(builder, extra):
+    builder.PrependUOffsetTRelativeSlot(
+        2, flatbuffers.number_types.UOffsetTFlags.py_type(extra), 0
+    )
+
+
 def AddExtra(builder, extra):
     return AuthenticateAddExtra(builder, extra)
-def AuthenticateEnd(builder): return builder.EndObject()
+
+
+def AuthenticateEnd(builder):
+    return builder.EndObject()
+
+
 def End(builder):
     return AuthenticateEnd(builder)

@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Error(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class Error(object):
     def GetRootAsError(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # Error
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,21 +31,27 @@ class Error(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Error
     def RequestType(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint16Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint16Flags, o + self._tab.Pos
+            )
         return 0
 
     # Error
     def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Error
@@ -57,7 +66,10 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(
+                flatbuffers.number_types.Uint8Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
+            )
         return 0
 
     # Error
@@ -98,7 +110,10 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(
+                flatbuffers.number_types.Uint8Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
+            )
         return 0
 
     # Error
@@ -120,39 +135,104 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         return o == 0
 
-def ErrorStart(builder): builder.StartObject(8)
+
+def ErrorStart(builder):
+    builder.StartObject(8)
+
+
 def Start(builder):
     return ErrorStart(builder)
-def ErrorAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+
+
+def ErrorAddSession(builder, session):
+    builder.PrependUint64Slot(0, session, 0)
+
+
 def AddSession(builder, session):
     return ErrorAddSession(builder, session)
-def ErrorAddRequestType(builder, requestType): builder.PrependUint16Slot(1, requestType, 0)
+
+
+def ErrorAddRequestType(builder, requestType):
+    builder.PrependUint16Slot(1, requestType, 0)
+
+
 def AddRequestType(builder, requestType):
     return ErrorAddRequestType(builder, requestType)
-def ErrorAddRequest(builder, request): builder.PrependUint64Slot(2, request, 0)
+
+
+def ErrorAddRequest(builder, request):
+    builder.PrependUint64Slot(2, request, 0)
+
+
 def AddRequest(builder, request):
     return ErrorAddRequest(builder, request)
-def ErrorAddError(builder, error): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(error), 0)
+
+
+def ErrorAddError(builder, error):
+    builder.PrependUOffsetTRelativeSlot(
+        3, flatbuffers.number_types.UOffsetTFlags.py_type(error), 0
+    )
+
+
 def AddError(builder, error):
     return ErrorAddError(builder, error)
-def ErrorAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+
+
+def ErrorAddPayload(builder, payload):
+    builder.PrependUOffsetTRelativeSlot(
+        4, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0
+    )
+
+
 def AddPayload(builder, payload):
     return ErrorAddPayload(builder, payload)
-def ErrorStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+
+
+def ErrorStartPayloadVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
 def StartPayloadVector(builder, numElems):
     return ErrorStartPayloadVector(builder, numElems)
-def ErrorAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(5, encAlgo, 0)
+
+
+def ErrorAddEncAlgo(builder, encAlgo):
+    builder.PrependUint8Slot(5, encAlgo, 0)
+
+
 def AddEncAlgo(builder, encAlgo):
     return ErrorAddEncAlgo(builder, encAlgo)
-def ErrorAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(6, encSerializer, 0)
+
+
+def ErrorAddEncSerializer(builder, encSerializer):
+    builder.PrependUint8Slot(6, encSerializer, 0)
+
+
 def AddEncSerializer(builder, encSerializer):
     return ErrorAddEncSerializer(builder, encSerializer)
-def ErrorAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+
+
+def ErrorAddEncKey(builder, encKey):
+    builder.PrependUOffsetTRelativeSlot(
+        7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0
+    )
+
+
 def AddEncKey(builder, encKey):
     return ErrorAddEncKey(builder, encKey)
-def ErrorStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+
+
+def ErrorStartEncKeyVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
 def StartEncKeyVector(builder, numElems):
     return ErrorStartEncKeyVector(builder, numElems)
-def ErrorEnd(builder): return builder.EndObject()
+
+
+def ErrorEnd(builder):
+    return builder.EndObject()
+
+
 def End(builder):
     return ErrorEnd(builder)

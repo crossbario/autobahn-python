@@ -25,29 +25,39 @@
 ###############################################################################
 
 import abc
-from typing import Union, Dict, Any, Optional, List, Tuple, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 # FIXME: see ISecurityModule.__iter__
 # from collections.abc import Iterator
-
 from autobahn.util import public
-from autobahn.wamp.types import Challenge, SessionDetails, CloseDetails, CallResult, RegisterOptions, \
-    SubscribeOptions, Registration, Subscription, Publication, ComponentConfig, TransportDetails
 from autobahn.wamp.message import Message, Welcome
+from autobahn.wamp.types import (
+    CallResult,
+    Challenge,
+    CloseDetails,
+    ComponentConfig,
+    Publication,
+    RegisterOptions,
+    Registration,
+    SessionDetails,
+    SubscribeOptions,
+    Subscription,
+    TransportDetails,
+)
 
 __all__ = (
-    'IObjectSerializer',
-    'ISerializer',
-    'IMessage',
-    'ITransport',
-    'ITransportHandler',
-    'ISession',
-    'IAuthenticator',
-    'IKey',
-    'ICryptosignKey',
-    'IEthereumKey',
-    'ISecurityModule',
-    'IPayloadCodec',
+    "IAuthenticator",
+    "ICryptosignKey",
+    "IEthereumKey",
+    "IKey",
+    "IMessage",
+    "IObjectSerializer",
+    "IPayloadCodec",
+    "ISecurityModule",
+    "ISerializer",
+    "ISession",
+    "ITransport",
+    "ITransportHandler",
 )
 
 
@@ -108,7 +118,7 @@ class ISerializer(abc.ABC):
     @public
     @property
     @abc.abstractmethod
-    def MESSAGE_TYPE_MAP(self) -> Dict[int, 'IMessage']:
+    def MESSAGE_TYPE_MAP(self) -> Dict[int, "IMessage"]:
         """
         Mapping of WAMP message type codes to WAMP message classes.
         """
@@ -139,7 +149,7 @@ class ISerializer(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def serialize(self, message: 'IMessage') -> Tuple[bytes, bool]:
+    def serialize(self, message: "IMessage") -> Tuple[bytes, bool]:
         """
         Serializes a WAMP message to bytes for sending over a WAMP transport.
 
@@ -150,7 +160,9 @@ class ISerializer(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def unserialize(self, payload: bytes, is_binary: Optional[bool] = None) -> List['IMessage']:
+    def unserialize(
+        self, payload: bytes, is_binary: Optional[bool] = None
+    ) -> List["IMessage"]:
         """
         Deserialize bytes from a transport and parse into WAMP messages.
 
@@ -183,7 +195,7 @@ class IMessage(abc.ABC):
     @public
     @staticmethod
     @abc.abstractmethod
-    def parse(wmsg) -> 'IMessage':
+    def parse(wmsg) -> "IMessage":
         """
         Factory method that parses a unserialized raw message (as returned byte
         :func:`autobahn.interfaces.ISerializer.unserialize`) into an instance
@@ -275,7 +287,6 @@ class ITransport(abc.ABC):
 
 @public
 class ITransportHandler(abc.ABC):
-
     @public
     @abc.abstractmethod
     def onOpen(self, transport: ITransport):
@@ -376,15 +387,17 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def join(self,
-             realm: str,
-             authmethods: Optional[List[str]] = None,
-             authid: Optional[str] = None,
-             authrole: Optional[str] = None,
-             authextra: Optional[Dict[str, Any]] = None,
-             resumable: Optional[bool] = None,
-             resume_session: Optional[int] = None,
-             resume_token: Optional[str] = None):
+    def join(
+        self,
+        realm: str,
+        authmethods: Optional[List[str]] = None,
+        authid: Optional[str] = None,
+        authrole: Optional[str] = None,
+        authextra: Optional[Dict[str, Any]] = None,
+        resumable: Optional[bool] = None,
+        resume_session: Optional[int] = None,
+        resume_token: Optional[str] = None,
+    ):
         """
         Attach the session to the given realm. A session is open as soon as it is attached to a realm.
         """
@@ -487,7 +500,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def set_payload_codec(self, payload_codec: Optional['IPayloadCodec']):
+    def set_payload_codec(self, payload_codec: Optional["IPayloadCodec"]):
         """
         Set a payload codec on the session. To remove a previously set payload codec,
         set the codec to ``None``.
@@ -500,7 +513,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def get_payload_codec(self) -> Optional['IPayloadCodec']:
+    def get_payload_codec(self) -> Optional["IPayloadCodec"]:
         """
         Get the current payload codec (if any) for the session.
 
@@ -556,9 +569,14 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def register(self, endpoint: Union[Callable, Any], procedure: Optional[str] = None,
-                 options: Optional[RegisterOptions] = None, prefix: Optional[str] = None,
-                 check_types: Optional[bool] = None) -> Union[Registration, List[Registration]]:
+    def register(
+        self,
+        endpoint: Union[Callable, Any],
+        procedure: Optional[str] = None,
+        options: Optional[RegisterOptions] = None,
+        prefix: Optional[str] = None,
+        check_types: Optional[bool] = None,
+    ) -> Union[Registration, List[Registration]]:
         """
         Register a procedure for remote calling.
 
@@ -637,9 +655,13 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def subscribe(self, handler: Union[Callable, Any], topic: Optional[str] = None,
-                  options: Optional[SubscribeOptions] = None, check_types: Optional[bool] = None) -> \
-            Union[Subscription, List[Subscription]]:
+    def subscribe(
+        self,
+        handler: Union[Callable, Any],
+        topic: Optional[str] = None,
+        options: Optional[SubscribeOptions] = None,
+        check_types: Optional[bool] = None,
+    ) -> Union[Subscription, List[Subscription]]:
         """
         Subscribe to a topic for receiving events.
 
@@ -713,7 +735,7 @@ class IKey(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def security_module(self) -> Optional['ISecurityModule']:
+    def security_module(self) -> Optional["ISecurityModule"]:
         """
         When this key is hosted by a security module, return a reference.
         If the key is freestanding (exists of its own outside any security
@@ -795,8 +817,12 @@ class ICryptosignKey(IKey):
     """
 
     @abc.abstractmethod
-    def sign_challenge(self, challenge: Challenge, channel_id: Optional[bytes] = None,
-                       channel_id_type: Optional[str] = None) -> bytes:
+    def sign_challenge(
+        self,
+        challenge: Challenge,
+        channel_id: Optional[bytes] = None,
+        channel_id_type: Optional[str] = None,
+    ) -> bytes:
         """
         Sign the data from the given WAMP challenge message, and the optional TLS channel ID
         using this key and return a valid signature that can be used in a WAMP-cryptosign
@@ -815,8 +841,13 @@ class ICryptosignKey(IKey):
         """
 
     @abc.abstractmethod
-    def verify_challenge(self, challenge: Challenge, signature: bytes, channel_id: Optional[bytes] = None,
-                         channel_id_type: Optional[str] = None) -> bool:
+    def verify_challenge(
+        self,
+        challenge: Challenge,
+        signature: bytes,
+        channel_id: Optional[bytes] = None,
+        channel_id_type: Optional[str] = None,
+    ) -> bool:
         """
         Verify the data from the given WAMP challenge message, and the optional TLS channel ID
         to be signed by this key.
@@ -864,7 +895,9 @@ class IEthereumKey(IKey):
         """
 
     @abc.abstractmethod
-    def verify_typed_data(self, data: Dict[str, Any], signature: bytes, signer_address: Union[str, bytes]) -> bool:
+    def verify_typed_data(
+        self, data: Dict[str, Any], signature: bytes, signer_address: Union[str, bytes]
+    ) -> bool:
         """
         Verify the given typed data according to `EIP712 <https://eips.ethereum.org/EIPS/eip-712>`_
         to be signed by this key.
@@ -943,7 +976,9 @@ class ISecurityModule(abc.ABC):
         """
 
     @abc.abstractmethod
-    def __setitem__(self, key_no: int, key: Union[ICryptosignKey, IEthereumKey]) -> None:
+    def __setitem__(
+        self, key_no: int, key: Union[ICryptosignKey, IEthereumKey]
+    ) -> None:
         """
 
         :param key_no:

@@ -25,10 +25,10 @@
 ###############################################################################
 
 import asyncio
-from os import environ
 import datetime
+from os import environ
 
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):
@@ -37,15 +37,14 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         def utcnow():
             now = datetime.datetime.utcnow()
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        await self.register(utcnow, 'com.timeservice.now')
+        await self.register(utcnow, "com.timeservice.now")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

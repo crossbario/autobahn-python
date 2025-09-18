@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Principal(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def SizeOf(cls):
@@ -18,7 +20,12 @@ class Principal(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Principal
-    def Session(self): return self._tab.Get(flatbuffers.number_types.Uint64Flags, self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0))
+    def Session(self):
+        return self._tab.Get(
+            flatbuffers.number_types.Uint64Flags,
+            self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0),
+        )
+
 
 def CreatePrincipal(builder, session):
     builder.Prep(8, 8)

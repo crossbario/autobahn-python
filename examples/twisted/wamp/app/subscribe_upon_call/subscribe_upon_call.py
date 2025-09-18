@@ -26,7 +26,6 @@
 
 from autobahn.twisted.wamp import Application
 
-
 app = Application()
 
 
@@ -34,13 +33,13 @@ def onEvent(msg):
     print("got event: {}".format(msg))
 
 
-@app.register('com.example.triggersubscribe')
+@app.register("com.example.triggersubscribe")
 def triggerSubscribe():
     print("triggersubscribe() called")
-    yield app.session.subscribe(onEvent, 'com.example.topic1')
+    yield app.session.subscribe(onEvent, "com.example.topic1")
 
 
-@app.signal('onjoined')
+@app.signal("onjoined")
 def onjoined():
     print("realm joined!")
 

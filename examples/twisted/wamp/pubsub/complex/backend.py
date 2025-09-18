@@ -27,10 +27,9 @@
 import random
 from os import environ
 
-from twisted.internet.defer import inlineCallbacks
-
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):
@@ -46,18 +45,19 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             print("publish: com.myapp.heartbeat")
-            self.publish('com.myapp.heartbeat')
+            self.publish("com.myapp.heartbeat")
 
-            obj = {'counter': counter, 'foo': [1, 2, 3]}
+            obj = {"counter": counter, "foo": [1, 2, 3]}
             print("publish: com.myapp.topic2", obj)
-            self.publish('com.myapp.topic2', random.randint(0, 100), 23,
-                         c="Hello", d=obj)
+            self.publish(
+                "com.myapp.topic2", random.randint(0, 100), 23, c="Hello", d=obj
+            )
 
             counter += 1
             yield sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

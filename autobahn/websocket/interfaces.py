@@ -25,17 +25,23 @@
 ###############################################################################
 
 import abc
-from typing import Optional, Union, Tuple, Dict
+from typing import Dict, Optional, Tuple, Union
 
 from autobahn.util import public
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectingRequest
 from autobahn.wamp.types import TransportDetails
+from autobahn.websocket.types import (
+    ConnectingRequest,
+    ConnectionRequest,
+    ConnectionResponse,
+)
 
-__all__ = ('IWebSocketServerChannelFactory',
-           'IWebSocketClientChannelFactory',
-           'IWebSocketChannel',
-           'IWebSocketChannelFrameApi',
-           'IWebSocketChannelStreamingApi')
+__all__ = (
+    "IWebSocketChannel",
+    "IWebSocketChannelFrameApi",
+    "IWebSocketChannelStreamingApi",
+    "IWebSocketClientChannelFactory",
+    "IWebSocketServerChannelFactory",
+)
 
 
 class IWebSocketClientAgent(abc.ABC):
@@ -67,12 +73,9 @@ class IWebSocketServerChannelFactory(abc.ABC):
     """
 
     @abc.abstractmethod
-    def __init__(self,
-                 url=None,
-                 protocols=None,
-                 server=None,
-                 headers=None,
-                 externalPort=None):
+    def __init__(
+        self, url=None, protocols=None, server=None, headers=None, externalPort=None
+    ):
         """
 
         :param url: The WebSocket URL this factory is working for, e.g. ``ws://myhost.com/somepath``.
@@ -97,12 +100,9 @@ class IWebSocketServerChannelFactory(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def setSessionParameters(self,
-                             url=None,
-                             protocols=None,
-                             server=None,
-                             headers=None,
-                             externalPort=None):
+    def setSessionParameters(
+        self, url=None, protocols=None, server=None, headers=None, externalPort=None
+    ):
         """
         Set WebSocket session parameters.
 
@@ -128,31 +128,33 @@ class IWebSocketServerChannelFactory(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def setProtocolOptions(self,
-                           versions=None,
-                           webStatus=None,
-                           utf8validateIncoming=None,
-                           maskServerFrames=None,
-                           requireMaskedClientFrames=None,
-                           applyMask=None,
-                           maxFramePayloadSize=None,
-                           maxMessagePayloadSize=None,
-                           autoFragmentSize=None,
-                           failByDrop=None,
-                           echoCloseCodeReason=None,
-                           openHandshakeTimeout=None,
-                           closeHandshakeTimeout=None,
-                           tcpNoDelay=None,
-                           perMessageCompressionAccept=None,
-                           autoPingInterval=None,
-                           autoPingTimeout=None,
-                           autoPingSize=None,
-                           serveFlashSocketPolicy=None,
-                           flashSocketPolicy=None,
-                           allowedOrigins=None,
-                           allowNullOrigin=False,
-                           maxConnections=None,
-                           trustXForwardedFor=0):
+    def setProtocolOptions(
+        self,
+        versions=None,
+        webStatus=None,
+        utf8validateIncoming=None,
+        maskServerFrames=None,
+        requireMaskedClientFrames=None,
+        applyMask=None,
+        maxFramePayloadSize=None,
+        maxMessagePayloadSize=None,
+        autoFragmentSize=None,
+        failByDrop=None,
+        echoCloseCodeReason=None,
+        openHandshakeTimeout=None,
+        closeHandshakeTimeout=None,
+        tcpNoDelay=None,
+        perMessageCompressionAccept=None,
+        autoPingInterval=None,
+        autoPingTimeout=None,
+        autoPingSize=None,
+        serveFlashSocketPolicy=None,
+        flashSocketPolicy=None,
+        allowedOrigins=None,
+        allowNullOrigin=False,
+        maxConnections=None,
+        trustXForwardedFor=0,
+    ):
         """
         Set WebSocket protocol options used as defaults for new protocol instances.
 
@@ -261,13 +263,15 @@ class IWebSocketClientChannelFactory(abc.ABC):
     """
 
     @abc.abstractmethod
-    def __init__(self,
-                 url=None,
-                 origin=None,
-                 protocols=None,
-                 useragent=None,
-                 headers=None,
-                 proxy=None):
+    def __init__(
+        self,
+        url=None,
+        origin=None,
+        protocols=None,
+        useragent=None,
+        headers=None,
+        proxy=None,
+    ):
         """
 
         Note that you MUST provide URL either here or set using
@@ -298,13 +302,15 @@ class IWebSocketClientChannelFactory(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def setSessionParameters(self,
-                             url=None,
-                             origin=None,
-                             protocols=None,
-                             useragent=None,
-                             headers=None,
-                             proxy=None):
+    def setSessionParameters(
+        self,
+        url=None,
+        origin=None,
+        protocols=None,
+        useragent=None,
+        headers=None,
+        proxy=None,
+    ):
         """
         Set WebSocket session parameters.
 
@@ -331,26 +337,28 @@ class IWebSocketClientChannelFactory(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def setProtocolOptions(self,
-                           version=None,
-                           utf8validateIncoming=None,
-                           acceptMaskedServerFrames=None,
-                           maskClientFrames=None,
-                           applyMask=None,
-                           maxFramePayloadSize=None,
-                           maxMessagePayloadSize=None,
-                           autoFragmentSize=None,
-                           failByDrop=None,
-                           echoCloseCodeReason=None,
-                           serverConnectionDropTimeout=None,
-                           openHandshakeTimeout=None,
-                           closeHandshakeTimeout=None,
-                           tcpNoDelay=None,
-                           perMessageCompressionOffers=None,
-                           perMessageCompressionAccept=None,
-                           autoPingInterval=None,
-                           autoPingTimeout=None,
-                           autoPingSize=None):
+    def setProtocolOptions(
+        self,
+        version=None,
+        utf8validateIncoming=None,
+        acceptMaskedServerFrames=None,
+        maskClientFrames=None,
+        applyMask=None,
+        maxFramePayloadSize=None,
+        maxMessagePayloadSize=None,
+        autoFragmentSize=None,
+        failByDrop=None,
+        echoCloseCodeReason=None,
+        serverConnectionDropTimeout=None,
+        openHandshakeTimeout=None,
+        closeHandshakeTimeout=None,
+        tcpNoDelay=None,
+        perMessageCompressionOffers=None,
+        perMessageCompressionAccept=None,
+        autoPingInterval=None,
+        autoPingTimeout=None,
+        autoPingSize=None,
+    ):
         """
         Set WebSocket protocol options used as defaults for _new_ protocol instances.
 
@@ -471,7 +479,9 @@ class IWebSocketChannel(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def onConnecting(self, transport_details: TransportDetails) -> Optional[ConnectingRequest]:
+    def onConnecting(
+        self, transport_details: TransportDetails
+    ) -> Optional[ConnectingRequest]:
         """
         This method is called when the WebSocket peer is connected at the byte stream level (e.g. TCP,
         TLS or Serial), but before the WebSocket opening handshake (e.g. at the HTTP request level).
@@ -486,8 +496,9 @@ class IWebSocketChannel(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def onConnect(self, request_or_response: Union[ConnectionRequest, ConnectionResponse]) -> \
-            Union[Optional[str], Tuple[Optional[str], Dict[str, str]]]:
+    def onConnect(
+        self, request_or_response: Union[ConnectionRequest, ConnectionResponse]
+    ) -> Union[Optional[str], Tuple[Optional[str], Dict[str, str]]]:
         """
         Callback fired during WebSocket opening handshake when a client connects to a server with
         request with a :class:`ConnectionRequest` from the client or when a server connection was established

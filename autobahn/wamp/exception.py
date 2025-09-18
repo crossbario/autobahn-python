@@ -29,17 +29,17 @@ from autobahn.util import public
 from autobahn.wamp.uri import error
 
 __all__ = (
-    'Error',
-    'SessionNotReady',
-    'SerializationError',
-    'InvalidUriError',
-    'ProtocolError',
-    'TransportLost',
-    'ApplicationError',
-    'NotAuthorized',
-    'InvalidUri',
-    'InvalidPayload',
-    'TypeCheckError',
+    "ApplicationError",
+    "Error",
+    "InvalidPayload",
+    "InvalidUri",
+    "InvalidUriError",
+    "NotAuthorized",
+    "ProtocolError",
+    "SerializationError",
+    "SessionNotReady",
+    "TransportLost",
+    "TypeCheckError",
 )
 
 
@@ -126,7 +126,9 @@ class ApplicationError(Error):
     already registered.
     """
 
-    PROCEDURE_EXISTS_INVOCATION_POLICY_CONFLICT = "wamp.error.procedure_exists_with_different_invocation_policy"
+    PROCEDURE_EXISTS_INVOCATION_POLICY_CONFLICT = (
+        "wamp.error.procedure_exists_with_different_invocation_policy"
+    )
     """
     A procedure could not be registered, since a procedure with the given URI is
     already registered, and the registration has a conflicting invocation policy.
@@ -264,11 +266,11 @@ class ApplicationError(Error):
         Exception.__init__(self, *args)
         self.kwargs = kwargs
         self.error = error
-        self.enc_algo = kwargs.pop('enc_algo', None)
-        self.callee = kwargs.pop('callee', None)
-        self.callee_authid = kwargs.pop('callee_authid', None)
-        self.callee_authrole = kwargs.pop('callee_authrole', None)
-        self.forward_for = kwargs.pop('forward_for', None)
+        self.enc_algo = kwargs.pop("enc_algo", None)
+        self.callee = kwargs.pop("callee", None)
+        self.callee_authid = kwargs.pop("callee_authid", None)
+        self.callee_authrole = kwargs.pop("callee_authrole", None)
+        self.forward_for = kwargs.pop("forward_for", None)
 
     @public
     def error_message(self):
@@ -278,19 +280,28 @@ class ApplicationError(Error):
         :returns: The error message.
         :rtype: str
         """
-        return '{0}: {1}'.format(
+        return "{0}: {1}".format(
             self.error,
-            ' '.join([str(a) for a in self.args]),
+            " ".join([str(a) for a in self.args]),
         )
 
     def __unicode__(self):
-        if self.kwargs and 'traceback' in self.kwargs:
-            tb = ':\n' + self.kwargs.pop('traceback') + '\n'
-            self.kwargs['traceback'] = '...'
+        if self.kwargs and "traceback" in self.kwargs:
+            tb = ":\n" + self.kwargs.pop("traceback") + "\n"
+            self.kwargs["traceback"] = "..."
         else:
-            tb = ''
+            tb = ""
         return "ApplicationError(error=<{0}>, args={1}, kwargs={2}, enc_algo={3}, callee={4}, callee_authid={5}, callee_authrole={6}, forward_for={7}){8}".format(
-            self.error, list(self.args), self.kwargs, self.enc_algo, self.callee, self.callee_authid, self.callee_authrole, self.forward_for, tb)
+            self.error,
+            list(self.args),
+            self.kwargs,
+            self.enc_algo,
+            self.callee,
+            self.callee_authid,
+            self.callee_authrole,
+            self.forward_for,
+            tb,
+        )
 
     def __str__(self):
         return self.__unicode__()
@@ -322,5 +333,6 @@ class TypeCheckError(ApplicationError):
     The URI for a topic published with invalid argument types or a
     procedure called with invalid arguments types.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(ApplicationError.TYPE_CHECK_ERROR, *args, **kwargs)

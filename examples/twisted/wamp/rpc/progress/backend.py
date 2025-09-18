@@ -25,11 +25,11 @@
 ###############################################################################
 
 from os import environ
-from twisted.internet.defer import inlineCallbacks
 
-from autobahn.wamp.types import RegisterOptions
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from autobahn.wamp.types import RegisterOptions
+from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):
@@ -53,12 +53,14 @@ class Component(ApplicationSession):
                 yield sleep(1 * n)
             return n
 
-        yield self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg='details'))
+        yield self.register(
+            longop, "com.myapp.longop", RegisterOptions(details_arg="details")
+        )
 
         print("procedures registered")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

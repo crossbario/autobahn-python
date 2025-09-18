@@ -27,10 +27,9 @@
 import time
 from os import environ
 
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
-
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
@@ -42,15 +41,15 @@ class Component(ApplicationSession):
         print("session attached")
 
         def got(res, started, msg):
-            duration = 1000. * (time.clock() - started)
+            duration = 1000.0 * (time.clock() - started)
             print("{}: {} in {}".format(msg, res, duration))
 
         t1 = time.clock()
-        d1 = self.call('com.math.slowsquare', 3)
+        d1 = self.call("com.math.slowsquare", 3)
         d1.addCallback(got, t1, "Slow Square")
 
         t2 = time.clock()
-        d2 = self.call('com.math.square', 3)
+        d2 = self.call("com.math.square", 3)
         d2.addCallback(got, t2, "Quick Square")
 
         def done(_):
@@ -64,7 +63,7 @@ class Component(ApplicationSession):
         reactor.stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

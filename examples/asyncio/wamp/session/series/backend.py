@@ -30,15 +30,13 @@ from autobahn.asyncio.wamp import ApplicationSession
 
 
 class Component(ApplicationSession):
-
     """
     A simple time service application component.
     """
 
     def onJoin(self, details):
-
         def utcnow():
             now = datetime.datetime.utcnow()
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        self.register(utcnow, 'com.timeservice.now')
+        self.register(utcnow, "com.timeservice.now")

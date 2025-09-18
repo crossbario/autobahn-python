@@ -24,11 +24,11 @@
 #
 ###############################################################################
 
-from os import environ
-import datetime
-
 import asyncio
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+import datetime
+from os import environ
+
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):
@@ -38,7 +38,7 @@ class Component(ApplicationSession):
 
     async def onJoin(self, details):
         try:
-            now = await self.call('com.timeservice.now')
+            now = await self.call("com.timeservice.now")
         except Exception as e:
             print("Error: {}".format(e))
         else:
@@ -50,7 +50,7 @@ class Component(ApplicationSession):
         asyncio.get_event_loop().stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

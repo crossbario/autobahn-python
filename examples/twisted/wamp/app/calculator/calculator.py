@@ -24,31 +24,29 @@
 #
 ###############################################################################
 
-from os import environ
-import sys
 import decimal
-
-from twisted.internet.defer import inlineCallbacks
+import sys
+from os import environ
 
 from autobahn import wamp
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationRunner, ApplicationSession
+from twisted.internet.defer import inlineCallbacks
 
 
 class Calculator(ApplicationSession):
-
     @inlineCallbacks
     def onJoin(self, details):
         self.clear()
         yield self.register(self)
         print("Ok, calculator procedures registered!")
 
-    @wamp.register('com.example.calculator.clear')
+    @wamp.register("com.example.calculator.clear")
     def clear(self, arg=None):
         self.op = None
         self.current = decimal.Decimal(0)
         return str(self.current)
 
-    @wamp.register('com.example.calculator.calc')
+    @wamp.register("com.example.calculator.calc")
     def calc(self, op, num):
         num = decimal.Decimal(num)
         if self.op:
@@ -72,25 +70,33 @@ class Calculator(ApplicationSession):
         return res
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     decimal.getcontext().prec = 20
 
-    import sys
     import argparse
+    import sys
 
     # parse command line arguments
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--web", type=int, default=8080,
-                        help='Web port to use for embedded Web server. Use 0 to disable.')
+    parser.add_argument(
+        "--web",
+        type=int,
+        default=8080,
+        help="Web port to use for embedded Web server. Use 0 to disable.",
+    )
 
-    parser.add_argument("--router", type=str, default=None,
-                        help='If given, connect to this WAMP router. Else run an embedded router on 9000.')
+    parser.add_argument(
+        "--router",
+        type=str,
+        default=None,
+        help="If given, connect to this WAMP router. Else run an embedded router on 9000.",
+    )
 
     args = parser.parse_args()
 
     from twisted.python import log
+
     log.startLogging(sys.stdout)
 
     # run WAMP application component

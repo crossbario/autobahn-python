@@ -27,24 +27,24 @@
 import os
 from unittest.mock import Mock, patch
 
-if os.environ.get('USE_TWISTED', False):
-    from autobahn.twisted.component import Component
+if os.environ.get("USE_TWISTED", False):
+    from txaio.testutil import replace_loop
     from zope.interface import directlyProvides
-    from autobahn.wamp.message import Welcome, Goodbye, Hello, Abort
-    from autobahn.wamp.serializer import JsonSerializer
+
     from autobahn.testutil import FakeTransport
+    from autobahn.twisted.component import Component
+    from autobahn.wamp.message import Abort, Goodbye, Hello, Welcome
+    from autobahn.wamp.serializer import JsonSerializer
+    from twisted.internet.defer import Deferred, inlineCallbacks, succeed
     from twisted.internet.interfaces import IStreamClientEndpoint
-    from twisted.internet.defer import inlineCallbacks, succeed, Deferred
     from twisted.internet.task import Clock
     from twisted.trial import unittest
-    from txaio.testutil import replace_loop
 
     class ConnectionTests(unittest.TestCase):
-
         def setUp(self):
             pass
 
-        @patch('txaio.sleep', return_value=succeed(None))
+        @patch("txaio.sleep", return_value=succeed(None))
         @inlineCallbacks
         def test_successful_connect(self, fake_sleep):
             endpoint = Mock()
@@ -53,6 +53,7 @@ if os.environ.get('USE_TWISTED', False):
             def joined(session, details):
                 joins.append((session, details))
                 return session.leave()
+
             directlyProvides(endpoint, IStreamClientEndpoint)
             component = Component(
                 transports={
@@ -61,27 +62,32 @@ if os.environ.get('USE_TWISTED', False):
                     "endpoint": endpoint,
                 }
             )
-            component.on('join', joined)
+            component.on("join", joined)
 
             def connect(factory, **kw):
-                proto = factory.buildProtocol('ws://localhost/')
+                proto = factory.buildProtocol("ws://localhost/")
                 transport = FakeTransport()
                 proto.makeConnection(transport)
 
-                from autobahn.websocket.protocol import WebSocketProtocol
                 from base64 import b64encode
                 from hashlib import sha1
+
+                from autobahn.websocket.protocol import WebSocketProtocol
+
                 key = proto.websocket_key + WebSocketProtocol._WS_MAGIC
                 proto.data = (
                     b"HTTP/1.1 101 Switching Protocols\x0d\x0a"
                     b"Upgrade: websocket\x0d\x0a"
                     b"Connection: upgrade\x0d\x0a"
                     b"Sec-Websocket-Protocol: wamp.2.json\x0d\x0a"
-                    b"Sec-Websocket-Accept: " + b64encode(sha1(key).digest()) + b"\x0d\x0a\x0d\x0a"
+                    b"Sec-Websocket-Accept: "
+                    + b64encode(sha1(key).digest())
+                    + b"\x0d\x0a\x0d\x0a"
                 )
                 proto.processHandshake()
 
                 from autobahn.wamp import role
+
                 features = role.RoleBrokerFeatures(
                     publisher_identification=True,
                     pattern_based_subscription=True,
@@ -94,7 +100,7 @@ if os.environ.get('USE_TWISTED', False):
                     payload_encryption_cryptobox=True,
                 )
 
-                msg = Welcome(123456, dict(broker=features), realm='realm')
+                msg = Welcome(123456, dict(broker=features), realm="realm")
                 serializer = JsonSerializer()
                 data, is_binary = serializer.serialize(msg)
                 proto.onMessage(data, is_binary)
@@ -104,6 +110,7 @@ if os.environ.get('USE_TWISTED', False):
                 proto.onClose(True, 100, "some old reason")
 
                 return succeed(proto)
+
             endpoint.connect = connect
 
             # XXX it would actually be nicer if we *could* support
@@ -117,7 +124,7 @@ if os.environ.get('USE_TWISTED', False):
                 # make sure we fire all our time-outs
                 reactor.advance(3600)
 
-        @patch('txaio.sleep', return_value=succeed(None))
+        @patch("txaio.sleep", return_value=succeed(None))
         def test_successful_proxy_connect(self, fake_sleep):
             endpoint = Mock()
             directlyProvides(endpoint, IStreamClientEndpoint)
@@ -141,6 +148,7 @@ if os.environ.get('USE_TWISTED', False):
 
             def connect(factory, **kw):
                 return succeed(Mock())
+
             endpoint.connect = connect
 
             # XXX it would actually be nicer if we *could* support
@@ -156,6 +164,7 @@ if os.environ.get('USE_TWISTED', False):
                 self.assertEqual(port, 65000)
                 got_proxy_connect.callback(None)
                 return endpoint.connect(factory._wrappedFactory)
+
             reactor.connectTCP = _tcp
 
             with replace_loop(reactor):
@@ -164,12 +173,13 @@ if os.environ.get('USE_TWISTED', False):
                 def done(x):
                     if not got_proxy_connect.called:
                         got_proxy_connect.callback(x)
+
                 # make sure we fire all our time-outs
                 d.addCallbacks(done, done)
                 reactor.advance(3600)
                 return got_proxy_connect
 
-        @patch('txaio.sleep', return_value=succeed(None))
+        @patch("txaio.sleep", return_value=succeed(None))
         @inlineCallbacks
         def test_cancel(self, fake_sleep):
             """
@@ -188,6 +198,7 @@ if os.environ.get('USE_TWISTED', False):
 
             def connect(factory, **kw):
                 return Deferred()
+
             endpoint.connect = connect
 
             # XXX it would actually be nicer if we *could* support
@@ -231,6 +242,7 @@ if os.environ.get('USE_TWISTED', False):
                     d = Deferred()
                     reactor.callLater(10, d.errback(RuntimeError("no connect for yo")))
                     return d
+
                 endpoint.connect = connect
 
                 d0 = component.start(reactor=reactor)
@@ -244,7 +256,7 @@ if os.environ.get('USE_TWISTED', False):
                 yield d1
                 yield d0
 
-        @patch('txaio.sleep', return_value=succeed(None))
+        @patch("txaio.sleep", return_value=succeed(None))
         @inlineCallbacks
         def test_connect_no_auth_method(self, fake_sleep):
             endpoint = Mock()
@@ -260,26 +272,33 @@ if os.environ.get('USE_TWISTED', False):
             )
 
             def connect(factory, **kw):
-                proto = factory.buildProtocol('boom')
+                proto = factory.buildProtocol("boom")
                 proto.makeConnection(Mock())
 
-                from autobahn.websocket.protocol import WebSocketProtocol
                 from base64 import b64encode
                 from hashlib import sha1
+
+                from autobahn.websocket.protocol import WebSocketProtocol
+
                 key = proto.websocket_key + WebSocketProtocol._WS_MAGIC
                 proto.data = (
                     b"HTTP/1.1 101 Switching Protocols\x0d\x0a"
                     b"Upgrade: websocket\x0d\x0a"
                     b"Connection: upgrade\x0d\x0a"
                     b"Sec-Websocket-Protocol: wamp.2.json\x0d\x0a"
-                    b"Sec-Websocket-Accept: " + b64encode(sha1(key).digest()) + b"\x0d\x0a\x0d\x0a"
+                    b"Sec-Websocket-Accept: "
+                    + b64encode(sha1(key).digest())
+                    + b"\x0d\x0a\x0d\x0a"
                 )
                 proto.processHandshake()
 
                 from autobahn.wamp import role
+
                 subrole = role.RoleSubscriberFeatures()
 
-                msg = Hello("realm", roles=dict(subscriber=subrole), authmethods=["anonymous"])
+                msg = Hello(
+                    "realm", roles=dict(subscriber=subrole), authmethods=["anonymous"]
+                )
                 serializer = JsonSerializer()
                 data, is_binary = serializer.serialize(msg)
                 proto.onMessage(data, is_binary)
@@ -289,6 +308,7 @@ if os.environ.get('USE_TWISTED', False):
                 proto.onClose(False, 100, "wamp.error.no_auth_method")
 
                 return succeed(proto)
+
             endpoint.connect = connect
 
             # XXX it would actually be nicer if we *could* support
@@ -302,18 +322,14 @@ if os.environ.get('USE_TWISTED', False):
                     # make sure we fire all our time-outs
                     reactor.advance(3600)
                     yield d
-            self.assertIn(
-                "Exhausted all transport",
-                str(ctx.exception)
-            )
+            self.assertIn("Exhausted all transport", str(ctx.exception))
 
     class InvalidTransportConfigs(unittest.TestCase):
-
         def test_invalid_key(self):
             with self.assertRaises(ValueError) as ctx:
                 Component(
                     transports=dict(
-                        foo='bar',  # totally invalid key
+                        foo="bar",  # totally invalid key
                     ),
                 )
             self.assertIn("'foo' is not", str(ctx.exception))
@@ -322,8 +338,8 @@ if os.environ.get('USE_TWISTED', False):
             with self.assertRaises(ValueError) as ctx:
                 Component(
                     transports=[
-                        dict(type='websocket', url='ws://127.0.0.1/ws'),
-                        dict(foo='bar'),  # totally invalid key
+                        dict(type="websocket", url="ws://127.0.0.1/ws"),
+                        dict(foo="bar"),  # totally invalid key
                     ]
                 )
             self.assertIn("'foo' is not a valid configuration item", str(ctx.exception))
@@ -389,11 +405,7 @@ if os.environ.get('USE_TWISTED', False):
 
         def test_invalid_type(self):
             with self.assertRaises(ValueError) as ctx:
-                Component(
-                    transports=[
-                        "foo"
-                    ]
-                )
+                Component(transports=["foo"])
             self.assertIn("invalid WebSocket URL", str(ctx.exception))
 
         def test_no_url(self):
@@ -417,7 +429,7 @@ if os.environ.get('USE_TWISTED', False):
                             "url": "ws://example.com/ws",
                             "endpoint": ("not", "a", "dict"),
                         }
-                    ]
+                    ],
                 )
             self.assertIn("'endpoint' configuration must be", str(ctx.exception))
 
@@ -432,7 +444,7 @@ if os.environ.get('USE_TWISTED', False):
                             "type": "tcp",
                             "host": "1.2.3.4",
                             "port": "4321",
-                        }
+                        },
                     }
-                ]
+                ],
             )

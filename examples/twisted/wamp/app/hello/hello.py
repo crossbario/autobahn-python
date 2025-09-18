@@ -25,10 +25,10 @@
 ###############################################################################
 
 from os import environ
+
 from autobahn.twisted.wamp import Application
 
-
-app = Application('com.example')
+app = Application("com.example")
 
 
 @app.register()
@@ -37,14 +37,14 @@ def add2(a, b):
     return a + b
 
 
-@app.register('com.example.hello')
+@app.register("com.example.hello")
 def hello():
     print("hello() called")
-    res = yield app.session.call('com.example.add2', 2, 3)
+    res = yield app.session.call("com.example.add2", 2, 3)
     return "Hello {}".format(res)
 
 
-@app.signal('onjoined')
+@app.signal("onjoined")
 def onjoined():
     print("realm joined!")
 

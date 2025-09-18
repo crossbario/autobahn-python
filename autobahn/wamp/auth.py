@@ -24,51 +24,52 @@
 #
 ###############################################################################
 
-import os
 import base64
+import binascii
+import hashlib
+import hmac
+import os
+import random
 import struct
 import time
-import binascii
-import hmac
-import hashlib
-import random
-from typing import Optional, Dict
+from typing import Dict, Optional
+
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from autobahn.util import public
 from autobahn.util import xor as xor_array
 from autobahn.wamp.interfaces import IAuthenticator
 
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.backends import default_backend
-
 # if we don't have argon2/passlib (see "authentication" extra) then
 # you don't get AuthScram and variants
 try:
-    from argon2.low_level import hash_secret
     from argon2 import Type
+    from argon2.low_level import hash_secret
     from passlib.utils import saslprep
+
     HAS_ARGON = True
 except ImportError:
     HAS_ARGON = False
 
 
 __all__ = (
-    'AuthAnonymous',
-    'AuthScram',
-    'AuthCryptoSign',
-    'AuthWampCra',
-    'AuthTicket',
-    'create_authenticator',
-    'pbkdf2',
-    'generate_totp_secret',
-    'compute_totp',
-    'check_totp',
-    'qrcode_from_totp',
-    'derive_key',
-    'generate_wcs',
-    'compute_wcs',
-    'derive_scram_credential',
+    "AuthAnonymous",
+    "AuthCryptoSign",
+    "AuthScram",
+    "AuthTicket",
+    "AuthWampCra",
+    "check_totp",
+    "compute_totp",
+    "compute_wcs",
+    "create_authenticator",
+    "derive_key",
+    "derive_scram_credential",
+    "generate_totp_secret",
+    "generate_wcs",
+    "pbkdf2",
+    "qrcode_from_totp",
 )
 
 
@@ -92,9 +93,7 @@ def create_authenticator(name, **kwargs):
             AuthTicket.name: AuthTicket,
         }[name]
     except KeyError:
-        raise ValueError(
-            "Unknown authenticator '{}'".format(name)
-        )
+        raise ValueError("Unknown authenticator '{}'".format(name))
     # this may raise further ValueErrors if the kwargs are wrong
     authenticator = klass(**kwargs)
     return authenticator
@@ -102,19 +101,17 @@ def create_authenticator(name, **kwargs):
 
 # experimental authentication API
 class AuthAnonymous(object):
-    name = 'anonymous'
+    name = "anonymous"
 
     def __init__(self, **kw):
         self._args = kw
 
     @property
     def authextra(self):
-        return self._args.get('authextra', dict())
+        return self._args.get("authextra", dict())
 
     def on_challenge(self, session, challenge):
-        raise RuntimeError(
-            "on_challenge called on anonymous authentication"
-        )
+        raise RuntimeError("on_challenge called on anonymous authentication")
 
     def on_welcome(self, msg, authextra):
         return None
@@ -124,27 +121,25 @@ IAuthenticator.register(AuthAnonymous)
 
 
 class AuthAnonymousProxy(AuthAnonymous):
-    name = 'anonymous-proxy'
+    name = "anonymous-proxy"
 
 
 IAuthenticator.register(AuthAnonymousProxy)
 
 
 class AuthTicket(object):
-    name = 'ticket'
+    name = "ticket"
 
     def __init__(self, **kw):
         self._args = kw
         try:
-            self._ticket = self._args.pop('ticket')
+            self._ticket = self._args.pop("ticket")
         except KeyError:
-            raise ValueError(
-                "ticket authentication requires 'ticket=' kwarg"
-            )
+            raise ValueError("ticket authentication requires 'ticket=' kwarg")
 
     @property
     def authextra(self):
-        return self._args.get('authextra', dict())
+        return self._args.get("authextra", dict())
 
     def on_challenge(self, session, challenge):
         assert challenge.method == "ticket"
@@ -158,48 +153,45 @@ IAuthenticator.register(AuthTicket)
 
 
 class AuthCryptoSign(object):
-    name = 'cryptosign'
+    name = "cryptosign"
 
     def __init__(self, **kw):
         # should put in checkconfig or similar
         for key in kw.keys():
-            if key not in ['authextra', 'authid', 'authrole', 'privkey']:
+            if key not in ["authextra", "authid", "authrole", "privkey"]:
                 raise ValueError(
                     "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
                 )
-        for key in ['privkey']:
+        for key in ["privkey"]:
             if key not in kw:
-                raise ValueError(
-                    "Must provide '{}' for cryptosign".format(key)
-                )
+                raise ValueError("Must provide '{}' for cryptosign".format(key))
 
         from autobahn.wamp.cryptosign import CryptosignKey
-        self._privkey = CryptosignKey.from_bytes(
-            binascii.a2b_hex(kw['privkey'])
-        )
 
-        if 'pubkey' in kw.get('authextra', dict()):
-            pubkey = kw['authextra']['pubkey']
+        self._privkey = CryptosignKey.from_bytes(binascii.a2b_hex(kw["privkey"]))
+
+        if "pubkey" in kw.get("authextra", dict()):
+            pubkey = kw["authextra"]["pubkey"]
             if pubkey != self._privkey.public_key():
-                raise ValueError(
-                    "Public key doesn't correspond to private key"
-                )
+                raise ValueError("Public key doesn't correspond to private key")
         else:
-            kw['authextra'] = kw.get('authextra', dict())
-            kw['authextra']['pubkey'] = self._privkey.public_key()
+            kw["authextra"] = kw.get("authextra", dict())
+            kw["authextra"]["pubkey"] = self._privkey.public_key()
 
-        self._channel_binding = kw.get('authextra', dict()).get('channel_binding', None)
+        self._channel_binding = kw.get("authextra", dict()).get("channel_binding", None)
         self._args = kw
 
     @property
     def authextra(self):
-        return self._args.get('authextra', dict())
+        return self._args.get("authextra", dict())
 
     def on_challenge(self, session, challenge):
-        channel_id = session._transport.transport_details.channel_id.get(self._channel_binding, None)
-        return self._privkey.sign_challenge(challenge,
-                                            channel_id=channel_id,
-                                            channel_id_type=self._channel_binding)
+        channel_id = session._transport.transport_details.channel_id.get(
+            self._channel_binding, None
+        )
+        return self._privkey.sign_challenge(
+            challenge, channel_id=channel_id, channel_id_type=self._channel_binding
+        )
 
     def on_welcome(self, msg, authextra):
         return None
@@ -209,7 +201,7 @@ IAuthenticator.register(AuthCryptoSign)
 
 
 class AuthCryptoSignProxy(AuthCryptoSign):
-    name = 'cryptosign-proxy'
+    name = "cryptosign-proxy"
 
 
 IAuthenticator.register(AuthCryptoSignProxy)
@@ -233,7 +225,7 @@ def _hash_argon2id13_secret(password, salt, iterations, memory):
     # spits out stuff like:
     # '$argon2i$v=19$m=512,t=2,p=2$5VtWOO3cGWYQHEMaYGbsfQ$AcmqasQgW/wI6wAHAMk4aQ'
 
-    _, tag, ver, options, salt_data, hash_data = rawhash.split(b'$')
+    _, tag, ver, options, salt_data, hash_data = rawhash.split(b"$")
     return hash_data
 
 
@@ -251,7 +243,8 @@ class AuthScram(object):
     NOTE: This is a prototype of a draft spec; see
     https://github.com/wamp-proto/wamp-proto/issues/135
     """
-    name = 'scram'
+
+    name = "scram"
 
     def __init__(self, **kw):
         if not HAS_ARGON:
@@ -266,7 +259,7 @@ class AuthScram(object):
     def authextra(self):
         # is authextra() called exactly once per authentication?
         if self._client_nonce is None:
-            self._client_nonce = base64.b64encode(os.urandom(16)).decode('ascii')
+            self._client_nonce = base64.b64encode(os.urandom(16)).decode("ascii")
         return {
             "nonce": self._client_nonce,
         }
@@ -274,8 +267,8 @@ class AuthScram(object):
     def on_challenge(self, session, challenge):
         assert challenge.method == "scram"
         assert self._client_nonce is not None
-        required_args = ['nonce', 'kdf', 'salt', 'iterations']
-        optional_args = ['memory', 'channel_binding']
+        required_args = ["nonce", "kdf", "salt", "iterations"]
+        optional_args = ["memory", "channel_binding"]
         for k in required_args:
             if k not in challenge.extra:
                 raise RuntimeError(
@@ -288,14 +281,14 @@ class AuthScram(object):
                     "WAMP-SCRAM challenge has unknown attribute '{}'".format(k)
                 )
 
-        channel_binding = challenge.extra.get('channel_binding', '')
-        server_nonce = challenge.extra['nonce']  # base64
-        salt = challenge.extra['salt']  # base64
-        iterations = int(challenge.extra['iterations'])
-        memory = int(challenge.extra.get('memory', -1))
-        password = self._args['password'].encode('utf8')  # supplied by user
-        authid = saslprep(self._args['authid'])
-        algorithm = challenge.extra['kdf']
+        channel_binding = challenge.extra.get("channel_binding", "")
+        server_nonce = challenge.extra["nonce"]  # base64
+        salt = challenge.extra["salt"]  # base64
+        iterations = int(challenge.extra["iterations"])
+        memory = int(challenge.extra.get("memory", -1))
+        password = self._args["password"].encode("utf8")  # supplied by user
+        authid = saslprep(self._args["authid"])
+        algorithm = challenge.extra["kdf"]
         client_nonce = self._client_nonce
 
         self._auth_message = (
@@ -304,25 +297,31 @@ class AuthScram(object):
                 server_first="r={},s={},i={}".format(server_nonce, salt, iterations),
                 client_final_no_proof="c={},r={}".format(channel_binding, server_nonce),
             )
-        ).encode('ascii')
+        ).encode("ascii")
 
-        if algorithm == 'argon2id-13':
+        if algorithm == "argon2id-13":
             if memory == -1:
                 raise ValueError(
                     "WAMP-SCRAM 'argon2id-13' challenge requires 'memory' parameter"
                 )
-            self._salted_password = _hash_argon2id13_secret(password, salt, iterations, memory)
-        elif algorithm == 'pbkdf2':
+            self._salted_password = _hash_argon2id13_secret(
+                password, salt, iterations, memory
+            )
+        elif algorithm == "pbkdf2":
             self._salted_password = _hash_pbkdf2_secret(password, salt, iterations)
         else:
             raise RuntimeError(
                 "WAMP-SCRAM specified unknown KDF '{}'".format(algorithm)
             )
 
-        client_key = hmac.new(self._salted_password, b"Client Key", hashlib.sha256).digest()
-        stored_key = hashlib.new('sha256', client_key).digest()
+        client_key = hmac.new(
+            self._salted_password, b"Client Key", hashlib.sha256
+        ).digest()
+        stored_key = hashlib.new("sha256", client_key).digest()
 
-        client_signature = hmac.new(stored_key, self._auth_message, hashlib.sha256).digest()
+        client_signature = hmac.new(
+            stored_key, self._auth_message, hashlib.sha256
+        ).digest()
         client_proof = xor_array(client_key, client_signature)
 
         return base64.b64encode(client_proof)
@@ -335,15 +334,17 @@ class AuthScram(object):
         before it gets set up -- we check the server-signature thus
         authorizing the server and if it fails we drop the connection.
         """
-        alleged_server_sig = base64.b64decode(authextra['scram_server_signature'])
-        server_key = hmac.new(self._salted_password, b"Server Key", hashlib.sha256).digest()
-        server_signature = hmac.new(server_key, self._auth_message, hashlib.sha256).digest()
+        alleged_server_sig = base64.b64decode(authextra["scram_server_signature"])
+        server_key = hmac.new(
+            self._salted_password, b"Server Key", hashlib.sha256
+        ).digest()
+        server_signature = hmac.new(
+            server_key, self._auth_message, hashlib.sha256
+        ).digest()
         if not hmac.compare_digest(server_signature, alleged_server_sig):
             session.log.error("Verification of server SCRAM signature failed")
             return "Verification of server SCRAM signature failed"
-        session.log.info(
-            "Verification of server SCRAM signature successful"
-        )
+        session.log.info("Verification of server SCRAM signature successful")
         return None
 
 
@@ -351,45 +352,40 @@ IAuthenticator.register(AuthScram)
 
 
 class AuthWampCra(object):
-    name = 'wampcra'
+    name = "wampcra"
 
     def __init__(self, **kw):
         # should put in checkconfig or similar
         for key in kw.keys():
-            if key not in ['authextra', 'authid', 'authrole', 'secret']:
+            if key not in ["authextra", "authid", "authrole", "secret"]:
                 raise ValueError(
                     "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
                 )
-        for key in ['secret', 'authid']:
+        for key in ["secret", "authid"]:
             if key not in kw:
-                raise ValueError(
-                    "Must provide '{}' for wampcra".format(key)
-                )
+                raise ValueError("Must provide '{}' for wampcra".format(key))
 
         self._args = kw
-        self._secret = kw.pop('secret')
+        self._secret = kw.pop("secret")
         if not isinstance(self._secret, str):
-            self._secret = self._secret.decode('utf8')
+            self._secret = self._secret.decode("utf8")
 
     @property
     def authextra(self):
-        return self._args.get('authextra', dict())
+        return self._args.get("authextra", dict())
 
     def on_challenge(self, session, challenge):
-        key = self._secret.encode('utf8')
-        if 'salt' in challenge.extra:
+        key = self._secret.encode("utf8")
+        if "salt" in challenge.extra:
             key = derive_key(
                 key,
-                challenge.extra['salt'],
-                challenge.extra['iterations'],
-                challenge.extra['keylen']
+                challenge.extra["salt"],
+                challenge.extra["iterations"],
+                challenge.extra["keylen"],
             )
 
-        signature = compute_wcs(
-            key,
-            challenge.extra['challenge'].encode('utf8')
-        )
-        return signature.decode('ascii')
+        signature = compute_wcs(key, challenge.extra["challenge"].encode("utf8"))
+        return signature.decode("ascii")
 
     def on_welcome(self, msg, authextra):
         return None
@@ -412,8 +408,8 @@ def generate_totp_secret(length=10):
        The length of the generated secret is ``length * 8 / 5`` octets.
     :rtype: unicode
     """
-    assert(type(length) == int)
-    return base64.b32encode(os.urandom(length)).decode('ascii')
+    assert type(length) == int
+    return base64.b32encode(os.urandom(length)).decode("ascii")
 
 
 @public
@@ -430,18 +426,18 @@ def compute_totp(secret, offset=0):
     :returns: TOTP for current time (+/- offset).
     :rtype: unicode
     """
-    assert(type(secret) == str)
-    assert(type(offset) == int)
+    assert type(secret) == str
+    assert type(offset) == int
     try:
         key = base64.b32decode(secret)
     except TypeError:
-        raise Exception('invalid secret')
+        raise Exception("invalid secret")
     interval = offset + int(time.time()) // 30
-    msg = struct.pack('>Q', interval)
+    msg = struct.pack(">Q", interval)
     digest = hmac.new(key, msg, hashlib.sha1).digest()
     o = 15 & (digest[19])
-    token = (struct.unpack('>I', digest[o:o + 4])[0] & 0x7fffffff) % 1000000
-    return '{0:06d}'.format(token)
+    token = (struct.unpack(">I", digest[o : o + 4])[0] & 0x7FFFFFFF) % 1000000
+    return "{0:06d}".format(token)
 
 
 @public
@@ -473,21 +469,22 @@ def check_totp(secret, ticket):
 @public
 def qrcode_from_totp(secret, label, issuer):
     if type(secret) != str:
-        raise Exception('secret must be of type unicode, not {}'.format(type(secret)))
+        raise Exception("secret must be of type unicode, not {}".format(type(secret)))
 
     if type(label) != str:
-        raise Exception('label must be of type unicode, not {}'.format(type(label)))
+        raise Exception("label must be of type unicode, not {}".format(type(label)))
 
     try:
         import qrcode
         import qrcode.image.svg
     except ImportError:
-        raise Exception('qrcode not installed')
+        raise Exception("qrcode not installed")
 
     return qrcode.make(
-        'otpauth://totp/{}?secret={}&issuer={}'.format(label, secret, issuer),
+        "otpauth://totp/{}?secret={}&issuer={}".format(label, secret, issuer),
         box_size=3,
-        image_factory=qrcode.image.svg.SvgImage).to_string()
+        image_factory=qrcode.image.svg.SvgImage,
+    ).to_string()
 
 
 @public
@@ -512,17 +509,19 @@ def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
     :returns: The derived cryptographic key.
     :rtype: bytes
     """
-    if not (type(data) == bytes) or \
-       not (type(salt) == bytes) or \
-       not (type(iterations) == int) or \
-       not (type(keylen) == int):
+    if (
+        not (type(data) == bytes)
+        or not (type(salt) == bytes)
+        or not (type(iterations) == int)
+        or not (type(keylen) == int)
+    ):
         raise ValueError("Invalid argument types")
 
     # justification: WAMP-CRA uses SHA256 and users shouldn't have any
     # other reason to call this particular pbkdf2 function (arguably,
     # it should be private maybe?)
     if hashfunc is None:
-        hashfunc = 'sha256'
+        hashfunc = "sha256"
     if hashfunc is callable:
         # used to take stuff from hashlib; translate?
         raise ValueError(
@@ -570,9 +569,9 @@ def derive_key(secret, salt, iterations=1000, keylen=32):
     if not (type(keylen) == int):
         raise ValueError("'keylen' must be an integer")
     if type(secret) == str:
-        secret = secret.encode('utf8')
+        secret = secret.encode("utf8")
     if type(salt) == str:
-        salt = salt.encode('utf8')
+        salt = salt.encode("utf8")
     key = pbkdf2(secret, salt, iterations, keylen)
     return binascii.b2a_base64(key).strip()
 
@@ -600,8 +599,10 @@ def generate_wcs(length=14):
     :return: The generated secret. The length of the generated is ``length`` octets.
     :rtype: bytes
     """
-    assert(type(length) == int)
-    return "".join(random.choice(WCS_SECRET_CHARSET) for _ in range(length)).encode('ascii')
+    assert type(length) == int
+    return "".join(random.choice(WCS_SECRET_CHARSET) for _ in range(length)).encode(
+        "ascii"
+    )
 
 
 @public
@@ -618,17 +619,19 @@ def compute_wcs(key, challenge):
     :return: The authentication signature.
     :rtype: bytes
     """
-    assert(type(key) in [str, bytes])
-    assert(type(challenge) in [str, bytes])
+    assert type(key) in [str, bytes]
+    assert type(challenge) in [str, bytes]
     if type(key) == str:
-        key = key.encode('utf8')
+        key = key.encode("utf8")
     if type(challenge) == str:
-        challenge = challenge.encode('utf8')
+        challenge = challenge.encode("utf8")
     sig = hmac.new(key, challenge, hashlib.sha256).digest()
     return binascii.b2a_base64(sig).strip()
 
 
-def derive_scram_credential(email: str, password: str, salt: Optional[bytes] = None) -> Dict:
+def derive_scram_credential(
+    email: str, password: str, salt: Optional[bytes] = None
+) -> Dict:
     """
     Derive WAMP-SCRAM credentials from user email and password. The SCRAM parameters used
     are the following (these are also contained in the returned credentials):
@@ -648,19 +651,18 @@ def derive_scram_credential(email: str, password: str, salt: Optional[bytes] = N
     :return: WAMP-SCRAM credentials. When serialized, the returned credentials can be copy-pasted
         into the ``config.json`` node configuration for a Crossbar.io node.
     """
-    assert HAS_ARGON, 'missing dependency argon2'
-    from argon2.low_level import hash_secret
-    from argon2.low_level import Type
+    assert HAS_ARGON, "missing dependency argon2"
+    from argon2.low_level import Type, hash_secret
 
     # derive salt from email
     if not salt:
         m = hashlib.sha256()
-        m.update(email.encode('utf8'))
+        m.update(email.encode("utf8"))
         salt = m.digest()[:16]
     assert len(salt) == 16
 
     hash_data = hash_secret(
-        secret=password.encode('utf8'),
+        secret=password.encode("utf8"),
         salt=salt,
         time_cost=4096,
         memory_cost=512,
@@ -669,26 +671,24 @@ def derive_scram_credential(email: str, password: str, salt: Optional[bytes] = N
         type=Type.ID,
         version=19,
     )
-    _, tag, v, params, _, salted_password = hash_data.decode('ascii').split('$')
-    assert tag == 'argon2id'
-    assert v == 'v=19'  # argon's version 1.3 is represented as 0x13, which is 19 decimal...
-    params = {
-        k: v
-        for k, v in
-        [x.split('=') for x in params.split(',')]
-    }
+    _, tag, v, params, _, salted_password = hash_data.decode("ascii").split("$")
+    assert tag == "argon2id"
+    assert (
+        v == "v=19"
+    )  # argon's version 1.3 is represented as 0x13, which is 19 decimal...
+    params = {k: v for k, v in [x.split("=") for x in params.split(",")]}
 
-    salted_password = salted_password.encode('ascii')
+    salted_password = salted_password.encode("ascii")
     client_key = hmac.new(salted_password, b"Client Key", hashlib.sha256).digest()
-    stored_key = hashlib.new('sha256', client_key).digest()
+    stored_key = hashlib.new("sha256", client_key).digest()
     server_key = hmac.new(salted_password, b"Server Key", hashlib.sha256).digest()
 
     credential = {
         "kdf": "argon2id-13",
-        "memory": int(params['m']),
-        "iterations": int(params['t']),
-        "salt": binascii.b2a_hex(salt).decode('ascii'),
-        "stored-key": binascii.b2a_hex(stored_key).decode('ascii'),
-        "server-key": binascii.b2a_hex(server_key).decode('ascii'),
+        "memory": int(params["m"]),
+        "iterations": int(params["t"]),
+        "salt": binascii.b2a_hex(salt).decode("ascii"),
+        "stored-key": binascii.b2a_hex(stored_key).decode("ascii"),
+        "server-key": binascii.b2a_hex(server_key).decode("ascii"),
     }
     return credential

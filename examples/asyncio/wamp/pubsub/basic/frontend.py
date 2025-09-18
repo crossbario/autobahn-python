@@ -26,7 +26,8 @@
 
 import asyncio
 from os import environ
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):
@@ -36,7 +37,6 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         self.received = 0
 
         def on_event(i):
@@ -45,13 +45,13 @@ class Component(ApplicationSession):
             if self.received > 5:
                 self.leave()
 
-        await self.subscribe(on_event, 'com.myapp.topic1')
+        await self.subscribe(on_event, "com.myapp.topic1")
 
     def onDisconnect(self):
         asyncio.get_event_loop().stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

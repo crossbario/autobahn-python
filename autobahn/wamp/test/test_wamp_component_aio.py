@@ -24,14 +24,15 @@
 #
 ###############################################################################
 
+import asyncio
 import os
 import sys
 import unittest.mock as mock
+
 import pytest
 import txaio
-import asyncio
 
-if os.environ.get('USE_ASYNCIO', False):
+if os.environ.get("USE_ASYNCIO", False):
     from autobahn.asyncio.component import Component
 
     @pytest.mark.skipif(sys.version_info < (3, 5), reason="requires Python 3.5+")
@@ -59,6 +60,7 @@ if os.environ.get('USE_ASYNCIO', False):
         def fail():
             finished.set_exception(AssertionError("timed out"))
             txaio.config.loop = orig_loop
+
         txaio.call_later(4.0, fail)
 
         def done(f):
@@ -66,11 +68,12 @@ if os.environ.get('USE_ASYNCIO', False):
                 f.result()
                 finished.set_exception(AssertionError("should get an error"))
             except RuntimeError as e:
-                if 'Exhausted all transport connect attempts' not in str(e):
+                if "Exhausted all transport connect attempts" not in str(e):
                     finished.set_exception(AssertionError("wrong exception caught"))
             finished.set_result(None)
             txaio.config.loop = orig_loop
             assert comp._done_f is None
+
         f.add_done_callback(done)
 
         asyncio.get_event_loop().run_until_complete(finished)
@@ -95,16 +98,22 @@ if os.environ.get('USE_ASYNCIO', False):
         fake_transport = FakeTransport()
         actual_protocol = [None]  # set in a closure below
 
-        def create_connection(protocol_factory=None, server_hostname=None, host=None, port=None, ssl=False):
+        def create_connection(
+            protocol_factory=None, server_hostname=None, host=None, port=None, ssl=False
+        ):
             if actual_protocol[0] is None:
                 protocol = protocol_factory()
                 actual_protocol[0] = protocol
                 protocol.connection_made(fake_transport)
                 return txaio.create_future_success((fake_transport, protocol))
             else:
-                return txaio.create_future_error(RuntimeError("second connection fails completely"))
+                return txaio.create_future_error(
+                    RuntimeError("second connection fails completely")
+                )
 
-        with mock.patch.object(txaio.config.loop, 'create_connection', create_connection):
+        with mock.patch.object(
+            txaio.config.loop, "create_connection", create_connection
+        ):
             txaio.config.loop.create_connection = create_connection
 
             comp = Component(
@@ -131,7 +140,10 @@ if os.environ.get('USE_ASYNCIO', False):
 
             def nuke_transport():
                 if actual_protocol[0] is not None:
-                    actual_protocol[0].connection_lost(None)  # asyncio can call this with None
+                    actual_protocol[0].connection_lost(
+                        None
+                    )  # asyncio can call this with None
+
             txaio.call_later(0.1, nuke_transport)
 
             finished = txaio.create_future()
@@ -139,6 +151,7 @@ if os.environ.get('USE_ASYNCIO', False):
             def fail():
                 finished.set_exception(AssertionError("timed out"))
                 txaio.config.loop = orig_loop
+
             txaio.call_later(1.0, fail)
 
             def done(f):
@@ -146,10 +159,11 @@ if os.environ.get('USE_ASYNCIO', False):
                     f.result()
                     finished.set_exception(AssertionError("should get an error"))
                 except RuntimeError as e:
-                    if 'Exhausted all transport connect attempts' not in str(e):
+                    if "Exhausted all transport connect attempts" not in str(e):
                         finished.set_exception(AssertionError("wrong exception caught"))
                 finished.set_result(None)
                 txaio.config.loop = orig_loop
+
             f.add_done_callback(done)
 
             asyncio.get_event_loop().run_until_complete(finished)

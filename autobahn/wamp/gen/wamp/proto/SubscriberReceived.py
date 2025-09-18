@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class SubscriberReceived(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class SubscriberReceived(object):
     def GetRootAsSubscriberReceived(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # SubscriberReceived
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,14 +31,18 @@ class SubscriberReceived(object):
     def Publication(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # SubscriberReceived
     def Subscriber(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # SubscriberReceived
@@ -57,7 +64,10 @@ class SubscriberReceived(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(
+                flatbuffers.number_types.Uint8Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
+            )
         return 0
 
     # SubscriberReceived
@@ -98,7 +108,10 @@ class SubscriberReceived(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
+            return self._tab.Get(
+                flatbuffers.number_types.Uint8Flags,
+                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
+            )
         return 0
 
     # SubscriberReceived
@@ -120,39 +133,106 @@ class SubscriberReceived(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         return o == 0
 
-def SubscriberReceivedStart(builder): builder.StartObject(8)
+
+def SubscriberReceivedStart(builder):
+    builder.StartObject(8)
+
+
 def Start(builder):
     return SubscriberReceivedStart(builder)
-def SubscriberReceivedAddPublication(builder, publication): builder.PrependUint64Slot(0, publication, 0)
+
+
+def SubscriberReceivedAddPublication(builder, publication):
+    builder.PrependUint64Slot(0, publication, 0)
+
+
 def AddPublication(builder, publication):
     return SubscriberReceivedAddPublication(builder, publication)
-def SubscriberReceivedAddSubscriber(builder, subscriber): builder.PrependUint64Slot(1, subscriber, 0)
+
+
+def SubscriberReceivedAddSubscriber(builder, subscriber):
+    builder.PrependUint64Slot(1, subscriber, 0)
+
+
 def AddSubscriber(builder, subscriber):
     return SubscriberReceivedAddSubscriber(builder, subscriber)
-def SubscriberReceivedAddSubscriberAuthid(builder, subscriberAuthid): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(subscriberAuthid), 0)
+
+
+def SubscriberReceivedAddSubscriberAuthid(builder, subscriberAuthid):
+    builder.PrependUOffsetTRelativeSlot(
+        2, flatbuffers.number_types.UOffsetTFlags.py_type(subscriberAuthid), 0
+    )
+
+
 def AddSubscriberAuthid(builder, subscriberAuthid):
     return SubscriberReceivedAddSubscriberAuthid(builder, subscriberAuthid)
-def SubscriberReceivedAddSubscriberAuthrole(builder, subscriberAuthrole): builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(subscriberAuthrole), 0)
+
+
+def SubscriberReceivedAddSubscriberAuthrole(builder, subscriberAuthrole):
+    builder.PrependUOffsetTRelativeSlot(
+        3, flatbuffers.number_types.UOffsetTFlags.py_type(subscriberAuthrole), 0
+    )
+
+
 def AddSubscriberAuthrole(builder, subscriberAuthrole):
     return SubscriberReceivedAddSubscriberAuthrole(builder, subscriberAuthrole)
-def SubscriberReceivedAddPayload(builder, payload): builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
+
+
+def SubscriberReceivedAddPayload(builder, payload):
+    builder.PrependUOffsetTRelativeSlot(
+        4, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0
+    )
+
+
 def AddPayload(builder, payload):
     return SubscriberReceivedAddPayload(builder, payload)
-def SubscriberReceivedStartPayloadVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+
+
+def SubscriberReceivedStartPayloadVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
 def StartPayloadVector(builder, numElems):
     return SubscriberReceivedStartPayloadVector(builder, numElems)
-def SubscriberReceivedAddEncAlgo(builder, encAlgo): builder.PrependUint8Slot(5, encAlgo, 0)
+
+
+def SubscriberReceivedAddEncAlgo(builder, encAlgo):
+    builder.PrependUint8Slot(5, encAlgo, 0)
+
+
 def AddEncAlgo(builder, encAlgo):
     return SubscriberReceivedAddEncAlgo(builder, encAlgo)
-def SubscriberReceivedAddEncSerializer(builder, encSerializer): builder.PrependUint8Slot(6, encSerializer, 0)
+
+
+def SubscriberReceivedAddEncSerializer(builder, encSerializer):
+    builder.PrependUint8Slot(6, encSerializer, 0)
+
+
 def AddEncSerializer(builder, encSerializer):
     return SubscriberReceivedAddEncSerializer(builder, encSerializer)
-def SubscriberReceivedAddEncKey(builder, encKey): builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
+
+
+def SubscriberReceivedAddEncKey(builder, encKey):
+    builder.PrependUOffsetTRelativeSlot(
+        7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0
+    )
+
+
 def AddEncKey(builder, encKey):
     return SubscriberReceivedAddEncKey(builder, encKey)
-def SubscriberReceivedStartEncKeyVector(builder, numElems): return builder.StartVector(1, numElems, 1)
+
+
+def SubscriberReceivedStartEncKeyVector(builder, numElems):
+    return builder.StartVector(1, numElems, 1)
+
+
 def StartEncKeyVector(builder, numElems):
     return SubscriberReceivedStartEncKeyVector(builder, numElems)
-def SubscriberReceivedEnd(builder): return builder.EndObject()
+
+
+def SubscriberReceivedEnd(builder):
+    return builder.EndObject()
+
+
 def End(builder):
     return SubscriberReceivedEnd(builder)

@@ -26,14 +26,14 @@
 
 import os
 
-if os.environ.get('USE_TWISTED', False):
-    from twisted.trial import unittest
-    from twisted.internet import defer
-    from twisted.python.failure import Failure
+if os.environ.get("USE_TWISTED", False):
+    from autobahn.twisted.wamp import ApplicationSession
     from autobahn.wamp import message, role
     from autobahn.wamp.exception import ProtocolError
-    from autobahn.twisted.wamp import ApplicationSession
     from autobahn.wamp.types import TransportDetails
+    from twisted.internet import defer
+    from twisted.python.failure import Failure
+    from twisted.trial import unittest
 
     class MockTransport:
         def __init__(self):
@@ -50,36 +50,37 @@ if os.environ.get('USE_TWISTED', False):
             pass
 
     class MockApplicationSession(ApplicationSession):
-        '''
+        """
         This is used by tests, which typically attach their own handler to
         on*() methods. This just collects any errors from onUserError
-        '''
+        """
 
         def __init__(self, *args, **kw):
             ApplicationSession.__init__(self, *args, **kw)
             self.errors = []
-            self._realm = 'dummy'
+            self._realm = "dummy"
             self._transport = MockTransport()
 
         def onUserError(self, e, msg):
             self.errors.append((e.value, msg))
 
     def exception_raiser(exc):
-        '''
+        """
         Create a method that takes any args and always raises the given
         Exception instance.
-        '''
+        """
         assert isinstance(exc, Exception), "Must derive from Exception"
 
         def method(*args, **kw):
             raise exc
+
         return method
 
     def async_exception_raiser(exc):
-        '''
+        """
         Create a method that takes any args, and always returns a Deferred
         that has failed.
-        '''
+        """
         assert isinstance(exc, Exception), "Must derive from Exception"
 
         def method(*args, **kw):
@@ -87,24 +88,25 @@ if os.environ.get('USE_TWISTED', False):
                 raise exc
             except:
                 return defer.fail(Failure())
+
         return method
 
     def create_mock_welcome():
         return message.Welcome(
             1234,
             {
-                'broker': role.RoleBrokerFeatures(),
+                "broker": role.RoleBrokerFeatures(),
             },
         )
 
     class TestSessionCallbacks(unittest.TestCase):
-        '''
+        """
         These test that callbacks on user-overridden ApplicationSession
         methods that produce errors are handled correctly.
 
         XXX should do state-diagram documenting where we are when each
         of these cases arises :/
-        '''
+        """
 
         # XXX sure would be nice to use py.test @fixture to do the
         # async/sync exception-raising stuff (i.e. make each test run
@@ -171,9 +173,9 @@ if os.environ.get('USE_TWISTED', False):
             self.assertEqual(exception, session.errors[0][0])
 
         def test_on_leave_valid_session(self):
-            '''
+            """
             cover when onLeave called after we have a valid session
-            '''
+            """
             session = MockApplicationSession()
             exception = RuntimeError("such challenge")
             session.onLeave = exception_raiser(exception)
@@ -189,9 +191,9 @@ if os.environ.get('USE_TWISTED', False):
             self.assertEqual(exception, session.errors[0][0])
 
         def test_on_leave_valid_session_deferred(self):
-            '''
+            """
             cover when onLeave called after we have a valid session
-            '''
+            """
             session = MockApplicationSession()
             exception = RuntimeError("such challenge")
             session.onLeave = async_exception_raiser(exception)
@@ -207,9 +209,9 @@ if os.environ.get('USE_TWISTED', False):
             self.assertEqual(exception, session.errors[0][0])
 
         def test_on_leave_after_bad_challenge(self):
-            '''
+            """
             onLeave raises error after onChallenge fails
-            '''
+            """
             session = MockApplicationSession()
             exception = RuntimeError("such challenge")
             session.onLeave = exception_raiser(exception)
@@ -289,12 +291,12 @@ if os.environ.get('USE_TWISTED', False):
             self.assertEqual("such challenge", reply.message)
 
         def test_no_session(self):
-            '''
+            """
             test "all other cases" when we don't yet have a session
             established, which should all raise ProtocolErrors and
             *not* go through the onUserError handler. We cheat and
             just test one.
-            '''
+            """
             session = MockApplicationSession()
             exception = RuntimeError("such challenge")
             session.onConnect = exception_raiser(exception)

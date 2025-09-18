@@ -26,33 +26,35 @@
 
 import sys
 
+from autobahn.twisted.websocket import (
+    WebSocketServerFactory,
+    WebSocketServerProtocol,
+    listenWS,
+)
+from autobahn.websocket.compress import (
+    PerMessageDeflateOffer,
+    PerMessageDeflateOfferAccept,
+)
 from twisted.internet import reactor
 from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.twisted.websocket import WebSocketServerProtocol, \
-    WebSocketServerFactory, \
-    listenWS
-
-from autobahn.websocket.compress import PerMessageDeflateOffer, \
-    PerMessageDeflateOfferAccept
-
 
 class EchoServerProtocol(WebSocketServerProtocol):
-
     def onConnect(self, request):
         print("WebSocket connection request by {}".format(request.peer))
 
     def onOpen(self):
-        print("WebSocket extensions in use: {}".format(self.websocket_extensions_in_use))
+        print(
+            "WebSocket extensions in use: {}".format(self.websocket_extensions_in_use)
+        )
 
     def onMessage(self, payload, isBinary):
         self.sendMessage(payload, isBinary)
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     log.startLogging(sys.stdout)
 
     factory = WebSocketServerFactory("ws://127.0.0.1:9000")

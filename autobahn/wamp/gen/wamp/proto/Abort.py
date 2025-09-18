@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Abort(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class Abort(object):
     def GetRootAsAbort(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # Abort
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,7 +31,9 @@ class Abort(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Abort
@@ -45,18 +50,46 @@ class Abort(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-def AbortStart(builder): builder.StartObject(3)
+
+def AbortStart(builder):
+    builder.StartObject(3)
+
+
 def Start(builder):
     return AbortStart(builder)
-def AbortAddSession(builder, session): builder.PrependUint64Slot(0, session, 0)
+
+
+def AbortAddSession(builder, session):
+    builder.PrependUint64Slot(0, session, 0)
+
+
 def AddSession(builder, session):
     return AbortAddSession(builder, session)
-def AbortAddReason(builder, reason): builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0)
+
+
+def AbortAddReason(builder, reason):
+    builder.PrependUOffsetTRelativeSlot(
+        1, flatbuffers.number_types.UOffsetTFlags.py_type(reason), 0
+    )
+
+
 def AddReason(builder, reason):
     return AbortAddReason(builder, reason)
-def AbortAddMessage(builder, message): builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0)
+
+
+def AbortAddMessage(builder, message):
+    builder.PrependUOffsetTRelativeSlot(
+        2, flatbuffers.number_types.UOffsetTFlags.py_type(message), 0
+    )
+
+
 def AddMessage(builder, message):
     return AbortAddMessage(builder, message)
-def AbortEnd(builder): return builder.EndObject()
+
+
+def AbortEnd(builder):
+    return builder.EndObject()
+
+
 def End(builder):
     return AbortEnd(builder)

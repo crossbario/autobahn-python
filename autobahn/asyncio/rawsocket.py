@@ -25,22 +25,27 @@
 ###############################################################################
 
 import asyncio
-import struct
-import math
 import copy
+import math
+import struct
 from typing import Optional
 
 import txaio
-from autobahn.util import public, _LazyHexFormatter, hltype
+
+from autobahn.asyncio.util import (
+    create_transport_details,
+    get_serializers,
+    transport_channel_id,
+)
+from autobahn.util import _LazyHexFormatter, hltype, public
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 from autobahn.wamp.types import TransportDetails
-from autobahn.asyncio.util import get_serializers, create_transport_details, transport_channel_id
 
 __all__ = (
-    'WampRawSocketServerProtocol',
-    'WampRawSocketClientProtocol',
-    'WampRawSocketServerFactory',
-    'WampRawSocketClientFactory'
+    "WampRawSocketClientFactory",
+    "WampRawSocketClientProtocol",
+    "WampRawSocketServerFactory",
+    "WampRawSocketServerProtocol",
 )
 
 FRAME_TYPE_DATA = 0
@@ -51,8 +56,7 @@ MAGIC_BYTE = 0x7F
 
 
 class PrefixProtocol(asyncio.Protocol):
-
-    prefix_format = '!L'
+    prefix_format = "!L"
     prefix_length = struct.calcsize(prefix_format)
     max_length = 16 * 1024 * 1024
     max_length_send = max_length
@@ -70,24 +74,30 @@ class PrefixProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         # asyncio networking framework entry point, called by asyncio
         # when the connection is established (either a client or a server)
-        self.log.debug('RawSocker Asyncio: Connection made with peer {peer}', peer=self.peer)
+        self.log.debug(
+            "RawSocker Asyncio: Connection made with peer {peer}", peer=self.peer
+        )
 
         self.transport = transport
 
         # determine preliminary transport details (what is known at this point)
-        self._transport_details = create_transport_details(self.transport, self.is_server)
-        self._transport_details.channel_framing = TransportDetails.CHANNEL_FRAMING_RAWSOCKET
+        self._transport_details = create_transport_details(
+            self.transport, self.is_server
+        )
+        self._transport_details.channel_framing = (
+            TransportDetails.CHANNEL_FRAMING_RAWSOCKET
+        )
 
         # backward compatibility
         self.peer = self._transport_details.peer
 
-        self._buffer = b''
+        self._buffer = b""
         self._header = None
         self._wait_closed = txaio.create_future()
 
     @property
     def is_closed(self):
-        if hasattr(self, '_wait_closed'):
+        if hasattr(self, "_wait_closed"):
             return self._wait_closed
         else:
             f = txaio.create_future()
@@ -95,7 +105,7 @@ class PrefixProtocol(asyncio.Protocol):
             return f
 
     def connection_lost(self, exc):
-        self.log.debug('RawSocker Asyncio: Connection lost')
+        self.log.debug("RawSocker Asyncio: Connection lost")
         self.transport = None
         self._wait_closed.set_result(True)
         self._on_connection_lost(exc)
@@ -110,7 +120,7 @@ class PrefixProtocol(asyncio.Protocol):
     def sendString(self, data):
         l = len(data)
         if l > self.max_length_send:
-            raise ValueError('Data too big')
+            raise ValueError("Data too big")
         header = struct.pack(self.prefix_format, len(data))
         self.transport.write(header)
         self.transport.write(data)
@@ -130,21 +140,21 @@ class PrefixProtocol(asyncio.Protocol):
             if self._header:
                 frame_type, frame_length = self._header
             else:
-                header = self._buffer[pos:pos + self.prefix_length]
+                header = self._buffer[pos : pos + self.prefix_length]
                 frame_type = ord(header[0:1]) & 0b00000111
                 if frame_type > FRAME_TYPE_PONG:
-                    self.protocol_error('Invalid frame type')
+                    self.protocol_error("Invalid frame type")
                     return
-                frame_length = struct.unpack(self.prefix_format, b'\0' + header[1:])[0]
+                frame_length = struct.unpack(self.prefix_format, b"\0" + header[1:])[0]
                 if frame_length > self.max_length:
-                    self.protocol_error('Frame too big')
+                    self.protocol_error("Frame too big")
                     return
 
             if remaining - self.prefix_length >= frame_length:
                 self._header = None
                 pos += self.prefix_length
                 remaining -= self.prefix_length
-                data = self._buffer[pos:pos + frame_length]
+                data = self._buffer[pos : pos + frame_length]
                 pos += frame_length
                 remaining -= frame_length
 
@@ -166,14 +176,13 @@ class PrefixProtocol(asyncio.Protocol):
 
 
 class RawSocketProtocol(PrefixProtocol):
-
     def __init__(self):
         max_size = None
         if max_size:
             exp = int(math.ceil(math.log(max_size, 2))) - 9
             if exp > 15:
-                raise ValueError('Maximum length is 16M')
-            self.max_length = 2**(exp + 9)
+                raise ValueError("Maximum length is 16M")
+            self.max_length = 2 ** (exp + 9)
             self._length_exp = exp
         else:
             self._length_exp = 15
@@ -189,19 +198,21 @@ class RawSocketProtocol(PrefixProtocol):
     def parse_handshake(self):
         buf = bytearray(self._buffer[:4])
         if buf[0] != MAGIC_BYTE:
-            raise HandshakeError('Invalid magic byte in handshake')
+            raise HandshakeError("Invalid magic byte in handshake")
         ser = buf[1] & 0x0F
         lexp = buf[1] >> 4
-        self.max_length_send = 2**(lexp + 9)
+        self.max_length_send = 2 ** (lexp + 9)
         if buf[2] != 0 or buf[3] != 0:
-            raise HandshakeError('Reserved bytes must be zero')
+            raise HandshakeError("Reserved bytes must be zero")
         return ser, lexp
 
     def process_handshake(self):
         raise NotImplementedError()
 
     def data_received(self, data):
-        self.log.debug('RawSocker Asyncio: data received {data}', data=_LazyHexFormatter(data))
+        self.log.debug(
+            "RawSocker Asyncio: data received {data}", data=_LazyHexFormatter(data)
+        )
         if self._handshake_done:
             return PrefixProtocol.data_received(self, data)
         else:
@@ -210,12 +221,12 @@ class RawSocketProtocol(PrefixProtocol):
                 try:
                     self.process_handshake()
                 except HandshakeError as e:
-                    self.protocol_error('Handshake error : {err}'.format(err=e))
+                    self.protocol_error("Handshake error : {err}".format(err=e))
                     return
                 self._handshake_done = True
                 self._on_handshake_complete()
                 data = self._buffer[4:]
-                self._buffer = b''
+                self._buffer = b""
                 if data:
                     PrefixProtocol.data_received(self, data)
 
@@ -227,17 +238,16 @@ ERRMAP = {
     1: "serializer unsupported",
     2: "maximum message length unacceptable",
     3: "use of reserved bits (unsupported feature)",
-    4: "maximum connection count reached"
+    4: "maximum connection count reached",
 }
 
 
 class HandshakeError(Exception):
     def __init__(self, msg, code=0):
-        Exception.__init__(self, msg if not code else msg + ' : %s' % ERRMAP.get(code))
+        Exception.__init__(self, msg if not code else msg + " : %s" % ERRMAP.get(code))
 
 
 class RawSocketClientProtocol(RawSocketProtocol):
-
     is_server = False
 
     def check_serializer(self, ser_id):
@@ -246,10 +256,13 @@ class RawSocketClientProtocol(RawSocketProtocol):
     def process_handshake(self):
         ser_id, err = self.parse_handshake()
         if ser_id == 0:
-            raise HandshakeError('Server returned handshake error', err)
+            raise HandshakeError("Server returned handshake error", err)
         if self.serializer_id != ser_id:
-            raise HandshakeError('Server returned different serializer {0} then requested {1}'
-                                 .format(ser_id, self.serializer_id))
+            raise HandshakeError(
+                "Server returned different serializer {0} then requested {1}".format(
+                    ser_id, self.serializer_id
+                )
+            )
 
     @property
     def serializer_id(self):
@@ -258,15 +271,14 @@ class RawSocketClientProtocol(RawSocketProtocol):
     def connection_made(self, transport):
         RawSocketProtocol.connection_made(self, transport)
         # start handshake
-        hs = bytes(bytearray([MAGIC_BYTE,
-                              self._length_exp << 4 | self.serializer_id,
-                              0, 0]))
+        hs = bytes(
+            bytearray([MAGIC_BYTE, self._length_exp << 4 | self.serializer_id, 0, 0])
+        )
         transport.write(hs)
-        self.log.debug('RawSocket Asyncio: Client handshake sent')
+        self.log.debug("RawSocket Asyncio: Client handshake sent")
 
 
 class RawSocketServerProtocol(RawSocketProtocol):
-
     is_server = True
 
     def supports_serializer(self, ser_id):
@@ -274,18 +286,20 @@ class RawSocketServerProtocol(RawSocketProtocol):
 
     def process_handshake(self):
         def send_response(lexp, ser_id):
-            b2 = lexp << 4 | (ser_id & 0x0f)
+            b2 = lexp << 4 | (ser_id & 0x0F)
             self.transport.write(bytes(bytearray([MAGIC_BYTE, b2, 0, 0])))
+
         ser_id, _lexp = self.parse_handshake()
         if not self.supports_serializer(ser_id):
             send_response(ERR_SERIALIZER_UNSUPPORTED, 0)
-            raise HandshakeError('Serializer unsupported : {ser_id}'.format(ser_id=ser_id))
+            raise HandshakeError(
+                "Serializer unsupported : {ser_id}".format(ser_id=ser_id)
+            )
         send_response(self._length_exp, ser_id)
 
 
 # this is transport independent part of WAMP protocol
 class WampRawSocketMixinGeneral(object):
-
     def _on_handshake_complete(self):
         self.log.debug("WampRawSocketProtocol: Handshake complete")
         # RawSocket connection established. Now let the user WAMP session factory
@@ -295,7 +309,9 @@ class WampRawSocketMixinGeneral(object):
                 # now that the TLS opening handshake is complete, the actual TLS channel ID
                 # will be available. make sure to set it!
                 channel_id = {
-                    'tls-unique': transport_channel_id(self.transport, self._transport_details.is_server, 'tls-unique'),
+                    "tls-unique": transport_channel_id(
+                        self.transport, self._transport_details.is_server, "tls-unique"
+                    ),
                 }
                 self._transport_details.channel_id = channel_id
 
@@ -303,24 +319,36 @@ class WampRawSocketMixinGeneral(object):
             self._session.onOpen(self)
         except Exception as e:
             # Exceptions raised in onOpen are fatal ..
-            self.log.warn("WampRawSocketProtocol: ApplicationSession constructor / onOpen raised ({err})", err=e)
+            self.log.warn(
+                "WampRawSocketProtocol: ApplicationSession constructor / onOpen raised ({err})",
+                err=e,
+            )
             self.abort()
         else:
             self.log.info("ApplicationSession started.")
 
     def stringReceived(self, payload):
-        self.log.debug("WampRawSocketProtocol: RX octets: {octets}", octets=_LazyHexFormatter(payload))
+        self.log.debug(
+            "WampRawSocketProtocol: RX octets: {octets}",
+            octets=_LazyHexFormatter(payload),
+        )
         try:
             for msg in self._serializer.unserialize(payload):
                 self.log.debug("WampRawSocketProtocol: RX WAMP message: {msg}", msg=msg)
                 self._session.onMessage(msg)
 
         except ProtocolError as e:
-            self.log.warn("WampRawSocketProtocol: WAMP Protocol Error ({err}) - aborting connection", err=e)
+            self.log.warn(
+                "WampRawSocketProtocol: WAMP Protocol Error ({err}) - aborting connection",
+                err=e,
+            )
             self.abort()
 
         except Exception as e:
-            self.log.warn("WampRawSocketProtocol: WAMP Internal Error ({err}) - aborting connection", err=e)
+            self.log.warn(
+                "WampRawSocketProtocol: WAMP Internal Error ({err}) - aborting connection",
+                err=e,
+            )
             self.abort()
 
     def send(self, msg):
@@ -328,16 +356,24 @@ class WampRawSocketMixinGeneral(object):
         Implements :func:`autobahn.wamp.interfaces.ITransport.send`
         """
         if self.isOpen():
-            self.log.debug('{func}: TX WAMP message: {msg}', func=hltype(self.send), msg=msg)
+            self.log.debug(
+                "{func}: TX WAMP message: {msg}", func=hltype(self.send), msg=msg
+            )
             try:
                 payload, _ = self._serializer.serialize(msg)
             except Exception as e:
                 # all exceptions raised from above should be serialization errors ..
-                raise SerializationError("WampRawSocketProtocol: unable to serialize WAMP application payload ({0})"
-                                         .format(e))
+                raise SerializationError(
+                    "WampRawSocketProtocol: unable to serialize WAMP application payload ({0})".format(
+                        e
+                    )
+                )
             else:
                 self.sendString(payload)
-                self.log.debug("WampRawSocketProtocol: TX octets: {octets}", octets=_LazyHexFormatter(payload))
+                self.log.debug(
+                    "WampRawSocketProtocol: TX octets: {octets}",
+                    octets=_LazyHexFormatter(payload),
+                )
         else:
             raise TransportLost()
 
@@ -345,7 +381,7 @@ class WampRawSocketMixinGeneral(object):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.isOpen`
         """
-        return hasattr(self, '_session') and self._session is not None
+        return hasattr(self, "_session") and self._session is not None
 
 
 # this is asyncio dependent part of WAMP protocol
@@ -360,7 +396,10 @@ class WampRawSocketMixinAsyncio(object):
             self._session.onClose(wasClean)
         except Exception as e:
             # silently ignore exceptions raised here ..
-            self.log.warn("WampRawSocketProtocol: ApplicationSession.onClose raised ({err})", err=e)
+            self.log.warn(
+                "WampRawSocketProtocol: ApplicationSession.onClose raised ({err})",
+                err=e,
+            )
         self._session = None
 
     def close(self):
@@ -377,7 +416,7 @@ class WampRawSocketMixinAsyncio(object):
         Implements :func:`autobahn.wamp.interfaces.ITransport.abort`
         """
         if self.isOpen():
-            if hasattr(self.transport, 'abort'):
+            if hasattr(self.transport, "abort"):
                 # ProcessProtocol lacks abortConnection()
                 self.transport.abort()
             else:
@@ -387,7 +426,9 @@ class WampRawSocketMixinAsyncio(object):
 
 
 @public
-class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinAsyncio, RawSocketServerProtocol):
+class WampRawSocketServerProtocol(
+    WampRawSocketMixinGeneral, WampRawSocketMixinAsyncio, RawSocketServerProtocol
+):
     """
     asyncio-based WAMP-over-RawSocket server protocol.
 
@@ -415,7 +456,9 @@ class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
 
 
 @public
-class WampRawSocketClientProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinAsyncio, RawSocketClientProtocol):
+class WampRawSocketClientProtocol(
+    WampRawSocketMixinGeneral, WampRawSocketMixinAsyncio, RawSocketClientProtocol
+):
     """
     asyncio-based WAMP-over-RawSocket client protocol.
 
@@ -426,7 +469,7 @@ class WampRawSocketClientProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
 
     @property
     def serializer_id(self):
-        if not hasattr(self, '_serializer'):
+        if not hasattr(self, "_serializer"):
             self._serializer = copy.copy(self.factory._serializer)
         return self._serializer.RAWSOCKET_SERIALIZER_ID
 
@@ -450,6 +493,7 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
     """
     asyncio-based WAMP-over-RawSocket server protocol factory.
     """
+
     protocol = WampRawSocketServerProtocol
 
     def __init__(self, factory, serializers=None):
@@ -485,6 +529,7 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
     """
     asyncio-based WAMP-over-RawSocket client factory.
     """
+
     protocol = WampRawSocketClientProtocol
 
     def __init__(self, factory, serializer=None):

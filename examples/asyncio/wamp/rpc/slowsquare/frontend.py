@@ -24,13 +24,12 @@
 #
 ###############################################################################
 
-from os import environ
-import time
-
 import asyncio
+import time
 from functools import partial
+from os import environ
 
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+from autobahn.asyncio.wamp import ApplicationRunner, ApplicationSession
 
 
 class Component(ApplicationSession):
@@ -39,18 +38,17 @@ class Component(ApplicationSession):
     """
 
     async def onJoin(self, details):
-
         def got(started, msg, f):
             res = f.result()
-            duration = 1000. * (time.clock() - started)
+            duration = 1000.0 * (time.clock() - started)
             print("{}: {} in {}".format(msg, res, duration))
 
         t1 = time.clock()
-        d1 = self.call('com.math.slowsquare', 3, 2)
+        d1 = self.call("com.math.slowsquare", 3, 2)
         d1.add_done_callback(partial(got, t1, "Slow Square"))
 
         t2 = time.clock()
-        d2 = self.call('com.math.square', 3)
+        d2 = self.call("com.math.square", 3)
         d2.add_done_callback(partial(got, t2, "Quick Square"))
 
         await asyncio.gather(d1, d2)
@@ -61,7 +59,7 @@ class Component(ApplicationSession):
         asyncio.get_event_loop().stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     url = environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws")
     realm = "crossbardemo"
     runner = ApplicationRunner(url, realm)

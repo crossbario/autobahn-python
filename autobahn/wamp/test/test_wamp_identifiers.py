@@ -24,29 +24,31 @@
 #
 ###############################################################################
 
-from autobahn.wamp.message import check_or_raise_realm_name, identify_realm_name_category
-from autobahn.wamp.exception import InvalidUriError
-
 import unittest
+
+from autobahn.wamp.exception import InvalidUriError
+from autobahn.wamp.message import (
+    check_or_raise_realm_name,
+    identify_realm_name_category,
+)
 
 
 class TestWampIdentifiers(unittest.TestCase):
-
     def test_valid_realm_names(self):
         for name in [
-            'realm1',
-            'com.example.myapp1',
-            'myapp1.example.com',
-            'eth.wamp-proto',
-            'wamp-proto.eth',
-            'eth.wamp-proto.myapp1',
-            'myapp1.wamp-proto.eth',
-            'aaa',
-            'Abc',
-            'a00',
-            'A00',
-            '0x0000000000000000000000000000000000000000',
-            '0xe59C7418403CF1D973485B36660728a5f4A8fF9c',
+            "realm1",
+            "com.example.myapp1",
+            "myapp1.example.com",
+            "eth.wamp-proto",
+            "wamp-proto.eth",
+            "eth.wamp-proto.myapp1",
+            "myapp1.wamp-proto.eth",
+            "aaa",
+            "Abc",
+            "a00",
+            "A00",
+            "0x0000000000000000000000000000000000000000",
+            "0xe59C7418403CF1D973485B36660728a5f4A8fF9c",
         ]:
             self.assertEqual(name, check_or_raise_realm_name(name))
 
@@ -55,44 +57,44 @@ class TestWampIdentifiers(unittest.TestCase):
             None,
             23,
             {},
-            '',
-            '.realm1',
-            '123realm',
-            '0x' + '00' * 64,
-            '0x' + '00' * 32,
-            '0x' + 'zz' * 40,
-            'rlm$test',
-            'a' * 256,
+            "",
+            ".realm1",
+            "123realm",
+            "0x" + "00" * 64,
+            "0x" + "00" * 32,
+            "0x" + "zz" * 40,
+            "rlm$test",
+            "a" * 256,
         ]:
             self.assertRaises(InvalidUriError, check_or_raise_realm_name, name)
 
     def test_realm_name_categories(self):
         for name, category in [
             # valid
-            ('realm1', 'standalone'),
-            ('com.example.myapp1', 'standalone'),
-            ('myapp1.example.com', 'standalone'),
-            ('eth.wamp-proto', 'reverse_ens'),
-            ('wamp-proto.eth', 'ens'),
-            ('eth.wamp-proto.myapp1', 'reverse_ens'),
-            ('myapp1.wamp-proto.eth', 'ens'),
-            ('aaa', 'standalone'),
-            ('Abc', 'standalone'),
-            ('a00', 'standalone'),
-            ('A00', 'standalone'),
-            ('0x0000000000000000000000000000000000000000', 'eth'),
-            ('0xe59C7418403CF1D973485B36660728a5f4A8fF9c', 'eth'),
+            ("realm1", "standalone"),
+            ("com.example.myapp1", "standalone"),
+            ("myapp1.example.com", "standalone"),
+            ("eth.wamp-proto", "reverse_ens"),
+            ("wamp-proto.eth", "ens"),
+            ("eth.wamp-proto.myapp1", "reverse_ens"),
+            ("myapp1.wamp-proto.eth", "ens"),
+            ("aaa", "standalone"),
+            ("Abc", "standalone"),
+            ("a00", "standalone"),
+            ("A00", "standalone"),
+            ("0x0000000000000000000000000000000000000000", "eth"),
+            ("0xe59C7418403CF1D973485B36660728a5f4A8fF9c", "eth"),
             # invalid
             (None, None),
             (23, None),
             ({}, None),
-            ('', None),
-            ('.realm1', None),
-            ('123realm', None),
-            ('0x' + '00' * 64, None),
-            ('0x' + '00' * 32, None),
-            ('0x' + 'zz' * 40, None),
-            ('rlm$test', None),
-            ('a' * 256, None),
+            ("", None),
+            (".realm1", None),
+            ("123realm", None),
+            ("0x" + "00" * 64, None),
+            ("0x" + "00" * 32, None),
+            ("0x" + "zz" * 40, None),
+            ("rlm$test", None),
+            ("a" * 256, None),
         ]:
             self.assertEqual(category, identify_realm_name_category(name))

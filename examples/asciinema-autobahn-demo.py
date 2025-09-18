@@ -15,17 +15,18 @@
 
 
 import os
+import random
 import sys
 import time
-import random
+
 import colors
 
-prompt = 'user@machine:~/autobahn-python$ '
+prompt = "user@machine:~/autobahn-python$ "
 
 
 def interkey_interval():
     """in milliseconds"""
-#    return 0  # makes testing faster
+    #    return 0  # makes testing faster
     return (random.lognormvariate(0.0, 0.5) * 30.0) / 1000.0
     return float(random.randrange(10, 50)) / 1000.0
 
@@ -45,13 +46,16 @@ def do_commands(lines):
         print
         os.system(colors.strip_color(line))
 
+
 commands = [
     "clear",
-    colors.red('# Welcome! Here we set up and run one basic'),
-    colors.red('# http://crossbar.io/autobahn example'),
-    colors.red('# (Note there are many other examples to try)'),
-    colors.red('#'),
-    colors.red("# I presume yo've got a clone of https://github.com/crossbario/autobahn-python"),
+    colors.red("# Welcome! Here we set up and run one basic"),
+    colors.red("# http://crossbar.io/autobahn example"),
+    colors.red("# (Note there are many other examples to try)"),
+    colors.red("#"),
+    colors.red(
+        "# I presume yo've got a clone of https://github.com/crossbario/autobahn-python"
+    ),
     colors.red("# in ~/autobahn-python"),
     "sleep 5",
     "clear",
@@ -64,17 +68,20 @@ commands = [
     "clear",
     colors.red("# we have installed the AutobahnPython checkout, and crossbar."),
     colors.red("# the examples have a suitable crossbar configuration"),
-    "./venv-autobahn/bin/" + colors.bold("crossbar start --cbdir examples/router/.crossbar &"),
+    "./venv-autobahn/bin/"
+    + colors.bold("crossbar start --cbdir examples/router/.crossbar &"),
     "sleep 2",
     colors.red('# now we run a simple "backend" which registers some callable methods'),
-    "./venv-autobahn/bin/" + colors.bold("python examples/twisted/wamp/rpc/arguments/backend.py &"),
+    "./venv-autobahn/bin/"
+    + colors.bold("python examples/twisted/wamp/rpc/arguments/backend.py &"),
     "sleep 2",
-    colors.red('# ...and a frontend that calls those methods'),
-    "./venv-autobahn/bin/" + colors.bold("python examples/twisted/wamp/rpc/arguments/frontend.py"),
-    colors.red('# Thanks for watching!'),
-    colors.red('# https://autobahn-python.readthedocs.io/en/latest/wamp/examples.html'),
+    colors.red("# ...and a frontend that calls those methods"),
+    "./venv-autobahn/bin/"
+    + colors.bold("python examples/twisted/wamp/rpc/arguments/frontend.py"),
+    colors.red("# Thanks for watching!"),
+    colors.red("# https://autobahn-python.readthedocs.io/en/latest/wamp/examples.html"),
     "sleep 5",
 ]
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     do_commands(commands)

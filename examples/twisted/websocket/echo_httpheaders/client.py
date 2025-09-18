@@ -26,40 +26,39 @@
 
 import sys
 
+from autobahn.twisted.websocket import (
+    WebSocketClientFactory,
+    WebSocketClientProtocol,
+    connectWS,
+)
 from twisted.internet import reactor
 from twisted.python import log
 
-from autobahn.twisted.websocket import WebSocketClientFactory, \
-    WebSocketClientProtocol, \
-    connectWS
-
 
 class EchoClientProtocol(WebSocketClientProtocol):
-
     def onConnect(self, response):
         print(response)
 
     def sendHello(self):
-        self.sendMessage("Hello, world!".encode('utf8'))
+        self.sendMessage("Hello, world!".encode("utf8"))
 
     def onOpen(self):
         self.sendHello()
 
     def onMessage(self, payload, isBinary):
         if not isBinary:
-            print("Text message received: {}".format(payload.decode('utf8')))
+            print("Text message received: {}".format(payload.decode("utf8")))
         reactor.callLater(1, self.sendHello)
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Need the WebSocket server address, i.e. ws://127.0.0.1:9000")
         sys.exit(1)
 
     log.startLogging(sys.stdout)
 
-    headers = {'MyCustomClientHeader': 'Bazbar'}
+    headers = {"MyCustomClientHeader": "Bazbar"}
 
     factory = WebSocketClientFactory(sys.argv[1], headers=headers)
     factory.protocol = EchoClientProtocol
