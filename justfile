@@ -381,7 +381,7 @@ install-tools venv="": (create venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Installing package development tools in ${VENV_NAME}..."
-    uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -r requirements-dev.txt
+    uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[dev]
 
 # Meta-recipe to run `install-tools` on all environments
 install-tools-all:
@@ -514,7 +514,7 @@ docs-clean:
     rm -rf docs/_build
 
 # -----------------------------------------------------------------------------
-# -- Building and Publishing 
+# -- Building and Publishing
 # -----------------------------------------------------------------------------
 
 # Build distribution packages (wheels and source tarball)
@@ -557,20 +557,20 @@ clean-fbs:
     echo "==> Cleaning FlatBuffers generated files..."
     rm -rf ./autobahn/wamp/gen/
 
-# Build FlatBuffers schema files and Python bindings  
+# Build FlatBuffers schema files and Python bindings
 build-fbs:
     #!/usr/bin/env bash
     set -e
     FBSFILES="./autobahn/wamp/flatbuffers/*.fbs"
     FLATC="flatc"
-    
+
     echo "==> Building FlatBuffers schema..."
-    
+
     # Generate schema binary type library (*.bfbs files)
     ${FLATC} -o ./autobahn/wamp/gen/schema/ --binary --schema --bfbs-comments --bfbs-builtins ${FBSFILES}
     echo "--> Generated $(find ./autobahn/wamp/gen/schema/ -name '*.bfbs' | wc -l) .bfbs files"
-    
-    # Generate schema Python bindings (*.py files)  
+
+    # Generate schema Python bindings (*.py files)
     ${FLATC} -o ./autobahn/wamp/gen/ --python ${FBSFILES}
     touch ./autobahn/wamp/gen/__init__.py
     echo "--> Generated $(find ./autobahn/wamp/gen/ -name '*.py' | wc -l) .py files"
@@ -582,7 +582,7 @@ build-fbs:
 # Alias for autoformat (Makefile compatibility)
 autoformat_python venv="": (autoformat venv)
 
-# Alias for flake8/lint checking (Makefile compatibility) 
+# Alias for flake8/lint checking (Makefile compatibility)
 flake8 venv="": (check-format venv)
 
 # Alias for mypy (Makefile compatibility)
