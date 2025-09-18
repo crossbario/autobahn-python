@@ -512,3 +512,78 @@ docs-view venv="": (docs venv)
 docs-clean:
     echo "==> Cleaning documentation build artifacts..."
     rm -rf docs/_build
+
+# -----------------------------------------------------------------------------
+# -- Building and Publishing 
+# -----------------------------------------------------------------------------
+
+# Build distribution packages (wheels and source tarball)
+build venv="": (install-tools venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    echo "==> Building distribution packages..."
+    rm -rf dist/
+    # Set environment variable for NVX acceleration
+    AUTOBAHN_USE_NVX=1 "${VENV_PATH}/bin/python" -m build
+    ls -la dist/
+
+# Publish package to PyPI (requires twine setup)
+publish venv="": (build venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    echo "==> Publishing to PyPI..."
+    "${VENV_PATH}/bin/twine" upload dist/*
+
+# -----------------------------------------------------------------------------
+# -- FlatBuffers Schema Generation
+# -----------------------------------------------------------------------------
+
+# Clean generated FlatBuffers files
+clean-fbs:
+    echo "==> Cleaning FlatBuffers generated files..."
+    rm -rf ./autobahn/wamp/gen/
+
+# Build FlatBuffers schema files and Python bindings  
+build-fbs:
+    #!/usr/bin/env bash
+    set -e
+    FBSFILES="./autobahn/wamp/flatbuffers/*.fbs"
+    FLATC="flatc"
+    
+    echo "==> Building FlatBuffers schema..."
+    
+    # Generate schema binary type library (*.bfbs files)
+    ${FLATC} -o ./autobahn/wamp/gen/schema/ --binary --schema --bfbs-comments --bfbs-builtins ${FBSFILES}
+    echo "--> Generated $(find ./autobahn/wamp/gen/schema/ -name '*.bfbs' | wc -l) .bfbs files"
+    
+    # Generate schema Python bindings (*.py files)  
+    ${FLATC} -o ./autobahn/wamp/gen/ --python ${FBSFILES}
+    touch ./autobahn/wamp/gen/__init__.py
+    echo "--> Generated $(find ./autobahn/wamp/gen/ -name '*.py' | wc -l) .py files"
+
+# -----------------------------------------------------------------------------
+# -- Legacy Makefile Compatibility Aliases
+# -----------------------------------------------------------------------------
+
+# Alias for autoformat (Makefile compatibility)
+autoformat_python venv="": (autoformat venv)
+
+# Alias for flake8/lint checking (Makefile compatibility) 
+flake8 venv="": (check-format venv)
+
+# Alias for mypy (Makefile compatibility)
+mypy venv="": (check-typing venv)
