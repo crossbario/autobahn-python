@@ -1,9 +1,9 @@
 [project]
 name = "autobahn"
-version = "20.6.1"
+version = "20.9.1"
 description = "WebSocket client & server library, WAMP real-time framework"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 [tool.rstfmt]
 # rstfmt configuration: ReST (Sphinx) doc files
@@ -14,7 +14,7 @@ width = 65
 line-length = 88
 indent-width = 4
 
-target-version = "py312"  # Adjust to your Python version
+target-version = "py311"  # Adjust to your Python version
 
 [tool.ruff.lint]
 
