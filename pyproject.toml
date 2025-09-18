@@ -1,6 +1,6 @@
 [project]
 name = "autobahn"
-version = "20.9.1"
+version = "25.9.1"
 description = "WebSocket client & server library, WAMP real-time framework"
 readme = "README.md"
 requires-python = ">=3.11"

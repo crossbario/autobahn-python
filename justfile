@@ -319,7 +319,7 @@ link-system-packages venv="" vendors="": (create venv)
     echo
 
 # -----------------------------------------------------------------------------
-# -- Installation and Test: RFMiner
+# -- Installation and Test
 # -----------------------------------------------------------------------------
 
 # Install this package and its run-time dependencies in a single environment (usage: `just install cpy314` or `just install`)
@@ -410,11 +410,11 @@ autoformat venv="": (install-tools venv)
     echo "==> Automatically formatting code with ${VENV_NAME}..."
 
     # 1. Run the FORMATTER first. This will handle line lengths, quotes, etc.
-    "${VENV_PATH}/bin/ruff" format --exclude ./tests ./rfminer
+    "${VENV_PATH}/bin/ruff" format --exclude ./tests ./autobahn
 
     # 2. Run the LINTER'S FIXER second. This will handle things like
     #    removing unused imports, sorting __all__, etc.
-    "${VENV_PATH}/bin/ruff" check --fix --exclude ./tests ./rfminer
+    "${VENV_PATH}/bin/ruff" check --fix --exclude ./tests ./autobahn
     echo "--> Formatting complete."
 
 # Lint code using Ruff in a single environment
@@ -442,7 +442,7 @@ check-typing venv="": (install-tools venv) (install venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
-    echo "==> Running static type checks wtih ${VENV_NAME}..."
+    echo "==> Running static type checks with ${VENV_NAME}..."
     "${VENV_PATH}/bin/mypy" autobahn/
 
 # Run tests and generate an HTML coverage report in a specific directory.

@@ -1,1 +1,1 @@
-../AI_AUDIT_PROCESS.md
+../.audit/AI_AUDIT_PROCESS.md
