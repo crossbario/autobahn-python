@@ -64,13 +64,10 @@ jobs:
       # we need to use this install wrapper on inheritently broken platforms (windows/powershell).
       - name: Install Just (Windows)
         if: runner.os == 'Windows'
-        run: |
-          $releaseUrl = "https://api.github.com/repos/casey/just/releases/latest"
-          $releaseInfo = Invoke-WebRequest -Uri $releaseUrl | ConvertFrom-Json
-          $asset = $releaseInfo.assets | Where-Object { $_.name -eq "just-x86_64-pc-windows-msvc.zip" }
-          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile "$env:TEMP\just.zip"
-          Expand-Archive -Path "$env:TEMP\just.zip" -DestinationPath "$env:TEMP\just"
-          echo "$env:TEMP\just" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        uses: extractions/setup-just@v3
+        with:
+          just-version: "latest"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # we use the standard upstream installation on non-broken platforms.
       - name: Install uv (Linux/macOS)
@@ -83,10 +80,11 @@ jobs:
       # we need to use this install wrapper on inheritently broken platforms (windows/powershell).
       - name: Install uv (Windows)
         if: runner.os == 'Windows'
-        run: |
-          # Install uv for Windows
-          irm https://astral.sh/uv/install.ps1 | iex
-          echo "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          enable-cache: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify toolchain installation (Linux/macOS)
         if: runner.os != 'Windows'
