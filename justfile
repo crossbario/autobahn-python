@@ -38,18 +38,22 @@ VENV_DIR := './.venvs'
 # Define a justfile-local variable for our environments.
 ENVS := 'cpy314 cpy313 cpy312 cpy311 pypy311'
 
-# internal helper to map Python version short name to full uv version
+# Internal helper to map Python version short name to full uv version
 _get-spec short_name:
     #!/usr/bin/env bash
     set -e
     case {{short_name}} in
-        cpy314)  echo "cpython-3.14";;
-        cpy313)  echo "cpython-3.13";;
-        cpy312)  echo "cpython-3.12";;
-        cpy311)  echo "cpython-3.11";;
-        pypy311) echo "pypy-3.11";;
+        cpy314)  echo "cpython-3.14";;  # cpython-3.14.0b3-linux-x86_64-gnu
+        cpy313)  echo "cpython-3.13";;  # cpython-3.13.5-linux-x86_64-gnu
+        cpy312)  echo "cpython-3.12";;  # cpython-3.12.11-linux-x86_64-gnu
+        cpy311)  echo "cpython-3.11";;  # cpython-3.11.13-linux-x86_64-gnu
+        pypy311) echo "pypy-3.11";;     # pypy-3.11.11-linux-x86_64-gnu
         *)       echo "Unknown environment: {{short_name}}" >&2; exit 1;;
     esac
+
+# uv python install pypy-3.11-linux-aarch64-gnu --preview --verbose
+# file /home/oberstet/.local/share/uv/python/pypy-3.11.11-linux-aarch64-gnu/bin/pypy3.11
+# /home/oberstet/.local/share/uv/python/pypy-3.11.11-linux-aarch64-gnu/bin/pypy3.11: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=150f642a07dc36d3e465beaa0109e70da76ca67e, for GNU/Linux 3.7.0, stripped
 
 # Internal helper that calculates and prints the system-matching venv name.
 _get-system-venv-name:
@@ -153,10 +157,15 @@ list-all:
     #!/usr/bin/env bash
     set -e
     echo
-    echo "Available Python run-times:"
-    echo "==========================="
+    echo "Available CPython run-times:"
+    echo "============================"
     echo
-    uv python list
+    uv python list --all-platforms cpython
+    echo
+    echo "Available PyPy run-times:"
+    echo "========================="
+    echo
+    uv python list --all-platforms pypy
     echo
     echo "Mapped Python run-time shortname => full version:"
     echo "================================================="
@@ -391,6 +400,16 @@ install-tools-all:
         just install-tools ${venv}
     done
 
+# Install Rust (rustc & cargo) from upstream via rustup.
+install-rust:
+    #!/usr/bin/env bash
+    set -e
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    which rustc
+    rustc --version
+    which cargo
+    cargo --version
+
 # -----------------------------------------------------------------------------
 # -- Linting, Static Typechecking, .. the codebase
 # -----------------------------------------------------------------------------
@@ -529,9 +548,16 @@ build venv="": (install-tools venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Building distribution packages..."
-    rm -rf dist/
     # Set environment variable for NVX acceleration
     AUTOBAHN_USE_NVX=1 "${VENV_PATH}/bin/python" -m build
+    ls -la dist/
+
+# Meta-recipe to run `build` on all environments
+build-all:
+    #!/usr/bin/env bash
+    for venv in {{ENVS}}; do
+        just build ${venv}
+    done
     ls -la dist/
 
 # Publish package to PyPI (requires twine setup)

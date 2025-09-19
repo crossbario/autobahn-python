@@ -7,7 +7,7 @@ name = "autobahn"
 version = "25.9.1"
 description = "WebSocket client & server library, WAMP real-time framework"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = {text = "MIT License"}
 authors = [
     {name = "typedef int GmbH", email = "contact@typedefint.eu"}
@@ -22,9 +22,10 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Topic :: Internet",
@@ -64,7 +65,7 @@ compress = [
 # accelerated JSON and non-JSON WAMP serialization support
 serialization = [
     "msgpack>=1.0.2; platform_python_implementation == 'CPython'",
-    "ujson>=4.0.2; platform_python_implementation == 'CPython'", 
+    "ujson>=4.0.2; platform_python_implementation == 'CPython'",
     "u-msgpack-python>=2.1; platform_python_implementation != 'CPython'",
     "cbor2>=5.2.0",
     "py-ubjson>=0.16.1",
