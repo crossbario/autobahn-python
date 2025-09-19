@@ -69,6 +69,27 @@ _get-system-venv-name:
     # The only output of this recipe is the name itself.
     echo "${ENV_NAME}"
 
+# Helper recipe to get the python executable path for a venv
+_get-venv-python venv="":
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PATH="{{VENV_DIR}}/${VENV_NAME}"
+
+    # In your main recipes, replace direct calls to python with:
+    # VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    # ${VENV_PYTHON} -V
+    # ${VENV_PYTHON} -m pip -V
+
+    if [[ "$OS" == "Windows_NT" ]]; then
+        echo "${VENV_PATH}/Scripts/python.exe"
+    else
+        echo "${VENV_PATH}/bin/python3"
+    fi
+
 # -----------------------------------------------------------------------------
 # -- General/global helper recipes
 # -----------------------------------------------------------------------------
@@ -196,6 +217,7 @@ create venv="":
     fi
 
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
 
     # Only create the venv if it doesn't already exist
     if [ ! -d "${VENV_PATH}" ]; then
@@ -210,8 +232,8 @@ create venv="":
         echo "==> Python virtual environment '${VENV_NAME}' already exists in ${VENV_PATH}."
     fi
 
-    ${VENV_PATH}/bin/python3 -V
-    ${VENV_PATH}/bin/pip3 -V
+    ${VENV_PYTHON} -V
+    ${VENV_PYTHON} -m pip -V
 
     echo "==> Activate Python virtual environment with: source ${VENV_PATH}/bin/activate"
 
@@ -279,7 +301,7 @@ link-system-packages venv="" vendors="": (create venv)
     # Collect all relevant site-packages directories (Debian + Ubuntu quirks)
     SYSTEM_SITE_PACKAGES=$(${SYSTEM_PYTHON} -c "import sysconfig, site, os, sys; paths={sysconfig.get_path('purelib')}; [paths.add(p) for p in site.getsitepackages() if os.path.isdir(p)]; print('\n'.join(sorted(paths)))")
 
-    VENV_PYTHON="${VENV_PATH}/bin/python"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     VENV_VERSION=$(${VENV_PYTHON} -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
     VENV_SITE_PACKAGES=$(${VENV_PYTHON} -c "import sysconfig; print(sysconfig.get_path('purelib'))")
 
@@ -548,9 +570,10 @@ build venv="": (install-tools venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Building distribution packages..."
     # Set environment variable for NVX acceleration
-    AUTOBAHN_USE_NVX=1 "${VENV_PATH}/bin/python" -m build
+    AUTOBAHN_USE_NVX=1 ${VENV_PYTHON} -m build
     ls -la dist/
 
 # Meta-recipe to run `build` on all environments
@@ -623,41 +646,41 @@ mypy venv="": (check-typing venv)
 fix-audit-filenames:
     #!/usr/bin/env bash
     set -e
-    
+
     echo "==> Renaming audit files to replace ':' with '_' for Windows compatibility..."
-    
+
     # Check if .audit directory exists
     if [ ! -d ".audit" ]; then
         echo "No .audit directory found, nothing to rename."
         exit 0
     fi
-    
+
     # Count files that need renaming
     FILES_TO_RENAME=$(find .audit -name "*:*" -type f | wc -l)
-    
+
     if [ "$FILES_TO_RENAME" -eq 0 ]; then
         echo "No files with ':' characters found in .audit directory."
         exit 0
     fi
-    
+
     echo "Found $FILES_TO_RENAME files to rename:"
     find .audit -name "*:*" -type f
     echo ""
-    
+
     # Rename files
     find .audit -name "*:*" -type f | while read -r file; do
         # Get directory and filename
         dir=$(dirname "$file")
         filename=$(basename "$file")
-        
+
         # Replace : with _
         new_filename="${filename//:/_}"
         new_file="$dir/$new_filename"
-        
+
         echo "Renaming: $filename -> $new_filename"
         mv "$file" "$new_file"
     done
-    
+
     echo ""
     echo "==> Renaming complete! Updated files:"
     ls -la .audit/
