@@ -1,0 +1,217 @@
+name: Build and Publish Wheels
+
+on:
+  # Build wheels on feature branches and PRs (test only)
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ main ]
+  
+  # Publish to GitHub Releases when merged to main
+  # Publish to PyPI when tagged
+  workflow_dispatch:
+
+env:
+  # Ensure uv and just are available in PATH
+  UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
+
+jobs:
+  build-wheels:
+    name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux x86-64 and ARM64
+          - os: ubuntu-24.04
+            arch: x86-64
+            platform: linux
+          - os: ubuntu-24.04-arm64
+            arch: aarch64
+            platform: linux
+            
+          # macOS x86-64 and ARM64 (Apple Silicon)
+          - os: macos-15
+            arch: x86-64
+            platform: macos
+          - os: macos-15-arm64
+            arch: aarch64
+            platform: macos
+            
+          # Windows x86-64 only
+          - os: windows-2022
+            arch: x86-64
+            platform: windows
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Just (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install Just (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          # Download and install just for Windows
+          $url = "https://github.com/casey/just/releases/latest/download/just-x86_64-pc-windows-msvc.zip"
+          $output = "$env:TEMP\just.zip"
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Expand-Archive -Path $output -DestinationPath "$env:TEMP\just"
+          $justPath = "$env:TEMP\just"
+          echo "$justPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install uv (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install uv (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          # Install uv for Windows
+          irm https://astral.sh/uv/install.ps1 | iex
+          echo "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Verify toolchain installation
+        run: |
+          just --version
+          uv --version
+        shell: bash
+
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-
+            uv-cache-${{ matrix.platform }}-
+
+      - name: Build all wheels
+        run: just build-all
+        shell: bash
+
+      - name: List built artifacts
+        run: |
+          echo "Built wheels:"
+          ls -la dist/
+        shell: bash
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/*.whl
+          retention-days: 30
+
+      - name: Upload source distribution (Linux x86-64 only)
+        if: matrix.os == 'ubuntu-24.04' && matrix.arch == 'x86-64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/*.tar.gz
+          retention-days: 30
+
+  publish-github-releases:
+    name: Publish to GitHub Releases
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist/
+
+      - name: Download source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/
+
+      - name: List all artifacts
+        run: |
+          echo "All built artifacts:"
+          ls -la dist/
+          echo ""
+          echo "Wheel count: $(ls dist/*.whl | wc -l)"
+          echo "Source distributions: $(ls dist/*.tar.gz | wc -l)"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Generate release tag based on timestamp and commit
+          RELEASE_TAG="wheels-$(date +'%Y%m%d')-${GITHUB_SHA::8}"
+          
+          # Create release
+          gh release create "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Wheels Build - $(date +'%Y-%m-%d')" \
+            --notes "Automated wheel build from commit ${GITHUB_SHA::8}
+          
+          ## Included Platforms
+          - Linux (x86-64, ARM64)
+          - macOS (x86-64, ARM64) 
+          - Windows (x86-64)
+          
+          ## Python Versions
+          - CPython 3.11, 3.12, 3.13, 3.14
+          - PyPy 3.11
+          
+          ## Installation
+          Download the appropriate wheel for your platform and install with:
+          \`\`\`bash
+          pip install <downloaded-wheel-file>
+          \`\`\`" \
+            dist/*
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    environment: 
+      name: pypi
+      url: https://pypi.org/p/autobahn
+    permissions:
+      id-token: write  # For trusted publishing
+
+    steps:
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist/
+
+      - name: Download source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/
+
+      - name: List artifacts for PyPI
+        run: |
+          echo "Publishing to PyPI:"
+          ls -la dist/
+          echo ""
+          echo "Total artifacts: $(ls dist/* | wc -l)"
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Uses trusted publishing - no API token needed
+          # Configure at: https://pypi.org/manage/account/publishing/
+          verbose: true
