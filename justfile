@@ -614,3 +614,52 @@ flake8 venv="": (check-format venv)
 
 # Alias for mypy (Makefile compatibility)
 mypy venv="": (check-typing venv)
+
+# -----------------------------------------------------------------------------
+# -- File Management Utilities
+# -----------------------------------------------------------------------------
+
+# Rename audit files to replace ':' with '_' for Windows compatibility
+fix-audit-filenames:
+    #!/usr/bin/env bash
+    set -e
+    
+    echo "==> Renaming audit files to replace ':' with '_' for Windows compatibility..."
+    
+    # Check if .audit directory exists
+    if [ ! -d ".audit" ]; then
+        echo "No .audit directory found, nothing to rename."
+        exit 0
+    fi
+    
+    # Count files that need renaming
+    FILES_TO_RENAME=$(find .audit -name "*:*" -type f | wc -l)
+    
+    if [ "$FILES_TO_RENAME" -eq 0 ]; then
+        echo "No files with ':' characters found in .audit directory."
+        exit 0
+    fi
+    
+    echo "Found $FILES_TO_RENAME files to rename:"
+    find .audit -name "*:*" -type f
+    echo ""
+    
+    # Rename files
+    find .audit -name "*:*" -type f | while read -r file; do
+        # Get directory and filename
+        dir=$(dirname "$file")
+        filename=$(basename "$file")
+        
+        # Replace : with _
+        new_filename="${filename//:/_}"
+        new_file="$dir/$new_filename"
+        
+        echo "Renaming: $filename -> $new_filename"
+        mv "$file" "$new_file"
+    done
+    
+    echo ""
+    echo "==> Renaming complete! Updated files:"
+    ls -la .audit/
+    echo ""
+    echo "These files are now Windows-compatible."
