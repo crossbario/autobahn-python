@@ -1,9 +1,161 @@
+[build-system]
+requires = ["setuptools>=64", "wheel", "cffi>=1.14.5; platform_python_implementation == 'CPython'"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "autobahn"
-version = "20.6.1"
+version = "25.9.1"
 description = "WebSocket client & server library, WAMP real-time framework"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
+license = {text = "MIT License"}
+authors = [
+    {name = "typedef int GmbH", email = "contact@typedefint.eu"}
+]
+keywords = ["autobahn", "crossbar", "websocket", "realtime", "rfc6455", "wamp", "rpc", "pubsub", "twisted", "asyncio"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: No Input/Output (Daemon)",
+    "Framework :: Twisted",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Internet",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Communications",
+    "Topic :: System :: Distributed Computing",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Object Brokering",
+]
+
+dependencies = [
+    "txaio>=25.6.1",
+    "cryptography>=3.4.6",
+    "hyperlink>=21.0.0",
+    "importlib-resources>=5.0.0; python_version < '3.10'",
+]
+
+[project.optional-dependencies]
+# Twisted dependencies
+twisted = [
+    "zope.interface>=5.2.0",
+    "twisted>=22.10.0",
+    "attrs>=20.3.0",
+]
+
+# C-based WebSocket acceleration (only use on CPython, not PyPy!)
+accelerate = [
+    # "wsaccel>=0.6.3; platform_python_implementation == 'CPython' and sys_platform != 'win32'"
+]
+
+# non-standard WebSocket compression support
+compress = [
+    "python-snappy>=0.6.0",
+]
+
+# accelerated JSON and non-JSON WAMP serialization support
+serialization = [
+    "msgpack>=1.0.2; platform_python_implementation == 'CPython'",
+    "ujson>=4.0.2; platform_python_implementation == 'CPython'",
+    "u-msgpack-python>=2.1; platform_python_implementation != 'CPython'",
+    "cbor2>=5.2.0",
+    "py-ubjson>=0.16.1",
+    "flatbuffers>=22.12.6",
+]
+
+# TLS transport encryption, WAMP-cryptosign end-to-end encryption and authentication
+encryption = [
+    "pyopenssl>=20.0.1",
+    "service-identity>=18.1.0",
+    "pynacl>=1.4.0",
+    "pytrie>=0.4.0",
+    "qrcode>=7.3.1",
+    "base58>=2.1.1",
+    "ecdsa>=0.19.1",
+]
+
+# Support for WAMP-SCRAM authentication
+scram = [
+    "cffi>=1.14.5",
+    "argon2-cffi>=20.1.0",
+    "passlib>=1.7.4",
+]
+
+# Support native vector (SIMD) acceleration included with Autobahn
+nvx = [
+    "cffi>=1.14.5",
+]
+
+# Development dependencies
+dev = [
+    "backports.tempfile>=1.0",
+    "build>=1.0.0",
+    "bumpversion>=0.5.3",
+    "codecov>=2.0.15",
+    "humanize>=0.5.1",
+    "mypy>=0.610; python_version >= '3.4' and platform_python_implementation != 'PyPy'",
+    "myst-parser>=4.0.1",
+    "passlib",
+    "pep8-naming>=0.3.3",
+    "pyenchant>=1.6.6",
+    "pyflakes>=1.0.0",
+    "pyinstaller>=4.2",
+    "pylint>=1.9.2",
+    "pytest-aiohttp",
+    "pytest-asyncio>=0.14.0",
+    "pytest-runner>=2.11.1",
+    "pytest>=3.4.2",
+    "pyyaml>=4.2b4",
+    "qualname>=0.1.0",
+    "ruff>=0.12.1",
+    "sphinx-autoapi>=1.7.0",
+    "sphinx>=1.7.1,<8",
+    "sphinx-rtd-theme>=0.1.9",
+    "sphinxcontrib-images>=0.9.1",
+    "tox-gh-actions>=2.2.0",
+    "tox>=4.2.8",
+    "twine>=3.3.0",
+    "twisted>=22.10.0",
+    "txaio>=20.4.1",
+    "watchdog>=0.8.3",
+    "wheel>=0.36.2",
+    "yapf==0.29.0",
+]
+
+# Everything combined
+all = [
+    "autobahn[twisted,accelerate,compress,serialization,encryption,scram,nvx]"
+]
+
+# Backwards compatibility
+asyncio = []
+
+[project.urls]
+"Homepage" = "https://autobahn.readthedocs.io/"
+"Source" = "https://github.com/crossbario/autobahn-python"
+
+[project.scripts]
+wamp = "autobahn.__main__:_main"
+
+[tool.setuptools.packages.find]
+include = ["autobahn*", "twisted.plugins"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"autobahn.asyncio" = ["./test/*"]
+"autobahn.wamp.gen.schema" = ["*.bfbs"]
+
 
 [tool.rstfmt]
 # rstfmt configuration: ReST (Sphinx) doc files
@@ -14,7 +166,7 @@ width = 65
 line-length = 88
 indent-width = 4
 
-target-version = "py312"  # Adjust to your Python version
+target-version = "py311"  # Adjust to your Python version
 
 [tool.ruff.lint]
 
