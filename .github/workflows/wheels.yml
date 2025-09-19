@@ -54,23 +54,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # we use the standard upstream installation on non-broken platforms.
       - name: Install Just (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
           echo "$HOME/bin" >> $GITHUB_PATH
 
+      # we need to use this install wrapper on inheritently broken platforms (windows/powershell).
       - name: Install Just (Windows)
         if: runner.os == 'Windows'
-        run: |
-          # Download and install just for Windows
-          $url = "https://github.com/casey/just/releases/latest/download/just-x86_64-pc-windows-msvc.zip"
-          $output = "$env:TEMP\just.zip"
-          Invoke-WebRequest -Uri $url -OutFile $output
-          Expand-Archive -Path $output -DestinationPath "$env:TEMP\just"
-          $justPath = "$env:TEMP\just"
-          echo "$justPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        uses: casey/just-install-action@v1
 
+      # we use the standard upstream installation on non-broken platforms.
       - name: Install uv (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
@@ -78,6 +74,7 @@ jobs:
           source $HOME/.cargo/env
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+      # we need to use this install wrapper on inheritently broken platforms (windows/powershell).
       - name: Install uv (Windows)
         if: runner.os == 'Windows'
         run: |
@@ -85,11 +82,19 @@ jobs:
           irm https://astral.sh/uv/install.ps1 | iex
           echo "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      - name: Verify toolchain installation
+      - name: Verify toolchain installation (Linux/macOS)
+        if: runner.os != 'Windows'
         run: |
           just --version
           uv --version
         shell: bash
+
+      - name: Verify toolchain installation (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          just --version
+          uv --version
+        shell: pwsh
 
       - name: Setup uv cache
         uses: actions/cache@v4
@@ -102,15 +107,29 @@ jobs:
             uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-
             uv-cache-${{ matrix.platform }}-
 
-      - name: Build all wheels
+      - name: Build all wheels (Linux/macOS)
+        if: runner.os != 'Windows'
         run: just build-all
         shell: bash
 
-      - name: List built artifacts
+      - name: Build all wheels (Windows)
+        if: runner.os == 'Windows'
+        run: just build-all
+        shell: pwsh
+
+      - name: List built artifacts (Linux/macOS)
+        if: runner.os != 'Windows'
         run: |
           echo "Built wheels:"
           ls -la dist/
         shell: bash
+
+      - name: List built artifacts (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Write-Host "Built wheels:"
+          Get-ChildItem dist
+        shell: pwsh
 
       - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
