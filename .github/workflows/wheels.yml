@@ -66,7 +66,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: extractions/setup-just@v3
         with:
-          just-version: "latest"
+          just-version: "1.42.3"
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # we use the standard upstream installation on non-broken platforms.
@@ -82,7 +82,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: astral-sh/setup-uv@v6
         with:
-          version: "latest"
+          version: "0.7.19"
           enable-cache: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
