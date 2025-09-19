@@ -364,8 +364,10 @@ install venv="": (create venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Installing package with package runtime dependencies in ${VENV_NAME}..."
-    uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" .
+    # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" .[all]
+    ${VENV_PYTHON} -m pip install .[all]
 
 # Install this package in development (editable) mode and its run-time dependencies in a single environment (usage: `just install-dev cpy314` or `just install-dev`)
 install-dev venv="": (create venv)
@@ -378,8 +380,10 @@ install-dev venv="": (create venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Installing package - in editable mode - with package runtime dependencies in ${VENV_NAME}..."
-    uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .
+    # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[all]
+    ${VENV_PYTHON} -m pip install -e .[all]
 
 # Meta-recipe to run `install` on all environments
 install-all:
@@ -411,8 +415,10 @@ install-tools venv="": (create venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Installing package development tools in ${VENV_NAME}..."
-    uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[dev]
+    # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[dev]
+    ${VENV_PYTHON} -m pip install -e .[dev]
 
 # Meta-recipe to run `install-tools` on all environments
 install-tools-all:
