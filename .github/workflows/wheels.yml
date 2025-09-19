@@ -3,10 +3,10 @@ name: Build and Publish Wheels
 on:
   # Build wheels on feature branches and PRs (test only)
   push:
-    branches: [ "**" ]
+    branches: ["**"]
   pull_request:
-    branches: [ main ]
-  
+    branches: [main]
+
   # Publish to GitHub Releases when merged to main
   # Publish to PyPI when tagged
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
   build-wheels:
     name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -28,12 +28,16 @@ jobs:
           - os: ubuntu-24.04
             arch: x86-64
             platform: linux
-            
-          # macOS x86-64 (always enabled)  
+
+          # macOS x86-64 (always enabled)
           - os: macos-15
             arch: x86-64
             platform: macos
-            
+
+          - os: windows-2022
+            arch: x86-64
+            platform: windows
+
           # ARM64 builds (optional - only if runners available)
           # Currently disabled due to runner availability issues
           # Uncomment when GitHub ARM64 runner pool improves
@@ -42,15 +46,9 @@ jobs:
           #   platform: linux
           #   continue-on-error: true
           # - os: macos-14-arm64      # Use older OS for better availability
-          #   arch: aarch64  
+          #   arch: aarch64
           #   platform: macos
           #   continue-on-error: true
-            
-          # Windows disabled due to filesystem compatibility issues
-          # (can't handle ':' characters in .audit/ filenames)
-          # - os: windows-2022
-          #   arch: x86-64
-          #   platform: windows
 
     steps:
       - name: Checkout code
@@ -97,7 +95,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.UV_CACHE_DIR }}
-          key: uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('pyproject.toml') }}
+          key:
+            uv-cache-${{ matrix.platform }}-${{ matrix.arch
+            }}-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
             uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-
             uv-cache-${{ matrix.platform }}-
@@ -120,7 +120,8 @@ jobs:
           retention-days: 30
 
       - name: Upload source distribution (Linux x86-64 only)
-        if: matrix.os == 'ubuntu-24.04' && matrix.arch == 'x86-64'
+        if:
+          matrix.os == 'ubuntu-24.04' && matrix.arch == 'x86-64'
         uses: actions/upload-artifact@v4
         with:
           name: source-distribution
@@ -131,8 +132,10 @@ jobs:
     name: Publish to GitHub Releases
     needs: build-wheels
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+    if:
+      github.ref == 'refs/heads/main' && github.event_name ==
+      'push'
+
     steps:
       - name: Download all wheel artifacts
         uses: actions/download-artifact@v4
@@ -161,22 +164,22 @@ jobs:
         run: |
           # Generate release tag based on timestamp and commit
           RELEASE_TAG="wheels-$(date +'%Y%m%d')-${GITHUB_SHA::8}"
-          
+
           # Create release
           gh release create "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Wheels Build - $(date +'%Y-%m-%d')" \
             --notes "Automated wheel build from commit ${GITHUB_SHA::8}
-          
+
           ## Included Platforms
           - Linux (x86-64, ARM64)
-          - macOS (x86-64, ARM64) 
+          - macOS (x86-64, ARM64)
           - Windows (x86-64)
-          
+
           ## Python Versions
           - CPython 3.11, 3.12, 3.13, 3.14
           - PyPy 3.11
-          
+
           ## Installation
           Download the appropriate wheel for your platform and install with:
           \`\`\`bash
@@ -189,11 +192,11 @@ jobs:
     needs: build-wheels
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    environment: 
+    environment:
       name: pypi
       url: https://pypi.org/p/autobahn
     permissions:
-      id-token: write  # For trusted publishing
+      id-token: write # For trusted publishing
 
     steps:
       - name: Download all wheel artifacts
