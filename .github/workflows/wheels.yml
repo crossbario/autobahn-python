@@ -1,4 +1,4 @@
-name: Build and Publish Wheels
+name: wheels
 
 on:
   # Build wheels on feature branches and PRs (test only)

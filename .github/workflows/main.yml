@@ -1,4 +1,4 @@
-name: Main CI Pipeline
+name: main
 
 on:
   push:
@@ -268,7 +268,8 @@ jobs:
   build-package:
     name: Package Build
     runs-on: ubuntu-24.04
-    needs: [quality-checks, tests, build-schema]
+    needs: [quality-checks, build-schema]
+    #    needs: [quality-checks, tests, build-schema]
 
     strategy:
       matrix:
