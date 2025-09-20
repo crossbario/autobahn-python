@@ -122,7 +122,12 @@ void nvx_utf8vld_free (void* utf8vld) {
 
 // unrolled DFA from http://bjoern.hoehrmann.de/utf-8/decoder/dfa/
 //
+// Use proper alignment attribute for each compiler
+#if defined(_MSC_VER)
+static __declspec(align(64)) const uint8_t UTF8VALIDATOR_DFA[] =
+#else
 static const uint8_t UTF8VALIDATOR_DFA[] __attribute__((aligned(64))) =
+#endif
 {
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 00..1f
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 20..3f
