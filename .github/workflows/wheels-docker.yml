@@ -1,0 +1,264 @@
+name: Build Wheels (Docker Multi-Arch)
+
+on:
+  # Build wheels on feature branches and PRs (test only)
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [master]
+  
+  # Publish to GitHub Releases when merged to master
+  # Publish to PyPI when tagged
+  workflow_dispatch:
+
+env:
+  # Registry for caching build images
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/wheel-builder
+
+jobs:
+  build-wheels:
+    name: Build wheels (${{ matrix.target.name }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write  # For GHCR access
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # Debian 12 (your preference)
+          - name: "debian12-amd64"
+            base_image: "debian:12"
+            platform: "linux/amd64"
+            
+          - name: "debian12-arm64" 
+            base_image: "debian:12"
+            platform: "linux/arm64"
+            
+          # Rocky Linux 9 (customer requirement)
+          - name: "rocky9-amd64"
+            base_image: "rockylinux:9"
+            platform: "linux/amd64"
+            
+          - name: "rocky9-arm64"
+            base_image: "rockylinux:9" 
+            platform: "linux/arm64"
+            
+          # Ubuntu 24.04 (dev environment)
+          - name: "ubuntu2404-amd64"
+            base_image: "ubuntu:24.04"
+            platform: "linux/amd64"
+            
+          - name: "ubuntu2404-arm64"
+            base_image: "ubuntu:24.04"
+            platform: "linux/arm64"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+
+      - name: Build wheels in Docker
+        uses: docker/buildx-bake-action@v4
+        with:
+          files: |
+            ./docker-bake.hcl
+          targets: wheel-builder
+          set: |
+            wheel-builder.platform=${{ matrix.target.platform }}
+            wheel-builder.args.BASE_IMAGE=${{ matrix.target.base_image }}
+            wheel-builder.output=type=local,dest=./dist
+          push: false
+
+      - name: List built artifacts
+        run: |
+          echo "==> Built artifacts for ${{ matrix.target.name }}:"
+          ls -la dist/ 2>/dev/null || echo "No dist/ directory found"
+          
+          echo ""
+          echo "==> Build metadata:"
+          cat dist/build-info.txt 2>/dev/null || echo "No build info found"
+          
+          echo ""
+          echo "==> Wheel inventory:"
+          find dist/ -name "*.whl" -exec basename {} \; 2>/dev/null | sort || echo "No wheels found"
+
+      - name: Upload wheel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.target.name }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+          retention-days: 30
+
+      - name: Upload build metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-info-${{ matrix.target.name }}
+          path: dist/build-info.txt
+          retention-days: 7
+
+  publish-github-releases:
+    name: Publish to GitHub Releases
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    
+    steps:
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist/
+
+      - name: Download build metadata
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-info-*
+          path: build-info/
+
+      - name: Analyze wheel inventory
+        id: inventory
+        run: |
+          echo "==> Complete wheel inventory:"
+          find dist/ -name "*.whl" | sort
+          
+          echo ""
+          echo "==> Wheels by platform:"
+          for platform in debian12 rocky9 ubuntu2404; do
+            for arch in amd64 arm64; do
+              count=$(find dist/ -name "*${platform}*${arch}*.whl" | wc -l)
+              echo "  $platform-$arch: $count wheels"
+            done
+          done
+          
+          echo ""
+          echo "==> Total wheel count:"
+          WHEEL_COUNT=$(find dist/ -name "*.whl" | wc -l)
+          echo "wheels_total=$WHEEL_COUNT" >> $GITHUB_OUTPUT
+          
+          echo ""
+          echo "==> Source distributions:"
+          find dist/ -name "*.tar.gz" | wc -l
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Generate release tag based on timestamp and commit
+          RELEASE_TAG="wheels-docker-$(date +'%Y%m%d')-${GITHUB_SHA::8}"
+          
+          # Create comprehensive release notes
+          cat > release_notes.md << 'EOF'
+          # Multi-Architecture Python Wheels
+          
+          Built using Docker QEMU emulation for precise ABI control and broad compatibility.
+          
+          ## Target Environments
+          
+          | Distribution | glibc Version | Architecture | Use Case |
+          |--------------|---------------|--------------|----------|
+          | **Debian 12** | 2.36 | AMD64, ARM64 | Modern Linux systems |
+          | **Rocky Linux 9** | 2.34 | AMD64, ARM64 | Enterprise RHEL environments |
+          | **Ubuntu 24.04** | 2.39 | AMD64, ARM64 | Latest Ubuntu LTS |
+          
+          ## Python Support
+          
+          - **CPython**: 3.11, 3.12, 3.13, 3.14
+          - **PyPy**: 3.11
+          - **Extensions**: Native CFFI modules included
+          
+          ## Installation
+          
+          ### Option 1: Auto-detect (pip will choose best wheel)
+          ```bash
+          pip install autobahn[all]
+          ```
+          
+          ### Option 2: Specific wheel download
+          ```bash
+          # Download the wheel for your platform
+          wget https://github.com/crossbario/autobahn-python/releases/download/${RELEASE_TAG}/autobahn-*-linux_*.whl
+          pip install autobahn-*-linux_*.whl
+          ```
+          
+          ## Build Information
+          
+          - **Build Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          - **Commit**: ${GITHUB_SHA::8}
+          - **Total Wheels**: ${{ steps.inventory.outputs.wheels_total }}
+          - **Build Method**: Docker + QEMU emulation
+          - **ABI**: Precise glibc targeting per distribution
+          
+          EOF
+          
+          # Create release
+          gh release create "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Multi-Arch Wheels - $(date +'%Y-%m-%d')" \
+            --notes-file release_notes.md \
+            dist/*.whl dist/*.tar.gz
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    environment: 
+      name: pypi
+      url: https://pypi.org/p/autobahn
+    permissions:
+      id-token: write  # For trusted publishing
+
+    steps:
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist/
+
+      - name: Prepare PyPI upload
+        run: |
+          echo "==> Preparing PyPI upload..."
+          
+          # Remove duplicate source distributions (keep only one)
+          find dist/ -name "*.tar.gz" | sort | tail -n +2 | xargs rm -f || true
+          
+          echo "==> Final PyPI artifact list:"
+          ls -la dist/
+          
+          echo ""
+          echo "==> Upload summary:"
+          echo "Wheels: $(find dist/ -name "*.whl" | wc -l)"
+          echo "Source: $(find dist/ -name "*.tar.gz" | wc -l)"
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
