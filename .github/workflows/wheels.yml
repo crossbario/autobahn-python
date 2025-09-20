@@ -57,6 +57,8 @@ jobs:
       # we use the standard upstream installation on non-broken platforms.
       - name: Install Just (Linux/macOS)
         if: runner.os != 'Windows'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
           echo "$HOME/bin" >> $GITHUB_PATH
@@ -72,6 +74,8 @@ jobs:
       # we use the standard upstream installation on non-broken platforms.
       - name: Install uv (Linux/macOS)
         if: runner.os != 'Windows'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           source $HOME/.cargo/env
