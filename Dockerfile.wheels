@@ -1,0 +1,152 @@
+# Multi-arch Python wheel builder for autobahn-python
+# Supports: Debian 12, Rocky Linux 9, Ubuntu 24.04 on AMD64/ARM64
+#
+# Usage:
+#   docker buildx build --platform linux/amd64,linux/arm64 \
+#     --build-arg BASE_IMAGE=debian:12 \
+#     --target wheel-builder \
+#     -o dist/ .
+
+ARG BASE_IMAGE=debian:12
+FROM ${BASE_IMAGE} as base
+
+# Build arguments for metadata
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM  
+ARG TARGETOS
+ARG TARGETARCH
+
+# Environment setup
+ENV LANG=C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+# Use bash as shell
+SHELL ["/bin/bash", "-c"]
+
+# Install system dependencies based on base image
+RUN if command -v apt-get >/dev/null 2>&1; then \
+        # Debian/Ubuntu systems
+        apt-get update && \
+        apt-get install -y --no-install-recommends \
+            ca-certificates \
+            curl \
+            build-essential \
+            pkg-config \
+            libssl-dev \
+            libffi-dev \
+            zlib1g-dev \
+            libbz2-dev \
+            libreadline-dev \
+            libsqlite3-dev \
+            libncurses5-dev \
+            libsnappy-dev \
+            git \
+            file \
+        && rm -rf /var/lib/apt/lists/*; \
+    elif command -v dnf >/dev/null 2>&1; then \
+        # Rocky Linux/RHEL systems  
+        dnf update -y && \
+        dnf groupinstall -y "Development Tools" && \
+        dnf install -y \
+            ca-certificates \
+            curl \
+            pkgconfig \
+            openssl-devel \
+            libffi-devel \
+            zlib-devel \
+            bzip2-devel \
+            readline-devel \
+            sqlite-devel \
+            ncurses-devel \
+            snappy-devel \
+            git \
+            file \
+        && dnf clean all; \
+    fi
+
+# Install Python (use system Python as base, then manage versions with uv)
+RUN if command -v apt-get >/dev/null 2>&1; then \
+        apt-get update && \
+        apt-get install -y --no-install-recommends python3 python3-pip python3-venv \
+        && rm -rf /var/lib/apt/lists/*; \
+    elif command -v dnf >/dev/null 2>&1; then \
+        dnf install -y python3 python3-pip \
+        && dnf clean all; \
+    fi
+
+# Install Just (command runner)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+RUN just --version
+
+# Install uv (Python package manager)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:$PATH"
+RUN uv --version
+
+# Install Rust (for any Rust-based Python extensions)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+RUN source /root/.cargo/env && rustc --version
+
+# Verify toolchain
+RUN echo "==> Build environment summary:" && \
+    echo "Platform: $TARGETPLATFORM" && \
+    echo "Architecture: $TARGETARCH" && \
+    echo "Just: $(just --version)" && \
+    echo "uv: $(uv --version)" && \
+    echo "Rust: $(source /root/.cargo/env && rustc --version)" && \
+    echo "Python: $(python3 --version)" && \
+    echo "GCC: $(gcc --version | head -1)" && \
+    echo "glibc: $(ldd --version | head -1)"
+
+# ============================================================================
+# Wheel building stage
+# ============================================================================
+FROM base as wheel-builder
+
+# Copy source code
+COPY . /workspace
+WORKDIR /workspace
+
+# Set uv environment variables
+ENV UV_CACHE_DIR=/workspace/.uv-cache
+ENV UV_LINK_MODE=copy
+
+# Create output directory
+RUN mkdir -p /output
+
+# Build wheels for all Python versions
+RUN echo "==> Building wheels for all Python versions..." && \
+    source /root/.cargo/env && \
+    just build-all && \
+    echo "==> Built wheels:" && \
+    ls -la dist/ && \
+    cp dist/*.whl dist/*.tar.gz /output/ 2>/dev/null || true
+
+# Create build info file
+RUN echo "==> Creating build metadata..." && \
+    cat > /output/build-info.txt << EOF
+Build Platform: $BUILDPLATFORM
+Target Platform: $TARGETPLATFORM  
+Target OS: $TARGETOS
+Target Arch: $TARGETARCH
+Base Image: ${BASE_IMAGE}
+Build Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+Python: $(python3 --version)
+GCC: $(gcc --version | head -1)
+glibc: $(ldd --version 2>/dev/null | head -1 || echo "N/A")
+musl: $(if command -v musl-gcc >/dev/null 2>&1; then musl-gcc --version | head -1; else echo "N/A"; fi)
+Wheels Built: $(ls -1 /output/*.whl 2>/dev/null | wc -l)
+EOF
+
+# List final output
+RUN echo "==> Final build output:" && \
+    ls -la /output/ && \
+    echo "==> Build info:" && \
+    cat /output/build-info.txt
+
+# ============================================================================  
+# Output stage - just the wheels
+# ============================================================================
+FROM scratch as output
+COPY --from=wheel-builder /output /
