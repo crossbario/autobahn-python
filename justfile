@@ -417,6 +417,10 @@ install-tools venv="": (create venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Installing package development tools in ${VENV_NAME}..."
+
+    ${VENV_PYTHON} -V
+    ${VENV_PYTHON} -m pip -V
+
     # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[dev]
     ${VENV_PYTHON} -m pip install -e .[dev]
 

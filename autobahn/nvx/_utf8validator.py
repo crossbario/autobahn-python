@@ -25,6 +25,7 @@
 ###############################################################################
 
 import os
+import sys
 
 from cffi import FFI
 
@@ -51,19 +52,29 @@ if "AUTOBAHN_USE_NVX" in os.environ and os.environ["AUTOBAHN_USE_NVX"] in ["1", 
 else:
     optional = True  # :noindex:
 
+# Detect platform/compiler and set flags
+if sys.platform == "win32":
+    # MSVC
+    extra_compile_args = [
+        "/O2", "/W3"
+    ]
+else:
+    # GCC/clang
+    extra_compile_args = [
+        "-std=c99",
+        "-Wall",
+        "-Wno-strict-prototypes",
+        "-O3",
+        "-march=native",
+    ]
+
 with open(os.path.join(os.path.dirname(__file__), "_utf8validator.c")) as fd:
     c_source = fd.read()
     ffi.set_source(
         "_nvx_utf8validator",
         c_source,
         libraries=[],
-        extra_compile_args=[
-            "-std=c99",
-            "-Wall",
-            "-Wno-strict-prototypes",
-            "-O3",
-            "-march=native",
-        ],
+        extra_compile_args=extra_compile_args,
         optional=optional,
     )
 
