@@ -5,9 +5,9 @@ on:
   push:
     branches: ["**"]
   pull_request:
-    branches: [main]
+    branches: [master]
 
-  # Publish to GitHub Releases when merged to main
+  # Publish to GitHub Releases when merged to master
   # Publish to PyPI when tagged
   workflow_dispatch:
 
@@ -159,9 +159,7 @@ jobs:
     name: Publish to GitHub Releases
     needs: build-wheels
     runs-on: ubuntu-latest
-    if:
-      github.ref == 'refs/heads/main' && github.event_name ==
-      'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
     steps:
       - name: Download all wheel artifacts
