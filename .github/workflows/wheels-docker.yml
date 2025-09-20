@@ -126,6 +126,31 @@ jobs:
           export PATH="/root/.cargo/bin:$PATH"
           just build-all
 
+      - name: Generate build metadata
+        run: |
+          mkdir -p dist/
+          cat > dist/build-info.txt << EOF
+          Build Information for ${{ matrix.target.name }}
+          =============================================
+          
+          Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          Container: ${{ matrix.target.base_image }}
+          Platform: AMD64
+          Build Method: GitHub Actions + Docker Container
+          
+          System Information:
+          - OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)
+          - Kernel: $(uname -r)
+          - glibc: $(ldd --version 2>/dev/null | head -1 || echo 'N/A')
+          
+          Build Tools:
+          - Just: $(just --version)
+          - uv: $(uv --version)
+          - Rust: $(rustc --version)
+          - Python: $(python3 --version)
+          - GCC: $(gcc --version | head -1)
+          EOF
+
       - name: List built artifacts
         run: |
           echo "==> Built artifacts for ${{ matrix.target.name }}:"
@@ -150,10 +175,12 @@ jobs:
 
       - name: Upload build metadata
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: build-info-${{ matrix.target.name }}
           path: dist/build-info.txt
           retention-days: 7
+          if-no-files-found: ignore
 
   publish-github-releases:
     name: Publish to GitHub Releases
