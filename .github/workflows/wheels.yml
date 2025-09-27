@@ -43,7 +43,7 @@ jobs:
           # ===========================================================
           # 🤦‍♂️IMPORTANT NOTES ABOUT GITHUB ACTIONS RUNNER AVAILABILITY PAR 🤦‍♂️
           #
-          # GitHub's runner availability is... "special":
+          # I. GitHub's runner availability is... "special":
           #
           # ✅ ALWAYS AVAILABLE (Fast, < 30 seconds):
           #   - ubuntu-* (x86_64)     → Abundant, instant
@@ -59,36 +59,40 @@ jobs:
           # 2. ARM64 Linux runners are still beta/limited capacity
           # 3. Intel Macs are being phased out of GitHub's fleet
           #
-          # SOLUTION: Use timeouts + continue-on-error for unreliable runners
+          # II. There is no built-in way in Actions to auto-cancel a job if it
+          # stays queued too long waiting for a specific runner label.
+          #
+          #   “Cancel this job if no runner has picked it up after 2 minutes.”
+          #
+          # This is another of those “WTF” gaps in Actions.
           # ===========================================================
 
           # --- Linux ---
-          - os: ubuntu-24.04 # ✅ Linux x86_64 (most common, always fast)
+          - os: ubuntu-24.04 # ✅ GitHub-hosted Linux x86_64 (most common, always fast)
             platform: linux
             arch: x86_64
-
-          - os: ubuntu-24.04-arm64 # 🕐 Linux ARM64 (servers/edge, often waits)
-            platform: linux
-            arch: arm64
-            timeout-minutes: 2  # Give up after 2 minutes of waiting
-            continue-on-error: true  # Don't block workflow if this fails
 
           # --- macOS ---
-          - os: macos-12 # 🕐 Intel macOS (legacy users, increasingly scarce)
-            platform: macos
-            arch: x86_64
-            timeout-minutes: 2  # Give up after 2 minutes of waiting
-            continue-on-error: true  # Don't block workflow if this fails
-
-          - os: macos-15 # ✅ Apple Silicon macOS (current Macs, fast)
+          - os: macos-15 # ✅ GitHub-hosted macOS Apple Silicon (current Macs, fast)
             platform: macos
             arch: arm64
 
           # --- Windows ---
-          - os: windows-2022 # GitHub-hosted Windows (x86_64)
+          - os: windows-2022 # ✅ GitHub-hosted Windows x86_64 (mostly fast)
             platform: windows
             arch: x86_64
 
+          # --- Linux ---
+          # - os: ubuntu-24.04-arm64 # 🕐 Linux ARM64 (servers/edge, often waits forever)
+          #   platform: linux
+          #   arch: arm64
+
+          # --- macOS ---
+          # - os: macos-12 # 🕐 Intel macOS (legacy users, increasingly scarce, often waits forever)
+          #   platform: macos
+          #   arch: x86_64
+
+          # --- Windows ---
           # ⚠️ GitHub does NOT provide Windows ARM64 hosted runners.
           #    If you want Windows ARM64 builds, you must either:
           #      - run a self-hosted Windows ARM64 runner, OR
