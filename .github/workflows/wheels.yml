@@ -40,21 +40,47 @@ jobs:
           #
           # ===========================================================
 
+          # ===========================================================
+          # 🤦‍♂️IMPORTANT NOTES ABOUT GITHUB ACTIONS RUNNER AVAILABILITY PAR 🤦‍♂️
+          #
+          # GitHub's runner availability is... "special":
+          #
+          # ✅ ALWAYS AVAILABLE (Fast, < 30 seconds):
+          #   - ubuntu-* (x86_64)     → Abundant, instant
+          #   - windows-* (x86_64)    → Reliable, quick
+          #   - macos-15 (ARM64)      → Apple Silicon, readily available
+          #
+          # 🕐 "PLEASE WAIT FOREVER" ZONE (Often > 1 hour waits):
+          #   - ubuntu-*-arm64        → Limited pool, beta status
+          #   - macos-12/13 (Intel)   → Legacy hardware, being phased out
+          #
+          # WHY THIS HAPPENS:
+          # 1. GitHub prioritizes current hardware (ARM64 macOS > Intel macOS)
+          # 2. ARM64 Linux runners are still beta/limited capacity
+          # 3. Intel Macs are being phased out of GitHub's fleet
+          #
+          # SOLUTION: Use timeouts + continue-on-error for unreliable runners
+          # ===========================================================
+
           # --- Linux ---
-          - os: ubuntu-24.04 # GitHub-hosted Linux (AMD64)
+          - os: ubuntu-24.04 # ✅ Linux x86_64 (most common, always fast)
             platform: linux
             arch: x86_64
 
-          - os: ubuntu-24.04-arm64 # GitHub-hosted Linux (ARM64)
+          - os: ubuntu-24.04-arm64 # 🕐 Linux ARM64 (servers/edge, often waits)
             platform: linux
             arch: arm64
+            timeout-minutes: 2  # Give up after 2 minutes of waiting
+            continue-on-error: true  # Don't block workflow if this fails
 
           # --- macOS ---
-          - os: macos-12 # Intel macOS (x86_64, AMD64)
+          - os: macos-12 # 🕐 Intel macOS (legacy users, increasingly scarce)
             platform: macos
             arch: x86_64
+            timeout-minutes: 2  # Give up after 2 minutes of waiting
+            continue-on-error: true  # Don't block workflow if this fails
 
-          - os: macos-15 # Apple Silicon macOS (ARM64)
+          - os: macos-15 # ✅ Apple Silicon macOS (current Macs, fast)
             platform: macos
             arch: arm64
 
