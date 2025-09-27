@@ -1,4 +1,4 @@
-name: Build Wheels (Docker Multi-Arch)
+name: wheels-docker
 
 on:
   # Build wheels on feature branches and PRs (test only)
