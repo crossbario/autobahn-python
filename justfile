@@ -572,8 +572,8 @@ build venv="": (install-tools venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Building distribution packages..."
-    # Set environment variable for NVX acceleration
-    AUTOBAHN_USE_NVX=1 ${VENV_PYTHON} -m build
+    # Set environment variable for NVX acceleration (defaults to enabled, respects existing setting)
+    AUTOBAHN_USE_NVX=${AUTOBAHN_USE_NVX:-1} ${VENV_PYTHON} -m build
     ls -la dist/
 
 # Meta-recipe to run `build` on all environments

@@ -80,17 +80,31 @@ jobs:
             dnf install -y snappy-devel || echo "snappy-devel not available, skipping"
           fi
 
-      - name: Verify Python installation
+      - name: Setup Python environment
         run: |
-          # manylinux images come with multiple Python versions pre-installed
+          # manylinux images come with multiple Python versions pre-installed in /opt/python/
           echo "==> Available Python versions:"
           ls -la /opt/python/*/bin/python* 2>/dev/null || echo "No /opt/python found"
+          
+          # Add all Python versions to PATH for uv/just to discover
+          for pyver in /opt/python/*/bin; do
+            if [ -d "$pyver" ]; then
+              echo "Adding $pyver to PATH"
+              export PATH="$pyver:$PATH"
+            fi
+          done
+          
+          # Also ensure we have a working python3 symlink
+          which python3 || ln -sf $(find /opt/python -name python3 | head -1) /usr/local/bin/python3
+          
           echo ""
-          echo "==> Default Python version:"
-          python3 --version 2>/dev/null || python --version 2>/dev/null || echo "No default Python found"
-          echo ""
+          echo "==> Current Python version:"
+          python3 --version
           echo "==> pip version:"
-          python3 -m pip --version 2>/dev/null || pip --version 2>/dev/null || echo "No pip found"
+          python3 -m pip --version
+          
+          # Save the updated PATH for subsequent steps
+          echo "PATH=$PATH" >> $GITHUB_ENV
 
       - name: Install Just
         run: |
@@ -100,12 +114,20 @@ jobs:
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
+          # Add to both GITHUB_PATH and current environment
           echo "/root/.cargo/bin" >> $GITHUB_PATH
+          echo "PATH=/root/.cargo/bin:$PATH" >> $GITHUB_ENV
+          export PATH="/root/.cargo/bin:$PATH"
+          uv --version
 
       - name: Install Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          # Add to both GITHUB_PATH and current environment  
           echo "/root/.cargo/bin" >> $GITHUB_PATH
+          echo "PATH=/root/.cargo/bin:$PATH" >> $GITHUB_ENV
+          export PATH="/root/.cargo/bin:$PATH"
+          rustc --version
 
       - name: Verify toolchain
         run: |
@@ -120,10 +142,21 @@ jobs:
           echo "glibc: $(ldd --version 2>/dev/null | head -1 || echo 'N/A')"
 
       - name: Build manylinux wheels with NVX
+        env:
+          AUTOBAHN_USE_NVX: 1
         run: |
+          # Ensure tools are in PATH
           export PATH="/root/.cargo/bin:$PATH"
+          
+          # Verify environment
+          echo "==> Environment verification:"
+          echo "AUTOBAHN_USE_NVX=$AUTOBAHN_USE_NVX"
+          echo "PATH=$PATH"
+          echo "Python: $(python3 --version)"
+          echo "uv: $(uv --version)"
+          echo "just: $(just --version)"
+          
           # Build binary wheels WITH NVX acceleration for manylinux
-          export AUTOBAHN_USE_NVX=1
           just build-all
 
       - name: Generate build metadata

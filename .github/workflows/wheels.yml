@@ -209,15 +209,18 @@ jobs:
           path: dist/*.whl
           retention-days: 30
 
-      - name: Verify pure Python wheel (Linux x86_64 only)
+      - name: Verify wheels built without NVX (Linux x86_64 only)
         if:
           matrix.platform == 'linux' && matrix.arch == 'x86_64'
         run: |
-          # Verify that pure Python wheel was built (should be automatic from build step above)
-          echo "Pure Python wheel verification:"
-          ls -la dist/*py3-none-any.whl || echo "No pure Python wheel found (this is expected since Linux builds pure Python wheels)"
-          echo "All Linux wheels (should be pure Python compatible):"
+          # Verify that wheels were built without NVX acceleration
+          echo "==> Wheels built without NVX (should be pure Python or at least NVX-free):"
           ls -la dist/*.whl || echo "No wheels found"
+          echo ""
+          echo "==> Source distribution:"
+          ls -la dist/*.tar.gz || echo "No source dist found"
+          echo ""
+          echo "==> Wheel count: $(ls dist/*.whl 2>/dev/null | wc -l)"
         shell: bash
 
       - name: Upload source distribution (Linux x86_64 only)
@@ -229,13 +232,13 @@ jobs:
           path: dist/*.tar.gz
           retention-days: 30
 
-      - name: Upload pure Python wheel (Linux x86_64 only)
+      - name: Upload Linux wheels without NVX (Linux x86_64 only)
         if:
           matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
-          name: pure-python-wheel
-          path: dist/*py3-none-any.whl
+          name: linux-wheels-no-nvx
+          path: dist/*.whl
           retention-days: 30
 
   publish-github-releases:
@@ -260,10 +263,10 @@ jobs:
           name: source-distribution
           path: dist/
 
-      - name: Download pure Python wheel
+      - name: Download Linux wheels without NVX
         uses: actions/download-artifact@v4
         with:
-          name: pure-python-wheel
+          name: linux-wheels-no-nvx
           path: dist/
 
       - name: List all artifacts
@@ -271,8 +274,8 @@ jobs:
           echo "All built artifacts:"
           ls -la dist/
           echo ""
-          echo "Platform-specific wheels: $(ls dist/*-cp*-*.whl dist/*-pp*-*.whl 2>/dev/null | wc -l)"
-          echo "Pure Python wheels: $(ls dist/*-py3-none-any.whl 2>/dev/null | wc -l)"
+          echo "Binary wheels (macOS/Windows): $(ls dist/*macos*.whl dist/*win*.whl 2>/dev/null | wc -l)"
+          echo "Linux wheels (no NVX): $(ls dist/*linux*.whl 2>/dev/null | wc -l)"
           echo "Source distributions: $(ls dist/*.tar.gz 2>/dev/null | wc -l)"
 
       - name: Create GitHub Release
@@ -337,10 +340,10 @@ jobs:
           name: source-distribution
           path: dist/
 
-      - name: Download pure Python wheel
+      - name: Download Linux wheels without NVX
         uses: actions/download-artifact@v4
         with:
-          name: pure-python-wheel
+          name: linux-wheels-no-nvx
           path: dist/
 
       - name: List artifacts for PyPI (selective publishing)
@@ -350,7 +353,7 @@ jobs:
           echo ""
           echo "macOS wheels: $(ls dist/*macos*.whl 2>/dev/null | wc -l)"
           echo "Windows wheels: $(ls dist/*win*.whl 2>/dev/null | wc -l)"
-          echo "Pure Python wheels: $(ls dist/*py3-none-any.whl 2>/dev/null | wc -l)"
+          echo "Linux wheels (fallback, no NVX): $(ls dist/*linux*.whl 2>/dev/null | wc -l)"
           echo "Source distributions: $(ls dist/*.tar.gz 2>/dev/null | wc -l)"
           echo ""
           echo "Total PyPI artifacts: $(ls dist/* | wc -l)"
