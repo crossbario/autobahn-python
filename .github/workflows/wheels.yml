@@ -188,13 +188,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Generate release tag based on timestamp and commit
-          RELEASE_TAG="wheels-$(date +'%Y%m%d')-${GITHUB_SHA::8}"
+          RELEASE_TAG="wheels-$(date +'%Y%m%d')-${{ github.sha }}"
+
+          # Delete existing release if it exists (ignore errors)
+          gh release delete "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --yes || true
 
           # Create release
           gh release create "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Wheels Build - $(date +'%Y-%m-%d')" \
-            --notes "Automated wheel build from commit ${GITHUB_SHA::8}
+            --notes "Automated wheel build from commit ${{ github.sha }}
 
           ## Included Platforms
           - Linux (x86-64, ARM64)
@@ -216,7 +219,7 @@ jobs:
     name: Publish to PyPI
     needs: build-wheels
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref_type == 'tag'
     environment:
       name: pypi
       url: https://pypi.org/p/autobahn
@@ -250,3 +253,26 @@ jobs:
           # Uses trusted publishing - no API token needed
           # Configure at: https://pypi.org/manage/account/publishing/
           verbose: true
+
+  publish-rtd:
+    name: Publish docs to RTD
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger RTD build
+        env:
+          RTD_TOKEN: ${{ secrets.RTD_TOKEN }}
+        run: |
+          if [ -n "$RTD_TOKEN" ]; then
+            echo "Triggering Read the Docs build for autobahn..."
+            curl -X POST \
+              -H "Authorization: Token $RTD_TOKEN" \
+              "https://readthedocs.org/api/v3/projects/autobahn/versions/latest/builds/"
+          else
+            echo "RTD_TOKEN not configured, skipping RTD build trigger"
+          fi
