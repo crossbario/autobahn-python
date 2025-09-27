@@ -123,6 +123,8 @@ jobs:
       - name: Install Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          # Source the Rust environment (as recommended by installer)
+          source "$HOME/.cargo/env"
           # Add to both GITHUB_PATH and current environment  
           echo "/root/.cargo/bin" >> $GITHUB_PATH
           echo "PATH=/root/.cargo/bin:$PATH" >> $GITHUB_ENV
@@ -131,6 +133,8 @@ jobs:
 
       - name: Verify toolchain
         run: |
+          # Source Rust environment and ensure PATH is set
+          source "$HOME/.cargo/env" 2>/dev/null || true
           export PATH="/root/.cargo/bin:$PATH"
           echo "==> Build environment summary:"
           echo "Container: ${{ matrix.target.base_image }}"
@@ -145,7 +149,8 @@ jobs:
         env:
           AUTOBAHN_USE_NVX: 1
         run: |
-          # Ensure tools are in PATH
+          # Source Rust environment and ensure tools are in PATH
+          source "$HOME/.cargo/env" 2>/dev/null || true
           export PATH="/root/.cargo/bin:$PATH"
           
           # Verify environment
@@ -155,6 +160,7 @@ jobs:
           echo "Python: $(python3 --version)"
           echo "uv: $(uv --version)"
           echo "just: $(just --version)"
+          echo "rustc: $(rustc --version)"
           
           # Build binary wheels WITH NVX acceleration for manylinux
           just build-all
