@@ -97,6 +97,7 @@ nvx = [
 
 # Development dependencies
 dev = [
+    "auditwheel>=5.0.0; sys_platform == 'linux'",
     "backports.tempfile>=1.0",
     "build>=1.0.0",
     "bumpversion>=0.5.3",

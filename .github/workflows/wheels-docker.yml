@@ -161,9 +161,32 @@ jobs:
           echo "uv: $(uv --version)"
           echo "just: $(just --version)"
           echo "rustc: $(rustc --version)"
+          echo "auditwheel: $(auditwheel --version || echo 'not available')"
           
           # Build binary wheels WITH NVX acceleration for manylinux
           just build-all
+          
+          # Convert linux_x86_64 wheels to manylinux_2_34_x86_64 using auditwheel
+          echo ""
+          echo "==> Converting wheels to manylinux_2_34_x86_64 format..."
+          mkdir -p wheelhouse
+          for wheel in dist/*.whl; do
+            if [[ "$wheel" == *"linux_x86_64"* ]]; then
+              echo "Converting: $(basename $wheel)"
+              auditwheel repair "$wheel" --plat-tag manylinux_2_34_x86_64 -w wheelhouse/
+            else
+              echo "Copying non-linux wheel: $(basename $wheel)"
+              cp "$wheel" wheelhouse/
+            fi
+          done
+          
+          # Replace dist/ with converted wheels
+          rm -rf dist/*.whl
+          cp wheelhouse/*.whl dist/
+          
+          echo ""
+          echo "==> Final wheel inventory after manylinux conversion:"
+          ls -la dist/*.whl
 
       - name: Generate build metadata
         run: |
