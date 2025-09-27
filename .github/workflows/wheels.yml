@@ -19,8 +19,6 @@ jobs:
   build-wheels:
     name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
-    if: ${{ matrix.skip != 'true' }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -69,12 +67,6 @@ jobs:
           #    If you want Windows ARM64 builds, you must either:
           #      - run a self-hosted Windows ARM64 runner, OR
           #      - cross-compile from AMD64 to ARM64 inside the workflow.
-          # - We'll include a "fake" matrix entry for completeness,
-          #   but mark it as "skip: true" so the workflow won't fail.
-          - os: windows-arm64 # (no hosted runner available!)
-            platform: windows
-            arch: arm64
-            skip: true # our own flag, see conditional above
 
     steps:
       - name: Checkout code
@@ -185,7 +177,9 @@ jobs:
     name: Publish to GitHub Releases
     needs: build-wheels
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if:
+      github.ref == 'refs/heads/master' && github.event_name ==
+      'push'
 
     steps:
       - name: Download all wheel artifacts
