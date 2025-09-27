@@ -26,20 +26,21 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          # Debian 12 (your preference) - AMD64 only for now
-          - name: "debian12-amd64"
-            base_image: "debian:12"
+          # manylinux_2_34 (glibc 2.34+) - PEP 600 compliant for modern Linux
+          - name: "manylinux_2_34_x86_64"
+            base_image: "quay.io/pypa/manylinux_2_34_x86_64"
             
-          # Rocky Linux 9 (customer requirement) - AMD64 only for now  
-          - name: "rocky9-amd64"
-            base_image: "rockylinux:9"
-            
-          # Ubuntu 24.04 (dev environment) - AMD64 only for now
-          - name: "ubuntu2404-amd64"
-            base_image: "ubuntu:24.04"
-            
-          # ARM64 builds can be added later with QEMU setup
-          # GitHub Actions container: syntax doesn't support ARM64 QEMU easily
+          # Future manylinux images can be added here:
+          # - name: "manylinux_2_34_aarch64" 
+          #   base_image: "quay.io/pypa/manylinux_2_34_aarch64"
+          
+          # Deactivated for now - focusing on standard manylinux wheels:
+          # - name: "debian12-amd64"
+          #   base_image: "debian:12"
+          # - name: "rocky9-amd64"
+          #   base_image: "rockylinux:9"
+          # - name: "ubuntu2404-amd64"
+          #   base_image: "ubuntu:24.04"
 
     steps:
       - name: Checkout code
@@ -47,52 +48,49 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          if command -v apt-get >/dev/null 2>&1; then
-            # Debian/Ubuntu systems
-            apt-get update
-            apt-get install -y --no-install-recommends \
-              ca-certificates \
+          # manylinux images use yum/dnf and come with many build tools pre-installed
+          if command -v yum >/dev/null 2>&1; then
+            # manylinux images (CentOS-based)
+            yum update -y
+            yum install -y \
               curl \
-              build-essential \
-              pkg-config \
-              libssl-dev \
-              libffi-dev \
-              zlib1g-dev \
-              libbz2-dev \
-              libreadline-dev \
-              libsqlite3-dev \
-              libncurses5-dev \
-              libsnappy-dev \
               git \
-              file
-          elif command -v dnf >/dev/null 2>&1; then
-            # Rocky Linux/RHEL systems  
-            dnf update -y
-            dnf groupinstall -y "Development Tools"
-            # Handle curl-minimal conflict in Rocky Linux
-            dnf install -y --allowerasing \
-              ca-certificates \
-              curl \
-              pkgconfig \
               openssl-devel \
               libffi-devel \
               zlib-devel \
               bzip2-devel \
               readline-devel \
               sqlite-devel \
-              ncurses-devel \
-              snappy-devel \
+              ncurses-devel
+            # Note: snappy-devel may not be available in manylinux base images
+            yum install -y snappy-devel || echo "snappy-devel not available, skipping"
+          elif command -v dnf >/dev/null 2>&1; then
+            # Newer manylinux images might use dnf
+            dnf update -y
+            dnf install -y \
+              curl \
               git \
-              file
+              openssl-devel \
+              libffi-devel \
+              zlib-devel \
+              bzip2-devel \
+              readline-devel \
+              sqlite-devel \
+              ncurses-devel
+            dnf install -y snappy-devel || echo "snappy-devel not available, skipping"
           fi
 
-      - name: Install Python
+      - name: Verify Python installation
         run: |
-          if command -v apt-get >/dev/null 2>&1; then
-            apt-get install -y --no-install-recommends python3 python3-pip python3-venv
-          elif command -v dnf >/dev/null 2>&1; then
-            dnf install -y python3 python3-pip
-          fi
+          # manylinux images come with multiple Python versions pre-installed
+          echo "==> Available Python versions:"
+          ls -la /opt/python/*/bin/python* 2>/dev/null || echo "No /opt/python found"
+          echo ""
+          echo "==> Default Python version:"
+          python3 --version 2>/dev/null || python --version 2>/dev/null || echo "No default Python found"
+          echo ""
+          echo "==> pip version:"
+          python3 -m pip --version 2>/dev/null || pip --version 2>/dev/null || echo "No pip found"
 
       - name: Install Just
         run: |
@@ -121,27 +119,32 @@ jobs:
           echo "GCC: $(gcc --version | head -1)"
           echo "glibc: $(ldd --version 2>/dev/null | head -1 || echo 'N/A')"
 
-      - name: Build wheels
+      - name: Build manylinux wheels with NVX
         run: |
           export PATH="/root/.cargo/bin:$PATH"
+          # Build binary wheels WITH NVX acceleration for manylinux
+          export AUTOBAHN_USE_NVX=1
           just build-all
 
       - name: Generate build metadata
         run: |
           mkdir -p dist/
           cat > dist/build-info.txt << EOF
-          Build Information for ${{ matrix.target.name }}
-          =============================================
+          manylinux Build Information for ${{ matrix.target.name }}
+          ========================================================
           
           Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
           Container: ${{ matrix.target.base_image }}
-          Platform: AMD64
-          Build Method: GitHub Actions + Docker Container
+          Platform: x86_64
+          ABI: manylinux_2_34 (glibc 2.34+)
+          Build Method: GitHub Actions + manylinux Docker Container
+          NVX Acceleration: ENABLED (binary wheels with native extensions)
           
           System Information:
-          - OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)
+          - OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2 2>/dev/null || echo 'manylinux container')
           - Kernel: $(uname -r)
           - glibc: $(ldd --version 2>/dev/null | head -1 || echo 'N/A')
+          - Architecture: $(uname -m)
           
           Build Tools:
           - Just: $(just --version)
@@ -205,17 +208,25 @@ jobs:
       - name: Analyze wheel inventory
         id: inventory
         run: |
-          echo "==> Complete wheel inventory:"
+          echo "==> Complete manylinux wheel inventory:"
           find dist/ -name "*.whl" | sort
           
           echo ""
-          echo "==> Wheels by platform:"
-          for platform in debian12 rocky9 ubuntu2404; do
-            for arch in amd64 arm64; do
-              count=$(find dist/ -name "*${platform}*${arch}*.whl" | wc -l)
-              echo "  $platform-$arch: $count wheels"
+          echo "==> manylinux wheels by ABI:"
+          for abi in manylinux_2_34; do
+            for arch in x86_64 aarch64; do
+              count=$(find dist/ -name "*${abi}*${arch}*.whl" | wc -l)
+              echo "  $abi-$arch: $count wheels"
             done
           done
+          
+          echo ""
+          echo "==> Expected wheel names (for verification):"
+          echo "  autobahn-25.9.1-cp311-cp311-manylinux_2_34_x86_64.whl"
+          echo "  autobahn-25.9.1-cp312-cp312-manylinux_2_34_x86_64.whl"
+          echo "  autobahn-25.9.1-cp313-cp313-manylinux_2_34_x86_64.whl"
+          echo "  autobahn-25.9.1-cp314-cp314-manylinux_2_34_x86_64.whl"
+          echo "  autobahn-25.9.1-pp311-pypy311_pp73-manylinux_2_34_x86_64.whl"
           
           echo ""
           echo "==> Total wheel count:"
@@ -235,23 +246,21 @@ jobs:
           
           # Create comprehensive release notes
           cat > release_notes.md << 'EOF'
-          # Multi-Architecture Python Wheels
+          # manylinux Binary Wheels
           
-          Built using Docker QEMU emulation for precise ABI control and broad compatibility.
+          Built using official PyPA manylinux Docker images for maximum Linux compatibility.
           
-          ## Target Environments
+          ## Target Compatibility
           
-          | Distribution | glibc Version | Architecture | Use Case |
-          |--------------|---------------|--------------|----------|
-          | **Debian 12** | 2.36 | AMD64, ARM64 | Modern Linux systems |
-          | **Rocky Linux 9** | 2.34 | AMD64, ARM64 | Enterprise RHEL environments |
-          | **Ubuntu 24.04** | 2.39 | AMD64, ARM64 | Latest Ubuntu LTS |
+          | manylinux Tag | glibc Version | Architecture | Compatibility |
+          |---------------|---------------|--------------|---------------|
+          | **manylinux_2_34** | 2.34+ | x86_64 | RHEL 9+, Ubuntu 22.04+, Debian 12+ |
           
           ## Python Support
           
           - **CPython**: 3.11, 3.12, 3.13, 3.14
           - **PyPy**: 3.11
-          - **Extensions**: Native CFFI modules included
+          - **Extensions**: Native CFFI modules with NVX acceleration included
           
           ## Installation
           

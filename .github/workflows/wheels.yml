@@ -163,14 +163,29 @@ jobs:
             uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-
             uv-cache-${{ matrix.platform }}-
 
-      - name: Build all wheels (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: just build-all
+      - name: Build pure Python wheels (Linux only)
+        if: matrix.platform == 'linux'
+        run: |
+          # Build pure Python wheels WITHOUT NVX acceleration
+          # This provides maximum compatibility across Linux distributions
+          export AUTOBAHN_USE_NVX=0
+          just build-all
         shell: bash
 
-      - name: Build all wheels (Windows)
-        if: runner.os == 'Windows'
-        run: just build-all
+      - name: Build binary wheels with NVX (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          # Build binary wheels WITH NVX acceleration for macOS
+          export AUTOBAHN_USE_NVX=1
+          just build-all
+        shell: bash
+
+      - name: Build binary wheels with NVX (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          # Build binary wheels WITH NVX acceleration for Windows
+          $env:AUTOBAHN_USE_NVX = "1"
+          just build-all
         shell: pwsh
 
       - name: List built artifacts (Linux/macOS)
@@ -194,13 +209,33 @@ jobs:
           path: dist/*.whl
           retention-days: 30
 
+      - name: Verify pure Python wheel (Linux x86_64 only)
+        if:
+          matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          # Verify that pure Python wheel was built (should be automatic from build step above)
+          echo "Pure Python wheel verification:"
+          ls -la dist/*py3-none-any.whl || echo "No pure Python wheel found (this is expected since Linux builds pure Python wheels)"
+          echo "All Linux wheels (should be pure Python compatible):"
+          ls -la dist/*.whl || echo "No wheels found"
+        shell: bash
+
       - name: Upload source distribution (Linux x86_64 only)
         if:
-          matrix.os == 'ubuntu-24.04' && matrix.arch == 'x86_64'
+          matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: source-distribution
           path: dist/*.tar.gz
+          retention-days: 30
+
+      - name: Upload pure Python wheel (Linux x86_64 only)
+        if:
+          matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pure-python-wheel
+          path: dist/*py3-none-any.whl
           retention-days: 30
 
   publish-github-releases:
@@ -225,13 +260,20 @@ jobs:
           name: source-distribution
           path: dist/
 
+      - name: Download pure Python wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: pure-python-wheel
+          path: dist/
+
       - name: List all artifacts
         run: |
           echo "All built artifacts:"
           ls -la dist/
           echo ""
-          echo "Wheel count: $(ls dist/*.whl | wc -l)"
-          echo "Source distributions: $(ls dist/*.tar.gz | wc -l)"
+          echo "Platform-specific wheels: $(ls dist/*-cp*-*.whl dist/*-pp*-*.whl 2>/dev/null | wc -l)"
+          echo "Pure Python wheels: $(ls dist/*-py3-none-any.whl 2>/dev/null | wc -l)"
+          echo "Source distributions: $(ls dist/*.tar.gz 2>/dev/null | wc -l)"
 
       - name: Create GitHub Release
         env:
@@ -277,11 +319,16 @@ jobs:
       id-token: write # For trusted publishing
 
     steps:
-      - name: Download all wheel artifacts
+      - name: Download macOS wheels only
         uses: actions/download-artifact@v4
         with:
-          pattern: wheels-*
-          merge-multiple: true
+          name: wheels-macos-arm64
+          path: dist/
+
+      - name: Download Windows wheels only
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-x86_64
           path: dist/
 
       - name: Download source distribution
@@ -290,12 +337,26 @@ jobs:
           name: source-distribution
           path: dist/
 
-      - name: List artifacts for PyPI
+      - name: Download pure Python wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: pure-python-wheel
+          path: dist/
+
+      - name: List artifacts for PyPI (selective publishing)
         run: |
-          echo "Publishing to PyPI:"
+          echo "Publishing to PyPI (selective - excludes Linux binary wheels):"
           ls -la dist/
           echo ""
-          echo "Total artifacts: $(ls dist/* | wc -l)"
+          echo "macOS wheels: $(ls dist/*macos*.whl 2>/dev/null | wc -l)"
+          echo "Windows wheels: $(ls dist/*win*.whl 2>/dev/null | wc -l)"
+          echo "Pure Python wheels: $(ls dist/*py3-none-any.whl 2>/dev/null | wc -l)"
+          echo "Source distributions: $(ls dist/*.tar.gz 2>/dev/null | wc -l)"
+          echo ""
+          echo "Total PyPI artifacts: $(ls dist/* | wc -l)"
+          echo ""
+          echo "⚠️  NOTE: Linux binary wheels are excluded from PyPI publishing"
+          echo "   but are available from GitHub Releases."
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
