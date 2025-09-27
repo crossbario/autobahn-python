@@ -19,36 +19,62 @@ jobs:
   build-wheels:
     name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
+    if: ${{ matrix.skip != 'true' }}
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Linux x86-64 (always enabled)
-          - os: ubuntu-24.04
-            arch: x86-64
+          # ===========================================================
+          # ⚠️ IMPORTANT NOTES ABOUT "arch" IN GITHUB ACTIONS ⚠️
+          #
+          # - GitHub Actions DOES NOT respect `arch:` for runner selection.
+          # - The *only* thing that decides which CPU architecture you get
+          #   is the `runs-on:` label (e.g. ubuntu-24.04 vs ubuntu-24.04-arm64).
+          # - Any `arch:` key you see in a matrix is just *your own metadata*.
+          #   It has NO effect on which runner is provisioned. ZERO. ZILCH.
+          # - This is confusing as hell, because many people expect `arch:`
+          #   to actually request AMD64 vs ARM64, but GitHub silently ignores it.
+          #
+          # So: we put `arch:` in here purely for naming artifacts or using
+          # conditional logic in steps. But the "real" architecture is
+          # locked in by the value of `runs-on: ${{ matrix.os }}` below.
+          #
+          # ===========================================================
+
+          # --- Linux ---
+          - os: ubuntu-24.04 # GitHub-hosted Linux (AMD64)
             platform: linux
+            arch: x86_64
 
-          # macOS x86-64 (always enabled)
-          - os: macos-15
-            arch: x86-64
+          - os: ubuntu-24.04-arm64 # GitHub-hosted Linux (ARM64)
+            platform: linux
+            arch: arm64
+
+          # --- macOS ---
+          - os: macos-12 # Intel macOS (x86_64, AMD64)
             platform: macos
+            arch: x86_64
 
-          - os: windows-2022
-            arch: x86-64
+          - os: macos-15 # Apple Silicon macOS (ARM64)
+            platform: macos
+            arch: arm64
+
+          # --- Windows ---
+          - os: windows-2022 # GitHub-hosted Windows (x86_64)
             platform: windows
+            arch: x86_64
 
-          # ARM64 builds (optional - only if runners available)
-          # Currently disabled due to runner availability issues
-          # Uncomment when GitHub ARM64 runner pool improves
-          # - os: ubuntu-22.04-arm64  # Use older OS for better availability
-          #   arch: aarch64
-          #   platform: linux
-          #   continue-on-error: true
-          # - os: macos-14-arm64      # Use older OS for better availability
-          #   arch: aarch64
-          #   platform: macos
-          #   continue-on-error: true
+          # ⚠️ GitHub does NOT provide Windows ARM64 hosted runners.
+          #    If you want Windows ARM64 builds, you must either:
+          #      - run a self-hosted Windows ARM64 runner, OR
+          #      - cross-compile from AMD64 to ARM64 inside the workflow.
+          # - We'll include a "fake" matrix entry for completeness,
+          #   but mark it as "skip: true" so the workflow won't fail.
+          - os: windows-arm64 # (no hosted runner available!)
+            platform: windows
+            arch: arm64
+            skip: true # our own flag, see conditional above
 
     steps:
       - name: Checkout code
@@ -146,9 +172,9 @@ jobs:
           path: dist/*.whl
           retention-days: 30
 
-      - name: Upload source distribution (Linux x86-64 only)
+      - name: Upload source distribution (Linux x86_64 only)
         if:
-          matrix.os == 'ubuntu-24.04' && matrix.arch == 'x86-64'
+          matrix.os == 'ubuntu-24.04' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: source-distribution
@@ -200,9 +226,9 @@ jobs:
             --notes "Automated wheel build from commit ${{ github.sha }}
 
           ## Included Platforms
-          - Linux (x86-64, ARM64)
-          - macOS (x86-64, ARM64)
-          - Windows (x86-64)
+          - Linux (x86_64, ARM64)
+          - macOS (x86_64 Intel, ARM64 Apple Silicon)
+          - Windows (x86_64)
 
           ## Python Versions
           - CPython 3.11, 3.12, 3.13, 3.14
