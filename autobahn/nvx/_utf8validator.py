@@ -55,9 +55,7 @@ else:
 # Detect platform/compiler and set flags
 if sys.platform == "win32":
     # MSVC
-    extra_compile_args = [
-        "/O2", "/W3"
-    ]
+    extra_compile_args = ["/O2", "/W3"]
 else:
     # GCC/clang
     extra_compile_args = [
