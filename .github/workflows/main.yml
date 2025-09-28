@@ -226,11 +226,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
           echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Install uv
+      - name: Install uv (Astral)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           source $HOME/.cargo/env
@@ -327,11 +331,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
           echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Install uv
+      - name: Install uv (Astral)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           source $HOME/.cargo/env
