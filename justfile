@@ -645,7 +645,7 @@ clean-fbs:
     rm -rf ./autobahn/wamp/gen/
 
 # Build FlatBuffers schema files and Python bindings
-build-fbs venv="":
+build-fbs venv="": (install-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"

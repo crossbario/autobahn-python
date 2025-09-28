@@ -50,15 +50,15 @@ jobs:
           just create cpy314
           just install-tools cpy314
 
-      - name: Code formatting check
+      - name: Code formatting / linting (via ruff)
         run: just check-format cpy314
 
-      - name: Flake8 linting
-        run: just flake8 cpy314
-
       # FIXME: Found 239 errors in 45 files (checked 163 source files)
-      # - name: Type checking with mypy
+      # - name: Code static typing (via mypy)
       #   run: just check-typing cpy314
+
+      - name: Code test coverage (via pytest-coverage)
+        run: just check-coverage cpy314
 
       - name: Unit test - Twisted / trial
         run: just test-twisted cpy314
@@ -239,7 +239,7 @@ jobs:
       - name: Install FlatBuffers compiler
         run: |
           sudo apt-get update
-          sudo apt-get install -y flatbuffers-compiler
+          sudo apt-get install -y cloc flatbuffers-compiler
 
       - name: Verify toolchain installation
         run: |
@@ -259,10 +259,26 @@ jobs:
             uv-cache-ubuntu-fbs-
 
       - name: Create Python environment
-        run: just create ${{ matrix.python-env }}
+        run: |
+          just create ${{ matrix.python-env }}
+          just install-tools ${{ matrix.python-env }}
 
-      - name: Build FlatBuffers schema
+      - name: Build FlatBuffers binary schema & Python wrappers
         run: just build-fbs
+
+      - name: List FlatBuffers artifacts
+        run: |
+          flatc --version
+          echo "Generated FlatBuffers binary schema & Python wrappers:"
+          echo "======================================================"
+          cloc autobahn/wamp/gen/
+          echo ""
+          ls -la autobahn/wamp/gen/schema/
+          echo ""
+          openssl sha256 autobahn/wamp/gen/schema/*.bfbs
+          echo ""
+          tree autobahn/wamp/gen/
+          echo ""
 
       - name: Upload FlatBuffers artifacts
         uses: actions/upload-artifact@v4
