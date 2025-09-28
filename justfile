@@ -645,13 +645,20 @@ clean-fbs:
     rm -rf ./autobahn/wamp/gen/
 
 # Build FlatBuffers schema files and Python bindings
-build-fbs:
+build-fbs venv="":
     #!/usr/bin/env bash
     set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+
     FBSFILES="./autobahn/wamp/flatbuffers/*.fbs"
     FLATC="flatc"
-
-    echo "==> Building FlatBuffers schema..."
+    echo "==> Generating FlatBuffers binary schema and Python wrappers using $(${FLATC} --version)..."
 
     # Generate schema binary type library (*.bfbs files)
     ${FLATC} -o ./autobahn/wamp/gen/schema/ --binary --schema --bfbs-comments --bfbs-builtins ${FBSFILES}
@@ -661,6 +668,10 @@ build-fbs:
     ${FLATC} -o ./autobahn/wamp/gen/ --python ${FBSFILES}
     touch ./autobahn/wamp/gen/__init__.py
     echo "--> Generated $(find ./autobahn/wamp/gen/ -name '*.py' | wc -l) .py files"
+
+    echo "Auto-formatting code using ruff after flatc code generation .."
+    "${VENV_PATH}/bin/ruff" format ./autobahn/wamp/gen/
+    "${VENV_PATH}/bin/ruff" check --fix ./autobahn/wamp/gen/
 
 # -----------------------------------------------------------------------------
 # -- File Management Utilities
