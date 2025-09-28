@@ -60,6 +60,12 @@ jobs:
       # - name: Type checking with mypy
       #   run: just check-typing cpy314
 
+      - name: Unit test - Twisted / trial
+        run: just test-twisted cpy314
+
+      - name: Unit test - asyncio / pytest
+        run: just test-asyncio cpy314
+
   documentation:
     name: Documentation Build
     runs-on: ubuntu-24.04
