@@ -205,7 +205,7 @@ jobs:
           echo ""
           echo "    Note: auditwheel adds multiple manylinux tags into the filename."
           echo "          This is expected and pip will resolve correctly."
-          echo "          Do NOT try to simplify" by renaming."
+          echo "          Do NOT try to simplify by renaming."
           echo ""
 
       - name: Generate build metadata
