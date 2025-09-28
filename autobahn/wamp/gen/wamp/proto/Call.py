@@ -248,7 +248,7 @@ def CallStartPayloadVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartPayloadVector(builder, numElems: int) -> int:
+def StartPayloadVector(builder, numElems):
     return CallStartPayloadVector(builder, numElems)
 
 
@@ -282,7 +282,7 @@ def CallStartEncKeyVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartEncKeyVector(builder, numElems: int) -> int:
+def StartEncKeyVector(builder, numElems):
     return CallStartEncKeyVector(builder, numElems)
 
 
@@ -354,7 +354,7 @@ def CallStartForwardForVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartForwardForVector(builder, numElems: int) -> int:
+def StartForwardForVector(builder, numElems):
     return CallStartForwardForVector(builder, numElems)
 
 

@@ -318,7 +318,7 @@ def EventStartArgsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartArgsVector(builder, numElems: int) -> int:
+def StartArgsVector(builder, numElems):
     return EventStartArgsVector(builder, numElems)
 
 
@@ -336,7 +336,7 @@ def EventStartKwargsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartKwargsVector(builder, numElems: int) -> int:
+def StartKwargsVector(builder, numElems):
     return EventStartKwargsVector(builder, numElems)
 
 
@@ -354,7 +354,7 @@ def EventStartPayloadVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartPayloadVector(builder, numElems: int) -> int:
+def StartPayloadVector(builder, numElems):
     return EventStartPayloadVector(builder, numElems)
 
 
@@ -388,7 +388,7 @@ def EventStartEncKeyVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartEncKeyVector(builder, numElems: int) -> int:
+def StartEncKeyVector(builder, numElems):
     return EventStartEncKeyVector(builder, numElems)
 
 
@@ -470,7 +470,7 @@ def EventStartForwardForVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartForwardForVector(builder, numElems: int) -> int:
+def StartForwardForVector(builder, numElems):
     return EventStartForwardForVector(builder, numElems)
 
 

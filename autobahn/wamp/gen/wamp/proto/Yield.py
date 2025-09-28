@@ -215,7 +215,7 @@ def YieldStartPayloadVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartPayloadVector(builder, numElems: int) -> int:
+def StartPayloadVector(builder, numElems):
     return YieldStartPayloadVector(builder, numElems)
 
 
@@ -249,7 +249,7 @@ def YieldStartEncKeyVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartEncKeyVector(builder, numElems: int) -> int:
+def StartEncKeyVector(builder, numElems):
     return YieldStartEncKeyVector(builder, numElems)
 
 
@@ -303,7 +303,7 @@ def YieldStartForwardForVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartForwardForVector(builder, numElems: int) -> int:
+def StartForwardForVector(builder, numElems):
     return YieldStartForwardForVector(builder, numElems)
 
 

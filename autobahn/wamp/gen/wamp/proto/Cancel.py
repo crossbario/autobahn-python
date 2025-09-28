@@ -124,7 +124,7 @@ def CancelStartForwardForVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartForwardForVector(builder, numElems: int) -> int:
+def StartForwardForVector(builder, numElems):
     return CancelStartForwardForVector(builder, numElems)
 
 

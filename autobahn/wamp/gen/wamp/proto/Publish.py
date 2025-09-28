@@ -445,7 +445,7 @@ def PublishStartArgsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartArgsVector(builder, numElems: int) -> int:
+def StartArgsVector(builder, numElems):
     return PublishStartArgsVector(builder, numElems)
 
 
@@ -463,7 +463,7 @@ def PublishStartKwargsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartKwargsVector(builder, numElems: int) -> int:
+def StartKwargsVector(builder, numElems):
     return PublishStartKwargsVector(builder, numElems)
 
 
@@ -481,7 +481,7 @@ def PublishStartPayloadVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartPayloadVector(builder, numElems: int) -> int:
+def StartPayloadVector(builder, numElems):
     return PublishStartPayloadVector(builder, numElems)
 
 
@@ -515,7 +515,7 @@ def PublishStartEncKeyVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartEncKeyVector(builder, numElems: int) -> int:
+def StartEncKeyVector(builder, numElems):
     return PublishStartEncKeyVector(builder, numElems)
 
 
@@ -549,7 +549,7 @@ def PublishStartExcludeVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartExcludeVector(builder, numElems: int) -> int:
+def StartExcludeVector(builder, numElems):
     return PublishStartExcludeVector(builder, numElems)
 
 
@@ -567,7 +567,7 @@ def PublishStartExcludeAuthidVector(builder, numElems):
     return builder.StartVector(4, numElems, 4)
 
 
-def StartExcludeAuthidVector(builder, numElems: int) -> int:
+def StartExcludeAuthidVector(builder, numElems):
     return PublishStartExcludeAuthidVector(builder, numElems)
 
 
@@ -585,7 +585,7 @@ def PublishStartExcludeAuthroleVector(builder, numElems):
     return builder.StartVector(4, numElems, 4)
 
 
-def StartExcludeAuthroleVector(builder, numElems: int) -> int:
+def StartExcludeAuthroleVector(builder, numElems):
     return PublishStartExcludeAuthroleVector(builder, numElems)
 
 
@@ -603,7 +603,7 @@ def PublishStartEligibleVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartEligibleVector(builder, numElems: int) -> int:
+def StartEligibleVector(builder, numElems):
     return PublishStartEligibleVector(builder, numElems)
 
 
@@ -621,7 +621,7 @@ def PublishStartEligibleAuthidVector(builder, numElems):
     return builder.StartVector(4, numElems, 4)
 
 
-def StartEligibleAuthidVector(builder, numElems: int) -> int:
+def StartEligibleAuthidVector(builder, numElems):
     return PublishStartEligibleAuthidVector(builder, numElems)
 
 
@@ -639,7 +639,7 @@ def PublishStartEligibleAuthroleVector(builder, numElems):
     return builder.StartVector(4, numElems, 4)
 
 
-def StartEligibleAuthroleVector(builder, numElems: int) -> int:
+def StartEligibleAuthroleVector(builder, numElems):
     return PublishStartEligibleAuthroleVector(builder, numElems)
 
 
@@ -675,7 +675,7 @@ def PublishStartForwardForVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartForwardForVector(builder, numElems: int) -> int:
+def StartForwardForVector(builder, numElems):
     return PublishStartForwardForVector(builder, numElems)
 
 

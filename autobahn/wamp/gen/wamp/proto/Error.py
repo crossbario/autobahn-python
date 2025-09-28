@@ -192,7 +192,7 @@ def ErrorStartPayloadVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartPayloadVector(builder, numElems: int) -> int:
+def StartPayloadVector(builder, numElems):
     return ErrorStartPayloadVector(builder, numElems)
 
 
@@ -226,7 +226,7 @@ def ErrorStartEncKeyVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartEncKeyVector(builder, numElems: int) -> int:
+def StartEncKeyVector(builder, numElems):
     return ErrorStartEncKeyVector(builder, numElems)
 
 
