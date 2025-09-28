@@ -74,7 +74,7 @@ def SubscribeStart(builder):
 
 
 def Start(builder):
-    return SubscribeStart(builder)
+    SubscribeStart(builder)
 
 
 def SubscribeAddSession(builder, session):
@@ -82,7 +82,7 @@ def SubscribeAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return SubscribeAddSession(builder, session)
+    SubscribeAddSession(builder, session)
 
 
 def SubscribeAddRequest(builder, request):
@@ -90,7 +90,7 @@ def SubscribeAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return SubscribeAddRequest(builder, request)
+    SubscribeAddRequest(builder, request)
 
 
 def SubscribeAddTopic(builder, topic):
@@ -100,7 +100,7 @@ def SubscribeAddTopic(builder, topic):
 
 
 def AddTopic(builder, topic):
-    return SubscribeAddTopic(builder, topic)
+    SubscribeAddTopic(builder, topic)
 
 
 def SubscribeAddMatch(builder, match):
@@ -108,7 +108,7 @@ def SubscribeAddMatch(builder, match):
 
 
 def AddMatch(builder, match):
-    return SubscribeAddMatch(builder, match)
+    SubscribeAddMatch(builder, match)
 
 
 def SubscribeAddGetRetained(builder, getRetained):
@@ -116,7 +116,7 @@ def SubscribeAddGetRetained(builder, getRetained):
 
 
 def AddGetRetained(builder, getRetained):
-    return SubscribeAddGetRetained(builder, getRetained)
+    SubscribeAddGetRetained(builder, getRetained)
 
 
 def SubscribeEnd(builder):

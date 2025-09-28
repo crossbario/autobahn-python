@@ -182,7 +182,7 @@ def ResultStart(builder):
 
 
 def Start(builder):
-    return ResultStart(builder)
+    ResultStart(builder)
 
 
 def ResultAddSession(builder, session):
@@ -190,7 +190,7 @@ def ResultAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return ResultAddSession(builder, session)
+    ResultAddSession(builder, session)
 
 
 def ResultAddRequest(builder, request):
@@ -198,7 +198,7 @@ def ResultAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return ResultAddRequest(builder, request)
+    ResultAddRequest(builder, request)
 
 
 def ResultAddPayload(builder, payload):
@@ -208,7 +208,7 @@ def ResultAddPayload(builder, payload):
 
 
 def AddPayload(builder, payload):
-    return ResultAddPayload(builder, payload)
+    ResultAddPayload(builder, payload)
 
 
 def ResultStartPayloadVector(builder, numElems):
@@ -224,7 +224,7 @@ def ResultAddEncAlgo(builder, encAlgo):
 
 
 def AddEncAlgo(builder, encAlgo):
-    return ResultAddEncAlgo(builder, encAlgo)
+    ResultAddEncAlgo(builder, encAlgo)
 
 
 def ResultAddEncSerializer(builder, encSerializer):
@@ -232,7 +232,7 @@ def ResultAddEncSerializer(builder, encSerializer):
 
 
 def AddEncSerializer(builder, encSerializer):
-    return ResultAddEncSerializer(builder, encSerializer)
+    ResultAddEncSerializer(builder, encSerializer)
 
 
 def ResultAddEncKey(builder, encKey):
@@ -242,7 +242,7 @@ def ResultAddEncKey(builder, encKey):
 
 
 def AddEncKey(builder, encKey):
-    return ResultAddEncKey(builder, encKey)
+    ResultAddEncKey(builder, encKey)
 
 
 def ResultStartEncKeyVector(builder, numElems):
@@ -258,7 +258,7 @@ def ResultAddProgress(builder, progress):
 
 
 def AddProgress(builder, progress):
-    return ResultAddProgress(builder, progress)
+    ResultAddProgress(builder, progress)
 
 
 def ResultAddCallee(builder, callee):
@@ -266,7 +266,7 @@ def ResultAddCallee(builder, callee):
 
 
 def AddCallee(builder, callee):
-    return ResultAddCallee(builder, callee)
+    ResultAddCallee(builder, callee)
 
 
 def ResultAddCalleeAuthid(builder, calleeAuthid):
@@ -276,7 +276,7 @@ def ResultAddCalleeAuthid(builder, calleeAuthid):
 
 
 def AddCalleeAuthid(builder, calleeAuthid):
-    return ResultAddCalleeAuthid(builder, calleeAuthid)
+    ResultAddCalleeAuthid(builder, calleeAuthid)
 
 
 def ResultAddCalleeAuthrole(builder, calleeAuthrole):
@@ -286,7 +286,7 @@ def ResultAddCalleeAuthrole(builder, calleeAuthrole):
 
 
 def AddCalleeAuthrole(builder, calleeAuthrole):
-    return ResultAddCalleeAuthrole(builder, calleeAuthrole)
+    ResultAddCalleeAuthrole(builder, calleeAuthrole)
 
 
 def ResultAddForwardFor(builder, forwardFor):
@@ -296,7 +296,7 @@ def ResultAddForwardFor(builder, forwardFor):
 
 
 def AddForwardFor(builder, forwardFor):
-    return ResultAddForwardFor(builder, forwardFor)
+    ResultAddForwardFor(builder, forwardFor)
 
 
 def ResultStartForwardForVector(builder, numElems):

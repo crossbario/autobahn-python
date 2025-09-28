@@ -125,7 +125,7 @@ def EventReceivedStart(builder):
 
 
 def Start(builder):
-    return EventReceivedStart(builder)
+    EventReceivedStart(builder)
 
 
 def EventReceivedAddSession(builder, session):
@@ -133,7 +133,7 @@ def EventReceivedAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return EventReceivedAddSession(builder, session)
+    EventReceivedAddSession(builder, session)
 
 
 def EventReceivedAddPublication(builder, publication):
@@ -141,7 +141,7 @@ def EventReceivedAddPublication(builder, publication):
 
 
 def AddPublication(builder, publication):
-    return EventReceivedAddPublication(builder, publication)
+    EventReceivedAddPublication(builder, publication)
 
 
 def EventReceivedAddPayload(builder, payload):
@@ -151,7 +151,7 @@ def EventReceivedAddPayload(builder, payload):
 
 
 def AddPayload(builder, payload):
-    return EventReceivedAddPayload(builder, payload)
+    EventReceivedAddPayload(builder, payload)
 
 
 def EventReceivedStartPayloadVector(builder, numElems):
@@ -167,7 +167,7 @@ def EventReceivedAddEncAlgo(builder, encAlgo):
 
 
 def AddEncAlgo(builder, encAlgo):
-    return EventReceivedAddEncAlgo(builder, encAlgo)
+    EventReceivedAddEncAlgo(builder, encAlgo)
 
 
 def EventReceivedAddEncSerializer(builder, encSerializer):
@@ -175,7 +175,7 @@ def EventReceivedAddEncSerializer(builder, encSerializer):
 
 
 def AddEncSerializer(builder, encSerializer):
-    return EventReceivedAddEncSerializer(builder, encSerializer)
+    EventReceivedAddEncSerializer(builder, encSerializer)
 
 
 def EventReceivedAddEncKey(builder, encKey):
@@ -185,7 +185,7 @@ def EventReceivedAddEncKey(builder, encKey):
 
 
 def AddEncKey(builder, encKey):
-    return EventReceivedAddEncKey(builder, encKey)
+    EventReceivedAddEncKey(builder, encKey)
 
 
 def EventReceivedStartEncKeyVector(builder, numElems):

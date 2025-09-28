@@ -402,7 +402,7 @@ def PublishStart(builder):
 
 
 def Start(builder):
-    return PublishStart(builder)
+    PublishStart(builder)
 
 
 def PublishAddSession(builder, session):
@@ -410,7 +410,7 @@ def PublishAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return PublishAddSession(builder, session)
+    PublishAddSession(builder, session)
 
 
 def PublishAddRequest(builder, request):
@@ -418,7 +418,7 @@ def PublishAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return PublishAddRequest(builder, request)
+    PublishAddRequest(builder, request)
 
 
 def PublishAddTopic(builder, topic):
@@ -428,7 +428,7 @@ def PublishAddTopic(builder, topic):
 
 
 def AddTopic(builder, topic):
-    return PublishAddTopic(builder, topic)
+    PublishAddTopic(builder, topic)
 
 
 def PublishAddArgs(builder, args):
@@ -438,7 +438,7 @@ def PublishAddArgs(builder, args):
 
 
 def AddArgs(builder, args):
-    return PublishAddArgs(builder, args)
+    PublishAddArgs(builder, args)
 
 
 def PublishStartArgsVector(builder, numElems):
@@ -456,7 +456,7 @@ def PublishAddKwargs(builder, kwargs):
 
 
 def AddKwargs(builder, kwargs):
-    return PublishAddKwargs(builder, kwargs)
+    PublishAddKwargs(builder, kwargs)
 
 
 def PublishStartKwargsVector(builder, numElems):
@@ -474,7 +474,7 @@ def PublishAddPayload(builder, payload):
 
 
 def AddPayload(builder, payload):
-    return PublishAddPayload(builder, payload)
+    PublishAddPayload(builder, payload)
 
 
 def PublishStartPayloadVector(builder, numElems):
@@ -490,7 +490,7 @@ def PublishAddEncAlgo(builder, encAlgo):
 
 
 def AddEncAlgo(builder, encAlgo):
-    return PublishAddEncAlgo(builder, encAlgo)
+    PublishAddEncAlgo(builder, encAlgo)
 
 
 def PublishAddEncSerializer(builder, encSerializer):
@@ -498,7 +498,7 @@ def PublishAddEncSerializer(builder, encSerializer):
 
 
 def AddEncSerializer(builder, encSerializer):
-    return PublishAddEncSerializer(builder, encSerializer)
+    PublishAddEncSerializer(builder, encSerializer)
 
 
 def PublishAddEncKey(builder, encKey):
@@ -508,7 +508,7 @@ def PublishAddEncKey(builder, encKey):
 
 
 def AddEncKey(builder, encKey):
-    return PublishAddEncKey(builder, encKey)
+    PublishAddEncKey(builder, encKey)
 
 
 def PublishStartEncKeyVector(builder, numElems):
@@ -524,7 +524,7 @@ def PublishAddAcknowledge(builder, acknowledge):
 
 
 def AddAcknowledge(builder, acknowledge):
-    return PublishAddAcknowledge(builder, acknowledge)
+    PublishAddAcknowledge(builder, acknowledge)
 
 
 def PublishAddExcludeMe(builder, excludeMe):
@@ -532,7 +532,7 @@ def PublishAddExcludeMe(builder, excludeMe):
 
 
 def AddExcludeMe(builder, excludeMe):
-    return PublishAddExcludeMe(builder, excludeMe)
+    PublishAddExcludeMe(builder, excludeMe)
 
 
 def PublishAddExclude(builder, exclude):
@@ -542,7 +542,7 @@ def PublishAddExclude(builder, exclude):
 
 
 def AddExclude(builder, exclude):
-    return PublishAddExclude(builder, exclude)
+    PublishAddExclude(builder, exclude)
 
 
 def PublishStartExcludeVector(builder, numElems):
@@ -560,7 +560,7 @@ def PublishAddExcludeAuthid(builder, excludeAuthid):
 
 
 def AddExcludeAuthid(builder, excludeAuthid):
-    return PublishAddExcludeAuthid(builder, excludeAuthid)
+    PublishAddExcludeAuthid(builder, excludeAuthid)
 
 
 def PublishStartExcludeAuthidVector(builder, numElems):
@@ -578,7 +578,7 @@ def PublishAddExcludeAuthrole(builder, excludeAuthrole):
 
 
 def AddExcludeAuthrole(builder, excludeAuthrole):
-    return PublishAddExcludeAuthrole(builder, excludeAuthrole)
+    PublishAddExcludeAuthrole(builder, excludeAuthrole)
 
 
 def PublishStartExcludeAuthroleVector(builder, numElems):
@@ -596,7 +596,7 @@ def PublishAddEligible(builder, eligible):
 
 
 def AddEligible(builder, eligible):
-    return PublishAddEligible(builder, eligible)
+    PublishAddEligible(builder, eligible)
 
 
 def PublishStartEligibleVector(builder, numElems):
@@ -614,7 +614,7 @@ def PublishAddEligibleAuthid(builder, eligibleAuthid):
 
 
 def AddEligibleAuthid(builder, eligibleAuthid):
-    return PublishAddEligibleAuthid(builder, eligibleAuthid)
+    PublishAddEligibleAuthid(builder, eligibleAuthid)
 
 
 def PublishStartEligibleAuthidVector(builder, numElems):
@@ -632,7 +632,7 @@ def PublishAddEligibleAuthrole(builder, eligibleAuthrole):
 
 
 def AddEligibleAuthrole(builder, eligibleAuthrole):
-    return PublishAddEligibleAuthrole(builder, eligibleAuthrole)
+    PublishAddEligibleAuthrole(builder, eligibleAuthrole)
 
 
 def PublishStartEligibleAuthroleVector(builder, numElems):
@@ -648,7 +648,7 @@ def PublishAddRetain(builder, retain):
 
 
 def AddRetain(builder, retain):
-    return PublishAddRetain(builder, retain)
+    PublishAddRetain(builder, retain)
 
 
 def PublishAddTransactionHash(builder, transactionHash):
@@ -658,7 +658,7 @@ def PublishAddTransactionHash(builder, transactionHash):
 
 
 def AddTransactionHash(builder, transactionHash):
-    return PublishAddTransactionHash(builder, transactionHash)
+    PublishAddTransactionHash(builder, transactionHash)
 
 
 def PublishAddForwardFor(builder, forwardFor):
@@ -668,7 +668,7 @@ def PublishAddForwardFor(builder, forwardFor):
 
 
 def AddForwardFor(builder, forwardFor):
-    return PublishAddForwardFor(builder, forwardFor)
+    PublishAddForwardFor(builder, forwardFor)
 
 
 def PublishStartForwardForVector(builder, numElems):

@@ -57,7 +57,7 @@ def RouterRolesStart(builder):
 
 
 def Start(builder):
-    return RouterRolesStart(builder)
+    RouterRolesStart(builder)
 
 
 def RouterRolesAddBroker(builder, broker):
@@ -67,7 +67,7 @@ def RouterRolesAddBroker(builder, broker):
 
 
 def AddBroker(builder, broker):
-    return RouterRolesAddBroker(builder, broker)
+    RouterRolesAddBroker(builder, broker)
 
 
 def RouterRolesAddDealer(builder, dealer):
@@ -77,7 +77,7 @@ def RouterRolesAddDealer(builder, dealer):
 
 
 def AddDealer(builder, dealer):
-    return RouterRolesAddDealer(builder, dealer)
+    RouterRolesAddDealer(builder, dealer)
 
 
 def RouterRolesEnd(builder):

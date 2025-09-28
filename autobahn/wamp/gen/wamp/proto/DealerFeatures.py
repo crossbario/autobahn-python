@@ -150,7 +150,7 @@ def DealerFeaturesStart(builder):
 
 
 def Start(builder):
-    return DealerFeaturesStart(builder)
+    DealerFeaturesStart(builder)
 
 
 def DealerFeaturesAddCallerIdentification(builder, callerIdentification):
@@ -158,7 +158,7 @@ def DealerFeaturesAddCallerIdentification(builder, callerIdentification):
 
 
 def AddCallerIdentification(builder, callerIdentification):
-    return DealerFeaturesAddCallerIdentification(builder, callerIdentification)
+    DealerFeaturesAddCallerIdentification(builder, callerIdentification)
 
 
 def DealerFeaturesAddCallTrustlevels(builder, callTrustlevels):
@@ -166,7 +166,7 @@ def DealerFeaturesAddCallTrustlevels(builder, callTrustlevels):
 
 
 def AddCallTrustlevels(builder, callTrustlevels):
-    return DealerFeaturesAddCallTrustlevels(builder, callTrustlevels)
+    DealerFeaturesAddCallTrustlevels(builder, callTrustlevels)
 
 
 def DealerFeaturesAddCallTimeout(builder, callTimeout):
@@ -174,7 +174,7 @@ def DealerFeaturesAddCallTimeout(builder, callTimeout):
 
 
 def AddCallTimeout(builder, callTimeout):
-    return DealerFeaturesAddCallTimeout(builder, callTimeout)
+    DealerFeaturesAddCallTimeout(builder, callTimeout)
 
 
 def DealerFeaturesAddCallCanceling(builder, callCanceling):
@@ -182,7 +182,7 @@ def DealerFeaturesAddCallCanceling(builder, callCanceling):
 
 
 def AddCallCanceling(builder, callCanceling):
-    return DealerFeaturesAddCallCanceling(builder, callCanceling)
+    DealerFeaturesAddCallCanceling(builder, callCanceling)
 
 
 def DealerFeaturesAddProgressiveCallResults(builder, progressiveCallResults):
@@ -190,7 +190,7 @@ def DealerFeaturesAddProgressiveCallResults(builder, progressiveCallResults):
 
 
 def AddProgressiveCallResults(builder, progressiveCallResults):
-    return DealerFeaturesAddProgressiveCallResults(builder, progressiveCallResults)
+    DealerFeaturesAddProgressiveCallResults(builder, progressiveCallResults)
 
 
 def DealerFeaturesAddRegistrationRevocation(builder, registrationRevocation):
@@ -198,7 +198,7 @@ def DealerFeaturesAddRegistrationRevocation(builder, registrationRevocation):
 
 
 def AddRegistrationRevocation(builder, registrationRevocation):
-    return DealerFeaturesAddRegistrationRevocation(builder, registrationRevocation)
+    DealerFeaturesAddRegistrationRevocation(builder, registrationRevocation)
 
 
 def DealerFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration):
@@ -206,7 +206,7 @@ def DealerFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration)
 
 
 def AddPatternBasedRegistration(builder, patternBasedRegistration):
-    return DealerFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration)
+    DealerFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration)
 
 
 def DealerFeaturesAddSharedRegistration(builder, sharedRegistration):
@@ -214,7 +214,7 @@ def DealerFeaturesAddSharedRegistration(builder, sharedRegistration):
 
 
 def AddSharedRegistration(builder, sharedRegistration):
-    return DealerFeaturesAddSharedRegistration(builder, sharedRegistration)
+    DealerFeaturesAddSharedRegistration(builder, sharedRegistration)
 
 
 def DealerFeaturesAddSessionMetaApi(builder, sessionMetaApi):
@@ -222,7 +222,7 @@ def DealerFeaturesAddSessionMetaApi(builder, sessionMetaApi):
 
 
 def AddSessionMetaApi(builder, sessionMetaApi):
-    return DealerFeaturesAddSessionMetaApi(builder, sessionMetaApi)
+    DealerFeaturesAddSessionMetaApi(builder, sessionMetaApi)
 
 
 def DealerFeaturesAddRegistrationMetaApi(builder, registrationMetaApi):
@@ -230,7 +230,7 @@ def DealerFeaturesAddRegistrationMetaApi(builder, registrationMetaApi):
 
 
 def AddRegistrationMetaApi(builder, registrationMetaApi):
-    return DealerFeaturesAddRegistrationMetaApi(builder, registrationMetaApi)
+    DealerFeaturesAddRegistrationMetaApi(builder, registrationMetaApi)
 
 
 def DealerFeaturesAddTestamentMetaApi(builder, testamentMetaApi):
@@ -238,7 +238,7 @@ def DealerFeaturesAddTestamentMetaApi(builder, testamentMetaApi):
 
 
 def AddTestamentMetaApi(builder, testamentMetaApi):
-    return DealerFeaturesAddTestamentMetaApi(builder, testamentMetaApi)
+    DealerFeaturesAddTestamentMetaApi(builder, testamentMetaApi)
 
 
 def DealerFeaturesAddPayloadTransparency(builder, payloadTransparency):
@@ -246,7 +246,7 @@ def DealerFeaturesAddPayloadTransparency(builder, payloadTransparency):
 
 
 def AddPayloadTransparency(builder, payloadTransparency):
-    return DealerFeaturesAddPayloadTransparency(builder, payloadTransparency)
+    DealerFeaturesAddPayloadTransparency(builder, payloadTransparency)
 
 
 def DealerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
@@ -254,9 +254,7 @@ def DealerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCrypto
 
 
 def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    return DealerFeaturesAddPayloadEncryptionCryptobox(
-        builder, payloadEncryptionCryptobox
-    )
+    DealerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
 
 
 def DealerFeaturesEnd(builder):

@@ -94,16 +94,6 @@ _get-venv-python venv="":
 # -- General/global helper recipes
 # -----------------------------------------------------------------------------
 
-# Bootstrap repository after cloning
-setup-githooks:
-    #!/usr/bin/env bash
-    set -e
-
-    # Configure Git to use the versioned hooks directory
-    git config core.hooksPath .githooks
-    echo "✔ Git hooks are now configured to use .githooks/"
-    echo "  (run 'git config core.hooksPath' to verify)"
-
 # Setup bash tab completion for the current user (to activate: `source ~/.config/bash_completion`).
 setup-completion:
     #!/usr/bin/env bash
@@ -149,7 +139,7 @@ distclean:
     # 1. Remove top-level directories known to us.
     #    This is fast for the common cases.
     echo "--> Removing venvs, cache, and build/dist directories..."
-    rm -rf {{UV_CACHE_DIR}} {{VENV_DIR}} build/ dist/ .pytest_cache/ .ruff_cache/ .mypy_cache/
+    rm -rf {{UV_CACHE_DIR}} {{VENV_DIR}} build/ dist/ wheelhouse/ .pytest_cache/ .ruff_cache/ .mypy_cache/
 
     # 2. Use `find` to hunt down and destroy nested artifacts that can be
     #    scattered throughout the source tree. This is the most thorough part.
@@ -497,10 +487,87 @@ check-typing venv="": (install-tools venv) (install venv)
     echo "==> Running static type checks with ${VENV_NAME}..."
     "${VENV_PATH}/bin/mypy" autobahn/
 
-# Run tests and generate an HTML coverage report in a specific directory.
+# Run coverage for Twisted tests only
+check-coverage-twisted venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running Twisted tests with coverage in ${VENV_NAME}..."
+    
+    # Clean previous coverage data
+    rm -f .coverage .coverage.*
+    
+    # Run Twisted tests with coverage
+    USE_TWISTED=1 "${VENV_PATH}/bin/coverage" run \
+        --source=autobahn \
+        --parallel-mode \
+        -m twisted.trial --no-recurse \
+        autobahn.test \
+        autobahn.twisted.test \
+        autobahn.websocket.test \
+        autobahn.rawsocket.test \
+        autobahn.wamp.test \
+        autobahn.nvx.test
+
+# Run coverage for asyncio tests only  
+check-coverage-asyncio venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    echo "==> Running asyncio tests with coverage in ${VENV_NAME}..."
+    
+    # Run asyncio tests with coverage (parallel mode to combine later)
+    USE_ASYNCIO=1 "${VENV_PATH}/bin/coverage" run \
+        --source=autobahn \
+        --parallel-mode \
+        -m pytest -s -v -rfP \
+        --ignore=./autobahn/twisted ./autobahn
+
+# Combined coverage report from both Twisted and asyncio tests
+check-coverage-combined venv="": (check-coverage-twisted venv) (check-coverage-asyncio venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    echo "==> Combining coverage data from Twisted and asyncio tests..."
+    
+    # Combine all coverage data files
+    "${VENV_PATH}/bin/coverage" combine
+    
+    # Generate reports
+    mkdir -p docs/_build/html
+    "${VENV_PATH}/bin/coverage" html -d docs/_build/html/coverage-combined
+    "${VENV_PATH}/bin/coverage" report --show-missing
+    
+    echo ""
+    echo "✅ Combined coverage report generated:"
+    echo "   HTML: docs/_build/html/coverage-combined/index.html"
+    echo "   Text: above summary"
+
+# Legacy coverage recipe (DEPRECATED - use check-coverage-combined instead)
 check-coverage venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
+    echo "⚠️  DEPRECATED: Use 'just check-coverage-combined' for comprehensive coverage"
+    echo "⚠️  This recipe only runs pytest coverage and misses Twisted-specific code paths"
     VENV_NAME="{{ venv }}"
     if [ -z "${VENV_NAME}" ]; then
         echo "==> No venv name specified. Auto-detecting from system Python..."
@@ -518,14 +585,17 @@ check-coverage venv="": (install-tools venv) (install venv)
     echo "--> Coverage report generated in docs/_build/html/coverage/index.html"
 
 # Run all checks in single environment (usage: `just check cpy314`)
-check venv="": (check-format venv) (check-typing venv) (check-coverage venv)
+check venv="": (check-format venv) (check-typing venv) (check-coverage-combined venv)
 
 # -----------------------------------------------------------------------------
 # -- Unit tests
 # -----------------------------------------------------------------------------
 
-# Run the test suite using pytest (usage: `just test cpy314`)
-test venv="": (install-tools venv) (install venv)
+# Run the test suite for Twisted/trial and asyncio/pytest (usage: `just test cpy314`)
+test venv="": (test-twisted venv) (test-asyncio venv)
+
+# Run the test suite for Twisted using trial (usage: `just test-twisted cpy314`)
+test-twisted venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -535,8 +605,42 @@ test venv="": (install-tools venv) (install venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
-    echo "==> Running test suite for ${VENV_NAME}..."
-    "${VENV_PATH}/bin/pytest"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running test suite for Twisted using trial in ${VENV_NAME}..."
+
+    # IMPORTANT: Twisted trial doesn't allow to recurse-and-exclude, and hence we
+    # need this looong explicit list of tests to run because we must exclude "asyncio"
+    #
+    # AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS=1:
+    #   This enables "autobahn/test/test_rng.py" (on Linux), which tests entropy depletion,
+    #   and tests how to correctly read _real_ entropy and block if not enough _real_ entropy
+    #   is currently available (see: https://github.com/crossbario/autobahn-python/issues/1275)
+
+    USE_TWISTED=1 ${VENV_PYTHON} -m twisted.trial --no-recurse \
+        autobahn.test \
+        autobahn.twisted.test \
+        autobahn.websocket.test \
+        autobahn.rawsocket.test \
+        autobahn.wamp.test \
+        autobahn.nvx.test
+
+# Run the test suite for asyncio using pytest (usage: `just test-asyncio cpy314`)
+test-asyncio venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running test suite for asyncio using pytest in ${VENV_NAME}..."
+
+    # IMPORTANT: we need to exclude all twisted tests
+    USE_ASYNCIO=1 ${VENV_PYTHON} -m pytest -s -v -rfP \
+        --ignore=./autobahn/twisted ./autobahn
 
 # -----------------------------------------------------------------------------
 # -- Documentation
@@ -612,19 +716,56 @@ publish venv="": (build venv)
 # -- FlatBuffers Schema Generation
 # -----------------------------------------------------------------------------
 
+# Install latest FlatBuffers compiler (flatc) to /usr/local/bin
+install-flatc:
+    #!/usr/bin/env bash
+    set -e
+    FLATC_VERSION="25.9.23"
+    FLATC_URL="https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/Linux.flatc.binary.g++-13.zip"
+    TEMP_DIR=$(mktemp -d)
+    
+    echo "==> Installing FlatBuffers compiler v${FLATC_VERSION}..."
+    echo "    URL: ${FLATC_URL}"
+    echo "    Temp dir: ${TEMP_DIR}"
+    
+    # Download and extract
+    cd "${TEMP_DIR}"
+    curl -L -o flatc.zip "${FLATC_URL}"
+    unzip flatc.zip
+    
+    # Install to /usr/local/bin (requires sudo)
+    echo "==> Installing flatc to /usr/local/bin (requires sudo)..."
+    sudo mv flatc /usr/local/bin/flatc
+    sudo chmod +x /usr/local/bin/flatc
+    
+    # Cleanup
+    rm -rf "${TEMP_DIR}"
+    
+    # Verify installation
+    echo "==> Verification:"
+    flatc --version
+    echo "✅ FlatBuffers compiler v${FLATC_VERSION} installed successfully!"
+
 # Clean generated FlatBuffers files
 clean-fbs:
     echo "==> Cleaning FlatBuffers generated files..."
     rm -rf ./autobahn/wamp/gen/
 
 # Build FlatBuffers schema files and Python bindings
-build-fbs:
+build-fbs venv="": (install-tools venv)
     #!/usr/bin/env bash
     set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+
     FBSFILES="./autobahn/wamp/flatbuffers/*.fbs"
     FLATC="flatc"
-
-    echo "==> Building FlatBuffers schema..."
+    echo "==> Generating FlatBuffers binary schema and Python wrappers using $(${FLATC} --version)..."
 
     # Generate schema binary type library (*.bfbs files)
     ${FLATC} -o ./autobahn/wamp/gen/schema/ --binary --schema --bfbs-comments --bfbs-builtins ${FBSFILES}
@@ -635,18 +776,9 @@ build-fbs:
     touch ./autobahn/wamp/gen/__init__.py
     echo "--> Generated $(find ./autobahn/wamp/gen/ -name '*.py' | wc -l) .py files"
 
-# -----------------------------------------------------------------------------
-# -- Legacy Makefile Compatibility Aliases
-# -----------------------------------------------------------------------------
-
-# Alias for autoformat (Makefile compatibility)
-autoformat_python venv="": (autoformat venv)
-
-# Alias for flake8/lint checking (Makefile compatibility)
-flake8 venv="": (check-format venv)
-
-# Alias for mypy (Makefile compatibility)
-mypy venv="": (check-typing venv)
+    echo "Auto-formatting code using ruff after flatc code generation .."
+    "${VENV_PATH}/bin/ruff" format ./autobahn/wamp/gen/
+    "${VENV_PATH}/bin/ruff" check --fix ./autobahn/wamp/gen/
 
 # -----------------------------------------------------------------------------
 # -- File Management Utilities

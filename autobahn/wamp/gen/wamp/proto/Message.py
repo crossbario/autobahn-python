@@ -51,7 +51,7 @@ def MessageStart(builder):
 
 
 def Start(builder):
-    return MessageStart(builder)
+    MessageStart(builder)
 
 
 def MessageAddMsgType(builder, msgType):
@@ -59,7 +59,7 @@ def MessageAddMsgType(builder, msgType):
 
 
 def AddMsgType(builder, msgType):
-    return MessageAddMsgType(builder, msgType)
+    MessageAddMsgType(builder, msgType)
 
 
 def MessageAddMsg(builder, msg):
@@ -69,7 +69,7 @@ def MessageAddMsg(builder, msg):
 
 
 def AddMsg(builder, msg):
-    return MessageAddMsg(builder, msg)
+    MessageAddMsg(builder, msg)
 
 
 def MessageEnd(builder):

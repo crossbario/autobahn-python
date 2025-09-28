@@ -1,0 +1,1 @@
+.ai/AI_GUIDELINES.md

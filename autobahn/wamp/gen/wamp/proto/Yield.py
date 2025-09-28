@@ -182,7 +182,7 @@ def YieldStart(builder):
 
 
 def Start(builder):
-    return YieldStart(builder)
+    YieldStart(builder)
 
 
 def YieldAddSession(builder, session):
@@ -190,7 +190,7 @@ def YieldAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return YieldAddSession(builder, session)
+    YieldAddSession(builder, session)
 
 
 def YieldAddRequest(builder, request):
@@ -198,7 +198,7 @@ def YieldAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return YieldAddRequest(builder, request)
+    YieldAddRequest(builder, request)
 
 
 def YieldAddPayload(builder, payload):
@@ -208,7 +208,7 @@ def YieldAddPayload(builder, payload):
 
 
 def AddPayload(builder, payload):
-    return YieldAddPayload(builder, payload)
+    YieldAddPayload(builder, payload)
 
 
 def YieldStartPayloadVector(builder, numElems):
@@ -224,7 +224,7 @@ def YieldAddEncAlgo(builder, encAlgo):
 
 
 def AddEncAlgo(builder, encAlgo):
-    return YieldAddEncAlgo(builder, encAlgo)
+    YieldAddEncAlgo(builder, encAlgo)
 
 
 def YieldAddEncSerializer(builder, encSerializer):
@@ -232,7 +232,7 @@ def YieldAddEncSerializer(builder, encSerializer):
 
 
 def AddEncSerializer(builder, encSerializer):
-    return YieldAddEncSerializer(builder, encSerializer)
+    YieldAddEncSerializer(builder, encSerializer)
 
 
 def YieldAddEncKey(builder, encKey):
@@ -242,7 +242,7 @@ def YieldAddEncKey(builder, encKey):
 
 
 def AddEncKey(builder, encKey):
-    return YieldAddEncKey(builder, encKey)
+    YieldAddEncKey(builder, encKey)
 
 
 def YieldStartEncKeyVector(builder, numElems):
@@ -258,7 +258,7 @@ def YieldAddProgress(builder, progress):
 
 
 def AddProgress(builder, progress):
-    return YieldAddProgress(builder, progress)
+    YieldAddProgress(builder, progress)
 
 
 def YieldAddCallee(builder, callee):
@@ -266,7 +266,7 @@ def YieldAddCallee(builder, callee):
 
 
 def AddCallee(builder, callee):
-    return YieldAddCallee(builder, callee)
+    YieldAddCallee(builder, callee)
 
 
 def YieldAddCalleeAuthid(builder, calleeAuthid):
@@ -276,7 +276,7 @@ def YieldAddCalleeAuthid(builder, calleeAuthid):
 
 
 def AddCalleeAuthid(builder, calleeAuthid):
-    return YieldAddCalleeAuthid(builder, calleeAuthid)
+    YieldAddCalleeAuthid(builder, calleeAuthid)
 
 
 def YieldAddCalleeAuthrole(builder, calleeAuthrole):
@@ -286,7 +286,7 @@ def YieldAddCalleeAuthrole(builder, calleeAuthrole):
 
 
 def AddCalleeAuthrole(builder, calleeAuthrole):
-    return YieldAddCalleeAuthrole(builder, calleeAuthrole)
+    YieldAddCalleeAuthrole(builder, calleeAuthrole)
 
 
 def YieldAddForwardFor(builder, forwardFor):
@@ -296,7 +296,7 @@ def YieldAddForwardFor(builder, forwardFor):
 
 
 def AddForwardFor(builder, forwardFor):
-    return YieldAddForwardFor(builder, forwardFor)
+    YieldAddForwardFor(builder, forwardFor)
 
 
 def YieldStartForwardForVector(builder, numElems):

@@ -277,7 +277,7 @@ def EventStart(builder):
 
 
 def Start(builder):
-    return EventStart(builder)
+    EventStart(builder)
 
 
 def EventAddSession(builder, session):
@@ -285,7 +285,7 @@ def EventAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return EventAddSession(builder, session)
+    EventAddSession(builder, session)
 
 
 def EventAddSubscription(builder, subscription):
@@ -293,7 +293,7 @@ def EventAddSubscription(builder, subscription):
 
 
 def AddSubscription(builder, subscription):
-    return EventAddSubscription(builder, subscription)
+    EventAddSubscription(builder, subscription)
 
 
 def EventAddPublication(builder, publication):
@@ -301,7 +301,7 @@ def EventAddPublication(builder, publication):
 
 
 def AddPublication(builder, publication):
-    return EventAddPublication(builder, publication)
+    EventAddPublication(builder, publication)
 
 
 def EventAddArgs(builder, args):
@@ -311,7 +311,7 @@ def EventAddArgs(builder, args):
 
 
 def AddArgs(builder, args):
-    return EventAddArgs(builder, args)
+    EventAddArgs(builder, args)
 
 
 def EventStartArgsVector(builder, numElems):
@@ -329,7 +329,7 @@ def EventAddKwargs(builder, kwargs):
 
 
 def AddKwargs(builder, kwargs):
-    return EventAddKwargs(builder, kwargs)
+    EventAddKwargs(builder, kwargs)
 
 
 def EventStartKwargsVector(builder, numElems):
@@ -347,7 +347,7 @@ def EventAddPayload(builder, payload):
 
 
 def AddPayload(builder, payload):
-    return EventAddPayload(builder, payload)
+    EventAddPayload(builder, payload)
 
 
 def EventStartPayloadVector(builder, numElems):
@@ -363,7 +363,7 @@ def EventAddEncAlgo(builder, encAlgo):
 
 
 def AddEncAlgo(builder, encAlgo):
-    return EventAddEncAlgo(builder, encAlgo)
+    EventAddEncAlgo(builder, encAlgo)
 
 
 def EventAddEncSerializer(builder, encSerializer):
@@ -371,7 +371,7 @@ def EventAddEncSerializer(builder, encSerializer):
 
 
 def AddEncSerializer(builder, encSerializer):
-    return EventAddEncSerializer(builder, encSerializer)
+    EventAddEncSerializer(builder, encSerializer)
 
 
 def EventAddEncKey(builder, encKey):
@@ -381,7 +381,7 @@ def EventAddEncKey(builder, encKey):
 
 
 def AddEncKey(builder, encKey):
-    return EventAddEncKey(builder, encKey)
+    EventAddEncKey(builder, encKey)
 
 
 def EventStartEncKeyVector(builder, numElems):
@@ -397,7 +397,7 @@ def EventAddPublisher(builder, publisher):
 
 
 def AddPublisher(builder, publisher):
-    return EventAddPublisher(builder, publisher)
+    EventAddPublisher(builder, publisher)
 
 
 def EventAddPublisherAuthid(builder, publisherAuthid):
@@ -407,7 +407,7 @@ def EventAddPublisherAuthid(builder, publisherAuthid):
 
 
 def AddPublisherAuthid(builder, publisherAuthid):
-    return EventAddPublisherAuthid(builder, publisherAuthid)
+    EventAddPublisherAuthid(builder, publisherAuthid)
 
 
 def EventAddPublisherAuthrole(builder, publisherAuthrole):
@@ -417,7 +417,7 @@ def EventAddPublisherAuthrole(builder, publisherAuthrole):
 
 
 def AddPublisherAuthrole(builder, publisherAuthrole):
-    return EventAddPublisherAuthrole(builder, publisherAuthrole)
+    EventAddPublisherAuthrole(builder, publisherAuthrole)
 
 
 def EventAddTopic(builder, topic):
@@ -427,7 +427,7 @@ def EventAddTopic(builder, topic):
 
 
 def AddTopic(builder, topic):
-    return EventAddTopic(builder, topic)
+    EventAddTopic(builder, topic)
 
 
 def EventAddRetained(builder, retained):
@@ -435,7 +435,7 @@ def EventAddRetained(builder, retained):
 
 
 def AddRetained(builder, retained):
-    return EventAddRetained(builder, retained)
+    EventAddRetained(builder, retained)
 
 
 def EventAddTransactionHash(builder, transactionHash):
@@ -445,7 +445,7 @@ def EventAddTransactionHash(builder, transactionHash):
 
 
 def AddTransactionHash(builder, transactionHash):
-    return EventAddTransactionHash(builder, transactionHash)
+    EventAddTransactionHash(builder, transactionHash)
 
 
 def EventAddAcknowledge(builder, acknowledge):
@@ -453,7 +453,7 @@ def EventAddAcknowledge(builder, acknowledge):
 
 
 def AddAcknowledge(builder, acknowledge):
-    return EventAddAcknowledge(builder, acknowledge)
+    EventAddAcknowledge(builder, acknowledge)
 
 
 def EventAddForwardFor(builder, forwardFor):
@@ -463,7 +463,7 @@ def EventAddForwardFor(builder, forwardFor):
 
 
 def AddForwardFor(builder, forwardFor):
-    return EventAddForwardFor(builder, forwardFor)
+    EventAddForwardFor(builder, forwardFor)
 
 
 def EventStartForwardForVector(builder, numElems):

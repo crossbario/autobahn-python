@@ -67,7 +67,7 @@ def UnsubscribedStart(builder):
 
 
 def Start(builder):
-    return UnsubscribedStart(builder)
+    UnsubscribedStart(builder)
 
 
 def UnsubscribedAddSession(builder, session):
@@ -75,7 +75,7 @@ def UnsubscribedAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return UnsubscribedAddSession(builder, session)
+    UnsubscribedAddSession(builder, session)
 
 
 def UnsubscribedAddRequest(builder, request):
@@ -83,7 +83,7 @@ def UnsubscribedAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return UnsubscribedAddRequest(builder, request)
+    UnsubscribedAddRequest(builder, request)
 
 
 def UnsubscribedAddSubscription(builder, subscription):
@@ -91,7 +91,7 @@ def UnsubscribedAddSubscription(builder, subscription):
 
 
 def AddSubscription(builder, subscription):
-    return UnsubscribedAddSubscription(builder, subscription)
+    UnsubscribedAddSubscription(builder, subscription)
 
 
 def UnsubscribedAddReason(builder, reason):
@@ -101,7 +101,7 @@ def UnsubscribedAddReason(builder, reason):
 
 
 def AddReason(builder, reason):
-    return UnsubscribedAddReason(builder, reason)
+    UnsubscribedAddReason(builder, reason)
 
 
 def UnsubscribedEnd(builder):

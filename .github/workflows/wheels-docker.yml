@@ -1,4 +1,4 @@
-name: Build Wheels (Docker Multi-Arch)
+name: wheels-docker
 
 on:
   # Build wheels on feature branches and PRs (test only)
@@ -6,7 +6,7 @@ on:
     branches: ["**"]
   pull_request:
     branches: [master]
-  
+
   # Publish to GitHub Releases when merged to master
   # Publish to PyPI when tagged
   workflow_dispatch:
@@ -21,25 +21,27 @@ jobs:
     name: Build wheels (${{ matrix.target.name }})
     runs-on: ubuntu-latest
     container: ${{ matrix.target.base_image }}
-    
+
     strategy:
       fail-fast: false
       matrix:
         target:
-          # Debian 12 (your preference) - AMD64 only for now
-          - name: "debian12-amd64"
-            base_image: "debian:12"
-            
-          # Rocky Linux 9 (customer requirement) - AMD64 only for now  
-          - name: "rocky9-amd64"
-            base_image: "rockylinux:9"
-            
-          # Ubuntu 24.04 (dev environment) - AMD64 only for now
-          - name: "ubuntu2404-amd64"
-            base_image: "ubuntu:24.04"
-            
-          # ARM64 builds can be added later with QEMU setup
-          # GitHub Actions container: syntax doesn't support ARM64 QEMU easily
+          # manylinux_2_34 (glibc 2.34+) - PEP 600 compliant for modern Linux
+          # see: https://github.com/pypa/manylinux
+          - name: "manylinux_2_34_x86_64"
+            base_image: "quay.io/pypa/manylinux_2_34_x86_64"
+
+          # Future manylinux images can be added here:
+          # - name: "manylinux_2_34_aarch64"
+          #   base_image: "quay.io/pypa/manylinux_2_34_aarch64"
+
+          # Deactivated for now - focusing on standard manylinux wheels:
+          # - name: "debian12-amd64"
+          #   base_image: "debian:12"
+          # - name: "rocky9-amd64"
+          #   base_image: "rockylinux:9"
+          # - name: "ubuntu2404-amd64"
+          #   base_image: "ubuntu:24.04"
 
     steps:
       - name: Checkout code
@@ -47,52 +49,63 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          if command -v apt-get >/dev/null 2>&1; then
-            # Debian/Ubuntu systems
-            apt-get update
-            apt-get install -y --no-install-recommends \
-              ca-certificates \
+          # manylinux images use yum/dnf and come with many build tools pre-installed
+          if command -v yum >/dev/null 2>&1; then
+            # manylinux images (CentOS-based)
+            yum update -y
+            yum install -y \
               curl \
-              build-essential \
-              pkg-config \
-              libssl-dev \
-              libffi-dev \
-              zlib1g-dev \
-              libbz2-dev \
-              libreadline-dev \
-              libsqlite3-dev \
-              libncurses5-dev \
-              libsnappy-dev \
               git \
-              file
-          elif command -v dnf >/dev/null 2>&1; then
-            # Rocky Linux/RHEL systems  
-            dnf update -y
-            dnf groupinstall -y "Development Tools"
-            # Handle curl-minimal conflict in Rocky Linux
-            dnf install -y --allowerasing \
-              ca-certificates \
-              curl \
-              pkgconfig \
               openssl-devel \
               libffi-devel \
               zlib-devel \
               bzip2-devel \
               readline-devel \
               sqlite-devel \
-              ncurses-devel \
-              snappy-devel \
+              ncurses-devel
+            # Note: snappy-devel may not be available in manylinux base images
+            yum install -y snappy-devel || echo "snappy-devel not available, skipping"
+          elif command -v dnf >/dev/null 2>&1; then
+            # Newer manylinux images might use dnf
+            dnf update -y
+            dnf install -y \
+              curl \
               git \
-              file
+              openssl-devel \
+              libffi-devel \
+              zlib-devel \
+              bzip2-devel \
+              readline-devel \
+              sqlite-devel \
+              ncurses-devel
+            dnf install -y snappy-devel || echo "snappy-devel not available, skipping"
           fi
 
-      - name: Install Python
+      - name: Setup Python environment
         run: |
-          if command -v apt-get >/dev/null 2>&1; then
-            apt-get install -y --no-install-recommends python3 python3-pip python3-venv
-          elif command -v dnf >/dev/null 2>&1; then
-            dnf install -y python3 python3-pip
-          fi
+          # manylinux images come with multiple Python versions pre-installed in /opt/python/
+          echo "==> Available Python versions:"
+          ls -la /opt/python/*/bin/python* 2>/dev/null || echo "No /opt/python found"
+
+          # Add all Python versions to PATH for uv/just to discover
+          for pyver in /opt/python/*/bin; do
+            if [ -d "$pyver" ]; then
+              echo "Adding $pyver to PATH"
+              export PATH="$pyver:$PATH"
+            fi
+          done
+
+          # Also ensure we have a working python3 symlink
+          which python3 || ln -sf $(find /opt/python -name python3 | head -1) /usr/local/bin/python3
+
+          echo ""
+          echo "==> Current Python version:"
+          python3 --version
+          echo "==> pip version:"
+          python3 -m pip --version
+
+          # Save the updated PATH for subsequent steps
+          echo "PATH=$PATH" >> $GITHUB_ENV
 
       - name: Install Just
         run: |
@@ -102,15 +115,27 @@ jobs:
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
+          # Add to both GITHUB_PATH and current environment
           echo "/root/.cargo/bin" >> $GITHUB_PATH
+          echo "PATH=/root/.cargo/bin:$PATH" >> $GITHUB_ENV
+          export PATH="/root/.cargo/bin:$PATH"
+          uv --version
 
       - name: Install Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          # Source the Rust environment (as recommended by installer)
+          source "$HOME/.cargo/env"
+          # Add to both GITHUB_PATH and current environment
           echo "/root/.cargo/bin" >> $GITHUB_PATH
+          echo "PATH=/root/.cargo/bin:$PATH" >> $GITHUB_ENV
+          export PATH="/root/.cargo/bin:$PATH"
+          rustc --version
 
       - name: Verify toolchain
         run: |
+          # Source Rust environment and ensure PATH is set
+          source "$HOME/.cargo/env" 2>/dev/null || true
           export PATH="/root/.cargo/bin:$PATH"
           echo "==> Build environment summary:"
           echo "Container: ${{ matrix.target.base_image }}"
@@ -121,110 +146,166 @@ jobs:
           echo "GCC: $(gcc --version | head -1)"
           echo "glibc: $(ldd --version 2>/dev/null | head -1 || echo 'N/A')"
 
-      - name: Build wheels
+      - name: Build manylinux wheels with NVX native extension
+        env:
+          AUTOBAHN_USE_NVX: 1
         run: |
+          # Source Rust environment and ensure tools are in PATH
+          source "$HOME/.cargo/env" 2>/dev/null || true
           export PATH="/root/.cargo/bin:$PATH"
+
+          # Verify environment
+          echo "==> Environment verification:"
+          echo "AUTOBAHN_USE_NVX=$AUTOBAHN_USE_NVX"
+          echo "PATH=$PATH"
+          echo "Python: $(python3 --version)"
+          echo "uv: $(uv --version)"
+          echo "just: $(just --version)"
+          echo "rustc: $(rustc --version)"
+          echo "auditwheel: $(auditwheel --version || echo 'not available')"
+
+          # Build binary wheels WITH NVX acceleration for manylinux
           just build-all
+
+          command -v auditwheel >/dev/null || { echo "auditwheel missing, aborting"; exit 1; }
+          mkdir -p wheelhouse
+
+          # Convert linux_x86_64 wheels to multi-platform tag (incl. manylinux_2_34_x86_64) using auditwheel
+          echo ""
+          echo "==> Converting wheels to multi-platform tag (incl. manylinux_2_34_x86_64) format..."
+          for wheel in dist/*.whl; do
+            if [[ "$wheel" == *"linux_x86_64"* ]]; then
+              echo "Converting: $(basename $wheel)"
+
+              # show autodetected set of platform tags
+              auditwheel show "$wheel"
+
+              # fix/rename wheel based on autodetected platform tags and store in wheelhouse/
+              # -> auditwheel will encode all (!) supported tags into the wheel filename
+              # -> Python packaging ecosystem allows wheels to carry multiple platform tags
+              # -> pip will then pick the most specific tag that works for the current system
+              # -> so we do not need to manually set: --plat manylinux_2_34_x86_64 as in:
+              #     auditwheel repair "$wheel" --plat manylinux_2_34_x86_64 -w wheelhouse/
+              auditwheel repair "$wheel" -w wheelhouse/
+            else
+              echo "Copying non-linux wheel: $(basename $wheel)"
+              cp "$wheel" wheelhouse/
+            fi
+          done
+          echo "Copying source distribution"
+          cp dist/*.tar.gz wheelhouse/
+
+          echo ""
+          echo "==> Final wheel inventory after manylinux conversion:"
+          echo ""
+          ls -la wheelhouse/
+          for wheel in wheelhouse/*.whl; do
+            auditwheel show "$wheel"
+          done
+          echo ""
+          echo "    Note: auditwheel adds multiple manylinux tags into the filename."
+          echo "          This is expected and pip will resolve correctly."
+          echo "          Do NOT try to simplify by renaming."
+          echo ""
 
       - name: Generate build metadata
         run: |
-          mkdir -p dist/
-          cat > dist/build-info.txt << EOF
-          Build Information for ${{ matrix.target.name }}
-          =============================================
-          
-          Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          Container: ${{ matrix.target.base_image }}
-          Platform: AMD64
-          Build Method: GitHub Actions + Docker Container
-          
-          System Information:
-          - OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)
-          - Kernel: $(uname -r)
-          - glibc: $(ldd --version 2>/dev/null | head -1 || echo 'N/A')
-          
-          Build Tools:
-          - Just: $(just --version)
-          - uv: $(uv --version)
-          - Rust: $(rustc --version)
-          - Python: $(python3 --version)
-          - GCC: $(gcc --version | head -1)
-          EOF
+          BUILD_INFO=wheelhouse/build-info.txt
+
+          echo "manylinux Build Information for ${{ matrix.target.name }}" > $BUILD_INFO
+          echo "========================================================" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+
+          echo "Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $BUILD_INFO
+          echo "Container: ${{ matrix.target.base_image }}" >> $BUILD_INFO
+          echo "Platform: $(uname -m)" >> $BUILD_INFO
+          echo "Build Method: GitHub Actions + manylinux Docker Container" >> $BUILD_INFO
+          echo "NVX Acceleration: ENABLED (binary wheels with native extensions)" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+
+          echo "Per-Wheel ABI / Platform Tags:" >> $BUILD_INFO
+          echo "------------------------------" >> $BUILD_INFO
+          for whl in wheelhouse/*.whl; do
+            echo "- $(basename "$whl")" >> $BUILD_INFO
+            auditwheel show "$whl" | grep "platform tag" | awk -F'"' '{print "  * " $2}' >> $BUILD_INFO
+            echo "" >> $BUILD_INFO
+          done
+
+          echo "" >> $BUILD_INFO
+          echo "Global System Information:" >> $BUILD_INFO
+          echo "--------------------------" >> $BUILD_INFO
+          echo "- OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'\"' -f2 2>/dev/null || echo 'manylinux container')" >> $BUILD_INFO
+          echo "- Kernel: $(uname -r)" >> $BUILD_INFO
+          echo "- glibc: $(ldd --version 2>/dev/null | head -1 || echo 'N/A')" >> $BUILD_INFO
+          echo "- Architecture: $(uname -m)" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+
+          echo "Build Tools:" >> $BUILD_INFO
+          echo "------------" >> $BUILD_INFO
+          echo "- Just: $(just --version)" >> $BUILD_INFO
+          echo "- uv: $(uv --version)" >> $BUILD_INFO
+          echo "- Rust: $(rustc --version)" >> $BUILD_INFO
+          echo "- Python: $(python3 --version)" >> $BUILD_INFO
+          echo "- GCC: $(gcc --version | head -1)" >> $BUILD_INFO
+
+          echo ""
+          echo "==> Generated build-info.txt:"
+          cat $BUILD_INFO
 
       - name: List built artifacts
         run: |
           echo "==> Built artifacts for ${{ matrix.target.name }}:"
-          ls -la dist/ 2>/dev/null || echo "No dist/ directory found"
-          
+          ls -la wheelhouse/ 2>/dev/null || echo "No wheelhouse/ directory found"
+
           echo ""
           echo "==> Build metadata:"
-          cat dist/build-info.txt 2>/dev/null || echo "No build info found"
-          
+          cat wheelhouse/build-info.txt 2>/dev/null || echo "No build info found"
+
           echo ""
           echo "==> Wheel inventory:"
-          find dist/ -name "*.whl" -exec basename {} \; 2>/dev/null | sort || echo "No wheels found"
+          find wheelhouse/ -name "*.whl" -exec basename {} \; 2>/dev/null | sort || echo "No wheels found"
 
-      - name: Upload wheel artifacts
+      - name:
+          Upload wheels, source dist and build metadata artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.target.name }}
+          name: artifacts-${{ matrix.target.name }}
           path: |
-            dist/*.whl
-            dist/*.tar.gz
+            wheelhouse/*.whl
+            wheelhouse/*.tar.gz
+            wheelhouse/build-info.txt
           retention-days: 30
-
-      - name: Upload build metadata
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: build-info-${{ matrix.target.name }}
-          path: dist/build-info.txt
-          retention-days: 7
-          if-no-files-found: ignore
 
   publish-github-releases:
     name: Publish to GitHub Releases
     needs: build-wheels
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    
-    steps:
-      - name: Download all wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: wheels-*
-          merge-multiple: true
-          path: dist/
+    if:
+      github.ref == 'refs/heads/master' && github.event_name ==
+      'push'
 
-      - name: Download build metadata
+    steps:
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: build-info-*
-          path: build-info/
+          pattern: artifacts-*
+          merge-multiple: true
+          path: wheelhouse/
 
       - name: Analyze wheel inventory
         id: inventory
         run: |
-          echo "==> Complete wheel inventory:"
-          find dist/ -name "*.whl" | sort
-          
-          echo ""
-          echo "==> Wheels by platform:"
-          for platform in debian12 rocky9 ubuntu2404; do
-            for arch in amd64 arm64; do
-              count=$(find dist/ -name "*${platform}*${arch}*.whl" | wc -l)
-              echo "  $platform-$arch: $count wheels"
-            done
-          done
-          
+          echo "==> Complete manylinux wheel inventory:"
+          find wheelhouse/ -name "*.whl" | sort
+
           echo ""
           echo "==> Total wheel count:"
-          WHEEL_COUNT=$(find dist/ -name "*.whl" | wc -l)
+          WHEEL_COUNT=$(find wheelhouse/ -name "*.whl" | wc -l)
           echo "wheels_total=$WHEEL_COUNT" >> $GITHUB_OUTPUT
-          
+
           echo ""
           echo "==> Source distributions:"
-          find dist/ -name "*.tar.gz" | wc -l
+          find wheelhouse/ -name "*.tar.gz" | wc -l
 
       - name: Create GitHub Release
         env:
@@ -232,91 +313,87 @@ jobs:
         run: |
           # Generate release tag based on timestamp and commit
           RELEASE_TAG="wheels-docker-$(date +'%Y%m%d')-${GITHUB_SHA::8}"
-          
+
           # Create comprehensive release notes
           cat > release_notes.md << 'EOF'
-          # Multi-Architecture Python Wheels
-          
-          Built using Docker QEMU emulation for precise ABI control and broad compatibility.
-          
-          ## Target Environments
-          
-          | Distribution | glibc Version | Architecture | Use Case |
-          |--------------|---------------|--------------|----------|
-          | **Debian 12** | 2.36 | AMD64, ARM64 | Modern Linux systems |
-          | **Rocky Linux 9** | 2.34 | AMD64, ARM64 | Enterprise RHEL environments |
-          | **Ubuntu 24.04** | 2.39 | AMD64, ARM64 | Latest Ubuntu LTS |
-          
+          # manylinux Binary Wheels
+
+          Built using official PyPA manylinux Docker images for maximum Linux compatibility.
+
+          ## Target Compatibility
+
+          | manylinux Tag | glibc Version | Architecture | Compatibility |
+          |---------------|---------------|--------------|---------------|
+          | **manylinux_2_34** | 2.34+ | x86_64 | RHEL 9+, Ubuntu 22.04+, Debian 12+ |
+
           ## Python Support
-          
+
           - **CPython**: 3.11, 3.12, 3.13, 3.14
           - **PyPy**: 3.11
-          - **Extensions**: Native CFFI modules included
-          
+          - **Extensions**: Native CFFI modules with NVX acceleration included
+
           ## Installation
-          
+
           ### Option 1: Auto-detect (pip will choose best wheel)
           ```bash
           pip install autobahn[all]
           ```
-          
+
           ### Option 2: Specific wheel download
           ```bash
           # Download the wheel for your platform
           wget https://github.com/crossbario/autobahn-python/releases/download/${RELEASE_TAG}/autobahn-*-linux_*.whl
           pip install autobahn-*-linux_*.whl
           ```
-          
+
           ## Build Information
-          
+
           - **Build Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
           - **Commit**: ${GITHUB_SHA::8}
           - **Total Wheels**: ${{ steps.inventory.outputs.wheels_total }}
           - **Build Method**: Docker + QEMU emulation
           - **ABI**: Precise glibc targeting per distribution
-          
+
           EOF
-          
+
           # Create release
           gh release create "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Multi-Arch Wheels - $(date +'%Y-%m-%d')" \
             --notes-file release_notes.md \
-            dist/*.whl dist/*.tar.gz
+            wheelhouse/*.whl wheelhouse/*.tar.gz wheelhouse/build-info.txt
 
   publish-pypi:
     name: Publish to PyPI
     needs: build-wheels
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    environment: 
+    environment:
       name: pypi
       url: https://pypi.org/p/autobahn
     permissions:
-      id-token: write  # For trusted publishing
+      id-token: write # For trusted publishing
 
     steps:
-      - name: Download all wheel artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: wheels-*
+          pattern: artifacts-*
           merge-multiple: true
-          path: dist/
+          path: wheelhouse/
 
       - name: Prepare PyPI upload
         run: |
           echo "==> Preparing PyPI upload..."
-          
-          # Remove duplicate source distributions (keep only one)
-          find dist/ -name "*.tar.gz" | sort | tail -n +2 | xargs rm -f || true
-          
+
           echo "==> Final PyPI artifact list:"
-          ls -la dist/
-          
+          ls -la wheelhouse/
+
           echo ""
           echo "==> Upload summary:"
-          echo "Wheels: $(find dist/ -name "*.whl" | wc -l)"
-          echo "Source: $(find dist/ -name "*.tar.gz" | wc -l)"
+          echo "Wheels: $(find wheelhouse/ -name "*.whl" | wc -l)"
+          echo "Source Dist: $(find wheelhouse/ -name "*.tar.gz" | wc -l)"
+          echo "Build Info: $(find wheelhouse/ -name "build-info.txt" | wc -l)"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

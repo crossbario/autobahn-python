@@ -60,7 +60,7 @@ def PublishedStart(builder):
 
 
 def Start(builder):
-    return PublishedStart(builder)
+    PublishedStart(builder)
 
 
 def PublishedAddSession(builder, session):
@@ -68,7 +68,7 @@ def PublishedAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return PublishedAddSession(builder, session)
+    PublishedAddSession(builder, session)
 
 
 def PublishedAddRequest(builder, request):
@@ -76,7 +76,7 @@ def PublishedAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return PublishedAddRequest(builder, request)
+    PublishedAddRequest(builder, request)
 
 
 def PublishedAddPublication(builder, publication):
@@ -84,7 +84,7 @@ def PublishedAddPublication(builder, publication):
 
 
 def AddPublication(builder, publication):
-    return PublishedAddPublication(builder, publication)
+    PublishedAddPublication(builder, publication)
 
 
 def PublishedEnd(builder):

@@ -33,7 +33,7 @@ def AuthCryptosignWelcomeStart(builder):
 
 
 def Start(builder):
-    return AuthCryptosignWelcomeStart(builder)
+    AuthCryptosignWelcomeStart(builder)
 
 
 def AuthCryptosignWelcomeEnd(builder):

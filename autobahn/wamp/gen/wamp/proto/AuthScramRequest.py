@@ -47,7 +47,7 @@ def AuthScramRequestStart(builder):
 
 
 def Start(builder):
-    return AuthScramRequestStart(builder)
+    AuthScramRequestStart(builder)
 
 
 def AuthScramRequestAddNonce(builder, nonce):
@@ -57,7 +57,7 @@ def AuthScramRequestAddNonce(builder, nonce):
 
 
 def AddNonce(builder, nonce):
-    return AuthScramRequestAddNonce(builder, nonce)
+    AuthScramRequestAddNonce(builder, nonce)
 
 
 def AuthScramRequestAddChannelBinding(builder, channelBinding):
@@ -65,7 +65,7 @@ def AuthScramRequestAddChannelBinding(builder, channelBinding):
 
 
 def AddChannelBinding(builder, channelBinding):
-    return AuthScramRequestAddChannelBinding(builder, channelBinding)
+    AuthScramRequestAddChannelBinding(builder, channelBinding)
 
 
 def AuthScramRequestEnd(builder):

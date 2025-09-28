@@ -90,7 +90,7 @@ def RegisterStart(builder):
 
 
 def Start(builder):
-    return RegisterStart(builder)
+    RegisterStart(builder)
 
 
 def RegisterAddSession(builder, session):
@@ -98,7 +98,7 @@ def RegisterAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return RegisterAddSession(builder, session)
+    RegisterAddSession(builder, session)
 
 
 def RegisterAddRequest(builder, request):
@@ -106,7 +106,7 @@ def RegisterAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return RegisterAddRequest(builder, request)
+    RegisterAddRequest(builder, request)
 
 
 def RegisterAddProcedure(builder, procedure):
@@ -116,7 +116,7 @@ def RegisterAddProcedure(builder, procedure):
 
 
 def AddProcedure(builder, procedure):
-    return RegisterAddProcedure(builder, procedure)
+    RegisterAddProcedure(builder, procedure)
 
 
 def RegisterAddMatch(builder, match):
@@ -124,7 +124,7 @@ def RegisterAddMatch(builder, match):
 
 
 def AddMatch(builder, match):
-    return RegisterAddMatch(builder, match)
+    RegisterAddMatch(builder, match)
 
 
 def RegisterAddInvoke(builder, invoke):
@@ -132,7 +132,7 @@ def RegisterAddInvoke(builder, invoke):
 
 
 def AddInvoke(builder, invoke):
-    return RegisterAddInvoke(builder, invoke)
+    RegisterAddInvoke(builder, invoke)
 
 
 def RegisterAddConcurrency(builder, concurrency):
@@ -140,7 +140,7 @@ def RegisterAddConcurrency(builder, concurrency):
 
 
 def AddConcurrency(builder, concurrency):
-    return RegisterAddConcurrency(builder, concurrency)
+    RegisterAddConcurrency(builder, concurrency)
 
 
 def RegisterAddForceReregister(builder, forceReregister):
@@ -148,7 +148,7 @@ def RegisterAddForceReregister(builder, forceReregister):
 
 
 def AddForceReregister(builder, forceReregister):
-    return RegisterAddForceReregister(builder, forceReregister)
+    RegisterAddForceReregister(builder, forceReregister)
 
 
 def RegisterEnd(builder):

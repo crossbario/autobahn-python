@@ -47,7 +47,7 @@ def AuthCryptosignRequestStart(builder):
 
 
 def Start(builder):
-    return AuthCryptosignRequestStart(builder)
+    AuthCryptosignRequestStart(builder)
 
 
 def AuthCryptosignRequestAddPubkey(builder, pubkey):
@@ -57,7 +57,7 @@ def AuthCryptosignRequestAddPubkey(builder, pubkey):
 
 
 def AddPubkey(builder, pubkey):
-    return AuthCryptosignRequestAddPubkey(builder, pubkey)
+    AuthCryptosignRequestAddPubkey(builder, pubkey)
 
 
 def AuthCryptosignRequestAddChannelBinding(builder, channelBinding):
@@ -65,7 +65,7 @@ def AuthCryptosignRequestAddChannelBinding(builder, channelBinding):
 
 
 def AddChannelBinding(builder, channelBinding):
-    return AuthCryptosignRequestAddChannelBinding(builder, channelBinding)
+    AuthCryptosignRequestAddChannelBinding(builder, channelBinding)
 
 
 def AuthCryptosignRequestEnd(builder):

@@ -214,7 +214,7 @@ def InvocationStart(builder):
 
 
 def Start(builder):
-    return InvocationStart(builder)
+    InvocationStart(builder)
 
 
 def InvocationAddSession(builder, session):
@@ -222,7 +222,7 @@ def InvocationAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return InvocationAddSession(builder, session)
+    InvocationAddSession(builder, session)
 
 
 def InvocationAddRequest(builder, request):
@@ -230,7 +230,7 @@ def InvocationAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return InvocationAddRequest(builder, request)
+    InvocationAddRequest(builder, request)
 
 
 def InvocationAddRegistration(builder, registration):
@@ -238,7 +238,7 @@ def InvocationAddRegistration(builder, registration):
 
 
 def AddRegistration(builder, registration):
-    return InvocationAddRegistration(builder, registration)
+    InvocationAddRegistration(builder, registration)
 
 
 def InvocationAddPayload(builder, payload):
@@ -248,7 +248,7 @@ def InvocationAddPayload(builder, payload):
 
 
 def AddPayload(builder, payload):
-    return InvocationAddPayload(builder, payload)
+    InvocationAddPayload(builder, payload)
 
 
 def InvocationStartPayloadVector(builder, numElems):
@@ -264,7 +264,7 @@ def InvocationAddEncAlgo(builder, encAlgo):
 
 
 def AddEncAlgo(builder, encAlgo):
-    return InvocationAddEncAlgo(builder, encAlgo)
+    InvocationAddEncAlgo(builder, encAlgo)
 
 
 def InvocationAddEncSerializer(builder, encSerializer):
@@ -272,7 +272,7 @@ def InvocationAddEncSerializer(builder, encSerializer):
 
 
 def AddEncSerializer(builder, encSerializer):
-    return InvocationAddEncSerializer(builder, encSerializer)
+    InvocationAddEncSerializer(builder, encSerializer)
 
 
 def InvocationAddEncKey(builder, encKey):
@@ -282,7 +282,7 @@ def InvocationAddEncKey(builder, encKey):
 
 
 def AddEncKey(builder, encKey):
-    return InvocationAddEncKey(builder, encKey)
+    InvocationAddEncKey(builder, encKey)
 
 
 def InvocationStartEncKeyVector(builder, numElems):
@@ -300,7 +300,7 @@ def InvocationAddProcedure(builder, procedure):
 
 
 def AddProcedure(builder, procedure):
-    return InvocationAddProcedure(builder, procedure)
+    InvocationAddProcedure(builder, procedure)
 
 
 def InvocationAddTimeout(builder, timeout):
@@ -308,7 +308,7 @@ def InvocationAddTimeout(builder, timeout):
 
 
 def AddTimeout(builder, timeout):
-    return InvocationAddTimeout(builder, timeout)
+    InvocationAddTimeout(builder, timeout)
 
 
 def InvocationAddReceiveProgress(builder, receiveProgress):
@@ -316,7 +316,7 @@ def InvocationAddReceiveProgress(builder, receiveProgress):
 
 
 def AddReceiveProgress(builder, receiveProgress):
-    return InvocationAddReceiveProgress(builder, receiveProgress)
+    InvocationAddReceiveProgress(builder, receiveProgress)
 
 
 def InvocationAddTransactionHash(builder, transactionHash):
@@ -326,7 +326,7 @@ def InvocationAddTransactionHash(builder, transactionHash):
 
 
 def AddTransactionHash(builder, transactionHash):
-    return InvocationAddTransactionHash(builder, transactionHash)
+    InvocationAddTransactionHash(builder, transactionHash)
 
 
 def InvocationAddCaller(builder, caller):
@@ -334,7 +334,7 @@ def InvocationAddCaller(builder, caller):
 
 
 def AddCaller(builder, caller):
-    return InvocationAddCaller(builder, caller)
+    InvocationAddCaller(builder, caller)
 
 
 def InvocationAddCallerAuthid(builder, callerAuthid):
@@ -344,7 +344,7 @@ def InvocationAddCallerAuthid(builder, callerAuthid):
 
 
 def AddCallerAuthid(builder, callerAuthid):
-    return InvocationAddCallerAuthid(builder, callerAuthid)
+    InvocationAddCallerAuthid(builder, callerAuthid)
 
 
 def InvocationAddCallerAuthrole(builder, callerAuthrole):
@@ -354,7 +354,7 @@ def InvocationAddCallerAuthrole(builder, callerAuthrole):
 
 
 def AddCallerAuthrole(builder, callerAuthrole):
-    return InvocationAddCallerAuthrole(builder, callerAuthrole)
+    InvocationAddCallerAuthrole(builder, callerAuthrole)
 
 
 def InvocationAddForwardFor(builder, forwardFor):
@@ -364,7 +364,7 @@ def InvocationAddForwardFor(builder, forwardFor):
 
 
 def AddForwardFor(builder, forwardFor):
-    return InvocationAddForwardFor(builder, forwardFor)
+    InvocationAddForwardFor(builder, forwardFor)
 
 
 def InvocationStartForwardForVector(builder, numElems):

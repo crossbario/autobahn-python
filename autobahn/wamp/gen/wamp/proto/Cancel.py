@@ -83,7 +83,7 @@ def CancelStart(builder):
 
 
 def Start(builder):
-    return CancelStart(builder)
+    CancelStart(builder)
 
 
 def CancelAddSession(builder, session):
@@ -91,7 +91,7 @@ def CancelAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return CancelAddSession(builder, session)
+    CancelAddSession(builder, session)
 
 
 def CancelAddRequest(builder, request):
@@ -99,7 +99,7 @@ def CancelAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return CancelAddRequest(builder, request)
+    CancelAddRequest(builder, request)
 
 
 def CancelAddMode(builder, mode):
@@ -107,7 +107,7 @@ def CancelAddMode(builder, mode):
 
 
 def AddMode(builder, mode):
-    return CancelAddMode(builder, mode)
+    CancelAddMode(builder, mode)
 
 
 def CancelAddForwardFor(builder, forwardFor):
@@ -117,7 +117,7 @@ def CancelAddForwardFor(builder, forwardFor):
 
 
 def AddForwardFor(builder, forwardFor):
-    return CancelAddForwardFor(builder, forwardFor)
+    CancelAddForwardFor(builder, forwardFor)
 
 
 def CancelStartForwardForVector(builder, numElems):

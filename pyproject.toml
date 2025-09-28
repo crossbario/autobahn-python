@@ -38,7 +38,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "txaio>=25.6.1",
+    "txaio>=25.9.2",
     "cryptography>=3.4.6",
     "hyperlink>=21.0.0",
     "importlib-resources>=5.0.0; python_version < '3.10'",
@@ -97,6 +97,7 @@ nvx = [
 
 # Development dependencies
 dev = [
+    "auditwheel>=5.0.0; sys_platform == 'linux'",
     "backports.tempfile>=1.0",
     "build>=1.0.0",
     "bumpversion>=0.5.3",
@@ -125,7 +126,7 @@ dev = [
     "tox>=4.2.8",
     "twine>=3.3.0",
     "twisted>=22.10.0",
-    "txaio>=20.4.1",
+    "txaio>=25.9.2",
     "watchdog>=0.8.3",
     "wheel>=0.36.2",
     "yapf==0.29.0",

@@ -209,6 +209,48 @@ application component, you need some lines of
 and a
 [WAMP Router](https://autobahn.readthedocs.io/en/latest/wamp/programming.html#running-a-wamp-router).
 
+## Package Releases
+
+Autobahn|Python provides comprehensive binary wheel coverage for all major platforms and Python implementations.
+
+### Generic
+
+- **Source distribution**: `autobahn-25.9.1.tar.gz`
+- **Pure Python 3 wheel**: `autobahn-25.9.1-py3-none-any.whl`
+
+> **Note**: The pure Python wheel cannot include NVX (Native Vector Extensions) optimizations and will fall back to pure Python implementations. This provides maximum compatibility but slower performance compared to platform-specific wheels with native CFFI extensions.
+
+### Linux
+
+Available for x86_64 architecture with native CFFI extensions:
+
+- `autobahn-25.9.1-cp311-cp311-linux_x86_64.whl`
+- `autobahn-25.9.1-cp312-cp312-linux_x86_64.whl`
+- `autobahn-25.9.1-cp313-cp313-linux_x86_64.whl`
+- `autobahn-25.9.1-cp314-cp314-linux_x86_64.whl`
+- `autobahn-25.9.1-pp311-pypy311_pp73-linux_x86_64.whl`
+
+### macOS
+
+Available for Apple Silicon (ARM64) architecture:
+
+- `autobahn-25.9.1-cp312-cp312-macosx_15_0_arm64.whl`
+- `autobahn-25.9.1-cp313-cp313-macosx_15_0_arm64.whl`
+- `autobahn-25.9.1-cp314-cp314-macosx_11_0_arm64.whl`
+- `autobahn-25.9.1-pp311-pypy311_pp73-macosx_11_0_arm64.whl`
+
+### Windows
+
+Available for x86_64 (AMD64) architecture:
+
+- `autobahn-25.9.1-cp311-cp311-win_amd64.whl`
+- `autobahn-25.9.1-cp312-cp312-win_amd64.whl`
+- `autobahn-25.9.1-cp313-cp313-win_amd64.whl`
+- `autobahn-25.9.1-cp314-cp314-win_amd64.whl`
+- `autobahn-25.9.1-pp311-pypy311_pp73-win_amd64.whl`
+
+All wheels include native CFFI extensions for optimal performance and are available from [PyPI](https://pypi.org/project/autobahn/) and [GitHub Releases](https://github.com/crossbario/autobahn-python/releases).
+
 ## Extensions
 
 ### Networking framework

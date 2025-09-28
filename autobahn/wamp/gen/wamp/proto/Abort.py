@@ -56,7 +56,7 @@ def AbortStart(builder):
 
 
 def Start(builder):
-    return AbortStart(builder)
+    AbortStart(builder)
 
 
 def AbortAddSession(builder, session):
@@ -64,7 +64,7 @@ def AbortAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return AbortAddSession(builder, session)
+    AbortAddSession(builder, session)
 
 
 def AbortAddReason(builder, reason):
@@ -74,7 +74,7 @@ def AbortAddReason(builder, reason):
 
 
 def AddReason(builder, reason):
-    return AbortAddReason(builder, reason)
+    AbortAddReason(builder, reason)
 
 
 def AbortAddMessage(builder, message):
@@ -84,7 +84,7 @@ def AbortAddMessage(builder, message):
 
 
 def AddMessage(builder, message):
-    return AbortAddMessage(builder, message)
+    AbortAddMessage(builder, message)
 
 
 def AbortEnd(builder):

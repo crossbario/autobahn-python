@@ -142,7 +142,7 @@ def HelloStart(builder):
 
 
 def Start(builder):
-    return HelloStart(builder)
+    HelloStart(builder)
 
 
 def HelloAddSession(builder, session):
@@ -150,7 +150,7 @@ def HelloAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return HelloAddSession(builder, session)
+    HelloAddSession(builder, session)
 
 
 def HelloAddRoles(builder, roles):
@@ -160,7 +160,7 @@ def HelloAddRoles(builder, roles):
 
 
 def AddRoles(builder, roles):
-    return HelloAddRoles(builder, roles)
+    HelloAddRoles(builder, roles)
 
 
 def HelloAddRealm(builder, realm):
@@ -170,7 +170,7 @@ def HelloAddRealm(builder, realm):
 
 
 def AddRealm(builder, realm):
-    return HelloAddRealm(builder, realm)
+    HelloAddRealm(builder, realm)
 
 
 def HelloAddAuthmethods(builder, authmethods):
@@ -180,7 +180,7 @@ def HelloAddAuthmethods(builder, authmethods):
 
 
 def AddAuthmethods(builder, authmethods):
-    return HelloAddAuthmethods(builder, authmethods)
+    HelloAddAuthmethods(builder, authmethods)
 
 
 def HelloStartAuthmethodsVector(builder, numElems):
@@ -198,7 +198,7 @@ def HelloAddAuthid(builder, authid):
 
 
 def AddAuthid(builder, authid):
-    return HelloAddAuthid(builder, authid)
+    HelloAddAuthid(builder, authid)
 
 
 def HelloAddAuthrole(builder, authrole):
@@ -208,7 +208,7 @@ def HelloAddAuthrole(builder, authrole):
 
 
 def AddAuthrole(builder, authrole):
-    return HelloAddAuthrole(builder, authrole)
+    HelloAddAuthrole(builder, authrole)
 
 
 def HelloAddAuthextra(builder, authextra):
@@ -218,7 +218,7 @@ def HelloAddAuthextra(builder, authextra):
 
 
 def AddAuthextra(builder, authextra):
-    return HelloAddAuthextra(builder, authextra)
+    HelloAddAuthextra(builder, authextra)
 
 
 def HelloAddResumable(builder, resumable):
@@ -226,7 +226,7 @@ def HelloAddResumable(builder, resumable):
 
 
 def AddResumable(builder, resumable):
-    return HelloAddResumable(builder, resumable)
+    HelloAddResumable(builder, resumable)
 
 
 def HelloAddResumeSession(builder, resumeSession):
@@ -234,7 +234,7 @@ def HelloAddResumeSession(builder, resumeSession):
 
 
 def AddResumeSession(builder, resumeSession):
-    return HelloAddResumeSession(builder, resumeSession)
+    HelloAddResumeSession(builder, resumeSession)
 
 
 def HelloAddResumeToken(builder, resumeToken):
@@ -244,7 +244,7 @@ def HelloAddResumeToken(builder, resumeToken):
 
 
 def AddResumeToken(builder, resumeToken):
-    return HelloAddResumeToken(builder, resumeToken)
+    HelloAddResumeToken(builder, resumeToken)
 
 
 def HelloEnd(builder):

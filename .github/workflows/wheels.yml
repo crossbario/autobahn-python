@@ -19,36 +19,84 @@ jobs:
   build-wheels:
     name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
-
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Linux x86-64 (always enabled)
-          - os: ubuntu-24.04
-            arch: x86-64
+          # ===========================================================
+          # ⚠️ IMPORTANT NOTES ABOUT "arch" IN GITHUB ACTIONS ⚠️
+          #
+          # - GitHub Actions DOES NOT respect `arch:` for runner selection.
+          # - The *only* thing that decides which CPU architecture you get
+          #   is the `runs-on:` label (e.g. ubuntu-24.04 vs ubuntu-24.04-arm64).
+          # - Any `arch:` key you see in a matrix is just *your own metadata*.
+          #   It has NO effect on which runner is provisioned. ZERO. ZILCH.
+          # - This is confusing as hell, because many people expect `arch:`
+          #   to actually request AMD64 vs ARM64, but GitHub silently ignores it.
+          #
+          # So: we put `arch:` in here purely for naming artifacts or using
+          # conditional logic in steps. But the "real" architecture is
+          # locked in by the value of `runs-on: ${{ matrix.os }}` below.
+          #
+          # ===========================================================
+
+          # ===========================================================
+          # 🤦‍♂️IMPORTANT NOTES ABOUT GITHUB ACTIONS RUNNER AVAILABILITY PAR 🤦‍♂️
+          #
+          # I. GitHub's runner availability is... "special":
+          #
+          # ✅ ALWAYS AVAILABLE (Fast, < 30 seconds):
+          #   - ubuntu-* (x86_64)     → Abundant, instant
+          #   - windows-* (x86_64)    → Reliable, quick
+          #   - macos-15 (ARM64)      → Apple Silicon, readily available
+          #
+          # 🕐 "PLEASE WAIT FOREVER" ZONE (Often > 1 hour waits):
+          #   - ubuntu-*-arm64        → Limited pool, beta status
+          #   - macos-12/13 (Intel)   → Legacy hardware, being phased out
+          #
+          # WHY THIS HAPPENS:
+          # 1. GitHub prioritizes current hardware (ARM64 macOS > Intel macOS)
+          # 2. ARM64 Linux runners are still beta/limited capacity
+          # 3. Intel Macs are being phased out of GitHub's fleet
+          #
+          # II. There is no built-in way in Actions to auto-cancel a job if it
+          # stays queued too long waiting for a specific runner label.
+          #
+          #   “Cancel this job if no runner has picked it up after 2 minutes.”
+          #
+          # This is another of those “WTF” gaps in Actions.
+          # ===========================================================
+
+          # --- Linux ---
+          - os: ubuntu-24.04 # ✅ GitHub-hosted Linux x86_64 (most common, always fast)
             platform: linux
+            arch: x86_64
 
-          # macOS x86-64 (always enabled)
-          - os: macos-15
-            arch: x86-64
+          # --- macOS ---
+          - os: macos-15 # ✅ GitHub-hosted macOS Apple Silicon (current Macs, fast)
             platform: macos
+            arch: arm64
 
-          - os: windows-2022
-            arch: x86-64
+          # --- Windows ---
+          - os: windows-2022 # ✅ GitHub-hosted Windows x86_64 (mostly fast)
             platform: windows
+            arch: x86_64
 
-          # ARM64 builds (optional - only if runners available)
-          # Currently disabled due to runner availability issues
-          # Uncomment when GitHub ARM64 runner pool improves
-          # - os: ubuntu-22.04-arm64  # Use older OS for better availability
-          #   arch: aarch64
+          # --- Linux ---
+          # - os: ubuntu-24.04-arm64 # 🕐 Linux ARM64 (servers/edge, often waits forever)
           #   platform: linux
-          #   continue-on-error: true
-          # - os: macos-14-arm64      # Use older OS for better availability
-          #   arch: aarch64
+          #   arch: arm64
+
+          # --- macOS ---
+          # - os: macos-12 # 🕐 Intel macOS (legacy users, increasingly scarce, often waits forever)
           #   platform: macos
-          #   continue-on-error: true
+          #   arch: x86_64
+
+          # --- Windows ---
+          # ⚠️ GitHub does NOT provide Windows ARM64 hosted runners.
+          #    If you want Windows ARM64 builds, you must either:
+          #      - run a self-hosted Windows ARM64 runner, OR
+          #      - cross-compile from AMD64 to ARM64 inside the workflow.
 
     steps:
       - name: Checkout code
@@ -115,14 +163,29 @@ jobs:
             uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-
             uv-cache-${{ matrix.platform }}-
 
-      - name: Build all wheels (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: just build-all
+      - name: Build pure Python wheels (Linux only)
+        if: matrix.platform == 'linux'
+        run: |
+          # Build pure Python wheels WITHOUT NVX acceleration
+          # This provides maximum compatibility across Linux distributions
+          export AUTOBAHN_USE_NVX=0
+          just build-all
         shell: bash
 
-      - name: Build all wheels (Windows)
-        if: runner.os == 'Windows'
-        run: just build-all
+      - name: Build binary wheels with NVX (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          # Build binary wheels WITH NVX acceleration for macOS
+          export AUTOBAHN_USE_NVX=1
+          just build-all
+        shell: bash
+
+      - name: Build binary wheels with NVX (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          # Build binary wheels WITH NVX acceleration for Windows
+          $env:AUTOBAHN_USE_NVX = "1"
+          just build-all
         shell: pwsh
 
       - name: List built artifacts (Linux/macOS)
@@ -146,20 +209,45 @@ jobs:
           path: dist/*.whl
           retention-days: 30
 
-      - name: Upload source distribution (Linux x86-64 only)
+      - name: Verify wheels built without NVX (Linux x86_64 only)
         if:
-          matrix.os == 'ubuntu-24.04' && matrix.arch == 'x86-64'
+          matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          # Verify that wheels were built without NVX acceleration
+          echo "==> Wheels built without NVX (should be pure Python or at least NVX-free):"
+          ls -la dist/*.whl || echo "No wheels found"
+          echo ""
+          echo "==> Source distribution:"
+          ls -la dist/*.tar.gz || echo "No source dist found"
+          echo ""
+          echo "==> Wheel count: $(ls dist/*.whl 2>/dev/null | wc -l)"
+        shell: bash
+
+      - name: Upload source distribution (Linux x86_64 only)
+        if:
+          matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: source-distribution
           path: dist/*.tar.gz
           retention-days: 30
 
+      - name: Upload Linux wheels without NVX (Linux x86_64 only)
+        if:
+          matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-wheels-no-nvx
+          path: dist/*.whl
+          retention-days: 30
+
   publish-github-releases:
     name: Publish to GitHub Releases
     needs: build-wheels
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if:
+      github.ref == 'refs/heads/master' && github.event_name ==
+      'push'
 
     steps:
       - name: Download all wheel artifacts
@@ -175,31 +263,41 @@ jobs:
           name: source-distribution
           path: dist/
 
+      - name: Download Linux wheels without NVX
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-wheels-no-nvx
+          path: dist/
+
       - name: List all artifacts
         run: |
           echo "All built artifacts:"
           ls -la dist/
           echo ""
-          echo "Wheel count: $(ls dist/*.whl | wc -l)"
-          echo "Source distributions: $(ls dist/*.tar.gz | wc -l)"
+          echo "Binary wheels (macOS/Windows): $(ls dist/*macos*.whl dist/*win*.whl 2>/dev/null | wc -l)"
+          echo "Linux wheels (no NVX): $(ls dist/*linux*.whl 2>/dev/null | wc -l)"
+          echo "Source distributions: $(ls dist/*.tar.gz 2>/dev/null | wc -l)"
 
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Generate release tag based on timestamp and commit
-          RELEASE_TAG="wheels-$(date +'%Y%m%d')-${GITHUB_SHA::8}"
+          RELEASE_TAG="wheels-$(date +'%Y%m%d')-${{ github.sha }}"
+
+          # Delete existing release if it exists (ignore errors)
+          gh release delete "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --yes || true
 
           # Create release
           gh release create "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "Wheels Build - $(date +'%Y-%m-%d')" \
-            --notes "Automated wheel build from commit ${GITHUB_SHA::8}
+            --notes "Automated wheel build from commit ${{ github.sha }}
 
           ## Included Platforms
-          - Linux (x86-64, ARM64)
-          - macOS (x86-64, ARM64)
-          - Windows (x86-64)
+          - Linux (x86_64, ARM64)
+          - macOS (x86_64 Intel, ARM64 Apple Silicon)
+          - Windows (x86_64)
 
           ## Python Versions
           - CPython 3.11, 3.12, 3.13, 3.14
@@ -216,7 +314,7 @@ jobs:
     name: Publish to PyPI
     needs: build-wheels
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref_type == 'tag'
     environment:
       name: pypi
       url: https://pypi.org/p/autobahn
@@ -224,11 +322,16 @@ jobs:
       id-token: write # For trusted publishing
 
     steps:
-      - name: Download all wheel artifacts
+      - name: Download macOS wheels only
         uses: actions/download-artifact@v4
         with:
-          pattern: wheels-*
-          merge-multiple: true
+          name: wheels-macos-arm64
+          path: dist/
+
+      - name: Download Windows wheels only
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-x86_64
           path: dist/
 
       - name: Download source distribution
@@ -237,12 +340,26 @@ jobs:
           name: source-distribution
           path: dist/
 
-      - name: List artifacts for PyPI
+      - name: Download Linux wheels without NVX
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-wheels-no-nvx
+          path: dist/
+
+      - name: List artifacts for PyPI (selective publishing)
         run: |
-          echo "Publishing to PyPI:"
+          echo "Publishing to PyPI (selective - excludes Linux binary wheels):"
           ls -la dist/
           echo ""
-          echo "Total artifacts: $(ls dist/* | wc -l)"
+          echo "macOS wheels: $(ls dist/*macos*.whl 2>/dev/null | wc -l)"
+          echo "Windows wheels: $(ls dist/*win*.whl 2>/dev/null | wc -l)"
+          echo "Linux wheels (fallback, no NVX): $(ls dist/*linux*.whl 2>/dev/null | wc -l)"
+          echo "Source distributions: $(ls dist/*.tar.gz 2>/dev/null | wc -l)"
+          echo ""
+          echo "Total PyPI artifacts: $(ls dist/* | wc -l)"
+          echo ""
+          echo "⚠️  NOTE: Linux binary wheels are excluded from PyPI publishing"
+          echo "   but are available from GitHub Releases."
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -250,3 +367,26 @@ jobs:
           # Uses trusted publishing - no API token needed
           # Configure at: https://pypi.org/manage/account/publishing/
           verbose: true
+
+  publish-rtd:
+    name: Publish docs to RTD
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger RTD build
+        env:
+          RTD_TOKEN: ${{ secrets.RTD_TOKEN }}
+        run: |
+          if [ -n "$RTD_TOKEN" ]; then
+            echo "Triggering Read the Docs build for autobahn..."
+            curl -X POST \
+              -H "Authorization: Token $RTD_TOKEN" \
+              "https://readthedocs.org/api/v3/projects/autobahn/versions/latest/builds/"
+          else
+            echo "RTD_TOKEN not configured, skipping RTD build trigger"
+          fi

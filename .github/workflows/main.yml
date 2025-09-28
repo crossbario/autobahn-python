@@ -50,15 +50,28 @@ jobs:
           just create cpy314
           just install-tools cpy314
 
-      - name: Code formatting check
+      - name: Code formatting / linting (via ruff)
         run: just check-format cpy314
 
-      - name: Flake8 linting
-        run: just flake8 cpy314
-
       # FIXME: Found 239 errors in 45 files (checked 163 source files)
-      # - name: Type checking with mypy
+      # - name: Code static typing (via mypy)
       #   run: just check-typing cpy314
+
+      - name: Code test coverage (Combined Twisted + asyncio)
+        run: just check-coverage-combined cpy314
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-combined
+          path: docs/_build/html/coverage-combined/
+          retention-days: 14
+
+      - name: Unit test - Twisted / trial
+        run: just test-twisted cpy314
+
+      - name: Unit test - asyncio / pytest
+        run: just test-asyncio cpy314
 
   documentation:
     name: Documentation Build
@@ -220,11 +233,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
           echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Install uv
+      - name: Install uv (Astral)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           source $HOME/.cargo/env
@@ -232,8 +249,22 @@ jobs:
 
       - name: Install FlatBuffers compiler
         run: |
+          # Install exact same version as used in development (v25.9.23)
+          FLATC_VERSION="25.9.23"
+          FLATC_URL="https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/Linux.flatc.binary.g++-13.zip"
+          TEMP_DIR=$(mktemp -d)
+          
+          echo "==> Installing FlatBuffers compiler v${FLATC_VERSION}..."
+          cd "${TEMP_DIR}"
+          curl -L -o flatc.zip "${FLATC_URL}"
+          unzip flatc.zip
+          sudo mv flatc /usr/local/bin/flatc
+          sudo chmod +x /usr/local/bin/flatc
+          rm -rf "${TEMP_DIR}"
+          
+          # Install cloc for code statistics
           sudo apt-get update
-          sudo apt-get install -y flatbuffers-compiler
+          sudo apt-get install -y cloc
 
       - name: Verify toolchain installation
         run: |
@@ -253,10 +284,51 @@ jobs:
             uv-cache-ubuntu-fbs-
 
       - name: Create Python environment
-        run: just create ${{ matrix.python-env }}
+        run: |
+          just create ${{ matrix.python-env }}
+          just install-tools ${{ matrix.python-env }}
 
-      - name: Build FlatBuffers schema
+      - name: Store original generated files checksum
+        run: |
+          echo "==> Computing checksums of committed FlatBuffers files..."
+          find autobahn/wamp/gen/ -name "*.py" -o -name "*.bfbs" | sort | xargs sha256sum > /tmp/original-checksums.txt
+          echo "Found $(wc -l < /tmp/original-checksums.txt) committed generated files"
+
+      - name: Build FlatBuffers binary schema & Python wrappers
         run: just build-fbs
+
+      - name: List FlatBuffers artifacts
+        run: |
+          flatc --version
+          echo "Generated FlatBuffers binary schema & Python wrappers:"
+          echo "======================================================"
+          cloc autobahn/wamp/gen/
+          echo ""
+          ls -la autobahn/wamp/gen/schema/
+          echo ""
+          openssl sha256 autobahn/wamp/gen/schema/*.bfbs
+          echo ""
+
+      - name: Verify regenerated files match committed files
+        run: |
+          echo "==> Computing checksums of regenerated files..."
+          find autobahn/wamp/gen/ -name "*.py" -o -name "*.bfbs" | sort | xargs sha256sum > /tmp/regenerated-checksums.txt
+
+          echo "==> Comparing checksums..."
+          if diff -u /tmp/original-checksums.txt /tmp/regenerated-checksums.txt; then
+            echo "✅ SUCCESS: All regenerated FlatBuffers files match committed versions exactly!"
+            echo "This confirms the build process is reproducible and up-to-date."
+          else
+            echo "❌ FAILURE: Regenerated files differ from committed versions!"
+            echo ""
+            echo "This indicates either:"
+            echo "1. The committed files were generated with a different flatc version"
+            echo "2. The committed files were manually modified"
+            echo "3. The build process has changed since files were last committed"
+            echo ""
+            echo "Please run 'just clean-fbs && just build-fbs' locally and commit the results."
+            exit 1
+          fi
 
       - name: Upload FlatBuffers artifacts
         uses: actions/upload-artifact@v4
@@ -280,11 +352,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
           echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Install uv
+      - name: Install uv (Astral)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           source $HOME/.cargo/env

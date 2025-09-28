@@ -123,7 +123,7 @@ def CalleeFeaturesStart(builder):
 
 
 def Start(builder):
-    return CalleeFeaturesStart(builder)
+    CalleeFeaturesStart(builder)
 
 
 def CalleeFeaturesAddCallerIdentification(builder, callerIdentification):
@@ -131,7 +131,7 @@ def CalleeFeaturesAddCallerIdentification(builder, callerIdentification):
 
 
 def AddCallerIdentification(builder, callerIdentification):
-    return CalleeFeaturesAddCallerIdentification(builder, callerIdentification)
+    CalleeFeaturesAddCallerIdentification(builder, callerIdentification)
 
 
 def CalleeFeaturesAddCallTrustlevels(builder, callTrustlevels):
@@ -139,7 +139,7 @@ def CalleeFeaturesAddCallTrustlevels(builder, callTrustlevels):
 
 
 def AddCallTrustlevels(builder, callTrustlevels):
-    return CalleeFeaturesAddCallTrustlevels(builder, callTrustlevels)
+    CalleeFeaturesAddCallTrustlevels(builder, callTrustlevels)
 
 
 def CalleeFeaturesAddCallTimeout(builder, callTimeout):
@@ -147,7 +147,7 @@ def CalleeFeaturesAddCallTimeout(builder, callTimeout):
 
 
 def AddCallTimeout(builder, callTimeout):
-    return CalleeFeaturesAddCallTimeout(builder, callTimeout)
+    CalleeFeaturesAddCallTimeout(builder, callTimeout)
 
 
 def CalleeFeaturesAddCallCanceling(builder, callCanceling):
@@ -155,7 +155,7 @@ def CalleeFeaturesAddCallCanceling(builder, callCanceling):
 
 
 def AddCallCanceling(builder, callCanceling):
-    return CalleeFeaturesAddCallCanceling(builder, callCanceling)
+    CalleeFeaturesAddCallCanceling(builder, callCanceling)
 
 
 def CalleeFeaturesAddProgressiveCallResults(builder, progressiveCallResults):
@@ -163,7 +163,7 @@ def CalleeFeaturesAddProgressiveCallResults(builder, progressiveCallResults):
 
 
 def AddProgressiveCallResults(builder, progressiveCallResults):
-    return CalleeFeaturesAddProgressiveCallResults(builder, progressiveCallResults)
+    CalleeFeaturesAddProgressiveCallResults(builder, progressiveCallResults)
 
 
 def CalleeFeaturesAddRegistrationRevocation(builder, registrationRevocation):
@@ -171,7 +171,7 @@ def CalleeFeaturesAddRegistrationRevocation(builder, registrationRevocation):
 
 
 def AddRegistrationRevocation(builder, registrationRevocation):
-    return CalleeFeaturesAddRegistrationRevocation(builder, registrationRevocation)
+    CalleeFeaturesAddRegistrationRevocation(builder, registrationRevocation)
 
 
 def CalleeFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration):
@@ -179,7 +179,7 @@ def CalleeFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration)
 
 
 def AddPatternBasedRegistration(builder, patternBasedRegistration):
-    return CalleeFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration)
+    CalleeFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration)
 
 
 def CalleeFeaturesAddSharedRegistration(builder, sharedRegistration):
@@ -187,7 +187,7 @@ def CalleeFeaturesAddSharedRegistration(builder, sharedRegistration):
 
 
 def AddSharedRegistration(builder, sharedRegistration):
-    return CalleeFeaturesAddSharedRegistration(builder, sharedRegistration)
+    CalleeFeaturesAddSharedRegistration(builder, sharedRegistration)
 
 
 def CalleeFeaturesAddPayloadTransparency(builder, payloadTransparency):
@@ -195,7 +195,7 @@ def CalleeFeaturesAddPayloadTransparency(builder, payloadTransparency):
 
 
 def AddPayloadTransparency(builder, payloadTransparency):
-    return CalleeFeaturesAddPayloadTransparency(builder, payloadTransparency)
+    CalleeFeaturesAddPayloadTransparency(builder, payloadTransparency)
 
 
 def CalleeFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
@@ -203,9 +203,7 @@ def CalleeFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCrypto
 
 
 def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    return CalleeFeaturesAddPayloadEncryptionCryptobox(
-        builder, payloadEncryptionCryptobox
-    )
+    CalleeFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
 
 
 def CalleeFeaturesEnd(builder):

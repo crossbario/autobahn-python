@@ -81,7 +81,7 @@ def ClientRolesStart(builder):
 
 
 def Start(builder):
-    return ClientRolesStart(builder)
+    ClientRolesStart(builder)
 
 
 def ClientRolesAddPublisher(builder, publisher):
@@ -91,7 +91,7 @@ def ClientRolesAddPublisher(builder, publisher):
 
 
 def AddPublisher(builder, publisher):
-    return ClientRolesAddPublisher(builder, publisher)
+    ClientRolesAddPublisher(builder, publisher)
 
 
 def ClientRolesAddSubscriber(builder, subscriber):
@@ -101,7 +101,7 @@ def ClientRolesAddSubscriber(builder, subscriber):
 
 
 def AddSubscriber(builder, subscriber):
-    return ClientRolesAddSubscriber(builder, subscriber)
+    ClientRolesAddSubscriber(builder, subscriber)
 
 
 def ClientRolesAddCaller(builder, caller):
@@ -111,7 +111,7 @@ def ClientRolesAddCaller(builder, caller):
 
 
 def AddCaller(builder, caller):
-    return ClientRolesAddCaller(builder, caller)
+    ClientRolesAddCaller(builder, caller)
 
 
 def ClientRolesAddCallee(builder, callee):
@@ -121,7 +121,7 @@ def ClientRolesAddCallee(builder, callee):
 
 
 def AddCallee(builder, callee):
-    return ClientRolesAddCallee(builder, callee)
+    ClientRolesAddCallee(builder, callee)
 
 
 def ClientRolesEnd(builder):
