@@ -263,8 +263,35 @@ jobs:
           just create ${{ matrix.python-env }}
           just install-tools ${{ matrix.python-env }}
 
+      - name: Store original generated files checksum
+        run: |
+          echo "==> Computing checksums of committed FlatBuffers files..."
+          find autobahn/wamp/gen/ -name "*.py" -o -name "*.bfbs" | sort | xargs sha256sum > /tmp/original-checksums.txt
+          echo "Found $(wc -l < /tmp/original-checksums.txt) committed generated files"
+
       - name: Build FlatBuffers binary schema & Python wrappers
         run: just build-fbs
+
+      - name: Verify regenerated files match committed files
+        run: |
+          echo "==> Computing checksums of regenerated files..."
+          find autobahn/wamp/gen/ -name "*.py" -o -name "*.bfbs" | sort | xargs sha256sum > /tmp/regenerated-checksums.txt
+
+          echo "==> Comparing checksums..."
+          if diff -u /tmp/original-checksums.txt /tmp/regenerated-checksums.txt; then
+            echo "✅ SUCCESS: All regenerated FlatBuffers files match committed versions exactly!"
+            echo "This confirms the build process is reproducible and up-to-date."
+          else
+            echo "❌ FAILURE: Regenerated files differ from committed versions!"
+            echo ""
+            echo "This indicates either:"
+            echo "1. The committed files were generated with a different flatc version"
+            echo "2. The committed files were manually modified"
+            echo "3. The build process has changed since files were last committed"
+            echo ""
+            echo "Please run 'just clean-fbs && just build-fbs' locally and commit the results."
+            exit 1
+          fi
 
       - name: List FlatBuffers artifacts
         run: |
