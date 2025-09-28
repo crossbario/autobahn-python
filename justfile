@@ -716,6 +716,36 @@ publish venv="": (build venv)
 # -- FlatBuffers Schema Generation
 # -----------------------------------------------------------------------------
 
+# Install latest FlatBuffers compiler (flatc) to /usr/local/bin
+install-flatc:
+    #!/usr/bin/env bash
+    set -e
+    FLATC_VERSION="25.9.23"
+    FLATC_URL="https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/Linux.flatc.binary.g++-13.zip"
+    TEMP_DIR=$(mktemp -d)
+    
+    echo "==> Installing FlatBuffers compiler v${FLATC_VERSION}..."
+    echo "    URL: ${FLATC_URL}"
+    echo "    Temp dir: ${TEMP_DIR}"
+    
+    # Download and extract
+    cd "${TEMP_DIR}"
+    curl -L -o flatc.zip "${FLATC_URL}"
+    unzip flatc.zip
+    
+    # Install to /usr/local/bin (requires sudo)
+    echo "==> Installing flatc to /usr/local/bin (requires sudo)..."
+    sudo mv flatc /usr/local/bin/flatc
+    sudo chmod +x /usr/local/bin/flatc
+    
+    # Cleanup
+    rm -rf "${TEMP_DIR}"
+    
+    # Verify installation
+    echo "==> Verification:"
+    flatc --version
+    echo "✅ FlatBuffers compiler v${FLATC_VERSION} installed successfully!"
+
 # Clean generated FlatBuffers files
 clean-fbs:
     echo "==> Cleaning FlatBuffers generated files..."

@@ -249,8 +249,22 @@ jobs:
 
       - name: Install FlatBuffers compiler
         run: |
+          # Install exact same version as used in development (v25.9.23)
+          FLATC_VERSION="25.9.23"
+          FLATC_URL="https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/Linux.flatc.binary.g++-13.zip"
+          TEMP_DIR=$(mktemp -d)
+          
+          echo "==> Installing FlatBuffers compiler v${FLATC_VERSION}..."
+          cd "${TEMP_DIR}"
+          curl -L -o flatc.zip "${FLATC_URL}"
+          unzip flatc.zip
+          sudo mv flatc /usr/local/bin/flatc
+          sudo chmod +x /usr/local/bin/flatc
+          rm -rf "${TEMP_DIR}"
+          
+          # Install cloc for code statistics
           sudo apt-get update
-          sudo apt-get install -y cloc flatbuffers-compiler
+          sudo apt-get install -y cloc
 
       - name: Verify toolchain installation
         run: |
