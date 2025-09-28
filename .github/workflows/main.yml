@@ -272,6 +272,18 @@ jobs:
       - name: Build FlatBuffers binary schema & Python wrappers
         run: just build-fbs
 
+      - name: List FlatBuffers artifacts
+        run: |
+          flatc --version
+          echo "Generated FlatBuffers binary schema & Python wrappers:"
+          echo "======================================================"
+          cloc autobahn/wamp/gen/
+          echo ""
+          ls -la autobahn/wamp/gen/schema/
+          echo ""
+          openssl sha256 autobahn/wamp/gen/schema/*.bfbs
+          echo ""
+
       - name: Verify regenerated files match committed files
         run: |
           echo "==> Computing checksums of regenerated files..."
@@ -292,20 +304,6 @@ jobs:
             echo "Please run 'just clean-fbs && just build-fbs' locally and commit the results."
             exit 1
           fi
-
-      - name: List FlatBuffers artifacts
-        run: |
-          flatc --version
-          echo "Generated FlatBuffers binary schema & Python wrappers:"
-          echo "======================================================"
-          cloc autobahn/wamp/gen/
-          echo ""
-          ls -la autobahn/wamp/gen/schema/
-          echo ""
-          openssl sha256 autobahn/wamp/gen/schema/*.bfbs
-          echo ""
-          tree autobahn/wamp/gen/
-          echo ""
 
       - name: Upload FlatBuffers artifacts
         uses: actions/upload-artifact@v4
