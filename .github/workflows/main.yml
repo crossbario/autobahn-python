@@ -57,8 +57,15 @@ jobs:
       # - name: Code static typing (via mypy)
       #   run: just check-typing cpy314
 
-      - name: Code test coverage (via pytest-coverage)
-        run: just check-coverage cpy314
+      - name: Code test coverage (Combined Twisted + asyncio)
+        run: just check-coverage-combined cpy314
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-combined
+          path: docs/_build/html/coverage-combined/
+          retention-days: 14
 
       - name: Unit test - Twisted / trial
         run: just test-twisted cpy314

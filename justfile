@@ -487,10 +487,87 @@ check-typing venv="": (install-tools venv) (install venv)
     echo "==> Running static type checks with ${VENV_NAME}..."
     "${VENV_PATH}/bin/mypy" autobahn/
 
-# Run tests and generate an HTML coverage report in a specific directory.
+# Run coverage for Twisted tests only
+check-coverage-twisted venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running Twisted tests with coverage in ${VENV_NAME}..."
+    
+    # Clean previous coverage data
+    rm -f .coverage .coverage.*
+    
+    # Run Twisted tests with coverage
+    USE_TWISTED=1 "${VENV_PATH}/bin/coverage" run \
+        --source=autobahn \
+        --parallel-mode \
+        -m twisted.trial --no-recurse \
+        autobahn.test \
+        autobahn.twisted.test \
+        autobahn.websocket.test \
+        autobahn.rawsocket.test \
+        autobahn.wamp.test \
+        autobahn.nvx.test
+
+# Run coverage for asyncio tests only  
+check-coverage-asyncio venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    echo "==> Running asyncio tests with coverage in ${VENV_NAME}..."
+    
+    # Run asyncio tests with coverage (parallel mode to combine later)
+    USE_ASYNCIO=1 "${VENV_PATH}/bin/coverage" run \
+        --source=autobahn \
+        --parallel-mode \
+        -m pytest -s -v -rfP \
+        --ignore=./autobahn/twisted ./autobahn
+
+# Combined coverage report from both Twisted and asyncio tests
+check-coverage-combined venv="": (check-coverage-twisted venv) (check-coverage-asyncio venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    echo "==> Combining coverage data from Twisted and asyncio tests..."
+    
+    # Combine all coverage data files
+    "${VENV_PATH}/bin/coverage" combine
+    
+    # Generate reports
+    mkdir -p docs/_build/html
+    "${VENV_PATH}/bin/coverage" html -d docs/_build/html/coverage-combined
+    "${VENV_PATH}/bin/coverage" report --show-missing
+    
+    echo ""
+    echo "✅ Combined coverage report generated:"
+    echo "   HTML: docs/_build/html/coverage-combined/index.html"
+    echo "   Text: above summary"
+
+# Legacy coverage recipe (DEPRECATED - use check-coverage-combined instead)
 check-coverage venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
+    echo "⚠️  DEPRECATED: Use 'just check-coverage-combined' for comprehensive coverage"
+    echo "⚠️  This recipe only runs pytest coverage and misses Twisted-specific code paths"
     VENV_NAME="{{ venv }}"
     if [ -z "${VENV_NAME}" ]; then
         echo "==> No venv name specified. Auto-detecting from system Python..."
@@ -508,7 +585,7 @@ check-coverage venv="": (install-tools venv) (install venv)
     echo "--> Coverage report generated in docs/_build/html/coverage/index.html"
 
 # Run all checks in single environment (usage: `just check cpy314`)
-check venv="": (check-format venv) (check-typing venv) (check-coverage venv)
+check venv="": (check-format venv) (check-typing venv) (check-coverage-combined venv)
 
 # -----------------------------------------------------------------------------
 # -- Unit tests
