@@ -67,7 +67,7 @@ def UnregisteredStart(builder):
 
 
 def Start(builder):
-    return UnregisteredStart(builder)
+    UnregisteredStart(builder)
 
 
 def UnregisteredAddSession(builder, session):
@@ -75,7 +75,7 @@ def UnregisteredAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return UnregisteredAddSession(builder, session)
+    UnregisteredAddSession(builder, session)
 
 
 def UnregisteredAddRequest(builder, request):
@@ -83,7 +83,7 @@ def UnregisteredAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return UnregisteredAddRequest(builder, request)
+    UnregisteredAddRequest(builder, request)
 
 
 def UnregisteredAddRegistration(builder, registration):
@@ -91,7 +91,7 @@ def UnregisteredAddRegistration(builder, registration):
 
 
 def AddRegistration(builder, registration):
-    return UnregisteredAddRegistration(builder, registration)
+    UnregisteredAddRegistration(builder, registration)
 
 
 def UnregisteredAddReason(builder, reason):
@@ -101,7 +101,7 @@ def UnregisteredAddReason(builder, reason):
 
 
 def AddReason(builder, reason):
-    return UnregisteredAddReason(builder, reason)
+    UnregisteredAddReason(builder, reason)
 
 
 def UnregisteredEnd(builder):

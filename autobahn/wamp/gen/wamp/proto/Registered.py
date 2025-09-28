@@ -60,7 +60,7 @@ def RegisteredStart(builder):
 
 
 def Start(builder):
-    return RegisteredStart(builder)
+    RegisteredStart(builder)
 
 
 def RegisteredAddSession(builder, session):
@@ -68,7 +68,7 @@ def RegisteredAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return RegisteredAddSession(builder, session)
+    RegisteredAddSession(builder, session)
 
 
 def RegisteredAddRequest(builder, request):
@@ -76,7 +76,7 @@ def RegisteredAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return RegisteredAddRequest(builder, request)
+    RegisteredAddRequest(builder, request)
 
 
 def RegisteredAddRegistration(builder, registration):
@@ -84,7 +84,7 @@ def RegisteredAddRegistration(builder, registration):
 
 
 def AddRegistration(builder, registration):
-    return RegisteredAddRegistration(builder, registration)
+    RegisteredAddRegistration(builder, registration)
 
 
 def RegisteredEnd(builder):

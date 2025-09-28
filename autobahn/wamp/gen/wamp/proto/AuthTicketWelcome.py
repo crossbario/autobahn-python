@@ -33,7 +33,7 @@ def AuthTicketWelcomeStart(builder):
 
 
 def Start(builder):
-    return AuthTicketWelcomeStart(builder)
+    AuthTicketWelcomeStart(builder)
 
 
 def AuthTicketWelcomeEnd(builder):

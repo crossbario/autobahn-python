@@ -63,7 +63,7 @@ def AuthCraChallengeStart(builder):
 
 
 def Start(builder):
-    return AuthCraChallengeStart(builder)
+    AuthCraChallengeStart(builder)
 
 
 def AuthCraChallengeAddChallenge(builder, challenge):
@@ -73,7 +73,7 @@ def AuthCraChallengeAddChallenge(builder, challenge):
 
 
 def AddChallenge(builder, challenge):
-    return AuthCraChallengeAddChallenge(builder, challenge)
+    AuthCraChallengeAddChallenge(builder, challenge)
 
 
 def AuthCraChallengeAddSalt(builder, salt):
@@ -83,7 +83,7 @@ def AuthCraChallengeAddSalt(builder, salt):
 
 
 def AddSalt(builder, salt):
-    return AuthCraChallengeAddSalt(builder, salt)
+    AuthCraChallengeAddSalt(builder, salt)
 
 
 def AuthCraChallengeAddIterations(builder, iterations):
@@ -91,7 +91,7 @@ def AuthCraChallengeAddIterations(builder, iterations):
 
 
 def AddIterations(builder, iterations):
-    return AuthCraChallengeAddIterations(builder, iterations)
+    AuthCraChallengeAddIterations(builder, iterations)
 
 
 def AuthCraChallengeAddKeylen(builder, keylen):
@@ -99,7 +99,7 @@ def AuthCraChallengeAddKeylen(builder, keylen):
 
 
 def AddKeylen(builder, keylen):
-    return AuthCraChallengeAddKeylen(builder, keylen)
+    AuthCraChallengeAddKeylen(builder, keylen)
 
 
 def AuthCraChallengeEnd(builder):

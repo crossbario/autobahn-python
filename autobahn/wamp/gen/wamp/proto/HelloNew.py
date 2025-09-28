@@ -152,7 +152,7 @@ def HelloNewStart(builder):
 
 
 def Start(builder):
-    return HelloNewStart(builder)
+    HelloNewStart(builder)
 
 
 def HelloNewAddRoles(builder, roles):
@@ -162,7 +162,7 @@ def HelloNewAddRoles(builder, roles):
 
 
 def AddRoles(builder, roles):
-    return HelloNewAddRoles(builder, roles)
+    HelloNewAddRoles(builder, roles)
 
 
 def HelloNewAddRealm(builder, realm):
@@ -172,7 +172,7 @@ def HelloNewAddRealm(builder, realm):
 
 
 def AddRealm(builder, realm):
-    return HelloNewAddRealm(builder, realm)
+    HelloNewAddRealm(builder, realm)
 
 
 def HelloNewAddAuthid(builder, authid):
@@ -182,7 +182,7 @@ def HelloNewAddAuthid(builder, authid):
 
 
 def AddAuthid(builder, authid):
-    return HelloNewAddAuthid(builder, authid)
+    HelloNewAddAuthid(builder, authid)
 
 
 def HelloNewAddAuthrole(builder, authrole):
@@ -192,7 +192,7 @@ def HelloNewAddAuthrole(builder, authrole):
 
 
 def AddAuthrole(builder, authrole):
-    return HelloNewAddAuthrole(builder, authrole)
+    HelloNewAddAuthrole(builder, authrole)
 
 
 def HelloNewAddAuthmode(builder, authmode):
@@ -200,7 +200,7 @@ def HelloNewAddAuthmode(builder, authmode):
 
 
 def AddAuthmode(builder, authmode):
-    return HelloNewAddAuthmode(builder, authmode)
+    HelloNewAddAuthmode(builder, authmode)
 
 
 def HelloNewAddAuthfactor1Type(builder, authfactor1Type):
@@ -208,7 +208,7 @@ def HelloNewAddAuthfactor1Type(builder, authfactor1Type):
 
 
 def AddAuthfactor1Type(builder, authfactor1Type):
-    return HelloNewAddAuthfactor1Type(builder, authfactor1Type)
+    HelloNewAddAuthfactor1Type(builder, authfactor1Type)
 
 
 def HelloNewAddAuthfactor1(builder, authfactor1):
@@ -218,7 +218,7 @@ def HelloNewAddAuthfactor1(builder, authfactor1):
 
 
 def AddAuthfactor1(builder, authfactor1):
-    return HelloNewAddAuthfactor1(builder, authfactor1)
+    HelloNewAddAuthfactor1(builder, authfactor1)
 
 
 def HelloNewAddAuthfactor2Type(builder, authfactor2Type):
@@ -226,7 +226,7 @@ def HelloNewAddAuthfactor2Type(builder, authfactor2Type):
 
 
 def AddAuthfactor2Type(builder, authfactor2Type):
-    return HelloNewAddAuthfactor2Type(builder, authfactor2Type)
+    HelloNewAddAuthfactor2Type(builder, authfactor2Type)
 
 
 def HelloNewAddAuthfactor2(builder, authfactor2):
@@ -236,7 +236,7 @@ def HelloNewAddAuthfactor2(builder, authfactor2):
 
 
 def AddAuthfactor2(builder, authfactor2):
-    return HelloNewAddAuthfactor2(builder, authfactor2)
+    HelloNewAddAuthfactor2(builder, authfactor2)
 
 
 def HelloNewAddAuthfactor3Type(builder, authfactor3Type):
@@ -244,7 +244,7 @@ def HelloNewAddAuthfactor3Type(builder, authfactor3Type):
 
 
 def AddAuthfactor3Type(builder, authfactor3Type):
-    return HelloNewAddAuthfactor3Type(builder, authfactor3Type)
+    HelloNewAddAuthfactor3Type(builder, authfactor3Type)
 
 
 def HelloNewAddAuthfactor3(builder, authfactor3):
@@ -254,7 +254,7 @@ def HelloNewAddAuthfactor3(builder, authfactor3):
 
 
 def AddAuthfactor3(builder, authfactor3):
-    return HelloNewAddAuthfactor3(builder, authfactor3)
+    HelloNewAddAuthfactor3(builder, authfactor3)
 
 
 def HelloNewAddResumable(builder, resumable):
@@ -262,7 +262,7 @@ def HelloNewAddResumable(builder, resumable):
 
 
 def AddResumable(builder, resumable):
-    return HelloNewAddResumable(builder, resumable)
+    HelloNewAddResumable(builder, resumable)
 
 
 def HelloNewAddResumeSession(builder, resumeSession):
@@ -270,7 +270,7 @@ def HelloNewAddResumeSession(builder, resumeSession):
 
 
 def AddResumeSession(builder, resumeSession):
-    return HelloNewAddResumeSession(builder, resumeSession)
+    HelloNewAddResumeSession(builder, resumeSession)
 
 
 def HelloNewAddResumeToken(builder, resumeToken):
@@ -280,7 +280,7 @@ def HelloNewAddResumeToken(builder, resumeToken):
 
 
 def AddResumeToken(builder, resumeToken):
-    return HelloNewAddResumeToken(builder, resumeToken)
+    HelloNewAddResumeToken(builder, resumeToken)
 
 
 def HelloNewEnd(builder):

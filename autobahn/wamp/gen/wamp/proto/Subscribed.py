@@ -60,7 +60,7 @@ def SubscribedStart(builder):
 
 
 def Start(builder):
-    return SubscribedStart(builder)
+    SubscribedStart(builder)
 
 
 def SubscribedAddSession(builder, session):
@@ -68,7 +68,7 @@ def SubscribedAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return SubscribedAddSession(builder, session)
+    SubscribedAddSession(builder, session)
 
 
 def SubscribedAddRequest(builder, request):
@@ -76,7 +76,7 @@ def SubscribedAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return SubscribedAddRequest(builder, request)
+    SubscribedAddRequest(builder, request)
 
 
 def SubscribedAddSubscription(builder, subscription):
@@ -84,7 +84,7 @@ def SubscribedAddSubscription(builder, subscription):
 
 
 def AddSubscription(builder, subscription):
-    return SubscribedAddSubscription(builder, subscription)
+    SubscribedAddSubscription(builder, subscription)
 
 
 def SubscribedEnd(builder):

@@ -40,7 +40,7 @@ def AuthScramWelcomeStart(builder):
 
 
 def Start(builder):
-    return AuthScramWelcomeStart(builder)
+    AuthScramWelcomeStart(builder)
 
 
 def AuthScramWelcomeAddVerifier(builder, verifier):
@@ -50,7 +50,7 @@ def AuthScramWelcomeAddVerifier(builder, verifier):
 
 
 def AddVerifier(builder, verifier):
-    return AuthScramWelcomeAddVerifier(builder, verifier)
+    AuthScramWelcomeAddVerifier(builder, verifier)
 
 
 def AuthScramWelcomeEnd(builder):

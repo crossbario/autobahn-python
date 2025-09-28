@@ -61,7 +61,7 @@ def ChallengeStart(builder):
 
 
 def Start(builder):
-    return ChallengeStart(builder)
+    ChallengeStart(builder)
 
 
 def ChallengeAddSession(builder, session):
@@ -69,7 +69,7 @@ def ChallengeAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return ChallengeAddSession(builder, session)
+    ChallengeAddSession(builder, session)
 
 
 def ChallengeAddMethod(builder, method):
@@ -77,7 +77,7 @@ def ChallengeAddMethod(builder, method):
 
 
 def AddMethod(builder, method):
-    return ChallengeAddMethod(builder, method)
+    ChallengeAddMethod(builder, method)
 
 
 def ChallengeAddExtra(builder, extra):
@@ -87,7 +87,7 @@ def ChallengeAddExtra(builder, extra):
 
 
 def AddExtra(builder, extra):
-    return ChallengeAddExtra(builder, extra)
+    ChallengeAddExtra(builder, extra)
 
 
 def ChallengeEnd(builder):

@@ -79,7 +79,7 @@ def AuthScramChallengeStart(builder):
 
 
 def Start(builder):
-    return AuthScramChallengeStart(builder)
+    AuthScramChallengeStart(builder)
 
 
 def AuthScramChallengeAddNonce(builder, nonce):
@@ -89,7 +89,7 @@ def AuthScramChallengeAddNonce(builder, nonce):
 
 
 def AddNonce(builder, nonce):
-    return AuthScramChallengeAddNonce(builder, nonce)
+    AuthScramChallengeAddNonce(builder, nonce)
 
 
 def AuthScramChallengeAddSalt(builder, salt):
@@ -99,7 +99,7 @@ def AuthScramChallengeAddSalt(builder, salt):
 
 
 def AddSalt(builder, salt):
-    return AuthScramChallengeAddSalt(builder, salt)
+    AuthScramChallengeAddSalt(builder, salt)
 
 
 def AuthScramChallengeAddKdf(builder, kdf):
@@ -107,7 +107,7 @@ def AuthScramChallengeAddKdf(builder, kdf):
 
 
 def AddKdf(builder, kdf):
-    return AuthScramChallengeAddKdf(builder, kdf)
+    AuthScramChallengeAddKdf(builder, kdf)
 
 
 def AuthScramChallengeAddIterations(builder, iterations):
@@ -115,7 +115,7 @@ def AuthScramChallengeAddIterations(builder, iterations):
 
 
 def AddIterations(builder, iterations):
-    return AuthScramChallengeAddIterations(builder, iterations)
+    AuthScramChallengeAddIterations(builder, iterations)
 
 
 def AuthScramChallengeAddMemory(builder, memory):
@@ -123,7 +123,7 @@ def AuthScramChallengeAddMemory(builder, memory):
 
 
 def AddMemory(builder, memory):
-    return AuthScramChallengeAddMemory(builder, memory)
+    AuthScramChallengeAddMemory(builder, memory)
 
 
 def AuthScramChallengeAddChannelBinding(builder, channelBinding):
@@ -131,7 +131,7 @@ def AuthScramChallengeAddChannelBinding(builder, channelBinding):
 
 
 def AddChannelBinding(builder, channelBinding):
-    return AuthScramChallengeAddChannelBinding(builder, channelBinding)
+    AuthScramChallengeAddChannelBinding(builder, channelBinding)
 
 
 def AuthScramChallengeEnd(builder):

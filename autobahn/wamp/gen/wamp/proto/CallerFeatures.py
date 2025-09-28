@@ -87,7 +87,7 @@ def CallerFeaturesStart(builder):
 
 
 def Start(builder):
-    return CallerFeaturesStart(builder)
+    CallerFeaturesStart(builder)
 
 
 def CallerFeaturesAddCallerIdentification(builder, callerIdentification):
@@ -95,7 +95,7 @@ def CallerFeaturesAddCallerIdentification(builder, callerIdentification):
 
 
 def AddCallerIdentification(builder, callerIdentification):
-    return CallerFeaturesAddCallerIdentification(builder, callerIdentification)
+    CallerFeaturesAddCallerIdentification(builder, callerIdentification)
 
 
 def CallerFeaturesAddCallTimeout(builder, callTimeout):
@@ -103,7 +103,7 @@ def CallerFeaturesAddCallTimeout(builder, callTimeout):
 
 
 def AddCallTimeout(builder, callTimeout):
-    return CallerFeaturesAddCallTimeout(builder, callTimeout)
+    CallerFeaturesAddCallTimeout(builder, callTimeout)
 
 
 def CallerFeaturesAddCallCanceling(builder, callCanceling):
@@ -111,7 +111,7 @@ def CallerFeaturesAddCallCanceling(builder, callCanceling):
 
 
 def AddCallCanceling(builder, callCanceling):
-    return CallerFeaturesAddCallCanceling(builder, callCanceling)
+    CallerFeaturesAddCallCanceling(builder, callCanceling)
 
 
 def CallerFeaturesAddProgressiveCallResults(builder, progressiveCallResults):
@@ -119,7 +119,7 @@ def CallerFeaturesAddProgressiveCallResults(builder, progressiveCallResults):
 
 
 def AddProgressiveCallResults(builder, progressiveCallResults):
-    return CallerFeaturesAddProgressiveCallResults(builder, progressiveCallResults)
+    CallerFeaturesAddProgressiveCallResults(builder, progressiveCallResults)
 
 
 def CallerFeaturesAddPayloadTransparency(builder, payloadTransparency):
@@ -127,7 +127,7 @@ def CallerFeaturesAddPayloadTransparency(builder, payloadTransparency):
 
 
 def AddPayloadTransparency(builder, payloadTransparency):
-    return CallerFeaturesAddPayloadTransparency(builder, payloadTransparency)
+    CallerFeaturesAddPayloadTransparency(builder, payloadTransparency)
 
 
 def CallerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
@@ -135,9 +135,7 @@ def CallerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCrypto
 
 
 def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    return CallerFeaturesAddPayloadEncryptionCryptobox(
-        builder, payloadEncryptionCryptobox
-    )
+    CallerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
 
 
 def CallerFeaturesEnd(builder):

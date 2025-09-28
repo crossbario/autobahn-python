@@ -87,7 +87,7 @@ def PublisherFeaturesStart(builder):
 
 
 def Start(builder):
-    return PublisherFeaturesStart(builder)
+    PublisherFeaturesStart(builder)
 
 
 def PublisherFeaturesAddPublisherIdentification(builder, publisherIdentification):
@@ -95,7 +95,7 @@ def PublisherFeaturesAddPublisherIdentification(builder, publisherIdentification
 
 
 def AddPublisherIdentification(builder, publisherIdentification):
-    return PublisherFeaturesAddPublisherIdentification(builder, publisherIdentification)
+    PublisherFeaturesAddPublisherIdentification(builder, publisherIdentification)
 
 
 def PublisherFeaturesAddPublisherExclusion(builder, publisherExclusion):
@@ -103,7 +103,7 @@ def PublisherFeaturesAddPublisherExclusion(builder, publisherExclusion):
 
 
 def AddPublisherExclusion(builder, publisherExclusion):
-    return PublisherFeaturesAddPublisherExclusion(builder, publisherExclusion)
+    PublisherFeaturesAddPublisherExclusion(builder, publisherExclusion)
 
 
 def PublisherFeaturesAddSubscriberBlackwhiteListing(
@@ -113,7 +113,7 @@ def PublisherFeaturesAddSubscriberBlackwhiteListing(
 
 
 def AddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing):
-    return PublisherFeaturesAddSubscriberBlackwhiteListing(
+    PublisherFeaturesAddSubscriberBlackwhiteListing(
         builder, subscriberBlackwhiteListing
     )
 
@@ -123,9 +123,7 @@ def PublisherFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceiv
 
 
 def AddAcknowledgeEventReceived(builder, acknowledgeEventReceived):
-    return PublisherFeaturesAddAcknowledgeEventReceived(
-        builder, acknowledgeEventReceived
-    )
+    PublisherFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceived)
 
 
 def PublisherFeaturesAddPayloadTransparency(builder, payloadTransparency):
@@ -133,7 +131,7 @@ def PublisherFeaturesAddPayloadTransparency(builder, payloadTransparency):
 
 
 def AddPayloadTransparency(builder, payloadTransparency):
-    return PublisherFeaturesAddPayloadTransparency(builder, payloadTransparency)
+    PublisherFeaturesAddPayloadTransparency(builder, payloadTransparency)
 
 
 def PublisherFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
@@ -141,9 +139,7 @@ def PublisherFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCry
 
 
 def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    return PublisherFeaturesAddPayloadEncryptionCryptobox(
-        builder, payloadEncryptionCryptobox
-    )
+    PublisherFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
 
 
 def PublisherFeaturesEnd(builder):

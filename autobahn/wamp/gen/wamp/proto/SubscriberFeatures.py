@@ -105,7 +105,7 @@ def SubscriberFeaturesStart(builder):
 
 
 def Start(builder):
-    return SubscriberFeaturesStart(builder)
+    SubscriberFeaturesStart(builder)
 
 
 def SubscriberFeaturesAddPublisherIdentification(builder, publisherIdentification):
@@ -113,9 +113,7 @@ def SubscriberFeaturesAddPublisherIdentification(builder, publisherIdentificatio
 
 
 def AddPublisherIdentification(builder, publisherIdentification):
-    return SubscriberFeaturesAddPublisherIdentification(
-        builder, publisherIdentification
-    )
+    SubscriberFeaturesAddPublisherIdentification(builder, publisherIdentification)
 
 
 def SubscriberFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription):
@@ -123,9 +121,7 @@ def SubscriberFeaturesAddPatternBasedSubscription(builder, patternBasedSubscript
 
 
 def AddPatternBasedSubscription(builder, patternBasedSubscription):
-    return SubscriberFeaturesAddPatternBasedSubscription(
-        builder, patternBasedSubscription
-    )
+    SubscriberFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription)
 
 
 def SubscriberFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels):
@@ -133,7 +129,7 @@ def SubscriberFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels)
 
 
 def AddPublicationTrustlevels(builder, publicationTrustlevels):
-    return SubscriberFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels)
+    SubscriberFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels)
 
 
 def SubscriberFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation):
@@ -141,7 +137,7 @@ def SubscriberFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation)
 
 
 def AddSubscriptionRevocation(builder, subscriptionRevocation):
-    return SubscriberFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation)
+    SubscriberFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation)
 
 
 def SubscriberFeaturesAddEventHistory(builder, eventHistory):
@@ -149,7 +145,7 @@ def SubscriberFeaturesAddEventHistory(builder, eventHistory):
 
 
 def AddEventHistory(builder, eventHistory):
-    return SubscriberFeaturesAddEventHistory(builder, eventHistory)
+    SubscriberFeaturesAddEventHistory(builder, eventHistory)
 
 
 def SubscriberFeaturesAddAcknowledgeSubscriberReceived(
@@ -159,7 +155,7 @@ def SubscriberFeaturesAddAcknowledgeSubscriberReceived(
 
 
 def AddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived):
-    return SubscriberFeaturesAddAcknowledgeSubscriberReceived(
+    SubscriberFeaturesAddAcknowledgeSubscriberReceived(
         builder, acknowledgeSubscriberReceived
     )
 
@@ -169,7 +165,7 @@ def SubscriberFeaturesAddPayloadTransparency(builder, payloadTransparency):
 
 
 def AddPayloadTransparency(builder, payloadTransparency):
-    return SubscriberFeaturesAddPayloadTransparency(builder, payloadTransparency)
+    SubscriberFeaturesAddPayloadTransparency(builder, payloadTransparency)
 
 
 def SubscriberFeaturesAddPayloadEncryptionCryptobox(
@@ -179,9 +175,7 @@ def SubscriberFeaturesAddPayloadEncryptionCryptobox(
 
 
 def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    return SubscriberFeaturesAddPayloadEncryptionCryptobox(
-        builder, payloadEncryptionCryptobox
-    )
+    SubscriberFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
 
 
 def SubscriberFeaturesEnd(builder):

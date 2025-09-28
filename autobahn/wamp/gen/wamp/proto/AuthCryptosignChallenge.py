@@ -40,7 +40,7 @@ def AuthCryptosignChallengeStart(builder):
 
 
 def Start(builder):
-    return AuthCryptosignChallengeStart(builder)
+    AuthCryptosignChallengeStart(builder)
 
 
 def AuthCryptosignChallengeAddChannelBinding(builder, channelBinding):
@@ -48,7 +48,7 @@ def AuthCryptosignChallengeAddChannelBinding(builder, channelBinding):
 
 
 def AddChannelBinding(builder, channelBinding):
-    return AuthCryptosignChallengeAddChannelBinding(builder, channelBinding)
+    AuthCryptosignChallengeAddChannelBinding(builder, channelBinding)
 
 
 def AuthCryptosignChallengeEnd(builder):

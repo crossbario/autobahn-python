@@ -61,7 +61,7 @@ def AuthenticateStart(builder):
 
 
 def Start(builder):
-    return AuthenticateStart(builder)
+    AuthenticateStart(builder)
 
 
 def AuthenticateAddSession(builder, session):
@@ -69,7 +69,7 @@ def AuthenticateAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return AuthenticateAddSession(builder, session)
+    AuthenticateAddSession(builder, session)
 
 
 def AuthenticateAddSignature(builder, signature):
@@ -79,7 +79,7 @@ def AuthenticateAddSignature(builder, signature):
 
 
 def AddSignature(builder, signature):
-    return AuthenticateAddSignature(builder, signature)
+    AuthenticateAddSignature(builder, signature)
 
 
 def AuthenticateAddExtra(builder, extra):
@@ -89,7 +89,7 @@ def AuthenticateAddExtra(builder, extra):
 
 
 def AddExtra(builder, extra):
-    return AuthenticateAddExtra(builder, extra)
+    AuthenticateAddExtra(builder, extra)
 
 
 def AuthenticateEnd(builder):

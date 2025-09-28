@@ -33,7 +33,7 @@ def AuthCraWelcomeStart(builder):
 
 
 def Start(builder):
-    return AuthCraWelcomeStart(builder)
+    AuthCraWelcomeStart(builder)
 
 
 def AuthCraWelcomeEnd(builder):

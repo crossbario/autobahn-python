@@ -47,7 +47,7 @@ def MapStart(builder):
 
 
 def Start(builder):
-    return MapStart(builder)
+    MapStart(builder)
 
 
 def MapAddKey(builder, key):
@@ -57,7 +57,7 @@ def MapAddKey(builder, key):
 
 
 def AddKey(builder, key):
-    return MapAddKey(builder, key)
+    MapAddKey(builder, key)
 
 
 def MapAddValue(builder, value):
@@ -67,7 +67,7 @@ def MapAddValue(builder, value):
 
 
 def AddValue(builder, value):
-    return MapAddValue(builder, value)
+    MapAddValue(builder, value)
 
 
 def MapEnd(builder):

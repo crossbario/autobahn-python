@@ -90,7 +90,7 @@ def InterruptStart(builder):
 
 
 def Start(builder):
-    return InterruptStart(builder)
+    InterruptStart(builder)
 
 
 def InterruptAddSession(builder, session):
@@ -98,7 +98,7 @@ def InterruptAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return InterruptAddSession(builder, session)
+    InterruptAddSession(builder, session)
 
 
 def InterruptAddRequest(builder, request):
@@ -106,7 +106,7 @@ def InterruptAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return InterruptAddRequest(builder, request)
+    InterruptAddRequest(builder, request)
 
 
 def InterruptAddMode(builder, mode):
@@ -114,7 +114,7 @@ def InterruptAddMode(builder, mode):
 
 
 def AddMode(builder, mode):
-    return InterruptAddMode(builder, mode)
+    InterruptAddMode(builder, mode)
 
 
 def InterruptAddReason(builder, reason):
@@ -124,7 +124,7 @@ def InterruptAddReason(builder, reason):
 
 
 def AddReason(builder, reason):
-    return InterruptAddReason(builder, reason)
+    InterruptAddReason(builder, reason)
 
 
 def InterruptAddForwardFor(builder, forwardFor):
@@ -134,14 +134,14 @@ def InterruptAddForwardFor(builder, forwardFor):
 
 
 def AddForwardFor(builder, forwardFor):
-    return InterruptAddForwardFor(builder, forwardFor)
+    InterruptAddForwardFor(builder, forwardFor)
 
 
 def InterruptStartForwardForVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartForwardForVector(builder, numElems):
+def StartForwardForVector(builder, numElems: int) -> int:
     return InterruptStartForwardForVector(builder, numElems)
 
 

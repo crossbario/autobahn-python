@@ -159,7 +159,7 @@ def BrokerFeaturesStart(builder):
 
 
 def Start(builder):
-    return BrokerFeaturesStart(builder)
+    BrokerFeaturesStart(builder)
 
 
 def BrokerFeaturesAddPublisherIdentification(builder, publisherIdentification):
@@ -167,7 +167,7 @@ def BrokerFeaturesAddPublisherIdentification(builder, publisherIdentification):
 
 
 def AddPublisherIdentification(builder, publisherIdentification):
-    return BrokerFeaturesAddPublisherIdentification(builder, publisherIdentification)
+    BrokerFeaturesAddPublisherIdentification(builder, publisherIdentification)
 
 
 def BrokerFeaturesAddPublisherExclusion(builder, publisherExclusion):
@@ -175,7 +175,7 @@ def BrokerFeaturesAddPublisherExclusion(builder, publisherExclusion):
 
 
 def AddPublisherExclusion(builder, publisherExclusion):
-    return BrokerFeaturesAddPublisherExclusion(builder, publisherExclusion)
+    BrokerFeaturesAddPublisherExclusion(builder, publisherExclusion)
 
 
 def BrokerFeaturesAddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing):
@@ -183,9 +183,7 @@ def BrokerFeaturesAddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteLi
 
 
 def AddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing):
-    return BrokerFeaturesAddSubscriberBlackwhiteListing(
-        builder, subscriberBlackwhiteListing
-    )
+    BrokerFeaturesAddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing)
 
 
 def BrokerFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription):
@@ -193,7 +191,7 @@ def BrokerFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription)
 
 
 def AddPatternBasedSubscription(builder, patternBasedSubscription):
-    return BrokerFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription)
+    BrokerFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription)
 
 
 def BrokerFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels):
@@ -201,7 +199,7 @@ def BrokerFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels):
 
 
 def AddPublicationTrustlevels(builder, publicationTrustlevels):
-    return BrokerFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels)
+    BrokerFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels)
 
 
 def BrokerFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation):
@@ -209,7 +207,7 @@ def BrokerFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation):
 
 
 def AddSubscriptionRevocation(builder, subscriptionRevocation):
-    return BrokerFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation)
+    BrokerFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation)
 
 
 def BrokerFeaturesAddSessionMetaApi(builder, sessionMetaApi):
@@ -217,7 +215,7 @@ def BrokerFeaturesAddSessionMetaApi(builder, sessionMetaApi):
 
 
 def AddSessionMetaApi(builder, sessionMetaApi):
-    return BrokerFeaturesAddSessionMetaApi(builder, sessionMetaApi)
+    BrokerFeaturesAddSessionMetaApi(builder, sessionMetaApi)
 
 
 def BrokerFeaturesAddSubscriptionMetaApi(builder, subscriptionMetaApi):
@@ -225,7 +223,7 @@ def BrokerFeaturesAddSubscriptionMetaApi(builder, subscriptionMetaApi):
 
 
 def AddSubscriptionMetaApi(builder, subscriptionMetaApi):
-    return BrokerFeaturesAddSubscriptionMetaApi(builder, subscriptionMetaApi)
+    BrokerFeaturesAddSubscriptionMetaApi(builder, subscriptionMetaApi)
 
 
 def BrokerFeaturesAddEventRetention(builder, eventRetention):
@@ -233,7 +231,7 @@ def BrokerFeaturesAddEventRetention(builder, eventRetention):
 
 
 def AddEventRetention(builder, eventRetention):
-    return BrokerFeaturesAddEventRetention(builder, eventRetention)
+    BrokerFeaturesAddEventRetention(builder, eventRetention)
 
 
 def BrokerFeaturesAddEventHistory(builder, eventHistory):
@@ -241,7 +239,7 @@ def BrokerFeaturesAddEventHistory(builder, eventHistory):
 
 
 def AddEventHistory(builder, eventHistory):
-    return BrokerFeaturesAddEventHistory(builder, eventHistory)
+    BrokerFeaturesAddEventHistory(builder, eventHistory)
 
 
 def BrokerFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceived):
@@ -249,7 +247,7 @@ def BrokerFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceived)
 
 
 def AddAcknowledgeEventReceived(builder, acknowledgeEventReceived):
-    return BrokerFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceived)
+    BrokerFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceived)
 
 
 def BrokerFeaturesAddAcknowledgeSubscriberReceived(
@@ -259,7 +257,7 @@ def BrokerFeaturesAddAcknowledgeSubscriberReceived(
 
 
 def AddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived):
-    return BrokerFeaturesAddAcknowledgeSubscriberReceived(
+    BrokerFeaturesAddAcknowledgeSubscriberReceived(
         builder, acknowledgeSubscriberReceived
     )
 
@@ -269,7 +267,7 @@ def BrokerFeaturesAddPayloadTransparency(builder, payloadTransparency):
 
 
 def AddPayloadTransparency(builder, payloadTransparency):
-    return BrokerFeaturesAddPayloadTransparency(builder, payloadTransparency)
+    BrokerFeaturesAddPayloadTransparency(builder, payloadTransparency)
 
 
 def BrokerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
@@ -277,9 +275,7 @@ def BrokerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCrypto
 
 
 def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
-    return BrokerFeaturesAddPayloadEncryptionCryptobox(
-        builder, payloadEncryptionCryptobox
-    )
+    BrokerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
 
 
 def BrokerFeaturesEnd(builder):

@@ -33,7 +33,7 @@ def VoidStart(builder):
 
 
 def Start(builder):
-    return VoidStart(builder)
+    VoidStart(builder)
 
 
 def VoidEnd(builder):

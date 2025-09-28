@@ -33,7 +33,7 @@ def AuthCraRequestStart(builder):
 
 
 def Start(builder):
-    return AuthCraRequestStart(builder)
+    AuthCraRequestStart(builder)
 
 
 def AuthCraRequestEnd(builder):

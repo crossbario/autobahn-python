@@ -126,7 +126,7 @@ def WelcomeStart(builder):
 
 
 def Start(builder):
-    return WelcomeStart(builder)
+    WelcomeStart(builder)
 
 
 def WelcomeAddSession(builder, session):
@@ -134,7 +134,7 @@ def WelcomeAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return WelcomeAddSession(builder, session)
+    WelcomeAddSession(builder, session)
 
 
 def WelcomeAddRoles(builder, roles):
@@ -144,7 +144,7 @@ def WelcomeAddRoles(builder, roles):
 
 
 def AddRoles(builder, roles):
-    return WelcomeAddRoles(builder, roles)
+    WelcomeAddRoles(builder, roles)
 
 
 def WelcomeAddRealm(builder, realm):
@@ -154,7 +154,7 @@ def WelcomeAddRealm(builder, realm):
 
 
 def AddRealm(builder, realm):
-    return WelcomeAddRealm(builder, realm)
+    WelcomeAddRealm(builder, realm)
 
 
 def WelcomeAddAuthid(builder, authid):
@@ -164,7 +164,7 @@ def WelcomeAddAuthid(builder, authid):
 
 
 def AddAuthid(builder, authid):
-    return WelcomeAddAuthid(builder, authid)
+    WelcomeAddAuthid(builder, authid)
 
 
 def WelcomeAddAuthrole(builder, authrole):
@@ -174,7 +174,7 @@ def WelcomeAddAuthrole(builder, authrole):
 
 
 def AddAuthrole(builder, authrole):
-    return WelcomeAddAuthrole(builder, authrole)
+    WelcomeAddAuthrole(builder, authrole)
 
 
 def WelcomeAddAuthmethod(builder, authmethod):
@@ -182,7 +182,7 @@ def WelcomeAddAuthmethod(builder, authmethod):
 
 
 def AddAuthmethod(builder, authmethod):
-    return WelcomeAddAuthmethod(builder, authmethod)
+    WelcomeAddAuthmethod(builder, authmethod)
 
 
 def WelcomeAddAuthprovider(builder, authprovider):
@@ -192,7 +192,7 @@ def WelcomeAddAuthprovider(builder, authprovider):
 
 
 def AddAuthprovider(builder, authprovider):
-    return WelcomeAddAuthprovider(builder, authprovider)
+    WelcomeAddAuthprovider(builder, authprovider)
 
 
 def WelcomeAddAuthextra(builder, authextra):
@@ -202,7 +202,7 @@ def WelcomeAddAuthextra(builder, authextra):
 
 
 def AddAuthextra(builder, authextra):
-    return WelcomeAddAuthextra(builder, authextra)
+    WelcomeAddAuthextra(builder, authextra)
 
 
 def WelcomeAddResumed(builder, resumed):
@@ -210,7 +210,7 @@ def WelcomeAddResumed(builder, resumed):
 
 
 def AddResumed(builder, resumed):
-    return WelcomeAddResumed(builder, resumed)
+    WelcomeAddResumed(builder, resumed)
 
 
 def WelcomeAddResumable(builder, resumable):
@@ -218,7 +218,7 @@ def WelcomeAddResumable(builder, resumable):
 
 
 def AddResumable(builder, resumable):
-    return WelcomeAddResumable(builder, resumable)
+    WelcomeAddResumable(builder, resumable)
 
 
 def WelcomeAddResumeToken(builder, resumeToken):
@@ -228,7 +228,7 @@ def WelcomeAddResumeToken(builder, resumeToken):
 
 
 def AddResumeToken(builder, resumeToken):
-    return WelcomeAddResumeToken(builder, resumeToken)
+    WelcomeAddResumeToken(builder, resumeToken)
 
 
 def WelcomeEnd(builder):

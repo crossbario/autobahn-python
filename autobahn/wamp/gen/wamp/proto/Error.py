@@ -141,7 +141,7 @@ def ErrorStart(builder):
 
 
 def Start(builder):
-    return ErrorStart(builder)
+    ErrorStart(builder)
 
 
 def ErrorAddSession(builder, session):
@@ -149,7 +149,7 @@ def ErrorAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return ErrorAddSession(builder, session)
+    ErrorAddSession(builder, session)
 
 
 def ErrorAddRequestType(builder, requestType):
@@ -157,7 +157,7 @@ def ErrorAddRequestType(builder, requestType):
 
 
 def AddRequestType(builder, requestType):
-    return ErrorAddRequestType(builder, requestType)
+    ErrorAddRequestType(builder, requestType)
 
 
 def ErrorAddRequest(builder, request):
@@ -165,7 +165,7 @@ def ErrorAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return ErrorAddRequest(builder, request)
+    ErrorAddRequest(builder, request)
 
 
 def ErrorAddError(builder, error):
@@ -175,7 +175,7 @@ def ErrorAddError(builder, error):
 
 
 def AddError(builder, error):
-    return ErrorAddError(builder, error)
+    ErrorAddError(builder, error)
 
 
 def ErrorAddPayload(builder, payload):
@@ -185,14 +185,14 @@ def ErrorAddPayload(builder, payload):
 
 
 def AddPayload(builder, payload):
-    return ErrorAddPayload(builder, payload)
+    ErrorAddPayload(builder, payload)
 
 
 def ErrorStartPayloadVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartPayloadVector(builder, numElems):
+def StartPayloadVector(builder, numElems: int) -> int:
     return ErrorStartPayloadVector(builder, numElems)
 
 
@@ -201,7 +201,7 @@ def ErrorAddEncAlgo(builder, encAlgo):
 
 
 def AddEncAlgo(builder, encAlgo):
-    return ErrorAddEncAlgo(builder, encAlgo)
+    ErrorAddEncAlgo(builder, encAlgo)
 
 
 def ErrorAddEncSerializer(builder, encSerializer):
@@ -209,7 +209,7 @@ def ErrorAddEncSerializer(builder, encSerializer):
 
 
 def AddEncSerializer(builder, encSerializer):
-    return ErrorAddEncSerializer(builder, encSerializer)
+    ErrorAddEncSerializer(builder, encSerializer)
 
 
 def ErrorAddEncKey(builder, encKey):
@@ -219,14 +219,14 @@ def ErrorAddEncKey(builder, encKey):
 
 
 def AddEncKey(builder, encKey):
-    return ErrorAddEncKey(builder, encKey)
+    ErrorAddEncKey(builder, encKey)
 
 
 def ErrorStartEncKeyVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartEncKeyVector(builder, numElems):
+def StartEncKeyVector(builder, numElems: int) -> int:
     return ErrorStartEncKeyVector(builder, numElems)
 
 

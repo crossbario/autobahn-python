@@ -33,7 +33,7 @@ def AuthTicketRequestStart(builder):
 
 
 def Start(builder):
-    return AuthTicketRequestStart(builder)
+    AuthTicketRequestStart(builder)
 
 
 def AuthTicketRequestEnd(builder):

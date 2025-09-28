@@ -65,7 +65,7 @@ def GoodbyeStart(builder):
 
 
 def Start(builder):
-    return GoodbyeStart(builder)
+    GoodbyeStart(builder)
 
 
 def GoodbyeAddSession(builder, session):
@@ -73,7 +73,7 @@ def GoodbyeAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return GoodbyeAddSession(builder, session)
+    GoodbyeAddSession(builder, session)
 
 
 def GoodbyeAddReason(builder, reason):
@@ -83,7 +83,7 @@ def GoodbyeAddReason(builder, reason):
 
 
 def AddReason(builder, reason):
-    return GoodbyeAddReason(builder, reason)
+    GoodbyeAddReason(builder, reason)
 
 
 def GoodbyeAddMessage(builder, message):
@@ -93,7 +93,7 @@ def GoodbyeAddMessage(builder, message):
 
 
 def AddMessage(builder, message):
-    return GoodbyeAddMessage(builder, message)
+    GoodbyeAddMessage(builder, message)
 
 
 def GoodbyeAddResumable(builder, resumable):
@@ -101,7 +101,7 @@ def GoodbyeAddResumable(builder, resumable):
 
 
 def AddResumable(builder, resumable):
-    return GoodbyeAddResumable(builder, resumable)
+    GoodbyeAddResumable(builder, resumable)
 
 
 def GoodbyeEnd(builder):

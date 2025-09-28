@@ -60,7 +60,7 @@ def UnsubscribeStart(builder):
 
 
 def Start(builder):
-    return UnsubscribeStart(builder)
+    UnsubscribeStart(builder)
 
 
 def UnsubscribeAddSession(builder, session):
@@ -68,7 +68,7 @@ def UnsubscribeAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return UnsubscribeAddSession(builder, session)
+    UnsubscribeAddSession(builder, session)
 
 
 def UnsubscribeAddRequest(builder, request):
@@ -76,7 +76,7 @@ def UnsubscribeAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return UnsubscribeAddRequest(builder, request)
+    UnsubscribeAddRequest(builder, request)
 
 
 def UnsubscribeAddSubscription(builder, subscription):
@@ -84,7 +84,7 @@ def UnsubscribeAddSubscription(builder, subscription):
 
 
 def AddSubscription(builder, subscription):
-    return UnsubscribeAddSubscription(builder, subscription)
+    UnsubscribeAddSubscription(builder, subscription)
 
 
 def UnsubscribeEnd(builder):

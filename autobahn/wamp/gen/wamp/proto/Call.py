@@ -205,7 +205,7 @@ def CallStart(builder):
 
 
 def Start(builder):
-    return CallStart(builder)
+    CallStart(builder)
 
 
 def CallAddSession(builder, session):
@@ -213,7 +213,7 @@ def CallAddSession(builder, session):
 
 
 def AddSession(builder, session):
-    return CallAddSession(builder, session)
+    CallAddSession(builder, session)
 
 
 def CallAddRequest(builder, request):
@@ -221,7 +221,7 @@ def CallAddRequest(builder, request):
 
 
 def AddRequest(builder, request):
-    return CallAddRequest(builder, request)
+    CallAddRequest(builder, request)
 
 
 def CallAddProcedure(builder, procedure):
@@ -231,7 +231,7 @@ def CallAddProcedure(builder, procedure):
 
 
 def AddProcedure(builder, procedure):
-    return CallAddProcedure(builder, procedure)
+    CallAddProcedure(builder, procedure)
 
 
 def CallAddPayload(builder, payload):
@@ -241,14 +241,14 @@ def CallAddPayload(builder, payload):
 
 
 def AddPayload(builder, payload):
-    return CallAddPayload(builder, payload)
+    CallAddPayload(builder, payload)
 
 
 def CallStartPayloadVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartPayloadVector(builder, numElems):
+def StartPayloadVector(builder, numElems: int) -> int:
     return CallStartPayloadVector(builder, numElems)
 
 
@@ -257,7 +257,7 @@ def CallAddEncAlgo(builder, encAlgo):
 
 
 def AddEncAlgo(builder, encAlgo):
-    return CallAddEncAlgo(builder, encAlgo)
+    CallAddEncAlgo(builder, encAlgo)
 
 
 def CallAddEncSerializer(builder, encSerializer):
@@ -265,7 +265,7 @@ def CallAddEncSerializer(builder, encSerializer):
 
 
 def AddEncSerializer(builder, encSerializer):
-    return CallAddEncSerializer(builder, encSerializer)
+    CallAddEncSerializer(builder, encSerializer)
 
 
 def CallAddEncKey(builder, encKey):
@@ -275,14 +275,14 @@ def CallAddEncKey(builder, encKey):
 
 
 def AddEncKey(builder, encKey):
-    return CallAddEncKey(builder, encKey)
+    CallAddEncKey(builder, encKey)
 
 
 def CallStartEncKeyVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartEncKeyVector(builder, numElems):
+def StartEncKeyVector(builder, numElems: int) -> int:
     return CallStartEncKeyVector(builder, numElems)
 
 
@@ -291,7 +291,7 @@ def CallAddTimeout(builder, timeout):
 
 
 def AddTimeout(builder, timeout):
-    return CallAddTimeout(builder, timeout)
+    CallAddTimeout(builder, timeout)
 
 
 def CallAddReceiveProgress(builder, receiveProgress):
@@ -299,7 +299,7 @@ def CallAddReceiveProgress(builder, receiveProgress):
 
 
 def AddReceiveProgress(builder, receiveProgress):
-    return CallAddReceiveProgress(builder, receiveProgress)
+    CallAddReceiveProgress(builder, receiveProgress)
 
 
 def CallAddTransactionHash(builder, transactionHash):
@@ -309,7 +309,7 @@ def CallAddTransactionHash(builder, transactionHash):
 
 
 def AddTransactionHash(builder, transactionHash):
-    return CallAddTransactionHash(builder, transactionHash)
+    CallAddTransactionHash(builder, transactionHash)
 
 
 def CallAddCaller(builder, caller):
@@ -317,7 +317,7 @@ def CallAddCaller(builder, caller):
 
 
 def AddCaller(builder, caller):
-    return CallAddCaller(builder, caller)
+    CallAddCaller(builder, caller)
 
 
 def CallAddCallerAuthid(builder, callerAuthid):
@@ -327,7 +327,7 @@ def CallAddCallerAuthid(builder, callerAuthid):
 
 
 def AddCallerAuthid(builder, callerAuthid):
-    return CallAddCallerAuthid(builder, callerAuthid)
+    CallAddCallerAuthid(builder, callerAuthid)
 
 
 def CallAddCallerAuthrole(builder, callerAuthrole):
@@ -337,7 +337,7 @@ def CallAddCallerAuthrole(builder, callerAuthrole):
 
 
 def AddCallerAuthrole(builder, callerAuthrole):
-    return CallAddCallerAuthrole(builder, callerAuthrole)
+    CallAddCallerAuthrole(builder, callerAuthrole)
 
 
 def CallAddForwardFor(builder, forwardFor):
@@ -347,14 +347,14 @@ def CallAddForwardFor(builder, forwardFor):
 
 
 def AddForwardFor(builder, forwardFor):
-    return CallAddForwardFor(builder, forwardFor)
+    CallAddForwardFor(builder, forwardFor)
 
 
 def CallStartForwardForVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartForwardForVector(builder, numElems):
+def StartForwardForVector(builder, numElems: int) -> int:
     return CallStartForwardForVector(builder, numElems)
 
 
