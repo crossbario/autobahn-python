@@ -139,7 +139,7 @@ distclean:
     # 1. Remove top-level directories known to us.
     #    This is fast for the common cases.
     echo "--> Removing venvs, cache, and build/dist directories..."
-    rm -rf {{UV_CACHE_DIR}} {{VENV_DIR}} build/ dist/ .pytest_cache/ .ruff_cache/ .mypy_cache/
+    rm -rf {{UV_CACHE_DIR}} {{VENV_DIR}} build/ dist/ wheelhouse/ .pytest_cache/ .ruff_cache/ .mypy_cache/
 
     # 2. Use `find` to hunt down and destroy nested artifacts that can be
     #    scattered throughout the source tree. This is the most thorough part.
@@ -514,8 +514,11 @@ check venv="": (check-format venv) (check-typing venv) (check-coverage venv)
 # -- Unit tests
 # -----------------------------------------------------------------------------
 
-# Run the test suite using pytest (usage: `just test cpy314`)
-test venv="": (install-tools venv) (install venv)
+# Run the test suite for Twisted/trial and asyncio/pytest (usage: `just test cpy314`)
+test venv="": (test-twisted venv) (test-asyncio venv)
+
+# Run the test suite for Twisted using trial (usage: `just test-twisted cpy314`)
+test-twisted venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -525,8 +528,42 @@ test venv="": (install-tools venv) (install venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
-    echo "==> Running test suite for ${VENV_NAME}..."
-    "${VENV_PATH}/bin/pytest"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running test suite for Twisted using trial in ${VENV_NAME}..."
+
+    # IMPORTANT: Twisted trial doesn't allow to recurse-and-exclude, and hence we
+    # need this looong explicit list of tests to run because we must exclude "asyncio"
+    #
+    # AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS=1:
+    #   This enables "autobahn/test/test_rng.py" (on Linux), which tests entropy depletion,
+    #   and tests how to correctly read _real_ entropy and block if not enough _real_ entropy
+    #   is currently available (see: https://github.com/crossbario/autobahn-python/issues/1275)
+
+    USE_TWISTED=1 ${VENV_PYTHON} -m twisted.trial --no-recurse \
+        autobahn.test \
+        autobahn.twisted.test \
+        autobahn.websocket.test \
+        autobahn.rawsocket.test \
+        autobahn.wamp.test \
+        autobahn.nvx.test
+
+# Run the test suite for asyncio using pytest (usage: `just test-asyncio cpy314`)
+test-asyncio venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running test suite for asyncio using pytest in ${VENV_NAME}..."
+
+    # IMPORTANT: we need to exclude all twisted tests
+    USE_ASYNCIO=1 ${VENV_PYTHON} -m pytest -s -v -rfP \
+        --ignore=./autobahn/twisted ./autobahn
 
 # -----------------------------------------------------------------------------
 # -- Documentation
@@ -572,8 +609,8 @@ build venv="": (install-tools venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Building distribution packages..."
-    # Set environment variable for NVX acceleration (defaults to enabled, respects existing setting)
-    AUTOBAHN_USE_NVX=${AUTOBAHN_USE_NVX:-1} ${VENV_PYTHON} -m build
+    # Set environment variable for NVX acceleration
+    AUTOBAHN_USE_NVX=1 ${VENV_PYTHON} -m build
     ls -la dist/
 
 # Meta-recipe to run `build` on all environments
@@ -624,19 +661,6 @@ build-fbs:
     ${FLATC} -o ./autobahn/wamp/gen/ --python ${FBSFILES}
     touch ./autobahn/wamp/gen/__init__.py
     echo "--> Generated $(find ./autobahn/wamp/gen/ -name '*.py' | wc -l) .py files"
-
-# -----------------------------------------------------------------------------
-# -- Legacy Makefile Compatibility Aliases
-# -----------------------------------------------------------------------------
-
-# Alias for autoformat (Makefile compatibility)
-autoformat_python venv="": (autoformat venv)
-
-# Alias for flake8/lint checking (Makefile compatibility)
-flake8 venv="": (check-format venv)
-
-# Alias for mypy (Makefile compatibility)
-mypy venv="": (check-typing venv)
 
 # -----------------------------------------------------------------------------
 # -- File Management Utilities
