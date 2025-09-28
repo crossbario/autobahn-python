@@ -49,3 +49,4 @@ package-lock.json
 package.json
 uv.lock
 wheelhouse/
+.coverage
