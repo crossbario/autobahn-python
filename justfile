@@ -849,6 +849,7 @@ fix-audit-filenames:
 # -----------------------------------------------------------------------------
 
 # Run Autobahn WebSocket Testsuite in fuzzingserver mode.
+# FIXME: add boolean flag to select running `fuzzingserver-quick.json` vs `fuzzingserver-full.json`
 wstest-fuzzingserver config_dir="" output_dir="":
     #!/usr/bin/env bash
     set -e
@@ -875,6 +876,8 @@ wstest-fuzzingserver config_dir="" output_dir="":
         "{{AUTOBAHN_TESTSUITE_IMAGE}}" \
         wstest -m fuzzingserver -s /config/fuzzingserver-quick.json
 
+# FIXME: add recipe wstest-fuzzingclient
+
 # Run Autobahn|Python WebSocket client on Twisted
 wstest-testeeclient-twisted venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
@@ -890,3 +893,22 @@ wstest-testeeclient-twisted venv="": (install-tools venv) (install venv)
     echo "==> Running Autobahn|Python WebSocket client on Twisted in ${VENV_NAME}..."
 
     ${VENV_PYTHON} ./wstest/testee_client_tx.py
+
+# Run Autobahn|Python WebSocket client on asyncio
+wstest-testeeclient-asyncio venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running Autobahn|Python WebSocket client on asyncio in ${VENV_NAME}..."
+
+    ${VENV_PYTHON} ./wstest/testee_client_aio.py
+
+# FIXME: add recipe wstest-testeeserver-twisted
+# FIXME: add recipe wstest-testeeserver-asyncio
