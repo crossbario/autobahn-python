@@ -446,7 +446,7 @@ install-rust:
 install-wstest:
     #!/usr/bin/env bash
     set -e
-    docker pull {{AUTOBAHN_TESTSUITE_IMAGE}}
+    sudo docker pull {{AUTOBAHN_TESTSUITE_IMAGE}}
 
 # -----------------------------------------------------------------------------
 # -- Linting, Static Typechecking, .. the codebase
@@ -868,7 +868,7 @@ wstest-fuzzingserver config_dir="" output_dir="":
     echo "Using config directory: ${CONFIG_DIR}"
     echo "Using output directory: ${OUTPUT_DIR}"
     echo ""
-    docker run -it --rm \
+    sudo docker run -it --rm \
         -v "${CONFIG_DIR}:/config" \
         -v "${OUTPUT_DIR}:/reports" \
         -p 9001:9001 \
