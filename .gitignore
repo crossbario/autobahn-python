@@ -50,3 +50,4 @@ package.json
 uv.lock
 wheelhouse/
 .coverage
+.wstest/

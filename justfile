@@ -32,6 +32,15 @@ default:
 # Tell uv to use project-local cache directory.
 export UV_CACHE_DIR := './.uv-cache'
 
+# Autobahn|Testsuite (https://github.com/crossbario/autobahn-testsuite) Docker image to use.
+AUTOBAHN_TESTSUITE_IMAGE := 'crossbario/autobahn-testsuite:latest'
+
+# Default output directory for Autobahn|Testsuite reports (HTML files).
+AUTOBAHN_TESTSUITE_OUTPUT_DIR := justfile_directory() / '.wstest'
+
+# Default config directory for Autobahn|Testsuite configuration (JSON files).
+AUTOBAHN_TESTSUITE_CONFIG_DIR := justfile_directory() / 'wstest'
+
 # Use this common single directory for all uv venvs.
 VENV_DIR := './.venvs'
 
@@ -433,6 +442,12 @@ install-rust:
     which cargo
     cargo --version
 
+# Install Autobahn WebSocket Testsuite (Docker image).
+install-wstest:
+    #!/usr/bin/env bash
+    set -e
+    docker pull {{AUTOBAHN_TESTSUITE_IMAGE}}
+
 # -----------------------------------------------------------------------------
 # -- Linting, Static Typechecking, .. the codebase
 # -----------------------------------------------------------------------------
@@ -500,10 +515,10 @@ check-coverage-twisted venv="": (install-tools venv) (install venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running Twisted tests with coverage in ${VENV_NAME}..."
-    
+
     # Clean previous coverage data
     rm -f .coverage .coverage.*
-    
+
     # Run Twisted tests with coverage
     USE_TWISTED=1 "${VENV_PATH}/bin/coverage" run \
         --source=autobahn \
@@ -516,7 +531,7 @@ check-coverage-twisted venv="": (install-tools venv) (install venv)
         autobahn.wamp.test \
         autobahn.nvx.test
 
-# Run coverage for asyncio tests only  
+# Run coverage for asyncio tests only
 check-coverage-asyncio venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
@@ -528,7 +543,7 @@ check-coverage-asyncio venv="": (install-tools venv) (install venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Running asyncio tests with coverage in ${VENV_NAME}..."
-    
+
     # Run asyncio tests with coverage (parallel mode to combine later)
     USE_ASYNCIO=1 "${VENV_PATH}/bin/coverage" run \
         --source=autobahn \
@@ -548,15 +563,15 @@ check-coverage-combined venv="": (check-coverage-twisted venv) (check-coverage-a
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Combining coverage data from Twisted and asyncio tests..."
-    
+
     # Combine all coverage data files
     "${VENV_PATH}/bin/coverage" combine
-    
+
     # Generate reports
     mkdir -p docs/_build/html
     "${VENV_PATH}/bin/coverage" html -d docs/_build/html/coverage-combined
     "${VENV_PATH}/bin/coverage" report --show-missing
-    
+
     echo ""
     echo "✅ Combined coverage report generated:"
     echo "   HTML: docs/_build/html/coverage-combined/index.html"
@@ -723,24 +738,24 @@ install-flatc:
     FLATC_VERSION="25.9.23"
     FLATC_URL="https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/Linux.flatc.binary.g++-13.zip"
     TEMP_DIR=$(mktemp -d)
-    
+
     echo "==> Installing FlatBuffers compiler v${FLATC_VERSION}..."
     echo "    URL: ${FLATC_URL}"
     echo "    Temp dir: ${TEMP_DIR}"
-    
+
     # Download and extract
     cd "${TEMP_DIR}"
     curl -L -o flatc.zip "${FLATC_URL}"
     unzip flatc.zip
-    
+
     # Install to /usr/local/bin (requires sudo)
     echo "==> Installing flatc to /usr/local/bin (requires sudo)..."
     sudo mv flatc /usr/local/bin/flatc
     sudo chmod +x /usr/local/bin/flatc
-    
+
     # Cleanup
     rm -rf "${TEMP_DIR}"
-    
+
     # Verify installation
     echo "==> Verification:"
     flatc --version
@@ -828,3 +843,50 @@ fix-audit-filenames:
     ls -la .audit/
     echo ""
     echo "These files are now Windows-compatible."
+
+# -----------------------------------------------------------------------------
+# -- WebSocket compliance testing
+# -----------------------------------------------------------------------------
+
+# Run Autobahn WebSocket Testsuite in fuzzingserver mode.
+wstest-fuzzingserver config_dir="" output_dir="":
+    #!/usr/bin/env bash
+    set -e
+    CONFIG_DIR="{{ config_dir }}"
+    if [ -z "${CONFIG_DIR}" ]; then
+        echo "==> No wstest config directory specified. Using default {{AUTOBAHN_TESTSUITE_CONFIG_DIR}}..."
+        CONFIG_DIR="{{AUTOBAHN_TESTSUITE_CONFIG_DIR}}"
+    fi
+    OUTPUT_DIR="{{ output_dir }}"
+    if [ -z "${OUTPUT_DIR}" ]; then
+        echo "==> No wstest output directory specified. Using default {{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}..."
+        OUTPUT_DIR="{{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}"
+    fi
+    echo ""
+    echo "Using Docker image: {{AUTOBAHN_TESTSUITE_IMAGE}}"
+    echo "Using config directory: ${CONFIG_DIR}"
+    echo "Using output directory: ${OUTPUT_DIR}"
+    echo ""
+    docker run -it --rm \
+        -v "${CONFIG_DIR}:/config" \
+        -v "${OUTPUT_DIR}:/reports" \
+        -p 9001:9001 \
+        --name fuzzingserver \
+        "{{AUTOBAHN_TESTSUITE_IMAGE}}" \
+        wstest -m fuzzingserver -s /config/fuzzingserver-quick.json
+
+# Run Autobahn|Python WebSocket client on Twisted
+wstest-testeeclient-twisted venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running Autobahn|Python WebSocket client on Twisted in ${VENV_NAME}..."
+
+    ${VENV_PYTHON} ./wstest/testee_client_tx.py
