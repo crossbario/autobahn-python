@@ -108,11 +108,15 @@ jobs:
           echo "PATH=$PATH" >> $GITHUB_ENV
 
       - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
           just --version
 
       - name: Install uv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           # Add to both GITHUB_PATH and current environment
@@ -122,6 +126,8 @@ jobs:
           uv --version
 
       - name: Install Rust
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           # Source the Rust environment (as recommended by installer)
