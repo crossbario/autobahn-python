@@ -126,11 +126,13 @@ if __name__ == "__main__":
 
     txaio.start_logging(level=options.loglevel)
 
+    # Create and set event loop early for Python 3.14 compatibility
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     factory = TesteeServerFactory(options.url)
 
     _, _, port, _, _, _ = parse_url(options.url)
-
-    loop = asyncio.get_event_loop()
     coro = loop.create_server(factory, port=port)
     server = loop.run_until_complete(coro)
 

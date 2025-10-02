@@ -868,7 +868,7 @@ wstest-fuzzingserver config_dir="" output_dir="":
     echo "Using config directory: ${CONFIG_DIR}"
     echo "Using output directory: ${OUTPUT_DIR}"
     echo ""
-    sudo docker run -it --rm \
+    sudo docker run -i --rm \
         -v "${CONFIG_DIR}:/config" \
         -v "${OUTPUT_DIR}:/reports" \
         -p 9001:9001 \
@@ -876,7 +876,34 @@ wstest-fuzzingserver config_dir="" output_dir="":
         "{{AUTOBAHN_TESTSUITE_IMAGE}}" \
         wstest -m fuzzingserver -s /config/fuzzingserver-quick.json
 
-# FIXME: add recipe wstest-fuzzingclient
+# Run Autobahn|Testsuite in fuzzingclient mode (tests autobahn-python servers)
+wstest-fuzzingclient config_dir="" output_dir="":
+    #!/usr/bin/env bash
+    set -e
+    CONFIG_DIR="{{ config_dir }}"
+    if [ -z "${CONFIG_DIR}" ]; then
+        echo "==> No wstest config directory specified. Using default {{AUTOBAHN_TESTSUITE_CONFIG_DIR}}..."
+        CONFIG_DIR="{{AUTOBAHN_TESTSUITE_CONFIG_DIR}}"
+    fi
+    OUTPUT_DIR="{{ output_dir }}"
+    if [ -z "${OUTPUT_DIR}" ]; then
+        echo "==> No wstest output directory specified. Using default {{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}..."
+        OUTPUT_DIR="{{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}"
+    fi
+    echo "==> Creating wstest output directory: ${OUTPUT_DIR}"
+    mkdir -p "${OUTPUT_DIR}"
+    echo "==> Pulling Autobahn|Testsuite Docker image..."
+    sudo docker pull "{{AUTOBAHN_TESTSUITE_IMAGE}}"
+    echo "==> Running Autobahn|Testsuite in fuzzingclient mode..."
+    # for now, ignore any non-zero exit code by prefixing with hyphen (FIXME: remove later)
+    # FIXME: add boolean flag to select running `fuzzingclient-quick.json` vs `fuzzingclient-full.json`
+    sudo docker run -i --rm \
+        --network host \
+        -v "${CONFIG_DIR}":/config \
+        -v "${OUTPUT_DIR}":/reports \
+        --name fuzzingclient \
+        "{{AUTOBAHN_TESTSUITE_IMAGE}}" \
+        wstest -m fuzzingclient -s /config/fuzzingclient-quick.json
 
 # Run Autobahn|Python WebSocket client on Twisted
 wstest-testeeclient-twisted venv="": (install-tools venv) (install venv)
@@ -910,5 +937,32 @@ wstest-testeeclient-asyncio venv="": (install-tools venv) (install venv)
 
     ${VENV_PYTHON} ./wstest/testee_client_aio.py
 
-# FIXME: add recipe wstest-testeeserver-twisted
-# FIXME: add recipe wstest-testeeserver-asyncio
+# Run Autobahn|Python WebSocket server on Twisted
+wstest-testeeserver-twisted venv="" url="ws://127.0.0.1:9011": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running Autobahn|Python WebSocket server on Twisted in ${VENV_NAME} at {{ url }}..."
+    ${VENV_PYTHON} ./wstest/testee_server_tx.py --url "{{ url }}"
+
+# Run Autobahn|Python WebSocket server on asyncio
+wstest-testeeserver-asyncio venv="" url="ws://127.0.0.1:9012": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running Autobahn|Python WebSocket server on asyncio in ${VENV_NAME} at {{ url }}..."
+    ${VENV_PYTHON} ./wstest/testee_server_aio.py --url "{{ url }}"
