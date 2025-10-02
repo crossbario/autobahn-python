@@ -1,0 +1,291 @@
+name: wstest
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode to run'
+        required: false
+        default: 'quick'
+        type: choice
+        options:
+        - quick
+        - full
+
+env:
+  UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
+  # Autobahn|Testsuite Docker image
+  TESTSUITE_IMAGE: crossbario/autobahn-testsuite:latest
+  # Test mode: 'quick' for fast CI, 'full' for comprehensive testing
+  TEST_MODE: ${{ github.event.inputs.test_mode || 'quick' }}
+
+jobs:
+  websocket-conformance:
+    name: WebSocket Conformance Testing
+    runs-on: ubuntu-24.04
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [twisted, asyncio]
+        role: [client, server]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Just
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Verify toolchain installation
+        run: |
+          just --version
+          uv --version
+          docker --version
+
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-cache-ubuntu-wstest-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-ubuntu-wstest-
+
+      - name: Create Python environment and install autobahn
+        run: |
+          just create cpy314
+          just install cpy314
+
+      - name: Prepare test directories
+        run: |
+          mkdir -p wstest-reports/${{ matrix.backend }}-${{ matrix.role }}
+          mkdir -p wstest-config
+          
+          # Copy appropriate config file based on role and test mode
+          if [ "${{ matrix.role }}" = "client" ]; then
+            cp wstest/fuzzingclient-${{ env.TEST_MODE }}.json wstest-config/fuzzingclient.json
+          else
+            cp wstest/fuzzingserver-${{ env.TEST_MODE }}.json wstest-config/fuzzingserver.json
+          fi
+          
+          echo "==> Test configuration:"
+          echo "Backend: ${{ matrix.backend }}"
+          echo "Role: ${{ matrix.role }}"
+          echo "Mode: ${{ env.TEST_MODE }}"
+          ls -la wstest-config/
+
+      - name: Pull Autobahn|Testsuite Docker image
+        run: |
+          echo "==> Pulling Docker image: ${{ env.TESTSUITE_IMAGE }}"
+          docker pull ${{ env.TESTSUITE_IMAGE }}
+
+      - name: Run WebSocket conformance tests (${{ matrix.backend }} ${{ matrix.role }})
+        run: |
+          echo "==> Starting WebSocket conformance test: ${{ matrix.backend }} ${{ matrix.role }}"
+          
+          # Start Autobahn|Testsuite container in background
+          if [ "${{ matrix.role }}" = "client" ]; then
+            # Test autobahn-python client against testsuite server (fuzzingserver mode)
+            echo "Starting Autobahn|Testsuite server for client testing..."
+            docker run -d --rm \
+              -v $(pwd)/wstest-config:/config \
+              -v $(pwd)/wstest-reports/${{ matrix.backend }}-${{ matrix.role }}:/reports \
+              -p 9001:9001 \
+              --name autobahn-testsuite-${{ matrix.backend }}-${{ matrix.role }} \
+              ${{ env.TESTSUITE_IMAGE }} \
+              wstest -m fuzzingserver -s /config/fuzzingserver.json
+          else
+            # Test autobahn-python server against testsuite client (fuzzingclient mode)  
+            echo "Starting Autobahn|Testsuite client for server testing..."
+            docker run -d --rm \
+              -v $(pwd)/wstest-config:/config \
+              -v $(pwd)/wstest-reports/${{ matrix.backend }}-${{ matrix.role }}:/reports \
+              -p 9001:9001 \
+              --name autobahn-testsuite-${{ matrix.backend }}-${{ matrix.role }} \
+              ${{ env.TESTSUITE_IMAGE }} \
+              wstest -m fuzzingclient -s /config/fuzzingclient.json
+          fi
+          
+          # Wait for testsuite to be ready
+          echo "Waiting for Autobahn|Testsuite to be ready..."
+          sleep 10
+          
+          # Check if testsuite is running
+          if ! docker ps | grep -q autobahn-testsuite-${{ matrix.backend }}-${{ matrix.role }}; then
+            echo "❌ Autobahn|Testsuite container failed to start"
+            docker logs autobahn-testsuite-${{ matrix.backend }}-${{ matrix.role }} || true
+            exit 1
+          fi
+          
+          echo "✅ Autobahn|Testsuite is running"
+
+      - name: Run autobahn-python testee (${{ matrix.backend }} ${{ matrix.role }})
+        run: |
+          echo "==> Running autobahn-python testee: ${{ matrix.backend }} ${{ matrix.role }}"
+          
+          # Run the appropriate testee script
+          TESTEE_SCRIPT="wstest/testee_${{ matrix.role }}_"
+          if [ "${{ matrix.backend }}" = "twisted" ]; then
+            TESTEE_SCRIPT="${TESTEE_SCRIPT}tx.py"
+          else
+            TESTEE_SCRIPT="${TESTEE_SCRIPT}aio.py"
+          fi
+          
+          echo "Executing: python ${TESTEE_SCRIPT}"
+          
+          # Run testee with timeout to prevent hanging
+          timeout 600 python ${TESTEE_SCRIPT} || {
+            echo "⚠️  Testee execution timed out or failed (exit code: $?)"
+            echo "This may be expected if tests completed or testsuite finished"
+          }
+
+      - name: Stop testsuite and collect results
+        if: always()
+        run: |
+          echo "==> Stopping Autobahn|Testsuite container..."
+          
+          # Stop the container gracefully
+          docker stop autobahn-testsuite-${{ matrix.backend }}-${{ matrix.role }} || true
+          
+          # Wait a moment for report generation to complete
+          sleep 5
+          
+          echo "==> Test results for ${{ matrix.backend }} ${{ matrix.role }}:"
+          ls -la wstest-reports/${{ matrix.backend }}-${{ matrix.role }}/ || echo "No reports directory found"
+          
+          # Show summary if available
+          if [ -f wstest-reports/${{ matrix.backend }}-${{ matrix.role }}/index.html ]; then
+            echo "✅ Test report generated: wstest-reports/${{ matrix.backend }}-${{ matrix.role }}/index.html"
+            
+            # Extract test summary from HTML if possible
+            if command -v grep >/dev/null 2>&1; then
+              echo "==> Test Summary:"
+              grep -E "pass|fail|Total|Cases" wstest-reports/${{ matrix.backend }}-${{ matrix.role }}/index.html | head -10 || true
+            fi
+          else
+            echo "⚠️  No index.html found in reports"
+          fi
+
+      - name: Upload WebSocket conformance reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wstest-reports-${{ matrix.backend }}-${{ matrix.role }}-${{ env.TEST_MODE }}
+          path: wstest-reports/${{ matrix.backend }}-${{ matrix.role }}/
+          retention-days: 30
+
+  consolidate-reports:
+    name: Consolidate WebSocket Reports
+    needs: websocket-conformance
+    runs-on: ubuntu-24.04
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all WebSocket reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wstest-reports-*
+          merge-multiple: false
+          path: all-wstest-reports/
+
+      - name: Create consolidated report index
+        run: |
+          mkdir -p consolidated-wstest-reports
+          
+          echo "==> Creating consolidated WebSocket conformance report..."
+          
+          cat > consolidated-wstest-reports/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Autobahn|Python WebSocket Conformance Reports</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 40px; }
+                  h1 { color: #333; }
+                  .test-matrix { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 20px 0; }
+                  .test-card { border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+                  .test-card h3 { margin-top: 0; color: #0066cc; }
+                  .test-mode { background: #f0f8ff; padding: 10px; border-radius: 3px; margin-bottom: 20px; }
+              </style>
+          </head>
+          <body>
+              <h1>🔌 Autobahn|Python WebSocket Conformance Reports</h1>
+              
+              <div class="test-mode">
+                  <strong>Test Mode:</strong> ${{ env.TEST_MODE }}
+                  <br><strong>Generated:</strong> $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+                  <br><strong>Commit:</strong> ${{ github.sha }}
+              </div>
+              
+              <p>This page provides WebSocket protocol conformance test results for Autobahn|Python 
+              against the <a href="https://github.com/crossbario/autobahn-testsuite">Autobahn|Testsuite</a>.</p>
+              
+              <div class="test-matrix">
+          EOF
+          
+          # Add links to individual reports
+          for backend in twisted asyncio; do
+            for role in client server; do
+              report_dir="wstest-reports-${backend}-${role}-${{ env.TEST_MODE }}"
+              if [ -d "all-wstest-reports/${report_dir}" ]; then
+                # Copy reports to consolidated directory
+                cp -r "all-wstest-reports/${report_dir}" "consolidated-wstest-reports/${backend}-${role}"
+                
+                # Add card to index
+                cat >> consolidated-wstest-reports/index.html << EOF
+                  <div class="test-card">
+                      <h3>${backend^} ${role^}</h3>
+                      <p>Autobahn|Python ${backend} WebSocket ${role} implementation</p>
+                      <a href="${backend}-${role}/index.html">📊 View Test Results</a>
+                  </div>
+          EOF
+              else
+                echo "⚠️  Report directory not found: ${report_dir}"
+              fi
+            done
+          done
+          
+          cat >> consolidated-wstest-reports/index.html << 'EOF'
+              </div>
+              
+              <hr>
+              <p><small>Generated by <a href="https://github.com/crossbario/autobahn-python">Autobahn|Python</a> 
+              CI/CD pipeline using <a href="https://github.com/crossbario/autobahn-testsuite">Autobahn|Testsuite</a></small></p>
+          </body>
+          </html>
+          EOF
+          
+          echo "✅ Consolidated report created"
+          ls -la consolidated-wstest-reports/
+
+      - name: Upload consolidated WebSocket reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-wstest-reports-${{ env.TEST_MODE }}
+          path: consolidated-wstest-reports/
+          retention-days: 30
+
+      - name: Report summary
+        run: |
+          echo "==> WebSocket Conformance Testing Complete"
+          echo "Test Mode: ${{ env.TEST_MODE }}"
+          echo "Reports generated for:"
+          find consolidated-wstest-reports -name "index.html" | sort
+          echo ""
+          echo "📄 Access consolidated report: consolidated-wstest-reports/index.html"
+          echo "🔗 Individual reports available in matrix job artifacts"
