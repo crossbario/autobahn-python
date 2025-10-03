@@ -132,8 +132,8 @@ if __name__ == "__main__":
 
     factory = TesteeServerFactory(options.url)
 
-    _, _, port, _, _, _ = parse_url(options.url)
-    coro = loop.create_server(factory, port=port)
+    _, host, port, _, _, _ = parse_url(options.url)
+    coro = loop.create_server(factory, host=host, port=port)
     server = loop.run_until_complete(coro)
 
     try:
