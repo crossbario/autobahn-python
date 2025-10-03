@@ -1034,4 +1034,6 @@ wstest-consolidate-reports:
 
     echo "✅ Test reports consolidated for documentation"
     echo "📄 HTML reports: docs/_static/websocket/conformance/"
+
+    sync docs/_static/websocket/conformance/
     du -hs docs/_static/websocket/conformance/
