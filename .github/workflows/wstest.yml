@@ -1,221 +1,133 @@
-name: wstest
+name: WebSocket Conformance Testing
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
   workflow_dispatch:
     inputs:
       test_mode:
-        description: "Test mode to run"
+        description: 'Test mode (quick or full)'
         required: false
-        default: "quick"
+        default: 'quick'
         type: choice
         options:
           - quick
           - full
+  schedule:
+    # Run daily at 02:00 UTC  
+    - cron: '0 2 * * *'
 
 env:
-  UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
-  # Test mode: 'quick' for fast CI, 'full' for comprehensive testing
+  UV_CACHE_DIR: /tmp/.uv-cache
   TEST_MODE: ${{ github.event.inputs.test_mode || 'quick' }}
 
 jobs:
-  # Client testing: Test autobahn-python clients against testsuite server
+  # Client testing: Test autobahn-python clients against testsuite server  
   client-conformance:
-    name: WebSocket Client Testing (${{ matrix.backend }})
+    name: WebSocket Client Testing (${{ matrix.backend }}-${{ matrix.python }})
     runs-on: ubuntu-24.04
-
+    
     strategy:
-      fail-fast: false
       matrix:
         backend: [twisted, asyncio]
-
+        python: [cpy311, cpy314, pypy311]
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Just
+      - name: Install toolchain
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
-          echo "$HOME/bin" >> $GITHUB_PATH
-
-      - name: Install uv
-        run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source $HOME/.cargo/env
+          echo "$HOME/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: Verify toolchain installation
-        run: |
-          just --version
-          uv --version
-          docker --version
 
       - name: Setup uv cache
         uses: actions/cache@v4
         with:
           path: ${{ env.UV_CACHE_DIR }}
-          key: uv-cache-ubuntu-wstest-${{ hashFiles('pyproject.toml') }}
-          restore-keys: |
-            uv-cache-ubuntu-wstest-
+          key: uv-cache-${{ matrix.python }}-${{ hashFiles('pyproject.toml') }}
 
       - name: Setup Python environment
+        run: just create ${{ matrix.python }}
+
+      - name: Start fuzzingserver  
         run: |
-          just create cpy314
-          just install cpy314
+          nohup just wstest-fuzzingserver "" "" ${{ env.TEST_MODE }} > fuzzingserver.log 2>&1 &
+          sleep 10
+          curl -f http://127.0.0.1:9001 || (echo "❌ Fuzzingserver failed"; cat fuzzingserver.log; exit 1)
 
-      - name: Install Autobahn|Testsuite Docker image
-        run: just install-wstest
+      - name: Run client tests
+        run: just wstest-testeeclient-${{ matrix.backend }} ${{ matrix.python }}
 
-      - name: Start Autobahn|Testsuite server (background)
-        run: |
-          echo "==> Starting Autobahn|Testsuite server in background..."
-          nohup just wstest-fuzzingserver > fuzzingserver.log 2>&1 &
-          echo $! > fuzzingserver.pid
-          
-          # Wait for server to be ready
-          echo "==> Waiting for fuzzingserver to be ready..."
-          sleep 15
-          
-          # Verify server is running
-          if ! docker ps | grep -q fuzzingserver; then
-            echo "❌ Fuzzingserver failed to start"
-            cat fuzzingserver.log
-            exit 1
-          fi
-          echo "✅ Fuzzingserver is running"
-
-      - name: Test ${{ matrix.backend }} client
-        run: |
-          echo "==> Testing ${{ matrix.backend }} WebSocket client..."
-          if [ "${{ matrix.backend }}" = "twisted" ]; then
-            just wstest-testeeclient-twisted cpy314
-          else
-            just wstest-testeeclient-asyncio cpy314
-          fi
-
-      - name: Stop fuzzingserver and collect results
-        if: always()
-        run: |
-          echo "==> Stopping fuzzingserver..."
-          if [ -f fuzzingserver.pid ]; then
-            kill $(cat fuzzingserver.pid) || true
-          fi
-          docker stop fuzzingserver || true
-          
-          echo "==> Client test results for ${{ matrix.backend }}:"
-          ls -la .wstest/clients/ || echo "No client reports found"
-
-      - name: Upload client test reports
+      - name: Upload client reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: client-reports-${{ matrix.backend }}-${{ env.TEST_MODE }}
+          name: client-${{ matrix.backend }}-${{ matrix.python }}-${{ env.TEST_MODE }}
           path: .wstest/clients/
           retention-days: 30
 
-  # Server testing: Test both autobahn-python servers against testsuite client
+  # Server testing: Test all server combinations against testsuite client
   server-conformance:
-    name: WebSocket Server Testing
+    name: WebSocket Server Testing (All Combinations)
     runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Just
+      - name: Install toolchain
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
-          echo "$HOME/bin" >> $GITHUB_PATH
-
-      - name: Install uv
-        run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
-          source $HOME/.cargo/env
+          echo "$HOME/bin" >> $GITHUB_PATH
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: Verify toolchain installation
-        run: |
-          just --version
-          uv --version
-          docker --version
 
       - name: Setup uv cache
         uses: actions/cache@v4
         with:
           path: ${{ env.UV_CACHE_DIR }}
-          key: uv-cache-ubuntu-wstest-${{ hashFiles('pyproject.toml') }}
-          restore-keys: |
-            uv-cache-ubuntu-wstest-
+          key: uv-cache-servers-${{ hashFiles('pyproject.toml') }}
 
-      - name: Setup Python environment
+      - name: Setup Python environments
         run: |
-          just create cpy314
-          just install cpy314
+          just create cpy311
+          just create cpy314  
+          just create pypy311
 
-      - name: Install Autobahn|Testsuite Docker image
-        run: just install-wstest
-
-      - name: Start Autobahn|Python servers (background)
+      - name: Start all WebSocket servers
         run: |
-          echo "==> Starting Twisted server on port 9011..."
-          nohup .venvs/cpy314/bin/python ./wstest/testee_server_tx.py --url ws://127.0.0.1:9011 > twisted-server.log 2>&1 &
-          echo $! > twisted-server.pid
+          echo "==> Starting 6 WebSocket server combinations..."
+          nohup just wstest-testeeserver-twisted cpy311 "ws://127.0.0.1:9011" > twisted-cpy311.log 2>&1 &
+          nohup just wstest-testeeserver-asyncio cpy311 "ws://127.0.0.1:9012" > asyncio-cpy311.log 2>&1 &
+          nohup just wstest-testeeserver-twisted cpy314 "ws://127.0.0.1:9013" > twisted-cpy314.log 2>&1 &
+          nohup just wstest-testeeserver-asyncio cpy314 "ws://127.0.0.1:9014" > asyncio-cpy314.log 2>&1 &
+          nohup just wstest-testeeserver-twisted pypy311 "ws://127.0.0.1:9015" > twisted-pypy311.log 2>&1 &
+          nohup just wstest-testeeserver-asyncio pypy311 "ws://127.0.0.1:9016" > asyncio-pypy311.log 2>&1 &
           
-          echo "==> Starting asyncio server on port 9012..."
-          nohup .venvs/cpy314/bin/python ./wstest/testee_server_aio.py --url ws://127.0.0.1:9012 > asyncio-server.log 2>&1 &
-          echo $! > asyncio-server.pid
+          sleep 10
           
-          # Wait for servers to be ready
-          echo "==> Waiting for servers to be ready..."
-          sleep 15
-          
-          # Verify both servers are listening
-          if ! netstat -tlnp | grep -q ":9011"; then
-            echo "❌ Twisted server failed to start on port 9011"
-            cat twisted-server.log
-            exit 1
-          fi
-          
-          if ! netstat -tlnp | grep -q ":9012"; then
-            echo "❌ asyncio server failed to start on port 9012"
-            cat asyncio-server.log
-            exit 1
-          fi
-          
-          echo "✅ Both servers are running"
-          netstat -tlnp | grep -E ":(9011|9012)"
+          echo "==> Verifying all servers are running..."
+          for port in 9011 9012 9013 9014 9015 9016; do
+            if ! netstat -tuln | grep :${port}; then
+              echo "❌ Server failed to start on port ${port}"
+              exit 1
+            fi
+          done
+          echo "✅ All 6 servers are running"
 
-      - name: Test servers with fuzzingclient
-        run: |
-          echo "==> Testing both Autobahn|Python servers..."
-          just wstest-fuzzingclient
+      - name: Run server tests
+        run: just wstest-fuzzingclient "" "" ${{ env.TEST_MODE }}
 
-      - name: Stop servers and collect results
-        if: always()
-        run: |
-          echo "==> Stopping servers..."
-          if [ -f twisted-server.pid ]; then
-            kill $(cat twisted-server.pid) || true
-          fi
-          if [ -f asyncio-server.pid ]; then
-            kill $(cat asyncio-server.pid) || true
-          fi
-          
-          echo "==> Server test results:"
-          ls -la .wstest/servers/ || echo "No server reports found"
-
-      - name: Upload server test reports
+      - name: Upload server reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: server-reports-${{ env.TEST_MODE }}
+          name: servers-all-${{ env.TEST_MODE }}
           path: .wstest/servers/
           retention-days: 30
 
-  # Consolidate all reports
+  # Consolidate all reports using the proven justfile recipe
   consolidate-reports:
     name: Consolidate WebSocket Reports
     needs: [client-conformance, server-conformance]
@@ -226,56 +138,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download all WebSocket reports
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: "*-reports-*"
-          merge-multiple: false
-          path: all-reports/
+          path: artifacts/
 
-      - name: Consolidate test reports for documentation
+      - name: Reconstruct test directory structure
         run: |
-          mkdir -p docs/_static/websocket/conformance
+          echo "==> Reconstructing .wstest directory structure..."
+          mkdir -p .wstest/clients .wstest/servers
           
-          echo "==> Consolidating WebSocket conformance test reports..."
-          
-          # Copy client reports to docs/_static
-          for backend in twisted asyncio; do
-            client_dir="client-reports-${backend}-${{ env.TEST_MODE }}"
-            if [ -d "all-reports/${client_dir}" ]; then
-              echo "Copying ${backend} client reports..."
-              cp -r "all-reports/${client_dir}"/* "docs/_static/websocket/conformance/" || true
-            else
-              echo "⚠️  Client report directory not found: ${client_dir}"
-            fi
+          # Combine all client reports
+          find artifacts -name "client-*" -type d | while read dir; do
+            echo "Processing: $dir"
+            cp -r "$dir"/* .wstest/clients/ || true
           done
           
-          # Copy server reports to docs/_static
-          server_dir="server-reports-${{ env.TEST_MODE }}"
-          if [ -d "all-reports/${server_dir}" ]; then
-            echo "Copying server reports..."
-            cp -r "all-reports/${server_dir}"/* "docs/_static/websocket/conformance/" || true
-          else
-            echo "⚠️  Server report directory not found: ${server_dir}"
-          fi
+          # Copy server reports
+          find artifacts -name "servers-*" -type d | while read dir; do
+            echo "Processing: $dir"  
+            cp -r "$dir"/* .wstest/servers/ || true
+          done
           
-          # Create ZIP archive of all JSON test reports
-          echo "==> Creating JSON reports archive..."
-          find docs/_static/websocket/conformance -name "*.json" -type f > json_files.txt
-          if [ -s json_files.txt ]; then
-            json_count=$(wc -l < json_files.txt)
-            echo "Found ${json_count} JSON test report files"
-            zip -r "docs/_static/websocket/conformance/conformance-reports-${{ env.TEST_MODE }}.zip" -@ < json_files.txt
-            echo "✅ Created conformance-reports-${{ env.TEST_MODE }}.zip with ${json_count} JSON files"
-          else
-            echo "⚠️  No JSON test report files found"
-          fi
-          
-          echo "✅ Test reports consolidated for documentation"
-          echo "HTML reports: docs/_static/websocket/conformance/"
-          ls -la docs/_static/websocket/conformance/ | head -10
+          echo "Client reports:" && ls -la .wstest/clients/ || echo "None"
+          echo "Server reports:" && ls -la .wstest/servers/ || echo "None"
 
-      - name: Upload consolidated WebSocket reports
+      - name: Consolidate reports for documentation
+        run: |
+          echo "==> Using proven justfile recipe..."
+          just wstest-consolidate-reports
+
+      - name: Upload consolidated reports
         uses: actions/upload-artifact@v4
         with:
           name: websocket-conformance-docs-${{ env.TEST_MODE }}
@@ -284,13 +177,11 @@ jobs:
 
       - name: Report summary
         run: |
-          echo "==> WebSocket Conformance Testing Complete"
+          echo "==> WebSocket Conformance Testing Complete ✅"
           echo "Test Mode: ${{ env.TEST_MODE }}"
-          echo "Reports integrated into documentation:"
-          find docs/_static/websocket/conformance -name "index.html" | sort
+          echo "Matrix tested: (client|server) × (twisted|asyncio) × (cpy311|cpy314|pypy311)"
           echo ""
-          if [ -f docs/_static/websocket/conformance/conformance-reports-${{ env.TEST_MODE }}.zip ]; then
-            echo "📦 JSON reports archive: conformance-reports-${{ env.TEST_MODE }}.zip"
-          fi
-          echo "📄 HTML reports available in docs/_static/websocket/conformance/"
-          echo "🔗 All reports available in job artifacts"
+          find docs/_static/websocket/conformance -name "*.zip" | while read zip; do
+            echo "📦 $(basename "$zip")"
+          done
+          echo "📄 Documentation: docs/_static/websocket/conformance/"
