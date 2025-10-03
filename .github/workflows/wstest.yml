@@ -161,11 +161,11 @@ jobs:
       - name: Start Autobahn|Python servers (background)
         run: |
           echo "==> Starting Twisted server on port 9011..."
-          nohup just wstest-testeeserver-twisted cpy314 > twisted-server.log 2>&1 &
+          nohup .venvs/cpy314/bin/python ./wstest/testee_server_tx.py --url ws://127.0.0.1:9011 > twisted-server.log 2>&1 &
           echo $! > twisted-server.pid
           
           echo "==> Starting asyncio server on port 9012..."
-          nohup just wstest-testeeserver-asyncio cpy314 > asyncio-server.log 2>&1 &
+          nohup .venvs/cpy314/bin/python ./wstest/testee_server_aio.py --url ws://127.0.0.1:9012 > asyncio-server.log 2>&1 &
           echo $! > asyncio-server.pid
           
           # Wait for servers to be ready
