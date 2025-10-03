@@ -1,12 +1,16 @@
-name: WebSocket Conformance Testing
+name: wstest
 
 on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
   workflow_dispatch:
     inputs:
       test_mode:
-        description: 'Test mode (quick or full)'
+        description: "Test mode to run"
         required: false
-        default: 'quick'
+        default: "quick"
         type: choice
         options:
           - quick
@@ -16,7 +20,8 @@ on:
     - cron: '0 2 * * *'
 
 env:
-  UV_CACHE_DIR: /tmp/.uv-cache
+  UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
+  # Test mode: 'quick' for fast CI, 'full' for comprehensive testing
   TEST_MODE: ${{ github.event.inputs.test_mode || 'quick' }}
 
 jobs:
