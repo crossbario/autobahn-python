@@ -233,129 +233,64 @@ jobs:
           merge-multiple: false
           path: all-reports/
 
-      - name: Create consolidated report index
+      - name: Consolidate test reports for documentation
         run: |
-          mkdir -p consolidated-wstest-reports
+          mkdir -p docs/_static/websocket/conformance
           
-          echo "==> Creating consolidated WebSocket conformance report..."
+          echo "==> Consolidating WebSocket conformance test reports..."
           
-          cat > consolidated-wstest-reports/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>Autobahn|Python WebSocket Conformance Reports</title>
-              <style>
-                  body { font-family: Arial, sans-serif; margin: 40px; }
-                  h1 { color: #333; }
-                  h2 { color: #0066cc; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-                  .test-section { margin: 30px 0; }
-                  .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0; }
-                  .test-card { border: 1px solid #ddd; padding: 15px; border-radius: 5px; background: #f9f9f9; }
-                  .test-card h3 { margin-top: 0; color: #0066cc; }
-                  .test-mode { background: #f0f8ff; padding: 15px; border-radius: 5px; margin-bottom: 30px; }
-                  .server-note { background: #fff5f5; border-left: 4px solid #e53e3e; padding: 15px; margin: 20px 0; }
-              </style>
-          </head>
-          <body>
-              <h1>🔌 Autobahn|Python WebSocket Conformance Reports</h1>
-
-              <div class="test-mode">
-                  <strong>Test Mode:</strong> ${{ env.TEST_MODE }}
-                  <br><strong>Generated:</strong> $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-                  <br><strong>Commit:</strong> ${{ github.sha }}
-                  <br><strong>Branch:</strong> ${{ github.ref_name }}
-              </div>
-
-              <p>This page provides WebSocket protocol conformance test results for Autobahn|Python
-              against the <a href="https://github.com/crossbario/autobahn-testsuite">Autobahn|Testsuite</a>.</p>
-
-              <div class="test-section">
-                  <h2>📤 Client Testing</h2>
-                  <p>Tests Autobahn|Python WebSocket clients against the Autobahn|Testsuite server (fuzzingserver mode).</p>
-                  <div class="test-grid">
-          EOF
-          
-          # Add client report links
+          # Copy client reports to docs/_static
           for backend in twisted asyncio; do
             client_dir="client-reports-${backend}-${{ env.TEST_MODE }}"
             if [ -d "all-reports/${client_dir}" ]; then
-              # Copy client reports to consolidated directory
-              mkdir -p "consolidated-wstest-reports/client-${backend}"
-              cp -r "all-reports/${client_dir}"/* "consolidated-wstest-reports/client-${backend}/" || true
-              
-              # Add card to index
-              cat >> consolidated-wstest-reports/index.html << EOF
-                      <div class="test-card">
-                          <h3>${backend^} Client</h3>
-                          <p>Autobahn|Python ${backend} WebSocket client implementation</p>
-                          <a href="client-${backend}/index.html">📊 View Test Results</a>
-                      </div>
-EOF
+              echo "Copying ${backend} client reports..."
+              cp -r "all-reports/${client_dir}"/* "docs/_static/websocket/conformance/" || true
             else
               echo "⚠️  Client report directory not found: ${client_dir}"
             fi
           done
           
-          cat >> consolidated-wstest-reports/index.html << 'EOF'
-                  </div>
-              </div>
-
-              <div class="test-section">
-                  <h2>📥 Server Testing</h2>
-                  <p>Tests both Autobahn|Python WebSocket servers (Twisted & asyncio) against the Autobahn|Testsuite client (fuzzingclient mode).</p>
-                  <div class="server-note">
-                      <strong>Note:</strong> Server testing runs both implementations concurrently and generates a unified report covering both backends.
-                  </div>
-                  <div class="test-grid">
-          EOF
-          
-          # Add server report link
+          # Copy server reports to docs/_static
           server_dir="server-reports-${{ env.TEST_MODE }}"
           if [ -d "all-reports/${server_dir}" ]; then
-            # Copy server reports to consolidated directory
-            mkdir -p "consolidated-wstest-reports/servers"
-            cp -r "all-reports/${server_dir}"/* "consolidated-wstest-reports/servers/" || true
-            
-            # Add card to index
-            cat >> consolidated-wstest-reports/index.html << 'EOF'
-                      <div class="test-card">
-                          <h3>Twisted + asyncio Servers</h3>
-                          <p>Both Autobahn|Python WebSocket server implementations tested together</p>
-                          <a href="servers/index.html">📊 View Unified Server Results</a>
-                      </div>
-EOF
+            echo "Copying server reports..."
+            cp -r "all-reports/${server_dir}"/* "docs/_static/websocket/conformance/" || true
           else
             echo "⚠️  Server report directory not found: ${server_dir}"
           fi
           
-          cat >> consolidated-wstest-reports/index.html << 'EOF'
-                  </div>
-              </div>
-
-              <hr>
-              <p><small>Generated by <a href="https://github.com/crossbario/autobahn-python">Autobahn|Python</a>
-              CI/CD pipeline using <a href="https://github.com/crossbario/autobahn-testsuite">Autobahn|Testsuite</a> • 
-              <a href="https://github.com/crossbario/autobahn-python/tree/${{ github.sha }}">Source Code</a></small></p>
-          </body>
-          </html>
-          EOF
+          # Create ZIP archive of all JSON test reports
+          echo "==> Creating JSON reports archive..."
+          find docs/_static/websocket/conformance -name "*.json" -type f > json_files.txt
+          if [ -s json_files.txt ]; then
+            json_count=$(wc -l < json_files.txt)
+            echo "Found ${json_count} JSON test report files"
+            zip -r "docs/_static/websocket/conformance/conformance-reports-${{ env.TEST_MODE }}.zip" -@ < json_files.txt
+            echo "✅ Created conformance-reports-${{ env.TEST_MODE }}.zip with ${json_count} JSON files"
+          else
+            echo "⚠️  No JSON test report files found"
+          fi
           
-          echo "✅ Consolidated report created"
-          ls -la consolidated-wstest-reports/
+          echo "✅ Test reports consolidated for documentation"
+          echo "HTML reports: docs/_static/websocket/conformance/"
+          ls -la docs/_static/websocket/conformance/ | head -10
 
       - name: Upload consolidated WebSocket reports
         uses: actions/upload-artifact@v4
         with:
-          name: consolidated-wstest-reports-${{ env.TEST_MODE }}
-          path: consolidated-wstest-reports/
+          name: websocket-conformance-docs-${{ env.TEST_MODE }}
+          path: docs/_static/websocket/conformance/
           retention-days: 30
 
       - name: Report summary
         run: |
           echo "==> WebSocket Conformance Testing Complete"
           echo "Test Mode: ${{ env.TEST_MODE }}"
-          echo "Reports generated for:"
-          find consolidated-wstest-reports -name "index.html" | sort
+          echo "Reports integrated into documentation:"
+          find docs/_static/websocket/conformance -name "index.html" | sort
           echo ""
-          echo "📄 Access consolidated report: consolidated-wstest-reports/index.html"
-          echo "🔗 Individual reports available in job artifacts"
+          if [ -f docs/_static/websocket/conformance/conformance-reports-${{ env.TEST_MODE }}.zip ]; then
+            echo "📦 JSON reports archive: conformance-reports-${{ env.TEST_MODE }}.zip"
+          fi
+          echo "📄 HTML reports available in docs/_static/websocket/conformance/"
+          echo "🔗 All reports available in job artifacts"

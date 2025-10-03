@@ -13,6 +13,7 @@ Contents
    asynchronous-programming
    websocket/programming
    websocket/examples
+   websocket/conformance
    wamp/programming
    wamp/aio-repl
    wamp/examples
