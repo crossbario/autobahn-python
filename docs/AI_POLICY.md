@@ -1,1 +1,1 @@
-../AI_POLICY.md
+../.ai/AI_POLICY.md

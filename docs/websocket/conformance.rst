@@ -25,20 +25,14 @@ The latest conformance test results are generated automatically by our CI/CD pip
 Client Conformance
 ~~~~~~~~~~~~~~~~~~
 
-* `Twisted Client Results <../_static/websocket/conformance/index.html>`__ - Autobahn|Python Twisted WebSocket client implementation
-* `asyncio Client Results <../_static/websocket/conformance/index.html>`__ - Autobahn|Python asyncio WebSocket client implementation
+* `Client Results <../_static/websocket/conformance/clients/index.html>`__ - Autobahn|Python WebSocket client conformance
+* :download:`Client Results (JSON) Archive </_static/websocket/conformance/autobahn-python-websocket-client-conformance.zip>`
 
 Server Conformance
 ~~~~~~~~~~~~~~~~~~~
 
-* `Server Results <../_static/websocket/conformance/index.html>`__ - Both Twisted and asyncio WebSocket server implementations tested together
-
-Raw Test Data
-~~~~~~~~~~~~~
-
-Complete test results in JSON format are available for analysis and integration:
-
-* `Download JSON Test Reports <../_static/websocket/conformance/conformance-reports-quick.zip>`__ - ZIP archive containing all JSON test result files
+* `Server Results <../_static/websocket/conformance/servers/index.html>`__ - Autobahn|Python WebSocket server conformance
+* :download:`Server Results (JSON) Archive </_static/websocket/conformance/autobahn-python-websocket-server-conformance.zip>`
 
 Running Tests Locally
 ----------------------
@@ -54,15 +48,17 @@ Client Testing
    just wstest-fuzzingserver
    # Or for full mode: just wstest-fuzzingserver "" "" full
 
-   # Terminal 2: Test Twisted client across Python versions
+   # Terminal 2: Test Twisted & asyncio clients across Python versions
    just wstest-testeeclient-twisted cpy311
-   just wstest-testeeclient-twisted cpy314  
+   just wstest-testeeclient-twisted cpy314
    just wstest-testeeclient-twisted pypy311
-
-   # Terminal 3: Test asyncio client across Python versions
    just wstest-testeeclient-asyncio cpy311
    just wstest-testeeclient-asyncio cpy314
    just wstest-testeeclient-asyncio pypy311
+
+Test results will be generated in the ``.wstest/`` directory:
+
+* ``.wstest/clients/`` - Client test results
 
 Server Testing (6 combinations)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,6 +77,10 @@ Server Testing (6 combinations)
    just wstest-fuzzingclient
    # Or for full mode: just wstest-fuzzingclient "" "" full
 
+Test results will be generated in the ``.wstest/`` directory:
+
+* ``.wstest/servers/`` - Server test results
+
 Consolidating Results for Documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -95,13 +95,8 @@ After running tests, consolidate the results for local documentation:
 This will:
 
 * Copy HTML reports to ``docs/_static/websocket/conformance/``
-* Create a ZIP archive with all JSON test files
+* Create a ZIP archive with all JSON test files, one for clients and one for servers
 * Make results available for local Sphinx documentation builds
-
-Test results will be generated in the ``.wstest/`` directory:
-
-* ``.wstest/clients/`` - Client test results
-* ``.wstest/servers/`` - Server test results
 
 Test Modes
 ----------
@@ -121,7 +116,7 @@ The `Autobahn|Testsuite <https://github.com/crossbario/autobahn-testsuite>`__ is
 industry-standard WebSocket protocol conformance testing suite. It provides:
 
 * Comprehensive RFC 6455 protocol testing
-* Fuzzing and edge case validation  
+* Fuzzing and edge case validation
 * Performance and robustness testing
 * Detailed HTML and JSON reporting
 * Cross-platform Docker-based execution

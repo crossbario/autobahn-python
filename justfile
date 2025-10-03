@@ -149,6 +149,7 @@ distclean:
     #    This is fast for the common cases.
     echo "--> Removing venvs, cache, and build/dist directories..."
     rm -rf {{UV_CACHE_DIR}} {{VENV_DIR}} build/ dist/ wheelhouse/ .pytest_cache/ .ruff_cache/ .mypy_cache/
+    rm -rf .wstest docs/_build/
 
     # 2. Use `find` to hunt down and destroy nested artifacts that can be
     #    scattered throughout the source tree. This is the most thorough part.
@@ -978,50 +979,59 @@ wstest-testeeserver-asyncio venv="" url="ws://127.0.0.1:9012": (install-tools ve
     ${VENV_PYTHON} ./wstest/testee_server_aio.py --url "{{ url }}"
 
 # Consolidate WebSocket test reports for local documentation
-wstest-consolidate-reports mode="quick":
+wstest-consolidate-reports:
     #!/usr/bin/env bash
     set -e
-    TEST_MODE="{{ mode }}"
-    if [ "${TEST_MODE}" != "quick" ] && [ "${TEST_MODE}" != "full" ]; then
-        echo "Error: mode must be 'quick' or 'full', got: ${TEST_MODE}"
-        exit 1
-    fi
-    
     echo "==> Consolidating WebSocket conformance test reports for documentation..."
-    echo "==> Test mode: ${TEST_MODE}"
-    
-    # Ensure target directory exists
+
+    # Ensure target directories exists
     mkdir -p docs/_static/websocket/conformance
-    
+    mkdir -p docs/_static/websocket/conformance/clients
+    mkdir -p docs/_static/websocket/conformance/servers
+
     # Copy client and server HTML reports to docs/_static
     if [ -d ".wstest/clients" ]; then
         echo "==> Copying client test reports..."
-        cp -r .wstest/clients/* docs/_static/websocket/conformance/ || true
+        cp -r .wstest/clients/* docs/_static/websocket/conformance/clients/ || true
     else
         echo "⚠️  No client test reports found in .wstest/clients"
     fi
-    
+
     if [ -d ".wstest/servers" ]; then
         echo "==> Copying server test reports..."
-        cp -r .wstest/servers/* docs/_static/websocket/conformance/ || true
+        cp -r .wstest/servers/* docs/_static/websocket/conformance/servers/ || true
     else
         echo "⚠️  No server test reports found in .wstest/servers"
     fi
-    
-    # Create ZIP archive of all JSON test reports
-    echo "==> Creating JSON reports archive..."
-    find docs/_static/websocket/conformance -name "*.json" -type f > json_files.txt
+
+    # Create ZIP archive of all clients JSON test reports
+    echo "==> Creating clients JSON reports archive..."
+    find docs/_static/websocket/conformance/clients -name "*.json" -type f > json_files.txt
     if [ -s json_files.txt ]; then
         json_count=$(wc -l < json_files.txt)
-        echo "Found ${json_count} JSON test report files"
-        zip -r "docs/_static/websocket/conformance/conformance-reports-${TEST_MODE}.zip" -@ < json_files.txt
-        echo "✅ Created conformance-reports-${TEST_MODE}.zip with ${json_count} JSON files"
+        echo "Found ${json_count} clients JSON test report files"
+        zip -r "docs/_static/websocket/conformance/autobahn-python-websocket-client-conformance.zip" -@ < json_files.txt
+        echo "✅ Created autobahn-python-websocket-client-conformance.zip with ${json_count} JSON files"
         rm json_files.txt
     else
-        echo "⚠️  No JSON test report files found"
+        echo "⚠️  No clients JSON test report files found"
         rm -f json_files.txt
     fi
-    
+
+    # Create ZIP archive of all servers JSON test reports
+    echo "==> Creating servers JSON reports archive..."
+    find docs/_static/websocket/conformance/servers -name "*.json" -type f > json_files.txt
+    if [ -s json_files.txt ]; then
+        json_count=$(wc -l < json_files.txt)
+        echo "Found ${json_count} servers JSON test report files"
+        zip -r "docs/_static/websocket/conformance/autobahn-python-websocket-server-conformance.zip" -@ < json_files.txt
+        echo "✅ Created autobahn-python-websocket-server-conformances.zip with ${json_count} JSON files"
+        rm json_files.txt
+    else
+        echo "⚠️  No servers JSON test report files found"
+        rm -f json_files.txt
+    fi
+
     echo "✅ Test reports consolidated for documentation"
     echo "📄 HTML reports: docs/_static/websocket/conformance/"
-    ls -la docs/_static/websocket/conformance/ | head -10
+    du -hs docs/_static/websocket/conformance/
