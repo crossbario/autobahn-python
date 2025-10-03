@@ -849,8 +849,7 @@ fix-audit-filenames:
 # -----------------------------------------------------------------------------
 
 # Run Autobahn WebSocket Testsuite in fuzzingserver mode.
-# FIXME: add boolean flag to select running `fuzzingserver-quick.json` vs `fuzzingserver-full.json`
-wstest-fuzzingserver config_dir="" output_dir="":
+wstest-fuzzingserver config_dir="" output_dir="" mode="quick":
     #!/usr/bin/env bash
     set -e
     CONFIG_DIR="{{ config_dir }}"
@@ -863,10 +862,16 @@ wstest-fuzzingserver config_dir="" output_dir="":
         echo "==> No wstest output directory specified. Using default {{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}..."
         OUTPUT_DIR="{{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}"
     fi
+    TEST_MODE="{{ mode }}"
+    if [ "${TEST_MODE}" != "quick" ] && [ "${TEST_MODE}" != "full" ]; then
+        echo "Error: mode must be 'quick' or 'full', got: ${TEST_MODE}"
+        exit 1
+    fi
     echo ""
     echo "Using Docker image: {{AUTOBAHN_TESTSUITE_IMAGE}}"
     echo "Using config directory: ${CONFIG_DIR}"
     echo "Using output directory: ${OUTPUT_DIR}"
+    echo "Using test mode: ${TEST_MODE}"
     echo ""
     sudo docker run -i --rm \
         -v "${CONFIG_DIR}:/config" \
@@ -874,10 +879,10 @@ wstest-fuzzingserver config_dir="" output_dir="":
         -p 9001:9001 \
         --name fuzzingserver \
         "{{AUTOBAHN_TESTSUITE_IMAGE}}" \
-        wstest -m fuzzingserver -s /config/fuzzingserver-quick.json
+        wstest -m fuzzingserver -s /config/fuzzingserver-${TEST_MODE}.json
 
 # Run Autobahn|Testsuite in fuzzingclient mode (tests autobahn-python servers)
-wstest-fuzzingclient config_dir="" output_dir="":
+wstest-fuzzingclient config_dir="" output_dir="" mode="quick":
     #!/usr/bin/env bash
     set -e
     CONFIG_DIR="{{ config_dir }}"
@@ -890,20 +895,25 @@ wstest-fuzzingclient config_dir="" output_dir="":
         echo "==> No wstest output directory specified. Using default {{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}..."
         OUTPUT_DIR="{{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}"
     fi
+    TEST_MODE="{{ mode }}"
+    if [ "${TEST_MODE}" != "quick" ] && [ "${TEST_MODE}" != "full" ]; then
+        echo "Error: mode must be 'quick' or 'full', got: ${TEST_MODE}"
+        exit 1
+    fi
     echo "==> Creating wstest output directory: ${OUTPUT_DIR}"
     mkdir -p "${OUTPUT_DIR}"
     echo "==> Pulling Autobahn|Testsuite Docker image..."
     sudo docker pull "{{AUTOBAHN_TESTSUITE_IMAGE}}"
     echo "==> Running Autobahn|Testsuite in fuzzingclient mode..."
+    echo "==> Using test mode: ${TEST_MODE}"
     # for now, ignore any non-zero exit code by prefixing with hyphen (FIXME: remove later)
-    # FIXME: add boolean flag to select running `fuzzingclient-quick.json` vs `fuzzingclient-full.json`
     sudo docker run -i --rm \
         --network host \
         -v "${CONFIG_DIR}":/config \
         -v "${OUTPUT_DIR}":/reports \
         --name fuzzingclient \
         "{{AUTOBAHN_TESTSUITE_IMAGE}}" \
-        wstest -m fuzzingclient -s /config/fuzzingclient-quick.json
+        wstest -m fuzzingclient -s /config/fuzzingclient-${TEST_MODE}.json
 
 # Run Autobahn|Python WebSocket client on Twisted
 wstest-testeeclient-twisted venv="": (install-tools venv) (install venv)
@@ -966,3 +976,52 @@ wstest-testeeserver-asyncio venv="" url="ws://127.0.0.1:9012": (install-tools ve
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running Autobahn|Python WebSocket server on asyncio in ${VENV_NAME} at {{ url }}..."
     ${VENV_PYTHON} ./wstest/testee_server_aio.py --url "{{ url }}"
+
+# Consolidate WebSocket test reports for local documentation
+wstest-consolidate-reports mode="quick":
+    #!/usr/bin/env bash
+    set -e
+    TEST_MODE="{{ mode }}"
+    if [ "${TEST_MODE}" != "quick" ] && [ "${TEST_MODE}" != "full" ]; then
+        echo "Error: mode must be 'quick' or 'full', got: ${TEST_MODE}"
+        exit 1
+    fi
+    
+    echo "==> Consolidating WebSocket conformance test reports for documentation..."
+    echo "==> Test mode: ${TEST_MODE}"
+    
+    # Ensure target directory exists
+    mkdir -p docs/_static/websocket/conformance
+    
+    # Copy client and server HTML reports to docs/_static
+    if [ -d ".wstest/clients" ]; then
+        echo "==> Copying client test reports..."
+        cp -r .wstest/clients/* docs/_static/websocket/conformance/ || true
+    else
+        echo "⚠️  No client test reports found in .wstest/clients"
+    fi
+    
+    if [ -d ".wstest/servers" ]; then
+        echo "==> Copying server test reports..."
+        cp -r .wstest/servers/* docs/_static/websocket/conformance/ || true
+    else
+        echo "⚠️  No server test reports found in .wstest/servers"
+    fi
+    
+    # Create ZIP archive of all JSON test reports
+    echo "==> Creating JSON reports archive..."
+    find docs/_static/websocket/conformance -name "*.json" -type f > json_files.txt
+    if [ -s json_files.txt ]; then
+        json_count=$(wc -l < json_files.txt)
+        echo "Found ${json_count} JSON test report files"
+        zip -r "docs/_static/websocket/conformance/conformance-reports-${TEST_MODE}.zip" -@ < json_files.txt
+        echo "✅ Created conformance-reports-${TEST_MODE}.zip with ${json_count} JSON files"
+        rm json_files.txt
+    else
+        echo "⚠️  No JSON test report files found"
+        rm -f json_files.txt
+    fi
+    
+    echo "✅ Test reports consolidated for documentation"
+    echo "📄 HTML reports: docs/_static/websocket/conformance/"
+    ls -la docs/_static/websocket/conformance/ | head -10

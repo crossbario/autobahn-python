@@ -43,35 +43,60 @@ Complete test results in JSON format are available for analysis and integration:
 Running Tests Locally
 ----------------------
 
-You can run the conformance tests locally using the provided justfile recipes:
+You can run the conformance tests locally using the provided justfile recipes. Both **quick** and **full** test modes are supported.
 
 Client Testing
 ~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   # Terminal 1: Start the testsuite server
+   # Terminal 1: Start the testsuite server (quick mode, default)
    just wstest-fuzzingserver
+   # Or for full mode: just wstest-fuzzingserver "" "" full
 
-   # Terminal 2: Test Twisted client
-   just wstest-testeeclient-twisted
+   # Terminal 2: Test Twisted client across Python versions
+   just wstest-testeeclient-twisted cpy311
+   just wstest-testeeclient-twisted cpy314  
+   just wstest-testeeclient-twisted pypy311
 
-   # Terminal 3: Test asyncio client  
-   just wstest-testeeclient-asyncio
+   # Terminal 3: Test asyncio client across Python versions
+   just wstest-testeeclient-asyncio cpy311
+   just wstest-testeeclient-asyncio cpy314
+   just wstest-testeeclient-asyncio pypy311
 
-Server Testing
-~~~~~~~~~~~~~~
+Server Testing (6 combinations)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   # Terminal 1: Start Twisted server
-   just wstest-testeeserver-twisted
+   # Terminal 1-6: Start all server combinations
+   just wstest-testeeserver-twisted cpy311 "ws://127.0.0.1:9011"
+   just wstest-testeeserver-asyncio cpy311 "ws://127.0.0.1:9012"
+   just wstest-testeeserver-twisted cpy314 "ws://127.0.0.1:9013"
+   just wstest-testeeserver-asyncio cpy314 "ws://127.0.0.1:9014"
+   just wstest-testeeserver-twisted pypy311 "ws://127.0.0.1:9015"
+   just wstest-testeeserver-asyncio pypy311 "ws://127.0.0.1:9016"
 
-   # Terminal 2: Start asyncio server (different port)
-   just wstest-testeeserver-asyncio
-
-   # Terminal 3: Run testsuite client against both servers
+   # Terminal 7: Run testsuite client against all 6 servers
    just wstest-fuzzingclient
+   # Or for full mode: just wstest-fuzzingclient "" "" full
+
+Consolidating Results for Documentation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After running tests, consolidate the results for local documentation:
+
+.. code-block:: bash
+
+   # Copy test results to docs/_static and create JSON archive
+   just wstest-consolidate-reports
+   # Or for full mode results: just wstest-consolidate-reports full
+
+This will:
+
+* Copy HTML reports to ``docs/_static/websocket/conformance/``
+* Create a ZIP archive with all JSON test files
+* Make results available for local Sphinx documentation builds
 
 Test results will be generated in the ``.wstest/`` directory:
 
