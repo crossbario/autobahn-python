@@ -290,7 +290,7 @@ jobs:
                           <p>Autobahn|Python ${backend} WebSocket client implementation</p>
                           <a href="client-${backend}/index.html">📊 View Test Results</a>
                       </div>
-          EOF
+EOF
             else
               echo "⚠️  Client report directory not found: ${client_dir}"
             fi
@@ -323,7 +323,7 @@ jobs:
                           <p>Both Autobahn|Python WebSocket server implementations tested together</p>
                           <a href="servers/index.html">📊 View Unified Server Results</a>
                       </div>
-            EOF
+EOF
           else
             echo "⚠️  Server report directory not found: ${server_dir}"
           fi
