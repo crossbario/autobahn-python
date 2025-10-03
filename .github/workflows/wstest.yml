@@ -57,12 +57,36 @@ jobs:
 
       - name: Start fuzzingserver  
         run: |
+          echo "==> Starting fuzzingserver in background..."
           nohup just wstest-fuzzingserver "" "" ${{ env.TEST_MODE }} > fuzzingserver.log 2>&1 &
-          sleep 10
-          curl -f http://127.0.0.1:9001 || (echo "❌ Fuzzingserver failed"; cat fuzzingserver.log; exit 1)
+          echo $! > fuzzingserver.pid
+          
+          echo "==> Waiting for fuzzingserver to start..."
+          for i in {1..30}; do
+            if curl -f http://127.0.0.1:9001 >/dev/null 2>&1; then
+              echo "✅ Fuzzingserver is running after ${i} seconds"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ Fuzzingserver failed to start after 30 seconds"
+              echo "==> Fuzzingserver log:"
+              cat fuzzingserver.log
+              exit 1
+            fi
+            sleep 1
+          done
 
       - name: Run client tests
         run: just wstest-testeeclient-${{ matrix.backend }} ${{ matrix.python }}
+
+      - name: Stop fuzzingserver
+        if: always()
+        run: |
+          echo "==> Stopping fuzzingserver..."
+          if [ -f fuzzingserver.pid ]; then
+            kill $(cat fuzzingserver.pid) || true
+          fi
+          docker stop fuzzingserver || true
 
       - name: Upload client reports
         uses: actions/upload-artifact@v4
