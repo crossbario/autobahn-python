@@ -110,11 +110,13 @@ if __name__ == "__main__":
 
     txaio.start_logging(level=options.loglevel)
 
+    # Create and set event loop early for Python 3.14 compatibility
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     factory = TesteeClientFactory(options.url, autobahn.asyncio.__ident__)
 
     _, host, port, _, _, _ = parse_url(options.url)
-
-    loop = asyncio.get_event_loop()
 
     factory.resource = "/getCaseCount"
     factory.endCaseId = None

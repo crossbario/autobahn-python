@@ -32,6 +32,15 @@ default:
 # Tell uv to use project-local cache directory.
 export UV_CACHE_DIR := './.uv-cache'
 
+# Autobahn|Testsuite (https://github.com/crossbario/autobahn-testsuite) Docker image to use.
+AUTOBAHN_TESTSUITE_IMAGE := 'crossbario/autobahn-testsuite:latest'
+
+# Default output directory for Autobahn|Testsuite reports (HTML files).
+AUTOBAHN_TESTSUITE_OUTPUT_DIR := justfile_directory() / '.wstest'
+
+# Default config directory for Autobahn|Testsuite configuration (JSON files).
+AUTOBAHN_TESTSUITE_CONFIG_DIR := justfile_directory() / 'wstest'
+
 # Use this common single directory for all uv venvs.
 VENV_DIR := './.venvs'
 
@@ -140,6 +149,7 @@ distclean:
     #    This is fast for the common cases.
     echo "--> Removing venvs, cache, and build/dist directories..."
     rm -rf {{UV_CACHE_DIR}} {{VENV_DIR}} build/ dist/ wheelhouse/ .pytest_cache/ .ruff_cache/ .mypy_cache/
+    rm -rf .wstest docs/_build/
 
     # 2. Use `find` to hunt down and destroy nested artifacts that can be
     #    scattered throughout the source tree. This is the most thorough part.
@@ -433,6 +443,12 @@ install-rust:
     which cargo
     cargo --version
 
+# Install Autobahn WebSocket Testsuite (Docker image).
+install-wstest:
+    #!/usr/bin/env bash
+    set -e
+    sudo docker pull {{AUTOBAHN_TESTSUITE_IMAGE}}
+
 # -----------------------------------------------------------------------------
 # -- Linting, Static Typechecking, .. the codebase
 # -----------------------------------------------------------------------------
@@ -500,10 +516,10 @@ check-coverage-twisted venv="": (install-tools venv) (install venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running Twisted tests with coverage in ${VENV_NAME}..."
-    
+
     # Clean previous coverage data
     rm -f .coverage .coverage.*
-    
+
     # Run Twisted tests with coverage
     USE_TWISTED=1 "${VENV_PATH}/bin/coverage" run \
         --source=autobahn \
@@ -516,7 +532,7 @@ check-coverage-twisted venv="": (install-tools venv) (install venv)
         autobahn.wamp.test \
         autobahn.nvx.test
 
-# Run coverage for asyncio tests only  
+# Run coverage for asyncio tests only
 check-coverage-asyncio venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
@@ -528,7 +544,7 @@ check-coverage-asyncio venv="": (install-tools venv) (install venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Running asyncio tests with coverage in ${VENV_NAME}..."
-    
+
     # Run asyncio tests with coverage (parallel mode to combine later)
     USE_ASYNCIO=1 "${VENV_PATH}/bin/coverage" run \
         --source=autobahn \
@@ -548,15 +564,15 @@ check-coverage-combined venv="": (check-coverage-twisted venv) (check-coverage-a
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Combining coverage data from Twisted and asyncio tests..."
-    
+
     # Combine all coverage data files
     "${VENV_PATH}/bin/coverage" combine
-    
+
     # Generate reports
     mkdir -p docs/_build/html
     "${VENV_PATH}/bin/coverage" html -d docs/_build/html/coverage-combined
     "${VENV_PATH}/bin/coverage" report --show-missing
-    
+
     echo ""
     echo "✅ Combined coverage report generated:"
     echo "   HTML: docs/_build/html/coverage-combined/index.html"
@@ -723,24 +739,24 @@ install-flatc:
     FLATC_VERSION="25.9.23"
     FLATC_URL="https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/Linux.flatc.binary.g++-13.zip"
     TEMP_DIR=$(mktemp -d)
-    
+
     echo "==> Installing FlatBuffers compiler v${FLATC_VERSION}..."
     echo "    URL: ${FLATC_URL}"
     echo "    Temp dir: ${TEMP_DIR}"
-    
+
     # Download and extract
     cd "${TEMP_DIR}"
     curl -L -o flatc.zip "${FLATC_URL}"
     unzip flatc.zip
-    
+
     # Install to /usr/local/bin (requires sudo)
     echo "==> Installing flatc to /usr/local/bin (requires sudo)..."
     sudo mv flatc /usr/local/bin/flatc
     sudo chmod +x /usr/local/bin/flatc
-    
+
     # Cleanup
     rm -rf "${TEMP_DIR}"
-    
+
     # Verify installation
     echo "==> Verification:"
     flatc --version
@@ -828,3 +844,196 @@ fix-audit-filenames:
     ls -la .audit/
     echo ""
     echo "These files are now Windows-compatible."
+
+# -----------------------------------------------------------------------------
+# -- WebSocket compliance testing
+# -----------------------------------------------------------------------------
+
+# Run Autobahn WebSocket Testsuite in fuzzingserver mode.
+wstest-fuzzingserver config_dir="" output_dir="" mode="quick":
+    #!/usr/bin/env bash
+    set -e
+    CONFIG_DIR="{{ config_dir }}"
+    if [ -z "${CONFIG_DIR}" ]; then
+        echo "==> No wstest config directory specified. Using default {{AUTOBAHN_TESTSUITE_CONFIG_DIR}}..."
+        CONFIG_DIR="{{AUTOBAHN_TESTSUITE_CONFIG_DIR}}"
+    fi
+    OUTPUT_DIR="{{ output_dir }}"
+    if [ -z "${OUTPUT_DIR}" ]; then
+        echo "==> No wstest output directory specified. Using default {{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}..."
+        OUTPUT_DIR="{{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}"
+    fi
+    TEST_MODE="{{ mode }}"
+    if [ "${TEST_MODE}" != "quick" ] && [ "${TEST_MODE}" != "full" ]; then
+        echo "Error: mode must be 'quick' or 'full', got: ${TEST_MODE}"
+        exit 1
+    fi
+    echo ""
+    echo "Using Docker image: {{AUTOBAHN_TESTSUITE_IMAGE}}"
+    echo "Using config directory: ${CONFIG_DIR}"
+    echo "Using output directory: ${OUTPUT_DIR}"
+    echo "Using test mode: ${TEST_MODE}"
+    echo ""
+    sudo docker run -i --rm \
+        -v "${CONFIG_DIR}:/config" \
+        -v "${OUTPUT_DIR}:/reports" \
+        -p 9001:9001 \
+        --name fuzzingserver \
+        "{{AUTOBAHN_TESTSUITE_IMAGE}}" \
+        wstest -m fuzzingserver -s /config/fuzzingserver-${TEST_MODE}.json
+
+# Run Autobahn|Testsuite in fuzzingclient mode (tests autobahn-python servers)
+wstest-fuzzingclient config_dir="" output_dir="" mode="quick":
+    #!/usr/bin/env bash
+    set -e
+    CONFIG_DIR="{{ config_dir }}"
+    if [ -z "${CONFIG_DIR}" ]; then
+        echo "==> No wstest config directory specified. Using default {{AUTOBAHN_TESTSUITE_CONFIG_DIR}}..."
+        CONFIG_DIR="{{AUTOBAHN_TESTSUITE_CONFIG_DIR}}"
+    fi
+    OUTPUT_DIR="{{ output_dir }}"
+    if [ -z "${OUTPUT_DIR}" ]; then
+        echo "==> No wstest output directory specified. Using default {{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}..."
+        OUTPUT_DIR="{{AUTOBAHN_TESTSUITE_OUTPUT_DIR}}"
+    fi
+    TEST_MODE="{{ mode }}"
+    if [ "${TEST_MODE}" != "quick" ] && [ "${TEST_MODE}" != "full" ]; then
+        echo "Error: mode must be 'quick' or 'full', got: ${TEST_MODE}"
+        exit 1
+    fi
+    echo "==> Creating wstest output directory: ${OUTPUT_DIR}"
+    mkdir -p "${OUTPUT_DIR}"
+    echo "==> Pulling Autobahn|Testsuite Docker image..."
+    sudo docker pull "{{AUTOBAHN_TESTSUITE_IMAGE}}"
+    echo "==> Running Autobahn|Testsuite in fuzzingclient mode..."
+    echo "==> Using test mode: ${TEST_MODE}"
+    # for now, ignore any non-zero exit code by prefixing with hyphen (FIXME: remove later)
+    sudo docker run -i --rm \
+        --network host \
+        -v "${CONFIG_DIR}":/config \
+        -v "${OUTPUT_DIR}":/reports \
+        --name fuzzingclient \
+        "{{AUTOBAHN_TESTSUITE_IMAGE}}" \
+        wstest -m fuzzingclient -s /config/fuzzingclient-${TEST_MODE}.json
+
+# Run Autobahn|Python WebSocket client on Twisted
+wstest-testeeclient-twisted venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running Autobahn|Python WebSocket client on Twisted in ${VENV_NAME}..."
+
+    ${VENV_PYTHON} ./wstest/testee_client_tx.py
+
+# Run Autobahn|Python WebSocket client on asyncio
+wstest-testeeclient-asyncio venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running Autobahn|Python WebSocket client on asyncio in ${VENV_NAME}..."
+
+    ${VENV_PYTHON} ./wstest/testee_client_aio.py
+
+# Run Autobahn|Python WebSocket server on Twisted
+wstest-testeeserver-twisted venv="" url="ws://127.0.0.1:9011": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running Autobahn|Python WebSocket server on Twisted in ${VENV_NAME} at {{ url }}..."
+    ${VENV_PYTHON} ./wstest/testee_server_tx.py --url "{{ url }}"
+
+# Run Autobahn|Python WebSocket server on asyncio
+wstest-testeeserver-asyncio venv="" url="ws://127.0.0.1:9012": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running Autobahn|Python WebSocket server on asyncio in ${VENV_NAME} at {{ url }}..."
+    ${VENV_PYTHON} ./wstest/testee_server_aio.py --url "{{ url }}"
+
+# Consolidate WebSocket test reports for local documentation
+wstest-consolidate-reports:
+    #!/usr/bin/env bash
+    set -e
+    echo "==> Consolidating WebSocket conformance test reports for documentation..."
+
+    # Ensure target directories exists
+    mkdir -p docs/_static/websocket/conformance
+    mkdir -p docs/_static/websocket/conformance/clients
+    mkdir -p docs/_static/websocket/conformance/servers
+
+    # Copy client and server HTML reports to docs/_static
+    if [ -d ".wstest/clients" ]; then
+        echo "==> Copying client test reports..."
+        cp -r .wstest/clients/* docs/_static/websocket/conformance/clients/ || true
+    else
+        echo "⚠️  No client test reports found in .wstest/clients"
+    fi
+
+    if [ -d ".wstest/servers" ]; then
+        echo "==> Copying server test reports..."
+        cp -r .wstest/servers/* docs/_static/websocket/conformance/servers/ || true
+    else
+        echo "⚠️  No server test reports found in .wstest/servers"
+    fi
+
+    # Create ZIP archive of all clients JSON test reports
+    echo "==> Creating clients JSON reports archive..."
+    find docs/_static/websocket/conformance/clients -name "*.json" -type f > json_files.txt
+    if [ -s json_files.txt ]; then
+        json_count=$(wc -l < json_files.txt)
+        echo "Found ${json_count} clients JSON test report files"
+        zip -r "docs/_static/websocket/conformance/autobahn-python-websocket-client-conformance.zip" -@ < json_files.txt
+        echo "✅ Created autobahn-python-websocket-client-conformance.zip with ${json_count} JSON files"
+        rm json_files.txt
+    else
+        echo "⚠️  No clients JSON test report files found"
+        rm -f json_files.txt
+    fi
+
+    # Create ZIP archive of all servers JSON test reports
+    echo "==> Creating servers JSON reports archive..."
+    find docs/_static/websocket/conformance/servers -name "*.json" -type f > json_files.txt
+    if [ -s json_files.txt ]; then
+        json_count=$(wc -l < json_files.txt)
+        echo "Found ${json_count} servers JSON test report files"
+        zip -r "docs/_static/websocket/conformance/autobahn-python-websocket-server-conformance.zip" -@ < json_files.txt
+        echo "✅ Created autobahn-python-websocket-server-conformances.zip with ${json_count} JSON files"
+        rm json_files.txt
+    else
+        echo "⚠️  No servers JSON test report files found"
+        rm -f json_files.txt
+    fi
+
+    echo "✅ Test reports consolidated for documentation"
+    echo "📄 HTML reports: docs/_static/websocket/conformance/"
+
+    sync docs/_static/websocket/conformance/
+    du -hs docs/_static/websocket/conformance/
