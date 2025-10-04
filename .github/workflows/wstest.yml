@@ -128,16 +128,17 @@ jobs:
           key:
             uv-cache-servers-${{ hashFiles('pyproject.toml') }}
 
-      - name: Setup Python environments
+      - name:
+          Setup Python environments and install Autobahn|Python
         run: |
-          just create cpy311
-          just create cpy314
-          just create pypy311
+          just install cpy311
+          just install cpy314
+          just install pypy311
 
       - name: Start all WebSocket servers
         run: |
           echo "==> Starting 6 WebSocket server combinations sequentially..."
-          
+
           # Server 1: Twisted + CPython 3.11 on port 9011
           echo "==> Starting Twisted + cpy311 server on port 9011..."
           nohup just wstest-testeeserver-twisted cpy311 "ws://127.0.0.1:9011" > twisted-cpy311.log 2>&1 &
@@ -153,7 +154,7 @@ jobs:
             fi
             sleep 1
           done
-          
+
           # Server 2: asyncio + CPython 3.11 on port 9012
           echo "==> Starting asyncio + cpy311 server on port 9012..."
           nohup just wstest-testeeserver-asyncio cpy311 "ws://127.0.0.1:9012" > asyncio-cpy311.log 2>&1 &
@@ -169,7 +170,7 @@ jobs:
             fi
             sleep 1
           done
-          
+
           # Server 3: Twisted + CPython 3.14 on port 9013
           echo "==> Starting Twisted + cpy314 server on port 9013..."
           nohup just wstest-testeeserver-twisted cpy314 "ws://127.0.0.1:9013" > twisted-cpy314.log 2>&1 &
@@ -185,7 +186,7 @@ jobs:
             fi
             sleep 1
           done
-          
+
           # Server 4: asyncio + CPython 3.14 on port 9014
           echo "==> Starting asyncio + cpy314 server on port 9014..."
           nohup just wstest-testeeserver-asyncio cpy314 "ws://127.0.0.1:9014" > asyncio-cpy314.log 2>&1 &
@@ -201,7 +202,7 @@ jobs:
             fi
             sleep 1
           done
-          
+
           # Server 5: Twisted + PyPy 3.11 on port 9015
           echo "==> Starting Twisted + pypy311 server on port 9015..."
           nohup just wstest-testeeserver-twisted pypy311 "ws://127.0.0.1:9015" > twisted-pypy311.log 2>&1 &
@@ -217,7 +218,7 @@ jobs:
             fi
             sleep 1
           done
-          
+
           # Server 6: asyncio + PyPy 3.11 on port 9016
           echo "==> Starting asyncio + pypy311 server on port 9016..."
           nohup just wstest-testeeserver-asyncio pypy311 "ws://127.0.0.1:9016" > asyncio-pypy311.log 2>&1 &
@@ -233,7 +234,7 @@ jobs:
             fi
             sleep 1
           done
-          
+
           echo "✅ All 6 WebSocket servers are running successfully"
 
       - name: Run server tests
