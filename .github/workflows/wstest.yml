@@ -141,7 +141,7 @@ jobs:
 
           # Server 1: Twisted + CPython 3.11 on port 9011
           echo "==> Starting Twisted + cpy311 server on port 9011..."
-          nohup just wstest-testeeserver-twisted cpy311 "ws://127.0.0.1:9011" > twisted-cpy311.log 2>&1 &
+          nohup .venvs/cpy311/bin/python ./wstest/testee_server_tx.py --url ws://127.0.0.1:9011 > twisted-cpy311.log 2>&1 &
           for i in {1..30}; do
             if netstat -tuln | grep :9011 >/dev/null 2>&1; then
               echo "✅ Twisted + cpy311 server running on port 9011"
@@ -157,7 +157,7 @@ jobs:
 
           # Server 2: asyncio + CPython 3.11 on port 9012
           echo "==> Starting asyncio + cpy311 server on port 9012..."
-          nohup just wstest-testeeserver-asyncio cpy311 "ws://127.0.0.1:9012" > asyncio-cpy311.log 2>&1 &
+          nohup .venvs/cpy311/bin/python ./wstest/testee_server_aio.py --url ws://127.0.0.1:9012 > asyncio-cpy311.log 2>&1 &
           for i in {1..30}; do
             if netstat -tuln | grep :9012 >/dev/null 2>&1; then
               echo "✅ asyncio + cpy311 server running on port 9012"
@@ -173,7 +173,7 @@ jobs:
 
           # Server 3: Twisted + CPython 3.14 on port 9013
           echo "==> Starting Twisted + cpy314 server on port 9013..."
-          nohup just wstest-testeeserver-twisted cpy314 "ws://127.0.0.1:9013" > twisted-cpy314.log 2>&1 &
+          nohup .venvs/cpy314/bin/python ./wstest/testee_server_tx.py --url ws://127.0.0.1:9013 > twisted-cpy314.log 2>&1 &
           for i in {1..30}; do
             if netstat -tuln | grep :9013 >/dev/null 2>&1; then
               echo "✅ Twisted + cpy314 server running on port 9013"
@@ -189,7 +189,7 @@ jobs:
 
           # Server 4: asyncio + CPython 3.14 on port 9014
           echo "==> Starting asyncio + cpy314 server on port 9014..."
-          nohup just wstest-testeeserver-asyncio cpy314 "ws://127.0.0.1:9014" > asyncio-cpy314.log 2>&1 &
+          nohup .venvs/cpy314/bin/python ./wstest/testee_server_aio.py --url ws://127.0.0.1:9014 > asyncio-cpy314.log 2>&1 &
           for i in {1..30}; do
             if netstat -tuln | grep :9014 >/dev/null 2>&1; then
               echo "✅ asyncio + cpy314 server running on port 9014"
@@ -205,7 +205,7 @@ jobs:
 
           # Server 5: Twisted + PyPy 3.11 on port 9015
           echo "==> Starting Twisted + pypy311 server on port 9015..."
-          nohup just wstest-testeeserver-twisted pypy311 "ws://127.0.0.1:9015" > twisted-pypy311.log 2>&1 &
+          nohup .venvs/pypy311/bin/python ./wstest/testee_server_tx.py --url ws://127.0.0.1:9015 > twisted-pypy311.log 2>&1 &
           for i in {1..30}; do
             if netstat -tuln | grep :9015 >/dev/null 2>&1; then
               echo "✅ Twisted + pypy311 server running on port 9015"
@@ -221,7 +221,7 @@ jobs:
 
           # Server 6: asyncio + PyPy 3.11 on port 9016
           echo "==> Starting asyncio + pypy311 server on port 9016..."
-          nohup just wstest-testeeserver-asyncio pypy311 "ws://127.0.0.1:9016" > asyncio-pypy311.log 2>&1 &
+          nohup .venvs/pypy311/bin/python ./wstest/testee_server_aio.py --url ws://127.0.0.1:9016 > asyncio-pypy311.log 2>&1 &
           for i in {1..30}; do
             if netstat -tuln | grep :9016 >/dev/null 2>&1; then
               echo "✅ asyncio + pypy311 server running on port 9016"
