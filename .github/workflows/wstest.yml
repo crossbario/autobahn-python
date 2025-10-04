@@ -15,9 +15,6 @@ on:
         options:
           - quick
           - full
-  schedule:
-    # Run daily at 02:00 UTC  
-    - cron: '0 2 * * *'
 
 env:
   UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
@@ -25,21 +22,25 @@ env:
   TEST_MODE: ${{ github.event.inputs.test_mode || 'quick' }}
 
 jobs:
-  # Client testing: Test autobahn-python clients against testsuite server  
+  # Client testing: Test autobahn-python clients against testsuite server
   client-conformance:
-    name: WebSocket Client Testing (${{ matrix.backend }}-${{ matrix.python }})
+    name:
+      WebSocket Client Testing (${{ matrix.backend }}-${{
+      matrix.python }})
     runs-on: ubuntu-24.04
-    
+
     strategy:
       matrix:
         backend: [twisted, asyncio]
         python: [cpy311, cpy314, pypy311]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install toolchain
+      - name: Install toolchain (just & uv)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
           curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -50,17 +51,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.UV_CACHE_DIR }}
-          key: uv-cache-${{ matrix.python }}-${{ hashFiles('pyproject.toml') }}
+          key:
+            uv-cache-${{ matrix.python }}-${{
+            hashFiles('pyproject.toml') }}
 
       - name: Setup Python environment
         run: just create ${{ matrix.python }}
 
-      - name: Start fuzzingserver  
+      - name: Start fuzzingserver
         run: |
           echo "==> Starting fuzzingserver in background..."
           nohup just wstest-fuzzingserver "" "" ${{ env.TEST_MODE }} > fuzzingserver.log 2>&1 &
           echo $! > fuzzingserver.pid
-          
+
           echo "==> Waiting for fuzzingserver to start..."
           for i in {1..30}; do
             if curl -f http://127.0.0.1:9001 >/dev/null 2>&1; then
@@ -77,7 +80,9 @@ jobs:
           done
 
       - name: Run client tests
-        run: just wstest-testeeclient-${{ matrix.backend }} ${{ matrix.python }}
+        run:
+          just wstest-testeeclient-${{ matrix.backend }} ${{
+          matrix.python }}
 
       - name: Stop fuzzingserver
         if: always()
@@ -92,7 +97,9 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: client-${{ matrix.backend }}-${{ matrix.python }}-${{ env.TEST_MODE }}
+          name:
+            client-${{ matrix.backend }}-${{ matrix.python }}-${{
+            env.TEST_MODE }}
           path: .wstest/clients/
           retention-days: 30
 
@@ -105,7 +112,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install toolchain
+      - name: Install toolchain (just & uv)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
           curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -116,12 +125,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.UV_CACHE_DIR }}
-          key: uv-cache-servers-${{ hashFiles('pyproject.toml') }}
+          key:
+            uv-cache-servers-${{ hashFiles('pyproject.toml') }}
 
       - name: Setup Python environments
         run: |
           just create cpy311
-          just create cpy314  
+          just create cpy314
           just create pypy311
 
       - name: Start all WebSocket servers
@@ -133,13 +143,14 @@ jobs:
           nohup just wstest-testeeserver-asyncio cpy314 "ws://127.0.0.1:9014" > asyncio-cpy314.log 2>&1 &
           nohup just wstest-testeeserver-twisted pypy311 "ws://127.0.0.1:9015" > twisted-pypy311.log 2>&1 &
           nohup just wstest-testeeserver-asyncio pypy311 "ws://127.0.0.1:9016" > asyncio-pypy311.log 2>&1 &
-          
+
           sleep 10
-          
+
           echo "==> Verifying all servers are running..."
           for port in 9011 9012 9013 9014 9015 9016; do
             if ! netstat -tuln | grep :${port}; then
               echo "❌ Server failed to start on port ${port}"
+              cat *${port}.log || true  # Show the server log for that port
               exit 1
             fi
           done
@@ -167,6 +178,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -176,19 +194,19 @@ jobs:
         run: |
           echo "==> Reconstructing .wstest directory structure..."
           mkdir -p .wstest/clients .wstest/servers
-          
+
           # Combine all client reports
           find artifacts -name "client-*" -type d | while read dir; do
             echo "Processing: $dir"
             cp -r "$dir"/* .wstest/clients/ || true
           done
-          
+
           # Copy server reports
           find artifacts -name "servers-*" -type d | while read dir; do
-            echo "Processing: $dir"  
+            echo "Processing: $dir"
             cp -r "$dir"/* .wstest/servers/ || true
           done
-          
+
           echo "Client reports:" && ls -la .wstest/clients/ || echo "None"
           echo "Server reports:" && ls -la .wstest/servers/ || echo "None"
 
