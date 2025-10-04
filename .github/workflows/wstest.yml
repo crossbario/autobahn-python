@@ -150,7 +150,14 @@ jobs:
           for port in 9011 9012 9013 9014 9015 9016; do
             if ! netstat -tuln | grep :${port}; then
               echo "❌ Server failed to start on port ${port}"
-              cat *${port}.log || true  # Show the server log for that port
+              case $port in
+                9011) cat twisted-cpy311.log ;;
+                9012) cat asyncio-cpy311.log ;;
+                9013) cat twisted-cpy314.log ;;
+                9014) cat asyncio-cpy314.log ;;
+                9015) cat twisted-pypy311.log ;;
+                9016) cat asyncio-pypy311.log ;;
+              esac
               exit 1
             fi
           done
