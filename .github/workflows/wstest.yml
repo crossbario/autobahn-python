@@ -24,15 +24,8 @@ env:
 jobs:
   # Client testing: Test autobahn-python clients against testsuite server
   client-conformance:
-    name:
-      WebSocket Client Testing (${{ matrix.backend }}-${{
-      matrix.python }})
+    name: WebSocket Client Testing (All Combinations)
     runs-on: ubuntu-24.04
-
-    strategy:
-      matrix:
-        backend: [twisted, asyncio]
-        python: [cpy311, cpy314, pypy311]
 
     steps:
       - name: Checkout code
@@ -51,12 +44,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.UV_CACHE_DIR }}
-          key:
-            uv-cache-${{ matrix.python }}-${{
-            hashFiles('pyproject.toml') }}
+          key: uv-cache-clients-${{ hashFiles('pyproject.toml') }}
 
-      - name: Setup Python environment
-        run: just create ${{ matrix.python }}
+      - name: Setup Python environments and install Autobahn|Python
+        run: |
+          just install cpy311
+          just install cpy314
+          just install pypy311
 
       - name: Start fuzzingserver
         run: |
@@ -79,10 +73,35 @@ jobs:
             sleep 1
           done
 
-      - name: Run client tests
-        run:
-          just wstest-testeeclient-${{ matrix.backend }} ${{
-          matrix.python }}
+      - name: Run all client test combinations
+        run: |
+          echo "==> Running client tests for all 6 combinations..."
+          
+          # Client 1: Twisted + CPython 3.11
+          echo "==> Testing Twisted + cpy311 client..."
+          just wstest-testeeclient-twisted cpy311
+          
+          # Client 2: asyncio + CPython 3.11  
+          echo "==> Testing asyncio + cpy311 client..."
+          just wstest-testeeclient-asyncio cpy311
+          
+          # Client 3: Twisted + CPython 3.14
+          echo "==> Testing Twisted + cpy314 client..."
+          just wstest-testeeclient-twisted cpy314
+          
+          # Client 4: asyncio + CPython 3.14
+          echo "==> Testing asyncio + cpy314 client..."
+          just wstest-testeeclient-asyncio cpy314
+          
+          # Client 5: Twisted + PyPy 3.11
+          echo "==> Testing Twisted + pypy311 client..."
+          just wstest-testeeclient-twisted pypy311
+          
+          # Client 6: asyncio + PyPy 3.11
+          echo "==> Testing asyncio + pypy311 client..."
+          just wstest-testeeclient-asyncio pypy311
+          
+          echo "✅ All 6 client test combinations completed"
 
       - name: Stop fuzzingserver
         if: always()
@@ -97,9 +116,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name:
-            client-${{ matrix.backend }}-${{ matrix.python }}-${{
-            env.TEST_MODE }}
+          name: clients-all-${{ env.TEST_MODE }}
           path: .wstest/clients/
           retention-days: 30
 
@@ -296,11 +313,113 @@ jobs:
           echo "==> Using proven justfile recipe..."
           just wstest-consolidate-reports
 
+      - name: Generate summary tables from index.json files
+        run: |
+          echo "==> Generating conformance summary tables..."
+          
+          # Function to process index.json and generate summary
+          generate_summary() {
+            local json_file="$1"
+            local title="$2"
+            
+            if [[ ! -f "$json_file" ]]; then
+              echo "⚠️  $json_file not found"
+              return
+            fi
+            
+            echo ""
+            echo "## $title"
+            echo ""
+            echo "| Testee | Cases OK / Total | Status |"
+            echo "|--------|------------------|---------|"
+            
+            # Process JSON and generate table rows
+            python3 -c "
+          import json
+          import sys
+          
+          with open('$json_file', 'r') as f:
+              data = json.load(f)
+          
+          for testee, cases in data.items():
+              total_cases = len(cases)
+              ok_cases = 0
+              
+              for case_id, case_data in cases.items():
+                  if case_data.get('behavior') == 'OK' and case_data.get('behaviorClose') == 'OK':
+                      ok_cases += 1
+              
+              status = '✅' if ok_cases == total_cases else '❌'
+              print(f'| {testee} | {ok_cases} / {total_cases} | {status} |')
+          "
+          }
+          
+          # Generate summary for clients and servers
+          echo "# WebSocket Conformance Test Results" > summary.md
+          echo "" >> summary.md
+          echo "Test Mode: \`${{ env.TEST_MODE }}\`" >> summary.md
+          echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> summary.md
+          
+          generate_summary "docs/_static/websocket/conformance/clients/index.json" "Client Conformance" >> summary.md
+          generate_summary "docs/_static/websocket/conformance/servers/index.json" "Server Conformance" >> summary.md
+          
+          # Show summary in workflow log
+          echo "==> Summary Report:"
+          cat summary.md
+
+      - name: Post summary to PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const summary = fs.readFileSync('summary.md', 'utf8');
+              
+              // Find existing comment
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              });
+              
+              const existingComment = comments.find(comment => 
+                comment.body.includes('WebSocket Conformance Test Results')
+              );
+              
+              if (existingComment) {
+                // Update existing comment
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existingComment.id,
+                  body: summary
+                });
+              } else {
+                // Create new comment
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: summary
+                });
+              }
+            } catch (error) {
+              console.log('Could not read summary.md or post comment:', error);
+            }
+
       - name: Upload consolidated reports
         uses: actions/upload-artifact@v4
         with:
           name: websocket-conformance-docs-${{ env.TEST_MODE }}
           path: docs/_static/websocket/conformance/
+          retention-days: 30
+
+      - name: Upload summary report
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-summary-${{ env.TEST_MODE }}
+          path: summary.md
           retention-days: 30
 
       - name: Report summary
@@ -313,3 +432,101 @@ jobs:
             echo "📦 $(basename "$zip")"
           done
           echo "📄 Documentation: docs/_static/websocket/conformance/"
+          echo "📊 Summary: summary.md"
+
+  # Verify all tests passed (100% conformance) - fails if any test failed
+  verify-reports:
+    name: Verify WebSocket Conformance (100% Pass Required)
+    needs: [consolidate-reports]
+    runs-on: ubuntu-24.04
+    if: always()
+
+    steps:
+      - name: Download consolidated reports
+        uses: actions/download-artifact@v4
+        with:
+          name: websocket-conformance-docs-${{ env.TEST_MODE }}
+          path: docs/_static/websocket/conformance/
+
+      - name: Verify 100% conformance
+        run: |
+          echo "==> Verifying 100% WebSocket conformance..."
+          
+          EXIT_CODE=0
+          
+          # Function to verify 100% pass rate
+          verify_conformance() {
+            local json_file="$1"
+            local test_type="$2"
+            
+            if [[ ! -f "$json_file" ]]; then
+              echo "❌ $json_file not found"
+              return 1
+            fi
+            
+            echo "==> Checking $test_type conformance..."
+            
+            # Check if all tests passed
+            python3 -c "
+          import json
+          import sys
+          
+          with open('$json_file', 'r') as f:
+              data = json.load(f)
+          
+          all_passed = True
+          total_testees = len(data)
+          passed_testees = 0
+          
+          for testee, cases in data.items():
+              total_cases = len(cases)
+              ok_cases = 0
+              
+              for case_id, case_data in cases.items():
+                  if case_data.get('behavior') == 'OK' and case_data.get('behaviorClose') == 'OK':
+                      ok_cases += 1
+              
+              if ok_cases == total_cases:
+                  print(f'✅ {testee}: {ok_cases}/{total_cases} tests passed')
+                  passed_testees += 1
+              else:
+                  print(f'❌ {testee}: {ok_cases}/{total_cases} tests passed')
+                  all_passed = False
+          
+          print(f'')
+          print(f'$test_type Summary: {passed_testees}/{total_testees} testees passed all tests')
+          
+          if not all_passed:
+              print(f'❌ $test_type conformance: FAILED - Not all tests passed')
+              sys.exit(1)
+          else:
+              print(f'✅ $test_type conformance: PASSED - All tests passed')
+          "
+            
+            return $?
+          }
+          
+          # Verify client conformance
+          if ! verify_conformance "docs/_static/websocket/conformance/clients/index.json" "Client"; then
+            EXIT_CODE=1
+          fi
+          
+          echo ""
+          
+          # Verify server conformance  
+          if ! verify_conformance "docs/_static/websocket/conformance/servers/index.json" "Server"; then
+            EXIT_CODE=1
+          fi
+          
+          echo ""
+          echo "==> Overall WebSocket Conformance Verification:"
+          if [[ $EXIT_CODE -eq 0 ]]; then
+            echo "✅ PASSED - Both client and server conformance tests achieved 100% pass rate"
+          else
+            echo "❌ FAILED - One or more conformance tests did not achieve 100% pass rate"
+            echo ""
+            echo "This means the WebSocket implementation has conformance issues that need to be addressed."
+            echo "Download the detailed reports from the workflow artifacts to investigate specific failures."
+          fi
+          
+          exit $EXIT_CODE
