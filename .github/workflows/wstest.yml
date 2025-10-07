@@ -16,6 +16,12 @@ on:
           - quick
           - full
 
+# Grant permissions needed for PR commenting
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 env:
   UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
   # Test mode: 'quick' for fast CI, 'full' for comprehensive testing
