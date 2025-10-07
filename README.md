@@ -209,6 +209,18 @@ application component, you need some lines of
 and a
 [WAMP Router](https://autobahn.readthedocs.io/en/latest/wamp/programming.html#running-a-wamp-router).
 
+## Packaging
+
+The Autobahn|Python OSS project:
+
+- build & publish *binary wheels* on [GitHub Releases](https://github.com/crossbario/autobahn-python/releases) and [PyPI](https://pypi.org/project/autobahn/)
+- plans to publish on [pyx](https://astral.sh/blog/introducing-pyx) once that launches
+- plans to support [WheelNext](https://wheelnext.dev/) once that launches (see also: https://lwn.net/Articles/1028299/, https://labs.quansight.org/blog/python-wheels-from-tags-to-variants)
+- no longer bakes & publishes Docker images *
+- no longer explicitly supports [PyInstaller](https://pyinstaller.org/) packaging
+
+> *: for commercial users, *typedef int GmbH (Germany)*, original creator and active maintainer of Autobahn, Crossbar.io and WAMP provides production grade, optimized and supported Docker images based on RHEL 9 and Debian 12, including complete SBOM for both the base system and full Python application run-time environment based on [CycloneDX v1.6](https://cyclonedx.org/) in JSON format and as a audit-level PDF/A document fulfilling strict cybersecurity requirements addressing e.g. EU CRA and [BSI TR-03183](https://www.bsi.bund.de/DE/Themen/Unternehmen-und-Organisationen/Standards-und-Zertifizierung/Technische-Richtlinien/TR-nach-Thema-sortiert/tr03183/TR-03183_node.html).
+
 ## Package Releases
 
 Autobahn|Python provides comprehensive binary wheel coverage for all major platforms and Python implementations.
