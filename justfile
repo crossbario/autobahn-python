@@ -33,7 +33,7 @@ default:
 export UV_CACHE_DIR := './.uv-cache'
 
 # Autobahn|Testsuite (https://github.com/crossbario/autobahn-testsuite) Docker image to use.
-AUTOBAHN_TESTSUITE_IMAGE := 'crossbario/autobahn-testsuite:latest'
+AUTOBAHN_TESTSUITE_IMAGE := 'crossbario/autobahn-testsuite:25.10.1'
 
 # Default output directory for Autobahn|Testsuite reports (HTML files).
 AUTOBAHN_TESTSUITE_OUTPUT_DIR := justfile_directory() / '.wstest'
