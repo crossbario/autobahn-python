@@ -74,7 +74,7 @@ def verify_conformance(json_file: Path, test_type: str) -> bool:
                 print(f'   ... and {len(failed_cases) - 3} more failed cases')
             all_passed = False
     
-    print(f'')
+    print('')
     print(f'{test_type} Summary: {passed_testees}/{total_testees} testees passed all tests')
     
     if not all_passed:

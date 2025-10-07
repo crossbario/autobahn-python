@@ -425,6 +425,16 @@ jobs:
 
       - name: Verify 100% conformance
         run: |
+          echo "==> Debugging directory structure:"
+          find docs/_static/websocket/conformance -type f -name "*.json" | head -10
+          echo ""
+          ls -la docs/_static/websocket/conformance/ || echo "conformance dir not found"
+          echo ""
+          ls -la docs/_static/websocket/conformance/clients/ || echo "clients dir not found"
+          echo ""
+          ls -la docs/_static/websocket/conformance/servers/ || echo "servers dir not found"
+          echo ""
+          
           python3 ${{ github.workspace }}/.github/workflows/verify_conformance.py \
             "docs/_static/websocket/conformance/clients/index.json" \
             "docs/_static/websocket/conformance/servers/index.json"
