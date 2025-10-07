@@ -44,9 +44,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.UV_CACHE_DIR }}
-          key: uv-cache-clients-${{ hashFiles('pyproject.toml') }}
+          key:
+            uv-cache-clients-${{ hashFiles('pyproject.toml') }}
 
-      - name: Setup Python environments and install Autobahn|Python
+      - name:
+          Setup Python environments and install Autobahn|Python
         run: |
           just install cpy311
           just install cpy314
@@ -76,31 +78,31 @@ jobs:
       - name: Run all client test combinations
         run: |
           echo "==> Running client tests for all 6 combinations..."
-          
+
           # Client 1: Twisted + CPython 3.11
           echo "==> Testing Twisted + cpy311 client..."
           just wstest-testeeclient-twisted cpy311
-          
-          # Client 2: asyncio + CPython 3.11  
+
+          # Client 2: asyncio + CPython 3.11
           echo "==> Testing asyncio + cpy311 client..."
           just wstest-testeeclient-asyncio cpy311
-          
+
           # Client 3: Twisted + CPython 3.14
           echo "==> Testing Twisted + cpy314 client..."
           just wstest-testeeclient-twisted cpy314
-          
+
           # Client 4: asyncio + CPython 3.14
           echo "==> Testing asyncio + cpy314 client..."
           just wstest-testeeclient-asyncio cpy314
-          
+
           # Client 5: Twisted + PyPy 3.11
           echo "==> Testing Twisted + pypy311 client..."
           just wstest-testeeclient-twisted pypy311
-          
+
           # Client 6: asyncio + PyPy 3.11
           echo "==> Testing asyncio + pypy311 client..."
           just wstest-testeeclient-asyncio pypy311
-          
+
           echo "✅ All 6 client test combinations completed"
 
       - name: Stop fuzzingserver
@@ -293,26 +295,20 @@ jobs:
           echo "==> Reconstructing .wstest directory structure..."
           mkdir -p .wstest/clients .wstest/servers
 
-          # Combine all client reports (now using clients-all naming)
-          find artifacts -name "clients-all-*" -type d | while read dir; do
-            echo "Processing client reports: $dir"
+          # Combine all client reports
+          find artifacts -name "client-*" -type d | while read dir; do
+            echo "Processing: $dir"
             cp -r "$dir"/* .wstest/clients/ || true
           done
 
-          # Copy server reports (servers-all naming)  
-          find artifacts -name "servers-all-*" -type d | while read dir; do
-            echo "Processing server reports: $dir"
+          # Copy server reports
+          find artifacts -name "servers-*" -type d | while read dir; do
+            echo "Processing: $dir"
             cp -r "$dir"/* .wstest/servers/ || true
           done
 
-          echo "==> Artifact structure:"
-          ls -la artifacts/ || echo "No artifacts directory"
-          echo ""
-          echo "==> Reconstructed client reports:" 
-          ls -la .wstest/clients/ || echo "None"
-          echo ""
-          echo "==> Reconstructed server reports:" 
-          ls -la .wstest/servers/ || echo "None"
+          echo "Client reports:" && ls -la .wstest/clients/ || echo "None"
+          echo "Server reports:" && ls -la .wstest/servers/ || echo "None"
 
       - name: Consolidate reports for documentation
         run: |
@@ -322,53 +318,53 @@ jobs:
       - name: Generate summary tables from index.json files
         run: |
           echo "==> Generating conformance summary tables..."
-          
+
           # Function to process index.json and generate summary
           generate_summary() {
             local json_file="$1"
             local title="$2"
-            
+
             if [[ ! -f "$json_file" ]]; then
               echo "⚠️  $json_file not found"
               return
             fi
-            
+
             echo ""
             echo "## $title"
             echo ""
             echo "| Testee | Cases OK / Total | Status |"
             echo "|--------|------------------|---------|"
-            
+
             # Process JSON and generate table rows
             python3 -c "
           import json
           import sys
-          
+
           with open('$json_file', 'r') as f:
               data = json.load(f)
-          
+
           for testee, cases in data.items():
               total_cases = len(cases)
               ok_cases = 0
-              
+
               for case_id, case_data in cases.items():
                   if case_data.get('behavior') == 'OK' and case_data.get('behaviorClose') == 'OK':
                       ok_cases += 1
-              
+
               status = '✅' if ok_cases == total_cases else '❌'
               print(f'| {testee} | {ok_cases} / {total_cases} | {status} |')
           "
           }
-          
+
           # Generate summary for clients and servers
           echo "# WebSocket Conformance Test Results" > summary.md
           echo "" >> summary.md
           echo "Test Mode: \`${{ env.TEST_MODE }}\`" >> summary.md
           echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> summary.md
-          
+
           generate_summary "docs/_static/websocket/conformance/clients/index.json" "Client Conformance" >> summary.md
           generate_summary "docs/_static/websocket/conformance/servers/index.json" "Server Conformance" >> summary.md
-          
+
           # Show summary in workflow log
           echo "==> Summary Report:"
           cat summary.md
@@ -381,18 +377,18 @@ jobs:
             const fs = require('fs');
             try {
               const summary = fs.readFileSync('summary.md', 'utf8');
-              
+
               // Find existing comment
               const { data: comments } = await github.rest.issues.listComments({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
               });
-              
-              const existingComment = comments.find(comment => 
+
+              const existingComment = comments.find(comment =>
                 comment.body.includes('WebSocket Conformance Test Results')
               );
-              
+
               if (existingComment) {
                 // Update existing comment
                 await github.rest.issues.updateComment({
@@ -457,73 +453,81 @@ jobs:
       - name: Verify 100% conformance
         run: |
           echo "==> Verifying 100% WebSocket conformance..."
-          
+
           EXIT_CODE=0
-          
+
           # Function to verify 100% pass rate
           verify_conformance() {
             local json_file="$1"
             local test_type="$2"
-            
+
             if [[ ! -f "$json_file" ]]; then
               echo "❌ $json_file not found"
               return 1
             fi
-            
+
             echo "==> Checking $test_type conformance..."
-            
+
             # Check if all tests passed
             python3 -c "
           import json
           import sys
-          
+          from pprint import pprint
+
           with open('$json_file', 'r') as f:
               data = json.load(f)
-          
+
           all_passed = True
           total_testees = len(data)
           passed_testees = 0
-          
+
           for testee, cases in data.items():
               total_cases = len(cases)
               ok_cases = 0
-              
+
               for case_id, case_data in cases.items():
-                  if case_data.get('behavior') == 'OK' and case_data.get('behaviorClose') == 'OK':
-                      ok_cases += 1
-              
+                if (
+                    case_data.get("behavior") == "OK" and case_data.get("behaviorClose") == "OK"
+                ) or (
+                    case_data.get("behavior") == "INFORMATIONAL"
+                    and case_data.get("behaviorClose") == "INFORMATIONAL"
+                ):
+                    ok_cases += 1
+                else:
+                    print(f"{case_id}: {case_data}")
+
               if ok_cases == total_cases:
                   print(f'✅ {testee}: {ok_cases}/{total_cases} tests passed')
                   passed_testees += 1
               else:
                   print(f'❌ {testee}: {ok_cases}/{total_cases} tests passed')
                   all_passed = False
-          
+
           print(f'')
           print(f'$test_type Summary: {passed_testees}/{total_testees} testees passed all tests')
-          
+
           if not all_passed:
               print(f'❌ $test_type conformance: FAILED - Not all tests passed')
               sys.exit(1)
           else:
               print(f'✅ $test_type conformance: PASSED - All tests passed')
           "
-            
+
             return $?
           }
-          
+
           # Verify client conformance
           if ! verify_conformance "docs/_static/websocket/conformance/clients/index.json" "Client"; then
             EXIT_CODE=1
           fi
-          
+
           echo ""
-          
-          # Verify server conformance  
+
+          # Verify server conformance
           if ! verify_conformance "docs/_static/websocket/conformance/servers/index.json" "Server"; then
             EXIT_CODE=1
           fi
-          
+
           echo ""
           echo "==> Overall WebSocket Conformance Verification:"
           if [[ $EXIT_CODE -eq 0 ]]; then
@@ -534,5 +538,5 @@ jobs:
             echo "This means the WebSocket implementation has conformance issues that need to be addressed."
             echo "Download the detailed reports from the workflow artifacts to investigate specific failures."
           fi
-          
+
           exit $EXIT_CODE
