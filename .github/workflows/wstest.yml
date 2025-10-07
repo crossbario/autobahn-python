@@ -295,20 +295,27 @@ jobs:
           echo "==> Reconstructing .wstest directory structure..."
           mkdir -p .wstest/clients .wstest/servers
 
-          # Combine all client reports
-          find artifacts -name "client-*" -type d | while read dir; do
-            echo "Processing: $dir"
+          # Debug: Show what artifacts we actually have
+          echo "==> Available artifacts:"
+          ls -la artifacts/ || echo "No artifacts directory"
+
+          # Combine all client reports (now using clients-all naming)
+          find artifacts -name "clients-all-*" -type d | while read dir; do
+            echo "Processing client reports: $dir"
             cp -r "$dir"/* .wstest/clients/ || true
           done
 
-          # Copy server reports
-          find artifacts -name "servers-*" -type d | while read dir; do
-            echo "Processing: $dir"
+          # Copy server reports (servers-all naming)  
+          find artifacts -name "servers-all-*" -type d | while read dir; do
+            echo "Processing server reports: $dir"
             cp -r "$dir"/* .wstest/servers/ || true
           done
 
-          echo "Client reports:" && ls -la .wstest/clients/ || echo "None"
-          echo "Server reports:" && ls -la .wstest/servers/ || echo "None"
+          echo "==> Reconstructed client reports:" 
+          ls -la .wstest/clients/ || echo "None"
+          echo ""
+          echo "==> Reconstructed server reports:" 
+          ls -la .wstest/servers/ || echo "None"
 
       - name: Consolidate reports for documentation
         run: |
