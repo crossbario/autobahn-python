@@ -319,51 +319,21 @@ jobs:
         run: |
           echo "==> Generating conformance summary tables..."
 
-          # Function to process index.json and generate summary
-          generate_summary() {
-            local json_file="$1"
-            local title="$2"
-
-            if [[ ! -f "$json_file" ]]; then
-              echo "⚠️  $json_file not found"
-              return
-            fi
-
-            echo ""
-            echo "## $title"
-            echo ""
-            echo "| Testee | Cases OK / Total | Status |"
-            echo "|--------|------------------|---------|"
-
-            # Process JSON and generate table rows
-            python3 -c "
-          import json
-          import sys
-
-          with open('$json_file', 'r') as f:
-              data = json.load(f)
-
-          for testee, cases in data.items():
-              total_cases = len(cases)
-              ok_cases = 0
-
-              for case_id, case_data in cases.items():
-                  if case_data.get('behavior') == 'OK' and case_data.get('behaviorClose') == 'OK':
-                      ok_cases += 1
-
-              status = '✅' if ok_cases == total_cases else '❌'
-              print(f'| {testee} | {ok_cases} / {total_cases} | {status} |')
-          "
-          }
-
           # Generate summary for clients and servers
           echo "# WebSocket Conformance Test Results" > summary.md
           echo "" >> summary.md
           echo "Test Mode: \`${{ env.TEST_MODE }}\`" >> summary.md
           echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> summary.md
 
-          generate_summary "docs/_static/websocket/conformance/clients/index.json" "Client Conformance" >> summary.md
-          generate_summary "docs/_static/websocket/conformance/servers/index.json" "Server Conformance" >> summary.md
+          # Generate client summary
+          python3 ${{ github.workspace }}/.github/workflows/generate_summary.py \
+            "docs/_static/websocket/conformance/clients/index.json" \
+            "Client Conformance" >> summary.md
+
+          # Generate server summary  
+          python3 ${{ github.workspace }}/.github/workflows/generate_summary.py \
+            "docs/_static/websocket/conformance/servers/index.json" \
+            "Server Conformance" >> summary.md
 
           # Show summary in workflow log
           echo "==> Summary Report:"
@@ -452,6 +422,6 @@ jobs:
 
       - name: Verify 100% conformance
         run: |
-          python3 .github/workflows/verify_conformance.py \
+          python3 ${{ github.workspace }}/.github/workflows/verify_conformance.py \
             "docs/_static/websocket/conformance/clients/index.json" \
             "docs/_static/websocket/conformance/servers/index.json"
