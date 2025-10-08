@@ -363,38 +363,12 @@ jobs:
           path: docs/_static/websocket/conformance/
           retention-days: 30
 
-      - name: Commit summary to .audit/ directory
-        run: |
-          echo "==> Committing summary file to .audit/ directory..."
-
-          # Check if file exists and if it has changed
-          if git ls-files --error-unmatch $SUMMARY_FILE >/dev/null 2>&1; then
-            # File exists, check if it changed
-            if git diff --quiet HEAD $SUMMARY_FILE; then
-              echo "Summary file unchanged, skipping commit"
-              exit 0
-            else
-              echo "Summary file changed, will update"
-            fi
-          else
-            echo "New summary file, will add"
-          fi
-
-          # Configure git
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Create and checkout the branch locally (from detached HEAD)
-          git checkout -b ${{ github.head_ref }}
-
-          # Add and commit the file
-          git add $SUMMARY_FILE
-          git commit -m "Add/update WebSocket conformance summary (Test mode: ${{ env.TEST_MODE }}, Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')) for PR #${{ github.event.number }}"
-
-          # Push to the PR branch
-          git push origin ${{ github.head_ref }}
-
-          echo "✅ Summary file committed to $SUMMARY_FILE"
+      - name: Upload summary report for PR comment
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-summary-${{ env.TEST_MODE }}
+          path: ${{ env.SUMMARY_FILE }}
+          retention-days: 30
 
       - name: Report summary
         run: |

@@ -71,42 +71,38 @@ jobs:
             const summary_filename = `${head_repo}-${head_ref}-${pr_number}-wstest-summary.md`;
             core.setOutput('summary_filename', summary_filename);
 
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
+      - name: Download summary artifact
+        uses: actions/download-artifact@v4
         with:
-          repository: ${{ steps.pr-info.outputs.head_repo }}
-          ref: ${{ steps.pr-info.outputs.head_ref }}
-          fetch-depth: 2  # Need at least 2 commits to detect changes
+          name: conformance-summary-${{ github.event.workflow_run.conclusion == 'success' && 'quick' || env.TEST_MODE || 'quick' }}
+          path: summary-artifact/
+        continue-on-error: true
 
-      - name: Check if summary file exists and was changed
+      - name: Check if summary file exists
         id: file-check
         run: |
-          SUMMARY_FILE=".audit/${{ steps.pr-info.outputs.summary_filename }}"
-          echo "Checking file: $SUMMARY_FILE"
+          echo "==> Looking for summary file in artifact..."
           
-          if [[ ! -f "$SUMMARY_FILE" ]]; then
-            echo "❌ Summary file not found: $SUMMARY_FILE"
+          # Find the summary file in the downloaded artifact
+          SUMMARY_FILE=$(find summary-artifact/ -name "*wstest-summary.md" | head -1)
+          
+          if [[ -z "$SUMMARY_FILE" || ! -f "$SUMMARY_FILE" ]]; then
+            echo "❌ Summary file not found in artifact"
             echo "should_comment=false" >> $GITHUB_OUTPUT
+            ls -la summary-artifact/ || echo "No artifact directory"
             exit 0
           fi
           
-          echo "✅ Summary file found"
-          
-          # Check if file was changed in the last commit (from wstest workflow)
-          if git diff HEAD~1 HEAD --name-only | grep -q "$SUMMARY_FILE"; then
-            echo "✅ Summary file was updated in latest commit"
-            echo "should_comment=true" >> $GITHUB_OUTPUT
-          else
-            echo "ℹ️  Summary file exists but wasn't changed"
-            echo "should_comment=false" >> $GITHUB_OUTPUT
-          fi
+          echo "✅ Summary file found: $SUMMARY_FILE"
+          echo "summary_file_path=$SUMMARY_FILE" >> $GITHUB_OUTPUT
+          echo "should_comment=true" >> $GITHUB_OUTPUT
 
       - name: Comment on PR
         if: steps.file-check.outputs.should_comment == 'true'
         uses: thollander/actions-comment-pull-request@v3
         with:
           pr_number: ${{ steps.pr-info.outputs.pr_number }}
-          filePath: .audit/${{ steps.pr-info.outputs.summary_filename }}
+          filePath: ${{ steps.file-check.outputs.summary_file_path }}
           comment_tag: wstest-conformance-summary
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
