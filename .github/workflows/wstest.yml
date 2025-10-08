@@ -384,6 +384,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Create and checkout the branch locally (from detached HEAD)
+          git checkout -b ${{ github.head_ref }}
+
           # Add and commit the file
           git add $SUMMARY_FILE
           git commit -m "Add/update WebSocket conformance summary (Test mode: ${{ env.TEST_MODE }}, Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')) for PR #${{ github.event.number }}"
