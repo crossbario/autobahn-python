@@ -1,89 +1,107 @@
-# IMPORTANT: This workflow requires to create and add the fine-grained PAT as a secret:
-#
-#   - Go to GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens.
-#   - Create a token for your repo with “Issues: Read & Write” and “Pull requests: Read & Write”.
-#   - Copy the generated token value*
-#   - Add it to your repo as a secret named GH_FINEGRAINED_TOKEN (Settings → Secrets and variables → Actions → New repository secret)
-#   - Paste the token value* into the “Secret *” field.
+name: post-summary
 
 on:
+  # Auto-trigger after wstest workflow completes
   workflow_run:
-    workflows: ["wstest"] # <-- match exactly the name in your wstest.yml 'name:' field
+    workflows: ["wstest"]
     types:
       - completed
-  workflow_dispatch: # <-- allow manual dispatch to allow debug GH actions shit
+  
+  # Allow manual dispatch for debugging
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to post summary for'
+        required: true
+        type: string
 
 jobs:
-  post-summary:
+  add-comment:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.event == 'pull_request' }}
+    # Only run if wstest was successful OR if manually dispatched
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    
     steps:
-      - name: Download summary artifact
+      - name: Get PR information
+        id: pr-info
         uses: actions/github-script@v7
         with:
           script: |
-            const run_id = ${{ github.event.workflow_run.id }};
-            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id,
-            });
-            // Find the artifact whose name starts with 'conformance-summary-'
-            const summaryArtifact = artifacts.data.artifacts.find(a => a.name.startsWith('conformance-summary-'));
-            if (!summaryArtifact) {
-              core.setFailed('No summary artifact found');
-              return;
-            }
-            const download = await github.rest.actions.downloadArtifact({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              artifact_id: summaryArtifact.id,
-              archive_format: 'zip',
-            });
-            const fs = require('fs');
-            const unzip = require('unzipper');
-            await fs.promises.writeFile('summary.zip', Buffer.from(download.data));
-            await fs.createReadStream('summary.zip').pipe(unzip.Extract({ path: 'summary' })).promise();
-
-      - name: Post summary as PR comment
-        uses: actions/github-script@v7
-        env:
-          GH_TOKEN: ${{ secrets.GH_FINEGRAINED_TOKEN }}
-        with:
-          script: |
-            const fs = require('fs');
-            // Find the summary.md file inside the unzipped artifact folder
-            const summaryDir = 'summary';
-            let summaryPath = null;
-            // Find summary.md anywhere in the unzipped folder
-            const walk = (dir) => {
-              for (const file of fs.readdirSync(dir)) {
-                const fullPath = `${dir}/${file}`;
-                if (fs.statSync(fullPath).isFile() && file === 'summary.md') {
-                  summaryPath = fullPath;
-                  return;
-                } else if (fs.statSync(fullPath).isDirectory()) {
-                  walk(fullPath);
-                  if (summaryPath) return;
-                }
+            let pr_number, head_repo, head_ref;
+            
+            if (context.eventName === 'workflow_dispatch') {
+              // Manual dispatch - get PR info from input
+              pr_number = context.payload.inputs.pr_number;
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr_number
+              });
+              head_repo = pr.head.repo.full_name;
+              head_ref = pr.head.ref;
+            } else {
+              // workflow_run trigger - get PR info from workflow_run event
+              const prs = context.payload.workflow_run.pull_requests;
+              if (!prs || prs.length === 0) {
+                core.setFailed('No PR found in workflow_run event');
+                return;
               }
-            };
-            walk(summaryDir);
-            if (!summaryPath) {
-              core.setFailed('summary.md not found in artifact');
-              return;
+              pr_number = prs[0].number;
+              head_repo = prs[0].head.repo.full_name;
+              head_ref = prs[0].head.ref;
             }
-            const summary = fs.readFileSync(summaryPath, 'utf8');
-            // Get PR number from workflow_run event
-            const prs = github.event.workflow_run.pull_requests;
-            if (!prs || prs.length === 0) {
-              core.setFailed('No PR found in workflow_run event');
-              return;
-            }
-            const pr_number = prs[0].number;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: pr_number,
-              body: summary
-            });
+            
+            console.log(`PR: #${pr_number}, Repo: ${head_repo}, Branch: ${head_ref}`);
+            
+            // Set outputs for next steps
+            core.setOutput('pr_number', pr_number);
+            core.setOutput('head_repo', head_repo);
+            core.setOutput('head_ref', head_ref);
+            
+            // Construct summary filename
+            const summary_filename = `${head_repo}-${head_ref}-${pr_number}-wstest-summary.md`;
+            core.setOutput('summary_filename', summary_filename);
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr-info.outputs.head_repo }}
+          ref: ${{ steps.pr-info.outputs.head_ref }}
+          fetch-depth: 2  # Need at least 2 commits to detect changes
+
+      - name: Check if summary file exists and was changed
+        id: file-check
+        run: |
+          SUMMARY_FILE=".audit/${{ steps.pr-info.outputs.summary_filename }}"
+          echo "Checking file: $SUMMARY_FILE"
+          
+          if [[ ! -f "$SUMMARY_FILE" ]]; then
+            echo "❌ Summary file not found: $SUMMARY_FILE"
+            echo "should_comment=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "✅ Summary file found"
+          
+          # Check if file was changed in the last commit (from wstest workflow)
+          if git diff HEAD~1 HEAD --name-only | grep -q "$SUMMARY_FILE"; then
+            echo "✅ Summary file was updated in latest commit"
+            echo "should_comment=true" >> $GITHUB_OUTPUT
+          else
+            echo "ℹ️  Summary file exists but wasn't changed"
+            echo "should_comment=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on PR
+        if: steps.file-check.outputs.should_comment == 'true'
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          pr_number: ${{ steps.pr-info.outputs.pr_number }}
+          filePath: .audit/${{ steps.pr-info.outputs.summary_filename }}
+          comment_tag: wstest-conformance-summary
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip comment (file unchanged)
+        if: steps.file-check.outputs.should_comment == 'false'
+        run: |
+          echo "ℹ️  Skipping PR comment - summary file was not changed or not found"
