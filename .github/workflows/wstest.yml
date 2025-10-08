@@ -326,8 +326,9 @@ jobs:
         run: |
           echo "==> Generating conformance summary tables..."
 
-          # Create unique filename for PR
-          SUMMARY_FILE="${{ github.workspace }}/.audit/${{ github.event.pull_request.head.repo.full_name }}-${{ github.head_ref }}-${{ github.event.number }}-wstest-summary.md"
+          # Create unique filename for PR using -- as separator
+          REPO_SAFE=$(echo '${{ github.event.pull_request.head.repo.full_name }}' | tr '/' '--')
+          SUMMARY_FILE="${{ github.workspace }}/.audit/${REPO_SAFE}--${{ github.head_ref }}--${{ github.event.number }}--wstest-summary.md"
           echo "Summary file: $SUMMARY_FILE"
 
           # Generate summary for clients and servers
