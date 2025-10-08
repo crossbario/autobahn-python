@@ -326,25 +326,34 @@ jobs:
         run: |
           echo "==> Generating conformance summary tables..."
 
+          # Create unique filename for PR
+          SUMMARY_FILE="${{ github.event.pull_request.head.repo.full_name }}-${{ github.head_ref }}-${{ github.event.number }}-wstest-summary.md"
+          echo "Summary file: $SUMMARY_FILE"
+
           # Generate summary for clients and servers
-          echo "# WebSocket Conformance Test Results" > summary.md
-          echo "" >> summary.md
-          echo "Test Mode: \`${{ env.TEST_MODE }}\`" >> summary.md
-          echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> summary.md
+          echo "# WebSocket Conformance Test Results" > "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "Repo: ${{ github.event.pull_request.head.repo.full_name }}" >> "$SUMMARY_FILE"
+          echo "Branch: ${{ github.head_ref }}" >> "$SUMMARY_FILE"
+          echo "PR: #${{ github.event.number }}" >> "$SUMMARY_FILE"
+          echo "Test Mode: \`${{ env.TEST_MODE }}\`" >> "$SUMMARY_FILE"
 
           # Generate client summary
           python3 ${{ github.workspace }}/.github/workflows/generate_summary.py \
             "docs/_static/websocket/conformance/clients/index.json" \
-            "Client Conformance" >> summary.md
+            "Client Conformance" >> "$SUMMARY_FILE"
 
-          # Generate server summary
+          # Generate server summary  
           python3 ${{ github.workspace }}/.github/workflows/generate_summary.py \
             "docs/_static/websocket/conformance/servers/index.json" \
-            "Server Conformance" >> summary.md
+            "Server Conformance" >> "$SUMMARY_FILE"
 
           # Show summary in workflow log
           echo "==> Summary Report:"
-          cat summary.md
+          cat "$SUMMARY_FILE"
+          
+          # Store filename for next step
+          echo "SUMMARY_FILE=$SUMMARY_FILE" >> $GITHUB_ENV
 
       - name: Upload consolidated reports
         uses: actions/upload-artifact@v4
@@ -353,12 +362,45 @@ jobs:
           path: docs/_static/websocket/conformance/
           retention-days: 30
 
-      - name: Upload summary report (used in PR comment)
-        uses: actions/upload-artifact@v4
-        with:
-          name: conformance-summary-${{ env.TEST_MODE }}
-          path: summary.md
-          retention-days: 30
+      - name: Commit summary to .audit/ directory
+        run: |
+          echo "==> Committing summary file to .audit/ directory..."
+          
+          # Create .audit directory if it doesn't exist
+          mkdir -p .audit
+          
+          # Move summary file to .audit directory
+          mv "$SUMMARY_FILE" ".audit/$SUMMARY_FILE"
+          
+          # Check if file exists and if it has changed
+          if git ls-files --error-unmatch ".audit/$SUMMARY_FILE" >/dev/null 2>&1; then
+            # File exists, check if it changed
+            if git diff --quiet HEAD ".audit/$SUMMARY_FILE"; then
+              echo "Summary file unchanged, skipping commit"
+              exit 0
+            else
+              echo "Summary file changed, will update"
+            fi
+          else
+            echo "New summary file, will add"
+          fi
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Add and commit the file
+          git add ".audit/$SUMMARY_FILE"
+          git commit -m "Add/update WebSocket conformance summary for PR #${{ github.event.number }}
+
+- Test mode: ${{ env.TEST_MODE }}
+- Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+- File: .audit/$SUMMARY_FILE"
+          
+          # Push to the PR branch
+          git push origin ${{ github.head_ref }}
+          
+          echo "✅ Summary file committed to .audit/$SUMMARY_FILE"
 
       - name: Report summary
         run: |
