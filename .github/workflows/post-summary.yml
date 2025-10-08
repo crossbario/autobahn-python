@@ -1,6 +1,10 @@
 name: post-summary
 
 on:
+  # Use pull_request_target to run in main repo context (required for GITHUB_TOKEN write permissions)
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  
   # Auto-trigger after wstest workflow completes
   workflow_run:
     workflows: ["wstest"]
@@ -18,8 +22,8 @@ on:
 jobs:
   add-comment:
     runs-on: ubuntu-latest
-    # Only run if wstest was successful OR if manually dispatched
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    # Only run if wstest was successful OR if manually dispatched OR if pull_request_target
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request_target' }}
     
     steps:
       - name: Get PR information
@@ -39,6 +43,11 @@ jobs:
               });
               head_repo = pr.head.repo.full_name;
               head_ref = pr.head.ref;
+            } else if (context.eventName === 'pull_request_target') {
+              // pull_request_target trigger - get PR info from event
+              pr_number = context.payload.pull_request.number;
+              head_repo = context.payload.pull_request.head.repo.full_name;
+              head_ref = context.payload.pull_request.head.ref;
             } else {
               // workflow_run trigger - get PR info from workflow_run event
               const prs = context.payload.workflow_run.pull_requests;
