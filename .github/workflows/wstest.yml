@@ -395,7 +395,7 @@ jobs:
 
 - Test mode: ${{ env.TEST_MODE }}
 - Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-- File: .audit/$SUMMARY_FILE"
+- File: .audit/\$SUMMARY_FILE"
           
           # Push to the PR branch
           git push origin ${{ github.head_ref }}
