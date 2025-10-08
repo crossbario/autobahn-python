@@ -1,3 +1,6 @@
 [submodule ".ai"]
 	path = .ai
 	url = https://github.com/wamp-proto/wamp-ai.git
+[submodule ".cicd"]
+	path = .cicd
+	url = https://github.com/wamp-proto/wamp-cicd.git

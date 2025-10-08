@@ -16,9 +16,21 @@ env:
   UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
 
 jobs:
+  identifiers:
+    uses: ./.cicd/workflows/identifiers.yml
+
   build-wheels:
     name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
+    needs: identifiers
     runs-on: ${{ matrix.os }}
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -101,6 +113,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       # we use the standard upstream installation on non-broken platforms.
       - name: Install Just (Linux/macOS)
@@ -210,8 +224,7 @@ jobs:
           retention-days: 30
 
       - name: Verify wheels built without NVX (Linux x86_64 only)
-        if:
-          matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
         run: |
           # Verify that wheels were built without NVX acceleration
           echo "==> Wheels built without NVX (should be pure Python or at least NVX-free):"
@@ -224,8 +237,7 @@ jobs:
         shell: bash
 
       - name: Upload source distribution (Linux x86_64 only)
-        if:
-          matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: source-distribution
@@ -233,8 +245,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Linux wheels without NVX (Linux x86_64 only)
-        if:
-          matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: linux-wheels-no-nvx
@@ -243,11 +254,19 @@ jobs:
 
   publish-github-releases:
     name: Publish to GitHub Releases
-    needs: build-wheels
+    needs: [identifiers, build-wheels]
     runs-on: ubuntu-latest
+
     if:
       github.ref == 'refs/heads/master' && github.event_name ==
       'push'
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     steps:
       - name: Download all wheel artifacts
@@ -312,9 +331,17 @@ jobs:
 
   publish-pypi:
     name: Publish to PyPI
-    needs: build-wheels
+    needs: [identifiers, build-wheels]
     runs-on: ubuntu-latest
     if: github.ref_type == 'tag'
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
     environment:
       name: pypi
       url: https://pypi.org/p/autobahn
@@ -370,13 +397,22 @@ jobs:
 
   publish-rtd:
     name: Publish docs to RTD
-    needs: build-wheels
+    needs: [identifiers, build-wheels]
     runs-on: ubuntu-latest
     if: github.ref_type == 'tag'
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Trigger RTD build
         env:

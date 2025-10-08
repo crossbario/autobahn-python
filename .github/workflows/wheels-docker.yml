@@ -17,10 +17,21 @@ env:
   IMAGE_NAME: ${{ github.repository }}/wheel-builder
 
 jobs:
+  identifiers:
+    uses: ./.cicd/workflows/identifiers.yml
+
   build-wheels:
     name: Build wheels (${{ matrix.target.name }})
+    needs: identifiers
     runs-on: ubuntu-latest
     container: ${{ matrix.target.base_image }}
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     strategy:
       fail-fast: false
@@ -46,6 +57,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install system dependencies
         run: |
@@ -284,11 +297,18 @@ jobs:
 
   publish-github-releases:
     name: Publish to GitHub Releases
-    needs: build-wheels
+    needs: [identifiers, build-wheels]
     runs-on: ubuntu-latest
     if:
       github.ref == 'refs/heads/master' && github.event_name ==
       'push'
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     steps:
       - name: Download all artifacts
@@ -371,9 +391,17 @@ jobs:
 
   publish-pypi:
     name: Publish to PyPI
-    needs: build-wheels
+    needs: [identifiers, build-wheels]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
     environment:
       name: pypi
       url: https://pypi.org/p/autobahn

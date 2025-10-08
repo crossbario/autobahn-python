@@ -22,14 +22,27 @@ env:
   TEST_MODE: ${{ github.event.inputs.test_mode || 'quick' }}
 
 jobs:
+  identifiers:
+    uses: ./.cicd/workflows/identifiers.yml
+
   # Client testing: Test autobahn-python clients against testsuite server
   client-conformance:
     name: WebSocket Client Testing (All Combinations)
+    needs: identifiers
     runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install toolchain (just & uv)
         env:
@@ -125,11 +138,21 @@ jobs:
   # Server testing: Test all server combinations against testsuite client
   server-conformance:
     name: WebSocket Server Testing (All Combinations)
+    needs: identifiers
     runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install toolchain (just & uv)
         env:
@@ -270,13 +293,22 @@ jobs:
   # Consolidate all reports using the proven justfile recipe
   consolidate-reports:
     name: Consolidate WebSocket Reports
-    needs: [client-conformance, server-conformance]
+    needs: [identifiers, client-conformance, server-conformance]
     runs-on: ubuntu-24.04
     if: always()
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Just
         env:
@@ -385,13 +417,22 @@ jobs:
   # Verify all tests passed (100% conformance) - fails if any test failed
   verify-reports:
     name: Verify WebSocket Conformance (100% Pass Required)
-    needs: [consolidate-reports]
+    needs: [identifiers, consolidate-reports]
     runs-on: ubuntu-24.04
     if: always()
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Download consolidated reports
         uses: actions/download-artifact@v4
