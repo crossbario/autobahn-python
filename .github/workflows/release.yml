@@ -22,17 +22,17 @@ jobs:
   identifiers:
     uses: ./.cicd/workflows/identifiers.yml
 
-  # Unified GitHub Release publishing (consolidates wheels from both workflows)
-  publish-github-release:
-    name: Publish Unified GitHub Release
+  # Nightly and stable GitHub releases (consolidates wheels from both workflows)
+  release-nightly:
+    name: Nightly & Stable GitHub Releases
     needs: identifiers
     runs-on: ubuntu-latest
 
-    # Only create releases for nightly builds and official releases (explicit positive list)
+    # Only create releases for nightly and stable builds (explicit positive list)
     if: |
       github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success' &&
-      (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'release') &&
+      (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable') &&
       (github.event.workflow_run.name == 'wheels' || github.event.workflow_run.name == 'wheels-docker')
 
     env:
@@ -116,8 +116,8 @@ jobs:
           SDIST_COUNT="$(find release-artifacts -name "*.tar.gz" | wc -l)"
 
           # Select template based on release type
-          if [ "$RELEASE_TYPE" = "release" ]; then
-            TEMPLATE=".github/templates/release-official.md.j2"
+          if [ "$RELEASE_TYPE" = "stable" ]; then
+            TEMPLATE=".github/templates/release-stable.md.j2"
           else
             TEMPLATE=".github/templates/release-nightly.md.j2"
           fi
@@ -147,7 +147,7 @@ jobs:
           gh release delete "$RELEASE_NAME" --repo "$GITHUB_REPOSITORY" --yes || true
 
           # Set release title based on type
-          if [ "$RELEASE_TYPE" = "release" ]; then
+          if [ "$RELEASE_TYPE" = "stable" ]; then
             TITLE="Release $RELEASE_NAME"
           else
             TITLE="Nightly Build $RELEASE_NAME"
@@ -162,14 +162,14 @@ jobs:
 
           echo "✅ Release $RELEASE_NAME created successfully"
 
-  # Unified PyPI and RTD publishing (consolidates from both wheel workflows)
-  publish-pypi-release:
-    name: Publish to PyPI and RTD
-    needs: [identifiers, publish-github-release]
+  # Stable release publishing: PyPI and RTD (consolidates from both wheel workflows)
+  release-stable:
+    name: Stable Release (PyPI & RTD)
+    needs: [identifiers, release-nightly]
     runs-on: ubuntu-latest
 
-    # Only publish to PyPI for official releases (explicit positive list)
-    if: needs.identifiers.outputs.release_type == 'release'
+    # Only publish to PyPI for stable releases (explicit positive list)
+    if: needs.identifiers.outputs.release_type == 'stable'
 
     env:
       RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
@@ -257,13 +257,13 @@ jobs:
             echo "⚠️  RTD_TOKEN not configured, skipping RTD build trigger"
           fi
 
-  # Post PR summary comment (existing functionality)
-  post-pr-summary:
-    name: Post PR Summary Comment
+  # Development release: Post PR summary comment for development builds
+  release-development:
+    name: Development Release (PR Summary)
     needs: identifiers
     runs-on: ubuntu-latest
 
-    # Only run for PR contexts
+    # Only run for PR/development contexts
     if: |
       (github.event_name == 'pull_request_target') ||
       (github.event_name == 'workflow_run' &&
