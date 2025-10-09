@@ -278,6 +278,11 @@ jobs:
       PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
       - name: Get PR information
         id: pr-info
         uses: actions/github-script@v7
@@ -319,46 +324,81 @@ jobs:
             core.setOutput('head_repo', head_repo);
             core.setOutput('head_ref', head_ref);
 
-            // Construct summary filename
-            const summary_filename = `${head_repo}-${head_ref}-${pr_number}-wstest-summary.md`;
-            core.setOutput('summary_filename', summary_filename);
-
-      - name: Download summary artifact
+      - name: Download wstest conformance summary
         uses: actions/download-artifact@v4
         with:
           name: conformance-summary-${{ github.event.workflow_run.conclusion == 'success' && 'quick' || env.TEST_MODE || 'quick' }}
           path: summary-artifact/
         continue-on-error: true
 
-      - name: Check if summary file exists
-        id: file-check
+      - name: Install jinja2-cli for template rendering
         run: |
-          echo "==> Looking for summary file in artifact..."
+          pip install jinja2-cli
 
-          # Find the summary file in the downloaded artifact
-          SUMMARY_FILE=$(find summary-artifact/ -name "*wstest-summary.md" | head -1)
+      - name: Render PR comment from Jinja2 template
+        id: render
+        run: |
+          echo "==> Preparing PR comment using Jinja2 template..."
 
-          if [[ -z "$SUMMARY_FILE" || ! -f "$SUMMARY_FILE" ]]; then
-            echo "❌ Summary file not found in artifact"
-            echo "should_comment=false" >> $GITHUB_OUTPUT
-            ls -la summary-artifact/ || echo "No artifact directory"
-            exit 0
+          # Collect template variables
+          PR_NUMBER="${{ steps.pr-info.outputs.pr_number }}"
+          PR_REPO="${{ steps.pr-info.outputs.head_repo }}"
+          PR_BRANCH="${{ steps.pr-info.outputs.head_ref }}"
+          BASE_REPO="${BASE_REPO}"
+          BASE_BRANCH="${BASE_BRANCH}"
+          COMMIT_SHA="${GITHUB_SHA::8}"
+          BUILD_DATE="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          WORKFLOW_RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          # Read wstest summary if available, otherwise use placeholder
+          WSTEST_SUMMARY="WebSocket conformance testing results not available."
+          SUMMARY_FILE=$(find summary-artifact/ -name "*wstest-summary.md" 2>/dev/null | head -1)
+          if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
+            echo "✅ Found wstest summary: $SUMMARY_FILE"
+            WSTEST_SUMMARY=$(cat "$SUMMARY_FILE")
+            WHEEL_COUNT=$(find . -name "*.whl" 2>/dev/null | wc -l)
+          else
+            echo "⚠️  No wstest summary found, using placeholder"
+            WHEEL_COUNT="N/A"
           fi
 
-          echo "✅ Summary file found: $SUMMARY_FILE"
-          echo "summary_file_path=$SUMMARY_FILE" >> $GITHUB_OUTPUT
-          echo "should_comment=true" >> $GITHUB_OUTPUT
+          # Render template using jinja2
+          jinja2 .github/templates/release-development.md.j2 \
+            -D pr_number="$PR_NUMBER" \
+            -D pr_repo="$PR_REPO" \
+            -D pr_branch="$PR_BRANCH" \
+            -D base_repo="$BASE_REPO" \
+            -D base_branch="$BASE_BRANCH" \
+            -D commit_sha="$COMMIT_SHA" \
+            -D build_date="$BUILD_DATE" \
+            -D workflow_run_url="$WORKFLOW_RUN_URL" \
+            -D wheel_count="$WHEEL_COUNT" \
+            -D wstest_summary="$WSTEST_SUMMARY" \
+            -o pr-comment.md
 
-      - name: Comment on PR
-        if: steps.file-check.outputs.should_comment == 'true'
-        uses: thollander/actions-comment-pull-request@v3
-        with:
-          pr_number: ${{ steps.pr-info.outputs.pr_number }}
-          filePath: ${{ steps.file-check.outputs.summary_file_path }}
-          comment_tag: wstest-conformance-summary
+          echo ""
+          echo "==> Generated PR comment:"
+          cat pr-comment.md
+
+          # Check if we should post comment
+          if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
+            echo "should_comment=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_comment=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post PR comment using GitHub CLI
+        if: steps.render.outputs.should_comment == 'true'
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Skip comment
-        if: steps.file-check.outputs.should_comment == 'false'
         run: |
-          echo "ℹ️  Skipping PR comment - summary file not found"
+          echo "==> Posting comment to PR #${{ steps.pr-info.outputs.pr_number }}..."
+          gh pr comment "${{ steps.pr-info.outputs.pr_number }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --body-file pr-comment.md
+          echo "✅ PR comment posted successfully"
+
+      - name: Skip PR comment
+        if: steps.render.outputs.should_comment == 'false'
+        run: |
+          echo "ℹ️  Skipping PR comment - wstest summary not available"
