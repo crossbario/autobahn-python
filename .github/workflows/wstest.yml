@@ -23,7 +23,13 @@ env:
 
 jobs:
   identifiers:
-    uses: ./.cicd/workflows/identifiers.yml
+    # GitHub needs to know where .cicd/workflows/identifiers.yml lives at parse time,
+    # and submodules aren't included in that context! thus the following does NOT work:
+    # uses: ./.cicd/workflows/identifiers.yml
+    # we MUST reference the remote repo directly:
+    uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
+    # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
+    # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
 
   # Client testing: Test autobahn-python clients against testsuite server
   client-conformance:
