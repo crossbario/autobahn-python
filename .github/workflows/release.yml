@@ -28,11 +28,11 @@ jobs:
     needs: identifiers
     runs-on: ubuntu-latest
 
-    # Only create releases for nightly builds and official releases, not development/PR builds
+    # Only create releases for nightly builds and official releases (explicit positive list)
     if: |
       github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success' &&
-      needs.identifiers.outputs.release_type != 'development' &&
+      (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'release') &&
       (github.event.workflow_run.name == 'wheels' || github.event.workflow_run.name == 'wheels-docker')
 
     env:
@@ -99,6 +99,42 @@ jobs:
           echo "Total wheels: $(find release-artifacts -name "*.whl" | wc -l)"
           echo "Source dists: $(find release-artifacts -name "*.tar.gz" | wc -l)"
 
+      - name: Install jinja2-cli for template rendering
+        run: |
+          pip install jinja2-cli
+
+      - name: Render release notes from Jinja2 template
+        run: |
+          echo "==> Preparing release notes using Jinja2 template..."
+          echo "Release type: $RELEASE_TYPE"
+          echo "Release name: $RELEASE_NAME"
+
+          # Collect template variables
+          COMMIT_SHA="${GITHUB_SHA::8}"
+          BUILD_DATE="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          WHEEL_COUNT="$(find release-artifacts -name "*.whl" | wc -l)"
+          SDIST_COUNT="$(find release-artifacts -name "*.tar.gz" | wc -l)"
+
+          # Select template based on release type
+          if [ "$RELEASE_TYPE" = "release" ]; then
+            TEMPLATE=".github/templates/release-official.md.j2"
+          else
+            TEMPLATE=".github/templates/release-nightly.md.j2"
+          fi
+
+          # Render template using jinja2
+          jinja2 "$TEMPLATE" \
+            -D release_name="$RELEASE_NAME" \
+            -D commit_sha="$COMMIT_SHA" \
+            -D build_date="$BUILD_DATE" \
+            -D wheel_count="$WHEEL_COUNT" \
+            -D sdist_count="$SDIST_COUNT" \
+            -o release-notes.md
+
+          echo ""
+          echo "==> Generated release notes:"
+          cat release-notes.md
+
       - name: Create unified GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -110,60 +146,116 @@ jobs:
           # Delete existing release if it exists (for nightly builds)
           gh release delete "$RELEASE_NAME" --repo "$GITHUB_REPOSITORY" --yes || true
 
-          # Construct release notes based on release type
+          # Set release title based on type
           if [ "$RELEASE_TYPE" = "release" ]; then
             TITLE="Release $RELEASE_NAME"
-            NOTES="Official release $RELEASE_NAME
-
-## Included Platforms
-- **Linux**: x86_64, ARM64 (manylinux_2_34 wheels with NVX)
-- **macOS**: Apple Silicon ARM64 (binary wheels with NVX)
-- **Windows**: x86_64 (binary wheels with NVX)
-
-## Python Versions
-- **CPython**: 3.11, 3.12, 3.13, 3.14
-- **PyPy**: 3.11
-
-## Installation
-\`\`\`bash
-pip install autobahn[all]==$RELEASE_NAME
-\`\`\`
-
-Or download wheels directly from this release."
-
-          else  # nightly
+          else
             TITLE="Nightly Build $RELEASE_NAME"
-            NOTES="Automated nightly build from master branch
-
-## Build Information
-- **Commit**: ${GITHUB_SHA::8}
-- **Build Date**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
-- **Release Type**: nightly
-
-## Included Platforms
-- **Linux**: x86_64, ARM64 (manylinux wheels + pure Python fallbacks)
-- **macOS**: Apple Silicon ARM64
-- **Windows**: x86_64
-
-## Python Versions
-- **CPython**: 3.11, 3.12, 3.13, 3.14
-- **PyPy**: 3.11
-
-## Installation
-Download the appropriate wheel for your platform:
-\`\`\`bash
-pip install <downloaded-wheel-file>
-\`\`\`"
           fi
 
-          # Create the release
+          # Create the release using rendered notes
           gh release create "$RELEASE_NAME" \
             --repo "$GITHUB_REPOSITORY" \
             --title "$TITLE" \
-            --notes "$NOTES" \
+            --notes-file release-notes.md \
             release-artifacts/*
 
           echo "✅ Release $RELEASE_NAME created successfully"
+
+  # Unified PyPI and RTD publishing (consolidates from both wheel workflows)
+  publish-pypi-release:
+    name: Publish to PyPI and RTD
+    needs: [identifiers, publish-github-release]
+    runs-on: ubuntu-latest
+
+    # Only publish to PyPI for official releases (explicit positive list)
+    if: needs.identifiers.outputs.release_type == 'release'
+
+    env:
+      RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
+      RELEASE_NAME: ${{ needs.identifiers.outputs.release_name }}
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/autobahn
+    permissions:
+      id-token: write # For trusted publishing
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download macOS wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-macos-arm64
+          path: dist/
+        continue-on-error: true
+
+      - name: Download Windows wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-x86_64
+          path: dist/
+        continue-on-error: true
+
+      - name: Download source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/
+        continue-on-error: true
+
+      - name: Download Linux wheels without NVX
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-wheels-no-nvx
+          path: dist/
+        continue-on-error: true
+
+      - name: Download manylinux wheels with NVX (from wheels-docker)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: artifacts-*
+          merge-multiple: true
+          path: dist/
+        continue-on-error: true
+
+      - name: List artifacts for PyPI publishing
+        run: |
+          echo "Publishing to PyPI for release: $RELEASE_NAME"
+          ls -la dist/
+          echo ""
+          echo "macOS wheels: $(find dist -name "*macos*.whl" 2>/dev/null | wc -l)"
+          echo "Windows wheels: $(find dist -name "*win*.whl" 2>/dev/null | wc -l)"
+          echo "Linux manylinux wheels: $(find dist -name "*manylinux*.whl" 2>/dev/null | wc -l)"
+          echo "Linux fallback wheels: $(find dist -name "*linux*.whl" ! -name "*manylinux*.whl" 2>/dev/null | wc -l)"
+          echo "Source distributions: $(find dist -name "*.tar.gz" 2>/dev/null | wc -l)"
+          echo ""
+          echo "Total PyPI artifacts: $(find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) | wc -l)"
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Uses trusted publishing - no API token needed
+          # Configure at: https://pypi.org/manage/account/publishing/
+          verbose: true
+
+      - name: Trigger RTD build
+        env:
+          RTD_TOKEN: ${{ secrets.RTD_TOKEN }}
+        run: |
+          if [ -n "$RTD_TOKEN" ]; then
+            echo "Triggering Read the Docs build for autobahn..."
+            curl -X POST \
+              -H "Authorization: Token $RTD_TOKEN" \
+              "https://readthedocs.org/api/v3/projects/autobahn/versions/latest/builds/"
+            echo "✅ RTD build triggered successfully"
+          else
+            echo "⚠️  RTD_TOKEN not configured, skipping RTD build trigger"
+          fi
 
   # Post PR summary comment (existing functionality)
   post-pr-summary:

@@ -1,0 +1,43 @@
+# Release {{ release_name }}
+
+Official release {{ release_name }}
+
+## Included Platforms
+
+- **Linux**: x86_64, ARM64 (manylinux_2_34 wheels with NVX)
+- **macOS**: Apple Silicon ARM64 (binary wheels with NVX)
+- **Windows**: x86_64 (binary wheels with NVX)
+
+## Python Versions
+
+- **CPython**: 3.11, 3.12, 3.13, 3.14
+- **PyPy**: 3.11
+
+## Installation
+
+```bash
+pip install autobahn[all]=={{ release_name }}
+```
+
+Or download wheels directly from this release.
+
+## Build Information
+
+- **Release Date**: {{ build_date }}
+- **Total Wheels**: {{ wheel_count }}
+- **Source Distributions**: {{ sdist_count }}
+
+## Features
+
+Autobahn|Python provides:
+
+- **WebSocket** client and server implementations (RFC 6455)
+- **WAMP** client library for both Twisted and asyncio
+- **NVX acceleration** for high-performance networking (binary wheels)
+- **Pure Python fallback** wheels for maximum compatibility
+
+## Documentation
+
+- [Read the Docs](https://autobahn.readthedocs.io)
+- [GitHub Repository](https://github.com/crossbario/autobahn-python)
+- [WAMP Protocol](https://wamp-proto.org)

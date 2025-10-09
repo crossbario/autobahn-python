@@ -1,0 +1,33 @@
+# Nightly Build {{ release_name }}
+
+Automated nightly build from master branch
+
+## Build Information
+
+- **Commit**: {{ commit_sha }}
+- **Build Date**: {{ build_date }}
+- **Release Type**: nightly
+
+## Included Platforms
+
+- **Linux**: x86_64, ARM64 (manylinux wheels + pure Python fallbacks)
+- **macOS**: Apple Silicon ARM64
+- **Windows**: x86_64
+
+## Python Versions
+
+- **CPython**: 3.11, 3.12, 3.13, 3.14
+- **PyPy**: 3.11
+
+## Installation
+
+Download the appropriate wheel for your platform:
+
+```bash
+pip install <downloaded-wheel-file>
+```
+
+## Artifact Inventory
+
+- **Total Wheels**: {{ wheel_count }}
+- **Source Distributions**: {{ sdist_count }}
