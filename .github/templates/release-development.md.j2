@@ -1,0 +1,31 @@
+# Development Build Summary
+
+## Pull Request Information
+
+- **PR Number**: #{{ pr_number }}
+- **Source Repository**: `{{ pr_repo }}`
+- **Source Branch**: `{{ pr_branch }}`
+- **Target Repository**: `{{ base_repo }}`
+- **Target Branch**: `{{ base_branch }}`
+
+## Build Information
+
+- **Commit**: {{ commit_sha }}
+- **Build Date**: {{ build_date }}
+- **Workflow Run**: [View Details]({{ workflow_run_url }})
+
+## Build Artifacts
+
+The following artifacts were built and are available for testing:
+
+- **Wheels Built**: {{ wheel_count }}
+- **Platforms**: Linux (x86_64), macOS (ARM64), Windows (x86_64)
+- **Python Versions**: CPython 3.11, 3.12, 3.13, 3.14 | PyPy 3.11
+
+## WebSocket Conformance Testing
+
+{{ wstest_summary }}
+
+---
+
+💡 **Download artifacts** from the [workflow run]({{ workflow_run_url }}) for local testing.

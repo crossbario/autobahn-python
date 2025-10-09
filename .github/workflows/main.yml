@@ -11,13 +11,32 @@ env:
   UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
 
 jobs:
+  identifiers:
+    # GitHub needs to know where .cicd/workflows/identifiers.yml lives at parse time,
+    # and submodules aren't included in that context! thus the following does NOT work:
+    # uses: ./.cicd/workflows/identifiers.yml
+    # we MUST reference the remote repo directly:
+    uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
+    # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
+    # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
+
   quality-checks:
     name: Code Quality Checks
+    needs: identifiers
     runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Just
         env:
@@ -79,11 +98,21 @@ jobs:
 
   documentation:
     name: Documentation Build
+    needs: identifiers
     runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Just
         env:
@@ -141,7 +170,8 @@ jobs:
   #   steps:
   #     - name: Checkout code
   #       uses: actions/checkout@v4
-
+  #       with:
+  #         submodules: recursive
   #     - name: Install Just
   #       run: |
   #         curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
@@ -192,6 +222,8 @@ jobs:
   #   steps:
   #     - name: Checkout code
   #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
 
   #     - name: Install Just
   #       run: |
@@ -230,7 +262,15 @@ jobs:
 
   build-schema:
     name: FlatBuffers Schema Build
+    needs: identifiers
     runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     strategy:
       matrix:
@@ -239,6 +279,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Just
         env:
@@ -348,8 +390,15 @@ jobs:
   build-package:
     name: Package Build
     runs-on: ubuntu-24.04
-    needs: [quality-checks, build-schema]
-    #    needs: [quality-checks, tests, build-schema]
+    needs: [identifiers, quality-checks, build-schema]
+    #    needs: [identifiers, quality-checks, tests, build-schema]
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     strategy:
       matrix:
@@ -358,6 +407,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Just
         env:

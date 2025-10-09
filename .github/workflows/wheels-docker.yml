@@ -17,10 +17,27 @@ env:
   IMAGE_NAME: ${{ github.repository }}/wheel-builder
 
 jobs:
+  identifiers:
+    # GitHub needs to know where .cicd/workflows/identifiers.yml lives at parse time,
+    # and submodules aren't included in that context! thus the following does NOT work:
+    # uses: ./.cicd/workflows/identifiers.yml
+    # we MUST reference the remote repo directly:
+    uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
+    # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
+    # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
+
   build-wheels:
     name: Build wheels (${{ matrix.target.name }})
+    needs: identifiers
     runs-on: ubuntu-latest
     container: ${{ matrix.target.base_image }}
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     strategy:
       fail-fast: false
@@ -46,6 +63,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install system dependencies
         run: |
@@ -282,126 +301,4 @@ jobs:
             wheelhouse/build-info.txt
           retention-days: 30
 
-  publish-github-releases:
-    name: Publish to GitHub Releases
-    needs: build-wheels
-    runs-on: ubuntu-latest
-    if:
-      github.ref == 'refs/heads/master' && github.event_name ==
-      'push'
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: artifacts-*
-          merge-multiple: true
-          path: wheelhouse/
-
-      - name: Analyze wheel inventory
-        id: inventory
-        run: |
-          echo "==> Complete manylinux wheel inventory:"
-          find wheelhouse/ -name "*.whl" | sort
-
-          echo ""
-          echo "==> Total wheel count:"
-          WHEEL_COUNT=$(find wheelhouse/ -name "*.whl" | wc -l)
-          echo "wheels_total=$WHEEL_COUNT" >> $GITHUB_OUTPUT
-
-          echo ""
-          echo "==> Source distributions:"
-          find wheelhouse/ -name "*.tar.gz" | wc -l
-
-      - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Generate release tag based on timestamp and commit
-          RELEASE_TAG="wheels-docker-$(date +'%Y%m%d')-${GITHUB_SHA::8}"
-
-          # Create comprehensive release notes
-          cat > release_notes.md << 'EOF'
-          # manylinux Binary Wheels
-
-          Built using official PyPA manylinux Docker images for maximum Linux compatibility.
-
-          ## Target Compatibility
-
-          | manylinux Tag | glibc Version | Architecture | Compatibility |
-          |---------------|---------------|--------------|---------------|
-          | **manylinux_2_34** | 2.34+ | x86_64 | RHEL 9+, Ubuntu 22.04+, Debian 12+ |
-
-          ## Python Support
-
-          - **CPython**: 3.11, 3.12, 3.13, 3.14
-          - **PyPy**: 3.11
-          - **Extensions**: Native CFFI modules with NVX acceleration included
-
-          ## Installation
-
-          ### Option 1: Auto-detect (pip will choose best wheel)
-          ```bash
-          pip install autobahn[all]
-          ```
-
-          ### Option 2: Specific wheel download
-          ```bash
-          # Download the wheel for your platform
-          wget https://github.com/crossbario/autobahn-python/releases/download/${RELEASE_TAG}/autobahn-*-linux_*.whl
-          pip install autobahn-*-linux_*.whl
-          ```
-
-          ## Build Information
-
-          - **Build Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          - **Commit**: ${GITHUB_SHA::8}
-          - **Total Wheels**: ${{ steps.inventory.outputs.wheels_total }}
-          - **Build Method**: Docker + QEMU emulation
-          - **ABI**: Precise glibc targeting per distribution
-
-          EOF
-
-          # Create release
-          gh release create "$RELEASE_TAG" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Multi-Arch Wheels - $(date +'%Y-%m-%d')" \
-            --notes-file release_notes.md \
-            wheelhouse/*.whl wheelhouse/*.tar.gz wheelhouse/build-info.txt
-
-  publish-pypi:
-    name: Publish to PyPI
-    needs: build-wheels
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    environment:
-      name: pypi
-      url: https://pypi.org/p/autobahn
-    permissions:
-      id-token: write # For trusted publishing
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: artifacts-*
-          merge-multiple: true
-          path: wheelhouse/
-
-      - name: Prepare PyPI upload
-        run: |
-          echo "==> Preparing PyPI upload..."
-
-          echo "==> Final PyPI artifact list:"
-          ls -la wheelhouse/
-
-          echo ""
-          echo "==> Upload summary:"
-          echo "Wheels: $(find wheelhouse/ -name "*.whl" | wc -l)"
-          echo "Source Dist: $(find wheelhouse/ -name "*.tar.gz" | wc -l)"
-          echo "Build Info: $(find wheelhouse/ -name "build-info.txt" | wc -l)"
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          verbose: true
+  # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow

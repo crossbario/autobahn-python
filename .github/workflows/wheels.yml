@@ -16,9 +16,27 @@ env:
   UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
 
 jobs:
+  identifiers:
+    # GitHub needs to know where .cicd/workflows/identifiers.yml lives at parse time,
+    # and submodules aren't included in that context! thus the following does NOT work:
+    # uses: ./.cicd/workflows/identifiers.yml
+    # we MUST reference the remote repo directly:
+    uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
+    # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
+    # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
+
   build-wheels:
     name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }})
+    needs: identifiers
     runs-on: ${{ matrix.os }}
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -101,6 +119,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       # we use the standard upstream installation on non-broken platforms.
       - name: Install Just (Linux/macOS)
@@ -210,8 +230,7 @@ jobs:
           retention-days: 30
 
       - name: Verify wheels built without NVX (Linux x86_64 only)
-        if:
-          matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
         run: |
           # Verify that wheels were built without NVX acceleration
           echo "==> Wheels built without NVX (should be pure Python or at least NVX-free):"
@@ -224,8 +243,7 @@ jobs:
         shell: bash
 
       - name: Upload source distribution (Linux x86_64 only)
-        if:
-          matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: source-distribution
@@ -233,160 +251,11 @@ jobs:
           retention-days: 30
 
       - name: Upload Linux wheels without NVX (Linux x86_64 only)
-        if:
-          matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: linux-wheels-no-nvx
           path: dist/*.whl
           retention-days: 30
 
-  publish-github-releases:
-    name: Publish to GitHub Releases
-    needs: build-wheels
-    runs-on: ubuntu-latest
-    if:
-      github.ref == 'refs/heads/master' && github.event_name ==
-      'push'
-
-    steps:
-      - name: Download all wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: wheels-*
-          merge-multiple: true
-          path: dist/
-
-      - name: Download source distribution
-        uses: actions/download-artifact@v4
-        with:
-          name: source-distribution
-          path: dist/
-
-      - name: Download Linux wheels without NVX
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-wheels-no-nvx
-          path: dist/
-
-      - name: List all artifacts
-        run: |
-          echo "All built artifacts:"
-          ls -la dist/
-          echo ""
-          echo "Binary wheels (macOS/Windows): $(ls dist/*macos*.whl dist/*win*.whl 2>/dev/null | wc -l)"
-          echo "Linux wheels (no NVX): $(ls dist/*linux*.whl 2>/dev/null | wc -l)"
-          echo "Source distributions: $(ls dist/*.tar.gz 2>/dev/null | wc -l)"
-
-      - name: Create GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Generate release tag based on timestamp and commit
-          RELEASE_TAG="wheels-$(date +'%Y%m%d')-${{ github.sha }}"
-
-          # Delete existing release if it exists (ignore errors)
-          gh release delete "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --yes || true
-
-          # Create release
-          gh release create "$RELEASE_TAG" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Wheels Build - $(date +'%Y-%m-%d')" \
-            --notes "Automated wheel build from commit ${{ github.sha }}
-
-          ## Included Platforms
-          - Linux (x86_64, ARM64)
-          - macOS (x86_64 Intel, ARM64 Apple Silicon)
-          - Windows (x86_64)
-
-          ## Python Versions
-          - CPython 3.11, 3.12, 3.13, 3.14
-          - PyPy 3.11
-
-          ## Installation
-          Download the appropriate wheel for your platform and install with:
-          \`\`\`bash
-          pip install <downloaded-wheel-file>
-          \`\`\`" \
-            dist/*
-
-  publish-pypi:
-    name: Publish to PyPI
-    needs: build-wheels
-    runs-on: ubuntu-latest
-    if: github.ref_type == 'tag'
-    environment:
-      name: pypi
-      url: https://pypi.org/p/autobahn
-    permissions:
-      id-token: write # For trusted publishing
-
-    steps:
-      - name: Download macOS wheels only
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-macos-arm64
-          path: dist/
-
-      - name: Download Windows wheels only
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-windows-x86_64
-          path: dist/
-
-      - name: Download source distribution
-        uses: actions/download-artifact@v4
-        with:
-          name: source-distribution
-          path: dist/
-
-      - name: Download Linux wheels without NVX
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-wheels-no-nvx
-          path: dist/
-
-      - name: List artifacts for PyPI (selective publishing)
-        run: |
-          echo "Publishing to PyPI (selective - excludes Linux binary wheels):"
-          ls -la dist/
-          echo ""
-          echo "macOS wheels: $(ls dist/*macos*.whl 2>/dev/null | wc -l)"
-          echo "Windows wheels: $(ls dist/*win*.whl 2>/dev/null | wc -l)"
-          echo "Linux wheels (fallback, no NVX): $(ls dist/*linux*.whl 2>/dev/null | wc -l)"
-          echo "Source distributions: $(ls dist/*.tar.gz 2>/dev/null | wc -l)"
-          echo ""
-          echo "Total PyPI artifacts: $(ls dist/* | wc -l)"
-          echo ""
-          echo "⚠️  NOTE: Linux binary wheels are excluded from PyPI publishing"
-          echo "   but are available from GitHub Releases."
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          # Uses trusted publishing - no API token needed
-          # Configure at: https://pypi.org/manage/account/publishing/
-          verbose: true
-
-  publish-rtd:
-    name: Publish docs to RTD
-    needs: build-wheels
-    runs-on: ubuntu-latest
-    if: github.ref_type == 'tag'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Trigger RTD build
-        env:
-          RTD_TOKEN: ${{ secrets.RTD_TOKEN }}
-        run: |
-          if [ -n "$RTD_TOKEN" ]; then
-            echo "Triggering Read the Docs build for autobahn..."
-            curl -X POST \
-              -H "Authorization: Token $RTD_TOKEN" \
-              "https://readthedocs.org/api/v3/projects/autobahn/versions/latest/builds/"
-          else
-            echo "RTD_TOKEN not configured, skipping RTD build trigger"
-          fi
+  # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow
