@@ -197,11 +197,10 @@ jobs:
             find wstest-results -type f -exec cp {} release-artifacts/ \;
           fi
 
-          # Copy FlatBuffers schema
+          # Package FlatBuffers schema as tarball
           if [ -d "flatbuffers-schema" ]; then
-            echo "Copying FlatBuffers schema..."
-            mkdir -p release-artifacts/flatbuffers-schema
-            find flatbuffers-schema -type f -exec cp {} release-artifacts/flatbuffers-schema/ \;
+            echo "Packaging FlatBuffers schema..."
+            tar -czf release-artifacts/flatbuffers-schema.tar.gz -C flatbuffers-schema .
           fi
 
           echo ""
@@ -209,9 +208,9 @@ jobs:
           ls -la release-artifacts/ || echo "No artifacts found"
           echo ""
           echo "Wheels: $(find release-artifacts -name "*.whl" | wc -l)"
-          echo "Source dists: $(find release-artifacts -name "*.tar.gz" | wc -l)"
+          echo "Source dists: $(find release-artifacts -name "*.tar.gz" ! -name "flatbuffers-schema.tar.gz" | wc -l)"
           echo "Wstest reports: $(find release-artifacts -name "*wstest*" | wc -l)"
-          echo "FlatBuffers files: $(find release-artifacts/flatbuffers-schema -type f 2>/dev/null | wc -l || echo 0)"
+          echo "FlatBuffers schema: $(ls release-artifacts/flatbuffers-schema.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
 
       - name: Install jinja2-cli for template rendering
         run: |
