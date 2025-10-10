@@ -1,0 +1,213 @@
+name: release-post-comment
+
+on:
+  # For PR summaries (runs in main repo context with write permissions)
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+  # Manual dispatch for debugging
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to post summary for"
+        required: false
+        type: string
+
+permissions:
+  pull-requests: write  # Required for posting PR comments
+  contents: read        # Required for reading artifacts
+
+jobs:
+  identifiers:
+    # GitHub needs to know where .cicd/workflows/identifiers.yml lives at parse time,
+    # and submodules aren't included in that context! thus the following does NOT work:
+    # uses: ./.cicd/workflows/identifiers.yml
+    # we MUST reference the remote repo directly:
+    uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
+    # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
+    # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
+
+  # Development release: Post PR summary comment for development builds
+  post-pr-comment:
+    name: Post PR Comment (Development Builds)
+    needs: identifiers
+    runs-on: ubuntu-latest
+
+    # Only run for development contexts
+    if: needs.identifiers.outputs.release_type == 'development'
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Get PR information
+        id: pr-info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let pr_number, head_repo, head_ref;
+
+            if (context.eventName === 'workflow_dispatch') {
+              // Manual dispatch - get PR info from input
+              pr_number = context.payload.inputs.pr_number;
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr_number
+              });
+              head_repo = pr.head.repo.full_name;
+              head_ref = pr.head.ref;
+            } else if (context.eventName === 'pull_request_target') {
+              // pull_request_target trigger - get PR info from event
+              pr_number = context.payload.pull_request.number;
+              head_repo = context.payload.pull_request.head.repo.full_name;
+              head_ref = context.payload.pull_request.head.ref;
+            } else {
+              core.setFailed('Unexpected event type: ' + context.eventName);
+              return;
+            }
+
+            console.log(`PR: #${pr_number}, Repo: ${head_repo}, Branch: ${head_ref}`);
+
+            // Set outputs for next steps
+            core.setOutput('pr_number', pr_number);
+            core.setOutput('head_repo', head_repo);
+            core.setOutput('head_ref', head_ref);
+
+      # Wait for wstest workflow to complete
+      - name: Wait for wstest workflow
+        uses: actions/github-script@v7
+        id: wait-wstest
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const headSha = pr.head.sha;
+
+            console.log(`Waiting for wstest workflow on commit: ${headSha}`);
+
+            // Poll for workflow runs
+            const maxAttempts = 30;
+            const pollInterval = 10000; // 10 seconds
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              console.log(`Attempt ${attempt}/${maxAttempts}: Checking for wstest workflow...`);
+
+              const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'wstest.yml',
+                head_sha: headSha,
+                per_page: 1
+              });
+
+              if (runs.workflow_runs.length > 0) {
+                const run = runs.workflow_runs[0];
+                console.log(`Found wstest run: ${run.id}, status: ${run.status}, conclusion: ${run.conclusion}`);
+
+                if (run.status === 'completed') {
+                  core.setOutput('run_id', run.id);
+                  core.setOutput('conclusion', run.conclusion);
+                  return;
+                }
+              }
+
+              if (attempt < maxAttempts) {
+                console.log(`Waiting ${pollInterval/1000}s before next check...`);
+                await new Promise(resolve => setTimeout(resolve, pollInterval));
+              }
+            }
+
+            console.log('⚠️  wstest workflow not found after maximum attempts');
+            core.setOutput('run_id', '');
+            core.setOutput('conclusion', 'not_found');
+
+      - name: Download wstest conformance summary
+        if: steps.wait-wstest.outputs.run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: conformance-summary-quick
+          run-id: ${{ steps.wait-wstest.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: summary-artifact/
+        continue-on-error: true
+
+      - name: Install jinja2-cli for template rendering
+        run: |
+          pip install jinja2-cli
+
+      - name: Render PR comment from Jinja2 template
+        id: render
+        run: |
+          echo "==> Preparing PR comment using Jinja2 template..."
+
+          # Collect template variables
+          PR_NUMBER="${{ steps.pr-info.outputs.pr_number }}"
+          PR_REPO="${{ steps.pr-info.outputs.head_repo }}"
+          PR_BRANCH="${{ steps.pr-info.outputs.head_ref }}"
+          BASE_REPO="${BASE_REPO}"
+          BASE_BRANCH="${BASE_BRANCH}"
+          COMMIT_SHA="${GITHUB_SHA::8}"
+          BUILD_DATE="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          WORKFLOW_RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          # Read wstest summary if available, otherwise use placeholder
+          WSTEST_SUMMARY="WebSocket conformance testing results not available."
+          SUMMARY_FILE=$(find summary-artifact/ -name "*wstest-summary.md" 2>/dev/null | head -1)
+          if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
+            echo "✅ Found wstest summary: $SUMMARY_FILE"
+            WSTEST_SUMMARY=$(cat "$SUMMARY_FILE")
+            WHEEL_COUNT=$(find . -name "*.whl" 2>/dev/null | wc -l)
+          else
+            echo "⚠️  No wstest summary found, using placeholder"
+            WHEEL_COUNT="N/A"
+          fi
+
+          # Render template using jinja2
+          jinja2 .github/templates/release-development.md.j2 \
+            -D pr_number="$PR_NUMBER" \
+            -D pr_repo="$PR_REPO" \
+            -D pr_branch="$PR_BRANCH" \
+            -D base_repo="$BASE_REPO" \
+            -D base_branch="$BASE_BRANCH" \
+            -D commit_sha="$COMMIT_SHA" \
+            -D build_date="$BUILD_DATE" \
+            -D workflow_run_url="$WORKFLOW_RUN_URL" \
+            -D wheel_count="$WHEEL_COUNT" \
+            -D wstest_summary="$WSTEST_SUMMARY" \
+            -o pr-comment.md
+
+          echo ""
+          echo "==> Generated PR comment:"
+          cat pr-comment.md
+
+          # Check if we should post comment
+          if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
+            echo "should_comment=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_comment=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post PR comment using GitHub CLI
+        if: steps.render.outputs.should_comment == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "==> Posting comment to PR #${{ steps.pr-info.outputs.pr_number }}..."
+          gh pr comment "${{ steps.pr-info.outputs.pr_number }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --body-file pr-comment.md
+          echo "✅ PR comment posted successfully"
+
+      - name: Skip PR comment
+        if: steps.render.outputs.should_comment == 'false'
+        run: |
+          echo "ℹ️  Skipping PR comment - wstest summary not available"

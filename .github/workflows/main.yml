@@ -7,6 +7,10 @@ on:
     branches: [master]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: read
+
 env:
   UV_CACHE_DIR: ${{ github.workspace }}/.uv-cache
 
