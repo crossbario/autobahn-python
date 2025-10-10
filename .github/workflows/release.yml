@@ -10,7 +10,71 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-all-workflows:
+    name: Check if all workflows completed
+    runs-on: ubuntu-latest
+    outputs:
+      all_complete: ${{ steps.check.outputs.all_complete }}
+
+    steps:
+      - name: Check all required workflows completed
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const requiredWorkflows = ['wheels', 'wheels-docker', 'wstest', 'main'];
+            const commitSha = context.payload.workflow_run.head_sha;
+
+            console.log('─────────────────────────────────────────────────');
+            console.log('🔍 Checking workflow completion status');
+            console.log('─────────────────────────────────────────────────');
+            console.log(`Commit SHA: ${commitSha}`);
+            console.log(`Triggered by: ${context.payload.workflow_run.name}`);
+            console.log('');
+
+            // Get all workflow runs for this commit
+            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: commitSha,
+              per_page: 100
+            });
+
+            // Group by workflow name and find latest run for each
+            const latestRuns = {};
+            for (const run of runs.workflow_runs) {
+              const workflowName = run.name;
+              if (requiredWorkflows.includes(workflowName)) {
+                if (!latestRuns[workflowName] || run.id > latestRuns[workflowName].id) {
+                  latestRuns[workflowName] = run;
+                }
+              }
+            }
+
+            // Check if all required workflows completed successfully
+            console.log('Required workflows status:');
+            const allComplete = requiredWorkflows.every(name => {
+              const run = latestRuns[name];
+              const complete = run && run.status === 'completed' && run.conclusion === 'success';
+              const status = run ? `${run.status}/${run.conclusion}` : 'not found';
+              console.log(`  ${complete ? '✅' : '⏳'} ${name.padEnd(20)} : ${status}`);
+              return complete;
+            });
+
+            console.log('');
+            if (!allComplete) {
+              console.log('⏳ Not all workflows complete yet - exiting early');
+              console.log('   This is normal! Release will proceed once all workflows finish.');
+            } else {
+              console.log('✅ All workflows complete - proceeding with release!');
+            }
+            console.log('─────────────────────────────────────────────────');
+
+            core.setOutput('all_complete', allComplete ? 'true' : 'false');
+
   identifiers:
+    needs: check-all-workflows
+    if: needs.check-all-workflows.outputs.all_complete == 'true'
     # GitHub needs to know where .cicd/workflows/identifiers.yml lives at parse time,
     # and submodules aren't included in that context! thus the following does NOT work:
     # uses: ./.cicd/workflows/identifiers.yml
@@ -22,15 +86,15 @@ jobs:
   # Nightly and stable GitHub releases (consolidates wheels from both workflows)
   release-nightly:
     name: Nightly & Stable GitHub Releases
-    needs: identifiers
+    needs: [check-all-workflows, identifiers]
     runs-on: ubuntu-latest
 
     # Only create releases for nightly and stable builds (explicit positive list)
     if: |
+      needs.check-all-workflows.outputs.all_complete == 'true' &&
       github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success' &&
-      (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable') &&
-      (github.event.workflow_run.name == 'wheels' || github.event.workflow_run.name == 'wheels-docker')
+      (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
 
     env:
       RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
@@ -193,11 +257,13 @@ jobs:
   # Stable release publishing: PyPI and RTD (consolidates from both wheel workflows)
   release-stable:
     name: Stable Release (PyPI & RTD)
-    needs: [identifiers, release-nightly]
+    needs: [check-all-workflows, identifiers, release-nightly]
     runs-on: ubuntu-latest
 
     # Only publish to PyPI for stable releases (explicit positive list)
-    if: needs.identifiers.outputs.release_type == 'stable'
+    if: |
+      needs.check-all-workflows.outputs.all_complete == 'true' &&
+      needs.identifiers.outputs.release_type == 'stable'
 
     env:
       RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
