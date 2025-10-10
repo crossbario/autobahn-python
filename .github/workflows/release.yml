@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       all_complete: ${{ steps.check.outputs.all_complete }}
+      wheels_run_id: ${{ steps.check.outputs.wheels_run_id }}
+      wheels_docker_run_id: ${{ steps.check.outputs.wheels_docker_run_id }}
+      wstest_run_id: ${{ steps.check.outputs.wstest_run_id }}
+      main_run_id: ${{ steps.check.outputs.main_run_id }}
 
     steps:
       - name: Check all required workflows completed
@@ -72,6 +76,12 @@ jobs:
 
             core.setOutput('all_complete', allComplete ? 'true' : 'false');
 
+            // Output run IDs for artifact downloads (using sanitized names)
+            core.setOutput('wheels_run_id', latestRuns['wheels']?.id || '');
+            core.setOutput('wheels_docker_run_id', latestRuns['wheels-docker']?.id || '');
+            core.setOutput('wstest_run_id', latestRuns['wstest']?.id || '');
+            core.setOutput('main_run_id', latestRuns['main']?.id || '');
+
   identifiers:
     needs: check-all-workflows
     if: needs.check-all-workflows.outputs.all_complete == 'true'
@@ -112,6 +122,8 @@ jobs:
           pattern: wheels-*
           merge-multiple: true
           path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Download source distribution
@@ -119,6 +131,8 @@ jobs:
         with:
           name: source-distribution
           path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Download Linux wheels without NVX
@@ -126,6 +140,8 @@ jobs:
         with:
           name: linux-wheels-no-nvx
           path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Download manylinux wheel artifacts (from wheels-docker workflow)
@@ -134,6 +150,8 @@ jobs:
           pattern: artifacts-*
           merge-multiple: true
           path: wheelhouse/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Download wstest conformance summary
@@ -142,6 +160,8 @@ jobs:
           pattern: conformance-summary-*
           merge-multiple: true
           path: wstest-results/
+          run-id: ${{ needs.check-all-workflows.outputs.wstest_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Download FlatBuffers schema artifacts
@@ -150,6 +170,8 @@ jobs:
           pattern: flatbuffers-schema-*
           merge-multiple: true
           path: flatbuffers-schema/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Consolidate all artifacts
@@ -286,6 +308,8 @@ jobs:
         with:
           name: wheels-macos-arm64
           path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Download Windows wheels
@@ -293,6 +317,8 @@ jobs:
         with:
           name: wheels-windows-x86_64
           path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Download source distribution
@@ -300,6 +326,8 @@ jobs:
         with:
           name: source-distribution
           path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Download Linux wheels without NVX
@@ -307,6 +335,8 @@ jobs:
         with:
           name: linux-wheels-no-nvx
           path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Download manylinux wheels with NVX (from wheels-docker)
@@ -315,6 +345,8 @@ jobs:
           pattern: artifacts-*
           merge-multiple: true
           path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: List artifacts for PyPI publishing
