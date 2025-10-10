@@ -269,12 +269,12 @@ jobs:
     needs: identifiers
     runs-on: ubuntu-latest
 
-    # Only run for PR/development contexts
+    # Only run for PR/development contexts via workflow_run (has write permissions + artifact access)
     if: |
-      (github.event_name == 'pull_request_target') ||
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.event == 'pull_request' &&
-       github.event.workflow_run.conclusion == 'success')
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      needs.identifiers.outputs.release_type == 'development'
 
     env:
       BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
@@ -334,6 +334,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: conformance-summary-${{ github.event.workflow_run.conclusion == 'success' && 'quick' || env.TEST_MODE || 'quick' }}
+          run-id: ${{ github.event.workflow_run.id }}
           path: summary-artifact/
         continue-on-error: true
 
