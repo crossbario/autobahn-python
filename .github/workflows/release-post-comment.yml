@@ -68,19 +68,14 @@ jobs:
               // We only process when:
               // 1. Triggered by "release" workflow
               // 2. Release workflow completed successfully
-              // 3. Original event was pull_request (development) or push (nightly/stable)
+              // Note: release.yml is itself triggered by workflow_run (from base workflows),
+              // so we can't use triggeringEvent to determine type. Instead, we rely on the
+              // identifiers job to determine development/nightly/stable based on commit context.
               if (triggeringWorkflow === 'release' && conclusion === 'success') {
-                if (triggeringEvent === 'pull_request') {
-                  shouldProcess = true;
-                  eventType = 'development';
-                  console.log('✅ Development/PR build detected - will post PR comment');
-                } else if (triggeringEvent === 'push' || triggeringEvent === 'workflow_dispatch') {
-                  shouldProcess = true;
-                  eventType = 'nightly_or_stable';
-                  console.log('✅ Nightly or stable build detected - will post to Discussions');
-                } else {
-                  console.log(`⏭️  Skipping - unexpected event type: ${triggeringEvent}`);
-                }
+                shouldProcess = true;
+                eventType = 'from_release';  // Let identifiers determine actual type
+                console.log('✅ Release workflow completed successfully - proceeding');
+                console.log('   (identifiers job will determine: development/nightly/stable)');
               } else if (triggeringWorkflow !== 'release') {
                 console.log(`⏭️  Skipping - not triggered by release workflow`);
               } else if (conclusion !== 'success') {
