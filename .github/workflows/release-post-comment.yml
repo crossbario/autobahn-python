@@ -142,10 +142,8 @@ jobs:
   check-release-complete:
     name: Check if release is complete (Early Exit Pattern)
     needs: [identifiers, check-release-exists]
-    # Only check completion for nightly and stable releases
-    if: |
-      needs.check-release-exists.outputs.should_process == 'true' &&
-      (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
+    # Check completion for all release types
+    if: needs.check-release-exists.outputs.should_process == 'true'
     runs-on: ubuntu-latest
     outputs:
       should_process: ${{ steps.check.outputs.should_process }}
@@ -168,7 +166,18 @@ jobs:
           echo "Release type: $RELEASE_TYPE"
           echo ""
 
-          # Try to download the completion marker from the GitHub Release
+          # For development releases, completion marker is not created by release.yml
+          # (they don't go through the full release pipeline), so always proceed
+          if [ "$RELEASE_TYPE" = "development" ]; then
+            echo "✅ Development release - no completion check needed, proceeding"
+            {
+              echo "should_process=true"
+              echo "is_complete=true"
+            } >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # For nightly and stable releases, check for completion marker
           echo "Attempting to download release-complete.json marker..."
 
           if gh release download "$RELEASE_NAME" \
@@ -212,12 +221,12 @@ jobs:
   # Development release: Post PR summary comment for development builds
   post-pr-comment:
     name: Post PR Comment (Development Builds)
-    needs: [identifiers, check-release-exists]
+    needs: [identifiers, check-release-exists, check-release-complete]
     runs-on: ubuntu-latest
 
     # Only run for development/PR builds (explicit positive list)
     if: |
-      needs.check-release-exists.outputs.should_process == 'true' &&
+      needs.check-release-complete.outputs.should_process == 'true' &&
       needs.identifiers.outputs.release_type == 'development'
 
     env:

@@ -364,18 +364,20 @@ jobs:
         run: |
           echo "==> Generating conformance summary tables..."
 
-          # Create unique filename for PR using -- as separator
-          REPO_SAFE=$(echo '${{ github.event.pull_request.head.repo.full_name }}' | tr '/' '--')
-          SUMMARY_FILE="${{ github.workspace }}/.audit/${REPO_SAFE}--${{ github.head_ref }}--${{ github.event.number }}--wstest-summary.md"
+          # Create summary filename using consistent identifier from identifiers workflow
+          # This works for all event types (development, nightly, stable)
+          RELEASE_NAME="${{ needs.identifiers.outputs.release_name }}"
+          SUMMARY_FILE="${{ github.workspace }}/.audit/${RELEASE_NAME}-wstest-summary.md"
           echo "Summary file: $SUMMARY_FILE"
 
           # Generate summary for clients and servers
           echo "# WebSocket Conformance Test Results" > "$SUMMARY_FILE"
           echo "" >> "$SUMMARY_FILE"
           echo "Test Mode: \`${{ env.TEST_MODE }}\`" >> "$SUMMARY_FILE"
-          echo "Repo: ${{ github.event.pull_request.head.repo.full_name }}" >> "$SUMMARY_FILE"
-          echo "Branch: ${{ github.head_ref }}" >> "$SUMMARY_FILE"
-          echo "PR: #${{ github.event.number }}" >> "$SUMMARY_FILE"
+          echo "Release: $RELEASE_NAME" >> "$SUMMARY_FILE"
+          echo "Repo: ${{ needs.identifiers.outputs.pr_repo }}" >> "$SUMMARY_FILE"
+          echo "Branch: ${{ needs.identifiers.outputs.pr_branch }}" >> "$SUMMARY_FILE"
+          echo "PR: ${{ needs.identifiers.outputs.pr_number }}" >> "$SUMMARY_FILE"
 
           # Generate client summary
           python3 ${{ github.workspace }}/.github/workflows/generate_summary.py \
