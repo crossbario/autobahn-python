@@ -67,15 +67,20 @@ jobs:
             echo "⏳ GitHub Release not found: $RELEASE_NAME"
             echo "   This is normal! Will post once release workflow creates the release."
             echo "   (This is an early exit - release.yml probably hasn't created the release yet)"
-            echo "should_process=false" >> $GITHUB_OUTPUT
-            echo "release_exists=false" >> $GITHUB_OUTPUT
+            {
+              echo "should_process=false"
+              echo "release_exists=false"
+              echo "release_url="
+            } >> $GITHUB_OUTPUT
           else
             echo "✅ GitHub Release found: $RELEASE_NAME"
             RELEASE_URL=$(echo "$RELEASE_JSON" | jq -r '.html_url')
             echo "   Release URL: $RELEASE_URL"
-            echo "should_process=true" >> $GITHUB_OUTPUT
-            echo "release_exists=true" >> $GITHUB_OUTPUT
-            echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+            {
+              echo "should_process=true"
+              echo "release_exists=true"
+              echo "release_url=$RELEASE_URL"
+            } >> $GITHUB_OUTPUT
           fi
 
           echo '─────────────────────────────────────────────────'
