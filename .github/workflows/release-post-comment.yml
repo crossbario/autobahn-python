@@ -14,13 +14,96 @@ on:
         description: "PR number to post summary for"
         required: false
         type: string
+      discussion_category_id:
+        description: "GitHub Discussions category ID for announcements"
+        required: false
+        type: string
+        default: "DIC_kwDOAP_4P84CkZFU"  # Find via: gh api graphql -f query='query {repository(owner:"crossbario", name:"autobahn-python") {discussionCategories(first:10) {nodes {id name}}}}'
 
 permissions:
   pull-requests: write  # Required for posting PR comments
   contents: read        # Required for reading artifacts
+  discussions: write    # Required for posting to discussions
 
 jobs:
+  check-event-context:
+    name: Check event context and release type
+    runs-on: ubuntu-latest
+    outputs:
+      should_process: ${{ steps.check.outputs.should_process }}
+      release_type: ${{ steps.check.outputs.release_type }}
+      event_type: ${{ steps.check.outputs.event_type }}
+      release_run_id: ${{ steps.check.outputs.release_run_id }}
+      release_conclusion: ${{ steps.check.outputs.release_conclusion }}
+
+    steps:
+      - name: Check workflow trigger context
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('─────────────────────────────────────────────────');
+            console.log('🔍 Checking workflow trigger context');
+            console.log('─────────────────────────────────────────────────');
+            console.log(`Event: ${context.eventName}`);
+
+            let shouldProcess = false;
+            let eventType = 'unknown';
+            let releaseRunId = '';
+            let releaseConclusion = 'unknown';
+
+            if (context.eventName === 'workflow_run') {
+              const triggeringWorkflow = context.payload.workflow_run.name;
+              const triggeringEvent = context.payload.workflow_run.event;
+              const conclusion = context.payload.workflow_run.conclusion;
+
+              releaseRunId = context.payload.workflow_run.id;
+              releaseConclusion = conclusion;
+
+              console.log(`Triggered by: ${triggeringWorkflow}`);
+              console.log(`Original event: ${triggeringEvent}`);
+              console.log(`Conclusion: ${conclusion}`);
+              console.log(`Release run ID: ${releaseRunId}`);
+
+              // We only process when:
+              // 1. Triggered by "release" workflow
+              // 2. Release workflow completed successfully
+              // 3. Original event was pull_request (development) or push (nightly/stable)
+              if (triggeringWorkflow === 'release' && conclusion === 'success') {
+                if (triggeringEvent === 'pull_request') {
+                  shouldProcess = true;
+                  eventType = 'development';
+                  console.log('✅ Development/PR build detected - will post PR comment');
+                } else if (triggeringEvent === 'push' || triggeringEvent === 'workflow_dispatch') {
+                  shouldProcess = true;
+                  eventType = 'nightly_or_stable';
+                  console.log('✅ Nightly or stable build detected - will post to Discussions');
+                } else {
+                  console.log(`⏭️  Skipping - unexpected event type: ${triggeringEvent}`);
+                }
+              } else if (triggeringWorkflow !== 'release') {
+                console.log(`⏭️  Skipping - not triggered by release workflow`);
+              } else if (conclusion !== 'success') {
+                console.log(`⏭️  Skipping - release workflow did not succeed: ${conclusion}`);
+              }
+            } else if (context.eventName === 'workflow_dispatch') {
+              shouldProcess = true;
+              eventType = 'manual';
+              console.log('✅ Manual dispatch - will process based on identifiers');
+            } else {
+              console.log(`⏭️  Skipping - unexpected event: ${context.eventName}`);
+            }
+
+            console.log('─────────────────────────────────────────────────');
+
+            core.setOutput('should_process', shouldProcess ? 'true' : 'false');
+            core.setOutput('event_type', eventType);
+            core.setOutput('release_run_id', releaseRunId);
+            core.setOutput('release_conclusion', releaseConclusion);
+
   identifiers:
+    needs: check-event-context
+    if: needs.check-event-context.outputs.should_process == 'true'
     # GitHub needs to know where .cicd/workflows/identifiers.yml lives at parse time,
     # and submodules aren't included in that context! thus the following does NOT work:
     # uses: ./.cicd/workflows/identifiers.yml
@@ -32,14 +115,12 @@ jobs:
   # Development release: Post PR summary comment for development builds
   post-pr-comment:
     name: Post PR Comment (Development Builds)
-    needs: identifiers
+    needs: [check-event-context, identifiers]
     runs-on: ubuntu-latest
 
-    # Only run for PR/development contexts and successful release runs
+    # Only run for development/PR builds (explicit positive list)
     if: |
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success' &&
+      needs.check-event-context.outputs.should_process == 'true' &&
       needs.identifiers.outputs.release_type == 'development'
 
     env:
@@ -166,3 +247,150 @@ jobs:
         if: steps.render.outputs.should_comment == 'false'
         run: |
           echo "ℹ️  Skipping PR comment - wstest summary not available"
+
+  # Nightly and Stable releases: Post to GitHub Discussions
+  post-discussion:
+    name: Post to GitHub Discussions (Nightly & Stable)
+    needs: [check-event-context, identifiers]
+    runs-on: ubuntu-latest
+
+    # Only run for nightly or stable builds (explicit positive list)
+    if: |
+      needs.check-event-context.outputs.should_process == 'true' &&
+      (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
+
+    env:
+      RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
+      RELEASE_NAME: ${{ needs.identifiers.outputs.release_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Get release details from GitHub Release
+        id: release-details
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "==> Fetching release details for: $RELEASE_NAME"
+
+          # Get release info via GitHub API
+          RELEASE_JSON=$(gh api repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_NAME 2>/dev/null || echo "{}")
+
+          if [ "$RELEASE_JSON" = "{}" ]; then
+            echo "⚠️  Release not found: $RELEASE_NAME"
+            echo "release_found=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Release found: $RELEASE_NAME"
+            echo "release_found=true" >> $GITHUB_OUTPUT
+
+            # Extract release URL
+            RELEASE_URL=$(echo "$RELEASE_JSON" | jq -r '.html_url')
+            echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+
+            # Save release body for discussion
+            echo "$RELEASE_JSON" | jq -r '.body' > release-body.md
+          fi
+
+      - name: Install jinja2-cli for template rendering
+        if: steps.release-details.outputs.release_found == 'true'
+        run: |
+          pip install jinja2-cli
+
+      - name: Render discussion post from template
+        if: steps.release-details.outputs.release_found == 'true'
+        id: render
+        run: |
+          echo "==> Preparing GitHub Discussion post..."
+          echo "Release type: $RELEASE_TYPE"
+          echo "Release name: $RELEASE_NAME"
+
+          # Get release information
+          COMMIT_SHA="${{ needs.identifiers.outputs.head_sha }}"
+          BUILD_DATE="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          RELEASE_URL="${{ steps.release-details.outputs.release_url }}"
+
+          # Read release body
+          RELEASE_BODY=$(cat release-body.md)
+
+          # Create discussion body with link to release and full release notes
+          cat > discussion-post.md <<'EOF'
+          $RELEASE_BODY
+
+          ---
+
+          **📦 [View Full Release on GitHub]($RELEASE_URL)**
+
+          Download wheels, source distributions, and other artifacts from the release page.
+          EOF
+
+          # Replace variables
+          sed -i "s|\$RELEASE_BODY|$RELEASE_BODY|g" discussion-post.md
+          sed -i "s|\$RELEASE_URL|$RELEASE_URL|g" discussion-post.md
+
+          echo ""
+          echo "==> Generated discussion post:"
+          cat discussion-post.md
+
+      - name: Post to GitHub Discussions
+        if: steps.release-details.outputs.release_found == 'true'
+        uses: actions/github-script@v7
+        env:
+          DISCUSSION_CATEGORY_ID: ${{ github.event.inputs.discussion_category_id || 'DIC_kwDOAP_4P84CkZFU' }}
+        with:
+          script: |
+            const fs = require('fs');
+            const discussionBody = fs.readFileSync('discussion-post.md', 'utf8');
+
+            const releaseType = '${{ env.RELEASE_TYPE }}';
+            const releaseName = '${{ env.RELEASE_NAME }}';
+
+            // Set title based on release type
+            const title = releaseType === 'stable'
+              ? `Release ${releaseName}`
+              : `Nightly Build ${releaseName}`;
+
+            console.log(`Creating discussion: ${title}`);
+            console.log(`Category ID: ${process.env.DISCUSSION_CATEGORY_ID}`);
+
+            // Create discussion using GraphQL API
+            const mutation = `
+              mutation($repositoryId: ID!, $categoryId: ID!, $title: String!, $body: String!) {
+                createDiscussion(input: {
+                  repositoryId: $repositoryId
+                  categoryId: $categoryId
+                  title: $title
+                  body: $body
+                }) {
+                  discussion {
+                    url
+                  }
+                }
+              }
+            `;
+
+            // Get repository ID
+            const { data: repo } = await github.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const repositoryId = repo.node_id;
+
+            // Create the discussion
+            const result = await github.graphql(mutation, {
+              repositoryId: repositoryId,
+              categoryId: process.env.DISCUSSION_CATEGORY_ID,
+              title: title,
+              body: discussionBody
+            });
+
+            const discussionUrl = result.createDiscussion.discussion.url;
+            console.log(`✅ Discussion created: ${discussionUrl}`);
+            core.setOutput('discussion_url', discussionUrl);
+
+      - name: Skip discussion post
+        if: steps.release-details.outputs.release_found == 'false'
+        run: |
+          echo "ℹ️  Skipping GitHub Discussion - release not found: $RELEASE_NAME"
