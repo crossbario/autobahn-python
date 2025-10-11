@@ -93,6 +93,175 @@ jobs:
     # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
     # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
 
+  # Development GitHub releases (consolidates wheels from both workflows)
+  release-development:
+    name: Development GitHub Release
+    needs: [check-all-workflows, identifiers]
+    runs-on: ubuntu-latest
+
+    # Only create releases for development builds (explicit positive list)
+    if: |
+      needs.check-all-workflows.outputs.all_complete == 'true' &&
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      needs.identifiers.outputs.release_type == 'development'
+
+    env:
+      RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
+      RELEASE_NAME: ${{ needs.identifiers.outputs.release_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download all wheel artifacts (from wheels workflow)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download Linux wheels without NVX
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-wheels-no-nvx
+          path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download manylinux wheel artifacts (from wheels-docker workflow)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: artifacts-*
+          merge-multiple: true
+          path: wheelhouse/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download wstest conformance summary
+        uses: actions/download-artifact@v4
+        with:
+          pattern: conformance-summary-*
+          merge-multiple: true
+          path: wstest-results/
+          run-id: ${{ needs.check-all-workflows.outputs.wstest_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download FlatBuffers schema artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: flatbuffers-schema-*
+          merge-multiple: true
+          path: flatbuffers-schema/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Consolidate all artifacts
+        run: |
+          echo "==> Consolidating all artifacts into unified release directory..."
+          mkdir -p release-artifacts
+
+          # Copy wheels from wheels workflow
+          if [ -d "dist" ]; then
+            echo "Copying wheels workflow artifacts..."
+            find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} release-artifacts/ \;
+          fi
+
+          # Copy wheels from wheels-docker workflow
+          if [ -d "wheelhouse" ]; then
+            echo "Copying wheels-docker workflow artifacts..."
+            find wheelhouse -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} release-artifacts/ \;
+          fi
+
+          # Copy wstest conformance results
+          if [ -d "wstest-results" ]; then
+            echo "Copying wstest conformance results..."
+            find wstest-results -type f -exec cp {} release-artifacts/ \;
+          fi
+
+          # Package FlatBuffers schema as tarball
+          if [ -d "flatbuffers-schema" ]; then
+            echo "Packaging FlatBuffers schema..."
+            tar -czf release-artifacts/flatbuffers-schema.tar.gz -C flatbuffers-schema .
+          fi
+
+          echo ""
+          echo "==> Unified release artifact inventory:"
+          ls -la release-artifacts/ || echo "No artifacts found"
+          echo ""
+          echo "Wheels: $(find release-artifacts -name "*.whl" | wc -l)"
+          echo "Source dists: $(find release-artifacts -name "*.tar.gz" ! -name "flatbuffers-schema.tar.gz" | wc -l)"
+          echo "Wstest reports: $(find release-artifacts -name "*wstest*" | wc -l)"
+          echo "FlatBuffers schema: $(ls release-artifacts/flatbuffers-schema.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
+
+      - name: Install jinja2-cli for template rendering
+        run: |
+          pip install jinja2-cli
+
+      - name: Render release notes from Jinja2 template
+        run: |
+          echo "==> Preparing release notes using Jinja2 template..."
+          echo "Release type: $RELEASE_TYPE"
+          echo "Release name: $RELEASE_NAME"
+
+          # Collect template variables
+          COMMIT_SHA="${GITHUB_SHA::8}"
+          BUILD_DATE="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          WHEEL_COUNT="$(find release-artifacts -name "*.whl" | wc -l)"
+          SDIST_COUNT="$(find release-artifacts -name "*.tar.gz" | wc -l)"
+
+          # Render template using jinja2
+          jinja2 .github/templates/release-development.md.j2 \
+            -D release_name="$RELEASE_NAME" \
+            -D commit_sha="$COMMIT_SHA" \
+            -D build_date="$BUILD_DATE" \
+            -D wheel_count="$WHEEL_COUNT" \
+            -D sdist_count="$SDIST_COUNT" \
+            -o release-notes.md
+
+          echo ""
+          echo "==> Generated release notes:"
+          cat release-notes.md
+
+      - name: Create development GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "==> Creating development GitHub release..."
+          echo "Release type: $RELEASE_TYPE"
+          echo "Release name: $RELEASE_NAME"
+
+          # Delete existing release if it exists (development builds may be rebuilt)
+          gh release delete "$RELEASE_NAME" --repo "$GITHUB_REPOSITORY" --yes || true
+
+          # Create the release using rendered notes
+          gh release create "$RELEASE_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Development Build $RELEASE_NAME" \
+            --notes-file release-notes.md \
+            --prerelease \
+            release-artifacts/*
+
+          echo "✅ Release $RELEASE_NAME created successfully"
+
   # Nightly and stable GitHub releases (consolidates wheels from both workflows)
   release-nightly:
     name: Nightly & Stable GitHub Releases
@@ -385,8 +554,8 @@ jobs:
   # Mark release as complete (for release-post-comment to detect)
   mark-release-complete:
     name: Mark Release Complete
-    needs: [identifiers, release-nightly, release-stable]
-    if: always() && needs.identifiers.result == 'success' && (needs.release-nightly.result == 'success' || needs.release-stable.result == 'success')
+    needs: [identifiers, release-development, release-nightly, release-stable]
+    if: always() && needs.identifiers.result == 'success' && (needs.release-development.result == 'success' || needs.release-nightly.result == 'success' || needs.release-stable.result == 'success')
     runs-on: ubuntu-latest
 
     env:
@@ -408,6 +577,7 @@ jobs:
             "completed_at": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
             "workflow_run_id": "${{ github.run_id }}",
             "commit_sha": "${{ needs.identifiers.outputs.head_sha }}",
+            "development_status": "${{ needs.release-development.result }}",
             "nightly_status": "${{ needs.release-nightly.result }}",
             "stable_status": "${{ needs.release-stable.result }}"
           }

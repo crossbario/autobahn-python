@@ -1,31 +1,33 @@
-# Development Build Summary
+# Development Build {{ release_name }}
 
-## Pull Request Information
-
-- **PR Number**: #{{ pr_number }}
-- **Source Repository**: `{{ pr_repo }}`
-- **Source Branch**: `{{ pr_branch }}`
-- **Target Repository**: `{{ base_repo }}`
-- **Target Branch**: `{{ base_branch }}`
+Development build from pull request
 
 ## Build Information
 
 - **Commit**: {{ commit_sha }}
 - **Build Date**: {{ build_date }}
-- **Workflow Run**: [View Details]({{ workflow_run_url }})
+- **Release Type**: development
 
-## Build Artifacts
+## Included Platforms
 
-The following artifacts were built and are available for testing:
+- **Linux**: x86_64, ARM64 (manylinux wheels + pure Python fallbacks)
+- **macOS**: Apple Silicon ARM64
+- **Windows**: x86_64
 
-- **Wheels Built**: {{ wheel_count }}
-- **Platforms**: Linux (x86_64), macOS (ARM64), Windows (x86_64)
-- **Python Versions**: CPython 3.11, 3.12, 3.13, 3.14 | PyPy 3.11
+## Python Versions
 
-## WebSocket Conformance Testing
+- **CPython**: 3.11, 3.12, 3.13, 3.14
+- **PyPy**: 3.11
 
-{{ wstest_summary }}
+## Installation
 
----
+Download the appropriate wheel for your platform:
 
-💡 **Download artifacts** from the [workflow run]({{ workflow_run_url }}) for local testing.
+```bash
+pip install <downloaded-wheel-file>
+```
+
+## Artifact Inventory
+
+- **Total Wheels**: {{ wheel_count }}
+- **Source Distributions**: {{ sdist_count }}

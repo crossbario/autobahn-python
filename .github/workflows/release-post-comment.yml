@@ -166,18 +166,7 @@ jobs:
           echo "Release type: $RELEASE_TYPE"
           echo ""
 
-          # For development releases, completion marker is not created by release.yml
-          # (they don't go through the full release pipeline), so always proceed
-          if [ "$RELEASE_TYPE" = "development" ]; then
-            echo "✅ Development release - no completion check needed, proceeding"
-            {
-              echo "should_process=true"
-              echo "is_complete=true"
-            } >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # For nightly and stable releases, check for completion marker
+          # All release types (development, nightly, stable) now create completion markers
           echo "Attempting to download release-complete.json marker..."
 
           if gh release download "$RELEASE_NAME" \
@@ -282,21 +271,48 @@ jobs:
           path: summary-artifact/
         continue-on-error: true
 
+      - name: Get release notes from GitHub Release
+        id: release-details
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_NAME="${{ needs.check-release-exists.outputs.release_name }}"
+          RELEASE_URL="${{ needs.check-release-exists.outputs.release_url }}"
+
+          echo "==> Fetching release notes for: $RELEASE_NAME"
+          echo "   Release URL: $RELEASE_URL"
+
+          # Get release body via GitHub API
+          RELEASE_JSON=$(gh api repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_NAME 2>/dev/null || echo "{}")
+
+          if [ "$RELEASE_JSON" = "{}" ]; then
+            echo "⚠️  Release not found: $RELEASE_NAME"
+            echo "This should not happen - check-release-exists should have prevented this!"
+            exit 1
+          fi
+
+          # Save release body (release notes)
+          echo "$RELEASE_JSON" | jq -r '.body' > release-notes.md
+          echo "✅ Release notes retrieved"
+
       - name: Install jinja2-cli for template rendering
         run: |
           pip install jinja2-cli
 
       - name: Render PR comment from Jinja2 template
         id: render
+        env:
+          RELEASE_URL: ${{ needs.check-release-exists.outputs.release_url }}
         run: |
           echo "==> Preparing PR comment using Jinja2 template..."
 
-          # Collect template variables from identifiers
+          # Collect template variables
           # Strip 'pr' prefix from PR_NUMBER for gh command
           PR_NUMBER_CLEAN="${PR_NUMBER#pr}"
-          COMMIT_SHA="${{ needs.identifiers.outputs.head_sha }}"
-          BUILD_DATE="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
           WORKFLOW_RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}"
+
+          # Read release notes (already fetched)
+          RELEASE_NOTES=$(cat release-notes.md)
 
           # Read wstest summary if available, otherwise use placeholder
           WSTEST_SUMMARY="WebSocket conformance testing results not available."
@@ -304,23 +320,20 @@ jobs:
           if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
             echo "✅ Found wstest summary: $SUMMARY_FILE"
             WSTEST_SUMMARY=$(cat "$SUMMARY_FILE")
-            WHEEL_COUNT="N/A"  # Could query artifacts if needed
           else
             echo "⚠️  No wstest summary found, using placeholder"
-            WHEEL_COUNT="N/A"
           fi
 
-          # Render template using jinja2
-          jinja2 .github/templates/release-development.md.j2 \
+          # Render wrapper template using jinja2
+          jinja2 .github/templates/pr-comment.md.j2 \
             -D pr_number="$PR_NUMBER" \
             -D pr_repo="$PR_REPO" \
             -D pr_branch="$PR_BRANCH" \
             -D base_repo="$BASE_REPO" \
             -D base_branch="$BASE_BRANCH" \
-            -D commit_sha="$COMMIT_SHA" \
-            -D build_date="$BUILD_DATE" \
             -D workflow_run_url="$WORKFLOW_RUN_URL" \
-            -D wheel_count="$WHEEL_COUNT" \
+            -D release_url="$RELEASE_URL" \
+            -D release_notes="$RELEASE_NOTES" \
             -D wstest_summary="$WSTEST_SUMMARY" \
             -o pr-comment.md
 
@@ -331,15 +344,10 @@ jobs:
           # Save clean PR number for posting
           echo "pr_number_clean=$PR_NUMBER_CLEAN" >> $GITHUB_OUTPUT
 
-          # Check if we should post comment
-          if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
-            echo "should_comment=true" >> $GITHUB_OUTPUT
-          else
-            echo "should_comment=false" >> $GITHUB_OUTPUT
-          fi
+          # Always post comment (release notes are always available now)
+          echo "should_comment=true" >> $GITHUB_OUTPUT
 
       - name: Post PR comment using GitHub CLI
-        if: steps.render.outputs.should_comment == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -348,11 +356,6 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --body-file pr-comment.md
           echo "✅ PR comment posted successfully"
-
-      - name: Skip PR comment
-        if: steps.render.outputs.should_comment == 'false'
-        run: |
-          echo "ℹ️  Skipping PR comment - wstest summary not available"
 
   # Nightly and Stable releases: Post to GitHub Discussions
   post-discussion:
@@ -377,12 +380,52 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Get release body from GitHub Release
+      - name: Find wstest workflow run ID
+        id: find-wstest
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commitSha = context.payload.workflow_run.head_sha;
+            console.log(`Finding wstest workflow for commit: ${commitSha}`);
+
+            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: commitSha,
+              per_page: 100
+            });
+
+            const wstestRun = runs.workflow_runs.find(run =>
+              run.name === 'wstest' &&
+              run.status === 'completed' &&
+              run.conclusion === 'success'
+            );
+
+            if (wstestRun) {
+              console.log(`Found wstest run: ${wstestRun.id}`);
+              core.setOutput('run_id', wstestRun.id);
+            } else {
+              console.log('⚠️  wstest workflow not found');
+              core.setOutput('run_id', '');
+            }
+
+      - name: Download wstest conformance summary
+        if: steps.find-wstest.outputs.run_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          pattern: conformance-summary-*
+          merge-multiple: true
+          run-id: ${{ steps.find-wstest.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: summary-artifact/
+        continue-on-error: true
+
+      - name: Get release notes from GitHub Release
         id: release-details
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "==> Fetching release body for: $RELEASE_NAME"
+          echo "==> Fetching release notes for: $RELEASE_NAME"
           echo "   Release URL: $RELEASE_URL"
 
           # Get release body via GitHub API
@@ -394,27 +437,40 @@ jobs:
             exit 1
           fi
 
-          # Save release body for discussion
-          echo "$RELEASE_JSON" | jq -r '.body' > release-body.md
-          echo "✅ Release body retrieved"
+          # Save release body (release notes)
+          echo "$RELEASE_JSON" | jq -r '.body' > release-notes.md
+          echo "✅ Release notes retrieved"
 
-      - name: Render discussion post
+      - name: Install jinja2-cli for template rendering
+        run: |
+          pip install jinja2-cli
+
+      - name: Render discussion post from Jinja2 template
         id: render
         run: |
           echo "==> Preparing GitHub Discussion post..."
           echo "Release type: $RELEASE_TYPE"
           echo "Release name: $RELEASE_NAME"
 
-          # Create discussion body by combining release body with footer
-          cat release-body.md > discussion-post.md
-          cat >> discussion-post.md <<EOF
+          # Read release notes (already fetched)
+          RELEASE_NOTES=$(cat release-notes.md)
 
-          ---
+          # Read wstest summary if available, otherwise use placeholder
+          WSTEST_SUMMARY="WebSocket conformance testing results not available."
+          SUMMARY_FILE=$(find summary-artifact/ -name "*wstest-summary.md" 2>/dev/null | head -1)
+          if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
+            echo "✅ Found wstest summary: $SUMMARY_FILE"
+            WSTEST_SUMMARY=$(cat "$SUMMARY_FILE")
+          else
+            echo "⚠️  No wstest summary found, using placeholder"
+          fi
 
-          **📦 [View Full Release on GitHub]($RELEASE_URL)**
-
-          Download wheels, source distributions, and other artifacts from the release page.
-          EOF
+          # Render wrapper template using jinja2
+          jinja2 .github/templates/discussion-post.md.j2 \
+            -D release_url="$RELEASE_URL" \
+            -D release_notes="$RELEASE_NOTES" \
+            -D wstest_summary="$WSTEST_SUMMARY" \
+            -o discussion-post.md
 
           echo ""
           echo "==> Generated discussion post:"
