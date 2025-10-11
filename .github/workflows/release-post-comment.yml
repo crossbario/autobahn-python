@@ -264,9 +264,13 @@ jobs:
     runs-on: ubuntu-latest
 
     # Only run for nightly or stable builds (explicit positive list)
-    if: |
-      needs.check-release-exists.outputs.should_process == 'true' &&
-      (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
+    # TODO: Re-enable after fixing:
+    #   1. Correct discussion category ID for autobahn-python repo
+    #   2. Duplicate detection to prevent multiple discussions
+    if: false  # Temporarily disabled
+    # if: |
+    #   needs.check-release-exists.outputs.should_process == 'true' &&
+    #   (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
 
     env:
       RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
