@@ -18,7 +18,7 @@ on:
         description: "GitHub Discussions category ID for announcements"
         required: false
         type: string
-        default: "DIC_kwDOAP_4P84CkZFU"  # Find via: gh api graphql -f query='query {repository(owner:"crossbario", name:"autobahn-python") {discussionCategories(first:10) {nodes {id name}}}}'
+        default: "DIC_kwDOACA_5s4CXquL"  # Announcements category in autobahn-python repo
 
 permissions:
   pull-requests: write  # Required for posting PR comments
@@ -282,13 +282,10 @@ jobs:
     runs-on: ubuntu-latest
 
     # Only run for nightly or stable builds (explicit positive list)
-    # TODO: Re-enable after fixing:
-    #   1. Correct discussion category ID for autobahn-python repo
-    #   2. Duplicate detection to prevent multiple discussions
-    if: false  # Temporarily disabled
-    # if: |
-    #   needs.check-release-exists.outputs.should_process == 'true' &&
-    #   (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
+    # With timestamp verification in check-release-exists, only the 4th run should proceed
+    if: |
+      needs.check-release-exists.outputs.should_process == 'true' &&
+      (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
 
     env:
       RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
@@ -347,7 +344,7 @@ jobs:
       - name: Post to GitHub Discussions
         uses: actions/github-script@v7
         env:
-          DISCUSSION_CATEGORY_ID: ${{ github.event.inputs.discussion_category_id || 'DIC_kwDOAP_4P84CkZFU' }}
+          DISCUSSION_CATEGORY_ID: ${{ github.event.inputs.discussion_category_id || 'DIC_kwDOACA_5s4CXquL' }}
         with:
           script: |
             const fs = require('fs');
