@@ -381,3 +381,52 @@ jobs:
           else
             echo "⚠️  RTD_TOKEN not configured, skipping RTD build trigger"
           fi
+
+  # Mark release as complete (for release-post-comment to detect)
+  mark-release-complete:
+    name: Mark Release Complete
+    needs: [identifiers, release-nightly, release-stable]
+    if: always() && needs.identifiers.result == 'success' && (needs.release-nightly.result == 'success' || needs.release-stable.result == 'success')
+    runs-on: ubuntu-latest
+
+    env:
+      RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
+      RELEASE_NAME: ${{ needs.identifiers.outputs.release_name }}
+
+    steps:
+      - name: Create completion marker
+        run: |
+          echo "==> Creating release completion marker..."
+          echo "Release: $RELEASE_NAME"
+          echo "Type: $RELEASE_TYPE"
+
+          # Create completion marker JSON with metadata
+          cat > release-complete.json <<EOF
+          {
+            "release_name": "$RELEASE_NAME",
+            "release_type": "$RELEASE_TYPE",
+            "completed_at": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
+            "workflow_run_id": "${{ github.run_id }}",
+            "commit_sha": "${{ needs.identifiers.outputs.head_sha }}",
+            "nightly_status": "${{ needs.release-nightly.result }}",
+            "stable_status": "${{ needs.release-stable.result }}"
+          }
+          EOF
+
+          echo ""
+          echo "Completion marker contents:"
+          cat release-complete.json
+
+      - name: Upload completion marker to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "==> Uploading completion marker to release $RELEASE_NAME..."
+
+          # Upload the completion marker as a release asset
+          gh release upload "$RELEASE_NAME" \
+            release-complete.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+
+          echo "✅ Completion marker uploaded successfully"

@@ -139,6 +139,76 @@ jobs:
 
           echo '─────────────────────────────────────────────────'
 
+  check-release-complete:
+    name: Check if release is complete (Early Exit Pattern)
+    needs: [identifiers, check-release-exists]
+    # Only check completion for nightly and stable releases
+    if: |
+      needs.check-release-exists.outputs.should_process == 'true' &&
+      (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
+    runs-on: ubuntu-latest
+    outputs:
+      should_process: ${{ steps.check.outputs.should_process }}
+      is_complete: ${{ steps.check.outputs.is_complete }}
+
+    steps:
+      - name: Check for completion marker in GitHub Release
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo '─────────────────────────────────────────────────'
+          echo '🔍 Checking if release is complete (Early Exit Pattern)'
+          echo '─────────────────────────────────────────────────'
+
+          RELEASE_NAME="${{ needs.check-release-exists.outputs.release_name }}"
+          RELEASE_TYPE="${{ needs.identifiers.outputs.release_type }}"
+
+          echo "Release name: $RELEASE_NAME"
+          echo "Release type: $RELEASE_TYPE"
+          echo ""
+
+          # Try to download the completion marker from the GitHub Release
+          echo "Attempting to download release-complete.json marker..."
+
+          if gh release download "$RELEASE_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "release-complete.json" \
+            --dir . 2>/dev/null; then
+
+            echo "✅ Completion marker found!"
+            echo ""
+            echo "Completion marker contents:"
+            cat release-complete.json
+            echo ""
+
+            # Verify the marker is for the correct release
+            MARKER_RELEASE=$(jq -r '.release_name' release-complete.json)
+            if [ "$MARKER_RELEASE" = "$RELEASE_NAME" ]; then
+              echo "✅ Completion marker matches release name - proceeding"
+              {
+                echo "should_process=true"
+                echo "is_complete=true"
+              } >> $GITHUB_OUTPUT
+            else
+              echo "⚠️  Completion marker mismatch (marker: $MARKER_RELEASE, expected: $RELEASE_NAME)"
+              {
+                echo "should_process=false"
+                echo "is_complete=false"
+              } >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⏳ Completion marker not found yet"
+            echo "   This is normal! Will post once release.yml completes the release."
+            echo "   (This is an early exit - release.yml is still building artifacts)"
+            {
+              echo "should_process=false"
+              echo "is_complete=false"
+            } >> $GITHUB_OUTPUT
+          fi
+
+          echo '─────────────────────────────────────────────────'
+
   # Development release: Post PR summary comment for development builds
   post-pr-comment:
     name: Post PR Comment (Development Builds)
@@ -278,13 +348,13 @@ jobs:
   # Nightly and Stable releases: Post to GitHub Discussions
   post-discussion:
     name: Post to GitHub Discussions (Nightly & Stable)
-    needs: [identifiers, check-release-exists]
+    needs: [identifiers, check-release-exists, check-release-complete]
     runs-on: ubuntu-latest
 
     # Only run for nightly or stable builds (explicit positive list)
-    # With timestamp verification in check-release-exists, only the 4th run should proceed
+    # With completion marker verification in check-release-complete, only the 4th run should proceed
     if: |
-      needs.check-release-exists.outputs.should_process == 'true' &&
+      needs.check-release-complete.outputs.should_process == 'true' &&
       (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
 
     env:
