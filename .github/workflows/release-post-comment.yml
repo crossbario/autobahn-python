@@ -78,9 +78,27 @@ jobs:
 
           if [ "$RELEASE_TYPE" = "nightly" ]; then
             # Search for most recent master-* release
+            echo "Checking for nightly release (master-*) created within last hour..."
             FOUND_RELEASE_NAME=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name | startswith(\"master-\")) | .tag_name" | head -1)
             if [ -n "$FOUND_RELEASE_NAME" ]; then
-              FOUND_RELEASE_URL=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$FOUND_RELEASE_NAME\") | .html_url")
+              # Verify this release was created recently (within last hour)
+              # to avoid matching old releases from previous builds
+              RELEASE_CREATED=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$FOUND_RELEASE_NAME\") | .created_at")
+              CURRENT_TIME=$(date -u +%s)
+              RELEASE_TIME=$(date -u -d "$RELEASE_CREATED" +%s 2>/dev/null || echo "0")
+              TIME_DIFF=$((CURRENT_TIME - RELEASE_TIME))
+
+              echo "Release: $FOUND_RELEASE_NAME"
+              echo "Created: $RELEASE_CREATED"
+              echo "Age: ${TIME_DIFF}s"
+
+              if [ $TIME_DIFF -lt 3600 ]; then
+                echo "✓ Release created within last hour - proceeding"
+                FOUND_RELEASE_URL=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$FOUND_RELEASE_NAME\") | .html_url")
+              else
+                echo "✗ Release is too old (${TIME_DIFF}s > 3600s) - skipping (this is early exit)"
+                FOUND_RELEASE_NAME=""
+              fi
             fi
           elif [ "$RELEASE_TYPE" = "stable" ]; then
             # For stable, use tag from identifiers (tags don't change)
