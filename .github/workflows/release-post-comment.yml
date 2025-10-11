@@ -26,79 +26,7 @@ permissions:
   discussions: write    # Required for posting to discussions
 
 jobs:
-  check-event-context:
-    name: Check event context and release type
-    runs-on: ubuntu-latest
-    outputs:
-      should_process: ${{ steps.check.outputs.should_process }}
-      release_type: ${{ steps.check.outputs.release_type }}
-      event_type: ${{ steps.check.outputs.event_type }}
-      release_run_id: ${{ steps.check.outputs.release_run_id }}
-      release_conclusion: ${{ steps.check.outputs.release_conclusion }}
-
-    steps:
-      - name: Check workflow trigger context
-        id: check
-        uses: actions/github-script@v7
-        with:
-          script: |
-            console.log('─────────────────────────────────────────────────');
-            console.log('🔍 Checking workflow trigger context');
-            console.log('─────────────────────────────────────────────────');
-            console.log(`Event: ${context.eventName}`);
-
-            let shouldProcess = false;
-            let eventType = 'unknown';
-            let releaseRunId = '';
-            let releaseConclusion = 'unknown';
-
-            if (context.eventName === 'workflow_run') {
-              const triggeringWorkflow = context.payload.workflow_run.name;
-              const triggeringEvent = context.payload.workflow_run.event;
-              const conclusion = context.payload.workflow_run.conclusion;
-
-              releaseRunId = context.payload.workflow_run.id;
-              releaseConclusion = conclusion;
-
-              console.log(`Triggered by: ${triggeringWorkflow}`);
-              console.log(`Original event: ${triggeringEvent}`);
-              console.log(`Conclusion: ${conclusion}`);
-              console.log(`Release run ID: ${releaseRunId}`);
-
-              // We only process when:
-              // 1. Triggered by "release" workflow
-              // 2. Release workflow completed successfully
-              // Note: release.yml is itself triggered by workflow_run (from base workflows),
-              // so we can't use triggeringEvent to determine type. Instead, we rely on the
-              // identifiers job to determine development/nightly/stable based on commit context.
-              if (triggeringWorkflow === 'release' && conclusion === 'success') {
-                shouldProcess = true;
-                eventType = 'from_release';  // Let identifiers determine actual type
-                console.log('✅ Release workflow completed successfully - proceeding');
-                console.log('   (identifiers job will determine: development/nightly/stable)');
-              } else if (triggeringWorkflow !== 'release') {
-                console.log(`⏭️  Skipping - not triggered by release workflow`);
-              } else if (conclusion !== 'success') {
-                console.log(`⏭️  Skipping - release workflow did not succeed: ${conclusion}`);
-              }
-            } else if (context.eventName === 'workflow_dispatch') {
-              shouldProcess = true;
-              eventType = 'manual';
-              console.log('✅ Manual dispatch - will process based on identifiers');
-            } else {
-              console.log(`⏭️  Skipping - unexpected event: ${context.eventName}`);
-            }
-
-            console.log('─────────────────────────────────────────────────');
-
-            core.setOutput('should_process', shouldProcess ? 'true' : 'false');
-            core.setOutput('event_type', eventType);
-            core.setOutput('release_run_id', releaseRunId);
-            core.setOutput('release_conclusion', releaseConclusion);
-
   identifiers:
-    needs: check-event-context
-    if: needs.check-event-context.outputs.should_process == 'true'
     # GitHub needs to know where .cicd/workflows/identifiers.yml lives at parse time,
     # and submodules aren't included in that context! thus the following does NOT work:
     # uses: ./.cicd/workflows/identifiers.yml
@@ -107,15 +35,60 @@ jobs:
     # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
     # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
 
+  check-release-exists:
+    name: Check if release created (Early Exit Pattern)
+    needs: identifiers
+    runs-on: ubuntu-latest
+    outputs:
+      should_process: ${{ steps.check.outputs.should_process }}
+      release_exists: ${{ steps.check.outputs.release_exists }}
+      release_url: ${{ steps.check.outputs.release_url }}
+
+    steps:
+      - name: Check if GitHub Release exists
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo '─────────────────────────────────────────────────'
+          echo '🔍 Checking if GitHub Release exists (Early Exit Pattern)'
+          echo '─────────────────────────────────────────────────'
+
+          RELEASE_NAME="${{ needs.identifiers.outputs.release_name }}"
+          RELEASE_TYPE="${{ needs.identifiers.outputs.release_type }}"
+
+          echo "Release name: $RELEASE_NAME"
+          echo "Release type: $RELEASE_TYPE"
+
+          # Check if release exists
+          RELEASE_JSON=$(gh api repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_NAME 2>/dev/null || echo "{}")
+
+          if [ "$RELEASE_JSON" = "{}" ]; then
+            echo "⏳ GitHub Release not found: $RELEASE_NAME"
+            echo "   This is normal! Will post once release workflow creates the release."
+            echo "   (This is an early exit - release.yml probably hasn't created the release yet)"
+            echo "should_process=false" >> $GITHUB_OUTPUT
+            echo "release_exists=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ GitHub Release found: $RELEASE_NAME"
+            RELEASE_URL=$(echo "$RELEASE_JSON" | jq -r '.html_url')
+            echo "   Release URL: $RELEASE_URL"
+            echo "should_process=true" >> $GITHUB_OUTPUT
+            echo "release_exists=true" >> $GITHUB_OUTPUT
+            echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
+          fi
+
+          echo '─────────────────────────────────────────────────'
+
   # Development release: Post PR summary comment for development builds
   post-pr-comment:
     name: Post PR Comment (Development Builds)
-    needs: [check-event-context, identifiers]
+    needs: [identifiers, check-release-exists]
     runs-on: ubuntu-latest
 
     # Only run for development/PR builds (explicit positive list)
     if: |
-      needs.check-event-context.outputs.should_process == 'true' &&
+      needs.check-release-exists.outputs.should_process == 'true' &&
       needs.identifiers.outputs.release_type == 'development'
 
     env:
@@ -246,12 +219,12 @@ jobs:
   # Nightly and Stable releases: Post to GitHub Discussions
   post-discussion:
     name: Post to GitHub Discussions (Nightly & Stable)
-    needs: [check-event-context, identifiers]
+    needs: [identifiers, check-release-exists]
     runs-on: ubuntu-latest
 
     # Only run for nightly or stable builds (explicit positive list)
     if: |
-      needs.check-event-context.outputs.should_process == 'true' &&
+      needs.check-release-exists.outputs.should_process == 'true' &&
       (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
 
     env:
@@ -303,16 +276,11 @@ jobs:
           echo "Release name: $RELEASE_NAME"
 
           # Get release information
-          COMMIT_SHA="${{ needs.identifiers.outputs.head_sha }}"
-          BUILD_DATE="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
           RELEASE_URL="${{ steps.release-details.outputs.release_url }}"
 
-          # Read release body
-          RELEASE_BODY=$(cat release-body.md)
-
-          # Create discussion body with link to release and full release notes
-          cat > discussion-post.md <<'EOF'
-          $RELEASE_BODY
+          # Create discussion body by combining release body with footer
+          cat release-body.md > discussion-post.md
+          cat >> discussion-post.md <<EOF
 
           ---
 
@@ -320,10 +288,6 @@ jobs:
 
           Download wheels, source distributions, and other artifacts from the release page.
           EOF
-
-          # Replace variables
-          sed -i "s|\$RELEASE_BODY|$RELEASE_BODY|g" discussion-post.md
-          sed -i "s|\$RELEASE_URL|$RELEASE_URL|g" discussion-post.md
 
           echo ""
           echo "==> Generated discussion post:"
