@@ -1,9 +1,11 @@
 name: release-post-comment
 
 on:
-  # For PR summaries (runs in main repo context with write permissions)
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  # Trigger after release workflow completes (ensures all 4 base workflows finished)
+  # release.yml waits for: wheels, wheels-docker, wstest, main
+  workflow_run:
+    workflows: ["release"]
+    types: [completed]
 
   # Manual dispatch for debugging
   workflow_dispatch:
@@ -33,8 +35,12 @@ jobs:
     needs: identifiers
     runs-on: ubuntu-latest
 
-    # Only run for development contexts
-    if: needs.identifiers.outputs.release_type == 'development'
+    # Only run for PR/development contexts and successful release runs
+    if: |
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      needs.identifiers.outputs.release_type == 'development'
 
     env:
       BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
@@ -49,93 +55,42 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Get PR information
-        id: pr-info
+      - name: Find wstest workflow run ID
+        id: find-wstest
         uses: actions/github-script@v7
         with:
           script: |
-            let pr_number, head_repo, head_ref;
+            const commitSha = context.payload.workflow_run.head_sha;
+            console.log(`Finding wstest workflow for commit: ${commitSha}`);
 
-            if (context.eventName === 'workflow_dispatch') {
-              // Manual dispatch - get PR info from input
-              pr_number = context.payload.inputs.pr_number;
-              const { data: pr } = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr_number
-              });
-              head_repo = pr.head.repo.full_name;
-              head_ref = pr.head.ref;
-            } else if (context.eventName === 'pull_request_target') {
-              // pull_request_target trigger - get PR info from event
-              pr_number = context.payload.pull_request.number;
-              head_repo = context.payload.pull_request.head.repo.full_name;
-              head_ref = context.payload.pull_request.head.ref;
+            const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: commitSha,
+              per_page: 100
+            });
+
+            const wstestRun = runs.workflow_runs.find(run =>
+              run.name === 'wstest' &&
+              run.status === 'completed' &&
+              run.conclusion === 'success'
+            );
+
+            if (wstestRun) {
+              console.log(`Found wstest run: ${wstestRun.id}`);
+              core.setOutput('run_id', wstestRun.id);
             } else {
-              core.setFailed('Unexpected event type: ' + context.eventName);
-              return;
+              console.log('⚠️  wstest workflow not found');
+              core.setOutput('run_id', '');
             }
-
-            console.log(`PR: #${pr_number}, Repo: ${head_repo}, Branch: ${head_ref}`);
-
-            // Set outputs for next steps
-            core.setOutput('pr_number', pr_number);
-            core.setOutput('head_repo', head_repo);
-            core.setOutput('head_ref', head_ref);
-
-      # Wait for wstest workflow to complete
-      - name: Wait for wstest workflow
-        uses: actions/github-script@v7
-        id: wait-wstest
-        with:
-          script: |
-            const pr = context.payload.pull_request;
-            const headSha = pr.head.sha;
-
-            console.log(`Waiting for wstest workflow on commit: ${headSha}`);
-
-            // Poll for workflow runs
-            const maxAttempts = 30;
-            const pollInterval = 10000; // 10 seconds
-
-            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-              console.log(`Attempt ${attempt}/${maxAttempts}: Checking for wstest workflow...`);
-
-              const { data: runs } = await github.rest.actions.listWorkflowRuns({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: 'wstest.yml',
-                head_sha: headSha,
-                per_page: 1
-              });
-
-              if (runs.workflow_runs.length > 0) {
-                const run = runs.workflow_runs[0];
-                console.log(`Found wstest run: ${run.id}, status: ${run.status}, conclusion: ${run.conclusion}`);
-
-                if (run.status === 'completed') {
-                  core.setOutput('run_id', run.id);
-                  core.setOutput('conclusion', run.conclusion);
-                  return;
-                }
-              }
-
-              if (attempt < maxAttempts) {
-                console.log(`Waiting ${pollInterval/1000}s before next check...`);
-                await new Promise(resolve => setTimeout(resolve, pollInterval));
-              }
-            }
-
-            console.log('⚠️  wstest workflow not found after maximum attempts');
-            core.setOutput('run_id', '');
-            core.setOutput('conclusion', 'not_found');
 
       - name: Download wstest conformance summary
-        if: steps.wait-wstest.outputs.run_id != ''
+        if: steps.find-wstest.outputs.run_id != ''
         uses: actions/download-artifact@v4
         with:
-          name: conformance-summary-quick
-          run-id: ${{ steps.wait-wstest.outputs.run_id }}
+          pattern: conformance-summary-*
+          merge-multiple: true
+          run-id: ${{ steps.find-wstest.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: summary-artifact/
         continue-on-error: true
@@ -149,15 +104,12 @@ jobs:
         run: |
           echo "==> Preparing PR comment using Jinja2 template..."
 
-          # Collect template variables
-          PR_NUMBER="${{ steps.pr-info.outputs.pr_number }}"
-          PR_REPO="${{ steps.pr-info.outputs.head_repo }}"
-          PR_BRANCH="${{ steps.pr-info.outputs.head_ref }}"
-          BASE_REPO="${BASE_REPO}"
-          BASE_BRANCH="${BASE_BRANCH}"
-          COMMIT_SHA="${GITHUB_SHA::8}"
+          # Collect template variables from identifiers
+          # Strip 'pr' prefix from PR_NUMBER for gh command
+          PR_NUMBER_CLEAN="${PR_NUMBER#pr}"
+          COMMIT_SHA="${{ needs.identifiers.outputs.head_sha }}"
           BUILD_DATE="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-          WORKFLOW_RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          WORKFLOW_RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}"
 
           # Read wstest summary if available, otherwise use placeholder
           WSTEST_SUMMARY="WebSocket conformance testing results not available."
@@ -165,7 +117,7 @@ jobs:
           if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
             echo "✅ Found wstest summary: $SUMMARY_FILE"
             WSTEST_SUMMARY=$(cat "$SUMMARY_FILE")
-            WHEEL_COUNT=$(find . -name "*.whl" 2>/dev/null | wc -l)
+            WHEEL_COUNT="N/A"  # Could query artifacts if needed
           else
             echo "⚠️  No wstest summary found, using placeholder"
             WHEEL_COUNT="N/A"
@@ -189,6 +141,9 @@ jobs:
           echo "==> Generated PR comment:"
           cat pr-comment.md
 
+          # Save clean PR number for posting
+          echo "pr_number_clean=$PR_NUMBER_CLEAN" >> $GITHUB_OUTPUT
+
           # Check if we should post comment
           if [[ -n "$SUMMARY_FILE" && -f "$SUMMARY_FILE" ]]; then
             echo "should_comment=true" >> $GITHUB_OUTPUT
@@ -201,8 +156,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "==> Posting comment to PR #${{ steps.pr-info.outputs.pr_number }}..."
-          gh pr comment "${{ steps.pr-info.outputs.pr_number }}" \
+          echo "==> Posting comment to PR #${{ steps.render.outputs.pr_number_clean }}..."
+          gh pr comment "${{ steps.render.outputs.pr_number_clean }}" \
             --repo "$GITHUB_REPOSITORY" \
             --body-file pr-comment.md
           echo "✅ PR comment posted successfully"
