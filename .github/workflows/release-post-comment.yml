@@ -42,10 +42,11 @@ jobs:
     outputs:
       should_process: ${{ steps.check.outputs.should_process }}
       release_exists: ${{ steps.check.outputs.release_exists }}
+      release_name: ${{ steps.check.outputs.release_name }}
       release_url: ${{ steps.check.outputs.release_url }}
 
     steps:
-      - name: Check if GitHub Release exists
+      - name: Check if GitHub Release exists for this commit
         id: check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -54,32 +55,67 @@ jobs:
           echo '🔍 Checking if GitHub Release exists (Early Exit Pattern)'
           echo '─────────────────────────────────────────────────'
 
-          RELEASE_NAME="${{ needs.identifiers.outputs.release_name }}"
           RELEASE_TYPE="${{ needs.identifiers.outputs.release_type }}"
+          COMMIT_SHA="${{ needs.identifiers.outputs.head_sha }}"
 
-          echo "Release name: $RELEASE_NAME"
           echo "Release type: $RELEASE_TYPE"
+          echo "Commit SHA: $COMMIT_SHA"
 
-          # Check if release exists
-          RELEASE_JSON=$(gh api repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_NAME 2>/dev/null || echo "{}")
+          # Find release by commit SHA instead of timestamp-based name
+          # This avoids timestamp mismatches between release.yml and release-post-comment.yml
+          echo ""
+          echo "Searching for releases created for commit $COMMIT_SHA..."
 
-          if [ "$RELEASE_JSON" = "{}" ]; then
-            echo "⏳ GitHub Release not found: $RELEASE_NAME"
+          # Get all releases (sorted by created date, newest first)
+          RELEASES_JSON=$(gh api repos/$GITHUB_REPOSITORY/releases --paginate 2>/dev/null || echo "[]")
+
+          # Find release matching this commit's SHA
+          # For nightly: look for master-YYYYMMDDHHMMSS pattern
+          # For stable: look for vX.Y.Z pattern
+          # For development: look for prN-* pattern
+          FOUND_RELEASE_NAME=""
+          FOUND_RELEASE_URL=""
+
+          if [ "$RELEASE_TYPE" = "nightly" ]; then
+            # Search for most recent master-* release
+            FOUND_RELEASE_NAME=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name | startswith(\"master-\")) | .tag_name" | head -1)
+            if [ -n "$FOUND_RELEASE_NAME" ]; then
+              FOUND_RELEASE_URL=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$FOUND_RELEASE_NAME\") | .html_url")
+            fi
+          elif [ "$RELEASE_TYPE" = "stable" ]; then
+            # For stable, use tag from identifiers (tags don't change)
+            TAG_NAME="${{ needs.identifiers.outputs.base_tag }}"
+            FOUND_RELEASE_NAME=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$TAG_NAME\") | .tag_name")
+            if [ -n "$FOUND_RELEASE_NAME" ]; then
+              FOUND_RELEASE_URL=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$FOUND_RELEASE_NAME\") | .html_url")
+            fi
+          elif [ "$RELEASE_TYPE" = "development" ]; then
+            # For development, look for PR-specific release
+            PR_PREFIX="${{ needs.identifiers.outputs.pr_number }}"
+            FOUND_RELEASE_NAME=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name | startswith(\"$PR_PREFIX-\")) | .tag_name" | head -1)
+            if [ -n "$FOUND_RELEASE_NAME" ]; then
+              FOUND_RELEASE_URL=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$FOUND_RELEASE_NAME\") | .html_url")
+            fi
+          fi
+
+          if [ -z "$FOUND_RELEASE_NAME" ]; then
+            echo "⏳ GitHub Release not found for commit $COMMIT_SHA"
             echo "   This is normal! Will post once release workflow creates the release."
             echo "   (This is an early exit - release.yml probably hasn't created the release yet)"
             {
               echo "should_process=false"
               echo "release_exists=false"
+              echo "release_name="
               echo "release_url="
             } >> $GITHUB_OUTPUT
           else
-            echo "✅ GitHub Release found: $RELEASE_NAME"
-            RELEASE_URL=$(echo "$RELEASE_JSON" | jq -r '.html_url')
-            echo "   Release URL: $RELEASE_URL"
+            echo "✅ GitHub Release found: $FOUND_RELEASE_NAME"
+            echo "   Release URL: $FOUND_RELEASE_URL"
             {
               echo "should_process=true"
               echo "release_exists=true"
-              echo "release_url=$RELEASE_URL"
+              echo "release_name=$FOUND_RELEASE_NAME"
+              echo "release_url=$FOUND_RELEASE_URL"
             } >> $GITHUB_OUTPUT
           fi
 
@@ -234,7 +270,8 @@ jobs:
 
     env:
       RELEASE_TYPE: ${{ needs.identifiers.outputs.release_type }}
-      RELEASE_NAME: ${{ needs.identifiers.outputs.release_name }}
+      RELEASE_NAME: ${{ needs.check-release-exists.outputs.release_name }}
+      RELEASE_URL: ${{ needs.check-release-exists.outputs.release_url }}
 
     steps:
       - name: Checkout code
@@ -242,46 +279,33 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Get release details from GitHub Release
+      - name: Get release body from GitHub Release
         id: release-details
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "==> Fetching release details for: $RELEASE_NAME"
+          echo "==> Fetching release body for: $RELEASE_NAME"
+          echo "   Release URL: $RELEASE_URL"
 
-          # Get release info via GitHub API
+          # Get release body via GitHub API
           RELEASE_JSON=$(gh api repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_NAME 2>/dev/null || echo "{}")
 
           if [ "$RELEASE_JSON" = "{}" ]; then
             echo "⚠️  Release not found: $RELEASE_NAME"
-            echo "release_found=false" >> $GITHUB_OUTPUT
-          else
-            echo "✅ Release found: $RELEASE_NAME"
-            echo "release_found=true" >> $GITHUB_OUTPUT
-
-            # Extract release URL
-            RELEASE_URL=$(echo "$RELEASE_JSON" | jq -r '.html_url')
-            echo "release_url=$RELEASE_URL" >> $GITHUB_OUTPUT
-
-            # Save release body for discussion
-            echo "$RELEASE_JSON" | jq -r '.body' > release-body.md
+            echo "This should not happen - check-release-exists should have prevented this!"
+            exit 1
           fi
 
-      - name: Install jinja2-cli for template rendering
-        if: steps.release-details.outputs.release_found == 'true'
-        run: |
-          pip install jinja2-cli
+          # Save release body for discussion
+          echo "$RELEASE_JSON" | jq -r '.body' > release-body.md
+          echo "✅ Release body retrieved"
 
-      - name: Render discussion post from template
-        if: steps.release-details.outputs.release_found == 'true'
+      - name: Render discussion post
         id: render
         run: |
           echo "==> Preparing GitHub Discussion post..."
           echo "Release type: $RELEASE_TYPE"
           echo "Release name: $RELEASE_NAME"
-
-          # Get release information
-          RELEASE_URL="${{ steps.release-details.outputs.release_url }}"
 
           # Create discussion body by combining release body with footer
           cat release-body.md > discussion-post.md
@@ -299,7 +323,6 @@ jobs:
           cat discussion-post.md
 
       - name: Post to GitHub Discussions
-        if: steps.release-details.outputs.release_found == 'true'
         uses: actions/github-script@v7
         env:
           DISCUSSION_CATEGORY_ID: ${{ github.event.inputs.discussion_category_id || 'DIC_kwDOAP_4P84CkZFU' }}
@@ -353,8 +376,3 @@ jobs:
             const discussionUrl = result.createDiscussion.discussion.url;
             console.log(`✅ Discussion created: ${discussionUrl}`);
             core.setOutput('discussion_url', discussionUrl);
-
-      - name: Skip discussion post
-        if: steps.release-details.outputs.release_found == 'false'
-        run: |
-          echo "ℹ️  Skipping GitHub Discussion - release not found: $RELEASE_NAME"
