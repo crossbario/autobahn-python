@@ -171,7 +171,7 @@ jobs:
 
               # Install uv
               curl -LsSf https://astral.sh/uv/install.sh | sh
-              export PATH="/root/.cargo/bin:$PATH"
+              export PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
               uv --version
 
               # Install Rust (required for NVX native extensions)
