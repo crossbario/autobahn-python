@@ -1,0 +1,20 @@
+# PyPy 3.11 on Debian 12 (Bookworm) - manylinux_2_36_aarch64 compatible
+# Multi-arch support: linux/amd64, linux/arm64/v8
+FROM pypy:3.11-bookworm
+
+LABEL maintainer="The Crossbar.io Project <support@crossbario.com>"
+LABEL manylinux.tag="manylinux_2_36_aarch64"
+LABEL glibc.version="2.36"
+
+# Install build essentials for wheel compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    patchelf \
+    libffi-dev \
+    libssl-dev \
+    libsnappy-dev \
+    && pip install --upgrade pip \
+    && pip install auditwheel \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /io

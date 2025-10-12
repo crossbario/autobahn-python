@@ -1,0 +1,299 @@
+name: wheels-arm64
+
+on:
+  # Build wheels on feature branches and PRs (test only)
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [master]
+
+  # Publish to GitHub Releases when merged to master
+  # Publish to PyPI when tagged
+  workflow_dispatch:
+
+env:
+  # Platform target
+  ARCH: aarch64
+
+jobs:
+  identifiers:
+    # GitHub needs to know where .cicd/workflows/identifiers.yml lives at parse time,
+    # and submodules aren't included in that context! thus the following does NOT work:
+    # uses: ./.cicd/workflows/identifiers.yml
+    # we MUST reference the remote repo directly:
+    uses: wamp-proto/wamp-cicd/.github/workflows/identifiers.yml@main
+    # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
+    # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
+
+  build-wheels:
+    name: Build ARM64 wheels (${{ matrix.target.name }})
+    needs: identifiers
+    runs-on: ubuntu-latest
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # ============================================================
+          # CPython ARM64 wheels (using official PyPA manylinux images)
+          # ============================================================
+
+          # CPython 3.11 - manylinux2014_aarch64 (glibc 2.17)
+          # Maximum compatibility (RHEL 7+, Debian 8+, Ubuntu 14.04+)
+          - name: "cpython-3.11-manylinux2014_aarch64"
+            base_image: "quay.io/pypa/manylinux2014_aarch64"
+            manylinux_tag: "manylinux2014_aarch64"
+            glibc_version: "2.17"
+            python_impl: "cpython"
+            build_type: "official"
+
+          # CPython 3.13 - manylinux_2_28_aarch64 (glibc 2.28)
+          # Modern baseline (Debian 10+, Ubuntu 18.04+)
+          - name: "cpython-3.13-manylinux_2_28_aarch64"
+            base_image: "quay.io/pypa/manylinux_2_28_aarch64"
+            manylinux_tag: "manylinux_2_28_aarch64"
+            glibc_version: "2.28"
+            python_impl: "cpython"
+            build_type: "official"
+
+          # ============================================================
+          # PyPy ARM64 wheels (using our custom manylinux images)
+          # ============================================================
+
+          # PyPy 3.11 on Debian 12 (Bookworm) - manylinux_2_36_aarch64
+          - name: "pypy-3.11-bookworm-manylinux_2_36_aarch64"
+            dockerfile: "docker/Dockerfile.pypy-bookworm-manylinux-arm64"
+            manylinux_tag: "manylinux_2_36_aarch64"
+            glibc_version: "2.36"
+            python_impl: "pypy"
+            build_type: "custom"
+
+          # PyPy 3.11 on Debian 13 (Trixie) - manylinux_2_38_aarch64
+          - name: "pypy-3.11-trixie-manylinux_2_38_aarch64"
+            dockerfile: "docker/Dockerfile.pypy-trixie-manylinux-arm64"
+            manylinux_tag: "manylinux_2_38_aarch64"
+            glibc_version: "2.38"
+            python_impl: "pypy"
+            build_type: "custom"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # ============================================================
+      # QEMU + Docker Buildx Setup
+      # ============================================================
+
+      - name: Set up QEMU for ARM64 emulation
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify QEMU setup
+        run: |
+          echo "==> QEMU platforms available:"
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx ls
+
+      # ============================================================
+      # Build custom PyPy images (only for build_type == custom)
+      # ============================================================
+
+      - name: Build custom PyPy manylinux image
+        if: matrix.target.build_type == 'custom'
+        run: |
+          echo "==> Building custom PyPy manylinux image for ${{ matrix.target.name }}"
+          docker buildx build \
+            --platform linux/arm64 \
+            --tag ${{ matrix.target.name }}:latest \
+            --file ${{ matrix.target.dockerfile }} \
+            --load \
+            .
+
+          echo "✅ Custom image built: ${{ matrix.target.name }}:latest"
+
+      # ============================================================
+      # Build wheels inside ARM64 containers
+      # ============================================================
+
+      - name: Build ARM64 wheels with NVX extension
+        run: |
+          echo "==> Building ARM64 wheels for ${{ matrix.target.name }}"
+          echo "Container: ${{ matrix.target.base_image || matrix.target.name }}:latest"
+          echo "Platform: linux/arm64"
+          echo "Manylinux tag: ${{ matrix.target.manylinux_tag }}"
+          echo "glibc: ${{ matrix.target.glibc_version }}"
+
+          # Determine which image to use
+          if [ "${{ matrix.target.build_type }}" = "custom" ]; then
+            IMAGE="${{ matrix.target.name }}:latest"
+          else
+            IMAGE="${{ matrix.target.base_image }}"
+          fi
+
+          # Create wheelhouse directory on host
+          mkdir -p wheelhouse
+
+          # Run build inside ARM64 container via QEMU
+          docker run --rm \
+            --platform linux/arm64 \
+            -v $PWD:/io \
+            -w /io \
+            -e AUTOBAHN_USE_NVX=1 \
+            $IMAGE \
+            /bin/bash -c '
+              set -ex
+
+              # Install required tools if not present
+              if ! command -v curl &> /dev/null; then
+                if command -v yum &> /dev/null; then
+                  yum install -y curl git
+                elif command -v apt-get &> /dev/null; then
+                  apt-get update && apt-get install -y curl git
+                fi
+              fi
+
+              # Install Just
+              curl --proto "=https" --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+              just --version
+
+              # Install uv
+              curl -LsSf https://astral.sh/uv/install.sh | sh
+              export PATH="/root/.cargo/bin:$PATH"
+              uv --version
+
+              # Install Rust (required for NVX native extensions)
+              curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+              source "$HOME/.cargo/env"
+              rustc --version
+
+              # For manylinux CPython: Add all Python versions to PATH
+              if [ -d "/opt/python" ]; then
+                for pyver in /opt/python/*/bin; do
+                  if [ -d "$pyver" ]; then
+                    export PATH="$pyver:$PATH"
+                  fi
+                done
+              fi
+
+              # Verify environment
+              echo "==> Build environment:"
+              echo "Platform: $(uname -m)"
+              echo "glibc: $(ldd --version 2>/dev/null | head -1 || echo \"N/A\")"
+              echo "Python: $(python3 --version)"
+              echo "Just: $(just --version)"
+              echo "uv: $(uv --version)"
+              echo "Rust: $(rustc --version)"
+              echo "auditwheel: $(auditwheel --version || echo \"not available\")"
+
+              # Build binary wheels WITH NVX acceleration
+              export AUTOBAHN_USE_NVX=1
+              just build-all
+
+              # Repair/convert wheels to manylinux format if auditwheel is available
+              if command -v auditwheel &> /dev/null; then
+                echo ""
+                echo "==> Converting wheels to manylinux format..."
+                mkdir -p /io/wheelhouse
+
+                for wheel in dist/*.whl; do
+                  if [[ "$wheel" == *"linux_aarch64"* ]]; then
+                    echo "Converting: $(basename $wheel)"
+                    auditwheel show "$wheel"
+                    auditwheel repair "$wheel" -w /io/wheelhouse/
+                  else
+                    echo "Copying non-linux wheel: $(basename $wheel)"
+                    cp "$wheel" /io/wheelhouse/
+                  fi
+                done
+
+                echo ""
+                echo "==> Final wheel inventory after manylinux conversion:"
+                ls -la /io/wheelhouse/
+                for wheel in /io/wheelhouse/*.whl; do
+                  auditwheel show "$wheel" || echo "Could not inspect $wheel"
+                done
+              else
+                echo "⚠️  auditwheel not available, copying wheels as-is"
+                mkdir -p /io/wheelhouse
+                cp dist/*.whl /io/wheelhouse/
+              fi
+
+              # Copy source distribution (only if available)
+              if ls dist/*.tar.gz 1> /dev/null 2>&1; then
+                echo "Copying source distribution"
+                cp dist/*.tar.gz /io/wheelhouse/
+              fi
+            '
+
+          echo "✅ ARM64 wheels built successfully"
+
+      - name: Generate build metadata
+        run: |
+          BUILD_INFO=wheelhouse/build-info.txt
+
+          echo "ARM64 manylinux Build Information for ${{ matrix.target.name }}" > $BUILD_INFO
+          echo "================================================================" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+
+          echo "Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $BUILD_INFO
+          echo "Base Image: ${{ matrix.target.base_image || 'custom' }}" >> $BUILD_INFO
+          echo "Dockerfile: ${{ matrix.target.dockerfile || 'N/A (official image)' }}" >> $BUILD_INFO
+          echo "Platform: linux/arm64 (aarch64)" >> $BUILD_INFO
+          echo "Manylinux Tag: ${{ matrix.target.manylinux_tag }}" >> $BUILD_INFO
+          echo "glibc Version: ${{ matrix.target.glibc_version }}" >> $BUILD_INFO
+          echo "Python Implementation: ${{ matrix.target.python_impl }}" >> $BUILD_INFO
+          echo "Build Method: GitHub Actions + QEMU + Docker (ARM64 emulation)" >> $BUILD_INFO
+          echo "NVX Acceleration: ENABLED (binary wheels with native extensions)" >> $BUILD_INFO
+          echo "" >> $BUILD_INFO
+
+          echo "Wheels Built:" >> $BUILD_INFO
+          echo "-------------" >> $BUILD_INFO
+          for whl in wheelhouse/*.whl; do
+            echo "- $(basename "$whl")" >> $BUILD_INFO
+          done
+
+          echo "" >> $BUILD_INFO
+          echo "Note: These wheels were built using QEMU emulation on x86_64 runners." >> $BUILD_INFO
+          echo "      They are fully functional native ARM64 binaries." >> $BUILD_INFO
+
+          echo ""
+          echo "==> Generated build-info.txt:"
+          cat $BUILD_INFO
+
+      - name: List built artifacts
+        run: |
+          echo "==> Built artifacts for ${{ matrix.target.name }}:"
+          ls -la wheelhouse/ 2>/dev/null || echo "No wheelhouse/ directory found"
+
+          echo ""
+          echo "==> Build metadata:"
+          cat wheelhouse/build-info.txt 2>/dev/null || echo "No build info found"
+
+          echo ""
+          echo "==> Wheel inventory:"
+          find wheelhouse/ -name "*.whl" -exec basename {} \; 2>/dev/null | sort || echo "No wheels found"
+
+      - name: Upload wheels and build metadata artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-arm64-${{ matrix.target.name }}
+          path: |
+            wheelhouse/*.whl
+            wheelhouse/*.tar.gz
+            wheelhouse/build-info.txt
+          retention-days: 30
+
+  # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow
