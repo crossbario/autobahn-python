@@ -211,7 +211,9 @@ jobs:
                 for wheel in dist/*.whl; do
                   if [[ "$wheel" == *"linux_aarch64"* ]]; then
                     echo "Converting: $(basename $wheel)"
-                    auditwheel show "$wheel"
+                    # auditwheel show is diagnostic only - don't fail if it segfaults
+                    auditwheel show "$wheel" || echo "⚠️  auditwheel show failed (non-fatal)"
+                    # auditwheel repair is what actually matters
                     auditwheel repair "$wheel" -w /io/wheelhouse/
                   else
                     echo "Copying non-linux wheel: $(basename $wheel)"
@@ -223,7 +225,8 @@ jobs:
                 echo "==> Final wheel inventory after manylinux conversion:"
                 ls -la /io/wheelhouse/
                 for wheel in /io/wheelhouse/*.whl; do
-                  auditwheel show "$wheel" || echo "Could not inspect $wheel"
+                  # Diagnostic only - don't fail build if auditwheel segfaults
+                  auditwheel show "$wheel" 2>/dev/null || echo "⚠️  Could not inspect $(basename $wheel) (non-fatal)"
                 done
               else
                 echo "⚠️  auditwheel not available, copying wheels as-is"
