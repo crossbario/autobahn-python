@@ -25,97 +25,104 @@
 ###############################################################################
 
 
+# XorMaskerNull: pass-through implementation (no masking applied)
+# Shared by all implementations (NVX, wsaccel, pure Python)
+class XorMaskerNull(object):
+    __slots__ = ("_ptr",)
+
+    # noinspection PyUnusedLocal
+    def __init__(self, mask=None):
+        self._ptr = 0
+
+    def pointer(self):
+        return self._ptr
+
+    def reset(self):
+        self._ptr = 0
+
+    def process(self, data):
+        self._ptr += len(data)
+        return data
+
+
 try:
-    # use Cython implementation of XorMasker validator if available
-
-    # noinspection PyUnresolvedReferences
-    from wsaccel.xormask import XorMaskerNull, createXorMasker
-
-    create_xor_masker = createXorMasker
+    # Try NVX native implementation first (CFFI-based, works on CPython and PyPy)
+    from autobahn.nvx._xormasker import create_xor_masker
 
 except ImportError:
-    # fallback to pure Python implementation (this is faster on PyPy than above!)
-
-    # http://stackoverflow.com/questions/15014310/python3-xrange-lack-hurts
     try:
+        # Fall back to Cython implementation from wsaccel if available
         # noinspection PyUnresolvedReferences
-        xrange
-    except NameError:
-        # Python 3
-        # noinspection PyShadowingBuiltins
-        xrange = range
+        from wsaccel.xormask import createXorMasker
 
-    from array import array
+        create_xor_masker = createXorMasker
 
-    class XorMaskerNull(object):
-        __slots__ = ("_ptr",)
+    except ImportError:
+        # Fallback to pure Python implementation (faster on PyPy than wsaccel)
 
-        # noinspection PyUnusedLocal
-        def __init__(self, mask=None):
-            self._ptr = 0
+        # http://stackoverflow.com/questions/15014310/python3-xrange-lack-hurts
+        try:
+            # noinspection PyUnresolvedReferences
+            xrange
+        except NameError:
+            # Python 3
+            # noinspection PyShadowingBuiltins
+            xrange = range
 
-        def pointer(self):
-            return self._ptr
+        from array import array
 
-        def reset(self):
-            self._ptr = 0
+        class XorMaskerSimple(object):
+            __slots__ = ("_ptr", "_msk")
 
-        def process(self, data):
-            self._ptr += len(data)
-            return data
+            def __init__(self, mask):
+                assert len(mask) == 4
+                self._ptr = 0
+                self._msk = array("B", mask)
 
-    class XorMaskerSimple(object):
-        __slots__ = ("_ptr", "_msk")
+            def pointer(self):
+                return self._ptr
 
-        def __init__(self, mask):
-            assert len(mask) == 4
-            self._ptr = 0
-            self._msk = array("B", mask)
+            def reset(self):
+                self._ptr = 0
 
-        def pointer(self):
-            return self._ptr
+            def process(self, data):
+                dlen = len(data)
+                payload = array("B", data)
+                for k in xrange(dlen):
+                    payload[k] ^= self._msk[self._ptr & 3]
+                    self._ptr += 1
+                return payload.tobytes()
 
-        def reset(self):
-            self._ptr = 0
+        class XorMaskerShifted1(object):
+            __slots__ = ("_ptr", "_mskarray")
 
-        def process(self, data):
-            dlen = len(data)
-            payload = array("B", data)
-            for k in xrange(dlen):
-                payload[k] ^= self._msk[self._ptr & 3]
-                self._ptr += 1
-            return payload.tobytes()
+            def __init__(self, mask):
+                assert len(mask) == 4
+                self._ptr = 0
+                self._mskarray = [array("B"), array("B"), array("B"), array("B")]
+                for j in xrange(4):
+                    self._mskarray[0].append(mask[j & 3])
+                    self._mskarray[1].append(mask[(j + 1) & 3])
+                    self._mskarray[2].append(mask[(j + 2) & 3])
+                    self._mskarray[3].append(mask[(j + 3) & 3])
 
-    class XorMaskerShifted1(object):
-        __slots__ = ("_ptr", "_mskarray")
+            def pointer(self):
+                return self._ptr
 
-        def __init__(self, mask):
-            assert len(mask) == 4
-            self._ptr = 0
-            self._mskarray = [array("B"), array("B"), array("B"), array("B")]
-            for j in xrange(4):
-                self._mskarray[0].append(mask[j & 3])
-                self._mskarray[1].append(mask[(j + 1) & 3])
-                self._mskarray[2].append(mask[(j + 2) & 3])
-                self._mskarray[3].append(mask[(j + 3) & 3])
+            def reset(self):
+                self._ptr = 0
 
-        def pointer(self):
-            return self._ptr
+            def process(self, data):
+                dlen = len(data)
+                payload = array("B", data)
+                msk = self._mskarray[self._ptr & 3]
+                for k in xrange(dlen):
+                    payload[k] ^= msk[k & 3]
+                self._ptr += dlen
+                return payload.tobytes()
 
-        def reset(self):
-            self._ptr = 0
-
-        def process(self, data):
-            dlen = len(data)
-            payload = array("B", data)
-            msk = self._mskarray[self._ptr & 3]
-            for k in xrange(dlen):
-                payload[k] ^= msk[k & 3]
-            self._ptr += dlen
-            return payload.tobytes()
-
-    def create_xor_masker(mask, length=None):
-        if length is None or length < 128:
-            return XorMaskerSimple(mask)
-        else:
-            return XorMaskerShifted1(mask)
+        def create_xor_masker(mask, length=None):
+            if length is None or length < 128:
+                return XorMaskerSimple(mask)
+            else:
+                return XorMaskerShifted1(mask)
