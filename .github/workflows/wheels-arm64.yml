@@ -214,7 +214,7 @@ jobs:
                   if [[ "$wheel" == *"linux_aarch64"* ]]; then
                     echo "Converting: $(basename $wheel)"
                     # auditwheel show is diagnostic only - don't fail if it segfaults
-                    auditwheel show "$wheel" || echo "⚠️  auditwheel show failed (non-fatal)"
+                    auditwheel show "$wheel" || echo "WARNING: auditwheel show failed (non-fatal)"
                     # auditwheel repair is what actually matters
                     auditwheel repair "$wheel" -w /io/wheelhouse/
                   else
@@ -228,10 +228,10 @@ jobs:
                 ls -la /io/wheelhouse/
                 for wheel in /io/wheelhouse/*.whl; do
                   # Diagnostic only - don't fail build if auditwheel segfaults
-                  auditwheel show "$wheel" 2>/dev/null || echo "⚠️  Could not inspect $(basename $wheel) (non-fatal)"
+                  auditwheel show "$wheel" 2>/dev/null || echo "WARNING: Could not inspect $(basename $wheel) (non-fatal)"
                 done
               else
-                echo "⚠️  auditwheel not available, copying wheels as-is"
+                echo "WARNING: auditwheel not available, copying wheels as-is"
                 mkdir -p /io/wheelhouse
                 cp dist/*.whl /io/wheelhouse/
               fi
