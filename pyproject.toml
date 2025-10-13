@@ -95,6 +95,15 @@ nvx = [
     "cffi>=1.14.5",
 ]
 
+# Minimal build dependencies (for building wheels in CI/CD)
+# Excludes tools like twine (which depends on nh3, a Rust package that
+# segfaults under QEMU ARM64 emulation) as twine is only needed for uploading
+build-tools = [
+    "build>=1.0.0",
+    "wheel>=0.36.2",
+    "auditwheel>=5.0.0; sys_platform == 'linux'",
+]
+
 # Development dependencies
 dev = [
     "auditwheel>=5.0.0; sys_platform == 'linux'",

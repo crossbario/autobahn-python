@@ -404,6 +404,27 @@ install-dev-all:
 # -- Installation: Tools (Ruff, Sphinx, etc)
 # -----------------------------------------------------------------------------
 
+# Install minimal build tools for building wheels (usage: `just install-build-tools cpy314`)
+# This is lighter than install-tools as it excludes dependencies like twine
+# (which depends on nh3, a Rust package that segfaults under QEMU ARM64 emulation)
+install-build-tools venv="": (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Installing minimal build tools in ${VENV_NAME}..."
+
+    ${VENV_PYTHON} -V
+    ${VENV_PYTHON} -m pip -V
+
+    ${VENV_PYTHON} -m pip install -e .[build-tools]
+
 # Install the development tools for this Package in a single environment (usage: `just install-tools cpy314`)
 install-tools venv="": (create venv)
     #!/usr/bin/env bash
@@ -690,7 +711,7 @@ docs-clean:
 # -----------------------------------------------------------------------------
 
 # Build distribution packages (wheels and source tarball)
-build venv="": (install-tools venv)
+build venv="": (install-build-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"

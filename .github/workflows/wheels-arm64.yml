@@ -167,11 +167,11 @@ jobs:
                 fi
               fi
 
-              # Install Just
+              # Install Just (task runner)
               curl --proto "=https" --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
               just --version
 
-              # Install uv
+              # Install uv (required by justfile as script interpreter)
               curl -LsSf https://astral.sh/uv/install.sh | sh
               export PATH="/root/.local/bin:/root/.cargo/bin:$PATH"
               uv --version
@@ -201,6 +201,8 @@ jobs:
               echo "auditwheel: $(auditwheel --version || echo \"not available\")"
 
               # Build binary wheels WITH NVX acceleration
+              # Uses install-build-tools (not install-tools) to avoid nh3 dependency
+              # nh3 is a Rust package (indirect dep of twine) that segfaults under QEMU
               export AUTOBAHN_USE_NVX=1
               just build-all
 
