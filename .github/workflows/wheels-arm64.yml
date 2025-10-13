@@ -45,11 +45,12 @@ jobs:
           # CPython ARM64 wheels (using official PyPA manylinux images)
           # ============================================================
 
-          # CPython 3.11 - manylinux2014_aarch64 (glibc 2.17)
+          # CPython 3.11 - manylinux_2_17_aarch64 (glibc 2.17)
           # Maximum compatibility (RHEL 7+, Debian 8+, Ubuntu 14.04+)
-          - name: "cpython-3.11-manylinux2014_aarch64"
-            base_image: "quay.io/pypa/manylinux2014_aarch64"
-            manylinux_tag: "manylinux2014_aarch64"
+          # Note: Using manylinux_2_17 instead of manylinux2014 for better QEMU compatibility
+          - name: "cpython-3.11-manylinux_2_17_aarch64"
+            base_image: "quay.io/pypa/manylinux_2_17_aarch64"
+            manylinux_tag: "manylinux_2_17_aarch64"
             glibc_version: "2.17"
             python_impl: "cpython"
             build_type: "official"
