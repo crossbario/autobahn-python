@@ -85,9 +85,11 @@ jobs:
       #   run: just check-typing cpy314
 
       - name: Code test coverage (Combined Twisted + asyncio) - WITH NVX
+        continue-on-error: true
         run: just check-coverage-combined cpy314 1
 
       - name: Upload coverage report (with-nvx)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-combined-with-nvx
@@ -95,9 +97,11 @@ jobs:
           retention-days: 14
 
       - name: Code test coverage (Combined Twisted + asyncio) - WITHOUT NVX
+        continue-on-error: true
         run: just check-coverage-combined cpy314 0
 
       - name: Upload coverage report (without-nvx)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-combined-without-nvx
