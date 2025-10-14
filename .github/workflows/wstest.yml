@@ -149,18 +149,41 @@ jobs:
             # Wait for port to be released
             sleep 2
 
+            # Debug: Check what the fuzzingserver created
+            echo "==> Debugging: fuzzingserver output directory:"
+            find . -name "*.json" -path "*/.wstest/*" -type f 2>/dev/null | head -20 || echo "No JSON files found in .wstest"
+            echo ""
+            echo "==> Directory structure after tests:"
+            ls -laR .wstest/ 2>/dev/null | head -50 || echo "No .wstest directory"
+
             # Move reports to nvx-specific directory
+            echo "==> Checking for client reports in .wstest/clients..."
             if [ -d .wstest/clients ]; then
+              echo "✅ .wstest/clients exists"
+              ls -la .wstest/clients/ | head -20
+              echo "File count: $(find .wstest/clients -type f | wc -l)"
               mv .wstest/clients .wstest/clients-$nvx_config || true
               echo "✅ Reports moved to .wstest/clients-$nvx_config"
+              ls -la .wstest/clients-$nvx_config/ | head -20
             else
               echo "⚠️  Warning: .wstest/clients directory not found for $nvx_config"
+              echo "==> Checking .wstest directory structure:"
+              ls -la .wstest/ || echo "No .wstest directory"
             fi
           done
 
           echo "======================================================================"
           echo "✅ All client tests completed for BOTH NVX configurations"
           echo "======================================================================"
+
+          echo "==> Final directory structure:"
+          ls -la .wstest/
+          echo ""
+          echo "==> With-NVX client reports:"
+          ls -la .wstest/clients-with-nvx/ | head -10 || echo "Not found"
+          echo ""
+          echo "==> Without-NVX client reports:"
+          ls -la .wstest/clients-without-nvx/ | head -10 || echo "Not found"
 
       - name: Upload client reports (with-nvx)
         uses: actions/upload-artifact@v4
