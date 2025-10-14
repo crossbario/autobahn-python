@@ -138,10 +138,11 @@ jobs:
 
             echo "✅ All 6 client test combinations completed ($nvx_config)"
 
-            # Move reports to nvx-specific subdirectory
-            mkdir -p .wstest/clients-$nvx_config
+            # Move reports to nvx-specific directory
             if [ -d .wstest/clients ]; then
-              mv .wstest/clients/* .wstest/clients-$nvx_config/ || true
+              mv .wstest/clients .wstest/clients-$nvx_config || true
+            else
+              echo "⚠️  Warning: .wstest/clients directory not found for $nvx_config"
             fi
           done
 
@@ -339,10 +340,11 @@ jobs:
 
             echo "✅ Server tests completed ($nvx_config)"
 
-            # Move reports to nvx-specific subdirectory
-            mkdir -p .wstest/servers-$nvx_config
+            # Move reports to nvx-specific directory
             if [ -d .wstest/servers ]; then
-              mv .wstest/servers/* .wstest/servers-$nvx_config/ || true
+              mv .wstest/servers .wstest/servers-$nvx_config || true
+            else
+              echo "⚠️  Warning: .wstest/servers directory not found for $nvx_config"
             fi
           done
 

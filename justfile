@@ -525,7 +525,7 @@ check-typing venv="": (install-tools venv) (install venv)
     "${VENV_PATH}/bin/mypy" autobahn/
 
 # Run coverage for Twisted tests only
-check-coverage-twisted venv="": (install-tools venv) (install venv)
+check-coverage-twisted venv="" use_nvx="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -536,7 +536,18 @@ check-coverage-twisted venv="": (install-tools venv) (install venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
-    echo "==> Running Twisted tests with coverage in ${VENV_NAME}..."
+
+    # Handle NVX configuration
+    USE_NVX="{{ use_nvx }}"
+    if [ "${USE_NVX}" = "1" ]; then
+        export AUTOBAHN_USE_NVX=1
+        echo "==> Running Twisted tests with coverage in ${VENV_NAME} (WITH NVX)..."
+    elif [ "${USE_NVX}" = "0" ]; then
+        export AUTOBAHN_USE_NVX=0
+        echo "==> Running Twisted tests with coverage in ${VENV_NAME} (WITHOUT NVX)..."
+    else
+        echo "==> Running Twisted tests with coverage in ${VENV_NAME} (AUTO NVX)..."
+    fi
 
     # Clean previous coverage data
     rm -f .coverage .coverage.*
@@ -554,7 +565,7 @@ check-coverage-twisted venv="": (install-tools venv) (install venv)
         autobahn.nvx.test
 
 # Run coverage for asyncio tests only
-check-coverage-asyncio venv="": (install-tools venv) (install venv)
+check-coverage-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -564,7 +575,18 @@ check-coverage-asyncio venv="": (install-tools venv) (install venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
-    echo "==> Running asyncio tests with coverage in ${VENV_NAME}..."
+
+    # Handle NVX configuration
+    USE_NVX="{{ use_nvx }}"
+    if [ "${USE_NVX}" = "1" ]; then
+        export AUTOBAHN_USE_NVX=1
+        echo "==> Running asyncio tests with coverage in ${VENV_NAME} (WITH NVX)..."
+    elif [ "${USE_NVX}" = "0" ]; then
+        export AUTOBAHN_USE_NVX=0
+        echo "==> Running asyncio tests with coverage in ${VENV_NAME} (WITHOUT NVX)..."
+    else
+        echo "==> Running asyncio tests with coverage in ${VENV_NAME} (AUTO NVX)..."
+    fi
 
     # Run asyncio tests with coverage (parallel mode to combine later)
     USE_ASYNCIO=1 "${VENV_PATH}/bin/coverage" run \
@@ -574,7 +596,7 @@ check-coverage-asyncio venv="": (install-tools venv) (install venv)
         --ignore=./autobahn/twisted ./autobahn
 
 # Combined coverage report from both Twisted and asyncio tests
-check-coverage-combined venv="": (check-coverage-twisted venv) (check-coverage-asyncio venv)
+check-coverage-combined venv="" use_nvx="": (check-coverage-twisted venv use_nvx) (check-coverage-asyncio venv use_nvx)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -584,23 +606,35 @@ check-coverage-combined venv="": (check-coverage-twisted venv) (check-coverage-a
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
-    echo "==> Combining coverage data from Twisted and asyncio tests..."
+
+    # Determine NVX suffix for report naming
+    USE_NVX="{{ use_nvx }}"
+    if [ "${USE_NVX}" = "1" ]; then
+        NVX_SUFFIX="-with-nvx"
+        echo "==> Combining coverage data from Twisted and asyncio tests (WITH NVX)..."
+    elif [ "${USE_NVX}" = "0" ]; then
+        NVX_SUFFIX="-without-nvx"
+        echo "==> Combining coverage data from Twisted and asyncio tests (WITHOUT NVX)..."
+    else
+        NVX_SUFFIX=""
+        echo "==> Combining coverage data from Twisted and asyncio tests (AUTO NVX)..."
+    fi
 
     # Combine all coverage data files
     "${VENV_PATH}/bin/coverage" combine
 
-    # Generate reports
+    # Generate reports with NVX-specific naming
     mkdir -p docs/_build/html
-    "${VENV_PATH}/bin/coverage" html -d docs/_build/html/coverage-combined
+    "${VENV_PATH}/bin/coverage" html -d docs/_build/html/coverage-combined${NVX_SUFFIX}
     "${VENV_PATH}/bin/coverage" report --show-missing
 
     echo ""
     echo "✅ Combined coverage report generated:"
-    echo "   HTML: docs/_build/html/coverage-combined/index.html"
+    echo "   HTML: docs/_build/html/coverage-combined${NVX_SUFFIX}/index.html"
     echo "   Text: above summary"
 
 # Legacy coverage recipe (DEPRECATED - use check-coverage-combined instead)
-check-coverage venv="": (install-tools venv) (install venv)
+check-coverage venv="" use_nvx="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
     echo "⚠️  DEPRECATED: Use 'just check-coverage-combined' for comprehensive coverage"
@@ -612,14 +646,29 @@ check-coverage venv="": (install-tools venv) (install venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
-    echo "==> Running tests with coverage with ${VENV_NAME}..."
+
+    # Handle NVX configuration
+    USE_NVX="{{ use_nvx }}"
+    if [ "${USE_NVX}" = "1" ]; then
+        export AUTOBAHN_USE_NVX=1
+        NVX_SUFFIX="-with-nvx"
+        echo "==> Running tests with coverage with ${VENV_NAME} (WITH NVX)..."
+    elif [ "${USE_NVX}" = "0" ]; then
+        export AUTOBAHN_USE_NVX=0
+        NVX_SUFFIX="-without-nvx"
+        echo "==> Running tests with coverage with ${VENV_NAME} (WITHOUT NVX)..."
+    else
+        NVX_SUFFIX=""
+        echo "==> Running tests with coverage with ${VENV_NAME} (AUTO NVX)..."
+    fi
+
     mkdir -p docs/_build/html
     # for now, ignore any non-zero exit code by prefixing with hyphen (FIXME: remove later)
     "${VENV_PATH}/bin/pytest" \
         --cov=autobahn \
-        --cov-report=html:docs/_build/html/coverage
+        --cov-report=html:docs/_build/html/coverage${NVX_SUFFIX}
 
-    echo "--> Coverage report generated in docs/_build/html/coverage/index.html"
+    echo "--> Coverage report generated in docs/_build/html/coverage${NVX_SUFFIX}/index.html"
 
 # Run all checks in single environment (usage: `just check cpy314`)
 check venv="": (check-format venv) (check-typing venv) (check-coverage-combined venv)
