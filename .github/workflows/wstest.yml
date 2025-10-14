@@ -173,8 +173,9 @@ jobs:
               echo "File count: $(find .wstest/clients -type f | wc -l)"
 
               # Change ownership from root to runner (Docker creates files as root)
-              echo "==> Changing ownership of reports to runner user..."
-              sudo chown -R runner:runner .wstest/clients
+              # We need write permission on the parent .wstest/ directory to move subdirectories
+              echo "==> Changing ownership of .wstest/ directory to runner user..."
+              sudo chown -R runner:runner .wstest/
 
               # Now we can move the directory
               mv .wstest/clients .wstest/clients-$nvx_config
