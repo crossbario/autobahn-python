@@ -28,13 +28,17 @@ jobs:
         with:
           script: |
             const requiredWorkflows = ['wheels', 'wheels-docker', 'wheels-arm64', 'wstest', 'main'];
-            const commitSha = context.payload.workflow_run.head_sha;
+
+            // Handle both workflow_run and workflow_dispatch triggers
+            const commitSha = context.payload.workflow_run?.head_sha || context.sha;
+            const triggeredBy = context.payload.workflow_run?.name || 'manual (workflow_dispatch)';
 
             console.log('─────────────────────────────────────────────────');
             console.log('🔍 Checking workflow completion status');
             console.log('─────────────────────────────────────────────────');
+            console.log(`Event: ${context.eventName}`);
             console.log(`Commit SHA: ${commitSha}`);
-            console.log(`Triggered by: ${context.payload.workflow_run.name}`);
+            console.log(`Triggered by: ${triggeredBy}`);
             console.log('');
 
             // Get all workflow runs for this commit
@@ -104,8 +108,8 @@ jobs:
     # Only create releases for development builds (explicit positive list)
     if: |
       needs.check-all-workflows.outputs.all_complete == 'true' &&
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')) &&
       needs.identifiers.outputs.release_type == 'development'
 
     env:
@@ -289,8 +293,8 @@ jobs:
     # Only create releases for nightly and stable builds (explicit positive list)
     if: |
       needs.check-all-workflows.outputs.all_complete == 'true' &&
-      github.event_name == 'workflow_run' &&
-      github.event.workflow_run.conclusion == 'success' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')) &&
       (needs.identifiers.outputs.release_type == 'nightly' || needs.identifiers.outputs.release_type == 'stable')
 
     env:
