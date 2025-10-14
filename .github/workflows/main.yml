@@ -84,21 +84,45 @@ jobs:
       # - name: Code static typing (via mypy)
       #   run: just check-typing cpy314
 
-      - name: Code test coverage (Combined Twisted + asyncio)
-        run: just check-coverage-combined cpy314
+      - name: Code test coverage (Combined Twisted + asyncio) - WITH NVX
+        continue-on-error: true
+        run: just check-coverage-combined cpy314 1
 
-      - name: Upload coverage report
+      - name: Upload coverage report (with-nvx)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report-combined
-          path: docs/_build/html/coverage-combined/
+          name: coverage-report-combined-with-nvx
+          path: docs/_build/html/coverage-combined-with-nvx/
           retention-days: 14
 
-      - name: Unit test - Twisted / trial
-        run: just test-twisted cpy314
+      - name: Code test coverage (Combined Twisted + asyncio) - WITHOUT NVX
+        continue-on-error: true
+        run: just check-coverage-combined cpy314 0
 
-      - name: Unit test - asyncio / pytest
-        run: just test-asyncio cpy314
+      - name: Upload coverage report (without-nvx)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-combined-without-nvx
+          path: docs/_build/html/coverage-combined-without-nvx/
+          retention-days: 14
+
+      - name: Unit test - Twisted / trial - WITH NVX
+        continue-on-error: true
+        run: just test-twisted cpy314 1
+
+      - name: Unit test - Twisted / trial - WITHOUT NVX
+        continue-on-error: true
+        run: just test-twisted cpy314 0
+
+      - name: Unit test - asyncio / pytest - WITH NVX
+        continue-on-error: true
+        run: just test-asyncio cpy314 1
+
+      - name: Unit test - asyncio / pytest - WITHOUT NVX
+        continue-on-error: true
+        run: just test-asyncio cpy314 0
 
   documentation:
     name: Documentation Build

@@ -102,8 +102,8 @@ void nvx_utf8vld_reset (void* utf8vld) {
    utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
 
    vld->state = 0;
-   vld->current_index = -1;
-   vld->total_index = -1;
+   vld->current_index = 0;
+   vld->total_index = 0;
 }
 
 
@@ -117,6 +117,18 @@ void* nvx_utf8vld_new () {
 
 void nvx_utf8vld_free (void* utf8vld) {
    free (utf8vld);
+}
+
+
+size_t nvx_utf8vld_get_current_index (void* utf8vld) {
+   utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
+   return vld->current_index;
+}
+
+
+size_t nvx_utf8vld_get_total_index (void* utf8vld) {
+   utf8_validator_t* vld = (utf8_validator_t*) utf8vld;
+   return vld->total_index;
 }
 
 
@@ -153,25 +165,34 @@ int _nvx_utf8vld_validate_table (void* utf8vld, const uint8_t* data, size_t leng
 
    int state = vld->state;
 
+   const uint8_t* start = data;
    const uint8_t* end = data + length;
+   size_t i = 0;
 
-   while (data < end && state != 1) {
-      state = UTF8VALIDATOR_DFA[256 + state * 16 + UTF8VALIDATOR_DFA[*data++]];
+   while (i < length && state != 1) {
+      state = UTF8VALIDATOR_DFA[256 + state * 16 + UTF8VALIDATOR_DFA[data[i]]];
+      if (state == 1) {
+         // Invalid UTF-8 detected at position i
+         vld->state = state;
+         vld->current_index = i;
+         vld->total_index += i;
+         return -1;
+      }
+      i++;
    }
 
    vld->state = state;
+
+   // Update position tracking for success or partial success
+   vld->current_index = length;
+   vld->total_index += length;
 
    if (state == 0) {
       // UTF8 is valid and ends on codepoint
       return 0;
    } else {
-      if (state == 1) {
-         // UTF8 is invalid
-         return -1;
-      } else {
-         // UTF8 is valid, but does not end on codepoint (needs more data)
-         return 1;
-      }
+      // UTF8 is valid, but does not end on codepoint (needs more data)
+      return 1;
    }
 }
 
@@ -254,32 +275,39 @@ int _nvx_utf8vld_validate_unrolled (void* utf8vld, const uint8_t* data, size_t l
 
    int state = vld->state;
 
-   const uint8_t* tail_end = data + length;
+   const uint8_t* start = data;
+   size_t i = 0;
 
-   while (data < tail_end && state != 1) {
+   while (i < length && state != 1) {
 
-      // get tail octet
-      int octet = *data;
+      // get octet
+      int octet = data[i];
 
       // do the DFA
       DFA_TRANSITION(state, octet);
 
-      ++data;
+      if (state == 1) {
+         // Invalid UTF-8 detected at position i
+         vld->state = state;
+         vld->current_index = i;
+         vld->total_index += i;
+         return -1;
+      }
+      i++;
    }
 
    vld->state = state;
+
+   // Update position tracking for success or partial success
+   vld->current_index = length;
+   vld->total_index += length;
 
    if (state == 0) {
       // UTF8 is valid and ends on codepoint
       return 0;
    } else {
-      if (state == 1) {
-         // UTF8 is invalid
-         return -1;
-      } else {
-         // UTF8 is valid, but does not end on codepoint (needs more data)
-         return 1;
-      }
+      // UTF8 is valid, but does not end on codepoint (needs more data)
+      return 1;
    }
 }
 
@@ -323,6 +351,7 @@ int _nvx_utf8vld_validate_sse2 (void* utf8vld, const uint8_t* data, size_t lengt
 
    int state = vld->state;
 
+   const uint8_t* start = data;
    const uint8_t* tail_end = data + length;
 
    // process unaligned head (sub 16 octets)
@@ -464,6 +493,11 @@ int _nvx_utf8vld_validate_sse2 (void* utf8vld, const uint8_t* data, size_t lengt
 
    vld->state = state;
 
+   // Update position tracking
+   size_t bytes_processed = tail_ptr - start;
+   vld->current_index = bytes_processed;
+   vld->total_index += bytes_processed;
+
    if (state == UTF8_ACCEPT) {
       // UTF8 is valid and ends on codepoint
       return 0;
@@ -487,6 +521,7 @@ int _nvx_utf8vld_validate_sse4 (void* utf8vld, const uint8_t* data, size_t lengt
 
    int state = vld->state;
 
+   const uint8_t* start = data;
    const uint8_t* tail_end = data + length;
 
    // process unaligned head (sub 16 octets)
@@ -613,6 +648,11 @@ int _nvx_utf8vld_validate_sse4 (void* utf8vld, const uint8_t* data, size_t lengt
    }
 
    vld->state = state;
+
+   // Update position tracking
+   size_t bytes_processed = tail_ptr - start;
+   vld->current_index = bytes_processed;
+   vld->total_index += bytes_processed;
 
    if (state == UTF8_ACCEPT) {
       // UTF8 is valid and ends on codepoint

@@ -14,6 +14,7 @@ if "AUTOBAHN_USE_NVX" not in os.environ or os.environ["AUTOBAHN_USE_NVX"] not in
     "false",
 ]:
     cffi_modules.append("autobahn/nvx/_utf8validator.py:ffi")
+    cffi_modules.append("autobahn/nvx/_xormasker.py:ffi")
 
 # Include package data from MANIFEST.in
 include_package_data = True

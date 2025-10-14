@@ -29,6 +29,7 @@ import platform
 import autobahn
 import twisted
 from autobahn.twisted.choosereactor import install_reactor
+from autobahn.websocket import USES_NVX
 
 # Twisted specific utilities (these should really be in Twisted, but
 # they aren't, and we use these in example code, so it must be part of
@@ -62,12 +63,23 @@ __all__ = (
     "sleep",
 )
 
-__ident__ = "Autobahn/{}-Twisted/{}-{}/{}".format(
-    autobahn.__version__,
-    twisted.__version__,
-    platform.python_implementation(),
-    platform.python_version(),
-)
+# Build identification string with optional NVX acceleration indicator
+if USES_NVX:
+    import cffi
+    __ident__ = "Autobahn/{}-NVXCFFI/{}-Twisted/{}-{}/{}".format(
+        autobahn.__version__,
+        cffi.__version__,
+        twisted.__version__,
+        platform.python_implementation(),
+        platform.python_version(),
+    )
+else:
+    __ident__ = "Autobahn/{}-Twisted/{}-{}/{}".format(
+        autobahn.__version__,
+        twisted.__version__,
+        platform.python_implementation(),
+        platform.python_version(),
+    )
 """
 AutobahnPython library implementation (eg. "Autobahn/0.13.0-Twisted/15.5.0-CPython/3.5.1")
 """
