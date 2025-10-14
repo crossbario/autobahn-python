@@ -84,14 +84,24 @@ jobs:
       # - name: Code static typing (via mypy)
       #   run: just check-typing cpy314
 
-      - name: Code test coverage (Combined Twisted + asyncio)
-        run: just check-coverage-combined cpy314
+      - name: Code test coverage (Combined Twisted + asyncio) - WITH NVX
+        run: just check-coverage-combined cpy314 1
 
-      - name: Upload coverage report
+      - name: Upload coverage report (with-nvx)
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report-combined
-          path: docs/_build/html/coverage-combined/
+          name: coverage-report-combined-with-nvx
+          path: docs/_build/html/coverage-combined-with-nvx/
+          retention-days: 14
+
+      - name: Code test coverage (Combined Twisted + asyncio) - WITHOUT NVX
+        run: just check-coverage-combined cpy314 0
+
+      - name: Upload coverage report (without-nvx)
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-combined-without-nvx
+          path: docs/_build/html/coverage-combined-without-nvx/
           retention-days: 14
 
       - name: Unit test - Twisted / trial
