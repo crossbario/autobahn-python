@@ -171,7 +171,13 @@ jobs:
               echo "✅ .wstest/clients exists"
               ls -la .wstest/clients/ | head -20
               echo "File count: $(find .wstest/clients -type f | wc -l)"
-              mv .wstest/clients .wstest/clients-$nvx_config || true
+
+              # Change ownership from root to runner (Docker creates files as root)
+              echo "==> Changing ownership of reports to runner user..."
+              sudo chown -R runner:runner .wstest/clients
+
+              # Now we can move the directory
+              mv .wstest/clients .wstest/clients-$nvx_config
               echo "✅ Reports moved to .wstest/clients-$nvx_config"
               ls -la .wstest/clients-$nvx_config/ | head -20
             else
