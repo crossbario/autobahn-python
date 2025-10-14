@@ -94,35 +94,60 @@ jobs:
             sleep 1
           done
 
-      - name: Run all client test combinations
+      - name: Run all client test combinations (with-nvx and without-nvx)
         run: |
-          echo "==> Running client tests for all 6 combinations..."
+          # Test both NVX configurations sequentially
+          for nvx_config in "with-nvx" "without-nvx"; do
+            if [ "$nvx_config" = "with-nvx" ]; then
+              export AUTOBAHN_USE_NVX=1
+              echo "======================================================================"
+              echo "==> Testing WITH NVX acceleration (AUTOBAHN_USE_NVX=1)"
+              echo "======================================================================"
+            else
+              export AUTOBAHN_USE_NVX=0
+              echo "======================================================================"
+              echo "==> Testing WITHOUT NVX acceleration (AUTOBAHN_USE_NVX=0)"
+              echo "======================================================================"
+            fi
 
-          # Client 1: Twisted + CPython 3.11
-          echo "==> Testing Twisted + cpy311 client..."
-          just wstest-testeeclient-twisted cpy311
+            echo "==> Running client tests for all 6 combinations ($nvx_config)..."
 
-          # Client 2: asyncio + CPython 3.11
-          echo "==> Testing asyncio + cpy311 client..."
-          just wstest-testeeclient-asyncio cpy311
+            # Client 1: Twisted + CPython 3.11
+            echo "==> Testing Twisted + cpy311 client ($nvx_config)..."
+            just wstest-testeeclient-twisted cpy311
 
-          # Client 3: Twisted + CPython 3.14
-          echo "==> Testing Twisted + cpy314 client..."
-          just wstest-testeeclient-twisted cpy314
+            # Client 2: asyncio + CPython 3.11
+            echo "==> Testing asyncio + cpy311 client ($nvx_config)..."
+            just wstest-testeeclient-asyncio cpy311
 
-          # Client 4: asyncio + CPython 3.14
-          echo "==> Testing asyncio + cpy314 client..."
-          just wstest-testeeclient-asyncio cpy314
+            # Client 3: Twisted + CPython 3.14
+            echo "==> Testing Twisted + cpy314 client ($nvx_config)..."
+            just wstest-testeeclient-twisted cpy314
 
-          # Client 5: Twisted + PyPy 3.11
-          echo "==> Testing Twisted + pypy311 client..."
-          just wstest-testeeclient-twisted pypy311
+            # Client 4: asyncio + CPython 3.14
+            echo "==> Testing asyncio + cpy314 client ($nvx_config)..."
+            just wstest-testeeclient-asyncio cpy314
 
-          # Client 6: asyncio + PyPy 3.11
-          echo "==> Testing asyncio + pypy311 client..."
-          just wstest-testeeclient-asyncio pypy311
+            # Client 5: Twisted + PyPy 3.11
+            echo "==> Testing Twisted + pypy311 client ($nvx_config)..."
+            just wstest-testeeclient-twisted pypy311
 
-          echo "✅ All 6 client test combinations completed"
+            # Client 6: asyncio + PyPy 3.11
+            echo "==> Testing asyncio + pypy311 client ($nvx_config)..."
+            just wstest-testeeclient-asyncio pypy311
+
+            echo "✅ All 6 client test combinations completed ($nvx_config)"
+
+            # Move reports to nvx-specific subdirectory
+            mkdir -p .wstest/clients-$nvx_config
+            if [ -d .wstest/clients ]; then
+              mv .wstest/clients/* .wstest/clients-$nvx_config/ || true
+            fi
+          done
+
+          echo "======================================================================"
+          echo "✅ All client tests completed for BOTH NVX configurations"
+          echo "======================================================================"
 
       - name: Stop fuzzingserver
         if: always()
@@ -133,12 +158,20 @@ jobs:
           fi
           docker stop fuzzingserver || true
 
-      - name: Upload client reports
+      - name: Upload client reports (with-nvx)
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: clients-all-${{ env.TEST_MODE }}
-          path: .wstest/clients/
+          name: clients-all-${{ env.TEST_MODE }}-with-nvx
+          path: .wstest/clients-with-nvx/
+          retention-days: 30
+
+      - name: Upload client reports (without-nvx)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clients-all-${{ env.TEST_MODE }}-without-nvx
+          path: .wstest/clients-without-nvx/
           retention-days: 30
 
   # Server testing: Test all server combinations against testsuite client
@@ -285,15 +318,52 @@ jobs:
 
           echo "✅ All 6 WebSocket servers are running successfully"
 
-      - name: Run server tests
-        run: just wstest-fuzzingclient "" "" ${{ env.TEST_MODE }}
+      - name: Run server tests (with-nvx and without-nvx)
+        run: |
+          # Test both NVX configurations sequentially
+          for nvx_config in "with-nvx" "without-nvx"; do
+            if [ "$nvx_config" = "with-nvx" ]; then
+              export AUTOBAHN_USE_NVX=1
+              echo "======================================================================"
+              echo "==> Testing WITH NVX acceleration (AUTOBAHN_USE_NVX=1)"
+              echo "======================================================================"
+            else
+              export AUTOBAHN_USE_NVX=0
+              echo "======================================================================"
+              echo "==> Testing WITHOUT NVX acceleration (AUTOBAHN_USE_NVX=0)"
+              echo "======================================================================"
+            fi
 
-      - name: Upload server reports
+            echo "==> Running server tests ($nvx_config)..."
+            just wstest-fuzzingclient "" "" ${{ env.TEST_MODE }}
+
+            echo "✅ Server tests completed ($nvx_config)"
+
+            # Move reports to nvx-specific subdirectory
+            mkdir -p .wstest/servers-$nvx_config
+            if [ -d .wstest/servers ]; then
+              mv .wstest/servers/* .wstest/servers-$nvx_config/ || true
+            fi
+          done
+
+          echo "======================================================================"
+          echo "✅ All server tests completed for BOTH NVX configurations"
+          echo "======================================================================"
+
+      - name: Upload server reports (with-nvx)
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: servers-all-${{ env.TEST_MODE }}
-          path: .wstest/servers/
+          name: servers-all-${{ env.TEST_MODE }}-with-nvx
+          path: .wstest/servers-with-nvx/
+          retention-days: 30
+
+      - name: Upload server reports (without-nvx)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: servers-all-${{ env.TEST_MODE }}-without-nvx
+          path: .wstest/servers-without-nvx/
           retention-days: 30
 
   # Consolidate all reports using the proven justfile recipe
@@ -330,47 +400,76 @@ jobs:
 
       - name: Reconstruct test directory structure
         run: |
-          echo "==> Reconstructing .wstest directory structure..."
-          mkdir -p .wstest/clients .wstest/servers
+          echo "==> Reconstructing .wstest directory structure for both NVX configurations..."
 
           # Debug: Show what artifacts we actually have
           echo "==> Available artifacts:"
           ls -la artifacts/ || echo "No artifacts directory"
 
-          # Combine all client reports (now using clients-all naming)
-          find artifacts -name "clients-all-*" -type d | while read dir; do
-            echo "Processing client reports: $dir"
-            cp -r "$dir"/* .wstest/clients/ || true
-          done
+          # Process each NVX configuration separately
+          for nvx_config in "with-nvx" "without-nvx"; do
+            echo "======================================================================"
+            echo "==> Processing $nvx_config configuration"
+            echo "======================================================================"
 
-          # Copy server reports (servers-all naming)
-          find artifacts -name "servers-all-*" -type d | while read dir; do
-            echo "Processing server reports: $dir"
-            cp -r "$dir"/* .wstest/servers/ || true
-          done
+            mkdir -p .wstest/clients-$nvx_config .wstest/servers-$nvx_config
 
-          echo "==> Reconstructed client reports:"
-          ls -la .wstest/clients/ || echo "None"
-          echo ""
-          echo "==> Reconstructed server reports:"
-          ls -la .wstest/servers/ || echo "None"
+            # Combine client reports for this NVX configuration
+            find artifacts -name "clients-all-*-$nvx_config" -type d | while read dir; do
+              echo "Processing client reports: $dir"
+              cp -r "$dir"/* .wstest/clients-$nvx_config/ || true
+            done
+
+            # Copy server reports for this NVX configuration
+            find artifacts -name "servers-all-*-$nvx_config" -type d | while read dir; do
+              echo "Processing server reports: $dir"
+              cp -r "$dir"/* .wstest/servers-$nvx_config/ || true
+            done
+
+            echo "==> Reconstructed client reports ($nvx_config):"
+            ls -la .wstest/clients-$nvx_config/ || echo "None"
+            echo ""
+            echo "==> Reconstructed server reports ($nvx_config):"
+            ls -la .wstest/servers-$nvx_config/ || echo "None"
+            echo ""
+          done
 
       - name: Consolidate reports for documentation
         run: |
-          echo "==> Using proven justfile recipe..."
-          just wstest-consolidate-reports
+          # Process each NVX configuration separately
+          for nvx_config in "with-nvx" "without-nvx"; do
+            echo "======================================================================"
+            echo "==> Consolidating reports for $nvx_config configuration"
+            echo "======================================================================"
+
+            # Create temporary .wstest structure expected by justfile recipe
+            rm -rf .wstest/clients .wstest/servers || true
+            mkdir -p .wstest/clients .wstest/servers
+            cp -r .wstest/clients-$nvx_config/* .wstest/clients/ || true
+            cp -r .wstest/servers-$nvx_config/* .wstest/servers/ || true
+
+            # Run consolidation recipe
+            just wstest-consolidate-reports
+
+            # Move consolidated reports to nvx-specific subdirectory in docs
+            mkdir -p docs/_static/websocket/conformance-$nvx_config/clients
+            mkdir -p docs/_static/websocket/conformance-$nvx_config/servers
+            cp -r docs/_static/websocket/conformance/clients/* docs/_static/websocket/conformance-$nvx_config/clients/ || true
+            cp -r docs/_static/websocket/conformance/servers/* docs/_static/websocket/conformance-$nvx_config/servers/ || true
+
+            echo "✅ Consolidation complete for $nvx_config"
+          done
 
       - name: Generate summary tables from index.json files
         run: |
-          echo "==> Generating conformance summary tables..."
+          echo "==> Generating conformance summary tables for both NVX configurations..."
 
           # Create summary filename using consistent identifier from identifiers workflow
-          # This works for all event types (development, nightly, stable)
           RELEASE_NAME="${{ needs.identifiers.outputs.release_name }}"
           SUMMARY_FILE="${{ github.workspace }}/.audit/${RELEASE_NAME}-wstest-summary.md"
           echo "Summary file: $SUMMARY_FILE"
 
-          # Generate summary for clients and servers
+          # Generate combined summary header
           echo "# WebSocket Conformance Test Results" > "$SUMMARY_FILE"
           echo "" >> "$SUMMARY_FILE"
           echo "Test Mode: \`${{ env.TEST_MODE }}\`" >> "$SUMMARY_FILE"
@@ -378,16 +477,25 @@ jobs:
           echo "Repo: ${{ needs.identifiers.outputs.pr_repo }}" >> "$SUMMARY_FILE"
           echo "Branch: ${{ needs.identifiers.outputs.pr_branch }}" >> "$SUMMARY_FILE"
           echo "PR: ${{ needs.identifiers.outputs.pr_number }}" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
 
-          # Generate client summary
-          python3 ${{ github.workspace }}/.github/workflows/generate_summary.py \
-            "docs/_static/websocket/conformance/clients/index.json" \
-            "Client Conformance" >> "$SUMMARY_FILE"
+          # Generate summaries for each NVX configuration
+          for nvx_config in "with-nvx" "without-nvx"; do
+            echo "---" >> "$SUMMARY_FILE"
+            echo "" >> "$SUMMARY_FILE"
+            echo "## Configuration: $nvx_config" >> "$SUMMARY_FILE"
+            echo "" >> "$SUMMARY_FILE"
 
-          # Generate server summary
-          python3 ${{ github.workspace }}/.github/workflows/generate_summary.py \
-            "docs/_static/websocket/conformance/servers/index.json" \
-            "Server Conformance" >> "$SUMMARY_FILE"
+            # Generate client summary for this configuration
+            python3 ${{ github.workspace }}/.github/workflows/generate_summary.py \
+              "docs/_static/websocket/conformance-$nvx_config/clients/index.json" \
+              "Client Conformance ($nvx_config)" >> "$SUMMARY_FILE"
+
+            # Generate server summary for this configuration
+            python3 ${{ github.workspace }}/.github/workflows/generate_summary.py \
+              "docs/_static/websocket/conformance-$nvx_config/servers/index.json" \
+              "Server Conformance ($nvx_config)" >> "$SUMMARY_FILE"
+          done
 
           # Show summary in workflow log
           echo "==> Summary Report:"
@@ -396,11 +504,18 @@ jobs:
           # Store filename for next step
           echo "SUMMARY_FILE=$SUMMARY_FILE" >> $GITHUB_ENV
 
-      - name: Upload consolidated reports
+      - name: Upload consolidated reports (with-nvx)
         uses: actions/upload-artifact@v4
         with:
-          name: websocket-conformance-docs-${{ env.TEST_MODE }}
-          path: docs/_static/websocket/conformance/
+          name: websocket-conformance-docs-${{ env.TEST_MODE }}-with-nvx
+          path: docs/_static/websocket/conformance-with-nvx/
+          retention-days: 30
+
+      - name: Upload consolidated reports (without-nvx)
+        uses: actions/upload-artifact@v4
+        with:
+          name: websocket-conformance-docs-${{ env.TEST_MODE }}-without-nvx
+          path: docs/_static/websocket/conformance-without-nvx/
           retention-days: 30
 
       - name: Upload summary report for PR comment
@@ -414,12 +529,18 @@ jobs:
         run: |
           echo "==> WebSocket Conformance Testing Complete ✅"
           echo "Test Mode: ${{ env.TEST_MODE }}"
-          echo "Matrix tested: (client|server) × (twisted|asyncio) × (cpy311|cpy314|pypy311)"
+          echo "Matrix tested: (client|server) × (twisted|asyncio) × (cpy311|cpy314|pypy311) × (with-nvx|without-nvx)"
           echo ""
-          find docs/_static/websocket/conformance -name "*.zip" | while read zip; do
-            echo "📦 $(basename "$zip")"
+          echo "Reports generated for both NVX configurations:"
+          for nvx_config in "with-nvx" "without-nvx"; do
+            echo ""
+            echo "==== $nvx_config ===="
+            find docs/_static/websocket/conformance-$nvx_config -name "*.zip" 2>/dev/null | while read zip; do
+              echo "📦 $(basename "$zip")"
+            done || echo "No reports found for $nvx_config"
           done
-          echo "📄 Documentation: docs/_static/websocket/conformance/"
+          echo ""
+          echo "📄 Documentation: docs/_static/websocket/conformance-{with-nvx,without-nvx}/"
           echo "📊 Summary: summary.md"
 
   # Verify all tests passed (100% conformance) - fails if any test failed
@@ -442,24 +563,49 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download consolidated reports
+      - name: Download consolidated reports (with-nvx)
         uses: actions/download-artifact@v4
         with:
-          name: websocket-conformance-docs-${{ env.TEST_MODE }}
-          path: docs/_static/websocket/conformance/
+          name: websocket-conformance-docs-${{ env.TEST_MODE }}-with-nvx
+          path: docs/_static/websocket/conformance-with-nvx/
 
-      - name: Verify 100% conformance
+      - name: Download consolidated reports (without-nvx)
+        uses: actions/download-artifact@v4
+        with:
+          name: websocket-conformance-docs-${{ env.TEST_MODE }}-without-nvx
+          path: docs/_static/websocket/conformance-without-nvx/
+
+      - name: Verify 100% conformance (both NVX configurations)
         run: |
-          echo "==> Debugging directory structure:"
-          find docs/_static/websocket/conformance -type f -name "*.json" | head -10
-          echo ""
-          ls -la docs/_static/websocket/conformance/ || echo "conformance dir not found"
-          echo ""
-          ls -la docs/_static/websocket/conformance/clients/ || echo "clients dir not found"
-          echo ""
-          ls -la docs/_static/websocket/conformance/servers/ || echo "servers dir not found"
-          echo ""
+          echo "======================================================================"
+          echo "==> Verifying 100% conformance for BOTH NVX configurations"
+          echo "======================================================================"
 
-          python3 ${{ github.workspace }}/.github/workflows/verify_conformance.py \
-            "docs/_static/websocket/conformance/clients/index.json" \
-            "docs/_static/websocket/conformance/servers/index.json"
+          # Verify each NVX configuration independently
+          for nvx_config in "with-nvx" "without-nvx"; do
+            echo ""
+            echo "======================================================================"
+            echo "==> Verifying $nvx_config configuration"
+            echo "======================================================================"
+
+            echo "==> Debugging directory structure ($nvx_config):"
+            find docs/_static/websocket/conformance-$nvx_config -type f -name "*.json" | head -10
+            echo ""
+            ls -la docs/_static/websocket/conformance-$nvx_config/ || echo "conformance dir not found"
+            echo ""
+            ls -la docs/_static/websocket/conformance-$nvx_config/clients/ || echo "clients dir not found"
+            echo ""
+            ls -la docs/_static/websocket/conformance-$nvx_config/servers/ || echo "servers dir not found"
+            echo ""
+
+            python3 ${{ github.workspace }}/.github/workflows/verify_conformance.py \
+              "docs/_static/websocket/conformance-$nvx_config/clients/index.json" \
+              "docs/_static/websocket/conformance-$nvx_config/servers/index.json"
+
+            echo "✅ Verification passed for $nvx_config"
+          done
+
+          echo ""
+          echo "======================================================================"
+          echo "✅ All NVX configurations passed 100% conformance verification!"
+          echo "======================================================================"
