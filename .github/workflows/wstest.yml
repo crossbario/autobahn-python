@@ -73,30 +73,10 @@ jobs:
           just install cpy314
           just install pypy311
 
-      - name: Start fuzzingserver
-        run: |
-          echo "==> Starting fuzzingserver in background..."
-          nohup just wstest-fuzzingserver "" "" ${{ env.TEST_MODE }} > fuzzingserver.log 2>&1 &
-          echo $! > fuzzingserver.pid
-
-          echo "==> Waiting for fuzzingserver to start..."
-          for i in {1..30}; do
-            if curl -f http://127.0.0.1:9001 >/dev/null 2>&1; then
-              echo "✅ Fuzzingserver is running after ${i} seconds"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "❌ Fuzzingserver failed to start after 30 seconds"
-              echo "==> Fuzzingserver log:"
-              cat fuzzingserver.log
-              exit 1
-            fi
-            sleep 1
-          done
-
       - name: Run all client test combinations (with-nvx and without-nvx)
         run: |
           # Test both NVX configurations sequentially
+          # NOTE: We restart fuzzingserver for each configuration to ensure clean report directories
           for nvx_config in "with-nvx" "without-nvx"; do
             if [ "$nvx_config" = "with-nvx" ]; then
               export AUTOBAHN_USE_NVX=1
@@ -109,6 +89,26 @@ jobs:
               echo "==> Testing WITHOUT NVX acceleration (AUTOBAHN_USE_NVX=0)"
               echo "======================================================================"
             fi
+
+            # Start fuzzingserver for this configuration
+            echo "==> Starting fuzzingserver for $nvx_config..."
+            nohup just wstest-fuzzingserver "" "" ${{ env.TEST_MODE }} > fuzzingserver-$nvx_config.log 2>&1 &
+            echo $! > fuzzingserver-$nvx_config.pid
+
+            echo "==> Waiting for fuzzingserver to start..."
+            for i in {1..30}; do
+              if curl -f http://127.0.0.1:9001 >/dev/null 2>&1; then
+                echo "✅ Fuzzingserver is running after ${i} seconds"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "❌ Fuzzingserver failed to start after 30 seconds"
+                echo "==> Fuzzingserver log:"
+                cat fuzzingserver-$nvx_config.log
+                exit 1
+              fi
+              sleep 1
+            done
 
             echo "==> Running client tests for all 6 combinations ($nvx_config)..."
 
@@ -138,9 +138,21 @@ jobs:
 
             echo "✅ All 6 client test combinations completed ($nvx_config)"
 
+            # Stop fuzzingserver for this configuration
+            echo "==> Stopping fuzzingserver for $nvx_config..."
+            if [ -f fuzzingserver-$nvx_config.pid ]; then
+              kill $(cat fuzzingserver-$nvx_config.pid) || true
+              rm -f fuzzingserver-$nvx_config.pid
+            fi
+            docker stop fuzzingserver || true
+
+            # Wait for port to be released
+            sleep 2
+
             # Move reports to nvx-specific directory
             if [ -d .wstest/clients ]; then
               mv .wstest/clients .wstest/clients-$nvx_config || true
+              echo "✅ Reports moved to .wstest/clients-$nvx_config"
             else
               echo "⚠️  Warning: .wstest/clients directory not found for $nvx_config"
             fi
@@ -149,15 +161,6 @@ jobs:
           echo "======================================================================"
           echo "✅ All client tests completed for BOTH NVX configurations"
           echo "======================================================================"
-
-      - name: Stop fuzzingserver
-        if: always()
-        run: |
-          echo "==> Stopping fuzzingserver..."
-          if [ -f fuzzingserver.pid ]; then
-            kill $(cat fuzzingserver.pid) || true
-          fi
-          docker stop fuzzingserver || true
 
       - name: Upload client reports (with-nvx)
         uses: actions/upload-artifact@v4
