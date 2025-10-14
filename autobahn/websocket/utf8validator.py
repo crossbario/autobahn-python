@@ -439,12 +439,14 @@ UTF8_ACCEPT = 0
 UTF8_REJECT = 1
 
 
-# use Cython implementation of UTF8 validator if available
-try:
-    from wsaccel.utf8validator import Utf8Validator
+# Import USES_NVX flag from parent module
+from autobahn.websocket import USES_NVX
 
-except ImportError:
-    # Fallback to pure Python implementation - also for PyPy.
+if USES_NVX:
+    # Use NVX native implementation (CFFI-based, works on CPython and PyPy)
+    from autobahn.nvx._utf8validator import Utf8Validator
+else:
+    # Use pure Python fallback implementation
     #
     # Do NOT touch this code unless you know what you are doing!
     # https://github.com/oberstet/scratchbox/tree/master/python/utf8

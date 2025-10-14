@@ -24,6 +24,72 @@
 #
 ###############################################################################
 
+import os
+import warnings
+
+# ============================================================================
+# NVX (Native Vector Extensions) Runtime Configuration
+# ============================================================================
+#
+# This section determines whether to use native acceleration (NVX) for
+# performance-critical WebSocket operations (UTF-8 validation, XOR masking).
+#
+# Public API exported: HAS_NVX, USES_NVX
+# ============================================================================
+
+# Step 1: Probe for NVX availability (was it built and can we import it?)
+HAS_NVX = False
+try:
+    # Try importing both NVX modules to verify they're available
+    from autobahn.nvx._xormasker import create_xor_masker as _nvx_xor_test  # noqa: F401
+    from autobahn.nvx._utf8validator import Utf8Validator as _nvx_utf8_test  # noqa: F401
+    HAS_NVX = True
+except ImportError:
+    # NVX not available (not built or CFFI compilation failed)
+    pass
+
+# Step 2: Parse AUTOBAHN_USE_NVX environment variable
+env_val = os.environ.get("AUTOBAHN_USE_NVX", "").strip().lower()
+
+if env_val in ("0", "no", "false"):
+    # Case 2.2: Explicit disable
+    explicit_disable = True
+    explicit_enable = False
+elif env_val in ("1", "yes", "true"):
+    # Case 2.3: Explicit enable
+    explicit_enable = True
+    explicit_disable = False
+else:
+    # Case 2.4: Not set or empty/invalid value
+    explicit_enable = False
+    explicit_disable = False
+
+# Step 3: Validate and determine runtime usage
+if explicit_enable and not HAS_NVX:
+    # Case 3: User explicitly requested NVX but it's not available
+    raise RuntimeError(
+        "NVX native acceleration explicitly requested via AUTOBAHN_USE_NVX=1, "
+        "but NVX modules are not available. Either NVX was not built "
+        "(build with AUTOBAHN_USE_NVX=1) or CFFI compilation failed."
+    )
+
+if explicit_disable and HAS_NVX:
+    # Case 4: NVX available but user explicitly disabled it at runtime
+    warnings.warn(
+        "NVX native acceleration is available but explicitly disabled via "
+        "AUTOBAHN_USE_NVX=0. Falling back to pure Python implementations.",
+        RuntimeWarning,
+        stacklevel=2
+    )
+    USES_NVX = False
+else:
+    # Case 5: Default behavior - use NVX if available
+    USES_NVX = HAS_NVX
+
+# ============================================================================
+# End of NVX Runtime Configuration
+# ============================================================================
+
 
 from autobahn.websocket.interfaces import IWebSocketChannel
 from autobahn.websocket.types import (
@@ -41,8 +107,10 @@ __all__ = (
     "ConnectionDeny",
     "ConnectionRequest",
     "ConnectionResponse",
+    "HAS_NVX",
     "IWebSocketChannel",
     "IncomingMessage",
     "Message",
     "OutgoingMessage",
+    "USES_NVX",
 )
