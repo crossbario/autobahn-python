@@ -138,6 +138,15 @@ jobs:
 
             echo "✅ All 6 client test combinations completed ($nvx_config)"
 
+            # Give fuzzingserver time to write all reports to disk
+            echo "==> Waiting for fuzzingserver to finish writing reports..."
+            sleep 3
+
+            # Check if Docker container is still running
+            echo "==> Docker container status:"
+            docker ps | grep fuzzingserver || echo "fuzzingserver container not found in ps"
+            docker ps -a | grep fuzzingserver || echo "fuzzingserver container not found in ps -a"
+
             # Stop fuzzingserver for this configuration
             echo "==> Stopping fuzzingserver for $nvx_config..."
             if [ -f fuzzingserver-$nvx_config.pid ]; then
