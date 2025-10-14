@@ -108,11 +108,21 @@ jobs:
           path: docs/_build/html/coverage-combined-without-nvx/
           retention-days: 14
 
-      - name: Unit test - Twisted / trial
-        run: just test-twisted cpy314
+      - name: Unit test - Twisted / trial - WITH NVX
+        continue-on-error: true
+        run: just test-twisted cpy314 1
 
-      - name: Unit test - asyncio / pytest
-        run: just test-asyncio cpy314
+      - name: Unit test - Twisted / trial - WITHOUT NVX
+        continue-on-error: true
+        run: just test-twisted cpy314 0
+
+      - name: Unit test - asyncio / pytest - WITH NVX
+        continue-on-error: true
+        run: just test-asyncio cpy314 1
+
+      - name: Unit test - asyncio / pytest - WITHOUT NVX
+        continue-on-error: true
+        run: just test-asyncio cpy314 0
 
   documentation:
     name: Documentation Build
