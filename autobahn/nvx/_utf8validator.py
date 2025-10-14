@@ -44,6 +44,10 @@ ffi.cdef(
     int nvx_utf8vld_set_impl(void* utf8vld, int impl);
 
     int nvx_utf8vld_get_impl(void* utf8vld);
+
+    size_t nvx_utf8vld_get_current_index (void* utf8vld);
+
+    size_t nvx_utf8vld_get_total_index (void* utf8vld);
 """
 )
 
@@ -97,7 +101,9 @@ class Utf8Validator:
 
     def validate(self, ba):
         res = self.lib.nvx_utf8vld_validate(self._vld, ba, len(ba))
-        return (res >= 0, res == 0, None, None)
+        current_index = self.lib.nvx_utf8vld_get_current_index(self._vld)
+        total_index = self.lib.nvx_utf8vld_get_total_index(self._vld)
+        return (res >= 0, res == 0, current_index, total_index)
 
 
 if __name__ == "__main__":
