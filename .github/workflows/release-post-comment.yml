@@ -100,6 +100,33 @@ jobs:
                 FOUND_RELEASE_NAME=""
               fi
             fi
+
+            # Fallback: If no nightly release found, check for fork/PR releases
+            # This handles cases where identifiers workflow couldn't determine this is a PR build
+            if [ -z "$FOUND_RELEASE_NAME" ]; then
+              echo ""
+              echo "No nightly release found - checking for fork/PR releases as fallback..."
+              FOUND_RELEASE_NAME=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name | startswith(\"fork-\") or startswith(\"pr\")) | .tag_name" | head -1)
+              if [ -n "$FOUND_RELEASE_NAME" ]; then
+                # Verify this release was created recently
+                RELEASE_CREATED=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$FOUND_RELEASE_NAME\") | .created_at")
+                CURRENT_TIME=$(date -u +%s)
+                RELEASE_TIME=$(date -u -d "$RELEASE_CREATED" +%s 2>/dev/null || echo "0")
+                TIME_DIFF=$((CURRENT_TIME - RELEASE_TIME))
+
+                echo "Found PR/fork release: $FOUND_RELEASE_NAME"
+                echo "Created: $RELEASE_CREATED"
+                echo "Age: ${TIME_DIFF}s"
+
+                if [ $TIME_DIFF -lt 3600 ]; then
+                  echo "✓ PR/fork release created within last hour - proceeding"
+                  FOUND_RELEASE_URL=$(echo "$RELEASES_JSON" | jq -r ".[] | select(.tag_name == \"$FOUND_RELEASE_NAME\") | .html_url")
+                else
+                  echo "✗ PR/fork release is too old (${TIME_DIFF}s > 3600s) - skipping"
+                  FOUND_RELEASE_NAME=""
+                fi
+              fi
+            fi
           elif [ "$RELEASE_TYPE" = "stable" ]; then
             # For stable, use tag from identifiers (tags don't change)
             TAG_NAME="${{ needs.identifiers.outputs.base_tag }}"
@@ -214,9 +241,12 @@ jobs:
     runs-on: ubuntu-latest
 
     # Only run for development/PR builds (explicit positive list)
+    # Also run if a fork/PR release was found (handles cases where identifiers misidentified the release type)
     if: |
       needs.check-release-complete.outputs.should_process == 'true' &&
-      needs.identifiers.outputs.release_type == 'development'
+      (needs.identifiers.outputs.release_type == 'development' ||
+       startsWith(needs.check-release-exists.outputs.release_name, 'fork-') ||
+       startsWith(needs.check-release-exists.outputs.release_name, 'pr'))
 
     env:
       BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
@@ -303,12 +333,40 @@ jobs:
         id: render
         env:
           RELEASE_URL: ${{ needs.check-release-exists.outputs.release_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "==> Preparing PR comment using Jinja2 template..."
 
           # Collect template variables
           # Strip 'pr' prefix from PR_NUMBER for gh command
           PR_NUMBER_CLEAN="${PR_NUMBER#pr}"
+
+          # If PR_NUMBER is a fallback (fork-XXXXXXXX), try to resolve actual PR number
+          if [[ "$PR_NUMBER" == fork-* ]]; then
+            echo "⚠️  PR_NUMBER is a fallback value: $PR_NUMBER"
+            echo "Attempting to resolve actual PR number via GitHub API..."
+
+            # Try to find PR using the branch name from identifiers
+            PR_HEAD="$PR_REPO:$PR_BRANCH"
+            echo "Searching for PR with head: $PR_HEAD"
+
+            RESOLVED_PR_NUMBER=$(gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --head "$PR_HEAD" \
+              --state all \
+              --json number \
+              --jq '.[0].number // empty' 2>/dev/null || echo "")
+
+            if [[ -n "$RESOLVED_PR_NUMBER" ]]; then
+              echo "✅ Resolved PR number: $RESOLVED_PR_NUMBER"
+              PR_NUMBER_CLEAN="$RESOLVED_PR_NUMBER"
+            else
+              echo "❌ Could not resolve PR number - will skip posting comment"
+              echo "should_comment=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
           WORKFLOW_RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}"
 
           # Read release notes (already fetched)
@@ -348,6 +406,7 @@ jobs:
           echo "should_comment=true" >> $GITHUB_OUTPUT
 
       - name: Post PR comment using GitHub CLI
+        if: steps.render.outputs.should_comment != 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
