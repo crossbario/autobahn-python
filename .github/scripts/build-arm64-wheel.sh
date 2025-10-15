@@ -49,7 +49,18 @@ echo "auditwheel: $(auditwheel --version || echo 'not available')"
 # Uses install-build-tools (not install-tools) to avoid nh3 dependency
 # nh3 is a Rust package (indirect dep of twine) that segfaults under QEMU
 export AUTOBAHN_USE_NVX=1
-just build-all
+
+# Build only specified Python versions (or all if not specified)
+if [ -n "$PYTHON_VERSIONS" ]; then
+  echo "==> Building wheels for specific Python versions: $PYTHON_VERSIONS"
+  for venv in $PYTHON_VERSIONS; do
+    echo "Building for $venv..."
+    just build "$venv"
+  done
+else
+  echo "==> Building wheels for all Python versions (PYTHON_VERSIONS not set)"
+  just build-all
+fi
 
 # Repair/convert wheels to manylinux format if auditwheel is available
 if command -v auditwheel &> /dev/null; then
