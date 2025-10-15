@@ -806,8 +806,8 @@ build-all:
     done
     ls -la dist/
 
-# Publish package to PyPI (requires twine setup)
-publish venv="": (build venv)
+# Download release artifacts from GitHub and publish to PyPI
+publish-pypi venv="" tag="":
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -817,8 +817,111 @@ publish venv="": (build venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
-    echo "==> Publishing to PyPI..."
-    "${VENV_PATH}/bin/twine" upload dist/*
+
+    # Determine which tag to use
+    TAG="{{ tag }}"
+    if [ -z "${TAG}" ]; then
+        echo "==> No tag specified. Using latest git tag..."
+        TAG=$(git describe --tags --abbrev=0)
+        echo "==> Using tag: ${TAG}"
+    fi
+
+    # Verify tag looks like a version tag
+    if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "❌ Error: Tag '${TAG}' doesn't look like a version tag (expected format: vX.Y.Z)"
+        exit 1
+    fi
+
+    # Create temp directory for downloads
+    TEMP_DIR=$(mktemp -d)
+    echo "==> Downloading release artifacts from GitHub release ${TAG}..."
+    echo "    Temp directory: ${TEMP_DIR}"
+
+    # Download all release assets
+    gh release download "${TAG}" --repo crossbario/autobahn-python --dir "${TEMP_DIR}"
+
+    echo ""
+    echo "==> Downloaded files:"
+    ls -lh "${TEMP_DIR}"
+    echo ""
+
+    # Count wheels and source distributions
+    WHEEL_COUNT=$(find "${TEMP_DIR}" -name "*.whl" | wc -l)
+    SDIST_COUNT=$(find "${TEMP_DIR}" -name "*.tar.gz" | wc -l)
+
+    echo "Found ${WHEEL_COUNT} wheel(s) and ${SDIST_COUNT} source distribution(s)"
+
+    if [ "${WHEEL_COUNT}" -eq 0 ] || [ "${SDIST_COUNT}" -eq 0 ]; then
+        echo "❌ Error: Expected at least 1 wheel and 1 source distribution"
+        echo "    Wheels found: ${WHEEL_COUNT}"
+        echo "    Source dist found: ${SDIST_COUNT}"
+        rm -rf "${TEMP_DIR}"
+        exit 1
+    fi
+
+    # Ensure twine is installed
+    if [ ! -f "${VENV_PATH}/bin/twine" ]; then
+        echo "==> Installing twine in ${VENV_NAME}..."
+        "${VENV_PATH}/bin/pip" install twine
+    fi
+
+    echo "==> Publishing to PyPI using twine..."
+    "${VENV_PATH}/bin/twine" upload "${TEMP_DIR}"/*.whl "${TEMP_DIR}"/*.tar.gz
+
+    # Cleanup
+    rm -rf "${TEMP_DIR}"
+    echo "✅ Successfully published ${TAG} to PyPI"
+
+# Trigger Read the Docs build for a specific tag
+publish-rtd tag="":
+    #!/usr/bin/env bash
+    set -e
+
+    # Determine which tag to use
+    TAG="{{ tag }}"
+    if [ -z "${TAG}" ]; then
+        echo "==> No tag specified. Using latest git tag..."
+        TAG=$(git describe --tags --abbrev=0)
+        echo "==> Using tag: ${TAG}"
+    fi
+
+    # Verify tag looks like a version tag
+    if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "❌ Error: Tag '${TAG}' doesn't look like a version tag (expected format: vX.Y.Z)"
+        exit 1
+    fi
+
+    echo "==> Triggering Read the Docs build for ${TAG}..."
+    echo ""
+    echo "📚 Read the Docs builds are automatically triggered by git tags."
+    echo "   Once the tag '${TAG}' is pushed to GitHub, RTD will detect it"
+    echo "   and build the documentation automatically."
+    echo ""
+    echo "   Check build status at:"
+    echo "   https://readthedocs.org/projects/autobahnpython/builds/"
+    echo ""
+    echo "   Documentation will be available at:"
+    echo "   https://autobahnpython.readthedocs.io/en/${TAG}/"
+    echo "   https://autobahnpython.readthedocs.io/en/stable/ (if marked as stable)"
+    echo ""
+    echo "✅ Read the Docs should build automatically"
+
+# Publish to both PyPI and Read the Docs (meta-recipe)
+publish venv="" tag="": (publish-pypi venv tag) (publish-rtd tag)
+    #!/usr/bin/env bash
+    set -e
+    TAG="{{ tag }}"
+    if [ -z "${TAG}" ]; then
+        TAG=$(git describe --tags --abbrev=0)
+    fi
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+    echo "✅ Successfully published version ${TAG}"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "📦 PyPI: https://pypi.org/project/autobahn/${TAG#v}/"
+    echo "📚 RTD:  https://autobahnpython.readthedocs.io/en/${TAG}/"
+    echo ""
 
 # -----------------------------------------------------------------------------
 # -- FlatBuffers Schema Generation
