@@ -578,10 +578,16 @@ jobs:
           echo ""
           echo "Total PyPI artifacts: $(find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) | wc -l)"
 
-      - name: Clean non-package files from dist/
+      - name: Clean non-package files and unsupported wheels from dist/
         run: |
           echo "==> Removing non-package files from dist/ before PyPI upload..."
           find dist/ -type f ! \( -name "*.whl" -o -name "*.tar.gz" \) -delete
+
+          echo "==> Removing plain linux_* wheels (PyPI only accepts manylinux_*)..."
+          # PyPI rejects plain linux_x86_64/linux_aarch64 tags - they must be manylinux_*
+          find dist/ -name "*-linux_x86_64.whl" -delete
+          find dist/ -name "*-linux_aarch64.whl" -delete
+
           echo ""
           echo "Remaining files for PyPI:"
           ls -la dist/
