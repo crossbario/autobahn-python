@@ -3,9 +3,15 @@ name: release-post-comment
 on:
   # Trigger after release workflow completes (ensures all 4 base workflows finished)
   # release.yml waits for: wheels, wheels-docker, wstest, main
+  # NOTE: workflow_run does NOT trigger for fork PRs (GitHub security restriction)
   workflow_run:
     workflows: ["release"]
     types: [completed]
+
+  # Fallback trigger for fork PRs (workflow_run doesn't fire for these)
+  # Will poll/wait for release to be ready before posting comment
+  pull_request_target:
+    types: [opened, synchronize]
 
   # Manual dispatch for debugging
   workflow_dispatch:
@@ -35,9 +41,102 @@ jobs:
     # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
     # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
 
+  wait-for-release:
+    name: Wait for release (pull_request_target only)
+    needs: identifiers
+    # Only run when triggered by pull_request_target (fork PRs)
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for release workflow to complete
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const maxWaitMinutes = 60;  // Maximum wait time
+            const pollIntervalSeconds = 30;  // Check every 30 seconds
+            const maxAttempts = (maxWaitMinutes * 60) / pollIntervalSeconds;
+
+            const commitSha = context.payload.pull_request.head.sha;
+            console.log(`Waiting for release workflow to complete for commit: ${commitSha}`);
+            console.log(`Max wait: ${maxWaitMinutes} minutes, polling every ${pollIntervalSeconds} seconds`);
+
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              console.log(`\nAttempt ${attempt}/${maxAttempts} - Checking for release workflow...`);
+
+              // Check if release workflow has completed for this commit
+              const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'release.yml',
+                head_sha: commitSha,
+                per_page: 10
+              });
+
+              const releaseRun = runs.workflow_runs.find(run =>
+                run.head_sha === commitSha &&
+                run.status === 'completed'
+              );
+
+              if (releaseRun) {
+                console.log(`✅ Release workflow completed with status: ${releaseRun.conclusion}`);
+                console.log(`   Run URL: ${releaseRun.html_url}`);
+
+                if (releaseRun.conclusion === 'success') {
+                  console.log('Release workflow succeeded - proceeding with comment posting');
+                  return;
+                } else {
+                  core.setFailed(`Release workflow completed with conclusion: ${releaseRun.conclusion}`);
+                  return;
+                }
+              }
+
+              // Check if any base workflows are still running
+              const baseWorkflows = ['main', 'wheels', 'wheels-docker', 'wstest'];
+              const runningWorkflows = [];
+
+              for (const workflowName of baseWorkflows) {
+                const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: `${workflowName}.yml`,
+                  head_sha: commitSha,
+                  per_page: 5
+                });
+
+                const workflowRun = workflowRuns.workflow_runs.find(run => run.head_sha === commitSha);
+                if (workflowRun && workflowRun.status !== 'completed') {
+                  runningWorkflows.push(`${workflowName} (${workflowRun.status})`);
+                }
+              }
+
+              if (runningWorkflows.length > 0) {
+                console.log(`⏳ Base workflows still running: ${runningWorkflows.join(', ')}`);
+              } else {
+                console.log('⏳ All base workflows completed, waiting for release workflow...');
+              }
+
+              if (attempt < maxAttempts) {
+                console.log(`Sleeping ${pollIntervalSeconds} seconds before next check...`);
+                await new Promise(resolve => setTimeout(resolve, pollIntervalSeconds * 1000));
+              }
+            }
+
+            core.setFailed(`Timeout: Release workflow did not complete within ${maxWaitMinutes} minutes`);
+
+
   check-release-exists:
     name: Check if release created (Early Exit Pattern)
-    needs: identifiers
+    needs: [identifiers, wait-for-release]
+    # For pull_request_target: wait-for-release must succeed
+    # For workflow_run: proceed immediately (release already completed)
+    # For workflow_dispatch: proceed immediately (manual trigger)
+    if: |
+      always() &&
+      needs.identifiers.result == 'success' &&
+      (github.event_name == 'workflow_run' ||
+       github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'pull_request_target' && needs.wait-for-release.result == 'success'))
     runs-on: ubuntu-latest
     outputs:
       should_process: ${{ steps.check.outputs.should_process }}
@@ -266,8 +365,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const commitSha = context.payload.workflow_run.head_sha;
+            // Handle both workflow_run and pull_request_target triggers
+            const commitSha = context.payload.workflow_run?.head_sha ||
+                             context.payload.pull_request?.head.sha ||
+                             context.sha;
             console.log(`Finding wstest workflow for commit: ${commitSha}`);
+            console.log(`Triggered by: ${context.eventName}`);
 
             const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
               owner: context.repo.owner,
@@ -367,7 +470,13 @@ jobs:
             fi
           fi
 
-          WORKFLOW_RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}"
+          # Construct workflow run URL (handle both workflow_run and pull_request_target triggers)
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            WORKFLOW_RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${{ github.event.workflow_run.id }}"
+          else
+            # For pull_request_target or workflow_dispatch, link to current run
+            WORKFLOW_RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}"
+          fi
 
           # Read release notes (already fetched)
           RELEASE_NOTES=$(cat release-notes.md)
@@ -444,8 +553,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const commitSha = context.payload.workflow_run.head_sha;
+            // Handle both workflow_run and pull_request_target triggers
+            const commitSha = context.payload.workflow_run?.head_sha ||
+                             context.payload.pull_request?.head.sha ||
+                             context.sha;
             console.log(`Finding wstest workflow for commit: ${commitSha}`);
+            console.log(`Triggered by: ${context.eventName}`);
 
             const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
               owner: context.repo.owner,
