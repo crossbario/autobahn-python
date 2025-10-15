@@ -578,6 +578,16 @@ jobs:
           echo ""
           echo "Total PyPI artifacts: $(find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) | wc -l)"
 
+      - name: Clean non-package files from dist/
+        run: |
+          echo "==> Removing non-package files from dist/ before PyPI upload..."
+          find dist/ -type f ! \( -name "*.whl" -o -name "*.tar.gz" \) -delete
+          echo ""
+          echo "Remaining files for PyPI:"
+          ls -la dist/
+          echo ""
+          echo "Total PyPI artifacts: $(find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) | wc -l)"
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
