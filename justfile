@@ -891,20 +891,64 @@ publish-rtd tag="":
         exit 1
     fi
 
+    # Check if RTD_TOKEN is set
+    if [ -z "${RTD_TOKEN}" ]; then
+        echo "❌ Error: RTD_TOKEN environment variable is not set"
+        echo ""
+        echo "To trigger RTD builds, you need to:"
+        echo "1. Get an API token from https://readthedocs.org/accounts/tokens/"
+        echo "2. Export it: export RTD_TOKEN=your_token_here"
+        echo ""
+        exit 1
+    fi
+
     echo "==> Triggering Read the Docs build for ${TAG}..."
     echo ""
-    echo "📚 Read the Docs builds are automatically triggered by git tags."
-    echo "   Once the tag '${TAG}' is pushed to GitHub, RTD will detect it"
-    echo "   and build the documentation automatically."
+
+    # Trigger build via RTD API
+    # See: https://docs.readthedocs.io/en/stable/api/v3.html#post--api-v3-projects-(string-project_slug)-versions-(string-version_slug)-builds-
+    RTD_PROJECT="autobahnpython"
+    RTD_API_URL="https://readthedocs.org/api/v3/projects/${RTD_PROJECT}/versions/${TAG}/builds/"
+
+    echo "==> Calling RTD API..."
+    echo "    Project: ${RTD_PROJECT}"
+    echo "    Version: ${TAG}"
+    echo "    URL: ${RTD_API_URL}"
     echo ""
-    echo "   Check build status at:"
-    echo "   https://readthedocs.org/projects/autobahnpython/builds/"
+
+    # Trigger the build
+    HTTP_CODE=$(curl -X POST \
+        -H "Authorization: Token ${RTD_TOKEN}" \
+        -w "%{http_code}" \
+        -s -o /tmp/rtd_response.json \
+        "${RTD_API_URL}")
+
+    echo "==> API Response (HTTP ${HTTP_CODE}):"
+    cat /tmp/rtd_response.json | python3 -m json.tool 2>/dev/null || cat /tmp/rtd_response.json
     echo ""
-    echo "   Documentation will be available at:"
-    echo "   https://autobahnpython.readthedocs.io/en/${TAG}/"
-    echo "   https://autobahnpython.readthedocs.io/en/stable/ (if marked as stable)"
-    echo ""
-    echo "✅ Read the Docs should build automatically"
+
+    if [ "${HTTP_CODE}" = "202" ] || [ "${HTTP_CODE}" = "201" ]; then
+        echo "✅ Read the Docs build triggered successfully!"
+        echo ""
+        echo "Check build status at:"
+        echo "  https://readthedocs.org/projects/${RTD_PROJECT}/builds/"
+        echo ""
+        echo "Documentation will be available at:"
+        echo "  https://${RTD_PROJECT}.readthedocs.io/en/${TAG}/"
+        echo "  https://${RTD_PROJECT}.readthedocs.io/en/stable/ (if marked as stable)"
+        echo ""
+    else
+        echo "❌ Error: Failed to trigger RTD build (HTTP ${HTTP_CODE})"
+        echo ""
+        echo "Common issues:"
+        echo "- Invalid RTD_TOKEN"
+        echo "- Version/tag doesn't exist in RTD project"
+        echo "- Network/API connectivity problems"
+        echo ""
+        exit 1
+    fi
+
+    rm -f /tmp/rtd_response.json
 
 # Publish to both PyPI and Read the Docs (meta-recipe)
 publish venv="" tag="": (publish-pypi venv tag) (publish-rtd tag)
