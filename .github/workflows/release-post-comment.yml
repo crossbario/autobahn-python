@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Wait for release workflow to complete
+      - name: Wait for release to be complete
         uses: actions/github-script@v7
         with:
           script: |
@@ -58,62 +58,112 @@ jobs:
             const maxAttempts = (maxWaitMinutes * 60) / pollIntervalSeconds;
 
             const commitSha = context.payload.pull_request.head.sha;
-            console.log(`Waiting for release workflow to complete for commit: ${commitSha}`);
+            console.log(`Waiting for release to be complete for commit: ${commitSha}`);
             console.log(`Max wait: ${maxWaitMinutes} minutes, polling every ${pollIntervalSeconds} seconds`);
 
+            let releaseWorkflowCompleted = false;
+            let releaseName = '';
+
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-              console.log(`\nAttempt ${attempt}/${maxAttempts} - Checking for release workflow...`);
+              console.log(`\nAttempt ${attempt}/${maxAttempts}`);
 
-              // Check if release workflow has completed for this commit
-              const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: 'release.yml',
-                head_sha: commitSha,
-                per_page: 10
-              });
-
-              const releaseRun = runs.workflow_runs.find(run =>
-                run.head_sha === commitSha &&
-                run.status === 'completed'
-              );
-
-              if (releaseRun) {
-                console.log(`✅ Release workflow completed with status: ${releaseRun.conclusion}`);
-                console.log(`   Run URL: ${releaseRun.html_url}`);
-
-                if (releaseRun.conclusion === 'success') {
-                  console.log('Release workflow succeeded - proceeding with comment posting');
-                  return;
-                } else {
-                  core.setFailed(`Release workflow completed with conclusion: ${releaseRun.conclusion}`);
-                  return;
-                }
-              }
-
-              // Check if any base workflows are still running
-              const baseWorkflows = ['main', 'wheels', 'wheels-docker', 'wstest'];
-              const runningWorkflows = [];
-
-              for (const workflowName of baseWorkflows) {
-                const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
+              // Step 1: Wait for release workflow to complete
+              if (!releaseWorkflowCompleted) {
+                console.log('Checking release workflow status...');
+                const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  workflow_id: `${workflowName}.yml`,
+                  workflow_id: 'release.yml',
                   head_sha: commitSha,
-                  per_page: 5
+                  per_page: 10
                 });
 
-                const workflowRun = workflowRuns.workflow_runs.find(run => run.head_sha === commitSha);
-                if (workflowRun && workflowRun.status !== 'completed') {
-                  runningWorkflows.push(`${workflowName} (${workflowRun.status})`);
+                const releaseRun = runs.workflow_runs.find(run =>
+                  run.head_sha === commitSha &&
+                  run.status === 'completed'
+                );
+
+                if (releaseRun) {
+                  if (releaseRun.conclusion !== 'success') {
+                    core.setFailed(`Release workflow failed with conclusion: ${releaseRun.conclusion}`);
+                    return;
+                  }
+                  console.log(`✅ Release workflow completed successfully`);
+                  console.log(`   Run URL: ${releaseRun.html_url}`);
+                  releaseWorkflowCompleted = true;
+                } else {
+                  // Check base workflows status for informational purposes
+                  const baseWorkflows = ['main', 'wheels', 'wheels-docker', 'wstest'];
+                  const runningWorkflows = [];
+
+                  for (const workflowName of baseWorkflows) {
+                    const { data: workflowRuns } = await github.rest.actions.listWorkflowRunsForRepo({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      workflow_id: `${workflowName}.yml`,
+                      head_sha: commitSha,
+                      per_page: 5
+                    });
+
+                    const workflowRun = workflowRuns.workflow_runs.find(run => run.head_sha === commitSha);
+                    if (workflowRun && workflowRun.status !== 'completed') {
+                      runningWorkflows.push(`${workflowName} (${workflowRun.status})`);
+                    }
+                  }
+
+                  if (runningWorkflows.length > 0) {
+                    console.log(`⏳ Base workflows still running: ${runningWorkflows.join(', ')}`);
+                  } else {
+                    console.log('⏳ Base workflows completed, waiting for release workflow...');
+                  }
                 }
               }
 
-              if (runningWorkflows.length > 0) {
-                console.log(`⏳ Base workflows still running: ${runningWorkflows.join(', ')}`);
-              } else {
-                console.log('⏳ All base workflows completed, waiting for release workflow...');
+              // Step 2: Once release workflow is complete, wait for completion marker
+              if (releaseWorkflowCompleted) {
+                console.log('Checking for release completion marker...');
+
+                // Find the release created by this commit
+                const { data: releases } = await github.rest.repos.listReleases({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  per_page: 20
+                });
+
+                // Look for PR-specific or fork release (most recent)
+                const prRelease = releases.find(r =>
+                  r.tag_name.startsWith('pr') ||
+                  r.tag_name.startsWith('fork-') ||
+                  r.tag_name.startsWith('1698-')  // PR number prefix
+                );
+
+                if (prRelease) {
+                  releaseName = prRelease.tag_name;
+                  console.log(`Found release: ${releaseName}`);
+
+                  // Try to download completion marker
+                  try {
+                    const { data: assets } = await github.rest.repos.listReleaseAssets({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      release_id: prRelease.id
+                    });
+
+                    const completionMarker = assets.find(a => a.name === 'release-complete.json');
+                    if (completionMarker) {
+                      console.log(`✅ Release is complete with completion marker!`);
+                      console.log(`   Release: ${releaseName}`);
+                      console.log(`   URL: ${prRelease.html_url}`);
+                      return;
+                    } else {
+                      console.log(`⏳ Release found but completion marker not yet available (${assets.length} assets)`);
+                    }
+                  } catch (error) {
+                    console.log(`⚠️  Error checking release assets: ${error.message}`);
+                  }
+                } else {
+                  console.log('⏳ Release not yet created');
+                }
               }
 
               if (attempt < maxAttempts) {
@@ -122,7 +172,7 @@ jobs:
               }
             }
 
-            core.setFailed(`Timeout: Release workflow did not complete within ${maxWaitMinutes} minutes`);
+            core.setFailed(`Timeout: Release did not become complete within ${maxWaitMinutes} minutes`);
 
 
   check-release-exists:
