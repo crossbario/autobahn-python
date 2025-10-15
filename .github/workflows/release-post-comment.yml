@@ -235,18 +235,15 @@ jobs:
           echo '─────────────────────────────────────────────────'
 
   # Development release: Post PR summary comment for development builds
+  # DISABLED: PR comments don't work reliably for fork PRs due to workflow_run context loss
   post-pr-comment:
-    name: Post PR Comment (Development Builds)
+    name: Post PR Comment (Development Builds) - DISABLED
     needs: [identifiers, check-release-exists, check-release-complete]
     runs-on: ubuntu-latest
 
-    # Only run for development/PR builds (explicit positive list)
-    # Also run if a fork/PR release was found (handles cases where identifiers misidentified the release type)
-    if: |
-      needs.check-release-complete.outputs.should_process == 'true' &&
-      (needs.identifiers.outputs.release_type == 'development' ||
-       startsWith(needs.check-release-exists.outputs.release_name, 'fork-') ||
-       startsWith(needs.check-release-exists.outputs.release_name, 'pr'))
+    # Permanently disabled - fork PRs lose context in workflow_run trigger
+    # Only GitHub Discussions posts are enabled (see post-discussion job)
+    if: false
 
     env:
       BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
