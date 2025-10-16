@@ -25,10 +25,9 @@
 ###############################################################################
 
 import os
-import sys
-import platform
 
 from cffi import FFI
+from autobahn.nvx._compile_args import get_compile_args
 
 ffi = FFI()
 
@@ -55,55 +54,10 @@ if "AUTOBAHN_USE_NVX" in os.environ and os.environ["AUTOBAHN_USE_NVX"] in ["1", 
 else:
     optional = True  # :noindex:
 
-# Detect platform/compiler and set flags
-#
-# IMPORTANT: Architecture baseline selection (fixes #1717)
-#
-# We DO NOT use -march=native because it creates CPU-specific binaries
-# that crash with SIGILL on older CPUs lacking the instructions used at
-# build time. Instead, we target safe "modern" baselines:
-#
-# For x86-64:
-#   -march=x86-64-v2 (microarchitecture level 2, 2009+)
-#   Includes: SSE4.2, POPCNT, SSSE3, SSE4.1
-#   Compatible with: Intel Nehalem+, AMD Bulldozer+ (2009+)
-#   Coverage: ~99% of x86-64 CPUs from 2010 onwards
-#
-# For ARM64:
-#   -march=armv8-a (baseline ARMv8-A architecture)
-#   Compatible with: Raspberry Pi 4/5, AWS Graviton, Apple M1/M2, etc.
-#   Coverage: All 64-bit ARM CPUs
-#
-# This provides good SIMD acceleration (current C code uses SSE2 on x86-64)
-# while maintaining broad compatibility. Future enhancements can add AVX2
-# with runtime CPU detection.
-#
-if sys.platform == "win32":
-    # MSVC on Windows
-    extra_compile_args = ["/O2", "/W3"]
-else:
-    # GCC/Clang on POSIX (Linux, macOS, *BSD)
-    machine = platform.machine().lower()
-
-    # Base flags for all POSIX platforms
-    extra_compile_args = [
-        "-std=c99",
-        "-Wall",
-        "-Wno-strict-prototypes",
-        "-O3",
-    ]
-
-    # Architecture-specific optimization flags
-    if machine in ("x86_64", "amd64", "x64"):
-        # x86-64: Use microarchitecture level 2 (2009+ CPUs)
-        extra_compile_args.append("-march=x86-64-v2")
-    elif machine in ("aarch64", "arm64"):
-        # ARM64: Use ARMv8-A baseline (all 64-bit ARM)
-        extra_compile_args.append("-march=armv8-a")
-    else:
-        # Unknown architecture: let compiler use safe defaults
-        # (no -march flag = generic code for the architecture)
-        pass
+# Get appropriate compiler flags for this build context
+# See autobahn.nvx._compile_args for details on architecture baseline selection
+# and build context detection (wheel distribution vs. local source install)
+extra_compile_args = get_compile_args()
 
 with open(os.path.join(os.path.dirname(__file__), "_xormasker.c")) as fd:
     c_source = fd.read()
