@@ -5,6 +5,16 @@
 Changelog
 =========
 
+25.10.1
+-------
+
+* fix: Issue #1716 - Added comprehensive source distribution integrity verification
+* new: Supply chain security with cryptographic fingerprints and chain of custody verification
+* new: RTD documentation includes WebSocket conformance reports and FlatBuffers schemas via GitHub Release artifacts
+* new: PyPI upload safety check prevents duplicate version uploads
+* new: Re-verification in release workflow ensures artifact integrity through entire pipeline
+* fix: Improved release workflow to download and integrate conformance artifacts
+
 25.6.1
 ------
 
