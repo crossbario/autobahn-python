@@ -253,8 +253,6 @@ jobs:
           echo "supply chain integrity - ensures no corruption from build → artifact → release."
           echo ""
 
-          HAS_ERRORS=0
-
           for tarball in dist/*.tar.gz; do
             if [ ! -f "$tarball" ]; then
               echo "⚠️  No source distribution found in dist/"
@@ -306,15 +304,10 @@ jobs:
               echo "------------------------------------------------------------------------"
               echo "Gzip Integrity Test"
               echo "------------------------------------------------------------------------"
-              if gzip -tv "$tarball" 2>&1; then
-                GZIP_EXIT=$?
+              if gzip -tv "$tarball"; then
                 echo ""
-                echo "Gzip exit code: $GZIP_EXIT"
-                if [ $GZIP_EXIT -eq 0 ]; then
-                  echo "Result: ✅ PASS (no trailing garbage)"
-                else
-                  echo "Result: ❌ FAIL (exit code $GZIP_EXIT)"
-                fi
+                echo "Gzip exit code: 0"
+                echo "Result: ✅ PASS (no trailing garbage)"
               else
                 GZIP_EXIT=$?
                 echo ""
@@ -328,7 +321,6 @@ jobs:
               echo "------------------------------------------------------------------------"
               echo "Testing with GNU tar (lists contents without extracting):"
               if tar -tzf "$tarball" > /tmp/tar_contents.txt 2>&1; then
-                TAR_EXIT=$?
                 echo "Result: ✅ PASS (tar can read archive)"
                 echo "File count: $(wc -l < /tmp/tar_contents.txt)"
                 echo ""
@@ -353,64 +345,59 @@ jobs:
               echo "------------------------------------------------------------------------"
               echo "Verification Summary"
               echo "------------------------------------------------------------------------"
-              if [ $GZIP_EXIT -eq 0 ] && [ $TAR_EXIT -eq 0 ]; then
-                echo "Overall Result: ✅ PASS - Archive is valid and extractable"
-              else
-                echo "Overall Result: ❌ FAIL - Archive has integrity issues"
-                echo "  Gzip exit code: $GZIP_EXIT"
-                echo "  Tar exit code:  $TAR_EXIT"
-              fi
+              echo "Overall Result: ✅ PASS - Archive is valid and extractable"
               echo ""
               echo "========================================================================"
               echo "End of Verification Report"
               echo "========================================================================"
             } | tee "$VERIFY_FILE"
 
-            # Check results and fail workflow if errors detected
+            # Run actual validation tests and fail immediately on error
+            echo ""
+            echo "==> Running integrity checks..."
+
+            # Check for trailing garbage in gzip
             GZIP_OUTPUT=$(gzip -tv "$tarball" 2>&1)
             GZIP_EXIT_CODE=$?
-            TAR_TEST_EXIT=$(tar -tzf "$tarball" > /dev/null 2>&1; echo $?)
 
             if echo "$GZIP_OUTPUT" | grep -qi "trailing garbage"; then
               echo ""
               echo "❌ ERROR: Source distribution has trailing garbage!"
               echo "This will cause tar extraction failures for users."
               echo "See $VERIFY_FILE for full details."
-              HAS_ERRORS=1
-            elif [ $GZIP_EXIT_CODE -ne 0 ]; then
+              echo ""
+              exit 1
+            fi
+
+            if [ $GZIP_EXIT_CODE -ne 0 ]; then
               echo ""
               echo "❌ ERROR: gzip test failed with exit code $GZIP_EXIT_CODE"
               echo "See $VERIFY_FILE for full details."
-              HAS_ERRORS=1
-            elif [ $TAR_TEST_EXIT -ne 0 ]; then
               echo ""
-              echo "❌ ERROR: tar extraction test failed with exit code $TAR_TEST_EXIT"
-              echo "See $VERIFY_FILE for full details."
-              HAS_ERRORS=1
-            else
-              echo "✅ $BASENAME verified successfully"
-              echo "   Verification report: $VERIFY_FILE"
+              exit 1
             fi
+
+            # Check tar extraction
+            if ! tar -tzf "$tarball" > /dev/null 2>&1; then
+              TAR_EXIT=$?
+              echo ""
+              echo "❌ ERROR: tar extraction test failed with exit code $TAR_EXIT"
+              echo "See $VERIFY_FILE for full details."
+              echo ""
+              exit 1
+            fi
+
+            echo "✅ $BASENAME verified successfully"
+            echo "   Verification report: $VERIFY_FILE"
             echo ""
           done
 
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "======================================================================"
-            echo "❌ VERIFICATION FAILED: Source distribution has integrity issues"
-            echo "======================================================================"
-            echo ""
-            echo "This is a critical packaging bug that must be fixed before release."
-            echo "See issue #1716 for details and workarounds."
-            echo ""
-            exit 1
-          else
-            echo "======================================================================"
-            echo "✅ All source distributions verified successfully"
-            echo "======================================================================"
-            echo ""
-            echo "Verification reports created:"
-            ls -lh dist/*.verify.txt
-          fi
+          echo "======================================================================"
+          echo "✅ All source distributions verified successfully"
+          echo "======================================================================"
+          echo ""
+          echo "Verification reports created:"
+          ls -lh dist/*.verify.txt
         shell: bash
 
       - name: Upload source distribution with verification reports (Linux x86_64 only)
