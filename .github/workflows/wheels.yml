@@ -242,6 +242,77 @@ jobs:
           echo "==> Wheel count: $(ls dist/*.whl 2>/dev/null | wc -l)"
         shell: bash
 
+      - name: Verify source distribution integrity (Linux x86_64 only)
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          echo "======================================================================"
+          echo "==> Verifying source distribution integrity (Issue #1716)"
+          echo "======================================================================"
+          echo ""
+          echo "Checking for trailing garbage in .tar.gz files that causes GNU tar"
+          echo "to fail with 'Child returned status 2' errors."
+          echo ""
+
+          HAS_ERRORS=0
+
+          for tarball in dist/*.tar.gz; do
+            if [ ! -f "$tarball" ]; then
+              echo "⚠️  No source distribution found in dist/"
+              continue
+            fi
+
+            echo "==> Checking: $(basename "$tarball")"
+            echo "    Size: $(ls -lh "$tarball" | awk '{print $5}')"
+
+            # Test gzip integrity - exit code 0 = clean, exit code 2 = trailing garbage
+            GZIP_OUTPUT=$(gzip -tv "$tarball" 2>&1)
+            GZIP_EXIT_CODE=$?
+
+            if echo "$GZIP_OUTPUT" | grep -qi "trailing garbage"; then
+              echo "❌ ERROR: Source distribution has trailing garbage!"
+              echo ""
+              echo "This will cause tar extraction failures:"
+              echo "  $ tar -xzf $(basename "$tarball")"
+              echo "  tar: Child returned status 2"
+              echo "  tar: Error is not recoverable: exiting now"
+              echo ""
+              echo "gzip output:"
+              echo "$GZIP_OUTPUT"
+              echo ""
+
+              # Show last 100 bytes in hex for debugging
+              echo "==> Last 100 bytes (hex dump):"
+              tail -c 100 "$tarball" | hexdump -C | tail -10
+              echo ""
+
+              HAS_ERRORS=1
+            elif [ $GZIP_EXIT_CODE -ne 0 ]; then
+              echo "⚠️  Warning: gzip test returned exit code $GZIP_EXIT_CODE"
+              echo "gzip output:"
+              echo "$GZIP_OUTPUT"
+              echo ""
+            else
+              echo "✅ $(basename "$tarball") is clean (no trailing garbage)"
+              echo ""
+            fi
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ VERIFICATION FAILED: Source distribution contains trailing garbage"
+            echo "======================================================================"
+            echo ""
+            echo "This is a critical packaging bug that must be fixed before release."
+            echo "See issue #1716 for details and workarounds."
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ All source distributions verified successfully"
+            echo "======================================================================"
+          fi
+        shell: bash
+
       - name: Upload source distribution (Linux x86_64 only)
         if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
