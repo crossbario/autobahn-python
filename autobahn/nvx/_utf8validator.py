@@ -27,7 +27,13 @@
 import os
 
 from cffi import FFI
-from ._compile_args import get_compile_args
+
+# Load the shared compile args module via direct execution
+# (CFFI's execfile() runs modules outside package context, so imports don't work)
+_compile_args_path = os.path.join(os.path.dirname(__file__), '_compile_args.py')
+with open(_compile_args_path) as _f:
+    exec(_f.read())
+# Now get_compile_args() is available in the current namespace
 
 ffi = FFI()
 
