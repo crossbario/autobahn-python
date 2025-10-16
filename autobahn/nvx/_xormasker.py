@@ -27,7 +27,7 @@
 import os
 
 from cffi import FFI
-from autobahn.nvx._compile_args import get_compile_args
+from ._compile_args import get_compile_args
 
 ffi = FFI()
 
