@@ -28,12 +28,23 @@ import os
 
 from cffi import FFI
 
-# Load the shared compile args module via direct execution
-# (CFFI's execfile() runs modules outside package context, so imports don't work)
-_compile_args_path = os.path.join(os.path.dirname(__file__), '_compile_args.py')
-with open(_compile_args_path) as _f:
-    exec(_f.read())
-# Now get_compile_args() is available in the current namespace
+# Try normal import first (works when package is installed or in editable mode)
+try:
+    from autobahn.nvx._compile_args import get_compile_args
+except ImportError:
+    # Fallback for CFFI build time (before package installation)
+    # CFFI's setuptools integration runs builder modules via execfile() outside
+    # of package context, so normal imports fail. Use importlib to dynamically
+    # load the module from file path as a workaround.
+    import importlib.util
+    import sys
+
+    _path = os.path.join(os.path.dirname(__file__), "_compile_args.py")
+    spec = importlib.util.spec_from_file_location("autobahn.nvx._compile_args", _path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    get_compile_args = mod.get_compile_args
 
 ffi = FFI()
 
