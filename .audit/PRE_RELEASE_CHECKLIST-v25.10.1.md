@@ -2,23 +2,13 @@
 
 This checklist ensures everything works locally before pushing to PyPI.
 
-## Branch Strategy Decision
-
-**Recommendation: Continue on `rel_v25.10.1_part1`**
-
-Reasons:
-- All changes are related to v25.10.1 release preparation
-- PR #1715 already passing all 30 checks ✅
-- Verification infrastructure complete
-- Easier to test everything together
-- Faster to release
-
 ## 1. Package Build & Contents Verification
 
 ### Build the package
+
 ```bash
 # Clean previous builds
-rm -rf dist/ build/ *.egg-info
+just distclean
 
 # Build with current branch
 just build-all
@@ -30,9 +20,10 @@ ls -lh dist/
 **Expected output:**
 - `autobahn-25.10.1.tar.gz` (source distribution, ~360KB)
 - `autobahn-25.10.1-*.whl` (wheel for current Python)
-- `autobahn-25.10.1.verify.txt` (verification report)
+- FIXME (not generated locally!): `autobahn-25.10.1.verify.txt` (verification report)
 
 ### Verify source distribution contents
+
 ```bash
 # List contents
 tar -tzf dist/autobahn-25.10.1.tar.gz | head -50
@@ -47,17 +38,49 @@ tar -tzf dist/autobahn-25.10.1.tar.gz | grep -E "(\.fbs|\.bfbs|wamp/gen.*\.py)"
 ```
 
 ### Verify wheel contents
+
 ```bash
 # Extract and list wheel contents
-unzip -l dist/autobahn-25.10.1-*.whl | grep -E "(wamp/gen|flatbuffers|\.fbs|\.bfbs)"
+for whl in dist/*.whl; do
+  echo "=== $(basename "$whl") ==="
+  unzip -l "$whl" \
+    | grep -E "(wamp/gen|flatbuffers|\.fbs|\.bfbs)" \
+    | awk -F. '{print $NF}' \
+    | sort \
+    | uniq -c \
+    | sort -nr
+  echo
+done
 
 # Expected:
-#   autobahn/wamp/gen/wamp/proto/*.py
-#   autobahn/wamp/gen/schema/*.bfbs
-#   autobahn/wamp/flatbuffers/*.fbs
+# === autobahn-25.10.1-cp311-cp311-linux_x86_64.whl ===
+#      65 py
+#       7 fbs
+#       7 bfbs
+#
+# === autobahn-25.10.1-cp312-cp312-linux_x86_64.whl ===
+#      65 py
+#       7 fbs
+#       7 bfbs
+#
+# === autobahn-25.10.1-cp313-cp313-linux_x86_64.whl ===
+#      65 py
+#       7 fbs
+#       7 bfbs
+#
+# === autobahn-25.10.1-cp314-cp314-linux_x86_64.whl ===
+#      65 py
+#       7 fbs
+#       7 bfbs
+#
+# === autobahn-25.10.1-pp311-pypy311_pp73-linux_x86_64.whl ===
+#      65 py
+#       7 fbs
+#       7 bfbs
 ```
 
 ### Verify source distribution integrity
+
 ```bash
 # Run the same checks as CI
 gzip -tv dist/autobahn-25.10.1.tar.gz
@@ -72,32 +95,52 @@ openssl sha256 dist/autobahn-25.10.1.tar.gz
 ## 2. Local Installation & Import Tests
 
 ### Install in clean virtualenv
+
 ```bash
 # Create fresh test environment
 python3 -m venv /tmp/test_autobahn_v25.10.1
 source /tmp/test_autobahn_v25.10.1/bin/activate
 
-# Install from local wheel
-pip install dist/autobahn-25.10.1-*.whl
+# Install from local wheel - minimal!
+pip install --find-links=dist autobahn
 
 # Or install from source dist
 # pip install dist/autobahn-25.10.1.tar.gz
+
+# Install from local wheel - full!
+pip install --find-links=dist autobahn[all]
+
+# IMPORTANT: make sure we do _not_ accidentily import modules from source tree (git working repo), aka Python "development mode"!
+cd ~
 ```
 
-### Test core imports
+### Test basic import
+
+```bash
+python -c 'import autobahn; print(f"✅ Autobahn version: {autobahn.__version__}")'
+```
+
+### Test Flatbuffers run-time imports
+
 ```bash
 python3 << 'EOF'
-# Test basic import
-import autobahn
-print(f"✅ Autobahn version: {autobahn.__version__}")
-
-# Test FlatBuffers wrapper imports (CRITICAL!)
+# Test FlatBuffers wrapper imports
 from autobahn.wamp.gen.wamp.proto import Welcome
 print(f"✅ Welcome class: {Welcome}")
 
 from autobahn.wamp.gen.wamp.proto import Hello, Goodbye, Error
 print(f"✅ Core WAMP messages: Hello, Goodbye, Error")
 
+print("\n✅ ALL IMPORTS SUCCESSFUL")
+EOF
+```
+
+### Test Flatbuffers schemata (source & binary) file access
+
+FIXME: `autobahn.wamp.gen.schema.__file__` is `None` at run-time! must access autobahn package data files using proper Python package (distutils?) functions.
+
+```bash
+python3 << 'EOF'
 # Test schema access
 import autobahn.wamp.gen.schema
 import os
@@ -113,11 +156,11 @@ fbs_files = [f for f in os.listdir(fbs_dir) if f.endswith('.fbs')]
 print(f"✅ Source schemas found: {len(fbs_files)} files")
 print(f"   Files: {fbs_files}")
 
-print("\n✅ ALL IMPORTS SUCCESSFUL")
+print("\n✅ ALL SCHEMA FILE ACCESSES SUCCESSFUL")
 EOF
 ```
-
 **Expected output:**
+
 ```
 ✅ Autobahn version: 25.10.1
 ✅ Welcome class: <module 'autobahn.wamp.gen.wamp.proto.Welcome' ...>
@@ -131,6 +174,7 @@ EOF
 ```
 
 ### Test runtime functionality
+
 ```bash
 python3 << 'EOF'
 # Test basic WAMP functionality
@@ -152,6 +196,7 @@ EOF
 ```
 
 ### Cleanup test environment
+
 ```bash
 deactivate
 rm -rf /tmp/test_autobahn_v25.10.1
@@ -160,6 +205,7 @@ rm -rf /tmp/test_autobahn_v25.10.1
 ## 3. Documentation Build Test (RTD Simulation)
 
 ### Test local Sphinx build
+
 ```bash
 cd docs
 
@@ -182,6 +228,7 @@ ls -lh _build/html/websocket/conformance.html 2>/dev/null || echo "⚠️  confo
 - Some warnings about missing conformance/flatbuffers files OK (they come from GitHub Release artifacts in RTD build)
 
 ### Test RTD artifact download script (dry-run simulation)
+
 ```bash
 # The script expects to run in RTD environment
 # We can't fully test it locally without mocking GitHub Release
@@ -196,6 +243,7 @@ echo "Script syntax: $?"
 ## 4. Verification Report Inspection
 
 ### Check verification report
+
 ```bash
 cat dist/autobahn-25.10.1.verify.txt
 
@@ -210,6 +258,7 @@ cat dist/autobahn-25.10.1.verify.txt
 ## 5. Release Notes & Changelog
 
 ### Check existing changelog
+
 ```bash
 cat docs/changelog.rst | head -50
 
