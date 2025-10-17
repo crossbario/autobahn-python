@@ -199,7 +199,19 @@ jobs:
 
             # Extract original SHA256 from verification report
             echo "Extracting original SHA256 from verification report..."
-            ORIGINAL_SHA256=$(grep "^SHA256(" "$VERIFY_FILE" | awk '{print $2}' | tr -d ')')
+            echo "DEBUG: Contents of $VERIFY_FILE:"
+            cat "$VERIFY_FILE"
+            echo ""
+            echo "DEBUG: Lines matching 'SHA256':"
+            grep -i "SHA256" "$VERIFY_FILE" || echo "(no matches found)"
+            echo ""
+            ORIGINAL_SHA256=$(grep "^SHA256(" "$VERIFY_FILE" | awk '{print $2}' | tr -d ')' || echo "")
+            if [ -z "$ORIGINAL_SHA256" ]; then
+              echo "❌ ERROR: Could not extract SHA256 from verification report"
+              echo "   The verification report may have an unexpected format"
+              HAS_ERRORS=1
+              continue
+            fi
             echo "Original SHA256: $ORIGINAL_SHA256"
             echo ""
 
@@ -551,7 +563,19 @@ jobs:
 
             # Extract original SHA256 from verification report
             echo "Extracting original SHA256 from verification report..."
-            ORIGINAL_SHA256=$(grep "^SHA256(" "$VERIFY_FILE" | awk '{print $2}' | tr -d ')')
+            echo "DEBUG: Contents of $VERIFY_FILE:"
+            cat "$VERIFY_FILE"
+            echo ""
+            echo "DEBUG: Lines matching 'SHA256':"
+            grep -i "SHA256" "$VERIFY_FILE" || echo "(no matches found)"
+            echo ""
+            ORIGINAL_SHA256=$(grep "^SHA256(" "$VERIFY_FILE" | awk '{print $2}' | tr -d ')' || echo "")
+            if [ -z "$ORIGINAL_SHA256" ]; then
+              echo "❌ ERROR: Could not extract SHA256 from verification report"
+              echo "   The verification report may have an unexpected format"
+              HAS_ERRORS=1
+              continue
+            fi
             echo "Original SHA256: $ORIGINAL_SHA256"
             echo ""
 
@@ -928,7 +952,19 @@ jobs:
 
             # Extract original SHA256 from verification report
             echo "Extracting original SHA256 from verification report..."
-            ORIGINAL_SHA256=$(grep "^SHA256(" "$VERIFY_FILE" | awk '{print $2}' | tr -d ')')
+            echo "DEBUG: Contents of $VERIFY_FILE:"
+            cat "$VERIFY_FILE"
+            echo ""
+            echo "DEBUG: Lines matching 'SHA256':"
+            grep -i "SHA256" "$VERIFY_FILE" || echo "(no matches found)"
+            echo ""
+            ORIGINAL_SHA256=$(grep "^SHA256(" "$VERIFY_FILE" | awk '{print $2}' | tr -d ')' || echo "")
+            if [ -z "$ORIGINAL_SHA256" ]; then
+              echo "❌ ERROR: Could not extract SHA256 from verification report"
+              echo "   The verification report may have an unexpected format"
+              HAS_ERRORS=1
+              continue
+            fi
             echo "Original SHA256: $ORIGINAL_SHA256"
             echo ""
 
