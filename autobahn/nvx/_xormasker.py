@@ -25,9 +25,26 @@
 ###############################################################################
 
 import os
-import sys
 
 from cffi import FFI
+
+# Try normal import first (works when package is installed or in editable mode)
+try:
+    from autobahn.nvx._compile_args import get_compile_args
+except ImportError:
+    # Fallback for CFFI build time (before package installation)
+    # CFFI's setuptools integration runs builder modules via execfile() outside
+    # of package context, so normal imports fail. Use importlib to dynamically
+    # load the module from file path as a workaround.
+    import importlib.util
+    import sys
+
+    _path = os.path.join(os.path.dirname(__file__), "_compile_args.py")
+    spec = importlib.util.spec_from_file_location("autobahn.nvx._compile_args", _path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    get_compile_args = mod.get_compile_args
 
 ffi = FFI()
 
@@ -54,19 +71,10 @@ if "AUTOBAHN_USE_NVX" in os.environ and os.environ["AUTOBAHN_USE_NVX"] in ["1", 
 else:
     optional = True  # :noindex:
 
-# Detect platform/compiler and set flags
-if sys.platform == "win32":
-    # MSVC
-    extra_compile_args = ["/O2", "/W3"]
-else:
-    # GCC/clang
-    extra_compile_args = [
-        "-std=c99",
-        "-Wall",
-        "-Wno-strict-prototypes",
-        "-O3",
-        "-march=native",
-    ]
+# Get appropriate compiler flags for this build context
+# See autobahn.nvx._compile_args for details on architecture baseline selection
+# and build context detection (wheel distribution vs. local source install)
+extra_compile_args = get_compile_args()
 
 with open(os.path.join(os.path.dirname(__file__), "_xormasker.c")) as fd:
     c_source = fd.read()

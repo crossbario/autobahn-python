@@ -52,3 +52,4 @@ wheelhouse/
 .coverage
 .wstest/
 docs/_static/websocket/conformance/
+.coverage.*

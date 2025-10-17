@@ -141,6 +141,129 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Re-verify source distribution integrity (chain of custody)
+        run: |
+          echo "======================================================================"
+          echo "==> Source Distribution Re-Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+          echo "Re-verifying artifact integrity at release workflow."
+          echo "Comparing against original verification from wheels workflow."
+          echo ""
+
+          HAS_ERRORS=0
+
+          for tarball in dist/*.tar.gz; do
+            if [ ! -f "$tarball" ]; then
+              echo "⚠️  No source distribution found - skipping verification"
+              continue
+            fi
+
+            BASENAME=$(basename "$tarball")
+            VERIFY_FILE="dist/${BASENAME%.tar.gz}.verify.txt"
+
+            if [ ! -f "$VERIFY_FILE" ]; then
+              echo "⚠️  Warning: No original verification report found for $BASENAME"
+              echo "    Expected: $VERIFY_FILE"
+              echo "    Artifact may have been created without verification."
+              echo ""
+              HAS_ERRORS=1
+              continue
+            fi
+
+            echo "==> Re-verifying: $BASENAME"
+            echo ""
+
+            # Re-compute SHA256 hash
+            echo "Computing current SHA256 fingerprint..."
+            CURRENT_SHA256=$(openssl sha256 "$tarball" | awk '{print $2}')
+            echo "Current SHA256:  $CURRENT_SHA256"
+            echo ""
+
+            # Extract original SHA256 from verification report
+            echo "Extracting original SHA256 from verification report..."
+            ORIGINAL_SHA256=$(grep "^SHA256(" "$VERIFY_FILE" | awk '{print $2}' | tr -d ')')
+            echo "Original SHA256: $ORIGINAL_SHA256"
+            echo ""
+
+            # Compare hashes
+            if [ "$CURRENT_SHA256" = "$ORIGINAL_SHA256" ]; then
+              echo "✅ SHA256 MATCH - Artifact integrity confirmed through pipeline"
+            else
+              echo "❌ SHA256 MISMATCH - Artifact corrupted during transfer!"
+              echo ""
+              echo "This indicates corruption between:"
+              echo "  1. wheels workflow (artifact creation)"
+              echo "  2. release workflow (artifact consumption)"
+              echo ""
+              echo "Expected: $ORIGINAL_SHA256"
+              echo "Got:      $CURRENT_SHA256"
+              echo ""
+              HAS_ERRORS=1
+            fi
+            echo ""
+
+            # Re-run gzip integrity test
+            echo "Re-running gzip integrity test..."
+            if gzip -tv "$tarball" 2>&1 | tee /tmp/gzip_output.txt; then
+              GZIP_EXIT=$?
+              if [ $GZIP_EXIT -eq 0 ]; then
+                echo "✅ Gzip test PASS"
+              else
+                echo "❌ Gzip test FAIL (exit code $GZIP_EXIT)"
+                HAS_ERRORS=1
+              fi
+            else
+              GZIP_EXIT=$?
+              echo "❌ Gzip test FAIL (exit code $GZIP_EXIT)"
+              cat /tmp/gzip_output.txt
+              HAS_ERRORS=1
+            fi
+            echo ""
+
+            # Re-run tar extraction test
+            echo "Re-running tar extraction test..."
+            if tar -tzf "$tarball" > /dev/null 2>&1; then
+              echo "✅ Tar extraction test PASS"
+            else
+              TAR_EXIT=$?
+              echo "❌ Tar extraction test FAIL (exit code $TAR_EXIT)"
+              HAS_ERRORS=1
+            fi
+            echo ""
+
+            echo "------------------------------------------------------------------------"
+            echo "Original verification report (first 30 lines):"
+            echo "------------------------------------------------------------------------"
+            head -30 "$VERIFY_FILE"
+            echo ""
+            echo "... (full report available in dist/$VERIFY_FILE)"
+            echo ""
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ RE-VERIFICATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "Source distribution failed integrity checks at release workflow."
+            echo "This indicates either:"
+            echo "  1. Corruption during artifact transfer"
+            echo "  2. Packaging bug not caught at origin"
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE - investigate and fix first."
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ All source distributions re-verified successfully"
+            echo "======================================================================"
+            echo ""
+            echo "Chain of custody confirmed: wheels workflow → release workflow"
+            echo "Cryptographic integrity maintained throughout pipeline."
+          fi
+        shell: bash
+
       - name: Download Linux wheels without NVX
         uses: actions/download-artifact@v4
         with:
@@ -352,6 +475,129 @@ jobs:
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Re-verify source distribution integrity (chain of custody)
+        run: |
+          echo "======================================================================"
+          echo "==> Source Distribution Re-Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+          echo "Re-verifying artifact integrity at release workflow."
+          echo "Comparing against original verification from wheels workflow."
+          echo ""
+
+          HAS_ERRORS=0
+
+          for tarball in dist/*.tar.gz; do
+            if [ ! -f "$tarball" ]; then
+              echo "⚠️  No source distribution found - skipping verification"
+              continue
+            fi
+
+            BASENAME=$(basename "$tarball")
+            VERIFY_FILE="dist/${BASENAME%.tar.gz}.verify.txt"
+
+            if [ ! -f "$VERIFY_FILE" ]; then
+              echo "⚠️  Warning: No original verification report found for $BASENAME"
+              echo "    Expected: $VERIFY_FILE"
+              echo "    Artifact may have been created without verification."
+              echo ""
+              HAS_ERRORS=1
+              continue
+            fi
+
+            echo "==> Re-verifying: $BASENAME"
+            echo ""
+
+            # Re-compute SHA256 hash
+            echo "Computing current SHA256 fingerprint..."
+            CURRENT_SHA256=$(openssl sha256 "$tarball" | awk '{print $2}')
+            echo "Current SHA256:  $CURRENT_SHA256"
+            echo ""
+
+            # Extract original SHA256 from verification report
+            echo "Extracting original SHA256 from verification report..."
+            ORIGINAL_SHA256=$(grep "^SHA256(" "$VERIFY_FILE" | awk '{print $2}' | tr -d ')')
+            echo "Original SHA256: $ORIGINAL_SHA256"
+            echo ""
+
+            # Compare hashes
+            if [ "$CURRENT_SHA256" = "$ORIGINAL_SHA256" ]; then
+              echo "✅ SHA256 MATCH - Artifact integrity confirmed through pipeline"
+            else
+              echo "❌ SHA256 MISMATCH - Artifact corrupted during transfer!"
+              echo ""
+              echo "This indicates corruption between:"
+              echo "  1. wheels workflow (artifact creation)"
+              echo "  2. release workflow (artifact consumption)"
+              echo ""
+              echo "Expected: $ORIGINAL_SHA256"
+              echo "Got:      $CURRENT_SHA256"
+              echo ""
+              HAS_ERRORS=1
+            fi
+            echo ""
+
+            # Re-run gzip integrity test
+            echo "Re-running gzip integrity test..."
+            if gzip -tv "$tarball" 2>&1 | tee /tmp/gzip_output.txt; then
+              GZIP_EXIT=$?
+              if [ $GZIP_EXIT -eq 0 ]; then
+                echo "✅ Gzip test PASS"
+              else
+                echo "❌ Gzip test FAIL (exit code $GZIP_EXIT)"
+                HAS_ERRORS=1
+              fi
+            else
+              GZIP_EXIT=$?
+              echo "❌ Gzip test FAIL (exit code $GZIP_EXIT)"
+              cat /tmp/gzip_output.txt
+              HAS_ERRORS=1
+            fi
+            echo ""
+
+            # Re-run tar extraction test
+            echo "Re-running tar extraction test..."
+            if tar -tzf "$tarball" > /dev/null 2>&1; then
+              echo "✅ Tar extraction test PASS"
+            else
+              TAR_EXIT=$?
+              echo "❌ Tar extraction test FAIL (exit code $TAR_EXIT)"
+              HAS_ERRORS=1
+            fi
+            echo ""
+
+            echo "------------------------------------------------------------------------"
+            echo "Original verification report (first 30 lines):"
+            echo "------------------------------------------------------------------------"
+            head -30 "$VERIFY_FILE"
+            echo ""
+            echo "... (full report available in dist/$VERIFY_FILE)"
+            echo ""
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ RE-VERIFICATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "Source distribution failed integrity checks at release workflow."
+            echo "This indicates either:"
+            echo "  1. Corruption during artifact transfer"
+            echo "  2. Packaging bug not caught at origin"
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE - investigate and fix first."
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ All source distributions re-verified successfully"
+            echo "======================================================================"
+            echo ""
+            echo "Chain of custody confirmed: wheels workflow → release workflow"
+            echo "Cryptographic integrity maintained throughout pipeline."
+          fi
+        shell: bash
 
       - name: Download Linux wheels without NVX
         uses: actions/download-artifact@v4
@@ -589,6 +835,129 @@ jobs:
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Re-verify source distribution integrity (chain of custody)
+        run: |
+          echo "======================================================================"
+          echo "==> Source Distribution Re-Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+          echo "Re-verifying artifact integrity at release workflow."
+          echo "Comparing against original verification from wheels workflow."
+          echo ""
+
+          HAS_ERRORS=0
+
+          for tarball in dist/*.tar.gz; do
+            if [ ! -f "$tarball" ]; then
+              echo "⚠️  No source distribution found - skipping verification"
+              continue
+            fi
+
+            BASENAME=$(basename "$tarball")
+            VERIFY_FILE="dist/${BASENAME%.tar.gz}.verify.txt"
+
+            if [ ! -f "$VERIFY_FILE" ]; then
+              echo "⚠️  Warning: No original verification report found for $BASENAME"
+              echo "    Expected: $VERIFY_FILE"
+              echo "    Artifact may have been created without verification."
+              echo ""
+              HAS_ERRORS=1
+              continue
+            fi
+
+            echo "==> Re-verifying: $BASENAME"
+            echo ""
+
+            # Re-compute SHA256 hash
+            echo "Computing current SHA256 fingerprint..."
+            CURRENT_SHA256=$(openssl sha256 "$tarball" | awk '{print $2}')
+            echo "Current SHA256:  $CURRENT_SHA256"
+            echo ""
+
+            # Extract original SHA256 from verification report
+            echo "Extracting original SHA256 from verification report..."
+            ORIGINAL_SHA256=$(grep "^SHA256(" "$VERIFY_FILE" | awk '{print $2}' | tr -d ')')
+            echo "Original SHA256: $ORIGINAL_SHA256"
+            echo ""
+
+            # Compare hashes
+            if [ "$CURRENT_SHA256" = "$ORIGINAL_SHA256" ]; then
+              echo "✅ SHA256 MATCH - Artifact integrity confirmed through pipeline"
+            else
+              echo "❌ SHA256 MISMATCH - Artifact corrupted during transfer!"
+              echo ""
+              echo "This indicates corruption between:"
+              echo "  1. wheels workflow (artifact creation)"
+              echo "  2. release workflow (artifact consumption)"
+              echo ""
+              echo "Expected: $ORIGINAL_SHA256"
+              echo "Got:      $CURRENT_SHA256"
+              echo ""
+              HAS_ERRORS=1
+            fi
+            echo ""
+
+            # Re-run gzip integrity test
+            echo "Re-running gzip integrity test..."
+            if gzip -tv "$tarball" 2>&1 | tee /tmp/gzip_output.txt; then
+              GZIP_EXIT=$?
+              if [ $GZIP_EXIT -eq 0 ]; then
+                echo "✅ Gzip test PASS"
+              else
+                echo "❌ Gzip test FAIL (exit code $GZIP_EXIT)"
+                HAS_ERRORS=1
+              fi
+            else
+              GZIP_EXIT=$?
+              echo "❌ Gzip test FAIL (exit code $GZIP_EXIT)"
+              cat /tmp/gzip_output.txt
+              HAS_ERRORS=1
+            fi
+            echo ""
+
+            # Re-run tar extraction test
+            echo "Re-running tar extraction test..."
+            if tar -tzf "$tarball" > /dev/null 2>&1; then
+              echo "✅ Tar extraction test PASS"
+            else
+              TAR_EXIT=$?
+              echo "❌ Tar extraction test FAIL (exit code $TAR_EXIT)"
+              HAS_ERRORS=1
+            fi
+            echo ""
+
+            echo "------------------------------------------------------------------------"
+            echo "Original verification report (first 30 lines):"
+            echo "------------------------------------------------------------------------"
+            head -30 "$VERIFY_FILE"
+            echo ""
+            echo "... (full report available in dist/$VERIFY_FILE)"
+            echo ""
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ RE-VERIFICATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "Source distribution failed integrity checks at release workflow."
+            echo "This indicates either:"
+            echo "  1. Corruption during artifact transfer"
+            echo "  2. Packaging bug not caught at origin"
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE - investigate and fix first."
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ All source distributions re-verified successfully"
+            echo "======================================================================"
+            echo ""
+            echo "Chain of custody confirmed: wheels workflow → release workflow"
+            echo "Cryptographic integrity maintained throughout pipeline."
+          fi
+        shell: bash
 
       - name: Download Linux wheels without NVX
         uses: actions/download-artifact@v4
