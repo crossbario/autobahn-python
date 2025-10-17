@@ -141,6 +141,23 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Debug - List downloaded files
+        run: |
+          echo "======================================================================"
+          echo "==> DEBUG: Files in dist/ after downloading source-distribution"
+          echo "======================================================================"
+          echo "Using wheels_run_id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}"
+          echo ""
+          ls -la dist/
+          echo ""
+          echo "*.tar.gz files:"
+          find dist/ -name "*.tar.gz" -ls || echo "None found"
+          echo ""
+          echo "*.verify.txt files:"
+          find dist/ -name "*.verify.txt" -ls || echo "None found"
+          echo ""
+        shell: bash
+
       - name: Re-verify source distribution integrity (chain of custody)
         run: |
           echo "======================================================================"
@@ -475,6 +492,23 @@ jobs:
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Debug - List downloaded files
+        run: |
+          echo "======================================================================"
+          echo "==> DEBUG: Files in dist/ after downloading source-distribution"
+          echo "======================================================================"
+          echo "Using wheels_run_id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}"
+          echo ""
+          ls -la dist/
+          echo ""
+          echo "*.tar.gz files:"
+          find dist/ -name "*.tar.gz" -ls || echo "None found"
+          echo ""
+          echo "*.verify.txt files:"
+          find dist/ -name "*.verify.txt" -ls || echo "None found"
+          echo ""
+        shell: bash
 
       - name: Re-verify source distribution integrity (chain of custody)
         run: |
@@ -835,6 +869,23 @@ jobs:
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Debug - List downloaded files
+        run: |
+          echo "======================================================================"
+          echo "==> DEBUG: Files in dist/ after downloading source-distribution"
+          echo "======================================================================"
+          echo "Using wheels_run_id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}"
+          echo ""
+          ls -la dist/
+          echo ""
+          echo "*.tar.gz files:"
+          find dist/ -name "*.tar.gz" -ls || echo "None found"
+          echo ""
+          echo "*.verify.txt files:"
+          find dist/ -name "*.verify.txt" -ls || echo "None found"
+          echo ""
+        shell: bash
 
       - name: Re-verify source distribution integrity (chain of custody)
         run: |
