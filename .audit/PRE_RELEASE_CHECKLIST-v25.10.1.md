@@ -142,24 +142,37 @@ EOF
 
 ### 2.4 Test Flatbuffers schemata (source & binary) file access
 
-FIXME: `autobahn.wamp.gen.schema.__file__` is `None` at run-time! must access autobahn package data files using proper Python package (distutils?) functions.
+**IMPORTANT:** Use `importlib.resources` to access package data files correctly.
+This works with both installed wheels and development installs, unlike `__file__`.
 
 ```bash
 python3 << 'EOF'
-# Test schema access
-import autobahn.wamp.gen.schema
-import os
-schema_dir = os.path.dirname(autobahn.wamp.gen.schema.__file__)
-bfbs_files = [f for f in os.listdir(schema_dir) if f.endswith('.bfbs')]
+# Modern way to access package data files (Python 3.9+)
+try:
+    from importlib.resources import files
+except ImportError:
+    # Fallback for Python 3.7-3.8 (if needed)
+    from importlib_resources import files
+
+# Test binary schema access
+schema_pkg = files('autobahn.wamp.gen.schema')
+bfbs_files = sorted([f.name for f in schema_pkg.iterdir() if f.name.endswith('.bfbs')])
 print(f"✅ Binary schemas found: {len(bfbs_files)} files")
 print(f"   Files: {bfbs_files}")
 
 # Test source schema access
-import autobahn.wamp.flatbuffers
-fbs_dir = os.path.dirname(autobahn.wamp.flatbuffers.__file__)
-fbs_files = [f for f in os.listdir(fbs_dir) if f.endswith('.fbs')]
+fbs_pkg = files('autobahn.wamp.flatbuffers')
+fbs_files = sorted([f.name for f in fbs_pkg.iterdir() if f.name.endswith('.fbs')])
 print(f"✅ Source schemas found: {len(fbs_files)} files")
 print(f"   Files: {fbs_files}")
+
+# Test actual file reading
+test_file = schema_pkg.joinpath('wamp.bfbs')
+if test_file.is_file():
+    data = test_file.read_bytes()
+    print(f"✅ Can read binary schema: wamp.bfbs ({len(data)} bytes)")
+else:
+    print(f"❌ ERROR: wamp.bfbs not found!")
 
 print("\n✅ ALL SCHEMA FILE ACCESSES SUCCESSFUL")
 EOF
@@ -167,15 +180,13 @@ EOF
 **Expected output:**
 
 ```
-✅ Autobahn version: 25.10.1
-✅ Welcome class: <module 'autobahn.wamp.gen.wamp.proto.Welcome' ...>
-✅ Core WAMP messages: Hello, Goodbye, Error
 ✅ Binary schemas found: 7 files
    Files: ['auth.bfbs', 'pubsub.bfbs', 'roles.bfbs', 'rpc.bfbs', 'session.bfbs', 'types.bfbs', 'wamp.bfbs']
 ✅ Source schemas found: 7 files
    Files: ['auth.fbs', 'pubsub.fbs', 'roles.fbs', 'rpc.fbs', 'session.fbs', 'types.fbs', 'wamp.fbs']
+✅ Can read binary schema: wamp.bfbs (XXXX bytes)
 
-✅ ALL IMPORTS SUCCESSFUL
+✅ ALL SCHEMA FILE ACCESSES SUCCESSFUL
 ```
 
 ### 2.5 Test runtime functionality
