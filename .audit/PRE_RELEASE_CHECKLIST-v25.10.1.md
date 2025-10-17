@@ -4,7 +4,7 @@ This checklist ensures everything works locally before pushing to PyPI.
 
 ## 1. Package Build & Contents Verification
 
-### Build the package
+### 1.1 Build the package
 
 ```bash
 # Clean previous builds
@@ -15,14 +15,17 @@ just build-all
 
 # Verify artifacts created
 ls -lh dist/
+
+# Expected:
+# autobahn-25.10.1-cp311-cp311-linux_x86_64.whl
+# autobahn-25.10.1-cp312-cp312-linux_x86_64.whl
+# autobahn-25.10.1-cp313-cp313-linux_x86_64.whl
+# autobahn-25.10.1-cp314-cp314-linux_x86_64.whl
+# autobahn-25.10.1-pp311-pypy311_pp73-linux_x86_64.whl
+# autobahn-25.10.1.tar.gz
 ```
 
-**Expected output:**
-- `autobahn-25.10.1.tar.gz` (source distribution, ~360KB)
-- `autobahn-25.10.1-*.whl` (wheel for current Python)
-- FIXME (not generated locally!): `autobahn-25.10.1.verify.txt` (verification report)
-
-### Verify source distribution contents
+### 1.2 Verify source distribution contents
 
 ```bash
 # List contents
@@ -37,7 +40,7 @@ tar -tzf dist/autobahn-25.10.1.tar.gz | grep -E "(\.fbs|\.bfbs|wamp/gen.*\.py)"
 #   autobahn-25.10.1/autobahn/wamp/gen/**/*.py (65+ files)
 ```
 
-### Verify wheel contents
+### 1.3 Verify wheel contents
 
 ```bash
 # Extract and list wheel contents
@@ -79,7 +82,7 @@ done
 #       7 bfbs
 ```
 
-### Verify source distribution integrity
+### 1.4 Verify source distribution integrity
 
 ```bash
 # Run the same checks as CI
@@ -88,13 +91,11 @@ tar -tzf dist/autobahn-25.10.1.tar.gz > /dev/null
 
 # Compute SHA256
 openssl sha256 dist/autobahn-25.10.1.tar.gz
-
-# Expected: exit code 0, no errors, clean hash
 ```
 
 ## 2. Local Installation & Import Tests
 
-### Install in clean virtualenv
+### 2.1 Install in clean virtualenv
 
 ```bash
 # Create fresh test environment
@@ -110,17 +111,21 @@ pip install --find-links=dist autobahn
 # Install from local wheel - full!
 pip install --find-links=dist autobahn[all]
 
+# Expected:
+# Looking in links: dist
+# Processing ./dist/autobahn-25.10.1-cp312-cp312-linux_x86_64.whl
+
 # IMPORTANT: make sure we do _not_ accidentily import modules from source tree (git working repo), aka Python "development mode"!
 cd ~
 ```
 
-### Test basic import
+### 2.2 Test basic import
 
 ```bash
 python -c 'import autobahn; print(f"✅ Autobahn version: {autobahn.__version__}")'
 ```
 
-### Test Flatbuffers run-time imports
+### 2.3 Test Flatbuffers run-time imports
 
 ```bash
 python3 << 'EOF'
@@ -135,7 +140,7 @@ print("\n✅ ALL IMPORTS SUCCESSFUL")
 EOF
 ```
 
-### Test Flatbuffers schemata (source & binary) file access
+### 2.4 Test Flatbuffers schemata (source & binary) file access
 
 FIXME: `autobahn.wamp.gen.schema.__file__` is `None` at run-time! must access autobahn package data files using proper Python package (distutils?) functions.
 
@@ -173,7 +178,7 @@ EOF
 ✅ ALL IMPORTS SUCCESSFUL
 ```
 
-### Test runtime functionality
+### 2.5 Test runtime functionality
 
 ```bash
 python3 << 'EOF'
@@ -195,7 +200,7 @@ print("\n✅ RUNTIME TESTS PASSED")
 EOF
 ```
 
-### Cleanup test environment
+### 2.6 Cleanup test environment
 
 ```bash
 deactivate
@@ -204,7 +209,7 @@ rm -rf /tmp/test_autobahn_v25.10.1
 
 ## 3. Documentation Build Test (RTD Simulation)
 
-### Test local Sphinx build
+### 3.1 Test local Sphinx build
 
 ```bash
 cd docs
