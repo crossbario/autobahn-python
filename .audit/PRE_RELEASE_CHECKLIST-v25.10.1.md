@@ -317,10 +317,10 @@ Ran 328 tests in 4.305s
 PASSED (skips=27, successes=301)
 ```
 
-### 4.1 asyncio
+### 4.2 asyncio
 
 ```
-just check-coverage-twisted
+just check-coverage-asyncio
 ```
 
 **Expected output:**
@@ -392,7 +392,7 @@ oberstet@amd-ryzen5:~/scm/crossbario/autobahn-python$
 just wstest-testeeserver-twisted
 ```
 
-*Terminal 1:*
+*Terminal 2:*
 
 ```
 just wstest-testeeserver-asyncio
@@ -440,36 +440,133 @@ oberstet@amd-ryzen5:~/scm/crossbario/autobahn-python$
 
 ## 6. Download GitHub Release Artifacts
 
-Download GitHub Release Artifacts:
+Download GitHub Release Artifacts for local docs testing:
 
 * WebSocket Compliance Reports
 * FlatBuffers Schemata
 
+```bash
+# Set release tag to download from (adjust as needed)
+RELEASE_TAG="v25.9.1"
+BASE_URL="https://github.com/crossbario/autobahn-python/releases/download/${RELEASE_TAG}"
+
+# Create temporary directory for artifacts
+mkdir -p /tmp/release-artifacts
+cd /tmp/release-artifacts
+
+# Download WebSocket conformance reports
+echo "==> Downloading WebSocket conformance reports..."
+curl -L "${BASE_URL}/autobahn-python-websocket-conformance-${RELEASE_TAG}.tar.gz" \
+  -o conformance.tar.gz
+
+# Download FlatBuffers schemas
+echo "==> Downloading FlatBuffers schemas..."
+curl -L "${BASE_URL}/flatbuffers-schema.tar.gz" \
+  -o flatbuffers-schema.tar.gz
+
+# Extract artifacts
+echo "==> Extracting artifacts..."
+tar -xzf conformance.tar.gz
+tar -xzf flatbuffers-schema.tar.gz
+
+# List extracted contents
+echo ""
+echo "==> Downloaded artifacts:"
+ls -lh
+
+# Expected:
+# conformance.tar.gz
+# flatbuffers-schema.tar.gz
+# with-nvx/     (HTML/JSON conformance reports)
+# without-nvx/  (HTML/JSON conformance reports)
+# *.fbs         (FlatBuffers source schemas)
+# *.bfbs        (FlatBuffers binary schemas)
 ```
-FIXME
-```
+
+**Note:** These artifacts are used during RTD builds via `.github/scripts/rtd-download-artifacts.sh`.
+For local testing, you can manually copy them to `docs/_static/` if needed.
 
 ## 7. Documentation Build
 
-```
+Build the documentation locally:
+
+```bash
 just docs
 ```
 
-Inspect (view) docs:
+**Expected:** Build completes successfully (some warnings about missing artifacts OK).
 
-```
+Open docs for visual inspection:
+
+```bash
 just docs-view
 ```
 
+This opens `docs/_build/html/index.html` in your browser.
+
 ### 7.1 Docs: Release Notes
+
+**Manual verification:**
+
+1. Open: `http://localhost:8000/index.html` (or the URL from `just docs-view`)
+2. Navigate to Release Notes section
+3. **Check:**
+   - ✅ v25.10.1 is listed
+   - ✅ Release date is correct
+   - ✅ Major changes are documented
+   - ✅ Links work (GitHub issues, PRs)
 
 ### 7.2 Docs: Changelog
 
+**Manual verification:**
+
+1. Open: `http://localhost:8000/changelog.html`
+2. **Check:**
+   - ✅ v25.10.1 entry exists at the top
+   - ✅ All changes from `docs/changelog.rst` are rendered correctly
+   - ✅ Formatting is correct (bullet points, code blocks)
+   - ✅ Issue links work (#1714, #1715, #1716, #1717)
+
 ### 7.3 Docs: Wheels Inventory
+
+**Manual verification:**
+
+1. Open: `http://localhost:8000/installation.html` (or wherever wheels are documented)
+2. **Check:**
+   - ✅ Supported Python versions listed (3.11, 3.12, 3.13, 3.14, PyPy 3.11)
+   - ✅ Supported platforms listed (Linux, macOS, Windows)
+   - ✅ Installation instructions are clear
+   - ✅ NVX acceleration mentioned with `AUTOBAHN_USE_NVX` instructions
 
 ### 7.4 Docs: Conformance Reports
 
-### 7.5 Docs: Flatbuffers Schemata
+**Manual verification:**
+
+1. Open: `http://localhost:8000/websocket/conformance.html`
+2. **Check:**
+   - ⚠️  **Note:** Reports won't be present in local build (they come from GitHub Release artifacts in RTD)
+   - ✅ Page structure exists
+   - ✅ Placeholder or message about reports is present
+   - ✅ Links to external conformance reports work (if any)
+
+**After RTD publishes v25.10.1:**
+- Open: `https://autobahnpython.readthedocs.io/en/v25.10.1/websocket/conformance.html`
+- Verify conformance reports load correctly (with-nvx and without-nvx)
+
+### 7.5 Docs: FlatBuffers Schemata
+
+**Manual verification:**
+
+1. Open: `http://localhost:8000/wamp/serialization.html` (or wherever FlatBuffers are documented)
+2. **Check:**
+   - ⚠️  **Note:** Schema files won't be present in local build (they come from GitHub Release artifacts in RTD)
+   - ✅ FlatBuffers serialization is documented
+   - ✅ Schema file references are present
+   - ✅ Usage examples exist
+
+**After RTD publishes v25.10.1:**
+- Open: `https://autobahnpython.readthedocs.io/en/v25.10.1/wamp/serialization.html`
+- Verify FlatBuffers schema files are accessible (`.fbs` and `.bfbs` files)
 
 ## 8. Release Process
 
