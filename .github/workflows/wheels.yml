@@ -309,10 +309,10 @@ jobs:
                 echo "Gzip exit code: 0"
                 echo "Result: ✅ PASS (no trailing garbage)"
               else
-                GZIP_EXIT=$?
                 echo ""
-                echo "Gzip exit code: $GZIP_EXIT"
+                echo "Gzip exit code: $?"
                 echo "Result: ❌ FAIL"
+                exit 1
               fi
               echo ""
 
@@ -332,6 +332,7 @@ jobs:
                 echo "Result: ❌ FAIL (tar exit code $TAR_EXIT)"
                 cat /tmp/tar_contents.txt || true
                 rm -f /tmp/tar_contents.txt
+                exit 1
               fi
               echo ""
 
