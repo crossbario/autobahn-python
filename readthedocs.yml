@@ -1,16 +1,13 @@
 version: 2
 
-python:
-   version: 3.8
-   #install:
-   #   - requirements: requirements-rtd.txt
-   install:
-      - method: pip
-        path: .
-        extra_requirements:
-          - dev
-          - twisted
-          - compress
-          - serialization
-          - encryption
-          - scram
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+  commands:
+    # Download conformance artifacts from GitHub Releases before building docs
+    - bash .github/scripts/rtd-download-artifacts.sh
+    # Install package with all extras needed for docs
+    - pip install -e ".[dev,twisted,compress,serialization,encryption,scram]"
+    # Build Sphinx documentation
+    - cd docs && sphinx-build -b html . _build/html

@@ -242,12 +242,173 @@ jobs:
           echo "==> Wheel count: $(ls dist/*.whl 2>/dev/null | wc -l)"
         shell: bash
 
-      - name: Upload source distribution (Linux x86_64 only)
+      - name: Verify source distribution integrity (Linux x86_64 only)
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          echo "======================================================================"
+          echo "==> Source Distribution Integrity Verification (Issue #1716)"
+          echo "======================================================================"
+          echo ""
+          echo "Creating cryptographic fingerprints and verification logs for"
+          echo "supply chain integrity - ensures no corruption from build → artifact → release."
+          echo ""
+
+          for tarball in dist/*.tar.gz; do
+            if [ ! -f "$tarball" ]; then
+              echo "⚠️  No source distribution found in dist/"
+              continue
+            fi
+
+            BASENAME=$(basename "$tarball")
+            VERIFY_FILE="dist/${BASENAME%.tar.gz}.verify.txt"
+
+            echo "==> Verifying: $BASENAME"
+            echo ""
+
+            # Create verification report
+            {
+              echo "========================================================================"
+              echo "Source Distribution Integrity Verification Report"
+              echo "========================================================================"
+              echo ""
+              echo "Verification performed at origin (wheels workflow)"
+              echo "This report ensures artifact integrity through the entire pipeline."
+              echo ""
+              echo "------------------------------------------------------------------------"
+              echo "Metadata"
+              echo "------------------------------------------------------------------------"
+              echo "Filename:      $BASENAME"
+              echo "Timestamp:     $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+              echo "Workflow:      ${{ github.workflow }}"
+              echo "Run ID:        ${{ github.run_id }}"
+              echo "Runner OS:     ${{ runner.os }}"
+              echo "Runner Arch:   ${{ runner.arch }}"
+              echo "Commit SHA:    ${{ github.sha }}"
+              echo "Ref:           ${{ github.ref }}"
+              echo ""
+
+              echo "------------------------------------------------------------------------"
+              echo "File Properties"
+              echo "------------------------------------------------------------------------"
+              ls -lh "$tarball"
+              echo ""
+              echo "File size (bytes): $(stat -c%s "$tarball" 2>/dev/null || stat -f%z "$tarball")"
+              echo ""
+
+              echo "------------------------------------------------------------------------"
+              echo "Cryptographic Fingerprint (SHA256)"
+              echo "------------------------------------------------------------------------"
+              openssl sha256 "$tarball"
+              echo ""
+
+              echo "------------------------------------------------------------------------"
+              echo "Gzip Integrity Test"
+              echo "------------------------------------------------------------------------"
+              if gzip -tv "$tarball"; then
+                echo ""
+                echo "Gzip exit code: 0"
+                echo "Result: ✅ PASS (no trailing garbage)"
+              else
+                echo ""
+                echo "Gzip exit code: $?"
+                echo "Result: ❌ FAIL"
+                exit 1
+              fi
+              echo ""
+
+              echo "------------------------------------------------------------------------"
+              echo "Tar Extraction Test"
+              echo "------------------------------------------------------------------------"
+              echo "Testing with GNU tar (lists contents without extracting):"
+              if tar -tzf "$tarball" > /tmp/tar_contents.txt 2>&1; then
+                echo "Result: ✅ PASS (tar can read archive)"
+                echo "File count: $(wc -l < /tmp/tar_contents.txt)"
+                echo ""
+                echo "First 10 files:"
+                head -10 /tmp/tar_contents.txt
+                rm -f /tmp/tar_contents.txt
+              else
+                TAR_EXIT=$?
+                echo "Result: ❌ FAIL (tar exit code $TAR_EXIT)"
+                cat /tmp/tar_contents.txt || true
+                rm -f /tmp/tar_contents.txt
+                exit 1
+              fi
+              echo ""
+
+              echo "------------------------------------------------------------------------"
+              echo "Binary Analysis"
+              echo "------------------------------------------------------------------------"
+              echo "Last 100 bytes (hex dump) - checking for trailing garbage:"
+              tail -c 100 "$tarball" | hexdump -C
+              echo ""
+
+              echo "------------------------------------------------------------------------"
+              echo "Verification Summary"
+              echo "------------------------------------------------------------------------"
+              echo "Overall Result: ✅ PASS - Archive is valid and extractable"
+              echo ""
+              echo "========================================================================"
+              echo "End of Verification Report"
+              echo "========================================================================"
+            } | tee "$VERIFY_FILE"
+
+            # Run actual validation tests and fail immediately on error
+            echo ""
+            echo "==> Running integrity checks..."
+
+            # Check for trailing garbage in gzip
+            GZIP_OUTPUT=$(gzip -tv "$tarball" 2>&1)
+            GZIP_EXIT_CODE=$?
+
+            if echo "$GZIP_OUTPUT" | grep -qi "trailing garbage"; then
+              echo ""
+              echo "❌ ERROR: Source distribution has trailing garbage!"
+              echo "This will cause tar extraction failures for users."
+              echo "See $VERIFY_FILE for full details."
+              echo ""
+              exit 1
+            fi
+
+            if [ $GZIP_EXIT_CODE -ne 0 ]; then
+              echo ""
+              echo "❌ ERROR: gzip test failed with exit code $GZIP_EXIT_CODE"
+              echo "See $VERIFY_FILE for full details."
+              echo ""
+              exit 1
+            fi
+
+            # Check tar extraction
+            if ! tar -tzf "$tarball" > /dev/null 2>&1; then
+              TAR_EXIT=$?
+              echo ""
+              echo "❌ ERROR: tar extraction test failed with exit code $TAR_EXIT"
+              echo "See $VERIFY_FILE for full details."
+              echo ""
+              exit 1
+            fi
+
+            echo "✅ $BASENAME verified successfully"
+            echo "   Verification report: $VERIFY_FILE"
+            echo ""
+          done
+
+          echo "======================================================================"
+          echo "✅ All source distributions verified successfully"
+          echo "======================================================================"
+          echo ""
+          echo "Verification reports created:"
+          ls -lh dist/*.verify.txt
+        shell: bash
+
+      - name: Upload source distribution with verification reports (Linux x86_64 only)
         if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: source-distribution
-          path: dist/*.tar.gz
+          path: |
+            dist/*.tar.gz
+            dist/*.verify.txt
           retention-days: 30
 
       - name: Upload Linux wheels without NVX (Linux x86_64 only)
