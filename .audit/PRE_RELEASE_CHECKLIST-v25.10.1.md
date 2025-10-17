@@ -140,6 +140,15 @@ print("\n✅ ALL IMPORTS SUCCESSFUL")
 EOF
 ```
 
+**Expected output:**
+
+```
+✅ Welcome class: <module 'autobahn.wamp.gen.wamp.proto.Welcome' from '/tmp/test_autobahn_v25.10.1/lib/python3.12/site-packages/autobahn/wamp/gen/wamp/proto/Welcome.py'>
+✅ Core WAMP messages: Hello, Goodbye, Error
+
+✅ ALL IMPORTS SUCCESSFUL
+```
+
 ### 2.4 Test Flatbuffers schemata (source & binary) file access
 
 **IMPORTANT:** Use `importlib.resources` to access package data files correctly.
@@ -177,6 +186,7 @@ else:
 print("\n✅ ALL SCHEMA FILE ACCESSES SUCCESSFUL")
 EOF
 ```
+
 **Expected output:**
 
 ```
@@ -184,7 +194,7 @@ EOF
    Files: ['auth.bfbs', 'pubsub.bfbs', 'roles.bfbs', 'rpc.bfbs', 'session.bfbs', 'types.bfbs', 'wamp.bfbs']
 ✅ Source schemas found: 7 files
    Files: ['auth.fbs', 'pubsub.fbs', 'roles.fbs', 'rpc.fbs', 'session.fbs', 'types.fbs', 'wamp.fbs']
-✅ Can read binary schema: wamp.bfbs (XXXX bytes)
+✅ Can read binary schema: wamp.bfbs (28648 bytes)
 
 ✅ ALL SCHEMA FILE ACCESSES SUCCESSFUL
 ```
@@ -211,6 +221,15 @@ print("\n✅ RUNTIME TESTS PASSED")
 EOF
 ```
 
+**Expected output:**
+
+```
+✅ Can instantiate WAMP message classes
+✅ flatbuffers available: 25.9.23
+
+✅ RUNTIME TESTS PASSED
+```
+
 ### 2.6 Cleanup test environment
 
 ```bash
@@ -218,194 +237,247 @@ deactivate
 rm -rf /tmp/test_autobahn_v25.10.1
 ```
 
-## 3. Documentation Build Test (RTD Simulation)
+## 3. Run Checks & Unit tests
 
-### 3.1 Test local Sphinx build
+### 3.1 Formatting
 
-```bash
-cd docs
-
-# Clean previous builds
-rm -rf _build/
-
-# Build documentation
-sphinx-build -b html . _build/html
-
-# Check for errors
-echo "Exit code: $?"
-
-# Verify key files exist
-ls -lh _build/html/index.html
-ls -lh _build/html/websocket/conformance.html 2>/dev/null || echo "⚠️  conformance.html not in git (expected - comes from artifacts)"
+```
+just check-format
 ```
 
-**Expected:**
-- Build completes with 0 errors
-- Some warnings about missing conformance/flatbuffers files OK (they come from GitHub Release artifacts in RTD build)
+**Expected output:**
 
-### Test RTD artifact download script (dry-run simulation)
-
-```bash
-# The script expects to run in RTD environment
-# We can't fully test it locally without mocking GitHub Release
-
-# But we can verify the script syntax
-bash -n .github/scripts/rtd-download-artifacts.sh
-echo "Script syntax: $?"
-
-# Expected: 0 (no syntax errors)
+```
+...
+==> Defaulting to venv: 'cpy312'
+==> Linting code with cpy312...
+All checks passed!
 ```
 
-## 4. Verification Report Inspection
+### 3.2 Typing
 
-### Check verification report
-
-```bash
-cat dist/autobahn-25.10.1.verify.txt
-
-# Verify it contains:
-#   - SHA256 fingerprint
-#   - Gzip test result: PASS
-#   - Tar test result: PASS
-#   - File count: ~222 files
-#   - Timestamp and workflow metadata
+```
+just check-typing
 ```
 
-## 5. Release Notes & Changelog
+**Expected output:**
 
-### Check existing changelog
-
-```bash
-cat docs/changelog.rst | head -50
-
-# Does v25.10.1 have an entry? If not, add one manually or via Towncrier
+```
+...
+Found 247 errors in 44 files (checked 164 source files)
+error: Recipe `check-typing` failed with exit code 1
 ```
 
-### Towncrier (Optional - if you want to use it)
+### 3.3 Unit Tests
 
-**Note:** Towncrier not currently configured. If you want to add it:
+#### Twisted
 
-```bash
-# Install towncrier
-pip install towncrier
-
-# Create config in pyproject.toml:
-# [tool.towncrier]
-# directory = "changelog.d"
-# filename = "CHANGELOG.md"
-# ...
-
-# For now, update changelog.rst manually for v25.10.1
+```
+just test-twisted
 ```
 
-## 6. Platform & Python Coverage Verification
+**Expected output:**
 
-### Check what wheels were built in CI
-From PR #1715, verify these platforms are covered:
-- ✅ Linux x86_64 (with NVX, without NVX, manylinux)
-- ✅ Linux ARM64 (manylinux)
-- ✅ macOS ARM64 (Apple Silicon)
-- ✅ Windows x86_64
+```
+...
+-------------------------------------------------------------------------------
+Ran 328 tests in 2.987s
 
-### Check Python versions
-From workflows, verify these versions are supported:
-- ✅ CPython 3.11
-- ✅ CPython 3.12
-- ✅ CPython 3.13
-- ✅ CPython 3.14
-- ✅ PyPy 3.11
-
-## 7. Integration Tests (Optional but Recommended)
-
-### Run test suite with installed package
-```bash
-source /tmp/test_autobahn_v25.10.1/bin/activate
-pip install pytest pytest-asyncio
-
-# Run tests (if test suite is included)
-pytest tests/ -v
-
-deactivate
+PASSED (skips=27, successes=301)
 ```
 
-## 8. Final Checks Before Release
+#### Asyncio
 
-- [ ] All 30 CI checks passing on PR #1715 ✅
-- [ ] Source dist clean (no trailing garbage) ✅
-- [ ] Verification reports present (.verify.txt) ✅
-- [ ] FlatBuffers wrappers import successfully
-- [ ] FlatBuffers schemas (.fbs, .bfbs) in package
-- [ ] Documentation builds locally
-- [ ] Changelog updated for v25.10.1
-- [ ] PyPI safety check in place (prevents duplicate uploads)
-- [ ] RTD artifact download configured
-- [ ] Supply chain verification working (origin → release)
+```
+just test-asyncio
+```
 
-## 9. Release Process
+**Expected output:**
 
-Once all checks pass:
+```
+...
+========================================= 226 passed, 3 skipped, 6 warnings in 4.54s ==========================================
+```
+
+## 4. Run coverage
+
+### 4.1 Twisted
+
+```
+just check-coverage-twisted
+```
+
+**Expected output:**
+
+```
+...
+-------------------------------------------------------------------------------
+Ran 328 tests in 4.305s
+
+PASSED (skips=27, successes=301)
+```
+
+### 4.1 asyncio
+
+```
+just check-coverage-twisted
+```
+
+**Expected output:**
+
+```
+...
+========================================= 226 passed, 3 skipped, 6 warnings in 6.09s ==========================================
+```
+
+## 5. Run conformance tests
+
+### 5.1 Testee Clients
+
+*Terminal 1:*
+
+```
+just wstest-fuzzingserver
+```
+
+*Terminal 2:*
+
+```
+just wstest-testeeclient-twisted
+just wstest-testeeclient-asyncio
+```
+
+**Expected output:**
+
+```
+oberstet@amd-ryzen5:~/scm/crossbario/autobahn-python$ tree .wstest/clients
+.wstest/
+└── clients
+    ├── autobahn_25_9_1_nvxcffi_2_0_0_asyncio_cpython_3_12_11_case_1_1_1.html
+    ├── autobahn_25_9_1_nvxcffi_2_0_0_asyncio_cpython_3_12_11_case_1_1_1.json
+    ├── autobahn_25_9_1_nvxcffi_2_0_0_asyncio_cpython_3_12_11_case_1_1_2.html
+    ├── autobahn_25_9_1_nvxcffi_2_0_0_asyncio_cpython_3_12_11_case_1_1_2.json
+...
+    ├── autobahn_25_9_1_nvxcffi_2_0_0_twisted_25_5_0_cpython_3_12_11_case_1_1_1.html
+    ├── autobahn_25_9_1_nvxcffi_2_0_0_twisted_25_5_0_cpython_3_12_11_case_1_1_1.json
+    ├── autobahn_25_9_1_nvxcffi_2_0_0_twisted_25_5_0_cpython_3_12_11_case_1_1_2.html
+    ├── autobahn_25_9_1_nvxcffi_2_0_0_twisted_25_5_0_cpython_3_12_11_case_1_1_2.json
+...
+    ├── index.html
+    └── index.json
+
+2 directories, 986 files
+oberstet@amd-ryzen5:~/scm/crossbario/autobahn-python$ cloc .wstest/clients
+ 986 text files.
+ 986 unique files.
+   0 files ignored.
+
+github.com/AlDanial/cloc v 1.98  T=0.86 s (1148.7 files/s, 296672.1 lines/s)
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+HTML                           493          17756              0         140555
+JSON                           493              0              0          96350
+-------------------------------------------------------------------------------
+SUM:                           986          17756              0         236905
+-------------------------------------------------------------------------------
+oberstet@amd-ryzen5:~/scm/crossbario/autobahn-python$
+```
+
+### 5.2 Testee Servers
+
+*Terminal 1:*
+
+```
+just wstest-testeeserver-twisted
+```
+
+*Terminal 1:*
+
+```
+just wstest-testeeserver-asyncio
+```
+
+*Terminal 3:*
+
+```
+just wstest-fuzzingclient
+```
+
+**Expected output:**
+
+```
+oberstet@amd-ryzen5:~/scm/crossbario/autobahn-python$ tree .wstest/servers/
+.wstest/servers/
+├── autobahn_25_9_1_nvxcffi_2_0_0_asyncio_cpython_3_12_11_case_1_1_1.html
+├── autobahn_25_9_1_nvxcffi_2_0_0_asyncio_cpython_3_12_11_case_1_1_1.json
+├── autobahn_25_9_1_nvxcffi_2_0_0_asyncio_cpython_3_12_11_case_1_1_2.html
+├── autobahn_25_9_1_nvxcffi_2_0_0_asyncio_cpython_3_12_11_case_1_1_2.json
+...
+├── autobahn_25_9_1_nvxcffi_2_0_0_twisted_25_5_0_cpython_3_12_11_case_1_1_1.html
+├── autobahn_25_9_1_nvxcffi_2_0_0_twisted_25_5_0_cpython_3_12_11_case_1_1_1.json
+├── autobahn_25_9_1_nvxcffi_2_0_0_twisted_25_5_0_cpython_3_12_11_case_1_1_2.html
+├── autobahn_25_9_1_nvxcffi_2_0_0_twisted_25_5_0_cpython_3_12_11_case_1_1_2.json
+...
+├── index.html
+└── index.json
+oberstet@amd-ryzen5:~/scm/crossbario/autobahn-python$ cloc .wstest/servers/
+     986 text files.
+     986 unique files.
+       0 files ignored.
+
+github.com/AlDanial/cloc v 1.98  T=0.89 s (1110.7 files/s, 286734.2 lines/s)
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+HTML                           493          17756              0         139618
+JSON                           493              0              0          97178
+-------------------------------------------------------------------------------
+SUM:                           986          17756              0         236796
+-------------------------------------------------------------------------------
+oberstet@amd-ryzen5:~/scm/crossbario/autobahn-python$
+```
+
+## 6. Download GitHub Release Artifacts
+
+Download GitHub Release Artifacts:
+
+* WebSocket Compliance Reports
+* FlatBuffers Schemata
+
+```
+FIXME
+```
+
+## 7. Documentation Build
+
+```
+just docs
+```
+
+Inspect (view) docs:
+
+```
+just docs-view
+```
+
+### 7.1 Docs: Release Notes
+
+### 7.2 Docs: Changelog
+
+### 7.3 Docs: Wheels Inventory
+
+### 7.4 Docs: Conformance Reports
+
+### 7.5 Docs: Flatbuffers Schemata
+
+## 8. Release Process
+
+Once all checks pass, Git tag the release:
 
 ```bash
-# Merge PR #1715 to master
-# Create and push tag
 git checkout master
 git pull origin master
-git tag v25.10.1
+git tag -a v25.10.1 -m "tagged release"
 git push origin v25.10.1
-
-# Workflows will automatically:
-# 1. Build all wheels
-# 2. Run conformance tests
-# 3. Verify source dist integrity
-# 4. Check if v25.10.1 exists on PyPI (should be false)
-# 5. Create GitHub Release
-# 6. Upload to PyPI via Trusted Publishing
-# 7. Trigger RTD build with artifacts
 ```
-
-## 10. Post-Release Verification
-
-After release completes:
-
-```bash
-# Install from PyPI
-pip install --upgrade autobahn
-
-# Verify version
-python -c "import autobahn; print(autobahn.__version__)"
-# Expected: 25.10.1
-
-# Verify FlatBuffers
-python -c "from autobahn.wamp.gen.wamp.proto import Welcome; print(Welcome)"
-# Expected: <module ...>
-
-# Check RTD
-# Visit: https://autobahnpython.readthedocs.io/en/v25.10.1/
-# Verify conformance reports load
-```
-
----
-
-## Summary
-
-**Branch Strategy:** Continue on `rel_v25.10.1_part1` ✅
-
-**Critical Verifications:**
-1. ✅ Source dist integrity (no trailing garbage)
-2. ✅ FlatBuffers wrappers in package
-3. ✅ FlatBuffers schemas in package
-4. ✅ Supply chain verification working
-5. ⏳ Local import tests (run checklist above)
-6. ⏳ RTD will get artifacts from release
-
-**What's Already Done:**
-- RTD artifact download script configured
-- PyPI safety check implemented
-- Comprehensive verification reports
-- Re-verification in release workflow
-
-**What to Test Locally:**
-Follow sections 1-3 above to verify package contents and imports.
-
-**Ready for Release When:**
-All checkboxes in section 8 are checked ✅
