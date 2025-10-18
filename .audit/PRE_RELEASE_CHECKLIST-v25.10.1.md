@@ -507,7 +507,7 @@ To use these artifacts:
 ```
 
 **Note:** These artifacts are used during RTD builds via `.github/scripts/rtd-download-artifacts.sh`.
-For local testing, follow Section 7 below to build docs and integrate artifacts.
+For local testing, use `just docs-integrate-github-release` to copy them into the docs build directory.
 
 **Troubleshooting:**
 
@@ -516,55 +516,24 @@ If downloads fail:
 2. Verify the artifact names match the release (especially for nightly vs stable)
 3. For older releases (before v25.10.1), these artifacts may not exist - use a newer nightly release
 
-## 7. Documentation Build and Integration
+## 7. Documentation Build
 
-Build the documentation locally, then integrate the downloaded GitHub release artifacts:
+Build the documentation locally:
 
 ```bash
-# Step 1: Build documentation
-just docs
-
-# Step 2: Integrate downloaded artifacts into built docs
 just docs-integrate-github-release
+just docs
+```
 
-# Step 3: View documentation
+**Expected:** Build completes successfully (some warnings about missing artifacts OK).
+
+Open docs for visual inspection:
+
+```bash
 just docs-view
 ```
 
-**Expected output from integration:**
-
-```
-==> No release tag specified. Finding latest downloaded artifacts...
-✅ Found latest downloaded artifacts: master-202510180103
-==> Integrating GitHub release artifacts into built documentation...
-    Release: master-202510180103
-    Source: /tmp/autobahn-release-artifacts-master-202510180103
-    Target: docs/_build/html/_static/
-
-==> Creating target directories in docs/_build/html/_static/...
-==> Copying conformance reports (with NVX)...
-✅ Copied 2954 files to docs/_build/html/_static/websocket/conformance/with-nvx/
-==> Copying conformance reports (without NVX)...
-✅ Copied 4430 files to docs/_build/html/_static/websocket/conformance/without-nvx/
-==> Copying FlatBuffers source schemas (.fbs)...
-⚠️  No .fbs files found in /tmp/autobahn-release-artifacts-master-202510180103
-==> Copying FlatBuffers binary schemas (.bfbs)...
-⚠️  No .bfbs files found in /tmp/autobahn-release-artifacts-master-202510180103
-==> Copying FlatBuffers schema directories...
-✅ Copied schema directories
-
-════════════════════════════════════════════════════════════
-✅ GitHub release artifacts integrated into built documentation
-════════════════════════════════════════════════════════════
-
-Integrated artifacts from: master-202510180103
-Target location: docs/_build/html/_static/
-```
-
-**Important:** The workflow order is critical:
-1. **Build docs first** (`just docs`) - Creates `docs/_build/html/` structure
-2. **Then integrate artifacts** (`just docs-integrate-github-release`) - Copies conformance reports and schemas into the built docs
-3. **Then view** (`just docs-view`) - Opens browser to review integrated documentation
+This opens `docs/_build/html/index.html` in your browser.
 
 ### 7.1 Docs: Release Notes
 
