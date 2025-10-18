@@ -249,6 +249,9 @@ jobs:
           echo "==> Source Distribution Integrity Verification (Issue #1716)"
           echo "======================================================================"
           echo ""
+          echo "OpenSSL version:"
+          openssl version
+          echo ""
           echo "Creating cryptographic fingerprints and verification logs for"
           echo "supply chain integrity - ensures no corruption from build → artifact → release."
           echo ""
