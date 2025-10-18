@@ -15,6 +15,7 @@ Contents
    websocket/examples
    websocket/conformance
    wamp/programming
+   wamp/flatbuffers-schema
    wamp/aio-repl
    wamp/examples
    autobahn-on-free-threaded-python
