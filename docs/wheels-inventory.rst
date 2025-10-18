@@ -15,6 +15,19 @@ Wheels are built automatically for every release via GitHub Actions and publishe
 
 All wheels include full WebSocket and WAMP functionality. Platform-specific builds may include NVX (Native Vector Extensions) for accelerated WebSocket frame masking/unmasking.
 
+What's Next / Future Directions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Python packaging ecosystem is evolving rapidly, and we're committed to staying at the forefront of these developments:
+
+* **Wheel Variants** - We're following the development of `WheelNext <https://wheelnext.dev/>`_ and the transition from platform tags to build variants as described in `Python Wheels: From Tags to Variants <https://labs.quansight.org/blog/python-wheels-from-tags-to-variants>`_. This will enable more flexible wheel distribution strategies, particularly for optional binary optimizations like NVX.
+
+* **PyX Packaging** - We plan to fully support `PyX <https://astral.sh/pyx>`_ (Astral's next-generation Python package format) once it becomes available. PyX promises to address many current limitations in Python packaging, including better handling of optional native extensions and build variants.
+
+* **Expanded Platform Coverage** - As GitHub Actions and QEMU support improve, we aim to expand our wheel coverage to additional platforms and architectures where there's user demand.
+
+These initiatives will allow us to provide even better wheel distribution strategies, particularly for use cases like NVX acceleration where users should have the choice between pure Python (maximum compatibility) and optimized binary wheels (maximum performance).
+
 Supported Platforms
 -------------------
 
