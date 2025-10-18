@@ -52,4 +52,5 @@ wheelhouse/
 .coverage
 .wstest/
 docs/_static/websocket/conformance/
+docs/_static/flatbuffers/
 .coverage.*

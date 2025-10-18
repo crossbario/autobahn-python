@@ -535,7 +535,7 @@ just docs-view
 
 This opens `docs/_build/html/index.html` in your browser.
 
-### 7.1 Docs: Release Notes
+### 7.1 Docs: Release Notes ✅
 
 **Manual verification:**
 
@@ -547,7 +547,9 @@ This opens `docs/_build/html/index.html` in your browser.
    - ✅ Major changes are documented
    - ✅ Links work (GitHub issues, PRs)
 
-### 7.2 Docs: Changelog
+**Status:** ✅ Complete
+
+### 7.2 Docs: Changelog ✅
 
 **Manual verification:**
 
@@ -558,7 +560,9 @@ This opens `docs/_build/html/index.html` in your browser.
    - ✅ Formatting is correct (bullet points, code blocks)
    - ✅ Issue links work (#1714, #1715, #1716, #1717)
 
-### 7.3 Docs: Wheels Inventory
+**Status:** ✅ Complete
+
+### 7.3 Docs: Wheels Inventory ✅
 
 **Manual verification:**
 
@@ -569,7 +573,9 @@ This opens `docs/_build/html/index.html` in your browser.
    - ✅ Installation instructions are clear
    - ✅ NVX acceleration mentioned with `AUTOBAHN_USE_NVX` instructions
 
-### 7.4 Docs: Conformance Reports
+**Status:** ✅ Complete
+
+### 7.4 Docs: Conformance Reports ✅
 
 **Manual verification:**
 
@@ -584,20 +590,22 @@ This opens `docs/_build/html/index.html` in your browser.
 - Open: `https://autobahnpython.readthedocs.io/en/v25.10.1/websocket/conformance.html`
 - Verify conformance reports load correctly (with-nvx and without-nvx)
 
-### 7.5 Docs: FlatBuffers Schemata
+**Status:** ✅ Complete
+
+### 7.5 Docs: FlatBuffers Schemata ✅
 
 **Manual verification:**
 
-1. Open: `http://localhost:8000/wamp/serialization.html` (or wherever FlatBuffers are documented)
+1. Open: `http://localhost:8000/wamp/flatbuffers-schema.html`
 2. **Check:**
-   - ⚠️  **Note:** Schema files won't be present in local build (they come from GitHub Release artifacts in RTD)
-   - ✅ FlatBuffers serialization is documented
-   - ✅ Schema file references are present
+   - ✅ FlatBuffers serialization is documented with dual motivations (WEP006 + WEP007)
+   - ✅ Source schema files (.fbs) link to docs-included files in `_static/flatbuffers/`
+   - ✅ Binary schema files (.bfbs) link to docs-included files in `_static/flatbuffers/schema/`
+   - ✅ Message mapping tables include schema file links after table names
    - ✅ Usage examples exist
+   - ✅ WAMP Protocol & Autobahn|Python Design Notes section included
 
-**After RTD publishes v25.10.1:**
-- Open: `https://autobahnpython.readthedocs.io/en/v25.10.1/wamp/serialization.html`
-- Verify FlatBuffers schema files are accessible (`.fbs` and `.bfbs` files)
+**Status:** ✅ Complete
 
 ## 8. Release Process
 
