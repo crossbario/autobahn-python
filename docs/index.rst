@@ -10,6 +10,7 @@ Contents
    :maxdepth: 3
 
    installation
+   wheels-inventory
    asynchronous-programming
    websocket/programming
    websocket/examples
