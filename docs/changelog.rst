@@ -8,19 +8,92 @@ Changelog
 25.10.1
 -------
 
-* fix: Issue #1716 - Added comprehensive source distribution integrity verification
-* new: Supply chain security with cryptographic fingerprints and chain of custody verification
-* new: RTD documentation includes WebSocket conformance reports and FlatBuffers schemas via GitHub Release artifacts
+**Critical Fixes**
+
+* fix: Server conformance testing properly tests both with-nvx and without-nvx configurations - servers now restart for each configuration ensuring accurate test results
+* fix: Version consistency - autobahn/_version.py now matches pyproject.toml
+* fix: GitHub release artifact integration targets correct directory (docs/_build/html/_static/ not docs/_static/)
+
+**Supply Chain Security**
+
+* fix: Issue #1716 - Added comprehensive source distribution integrity verification with cryptographic fingerprints
+* new: Chain of custody verification ensures artifact integrity from build → artifact → release
+* new: Re-verification in release workflow with OpenSSL version compatibility (handles both 1.x and 3.x formats)
 * new: PyPI upload safety check prevents duplicate version uploads
-* new: Re-verification in release workflow ensures artifact integrity through entire pipeline
-* fix: Improved release workflow to download and integrate conformance artifacts
+
+**Documentation & Release Infrastructure**
+
+* new: RTD documentation includes WebSocket conformance reports and FlatBuffers schemas via GitHub Release artifacts
+* new: Streamlined release artifact download with ``just download-github-release`` recipe (auto-detects nightly/stable/dev)
+* new: Automated docs integration with ``just docs-integrate-github-release`` recipe
+* fix: Nightly release detection now correctly identifies master-YYYYMMDDHHMM releases
+* fix: Pre-release checklist Section 6 simplified to use justfile recipes
+
+**Wheel Building**
+
+* fix: ARM64 wheel builds eliminate duplicate wheels by building specific Python versions per job
+* fix: Filter out plain linux_* wheels before PyPI upload
+* fix: PyPI publishing removes non-package files from dist/
+
+25.9.1
+------
+
+**Major Features**
+
+* new: NVX native XOR masking acceleration for WebSocket frame masking/unmasking (#1697) - up to 100x faster on supported CPUs
+* new: ARM64 wheel building infrastructure via QEMU emulation for CPython 3.11, 3.13 and PyPy 3.11
+* new: Docker QEMU multi-arch wheel building system (#1673) supporting manylinux_2_17 and manylinux_2_28
+
+**Tooling Modernization**
+
+* new: Migration to modern Python toolchain - just, uv, and ruff (#1672, #1671, #1669, #1668, #1666)
+* new: Removed setuptools dependency (#1652) - now using modern pyproject.toml-based build
+* new: Concrete versioning for just (1.42.3) and uv (0.7.19) instead of "latest"
+* fix: GITHUB_TOKEN set for upstream just/uv installation to avoid rate limits
+
+**Deprecation Removals**
+
+* fix: Stop using twisted.internet.defer.returnValue (#1667, #1651) - replaced with native return statements
+* fix: Various deprecation warnings in tests (#1647)
+
+**CI/CD & Release Improvements**
+
+* new: Symmetric release structure across all 3 release types (stable, nightly, development)
+* new: Early Exit Pattern in release workflows prevents unnecessary runs
+* new: Completion marker prevents duplicate GitHub Discussions posts
+* new: GitHub Discussions support with correct category ID for automated release announcements
+* new: FlatBuffers schema packaged as tarball in GitHub releases
+* fix: Cross-workflow artifact downloads with run-id parameters
+* fix: Timestamp verification prevents matching old releases
+* fix: Event type detection in release-post-comment for nested workflow_run triggers
+* fix: Branch references updated from 'main' to 'master' throughout workflows
+* fix: Workflow naming simplified, tests no longer required for build-package
+
+**Platform-Specific Fixes**
+
+* fix: PyPy ARM64 builds add /root/.local/bin to PATH for uv
+* fix: ARM64 CPython 3.11 uses manylinux_2_17, CPython 3.13 uses manylinux_2_28
+* fix: Build-tools extras added to avoid nh3 segfault under QEMU ARM64
+* fix: Auditwheel failures non-fatal to handle QEMU segfaults
+* fix: Windows builds use MSVC attributes and invoke pip via python
+* fix: VENV_PYTHON variable set and used consistently across platforms
+
+**Refactoring & Cleanup**
+
+* new: AI policy announcement (#1663) - upcoming contributor guidelines for AI-assisted contributions
+* new: LMDB & XBR code refactored and broken out (#1664)
+* fix: Plain twisted utilities are sufficient (#1661) - removed unnecessary dependencies
+* fix: Emoji characters removed from bash scripts (causing syntax errors)
+* fix: External bash scripts for ARM64 build logic
 
 25.6.1
 ------
 
-- new: announcement of upcoming (but not yet effective) new AI policy clarifying matter with respect to AI assisted contributions (#1663)
-- fix: stop using twisted.internet.defer.returnValue (#1667, #1651)
-- FIXME: all what happened since last release;)
+* new: Announcement of upcoming AI policy clarifying matter with respect to AI-assisted contributions (#1663)
+* fix: Stop using twisted.internet.defer.returnValue (#1667, #1651) - migration to native return statements
+* fix: Remove setuptools dependency (#1652) - modernize to pyproject.toml-based builds
+* fix: Some deprecations in tests (#1647)
+* fix: Plain twisted utilities are sufficient (#1661)
 
 24.4.2
 ------
