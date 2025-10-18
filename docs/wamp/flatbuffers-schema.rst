@@ -79,7 +79,7 @@ FlatBuffers IDL source files are located in ``autobahn/wamp/flatbuffers/``:
      - Root WAMP message union type
 
 Binary Schemas (.bfbs)
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Compiled binary reflection schemas are located in ``autobahn/wamp/gen/schema/``:
 
@@ -555,7 +555,6 @@ See :mod:`autobahn.wamp.serializer` for the complete serializer implementation a
 Related Documentation
 ---------------------
 
-* :ref:`WAMP Programming Guide <wamp-programming>`
 * :class:`autobahn.wamp.message` - WAMP message classes
 * :class:`autobahn.wamp.serializer` - WAMP serializers
 * `FlatBuffers Documentation <https://google.github.io/flatbuffers/>`_

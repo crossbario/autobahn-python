@@ -375,8 +375,6 @@ The ARM64 build process:
 Related Documentation
 ---------------------
 
-* :ref:`Installation Guide <installation>`
-* :ref:`Release Notes <release-notes>`
 * `PyPI Package <https://pypi.org/project/autobahn/>`_
 * `GitHub Releases <https://github.com/crossbario/autobahn-python/releases>`_
 * `PEP 427 - The Wheel Binary Package Format <https://peps.python.org/pep-0427/>`_
