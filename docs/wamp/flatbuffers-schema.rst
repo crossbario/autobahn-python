@@ -3,7 +3,41 @@
 FlatBuffers Schema Reference
 =============================
 
-Autobahn|Python includes comprehensive FlatBuffers schema definitions for WAMP message serialization. FlatBuffers provide a high-performance, zero-copy binary serialization format that is particularly well-suited for network protocols like WAMP.
+Autobahn|Python includes comprehensive FlatBuffers schema definitions for WAMP messages and application payloads. This page documents the schemas, their purpose, and how they enable both high-performance serialization and static typing for WAMP applications.
+
+Why FlatBuffers for WAMP?
+--------------------------
+
+FlatBuffers serve **two fundamental purposes** in the WAMP ecosystem:
+
+**1. Zero-Copy Serialization (WEP006)**
+
+FlatBuffers provide a high-performance, zero-copy binary serialization format particularly well-suited for network protocols like WAMP:
+
+* **Zero-copy deserialization** - Messages can be accessed directly from wire buffers without parsing overhead
+* **Smaller message size** - Typically 20-30% smaller than JSON for WAMP messages
+* **Faster processing** - Up to 10x faster than JSON for complex messages, crucial for high-throughput applications
+* **PyPy compatibility** - Pure Python fallback ensures excellent performance on PyPy's JIT compiler
+
+See `WEP006 - Zero-copy WAMP Serialization with Flatbuffers <https://github.com/wamp-proto/wamp-proto/blob/master/wep/wep006/README.md>`_ and `issue #72 <https://github.com/wamp-proto/wamp-proto/issues/72>`_.
+
+**2. WAMP IDL for Static Typing (WEP007)**
+
+FlatBuffers IDL enables **WAMP Interface Description Language (WAMP IDL)** for statically typing WAMP application interfaces:
+
+* **Type-safe WAMP APIs** - Define typed contracts for procedures and topics
+* **Interface declarations** - Group related procedures and topics into named interfaces with UUIDs
+* **Code generation** - Generate type-safe client/server code from interface definitions
+* **API documentation** - Machine-readable API catalogs for discovery and tooling
+* **Payload validation** - Runtime validation of call arguments and results against schemas
+
+WAMP IDL uses FlatBuffers custom attributes (``wampid``, ``wampuri``, ``arg``, ``kwarg``, etc.) to map WAMP concepts to FlatBuffers types, enabling rich interface definitions like the `WAMP Meta API <https://github.com/wamp-proto/wamp-proto/blob/master/catalog/src/wamp-meta.fbs>`_.
+
+See `WEP007 - WAMP API Schema Definition with Flatbuffers <https://github.com/wamp-proto/wamp-proto/blob/master/wep/wep007/README.md>`_, the `WAMP specification on WAMP IDL <https://wamp-proto.org/wamp_latest_ietf.html#name-wamp-idl>`_, and `issue #355 <https://github.com/wamp-proto/wamp-proto/issues/355>`_.
+
+**Performance Benchmarks**
+
+Comprehensive benchmarks demonstrating FlatBuffers performance advantages exist in a separate repository. These sophisticated benchmarks use `vmprof <https://vmprof.readthedocs.io/>`_ for PyPy-compatible profiling (including GC analysis) and generate flamegraphs for detailed performance visualization. These benchmarks should be integrated into this repository in the future.
 
 Overview
 --------
@@ -13,6 +47,7 @@ The WAMP FlatBuffers schemas define all WAMP message types using Google's `FlatB
 * **Compiled to binary reflection schemas** (.bfbs files) for runtime schema introspection
 * **Auto-generated to Python wrapper classes** for type-safe message construction and parsing
 * **Mapped to WAMP message classes** in :mod:`autobahn.wamp.message` for seamless integration
+* **Used in WAMP IDL** for declaring typed WAMP interfaces, procedures, and topics
 
 Schema Files
 ------------
