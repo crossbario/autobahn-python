@@ -449,129 +449,65 @@ Download GitHub Release Artifacts for local docs testing:
 This ensures we're testing the artifacts that will become the next stable release after successful testing.
 
 ```bash
-# Query GitHub API to find the latest nightly release (tagged as master-YYYYMMDDHHMM)
-echo "==> Finding latest nightly release..."
-NIGHTLY_TAG=$(curl -s "https://api.github.com/repos/crossbario/autobahn-python/releases" \
-  | grep '"tag_name":' \
-  | grep -o 'master-[0-9]*' \
-  | head -1)
+# Download latest nightly release artifacts
+just download-github-release
+```
 
-if [ -n "$NIGHTLY_TAG" ]; then
-  RELEASE_TAG="$NIGHTLY_TAG"
-  echo "✅ Found nightly release: $RELEASE_TAG"
-else
-  # Fallback to latest stable if no nightly exists
-  echo "⚠️  No nightly release found, falling back to latest stable..."
-  RELEASE_TAG=$(curl -s "https://api.github.com/repos/crossbario/autobahn-python/releases/latest" \
-    | grep '"tag_name":' \
-    | sed 's/.*"tag_name": "\([^"]*\)".*/\1/')
-  echo "✅ Using stable release: $RELEASE_TAG"
-fi
+**Alternative usage:**
 
-if [ -z "$RELEASE_TAG" ]; then
-  echo "❌ ERROR: Could not determine release tag from GitHub API"
-  exit 1
-fi
+```bash
+# Download latest stable release
+just download-github-release stable
 
-BASE_URL="https://github.com/crossbario/autobahn-python/releases/download/${RELEASE_TAG}"
+# Download latest development release
+just download-github-release dev
 
-# Create temporary directory for artifacts
-mkdir -p /tmp/release-artifacts
-cd /tmp/release-artifacts
-
-# Download WebSocket conformance reports
-echo ""
-echo "==> Downloading WebSocket conformance reports..."
-if curl -fL "${BASE_URL}/autobahn-python-websocket-conformance-${RELEASE_TAG}.tar.gz" \
-    -o conformance.tar.gz; then
-  echo "✅ Downloaded: autobahn-python-websocket-conformance-${RELEASE_TAG}.tar.gz"
-else
-  echo "❌ ERROR: Failed to download conformance reports from ${RELEASE_TAG}"
-  echo "   URL: ${BASE_URL}/autobahn-python-websocket-conformance-${RELEASE_TAG}.tar.gz"
-  exit 1
-fi
-
-# Download FlatBuffers schemas
-echo ""
-echo "==> Downloading FlatBuffers schemas..."
-if curl -fL "${BASE_URL}/flatbuffers-schema.tar.gz" \
-    -o flatbuffers-schema.tar.gz; then
-  echo "✅ Downloaded: flatbuffers-schema.tar.gz"
-else
-  echo "❌ ERROR: Failed to download FlatBuffers schemas from ${RELEASE_TAG}"
-  echo "   URL: ${BASE_URL}/flatbuffers-schema.tar.gz"
-  exit 1
-fi
-
-# Extract artifacts
-echo ""
-echo "==> Extracting artifacts..."
-tar -xzf conformance.tar.gz
-tar -xzf flatbuffers-schema.tar.gz
-
-# List extracted contents
-echo ""
-echo "==> Downloaded and extracted artifacts:"
-ls -lh
-
-# Verify expected files exist
-echo ""
-echo "==> Verifying artifact structure..."
-if [ -d "with-nvx" ] && [ -d "without-nvx" ]; then
-  echo "✅ Conformance reports: with-nvx/ and without-nvx/ directories found"
-else
-  echo "❌ ERROR: Expected conformance report directories not found"
-  exit 1
-fi
-
-if ls *.fbs >/dev/null 2>&1 && ls *.bfbs >/dev/null 2>&1; then
-  echo "✅ FlatBuffers schemas: .fbs and .bfbs files found"
-else
-  echo "❌ ERROR: Expected FlatBuffers schema files not found"
-  exit 1
-fi
-
-echo ""
-echo "✅ All artifacts downloaded and verified successfully"
-echo ""
-echo "Release used: ${RELEASE_TAG}"
+# Download specific release tag
+just download-github-release v25.10.1
 ```
 
 **Expected output:**
 
 ```
-==> Finding latest nightly release...
-✅ Found nightly release: nightly-2025-10-17
+==> Downloading GitHub release artifacts for: nightly
+
+==> Finding latest nightly release (tagged as master-YYYYMMDDHHMM)...
+✅ Found nightly release: master-202510180103
 
 ==> Downloading WebSocket conformance reports...
-✅ Downloaded: autobahn-python-websocket-conformance-nightly-2025-10-17.tar.gz
+✅ Downloaded: autobahn-python-websocket-conformance-master-202510180103.tar.gz
 
 ==> Downloading FlatBuffers schemas...
 ✅ Downloaded: flatbuffers-schema.tar.gz
 
 ==> Extracting artifacts...
+✅ Extracted conformance reports
+✅ Extracted FlatBuffers schemas
 
 ==> Downloaded and extracted artifacts:
-total 15M
--rw-r--r-- 1 user user 7.5M Oct 17 10:30 conformance.tar.gz
--rw-r--r-- 1 user user 512K Oct 17 10:30 flatbuffers-schema.tar.gz
-drwxr-xr-x 2 user user 4.0K Oct 17 10:30 with-nvx/
-drwxr-xr-x 2 user user 4.0K Oct 17 10:30 without-nvx/
--rw-r--r-- 1 user user  20K Oct 17 10:30 wamp.fbs
--rw-r--r-- 1 user user  28K Oct 17 10:30 wamp.bfbs
+total 8.1M
+-rw-r--r-- 1 user user 8.0M Oct 18 01:03 conformance.tar.gz
+-rw-r--r-- 1 user user  32K Oct 18 01:03 flatbuffers-schema.tar.gz
+drwxr-xr-x 2 user user 4.0K Oct 18 01:03 with-nvx/
+drwxr-xr-x 2 user user 4.0K Oct 18 01:03 without-nvx/
+-rw-r--r-- 1 user user  20K Oct 18 01:03 wamp.fbs
+-rw-r--r-- 1 user user  28K Oct 18 01:03 wamp.bfbs
 ... (more schema files)
 
-==> Verifying artifact structure...
-✅ Conformance reports: with-nvx/ and without-nvx/ directories found
-✅ FlatBuffers schemas: .fbs and .bfbs files found
+════════════════════════════════════════════════════════════
+✅ Artifacts downloaded to: /tmp/autobahn-release-artifacts-master-202510180103
+════════════════════════════════════════════════════════════
 
-✅ All artifacts downloaded and verified successfully
+Release: master-202510180103
+Location: /tmp/autobahn-release-artifacts-master-202510180103
 
-Release used: nightly-2025-10-17
+To use these artifacts:
+  - Conformance reports: /tmp/autobahn-release-artifacts-master-202510180103/with-nvx/, /tmp/autobahn-release-artifacts-master-202510180103/without-nvx/
+  - FlatBuffers schemas: /tmp/autobahn-release-artifacts-master-202510180103/*.fbs, /tmp/autobahn-release-artifacts-master-202510180103/*.bfbs
 ```
 
 **Note:** These artifacts are used during RTD builds via `.github/scripts/rtd-download-artifacts.sh`.
-For local testing, you can manually copy them to `docs/_static/` if needed.
+For local testing, use `just docs-integrate-github-release` to copy them into the docs build directory.
 
 **Troubleshooting:**
 
