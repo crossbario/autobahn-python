@@ -449,17 +449,15 @@ Download GitHub Release Artifacts for local docs testing:
 This ensures we're testing the artifacts that will become the next stable release after successful testing.
 
 ```bash
-# Query GitHub API to find the latest nightly (pre-release)
+# Query GitHub API to find the latest nightly release (tagged as master-YYYYMMDDHHMM)
 echo "==> Finding latest nightly release..."
-NIGHTLY_INFO=$(curl -s "https://api.github.com/repos/crossbario/autobahn-python/releases" \
-  | grep -B 3 '"prerelease": true' \
-  | head -4 \
+NIGHTLY_TAG=$(curl -s "https://api.github.com/repos/crossbario/autobahn-python/releases" \
   | grep '"tag_name":' \
-  | head -1 \
-  | sed 's/.*"tag_name": "\([^"]*\)".*/\1/')
+  | grep -o 'master-[0-9]*' \
+  | head -1)
 
-if [ -n "$NIGHTLY_INFO" ]; then
-  RELEASE_TAG="$NIGHTLY_INFO"
+if [ -n "$NIGHTLY_TAG" ]; then
+  RELEASE_TAG="$NIGHTLY_TAG"
   echo "✅ Found nightly release: $RELEASE_TAG"
 else
   # Fallback to latest stable if no nightly exists

@@ -1276,3 +1276,112 @@ wstest-consolidate-reports:
 
     sync docs/_static/websocket/conformance/
     du -hs docs/_static/websocket/conformance/
+
+# Download GitHub release artifacts (usage: `just download-github-release` for nightly, or `just download-github-release stable`)
+download-github-release release_type="nightly":
+    #!/usr/bin/env bash
+    set -e
+    
+    RELEASE_TYPE="{{ release_type }}"
+    echo "==> Downloading GitHub release artifacts for: ${RELEASE_TYPE}"
+    echo ""
+    
+    # Determine which release tag to download
+    case "${RELEASE_TYPE}" in
+        nightly)
+            echo "==> Finding latest nightly release (tagged as master-YYYYMMDDHHMM)..."
+            RELEASE_TAG=$(curl -s "https://api.github.com/repos/crossbario/autobahn-python/releases" \
+              | grep '"tag_name":' \
+              | grep -o 'master-[0-9]*' \
+              | head -1)
+            if [ -z "$RELEASE_TAG" ]; then
+                echo "❌ ERROR: No nightly release found"
+                exit 1
+            fi
+            echo "✅ Found nightly release: $RELEASE_TAG"
+            ;;
+        
+        stable|latest)
+            echo "==> Finding latest stable release..."
+            RELEASE_TAG=$(curl -s "https://api.github.com/repos/crossbario/autobahn-python/releases/latest" \
+              | grep '"tag_name":' \
+              | sed 's/.*"tag_name": "\([^"]*\)".*/\1/')
+            if [ -z "$RELEASE_TAG" ]; then
+                echo "❌ ERROR: No stable release found"
+                exit 1
+            fi
+            echo "✅ Found stable release: $RELEASE_TAG"
+            ;;
+        
+        development|dev)
+            echo "==> Finding latest development release (tagged as fork-*)..."
+            RELEASE_TAG=$(curl -s "https://api.github.com/repos/crossbario/autobahn-python/releases" \
+              | grep '"tag_name":' \
+              | grep -o 'fork-[^"]*' \
+              | head -1)
+            if [ -z "$RELEASE_TAG" ]; then
+                echo "❌ ERROR: No development release found"
+                exit 1
+            fi
+            echo "✅ Found development release: $RELEASE_TAG"
+            ;;
+        
+        *)
+            # Treat as explicit tag name
+            RELEASE_TAG="${RELEASE_TYPE}"
+            echo "==> Using explicit release tag: $RELEASE_TAG"
+            ;;
+    esac
+    
+    BASE_URL="https://github.com/crossbario/autobahn-python/releases/download/${RELEASE_TAG}"
+    
+    # Create temporary directory for artifacts
+    DOWNLOAD_DIR="/tmp/autobahn-release-artifacts-${RELEASE_TAG}"
+    mkdir -p "${DOWNLOAD_DIR}"
+    cd "${DOWNLOAD_DIR}"
+    
+    echo ""
+    echo "==> Downloading WebSocket conformance reports..."
+    if curl -fL "${BASE_URL}/autobahn-python-websocket-conformance-${RELEASE_TAG}.tar.gz" \
+        -o conformance.tar.gz; then
+        echo "✅ Downloaded: autobahn-python-websocket-conformance-${RELEASE_TAG}.tar.gz"
+    else
+        echo "⚠️  Failed to download conformance reports (may not exist for this release)"
+    fi
+    
+    echo ""
+    echo "==> Downloading FlatBuffers schemas..."
+    if curl -fL "${BASE_URL}/flatbuffers-schema.tar.gz" \
+        -o flatbuffers-schema.tar.gz; then
+        echo "✅ Downloaded: flatbuffers-schema.tar.gz"
+    else
+        echo "⚠️  Failed to download FlatBuffers schemas (may not exist for this release)"
+    fi
+    
+    echo ""
+    echo "==> Extracting artifacts..."
+    if [ -f conformance.tar.gz ]; then
+        tar -xzf conformance.tar.gz
+        echo "✅ Extracted conformance reports"
+    fi
+    if [ -f flatbuffers-schema.tar.gz ]; then
+        tar -xzf flatbuffers-schema.tar.gz
+        echo "✅ Extracted FlatBuffers schemas"
+    fi
+    
+    echo ""
+    echo "==> Downloaded and extracted artifacts:"
+    ls -lh
+    
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+    echo "✅ Artifacts downloaded to: ${DOWNLOAD_DIR}"
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Release: ${RELEASE_TAG}"
+    echo "Location: ${DOWNLOAD_DIR}"
+    echo ""
+    echo "To use these artifacts:"
+    echo "  - Conformance reports: ${DOWNLOAD_DIR}/with-nvx/, ${DOWNLOAD_DIR}/without-nvx/"
+    echo "  - FlatBuffers schemas: ${DOWNLOAD_DIR}/*.fbs, ${DOWNLOAD_DIR}/*.bfbs"
+    echo ""
