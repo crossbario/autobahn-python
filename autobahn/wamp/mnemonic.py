@@ -160,16 +160,17 @@ def parse_derivation_path(str_derivation_path):
 def mnemonic_to_private_key(
     mnemonic, str_derivation_path=LEDGER_ETH_DERIVATION_PATH, passphrase=""
 ):
-    """Performs all convertions to get a private key from a mnemonic sentence, including:
+    """Performs all convertions to get a private key from a mnemonic sentence.
 
-        BIP39 mnemonic to seed
-        BIP32 seed to master key
-        BIP32 child derivation of a path provided
+    This includes:
 
-    Parameters:
-        mnemonic -- seed wordlist, usually with 24 words, that is used for ledger wallet backup
-        str_derivation_path -- string that directs BIP32 key derivation, defaults to path
-            used by ledger ETH wallet
+    - BIP39 mnemonic to seed
+    - BIP32 seed to master key
+    - BIP32 child derivation of a path provided
+
+    :param mnemonic: seed wordlist, usually with 24 words, that is used for ledger wallet backup
+    :param str_derivation_path: string that directs BIP32 key derivation, defaults to path used by ledger ETH wallet
+    :param passphrase: optional passphrase for BIP39 seed generation
 
     """
 
