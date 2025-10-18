@@ -1393,6 +1393,19 @@ docs-integrate-github-release release_tag="":
 
     RELEASE_TAG="{{ release_tag }}"
 
+    # Check that docs have been built first
+    if [ ! -d "docs/_build/html" ]; then
+        echo "❌ ERROR: Documentation not built yet"
+        echo ""
+        echo "Please build documentation first using:"
+        echo "  just docs"
+        echo ""
+        echo "Then integrate artifacts with:"
+        echo "  just docs-integrate-github-release"
+        echo ""
+        exit 1
+    fi
+
     # If no tag specified, find the most recently downloaded artifacts
     if [ -z "${RELEASE_TAG}" ]; then
         echo "==> No release tag specified. Finding latest downloaded artifacts..."
@@ -1425,23 +1438,24 @@ docs-integrate-github-release release_tag="":
         exit 1
     fi
 
-    echo "==> Integrating GitHub release artifacts into docs build..."
+    echo "==> Integrating GitHub release artifacts into built documentation..."
     echo "    Release: ${RELEASE_TAG}"
     echo "    Source: ${DOWNLOAD_DIR}"
+    echo "    Target: docs/_build/html/_static/"
     echo ""
 
-    # Create target directories
-    echo "==> Creating target directories in docs/_static/..."
-    mkdir -p docs/_static/websocket/conformance/with-nvx
-    mkdir -p docs/_static/websocket/conformance/without-nvx
-    mkdir -p docs/_static/flatbuffers
+    # Create target directories in the BUILT docs
+    echo "==> Creating target directories in docs/_build/html/_static/..."
+    mkdir -p docs/_build/html/_static/websocket/conformance/with-nvx
+    mkdir -p docs/_build/html/_static/websocket/conformance/without-nvx
+    mkdir -p docs/_build/html/_static/flatbuffers
 
     # Copy conformance reports (with-nvx)
     if [ -d "${DOWNLOAD_DIR}/with-nvx" ]; then
         echo "==> Copying conformance reports (with NVX)..."
-        cp -r "${DOWNLOAD_DIR}/with-nvx"/* docs/_static/websocket/conformance/with-nvx/ 2>/dev/null || true
-        FILE_COUNT=$(find docs/_static/websocket/conformance/with-nvx -type f | wc -l)
-        echo "✅ Copied ${FILE_COUNT} files to docs/_static/websocket/conformance/with-nvx/"
+        cp -r "${DOWNLOAD_DIR}/with-nvx"/* docs/_build/html/_static/websocket/conformance/with-nvx/ 2>/dev/null || true
+        FILE_COUNT=$(find docs/_build/html/_static/websocket/conformance/with-nvx -type f | wc -l)
+        echo "✅ Copied ${FILE_COUNT} files to docs/_build/html/_static/websocket/conformance/with-nvx/"
     else
         echo "⚠️  No with-nvx conformance reports found in ${DOWNLOAD_DIR}"
     fi
@@ -1449,9 +1463,9 @@ docs-integrate-github-release release_tag="":
     # Copy conformance reports (without-nvx)
     if [ -d "${DOWNLOAD_DIR}/without-nvx" ]; then
         echo "==> Copying conformance reports (without NVX)..."
-        cp -r "${DOWNLOAD_DIR}/without-nvx"/* docs/_static/websocket/conformance/without-nvx/ 2>/dev/null || true
-        FILE_COUNT=$(find docs/_static/websocket/conformance/without-nvx -type f | wc -l)
-        echo "✅ Copied ${FILE_COUNT} files to docs/_static/websocket/conformance/without-nvx/"
+        cp -r "${DOWNLOAD_DIR}/without-nvx"/* docs/_build/html/_static/websocket/conformance/without-nvx/ 2>/dev/null || true
+        FILE_COUNT=$(find docs/_build/html/_static/websocket/conformance/without-nvx -type f | wc -l)
+        echo "✅ Copied ${FILE_COUNT} files to docs/_build/html/_static/websocket/conformance/without-nvx/"
     else
         echo "⚠️  No without-nvx conformance reports found in ${DOWNLOAD_DIR}"
     fi
@@ -1460,8 +1474,8 @@ docs-integrate-github-release release_tag="":
     echo "==> Copying FlatBuffers source schemas (.fbs)..."
     FBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.fbs" -type f 2>/dev/null | wc -l)
     if [ "${FBS_COUNT}" -gt 0 ]; then
-        cp "${DOWNLOAD_DIR}"/*.fbs docs/_static/flatbuffers/ 2>/dev/null || true
-        echo "✅ Copied ${FBS_COUNT} .fbs files to docs/_static/flatbuffers/"
+        cp "${DOWNLOAD_DIR}"/*.fbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+        echo "✅ Copied ${FBS_COUNT} .fbs files to docs/_build/html/_static/flatbuffers/"
     else
         echo "⚠️  No .fbs files found in ${DOWNLOAD_DIR}"
     fi
@@ -1470,8 +1484,8 @@ docs-integrate-github-release release_tag="":
     echo "==> Copying FlatBuffers binary schemas (.bfbs)..."
     BFBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.bfbs" -type f 2>/dev/null | wc -l)
     if [ "${BFBS_COUNT}" -gt 0 ]; then
-        cp "${DOWNLOAD_DIR}"/*.bfbs docs/_static/flatbuffers/ 2>/dev/null || true
-        echo "✅ Copied ${BFBS_COUNT} .bfbs files to docs/_static/flatbuffers/"
+        cp "${DOWNLOAD_DIR}"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+        echo "✅ Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
     else
         echo "⚠️  No .bfbs files found in ${DOWNLOAD_DIR}"
     fi
@@ -1479,22 +1493,21 @@ docs-integrate-github-release release_tag="":
     # Also check for schema/ and wamp/ subdirectories (alternative structure)
     if [ -d "${DOWNLOAD_DIR}/schema" ] || [ -d "${DOWNLOAD_DIR}/wamp" ]; then
         echo "==> Copying FlatBuffers schema directories..."
-        [ -d "${DOWNLOAD_DIR}/schema" ] && cp -r "${DOWNLOAD_DIR}/schema" docs/_static/flatbuffers/ 2>/dev/null || true
-        [ -d "${DOWNLOAD_DIR}/wamp" ] && cp -r "${DOWNLOAD_DIR}/wamp" docs/_static/flatbuffers/ 2>/dev/null || true
+        [ -d "${DOWNLOAD_DIR}/schema" ] && cp -r "${DOWNLOAD_DIR}/schema" docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+        [ -d "${DOWNLOAD_DIR}/wamp" ] && cp -r "${DOWNLOAD_DIR}/wamp" docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
         echo "✅ Copied schema directories"
     fi
 
     echo ""
     echo "════════════════════════════════════════════════════════════"
-    echo "✅ GitHub release artifacts integrated into docs build"
+    echo "✅ GitHub release artifacts integrated into built documentation"
     echo "════════════════════════════════════════════════════════════"
     echo ""
     echo "Integrated artifacts from: ${RELEASE_TAG}"
-    echo "Target location: docs/_static/"
+    echo "Target location: docs/_build/html/_static/"
     echo ""
     echo "Next steps:"
-    echo "  1. Build documentation: just docs"
-    echo "  2. View documentation: just docs-view"
-    echo "  3. Check conformance reports at: docs/_build/html/websocket/conformance.html"
-    echo "  4. Check FlatBuffers schemas at: docs/_build/html/wamp/serialization.html"
+    echo "  1. View documentation: just docs-view"
+    echo "  2. Check conformance reports at: http://localhost:8000/websocket/conformance.html"
+    echo "  3. Check FlatBuffers schemas at: http://localhost:8000/wamp/serialization.html"
     echo ""

@@ -25,14 +25,24 @@ The latest conformance test results are generated automatically by our CI/CD pip
 Client Conformance
 ~~~~~~~~~~~~~~~~~~
 
-* `Client Results <../_static/websocket/conformance/clients/index.html>`__ - Autobahn|Python WebSocket client conformance
-* :download:`Client Results (JSON) Archive </_static/websocket/conformance/autobahn-python-websocket-client-conformance.zip>`
+**With NVX Acceleration:**
+
+* `Client Results (With NVX) <../_static/websocket/conformance/with-nvx/clients/index.html>`__ - Autobahn|Python WebSocket client conformance with NVX acceleration
+
+**Without NVX Acceleration:**
+
+* `Client Results (Without NVX) <../_static/websocket/conformance/without-nvx/clients/index.html>`__ - Autobahn|Python WebSocket client conformance without NVX acceleration
 
 Server Conformance
 ~~~~~~~~~~~~~~~~~~~
 
-* `Server Results <../_static/websocket/conformance/servers/index.html>`__ - Autobahn|Python WebSocket server conformance
-* :download:`Server Results (JSON) Archive </_static/websocket/conformance/autobahn-python-websocket-server-conformance.zip>`
+**With NVX Acceleration:**
+
+* `Server Results (With NVX) <../_static/websocket/conformance/with-nvx/servers/index.html>`__ - Autobahn|Python WebSocket server conformance with NVX acceleration
+
+**Without NVX Acceleration:**
+
+* `Server Results (Without NVX) <../_static/websocket/conformance/without-nvx/servers/index.html>`__ - Autobahn|Python WebSocket server conformance without NVX acceleration
 
 Running Tests Locally
 ----------------------
