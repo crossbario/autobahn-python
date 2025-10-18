@@ -24,4 +24,5 @@ Contents
    AI_GUIDELINES.md
    AI_AUDIT_PROCESS.md
    AI_AUDIT_PROCESS_REVIEW.md
+   release-notes
    changelog
