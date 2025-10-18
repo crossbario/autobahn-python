@@ -692,7 +692,7 @@ class EventDetails(object):
 
         :param transaction_hash: An application provided transaction hash for the originating call, which may
             be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
-            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`__.
         :type transaction_hash: str
 
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
@@ -819,7 +819,7 @@ class PublishOptions(object):
 
         :param transaction_hash: An application provided transaction hash for the published event, which may
             be used in the router to throttle or deduplicate the events on the topic. See the discussion
-            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`__.
         :type transaction_hash: str
 
         :param forward_for: When this Event is forwarded for a client (or from an intermediary router).
@@ -1290,7 +1290,7 @@ class CallOptions(object):
 
         :param transaction_hash: An application provided transaction hash for the originating call, which may
             be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
-            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`__.
         :type transaction_hash: str
 
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
@@ -2166,7 +2166,7 @@ class TransportDetails(object):
         If this transport is using TLS and the TLS peer has provided a valid certificate,
         this attribute returns the peer certificate.
 
-        See `here <https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.getpeercert>`_ for details
+        See `here <https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.getpeercert>`__ for details
         about the object returned.
         """
         return self._peer_cert

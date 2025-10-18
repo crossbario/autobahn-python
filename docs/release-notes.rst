@@ -132,5 +132,5 @@ See Also
 --------
 
 * :ref:`changelog <changelog>` - Detailed technical changelog
-* :ref:`installation <installation>` - Installation instructions
+* Installation instructions - see README.md
 * `GitHub Releases <https://github.com/crossbario/autobahn-python/releases>`_ - Release artifacts and announcements

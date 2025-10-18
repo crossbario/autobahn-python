@@ -2101,7 +2101,7 @@ class Publish(Message):
 
         :param transaction_hash: An application provided transaction hash for the published event, which may
             be used in the router to throttle or deduplicate the events on the topic. See the discussion
-            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`__.
         :type transaction_hash: str
 
         :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
@@ -3722,7 +3722,7 @@ class Event(Message):
 
         :param transaction_hash: An application provided transaction hash for the originating call, which may
             be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
-            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`__.
         :type transaction_hash: str
 
         :param x_acknowledged_delivery: Whether this Event should be acknowledged.
@@ -4530,7 +4530,7 @@ class Call(Message):
 
         :param transaction_hash: An application provided transaction hash for the originating call, which may
             be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
-            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`__.
         :type transaction_hash: str
 
         :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
@@ -6017,7 +6017,7 @@ class Invocation(Message):
 
         :param transaction_hash: An application provided transaction hash for the originating call, which may
             be used in the router to throttle or deduplicate the calls on the procedure. See the discussion
-            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_.
+            `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`__.
         :type transaction_hash: str
 
         :param enc_algo: If using payload transparency, the encoding algorithm that was used to encode the payload.
