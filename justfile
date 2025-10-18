@@ -1472,30 +1472,46 @@ docs-integrate-github-release release_tag="":
 
     # Copy FlatBuffers schemas (source .fbs files)
     echo "==> Copying FlatBuffers source schemas (.fbs)..."
-    FBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.fbs" -type f 2>/dev/null | wc -l)
-    if [ "${FBS_COUNT}" -gt 0 ]; then
-        cp "${DOWNLOAD_DIR}"/*.fbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
-        echo "✅ Copied ${FBS_COUNT} .fbs files to docs/_build/html/_static/flatbuffers/"
+    if [ -d "${DOWNLOAD_DIR}/flatbuffers" ]; then
+        # New structure: .fbs files are in flatbuffers/ subdirectory
+        FBS_COUNT=$(find "${DOWNLOAD_DIR}/flatbuffers" -name "*.fbs" -type f 2>/dev/null | wc -l)
+        if [ "${FBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}/flatbuffers"/*.fbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "✅ Copied ${FBS_COUNT} .fbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "⚠️  No .fbs files found in ${DOWNLOAD_DIR}/flatbuffers"
+        fi
     else
-        echo "⚠️  No .fbs files found in ${DOWNLOAD_DIR}"
+        # Legacy structure: .fbs files in top-level directory
+        FBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.fbs" -type f 2>/dev/null | wc -l)
+        if [ "${FBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}"/*.fbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "✅ Copied ${FBS_COUNT} .fbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "⚠️  No .fbs files found in ${DOWNLOAD_DIR}"
+        fi
     fi
 
     # Copy FlatBuffers binary schemas (.bfbs files)
     echo "==> Copying FlatBuffers binary schemas (.bfbs)..."
-    BFBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.bfbs" -type f 2>/dev/null | wc -l)
-    if [ "${BFBS_COUNT}" -gt 0 ]; then
-        cp "${DOWNLOAD_DIR}"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
-        echo "✅ Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
+    if [ -d "${DOWNLOAD_DIR}/gen/schema" ]; then
+        # New structure: .bfbs files are in gen/schema/ subdirectory
+        BFBS_COUNT=$(find "${DOWNLOAD_DIR}/gen/schema" -name "*.bfbs" -type f 2>/dev/null | wc -l)
+        if [ "${BFBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}/gen/schema"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "✅ Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "⚠️  No .bfbs files found in ${DOWNLOAD_DIR}/gen/schema"
+        fi
     else
-        echo "⚠️  No .bfbs files found in ${DOWNLOAD_DIR}"
-    fi
-
-    # Also check for schema/ and wamp/ subdirectories (alternative structure)
-    if [ -d "${DOWNLOAD_DIR}/schema" ] || [ -d "${DOWNLOAD_DIR}/wamp" ]; then
-        echo "==> Copying FlatBuffers schema directories..."
-        [ -d "${DOWNLOAD_DIR}/schema" ] && cp -r "${DOWNLOAD_DIR}/schema" docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
-        [ -d "${DOWNLOAD_DIR}/wamp" ] && cp -r "${DOWNLOAD_DIR}/wamp" docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
-        echo "✅ Copied schema directories"
+        # Legacy structure: .bfbs files in top-level directory
+        BFBS_COUNT=$(find "${DOWNLOAD_DIR}" -maxdepth 1 -name "*.bfbs" -type f 2>/dev/null | wc -l)
+        if [ "${BFBS_COUNT}" -gt 0 ]; then
+            cp "${DOWNLOAD_DIR}"/*.bfbs docs/_build/html/_static/flatbuffers/ 2>/dev/null || true
+            echo "✅ Copied ${BFBS_COUNT} .bfbs files to docs/_build/html/_static/flatbuffers/"
+        else
+            echo "⚠️  No .bfbs files found in ${DOWNLOAD_DIR}"
+        fi
     fi
 
     echo ""
