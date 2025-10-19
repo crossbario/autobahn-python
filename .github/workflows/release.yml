@@ -418,6 +418,7 @@ jobs:
 
       - name: Validate all wheels before release (Final Gate)
         run: |
+          set -o pipefail
           echo "======================================================================"
           echo "==> FINAL VALIDATION: All Wheels Before Release"
           echo "======================================================================"
@@ -877,6 +878,7 @@ jobs:
 
       - name: Validate all wheels before release (Final Gate)
         run: |
+          set -o pipefail
           echo "======================================================================"
           echo "==> FINAL VALIDATION: All Wheels Before Release"
           echo "======================================================================"
@@ -1328,6 +1330,7 @@ jobs:
       - name: Final validation before PyPI upload
         if: steps.pypi_check.outputs.exists == 'false'
         run: |
+          set -o pipefail
           echo "======================================================================"
           echo "==> FINAL PYPI VALIDATION: All Packages"
           echo "======================================================================"

@@ -178,6 +178,7 @@ jobs:
 
       - name: Validate wheels integrity
         run: |
+          set -o pipefail
           echo "======================================================================"
           echo "==> Validating Wheel Integrity (Fail Fast)"
           echo "======================================================================"
