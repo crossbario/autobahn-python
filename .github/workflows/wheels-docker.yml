@@ -240,6 +240,8 @@ jobs:
           echo "======================================================================"
           echo ""
           echo "Installing twine for validation..."
+          # Ensure pip is available for the Python being used
+          python3 -m ensurepip --upgrade 2>/dev/null || true
           python3 -m pip install twine
           echo ""
 
