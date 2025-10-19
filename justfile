@@ -151,6 +151,10 @@ distclean:
     rm -rf {{UV_CACHE_DIR}} {{VENV_DIR}} build/ dist/ wheelhouse/ .pytest_cache/ .ruff_cache/ .mypy_cache/
     rm -rf .wstest docs/_build/
 
+    rm -f ./*.so
+    rm -f ./.coverage.*
+    rm -rf ./_trial_temp
+
     # 2. Use `find` to hunt down and destroy nested artifacts that can be
     #    scattered throughout the source tree. This is the most thorough part.
     echo "--> Searching for and removing nested Python caches..."
