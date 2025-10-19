@@ -427,7 +427,9 @@ jobs:
           echo "Any corrupted wheels will be caught here."
           echo ""
           echo "Installing twine for validation..."
-          python3 -m pip install twine
+          # Install twine from master for PEP 639 (Core Metadata 2.4) support
+          python3 -m pip install git+https://github.com/pypa/twine.git
+          python3 -m pip install 'packaging>=24.2'
           echo ""
 
           echo "==> Validation environment:"
@@ -898,7 +900,9 @@ jobs:
           echo "Any corrupted wheels will be caught here."
           echo ""
           echo "Installing twine for validation..."
-          python3 -m pip install twine
+          # Install twine from master for PEP 639 (Core Metadata 2.4) support
+          python3 -m pip install git+https://github.com/pypa/twine.git
+          python3 -m pip install 'packaging>=24.2'
           echo ""
 
           echo "==> Validation environment:"
@@ -1359,7 +1363,9 @@ jobs:
           echo ""
           echo "Last chance to catch corrupted packages before PyPI upload."
           echo ""
-          python3 -m pip install twine
+          # Install twine from master for PEP 639 (Core Metadata 2.4) support
+          python3 -m pip install git+https://github.com/pypa/twine.git
+          python3 -m pip install 'packaging>=24.2'
           echo ""
 
           echo "==> Validation environment:"

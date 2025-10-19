@@ -243,7 +243,9 @@ jobs:
           echo "Installing twine for validation..."
           # Ensure pip is available for the Python being used
           python3 -m ensurepip --upgrade 2>/dev/null || true
-          python3 -m pip install twine
+          # Install twine from master for PEP 639 (Core Metadata 2.4) support
+          python3 -m pip install git+https://github.com/pypa/twine.git
+          python3 -m pip install 'packaging>=24.2'
           echo ""
 
           echo "==> Validation environment:"
