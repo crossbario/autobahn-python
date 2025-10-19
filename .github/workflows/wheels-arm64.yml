@@ -178,6 +178,20 @@ jobs:
 
             echo "✅ ARM64 wheels built successfully"
 
+      - name: Force file system sync (post-build, pre-validation)
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (QEMU Buffer Flush)"
+          echo "======================================================================"
+          echo ""
+          echo "Flushing all file system buffers to disk to prevent QEMU delayed"
+          echo "write corruption. This ensures wheels are fully written before"
+          echo "validation and checksumming."
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+
       - name: Validate wheels integrity
         run: |
           set -o pipefail
@@ -198,6 +212,16 @@ jobs:
           echo "twine: $(twine --version)"
           echo ""
 
+          # Initialize validation output file
+          VALIDATION_FILE="wheelhouse/VALIDATION.txt"
+          echo "Wheel Validation Results - Build Time" > "$VALIDATION_FILE"
+          echo "======================================" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+          echo "Validation Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$VALIDATION_FILE"
+          echo "Python: $(python3 --version)" >> "$VALIDATION_FILE"
+          echo "twine: $(twine --version)" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+
           HAS_ERRORS=0
 
           for wheel in wheelhouse/*.whl; do
@@ -209,15 +233,19 @@ jobs:
 
             WHEEL_NAME=$(basename "$wheel")
             echo "==> Validating: $WHEEL_NAME"
-            echo ""
+            echo "" >> "$VALIDATION_FILE"
+            echo "Wheel: $WHEEL_NAME" >> "$VALIDATION_FILE"
+            echo "---" >> "$VALIDATION_FILE"
 
             # Test 1: Can unzip read the wheel?
             echo "  [1/3] ZIP integrity test..."
             if unzip -t "$wheel" > /dev/null 2>&1; then
               echo "  ✅ ZIP test PASS"
+              echo "  ZIP test: PASS" >> "$VALIDATION_FILE"
             else
               echo "  ❌ ZIP test FAIL - wheel is corrupted!"
               echo "     This wheel cannot be unzipped and is unusable."
+              echo "  ZIP test: FAIL - wheel is corrupted!" >> "$VALIDATION_FILE"
               HAS_ERRORS=1
             fi
 
@@ -225,8 +253,10 @@ jobs:
             echo "  [2/3] Python zipfile test..."
             if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
               echo "  ✅ Python zipfile test PASS"
+              echo "  Python zipfile test: PASS" >> "$VALIDATION_FILE"
             else
               echo "  ❌ Python zipfile test FAIL - wheel is corrupted!"
+              echo "  Python zipfile test: FAIL - wheel is corrupted!" >> "$VALIDATION_FILE"
               HAS_ERRORS=1
             fi
 
@@ -238,9 +268,12 @@ jobs:
             # Fail on nonzero exit or any error-like output
             if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_output.txt; then
               echo "  ✅ Twine check PASS"
+              echo "  Twine check: PASS" >> "$VALIDATION_FILE"
             else
               echo "  ❌ Twine check FAIL"
               cat /tmp/twine_output.txt
+              echo "  Twine check: FAIL" >> "$VALIDATION_FILE"
+              cat /tmp/twine_output.txt >> "$VALIDATION_FILE"
               HAS_ERRORS=1
             fi
             rm -f /tmp/twine_output.txt
@@ -249,6 +282,8 @@ jobs:
           done
 
           if [ $HAS_ERRORS -eq 1 ]; then
+            echo "" >> "$VALIDATION_FILE"
+            echo "RESULT: VALIDATION FAILED" >> "$VALIDATION_FILE"
             echo "======================================================================"
             echo "❌ WHEEL VALIDATION FAILED"
             echo "======================================================================"
@@ -260,11 +295,15 @@ jobs:
             echo ""
             exit 1
           else
+            echo "" >> "$VALIDATION_FILE"
+            echo "RESULT: ALL VALIDATIONS PASSED" >> "$VALIDATION_FILE"
             echo "======================================================================"
             echo "✅ All wheels validated successfully"
             echo "======================================================================"
             echo ""
             echo "All integrity checks passed. Wheels are valid and ready for upload."
+            echo ""
+            echo "Validation results written to: $VALIDATION_FILE"
           fi
 
       - name: Generate SHA256 checksums (chain of custody)
@@ -277,12 +316,20 @@ jobs:
           openssl version
           echo ""
 
+          # Force sync before checksumming to ensure files are on disk
+          echo "Forcing sync before checksumming..."
+          sync
+          echo "✅ Buffers flushed"
+          echo ""
+
           CHECKSUM_FILE="wheelhouse/CHECKSUMS.sha256"
 
           # Generate checksums for all wheels
           echo "Generating checksums for wheels..."
           for wheel in wheelhouse/*.whl; do
             if [ -f "$wheel" ]; then
+              # Sync before each checksum to ensure file is on disk
+              sync
               openssl sha256 "$wheel" | tee -a "$CHECKSUM_FILE"
             fi
           done
@@ -293,6 +340,19 @@ jobs:
           echo ""
           echo "This file will be uploaded with artifacts to verify integrity"
           echo "when artifacts are downloaded by the release workflow."
+          echo ""
+
+      - name: Force file system sync (post-checksum, pre-upload)
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Checksum)"
+          echo "======================================================================"
+          echo ""
+          echo "Final sync to ensure validation results and checksums are on disk"
+          echo "before artifact packaging."
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
           echo ""
 
       - name: Generate build metadata
@@ -350,6 +410,7 @@ jobs:
             wheelhouse/*.tar.gz
             wheelhouse/build-info.txt
             wheelhouse/CHECKSUMS.sha256
+            wheelhouse/VALIDATION.txt
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow

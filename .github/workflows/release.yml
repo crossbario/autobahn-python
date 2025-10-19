@@ -363,6 +363,19 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Force file system sync (post-download, pre-verification)
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Download)"
+          echo "======================================================================"
+          echo ""
+          echo "Flushing all file system buffers after artifact downloads."
+          echo "Ensures all downloaded files are on disk before checksum verification."
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+
       - name: Re-verify wheel checksums (chain of custody)
         run: |
           echo "======================================================================"
@@ -947,6 +960,19 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Force file system sync (post-download, pre-verification)
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Download)"
+          echo "======================================================================"
+          echo ""
+          echo "Flushing all file system buffers after artifact downloads."
+          echo "Ensures all downloaded files are on disk before checksum verification."
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+
       - name: Re-verify wheel checksums (chain of custody)
         run: |
           echo "======================================================================"
@@ -1517,6 +1543,20 @@ jobs:
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Force file system sync (post-download, pre-verification)
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Download - PyPI Upload)"
+          echo "======================================================================"
+          echo ""
+          echo "Flushing all file system buffers after artifact downloads."
+          echo "Ensures all downloaded files are on disk before checksum verification"
+          echo "and PyPI upload."
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
 
       - name: Re-verify wheel checksums (chain of custody)
         run: |
