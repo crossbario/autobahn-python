@@ -8,7 +8,8 @@ version = "25.10.1"
 description = "WebSocket client & server library, WAMP real-time framework"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT License"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     {name = "typedef int GmbH", email = "contact@typedefint.eu"}
 ]
