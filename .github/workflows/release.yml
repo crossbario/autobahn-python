@@ -416,6 +416,98 @@ jobs:
           echo "FlatBuffers schema: $(ls release-artifacts/flatbuffers-schema.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
           echo "Conformance reports: $(ls release-artifacts/autobahn-python-websocket-conformance-*.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
 
+      - name: Validate all wheels before release (Final Gate)
+        run: |
+          echo "======================================================================"
+          echo "==> FINAL VALIDATION: All Wheels Before Release"
+          echo "======================================================================"
+          echo ""
+          echo "This is the last line of defense before creating GitHub Release."
+          echo "Any corrupted wheels will be caught here."
+          echo ""
+          echo "Installing twine for validation..."
+          pip install twine
+          echo ""
+
+          HAS_ERRORS=0
+          WHEEL_COUNT=0
+
+          for wheel in release-artifacts/*.whl; do
+            if [ ! -f "$wheel" ]; then
+              echo "⚠️  No wheels found in release-artifacts/"
+              continue
+            fi
+
+            WHEEL_COUNT=$((WHEEL_COUNT + 1))
+            WHEEL_NAME=$(basename "$wheel")
+            echo "==> Validating [$WHEEL_COUNT]: $WHEEL_NAME"
+            echo ""
+
+            # Test 1: Can unzip read the wheel?
+            echo "  [1/3] ZIP integrity test..."
+            if unzip -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ ZIP test PASS"
+            else
+              echo "  ❌ ZIP test FAIL - wheel is CORRUPTED!"
+              echo "     This wheel cannot be unzipped and is unusable."
+              echo "     Wheel: $WHEEL_NAME"
+              HAS_ERRORS=1
+            fi
+
+            # Test 2: Python zipfile module validation
+            echo "  [2/3] Python zipfile test..."
+            if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ Python zipfile test PASS"
+            else
+              echo "  ❌ Python zipfile test FAIL - wheel is CORRUPTED!"
+              echo "     Wheel: $WHEEL_NAME"
+              HAS_ERRORS=1
+            fi
+
+            # Test 3: twine check (validates wheel metadata and structure)
+            echo "  [3/3] Twine validation..."
+            if twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt; then
+              echo "  ✅ Twine check PASS"
+            else
+              echo "  ❌ Twine check FAIL"
+              echo "     Wheel: $WHEEL_NAME"
+              cat /tmp/twine_output.txt
+              HAS_ERRORS=1
+            fi
+
+            echo ""
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ FINAL VALIDATION FAILED - RELEASE BLOCKED"
+            echo "======================================================================"
+            echo ""
+            echo "One or more wheels failed integrity checks at the FINAL GATE."
+            echo ""
+            echo "This means corrupted wheels made it through the build process"
+            echo "and were downloaded from artifacts."
+            echo ""
+            echo "This should NEVER happen if build-time validation is working."
+            echo ""
+            echo "CRITICAL: DO NOT PROCEED WITH RELEASE!"
+            echo ""
+            echo "Action required:"
+            echo "  1. Check build logs for the corrupted wheel(s)"
+            echo "  2. Identify which workflow produced the corrupt wheel"
+            echo "  3. Fix the build process"
+            echo "  4. Re-tag and rebuild from scratch"
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ FINAL VALIDATION PASSED - All $WHEEL_COUNT wheels are valid"
+            echo "======================================================================"
+            echo ""
+            echo "All wheels passed integrity checks."
+            echo "Safe to proceed with GitHub Release creation."
+          fi
+
       - name: Install jinja2-cli for template rendering
         run: |
           pip install jinja2-cli
@@ -783,6 +875,98 @@ jobs:
           echo "FlatBuffers schema: $(ls release-artifacts/flatbuffers-schema.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
           echo "Conformance reports: $(ls release-artifacts/autobahn-python-websocket-conformance-*.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
 
+      - name: Validate all wheels before release (Final Gate)
+        run: |
+          echo "======================================================================"
+          echo "==> FINAL VALIDATION: All Wheels Before Release"
+          echo "======================================================================"
+          echo ""
+          echo "This is the last line of defense before creating GitHub Release."
+          echo "Any corrupted wheels will be caught here."
+          echo ""
+          echo "Installing twine for validation..."
+          pip install twine
+          echo ""
+
+          HAS_ERRORS=0
+          WHEEL_COUNT=0
+
+          for wheel in release-artifacts/*.whl; do
+            if [ ! -f "$wheel" ]; then
+              echo "⚠️  No wheels found in release-artifacts/"
+              continue
+            fi
+
+            WHEEL_COUNT=$((WHEEL_COUNT + 1))
+            WHEEL_NAME=$(basename "$wheel")
+            echo "==> Validating [$WHEEL_COUNT]: $WHEEL_NAME"
+            echo ""
+
+            # Test 1: Can unzip read the wheel?
+            echo "  [1/3] ZIP integrity test..."
+            if unzip -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ ZIP test PASS"
+            else
+              echo "  ❌ ZIP test FAIL - wheel is CORRUPTED!"
+              echo "     This wheel cannot be unzipped and is unusable."
+              echo "     Wheel: $WHEEL_NAME"
+              HAS_ERRORS=1
+            fi
+
+            # Test 2: Python zipfile module validation
+            echo "  [2/3] Python zipfile test..."
+            if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ Python zipfile test PASS"
+            else
+              echo "  ❌ Python zipfile test FAIL - wheel is CORRUPTED!"
+              echo "     Wheel: $WHEEL_NAME"
+              HAS_ERRORS=1
+            fi
+
+            # Test 3: twine check (validates wheel metadata and structure)
+            echo "  [3/3] Twine validation..."
+            if twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt; then
+              echo "  ✅ Twine check PASS"
+            else
+              echo "  ❌ Twine check FAIL"
+              echo "     Wheel: $WHEEL_NAME"
+              cat /tmp/twine_output.txt
+              HAS_ERRORS=1
+            fi
+
+            echo ""
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ FINAL VALIDATION FAILED - RELEASE BLOCKED"
+            echo "======================================================================"
+            echo ""
+            echo "One or more wheels failed integrity checks at the FINAL GATE."
+            echo ""
+            echo "This means corrupted wheels made it through the build process"
+            echo "and were downloaded from artifacts."
+            echo ""
+            echo "This should NEVER happen if build-time validation is working."
+            echo ""
+            echo "CRITICAL: DO NOT PROCEED WITH RELEASE!"
+            echo ""
+            echo "Action required:"
+            echo "  1. Check build logs for the corrupted wheel(s)"
+            echo "  2. Identify which workflow produced the corrupt wheel"
+            echo "  3. Fix the build process"
+            echo "  4. Re-tag and rebuild from scratch"
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ FINAL VALIDATION PASSED - All $WHEEL_COUNT wheels are valid"
+            echo "======================================================================"
+            echo ""
+            echo "All wheels passed integrity checks."
+            echo "Safe to proceed with GitHub Release creation."
+          fi
+
       - name: Install jinja2-cli for template rendering
         run: |
           pip install jinja2-cli
@@ -1140,6 +1324,76 @@ jobs:
           fi
 
           rm -f /tmp/pypi_response.json
+
+      - name: Final validation before PyPI upload
+        if: steps.pypi_check.outputs.exists == 'false'
+        run: |
+          echo "======================================================================"
+          echo "==> FINAL PYPI VALIDATION: All Packages"
+          echo "======================================================================"
+          echo ""
+          echo "Last chance to catch corrupted packages before PyPI upload."
+          echo ""
+          pip install twine
+          echo ""
+
+          HAS_ERRORS=0
+
+          for pkg in dist/*.whl dist/*.tar.gz; do
+            if [ ! -f "$pkg" ]; then
+              continue
+            fi
+
+            PKG_NAME=$(basename "$pkg")
+            echo "==> Validating: $PKG_NAME"
+
+            # For wheels: full integrity check
+            if [[ "$pkg" == *.whl ]]; then
+              if ! unzip -t "$pkg" > /dev/null 2>&1; then
+                echo "  ❌ ZIP test FAIL - CORRUPTED WHEEL!"
+                HAS_ERRORS=1
+              elif ! python3 -m zipfile -t "$pkg" > /dev/null 2>&1; then
+                echo "  ❌ Python zipfile test FAIL - CORRUPTED WHEEL!"
+                HAS_ERRORS=1
+              elif ! twine check "$pkg" 2>&1 | grep -q "PASSED"; then
+                echo "  ❌ Twine check FAIL"
+                twine check "$pkg"
+                HAS_ERRORS=1
+              else
+                echo "  ✅ All checks PASS"
+              fi
+            # For source dists: gzip + tar integrity
+            elif [[ "$pkg" == *.tar.gz ]]; then
+              if ! gzip -t "$pkg" 2>/dev/null; then
+                echo "  ❌ Gzip test FAIL - CORRUPTED TARBALL!"
+                HAS_ERRORS=1
+              elif ! tar -tzf "$pkg" > /dev/null 2>&1; then
+                echo "  ❌ Tar test FAIL - CORRUPTED TARBALL!"
+                HAS_ERRORS=1
+              elif ! twine check "$pkg" 2>&1 | grep -q "PASSED"; then
+                echo "  ❌ Twine check FAIL"
+                twine check "$pkg"
+                HAS_ERRORS=1
+              else
+                echo "  ✅ All checks PASS"
+              fi
+            fi
+            echo ""
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ PYPI VALIDATION FAILED - UPLOAD BLOCKED"
+            echo "======================================================================"
+            echo ""
+            echo "Corrupted packages detected. PyPI upload BLOCKED."
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ ALL PACKAGES VALIDATED - Safe to upload to PyPI"
+            echo "======================================================================"
+          fi
 
       - name: Publish to PyPI
         if: steps.pypi_check.outputs.exists == 'false'

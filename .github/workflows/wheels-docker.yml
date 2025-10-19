@@ -233,6 +233,80 @@ jobs:
           echo "          Do NOT try to simplify by renaming."
           echo ""
 
+      - name: Validate wheels integrity
+        run: |
+          echo "======================================================================"
+          echo "==> Validating Wheel Integrity (Fail Fast)"
+          echo "======================================================================"
+          echo ""
+          echo "Installing twine for validation..."
+          pip3 install twine
+          echo ""
+
+          HAS_ERRORS=0
+
+          for wheel in wheelhouse/*.whl; do
+            if [ ! -f "$wheel" ]; then
+              echo "⚠️  No wheels found in wheelhouse/"
+              HAS_ERRORS=1
+              continue
+            fi
+
+            WHEEL_NAME=$(basename "$wheel")
+            echo "==> Validating: $WHEEL_NAME"
+            echo ""
+
+            # Test 1: Can unzip read the wheel?
+            echo "  [1/3] ZIP integrity test..."
+            if unzip -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ ZIP test PASS"
+            else
+              echo "  ❌ ZIP test FAIL - wheel is corrupted!"
+              echo "     This wheel cannot be unzipped and is unusable."
+              HAS_ERRORS=1
+            fi
+
+            # Test 2: Python zipfile module validation
+            echo "  [2/3] Python zipfile test..."
+            if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ Python zipfile test PASS"
+            else
+              echo "  ❌ Python zipfile test FAIL - wheel is corrupted!"
+              HAS_ERRORS=1
+            fi
+
+            # Test 3: twine check (validates wheel metadata and structure)
+            echo "  [3/3] Twine validation..."
+            if twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt; then
+              echo "  ✅ Twine check PASS"
+            else
+              echo "  ❌ Twine check FAIL"
+              cat /tmp/twine_output.txt
+              HAS_ERRORS=1
+            fi
+
+            echo ""
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ WHEEL VALIDATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "One or more wheels failed integrity checks."
+            echo "This indicates a build or packaging problem."
+            echo ""
+            echo "DO NOT PROCEED - corrupted wheels must NOT become artifacts!"
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ All wheels validated successfully"
+            echo "======================================================================"
+            echo ""
+            echo "All integrity checks passed. Wheels are valid and ready for upload."
+          fi
+
       - name: Generate build metadata
         run: |
           BUILD_INFO=wheelhouse/build-info.txt
