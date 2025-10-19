@@ -324,6 +324,34 @@ jobs:
             echo "All integrity checks passed. Wheels are valid and ready for upload."
           fi
 
+      - name: Generate SHA256 checksums (chain of custody)
+        run: |
+          echo "======================================================================"
+          echo "==> Generating SHA256 Checksums for Chain of Custody"
+          echo "======================================================================"
+          echo ""
+          echo "OpenSSL version:"
+          openssl version
+          echo ""
+
+          CHECKSUM_FILE="wheelhouse/CHECKSUMS.sha256"
+
+          # Generate checksums for all wheels
+          echo "Generating checksums for wheels..."
+          for wheel in wheelhouse/*.whl; do
+            if [ -f "$wheel" ]; then
+              openssl sha256 "$wheel" | tee -a "$CHECKSUM_FILE"
+            fi
+          done
+
+          echo ""
+          echo "==> Generated checksum file:"
+          cat "$CHECKSUM_FILE"
+          echo ""
+          echo "This file will be uploaded with artifacts to verify integrity"
+          echo "when artifacts are downloaded by the release workflow."
+          echo ""
+
       - name: Generate build metadata
         run: |
           BUILD_INFO=wheelhouse/build-info.txt
@@ -390,6 +418,7 @@ jobs:
             wheelhouse/*.whl
             wheelhouse/*.tar.gz
             wheelhouse/build-info.txt
+            wheelhouse/CHECKSUMS.sha256
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow
