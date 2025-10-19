@@ -363,6 +363,116 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Re-verify wheel checksums (chain of custody)
+        run: |
+          echo "======================================================================"
+          echo "==> Wheel Checksum Re-Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+          echo "OpenSSL version:"
+          openssl version
+          echo ""
+          echo "Re-verifying wheel integrity after artifact download."
+          echo "Detecting corruption during GitHub Actions artifact transfer."
+          echo ""
+
+          HAS_ERRORS=0
+
+          # Re-verify wheels from wheels-docker workflow
+          if [ -d "wheelhouse" ] && [ -f "wheelhouse/CHECKSUMS.sha256" ]; then
+            echo "==> Re-verifying wheels-docker artifacts..."
+            cd wheelhouse
+
+            while IFS= read -r line; do
+              # Parse openssl output: "SHA256(file.whl)= checksum"
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "⚠️  WARNING: Checksum file references missing wheel: $WHEEL_FILE"
+                continue
+              fi
+
+              # Re-compute current checksum
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                echo "   => Artifact CORRUPTED during transfer!"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+            echo ""
+          else
+            echo "⚠️  No checksums found for wheels-docker artifacts"
+            echo ""
+          fi
+
+          # Re-verify wheels from wheels-arm64 workflow
+          if [ -d "wheelhouse-arm64" ] && [ -f "wheelhouse-arm64/CHECKSUMS.sha256" ]; then
+            echo "==> Re-verifying wheels-arm64 artifacts..."
+            cd wheelhouse-arm64
+
+            while IFS= read -r line; do
+              # Parse openssl output: "SHA256(file.whl)= checksum"
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "⚠️  WARNING: Checksum file references missing wheel: $WHEEL_FILE"
+                continue
+              fi
+
+              # Re-compute current checksum
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                echo "   => Artifact CORRUPTED during transfer!"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+            echo ""
+          else
+            echo "⚠️  No checksums found for wheels-arm64 artifacts"
+            echo ""
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ CHECKSUM RE-VERIFICATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "One or more wheels failed checksum verification."
+            echo "This indicates CORRUPTION during GitHub Actions artifact transfer:"
+            echo "  1. Build workflow created valid wheel + checksum"
+            echo "  2. GitHub Actions corrupted wheel during upload/storage/download"
+            echo "  3. Downloaded wheel checksum doesn't match original"
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE!"
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ All wheel checksums verified successfully"
+            echo "======================================================================"
+            echo ""
+            echo "Chain of custody confirmed: build workflows → release workflow"
+            echo "No corruption detected during artifact transfer."
+          fi
+
       - name: Consolidate all artifacts
         run: |
           echo "==> Consolidating all artifacts into unified release directory..."
@@ -837,6 +947,116 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Re-verify wheel checksums (chain of custody)
+        run: |
+          echo "======================================================================"
+          echo "==> Wheel Checksum Re-Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+          echo "OpenSSL version:"
+          openssl version
+          echo ""
+          echo "Re-verifying wheel integrity after artifact download."
+          echo "Detecting corruption during GitHub Actions artifact transfer."
+          echo ""
+
+          HAS_ERRORS=0
+
+          # Re-verify wheels from wheels-docker workflow
+          if [ -d "wheelhouse" ] && [ -f "wheelhouse/CHECKSUMS.sha256" ]; then
+            echo "==> Re-verifying wheels-docker artifacts..."
+            cd wheelhouse
+
+            while IFS= read -r line; do
+              # Parse openssl output: "SHA256(file.whl)= checksum"
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "⚠️  WARNING: Checksum file references missing wheel: $WHEEL_FILE"
+                continue
+              fi
+
+              # Re-compute current checksum
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                echo "   => Artifact CORRUPTED during transfer!"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+            echo ""
+          else
+            echo "⚠️  No checksums found for wheels-docker artifacts"
+            echo ""
+          fi
+
+          # Re-verify wheels from wheels-arm64 workflow
+          if [ -d "wheelhouse-arm64" ] && [ -f "wheelhouse-arm64/CHECKSUMS.sha256" ]; then
+            echo "==> Re-verifying wheels-arm64 artifacts..."
+            cd wheelhouse-arm64
+
+            while IFS= read -r line; do
+              # Parse openssl output: "SHA256(file.whl)= checksum"
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "⚠️  WARNING: Checksum file references missing wheel: $WHEEL_FILE"
+                continue
+              fi
+
+              # Re-compute current checksum
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                echo "   => Artifact CORRUPTED during transfer!"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+            echo ""
+          else
+            echo "⚠️  No checksums found for wheels-arm64 artifacts"
+            echo ""
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ CHECKSUM RE-VERIFICATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "One or more wheels failed checksum verification."
+            echo "This indicates CORRUPTION during GitHub Actions artifact transfer:"
+            echo "  1. Build workflow created valid wheel + checksum"
+            echo "  2. GitHub Actions corrupted wheel during upload/storage/download"
+            echo "  3. Downloaded wheel checksum doesn't match original"
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE!"
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ All wheel checksums verified successfully"
+            echo "======================================================================"
+            echo ""
+            echo "Chain of custody confirmed: build workflows → release workflow"
+            echo "No corruption detected during artifact transfer."
+          fi
+
       - name: Consolidate all artifacts
         run: |
           echo "==> Consolidating all artifacts into unified release directory..."
@@ -1297,6 +1517,90 @@ jobs:
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Re-verify wheel checksums (chain of custody)
+        run: |
+          echo "======================================================================"
+          echo "==> Wheel Checksum Re-Verification (Chain of Custody - PyPI Upload)"
+          echo "======================================================================"
+          echo ""
+          echo "OpenSSL version:"
+          openssl version
+          echo ""
+          echo "Re-verifying wheel integrity before PyPI upload."
+          echo "Detecting corruption during GitHub Actions artifact transfer."
+          echo ""
+
+          HAS_ERRORS=0
+
+          # Find all CHECKSUMS.sha256 files (multiple may exist from different artifacts)
+          CHECKSUM_FILES=$(find dist/ -name "CHECKSUMS.sha256")
+
+          if [ -z "$CHECKSUM_FILES" ]; then
+            echo "⚠️  WARNING: No checksum files found in dist/"
+            echo "   Wheels downloaded without chain-of-custody verification!"
+            echo ""
+          else
+            for CHECKSUM_FILE in $CHECKSUM_FILES; do
+              echo "==> Processing checksum file: $CHECKSUM_FILE"
+
+              # Change to the directory containing the checksum file
+              CHECKSUM_DIR=$(dirname "$CHECKSUM_FILE")
+              cd "$CHECKSUM_DIR"
+
+              while IFS= read -r line; do
+                # Parse openssl output: "SHA256(file.whl)= checksum"
+                ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+                WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
+
+                if [ ! -f "$WHEEL_FILE" ]; then
+                  echo "⚠️  WARNING: Checksum references missing wheel: $WHEEL_FILE"
+                  continue
+                fi
+
+                # Re-compute current checksum
+                CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+                if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                  echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                else
+                  echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                  echo "   Original:  $ORIGINAL_CHECKSUM"
+                  echo "   Current:   $CURRENT_CHECKSUM"
+                  echo "   => Artifact CORRUPTED during transfer!"
+                  HAS_ERRORS=1
+                fi
+              done < "$(basename $CHECKSUM_FILE)"
+
+              # Return to workflow root
+              cd - > /dev/null
+              echo ""
+            done
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "======================================================================"
+            echo "❌ CHECKSUM RE-VERIFICATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "One or more wheels failed checksum verification."
+            echo "This indicates CORRUPTION during GitHub Actions artifact transfer:"
+            echo "  1. Build workflow created valid wheel + checksum"
+            echo "  2. GitHub Actions corrupted wheel during upload/storage/download"
+            echo "  3. Downloaded wheel checksum doesn't match original"
+            echo ""
+            echo "CRITICAL: DO NOT UPLOAD TO PYPI!"
+            echo ""
+            exit 1
+          else
+            echo "======================================================================"
+            echo "✅ All wheel checksums verified successfully"
+            echo "======================================================================"
+            echo ""
+            echo "Chain of custody confirmed: build workflows → PyPI upload"
+            echo "No corruption detected during artifact transfer."
+            echo "Safe to proceed with PyPI upload."
+          fi
 
       - name: List artifacts for PyPI publishing
         run: |
