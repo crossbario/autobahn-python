@@ -117,52 +117,64 @@ jobs:
       # Build custom PyPy images (only for build_type == custom)
       # ============================================================
 
-      - name: Build custom PyPy manylinux image
+      - name: Build custom PyPy manylinux image (with retry for QEMU flakiness)
         if: matrix.target.build_type == 'custom'
-        run: |
-          echo "==> Building custom PyPy manylinux image for ${{ matrix.target.name }}"
-          docker buildx build \
-            --platform linux/arm64 \
-            --tag ${{ matrix.target.name }}:latest \
-            --file ${{ matrix.target.dockerfile }} \
-            --load \
-            .
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_on: error
+          warning_on_retry: true
+          command: |
+            echo "==> Building custom PyPy manylinux image for ${{ matrix.target.name }}"
+            docker buildx build \
+              --platform linux/arm64 \
+              --tag ${{ matrix.target.name }}:latest \
+              --file ${{ matrix.target.dockerfile }} \
+              --load \
+              .
 
-          echo "✅ Custom image built: ${{ matrix.target.name }}:latest"
+            echo "✅ Custom image built: ${{ matrix.target.name }}:latest"
 
       # ============================================================
       # Build wheels inside ARM64 containers
       # ============================================================
 
-      - name: Build ARM64 wheels with NVX extension
-        run: |
-          echo "==> Building ARM64 wheels for ${{ matrix.target.name }}"
-          echo "Container: ${{ matrix.target.base_image || matrix.target.name }}:latest"
-          echo "Platform: linux/arm64"
-          echo "Manylinux tag: ${{ matrix.target.manylinux_tag }}"
-          echo "glibc: ${{ matrix.target.glibc_version }}"
+      - name: Build ARM64 wheels with NVX extension (with retry for QEMU flakiness)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_on: error
+          warning_on_retry: true
+          command: |
+            echo "==> Building ARM64 wheels for ${{ matrix.target.name }}"
+            echo "Container: ${{ matrix.target.base_image || matrix.target.name }}:latest"
+            echo "Platform: linux/arm64"
+            echo "Manylinux tag: ${{ matrix.target.manylinux_tag }}"
+            echo "glibc: ${{ matrix.target.glibc_version }}"
 
-          # Determine which image to use
-          if [ "${{ matrix.target.build_type }}" = "custom" ]; then
-            IMAGE="${{ matrix.target.name }}:latest"
-          else
-            IMAGE="${{ matrix.target.base_image }}"
-          fi
+            # Determine which image to use
+            if [ "${{ matrix.target.build_type }}" = "custom" ]; then
+              IMAGE="${{ matrix.target.name }}:latest"
+            else
+              IMAGE="${{ matrix.target.base_image }}"
+            fi
 
-          # Create wheelhouse directory on host
-          mkdir -p wheelhouse
+            # Create wheelhouse directory on host
+            mkdir -p wheelhouse
 
-          # Run build script inside ARM64 container via QEMU
-          docker run --rm \
-            --platform linux/arm64 \
-            -v $PWD:/io \
-            -w /io \
-            -e AUTOBAHN_USE_NVX=1 \
-            -e PYTHON_VERSIONS="${{ matrix.target.python_versions }}" \
-            $IMAGE \
-            /bin/bash /io/.github/scripts/build-arm64-wheel.sh
+            # Run build script inside ARM64 container via QEMU
+            docker run --rm \
+              --platform linux/arm64 \
+              -v $PWD:/io \
+              -w /io \
+              -e AUTOBAHN_USE_NVX=1 \
+              -e PYTHON_VERSIONS="${{ matrix.target.python_versions }}" \
+              $IMAGE \
+              /bin/bash /io/.github/scripts/build-arm64-wheel.sh
 
-          echo "✅ ARM64 wheels built successfully"
+            echo "✅ ARM64 wheels built successfully"
 
       - name: Validate wheels integrity
         run: |
