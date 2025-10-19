@@ -390,6 +390,7 @@ jobs:
           echo ""
 
           HAS_ERRORS=0
+          WHEELS_VERIFIED=0
 
           # Re-verify wheels from wheels-docker workflow
           if [ -d "wheelhouse" ] && [ -f "wheelhouse/CHECKSUMS.sha256" ]; then
@@ -402,7 +403,13 @@ jobs:
               WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
 
               if [ ! -f "$WHEEL_FILE" ]; then
-                echo "⚠️  WARNING: Checksum file references missing wheel: $WHEEL_FILE"
+                echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
+                echo "   Original checksum line: $line"
+                echo "   This indicates either:"
+                echo "     1. Path mismatch between build and release workflows"
+                echo "     2. Wheel was not downloaded from artifacts"
+                echo "     3. Artifact corruption during transfer"
+                HAS_ERRORS=1
                 continue
               fi
 
@@ -411,6 +418,7 @@ jobs:
 
               if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
                 echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
               else
                 echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
                 echo "   Original:  $ORIGINAL_CHECKSUM"
@@ -438,7 +446,13 @@ jobs:
               WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
 
               if [ ! -f "$WHEEL_FILE" ]; then
-                echo "⚠️  WARNING: Checksum file references missing wheel: $WHEEL_FILE"
+                echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
+                echo "   Original checksum line: $line"
+                echo "   This indicates either:"
+                echo "     1. Path mismatch between build and release workflows"
+                echo "     2. Wheel was not downloaded from artifacts"
+                echo "     3. Artifact corruption during transfer"
+                HAS_ERRORS=1
                 continue
               fi
 
@@ -447,6 +461,7 @@ jobs:
 
               if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
                 echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
               else
                 echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
                 echo "   Original:  $ORIGINAL_CHECKSUM"
@@ -477,9 +492,23 @@ jobs:
             echo "DO NOT PROCEED WITH RELEASE!"
             echo ""
             exit 1
+          elif [ $WHEELS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ CHECKSUM RE-VERIFICATION FAILED - NO WHEELS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero wheels were verified. This means:"
+            echo "  1. No CHECKSUMS.sha256 files were found, OR"
+            echo "  2. All wheels referenced in checksums were missing"
+            echo ""
+            echo "This is a critical failure - we cannot confirm wheel integrity."
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE!"
+            echo ""
+            exit 1
           else
             echo "======================================================================"
-            echo "✅ All wheel checksums verified successfully"
+            echo "✅ All wheel checksums verified successfully ($WHEELS_VERIFIED wheels)"
             echo "======================================================================"
             echo ""
             echo "Chain of custody confirmed: build workflows → release workflow"
@@ -987,6 +1016,7 @@ jobs:
           echo ""
 
           HAS_ERRORS=0
+          WHEELS_VERIFIED=0
 
           # Re-verify wheels from wheels-docker workflow
           if [ -d "wheelhouse" ] && [ -f "wheelhouse/CHECKSUMS.sha256" ]; then
@@ -999,7 +1029,13 @@ jobs:
               WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
 
               if [ ! -f "$WHEEL_FILE" ]; then
-                echo "⚠️  WARNING: Checksum file references missing wheel: $WHEEL_FILE"
+                echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
+                echo "   Original checksum line: $line"
+                echo "   This indicates either:"
+                echo "     1. Path mismatch between build and release workflows"
+                echo "     2. Wheel was not downloaded from artifacts"
+                echo "     3. Artifact corruption during transfer"
+                HAS_ERRORS=1
                 continue
               fi
 
@@ -1008,6 +1044,7 @@ jobs:
 
               if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
                 echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
               else
                 echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
                 echo "   Original:  $ORIGINAL_CHECKSUM"
@@ -1035,7 +1072,13 @@ jobs:
               WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
 
               if [ ! -f "$WHEEL_FILE" ]; then
-                echo "⚠️  WARNING: Checksum file references missing wheel: $WHEEL_FILE"
+                echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
+                echo "   Original checksum line: $line"
+                echo "   This indicates either:"
+                echo "     1. Path mismatch between build and release workflows"
+                echo "     2. Wheel was not downloaded from artifacts"
+                echo "     3. Artifact corruption during transfer"
+                HAS_ERRORS=1
                 continue
               fi
 
@@ -1044,6 +1087,7 @@ jobs:
 
               if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
                 echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
               else
                 echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
                 echo "   Original:  $ORIGINAL_CHECKSUM"
@@ -1074,9 +1118,23 @@ jobs:
             echo "DO NOT PROCEED WITH RELEASE!"
             echo ""
             exit 1
+          elif [ $WHEELS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ CHECKSUM RE-VERIFICATION FAILED - NO WHEELS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero wheels were verified. This means:"
+            echo "  1. No CHECKSUMS.sha256 files were found, OR"
+            echo "  2. All wheels referenced in checksums were missing"
+            echo ""
+            echo "This is a critical failure - we cannot confirm wheel integrity."
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE!"
+            echo ""
+            exit 1
           else
             echo "======================================================================"
-            echo "✅ All wheel checksums verified successfully"
+            echo "✅ All wheel checksums verified successfully ($WHEELS_VERIFIED wheels)"
             echo "======================================================================"
             echo ""
             echo "Chain of custody confirmed: build workflows → release workflow"
@@ -1572,14 +1630,17 @@ jobs:
           echo ""
 
           HAS_ERRORS=0
+          WHEELS_VERIFIED=0
 
           # Find all CHECKSUMS.sha256 files (multiple may exist from different artifacts)
           CHECKSUM_FILES=$(find dist/ -name "CHECKSUMS.sha256")
 
           if [ -z "$CHECKSUM_FILES" ]; then
-            echo "⚠️  WARNING: No checksum files found in dist/"
+            echo "❌ CRITICAL: No checksum files found in dist/"
             echo "   Wheels downloaded without chain-of-custody verification!"
+            echo "   This should never happen if build workflows generated checksums."
             echo ""
+            HAS_ERRORS=1
           else
             for CHECKSUM_FILE in $CHECKSUM_FILES; do
               echo "==> Processing checksum file: $CHECKSUM_FILE"
@@ -1594,7 +1655,13 @@ jobs:
                 WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
 
                 if [ ! -f "$WHEEL_FILE" ]; then
-                  echo "⚠️  WARNING: Checksum references missing wheel: $WHEEL_FILE"
+                  echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
+                  echo "   Original checksum line: $line"
+                  echo "   This indicates either:"
+                  echo "     1. Path mismatch between build and release workflows"
+                  echo "     2. Wheel was not downloaded from artifacts"
+                  echo "     3. Artifact corruption during transfer"
+                  HAS_ERRORS=1
                   continue
                 fi
 
@@ -1603,6 +1670,7 @@ jobs:
 
                 if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
                   echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                  WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
                 else
                   echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
                   echo "   Original:  $ORIGINAL_CHECKSUM"
@@ -1632,9 +1700,23 @@ jobs:
             echo "CRITICAL: DO NOT UPLOAD TO PYPI!"
             echo ""
             exit 1
+          elif [ $WHEELS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ CHECKSUM RE-VERIFICATION FAILED - NO WHEELS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero wheels were verified. This means:"
+            echo "  1. No CHECKSUMS.sha256 files were found, OR"
+            echo "  2. All wheels referenced in checksums were missing"
+            echo ""
+            echo "This is a critical failure - we cannot confirm wheel integrity."
+            echo ""
+            echo "CRITICAL: DO NOT UPLOAD TO PYPI!"
+            echo ""
+            exit 1
           else
             echo "======================================================================"
-            echo "✅ All wheel checksums verified successfully"
+            echo "✅ All wheel checksums verified successfully ($WHEELS_VERIFIED wheels)"
             echo "======================================================================"
             echo ""
             echo "Chain of custody confirmed: build workflows → PyPI upload"

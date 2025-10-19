@@ -322,11 +322,14 @@ jobs:
           echo "✅ Buffers flushed"
           echo ""
 
-          CHECKSUM_FILE="wheelhouse/CHECKSUMS.sha256"
+          # Change to wheelhouse directory to generate relative paths (basename only)
+          cd wheelhouse
 
-          # Generate checksums for all wheels
+          CHECKSUM_FILE="CHECKSUMS.sha256"
+
+          # Generate checksums for all wheels (using basename only)
           echo "Generating checksums for wheels..."
-          for wheel in wheelhouse/*.whl; do
+          for wheel in *.whl; do
             if [ -f "$wheel" ]; then
               # Sync before each checksum to ensure file is on disk
               sync
@@ -341,6 +344,9 @@ jobs:
           echo "This file will be uploaded with artifacts to verify integrity"
           echo "when artifacts are downloaded by the release workflow."
           echo ""
+
+          # Return to project root
+          cd ..
 
       - name: Force file system sync (post-checksum, pre-upload)
         run: |
