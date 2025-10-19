@@ -427,14 +427,15 @@ jobs:
           echo "Any corrupted wheels will be caught here."
           echo ""
           echo "Installing twine for validation..."
-          # Install twine from master for PEP 639 (Core Metadata 2.4) support
+          # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
+          python3 -m pip install git+https://github.com/pypa/packaging.git
           python3 -m pip install git+https://github.com/pypa/twine.git
-          python3 -m pip install 'packaging>=24.2'
           echo ""
 
           echo "==> Validation environment:"
           echo "Python: $(python3 --version)"
           echo "setuptools: $(python3 -m pip show setuptools | grep '^Version:' || echo 'not installed')"
+          echo "packaging: $(python3 -m pip show packaging | grep '^Version:' || echo 'not installed')"
           echo "twine: $(twine --version)"
           echo ""
 
@@ -900,14 +901,15 @@ jobs:
           echo "Any corrupted wheels will be caught here."
           echo ""
           echo "Installing twine for validation..."
-          # Install twine from master for PEP 639 (Core Metadata 2.4) support
+          # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
+          python3 -m pip install git+https://github.com/pypa/packaging.git
           python3 -m pip install git+https://github.com/pypa/twine.git
-          python3 -m pip install 'packaging>=24.2'
           echo ""
 
           echo "==> Validation environment:"
           echo "Python: $(python3 --version)"
           echo "setuptools: $(python3 -m pip show setuptools | grep '^Version:' || echo 'not installed')"
+          echo "packaging: $(python3 -m pip show packaging | grep '^Version:' || echo 'not installed')"
           echo "twine: $(twine --version)"
           echo ""
 
@@ -1363,14 +1365,15 @@ jobs:
           echo ""
           echo "Last chance to catch corrupted packages before PyPI upload."
           echo ""
-          # Install twine from master for PEP 639 (Core Metadata 2.4) support
+          # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
+          python3 -m pip install git+https://github.com/pypa/packaging.git
           python3 -m pip install git+https://github.com/pypa/twine.git
-          python3 -m pip install 'packaging>=24.2'
           echo ""
 
           echo "==> Validation environment:"
           echo "Python: $(python3 --version)"
           echo "setuptools: $(python3 -m pip show setuptools | grep '^Version:' || echo 'not installed')"
+          echo "packaging: $(python3 -m pip show packaging | grep '^Version:' || echo 'not installed')"
           echo "twine: $(twine --version)"
           echo ""
 
