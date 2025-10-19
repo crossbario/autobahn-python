@@ -187,6 +187,12 @@ jobs:
           python3 -m pip install twine
           echo ""
 
+          echo "==> Validation environment:"
+          echo "Python: $(python3 --version)"
+          echo "setuptools: $(python3 -m pip show setuptools | grep '^Version:' || echo 'not installed')"
+          echo "twine: $(twine --version)"
+          echo ""
+
           HAS_ERRORS=0
 
           for wheel in wheelhouse/*.whl; do
