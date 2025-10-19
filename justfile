@@ -755,7 +755,7 @@ test-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
 # -----------------------------------------------------------------------------
 
 # Build the HTML documentation using Sphinx
-docs venv="": (install-tools venv)
+docs venv="":
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -765,6 +765,10 @@ docs venv="": (install-tools venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    if [ ! -d "${VENV_PATH}" ]; then
+        just install-tools ${VENV_NAME}
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Building documentation..."
     "${VENV_PATH}/bin/sphinx-build" -b html docs/ docs/_build/html
 
@@ -1281,11 +1285,11 @@ wstest-consolidate-reports:
 download-github-release release_type="nightly":
     #!/usr/bin/env bash
     set -e
-    
+
     RELEASE_TYPE="{{ release_type }}"
     echo "==> Downloading GitHub release artifacts for: ${RELEASE_TYPE}"
     echo ""
-    
+
     # Determine which release tag to download
     case "${RELEASE_TYPE}" in
         nightly)
@@ -1300,7 +1304,7 @@ download-github-release release_type="nightly":
             fi
             echo "✅ Found nightly release: $RELEASE_TAG"
             ;;
-        
+
         stable|latest)
             echo "==> Finding latest stable release..."
             RELEASE_TAG=$(curl -s "https://api.github.com/repos/crossbario/autobahn-python/releases/latest" \
@@ -1312,7 +1316,7 @@ download-github-release release_type="nightly":
             fi
             echo "✅ Found stable release: $RELEASE_TAG"
             ;;
-        
+
         development|dev)
             echo "==> Finding latest development release (tagged as fork-*)..."
             RELEASE_TAG=$(curl -s "https://api.github.com/repos/crossbario/autobahn-python/releases" \
@@ -1325,21 +1329,21 @@ download-github-release release_type="nightly":
             fi
             echo "✅ Found development release: $RELEASE_TAG"
             ;;
-        
+
         *)
             # Treat as explicit tag name
             RELEASE_TAG="${RELEASE_TYPE}"
             echo "==> Using explicit release tag: $RELEASE_TAG"
             ;;
     esac
-    
+
     BASE_URL="https://github.com/crossbario/autobahn-python/releases/download/${RELEASE_TAG}"
-    
+
     # Create temporary directory for artifacts
     DOWNLOAD_DIR="/tmp/autobahn-release-artifacts-${RELEASE_TAG}"
     mkdir -p "${DOWNLOAD_DIR}"
     cd "${DOWNLOAD_DIR}"
-    
+
     echo ""
     echo "==> Downloading WebSocket conformance reports..."
     if curl -fL "${BASE_URL}/autobahn-python-websocket-conformance-${RELEASE_TAG}.tar.gz" \
@@ -1348,7 +1352,7 @@ download-github-release release_type="nightly":
     else
         echo "⚠️  Failed to download conformance reports (may not exist for this release)"
     fi
-    
+
     echo ""
     echo "==> Downloading FlatBuffers schemas..."
     if curl -fL "${BASE_URL}/flatbuffers-schema.tar.gz" \
@@ -1357,7 +1361,7 @@ download-github-release release_type="nightly":
     else
         echo "⚠️  Failed to download FlatBuffers schemas (may not exist for this release)"
     fi
-    
+
     echo ""
     echo "==> Extracting artifacts..."
     if [ -f conformance.tar.gz ]; then
@@ -1368,11 +1372,11 @@ download-github-release release_type="nightly":
         tar -xzf flatbuffers-schema.tar.gz
         echo "✅ Extracted FlatBuffers schemas"
     fi
-    
+
     echo ""
     echo "==> Downloaded and extracted artifacts:"
     ls -lh
-    
+
     echo ""
     echo "════════════════════════════════════════════════════════════"
     echo "✅ Artifacts downloaded to: ${DOWNLOAD_DIR}"

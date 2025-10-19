@@ -115,20 +115,17 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
 
 autoapi_type = "python"
 autoapi_dirs = ["../autobahn"]
+# autoapi_ignore doesn’t interpret filesystem-style paths — it uses
+# glob-style matching relative to autoapi_dirs roots.
 autoapi_ignore = [
-    "*test*",
-    "test_*.py",
-    "../autobahn/test/*",
-    "../autobahn/wamp/test/*",
-    "../autobahn/websocket/test/*",
-    "../autobahn/test/test_*.py",
-    "../autobahn/wamp/test/test_*.py",
-    "../autobahn/websocket/test/test_*.py",
-    "autoapi/autobahn/test/*",
-    "autoapi/autobahn/websocket/test/*",
-    "autoapi/autobahn/wamp/test/*",
+    "**/test/**",  # ignore all test dirs
+    "test_*.py",  # ignore test files
+    "__main__.py",  # path-based match
+    "*/__main__.py",  # path-based match (more aggressive)
+    "autobahn.__main__",  # module-name match
 ]
-autoapi_add_toctree_entry = False
+autoapi_add_toctree_entry = True
+autoapi_root = "reference"
 autoapi_options = [
     "members",
     "undoc-members",

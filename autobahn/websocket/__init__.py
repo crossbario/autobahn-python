@@ -38,15 +38,17 @@ import warnings
 # ============================================================================
 
 # Step 1: Probe for NVX availability (was it built and can we import it?)
-HAS_NVX = False
+_has_nvx = False
 try:
     # Try importing both NVX modules to verify they're available
     from autobahn.nvx._xormasker import create_xor_masker as _nvx_xor_test  # noqa: F401
     from autobahn.nvx._utf8validator import Utf8Validator as _nvx_utf8_test  # noqa: F401
-    HAS_NVX = True
+
+    _has_nvx = True
 except ImportError:
     # NVX not available (not built or CFFI compilation failed)
     pass
+HAS_NVX = _has_nvx
 
 # Step 2: Parse AUTOBAHN_USE_NVX environment variable
 env_val = os.environ.get("AUTOBAHN_USE_NVX", "").strip().lower()
@@ -79,7 +81,7 @@ if explicit_disable and HAS_NVX:
         "NVX native acceleration is available but explicitly disabled via "
         "AUTOBAHN_USE_NVX=0. Falling back to pure Python implementations.",
         RuntimeWarning,
-        stacklevel=2
+        stacklevel=2,
     )
     USES_NVX = False
 else:

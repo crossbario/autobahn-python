@@ -1,7 +1,5 @@
 :tocdepth: 1
 
-.. _changelog:
-
 Changelog
 =========
 
@@ -237,9 +235,9 @@ Changelog
 22.2.1
 ------
 
-* new: add auto-ping/pong configuration knob ``autoPingRestartOnAnyTraffic`` (see discussion `here <https://github.com/crossbario/autobahn-python/issues/1327>`_).
+* new: add auto-ping/pong configuration knob ``autoPingRestartOnAnyTraffic`` (see discussion `here <https://github.com/crossbario/autobahn-python/issues/1327>`__).
 * new: extended websocket auto-ping/pong ("heartbeating") with builtin RTT measurement
-* new: experimental support for ``transaction_hash`` in WAMP Publish/Call (see discussion `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`_).
+* new: experimental support for ``transaction_hash`` in WAMP Publish/Call (see discussion `here <https://github.com/wamp-proto/wamp-proto/issues/391#issuecomment-998577967>`__).
 * new: support decimal numbers WAMP serialization and round-tripping in both JSON and CBOR
 * fix: only depend on cbor2 (for WAMP CBOR serialization), not also cbor
 * fix: PyInstaller and Docker build / CI issues

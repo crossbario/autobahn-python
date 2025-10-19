@@ -16,7 +16,7 @@ no single “easy” answer we can give. Autobahn|Python supports a wide range
 of combinations:
 
 * **Runtimes:** CPython with CPyExt, and PyPy with cffi
-* **Operating systems:** Linux (``epoll``), *BSD (``kqueue``), and Windows (IOCP)
+* **Operating systems:** Linux (``epoll``), BSD (``kqueue``), and Windows (IOCP)
 * **Event loops:** Python stdlib ``asyncio`` and Twisted reactors
 
 Multiplying these dimensions quickly produces a large compatibility matrix,

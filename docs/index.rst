@@ -20,7 +20,6 @@ Contents
    wamp/aio-repl
    wamp/examples
    autobahn-on-free-threaded-python
-   reference/autobahn
    OVERVIEW.md
    AI_POLICY.md
    AI_GUIDELINES.md
