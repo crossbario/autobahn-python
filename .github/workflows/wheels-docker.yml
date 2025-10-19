@@ -280,13 +280,18 @@ jobs:
 
             # Test 3: twine check (validates wheel metadata and structure)
             echo "  [3/3] Twine validation..."
-            if twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt; then
+            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
+            TWINE_EXIT=${PIPESTATUS[0]}
+
+            # Fail on nonzero exit or any error-like output
+            if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_output.txt; then
               echo "  ✅ Twine check PASS"
             else
               echo "  ❌ Twine check FAIL"
               cat /tmp/twine_output.txt
               HAS_ERRORS=1
             fi
+            rm -f /tmp/twine_output.txt
 
             echo ""
           done

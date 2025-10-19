@@ -467,7 +467,11 @@ jobs:
 
             # Test 3: twine check (validates wheel metadata and structure)
             echo "  [3/3] Twine validation..."
-            if twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt; then
+            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
+            TWINE_EXIT=${PIPESTATUS[0]}
+
+            # Fail on nonzero exit or any error-like output
+            if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_output.txt; then
               echo "  ✅ Twine check PASS"
             else
               echo "  ❌ Twine check FAIL"
@@ -475,6 +479,7 @@ jobs:
               cat /tmp/twine_output.txt
               HAS_ERRORS=1
             fi
+            rm -f /tmp/twine_output.txt
 
             echo ""
           done
@@ -927,7 +932,11 @@ jobs:
 
             # Test 3: twine check (validates wheel metadata and structure)
             echo "  [3/3] Twine validation..."
-            if twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt; then
+            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
+            TWINE_EXIT=${PIPESTATUS[0]}
+
+            # Fail on nonzero exit or any error-like output
+            if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_output.txt; then
               echo "  ✅ Twine check PASS"
             else
               echo "  ❌ Twine check FAIL"
@@ -935,6 +944,7 @@ jobs:
               cat /tmp/twine_output.txt
               HAS_ERRORS=1
             fi
+            rm -f /tmp/twine_output.txt
 
             echo ""
           done
@@ -1358,12 +1368,20 @@ jobs:
               elif ! python3 -m zipfile -t "$pkg" > /dev/null 2>&1; then
                 echo "  ❌ Python zipfile test FAIL - CORRUPTED WHEEL!"
                 HAS_ERRORS=1
-              elif ! twine check "$pkg" 2>&1 | grep -q "PASSED"; then
-                echo "  ❌ Twine check FAIL"
-                twine check "$pkg"
-                HAS_ERRORS=1
               else
-                echo "  ✅ All checks PASS"
+                # Run twine check and capture output
+                twine check "$pkg" 2>&1 | tee /tmp/twine_pypi_output.txt
+                TWINE_EXIT=${PIPESTATUS[0]}
+
+                # Fail on nonzero exit or any error-like output
+                if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_pypi_output.txt; then
+                  echo "  ✅ All checks PASS"
+                else
+                  echo "  ❌ Twine check FAIL"
+                  cat /tmp/twine_pypi_output.txt
+                  HAS_ERRORS=1
+                fi
+                rm -f /tmp/twine_pypi_output.txt
               fi
             # For source dists: gzip + tar integrity
             elif [[ "$pkg" == *.tar.gz ]]; then
@@ -1373,12 +1391,20 @@ jobs:
               elif ! tar -tzf "$pkg" > /dev/null 2>&1; then
                 echo "  ❌ Tar test FAIL - CORRUPTED TARBALL!"
                 HAS_ERRORS=1
-              elif ! twine check "$pkg" 2>&1 | grep -q "PASSED"; then
-                echo "  ❌ Twine check FAIL"
-                twine check "$pkg"
-                HAS_ERRORS=1
               else
-                echo "  ✅ All checks PASS"
+                # Run twine check and capture output
+                twine check "$pkg" 2>&1 | tee /tmp/twine_pypi_output.txt
+                TWINE_EXIT=${PIPESTATUS[0]}
+
+                # Fail on nonzero exit or any error-like output
+                if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_pypi_output.txt; then
+                  echo "  ✅ All checks PASS"
+                else
+                  echo "  ❌ Twine check FAIL"
+                  cat /tmp/twine_pypi_output.txt
+                  HAS_ERRORS=1
+                fi
+                rm -f /tmp/twine_pypi_output.txt
               fi
             fi
             echo ""
