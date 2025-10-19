@@ -426,7 +426,7 @@ jobs:
           echo "Any corrupted wheels will be caught here."
           echo ""
           echo "Installing twine for validation..."
-          pip install twine
+          python3 -m pip install twine
           echo ""
 
           HAS_ERRORS=0
@@ -885,7 +885,7 @@ jobs:
           echo "Any corrupted wheels will be caught here."
           echo ""
           echo "Installing twine for validation..."
-          pip install twine
+          python3 -m pip install twine
           echo ""
 
           HAS_ERRORS=0
@@ -1334,7 +1334,7 @@ jobs:
           echo ""
           echo "Last chance to catch corrupted packages before PyPI upload."
           echo ""
-          pip install twine
+          python3 -m pip install twine
           echo ""
 
           HAS_ERRORS=0
