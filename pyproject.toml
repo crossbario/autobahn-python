@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64", "wheel", "cffi>=1.14.5; platform_python_implementation == 'CPython'"]
+requires = ["setuptools>=69.0.0", "wheel", "cffi>=1.14.5; platform_python_implementation == 'CPython'"]
 build-backend = "setuptools.build_meta"
 
 [project]
