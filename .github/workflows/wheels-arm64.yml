@@ -126,6 +126,7 @@ jobs:
           retry_on: error
           warning_on_retry: true
           command: |
+            set -e  # Exit immediately if docker build fails
             echo "==> Building custom PyPy manylinux image for ${{ matrix.target.name }}"
             docker buildx build \
               --platform linux/arm64 \
@@ -148,6 +149,7 @@ jobs:
           retry_on: error
           warning_on_retry: true
           command: |
+            set -e  # Exit immediately if docker build fails
             echo "==> Building ARM64 wheels for ${{ matrix.target.name }}"
             echo "Container: ${{ matrix.target.base_image || matrix.target.name }}:latest"
             echo "Platform: linux/arm64"
