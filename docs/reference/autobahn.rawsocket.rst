@@ -7,7 +7,6 @@ WAMP-RawSocket is an alternative WAMP transport that has less overhead compared 
 RawSocket Utilities
 -------------------
 
-RawSocket utilities that do not depend on the specific networking framework being used (Twisted or asyncio).
+See :doc:`/autoapi/autobahn/rawsocket/util/index`.
 
-.. automodule:: autobahn.rawsocket.util
-    :members:
+RawSocket utilities that do not depend on the specific networking framework being used (Twisted or asyncio).

@@ -4,34 +4,42 @@ Module ``autobahn.websocket``
 WebSocket Interfaces
 --------------------
 
-.. autoclass:: autobahn.websocket.interfaces.IWebSocketChannel
-    :members:
+See :doc:`/autoapi/autobahn/websocket/interfaces/index`.
 
-.. autoclass:: autobahn.websocket.interfaces.IWebSocketServerChannelFactory
-    :members:
-
-.. autoclass:: autobahn.websocket.interfaces.IWebSocketClientChannelFactory
-    :members:
+Core WebSocket interface definitions.
 
 
 WebSocket Types
 ---------------
 
-.. automodule:: autobahn.websocket.types
-    :members:
+See :doc:`/autoapi/autobahn/websocket/types/index`.
+
+WebSocket type definitions and connection parameters.
 
 
 WebSocket Compression
 ---------------------
 
-.. automodule:: autobahn.websocket.compress
-    :members:
+See :doc:`/autoapi/autobahn/websocket/compress_base/index`.
+
+Base compression support.
+
+See :doc:`/autoapi/autobahn/websocket/compress_deflate/index`.
+
+DEFLATE compression (permessage-deflate extension).
+
+See :doc:`/autoapi/autobahn/websocket/compress_bzip2/index`.
+
+Bzip2 compression.
+
+See :doc:`/autoapi/autobahn/websocket/compress_snappy/index`.
+
+Snappy compression.
 
 
 WebSocket Utilities
 -------------------
 
-WebSocket utilities that do not depend on the specific networking framework being used (Twisted or asyncio).
+See :doc:`/autoapi/autobahn/websocket/util/index`.
 
-.. automodule:: autobahn.websocket.util
-    :members:
+WebSocket utilities that do not depend on the specific networking framework being used (Twisted or asyncio).

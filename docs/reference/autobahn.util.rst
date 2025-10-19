@@ -1,6 +1,6 @@
 Module ``autobahn.util``
 ========================
 
-.. automodule:: autobahn.util
-    :members:
+See :doc:`/autoapi/autobahn/util/index`.
 
+General utility functions and decorators.

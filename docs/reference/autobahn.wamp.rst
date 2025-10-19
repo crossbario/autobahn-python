@@ -4,53 +4,62 @@ Module ``autobahn.wamp``
 WAMP Interfaces
 ---------------
 
-.. automodule:: autobahn.wamp.interfaces
-    :members:
+See :doc:`/autoapi/autobahn/wamp/interfaces/index`.
+
+Core WAMP interface definitions.
 
 
 WAMP Types
 ----------
 
-.. automodule:: autobahn.wamp.types
-    :members:
+See :doc:`/autoapi/autobahn/wamp/types/index`.
 
-.. automodule:: autobahn.wamp.request
-    :members:
+WAMP type definitions and session details.
+
+See :doc:`/autoapi/autobahn/wamp/request/index`.
+
+WAMP request types for subscriptions, registrations, and publications.
 
 
 WAMP Exceptions
 ---------------
 
-.. automodule:: autobahn.wamp.exception
-    :members:
+See :doc:`/autoapi/autobahn/wamp/exception/index`.
+
+WAMP exception classes.
 
 
 WAMP Authentication and Encryption
 ----------------------------------
 
-.. automodule:: autobahn.wamp.auth
-    :members:
-    :show-inheritance:
+See :doc:`/autoapi/autobahn/wamp/auth/index`.
 
-.. automodule:: autobahn.wamp.cryptosign
-    :members:
+WAMP authentication helpers.
 
-.. automodule:: autobahn.wamp.cryptobox
-    :members:
+See :doc:`/autoapi/autobahn/wamp/cryptosign/index`.
+
+WAMP-cryptosign authentication.
+
+See :doc:`/autoapi/autobahn/wamp/cryptobox/index`.
+
+WAMP-cryptobox payload encryption.
 
 
 WAMP Serializer
 ---------------
 
-.. automodule:: autobahn.wamp.serializer
-    :members:
+See :doc:`/autoapi/autobahn/wamp/serializer/index`.
+
+WAMP serializer implementations for JSON, MessagePack, CBOR, and FlatBuffers.
 
 
 WAMP Messages
 -------------
 
-.. automodule:: autobahn.wamp.message
-    :members:
+See :doc:`/autoapi/autobahn/wamp/message/index`.
 
-.. automodule:: autobahn.wamp.message_fbs
-    :members:
+WAMP message type definitions.
+
+See :doc:`/autoapi/autobahn/wamp/message_fbs/index`.
+
+WAMP FlatBuffers message serialization.
