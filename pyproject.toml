@@ -9,7 +9,10 @@ description = "WebSocket client & server library, WAMP real-time framework"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
-license-files = ["LICENSE"]
+# Twine 6.2 validator (via pkginfo) still flags license-files as "unrecognized or malformed",
+# because it only understands the old-style License: field (Core Metadata 2.3).
+# Rely on modern setuptools (80.9.0+) which automatically discovers LICENSE* files at the root.
+# license-files = ["LICENSE"]
 authors = [
     {name = "typedef int GmbH", email = "contact@typedefint.eu"}
 ]
