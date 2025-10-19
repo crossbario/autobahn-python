@@ -1451,13 +1451,24 @@ jobs:
             echo "======================================================================"
           fi
 
-      - name: Publish to PyPI
+      - name: Publish to PyPI using bleeding-edge twine
         if: steps.pypi_check.outputs.exists == 'false'
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          # Uses trusted publishing - no API token needed
-          # Configure at: https://pypi.org/manage/account/publishing/
-          verbose: true
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          echo "==> Publishing to PyPI using twine from master..."
+          # Install bleeding-edge packaging and twine for PEP 639 support
+          python3 -m pip install git+https://github.com/pypa/packaging.git
+          python3 -m pip install git+https://github.com/pypa/twine.git
+
+          echo "Upload environment:"
+          echo "twine: $(twine --version)"
+          echo "packaging: $(python3 -m pip show packaging | grep '^Version:')"
+          echo ""
+
+          # Upload to PyPI
+          twine upload dist/*.whl dist/*.tar.gz --verbose
 
       - name: Trigger RTD build
         env:
