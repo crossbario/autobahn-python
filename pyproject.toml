@@ -15,7 +15,6 @@ authors = [
 ]
 keywords = ["autobahn", "crossbar", "websocket", "realtime", "rfc6455", "wamp", "rpc", "pubsub", "twisted", "asyncio"]
 classifiers = [
-    "License :: OSI Approved :: MIT License",
     "Development Status :: 5 - Production/Stable",
     "Environment :: No Input/Output (Daemon)",
     "Framework :: Twisted",
