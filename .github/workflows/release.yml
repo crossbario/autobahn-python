@@ -122,15 +122,125 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download all wheel artifacts (from wheels workflow)
+      - name: Download macOS wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: wheels-*
-          merge-multiple: true
+          name: wheels-macos-arm64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Re-verify macOS wheels (immediate verification to prevent checksum file overwrites)
+        run: |
+          echo "======================================================================"
+          echo "==> macOS Wheels Checksum Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          if [ -f "dist/CHECKSUMS.sha256" ]; then
+            echo "Found CHECKSUMS.sha256 for macOS wheels"
+            cd dist
+
+            while IFS= read -r line; do
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ Missing wheel: $WHEEL_FILE"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+          else
+            echo "⚠️  No CHECKSUMS.sha256 found for macOS wheels"
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "❌ macOS wheel verification FAILED!"
+            exit 1
+          elif [ $WHEELS_VERIFIED -gt 0 ]; then
+            echo "✅ Verified $WHEELS_VERIFIED macOS wheels"
+          fi
+          echo ""
+        shell: bash
+
+      - name: Download Windows wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-x86_64
+          path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Re-verify Windows wheels (immediate verification to prevent checksum file overwrites)
+        run: |
+          echo "======================================================================"
+          echo "==> Windows Wheels Checksum Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          if [ -f "dist/CHECKSUMS.sha256" ]; then
+            echo "Found CHECKSUMS.sha256 for Windows wheels"
+            cd dist
+
+            while IFS= read -r line; do
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ Missing wheel: $WHEEL_FILE"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+          else
+            echo "⚠️  No CHECKSUMS.sha256 found for Windows wheels"
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "❌ Windows wheel verification FAILED!"
+            exit 1
+          elif [ $WHEELS_VERIFIED -gt 0 ]; then
+            echo "✅ Verified $WHEELS_VERIFIED Windows wheels"
+          fi
+          echo ""
+        shell: bash
 
       - name: Download source distribution
         uses: actions/download-artifact@v4
@@ -172,6 +282,7 @@ jobs:
           echo ""
 
           HAS_ERRORS=0
+          TARBALLS_VERIFIED=0
 
           for tarball in dist/*.tar.gz; do
             if [ ! -f "$tarball" ]; then
@@ -193,6 +304,8 @@ jobs:
 
             echo "==> Re-verifying: $BASENAME"
             echo ""
+
+            TARBALLS_VERIFIED=$((TARBALLS_VERIFIED + 1))
 
             # Re-compute SHA256 hash
             echo "Computing current SHA256 fingerprint..."
@@ -286,9 +399,24 @@ jobs:
             echo "DO NOT PROCEED WITH RELEASE - investigate and fix first."
             echo ""
             exit 1
+          elif [ $TARBALLS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ RE-VERIFICATION FAILED - NO SOURCE DISTRIBUTIONS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero source distributions were verified. This means:"
+            echo "  1. No *.tar.gz files were found in dist/, OR"
+            echo "  2. Source distribution download from artifacts failed"
+            echo ""
+            echo "This is a critical failure - we cannot confirm source distribution integrity."
+            echo "This was the root cause of issue #1714 (corrupted v25.10.1 on PyPI)."
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE - investigate artifact download!"
+            echo ""
+            exit 1
           else
             echo "======================================================================"
-            echo "✅ All source distributions re-verified successfully"
+            echo "✅ All source distributions re-verified successfully ($TARBALLS_VERIFIED tarballs)"
             echo "======================================================================"
             echo ""
             echo "Chain of custody confirmed: wheels workflow → release workflow"
@@ -304,6 +432,57 @@ jobs:
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Re-verify Linux no-NVX wheels (immediate verification to prevent checksum file overwrites)
+        run: |
+          echo "======================================================================"
+          echo "==> Linux no-NVX Wheels Checksum Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          if [ -f "dist/CHECKSUMS.sha256" ]; then
+            echo "Found CHECKSUMS.sha256 for Linux no-NVX wheels"
+            cd dist
+
+            while IFS= read -r line; do
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ Missing wheel: $WHEEL_FILE"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+          else
+            echo "⚠️  No CHECKSUMS.sha256 found for Linux no-NVX wheels"
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "❌ Linux no-NVX wheel verification FAILED!"
+            exit 1
+          elif [ $WHEELS_VERIFIED -gt 0 ]; then
+            echo "✅ Verified $WHEELS_VERIFIED Linux no-NVX wheels"
+          fi
+          echo ""
+        shell: bash
 
       - name: Download manylinux wheel artifacts (from wheels-docker workflow)
         uses: actions/download-artifact@v4
@@ -783,15 +962,125 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download all wheel artifacts (from wheels workflow)
+      - name: Download macOS wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: wheels-*
-          merge-multiple: true
+          name: wheels-macos-arm64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Re-verify macOS wheels (immediate verification to prevent checksum file overwrites)
+        run: |
+          echo "======================================================================"
+          echo "==> macOS Wheels Checksum Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          if [ -f "dist/CHECKSUMS.sha256" ]; then
+            echo "Found CHECKSUMS.sha256 for macOS wheels"
+            cd dist
+
+            while IFS= read -r line; do
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ Missing wheel: $WHEEL_FILE"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+          else
+            echo "⚠️  No CHECKSUMS.sha256 found for macOS wheels"
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "❌ macOS wheel verification FAILED!"
+            exit 1
+          elif [ $WHEELS_VERIFIED -gt 0 ]; then
+            echo "✅ Verified $WHEELS_VERIFIED macOS wheels"
+          fi
+          echo ""
+        shell: bash
+
+      - name: Download Windows wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-x86_64
+          path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Re-verify Windows wheels (immediate verification to prevent checksum file overwrites)
+        run: |
+          echo "======================================================================"
+          echo "==> Windows Wheels Checksum Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          if [ -f "dist/CHECKSUMS.sha256" ]; then
+            echo "Found CHECKSUMS.sha256 for Windows wheels"
+            cd dist
+
+            while IFS= read -r line; do
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ Missing wheel: $WHEEL_FILE"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+          else
+            echo "⚠️  No CHECKSUMS.sha256 found for Windows wheels"
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "❌ Windows wheel verification FAILED!"
+            exit 1
+          elif [ $WHEELS_VERIFIED -gt 0 ]; then
+            echo "✅ Verified $WHEELS_VERIFIED Windows wheels"
+          fi
+          echo ""
+        shell: bash
 
       - name: Download source distribution
         uses: actions/download-artifact@v4
@@ -833,6 +1122,7 @@ jobs:
           echo ""
 
           HAS_ERRORS=0
+          TARBALLS_VERIFIED=0
 
           for tarball in dist/*.tar.gz; do
             if [ ! -f "$tarball" ]; then
@@ -854,6 +1144,8 @@ jobs:
 
             echo "==> Re-verifying: $BASENAME"
             echo ""
+
+            TARBALLS_VERIFIED=$((TARBALLS_VERIFIED + 1))
 
             # Re-compute SHA256 hash
             echo "Computing current SHA256 fingerprint..."
@@ -947,9 +1239,24 @@ jobs:
             echo "DO NOT PROCEED WITH RELEASE - investigate and fix first."
             echo ""
             exit 1
+          elif [ $TARBALLS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ RE-VERIFICATION FAILED - NO SOURCE DISTRIBUTIONS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero source distributions were verified. This means:"
+            echo "  1. No *.tar.gz files were found in dist/, OR"
+            echo "  2. Source distribution download from artifacts failed"
+            echo ""
+            echo "This is a critical failure - we cannot confirm source distribution integrity."
+            echo "This was the root cause of issue #1714 (corrupted v25.10.1 on PyPI)."
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE - investigate artifact download!"
+            echo ""
+            exit 1
           else
             echo "======================================================================"
-            echo "✅ All source distributions re-verified successfully"
+            echo "✅ All source distributions re-verified successfully ($TARBALLS_VERIFIED tarballs)"
             echo "======================================================================"
             echo ""
             echo "Chain of custody confirmed: wheels workflow → release workflow"
@@ -965,6 +1272,57 @@ jobs:
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Re-verify Linux no-NVX wheels (immediate verification to prevent checksum file overwrites)
+        run: |
+          echo "======================================================================"
+          echo "==> Linux no-NVX Wheels Checksum Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          if [ -f "dist/CHECKSUMS.sha256" ]; then
+            echo "Found CHECKSUMS.sha256 for Linux no-NVX wheels"
+            cd dist
+
+            while IFS= read -r line; do
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ Missing wheel: $WHEEL_FILE"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+          else
+            echo "⚠️  No CHECKSUMS.sha256 found for Linux no-NVX wheels"
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "❌ Linux no-NVX wheel verification FAILED!"
+            exit 1
+          elif [ $WHEELS_VERIFIED -gt 0 ]; then
+            echo "✅ Verified $WHEELS_VERIFIED Linux no-NVX wheels"
+          fi
+          echo ""
+        shell: bash
 
       - name: Download manylinux wheel artifacts (from wheels-docker workflow)
         uses: actions/download-artifact@v4
@@ -1470,6 +1828,57 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Re-verify macOS wheels (immediate verification to prevent checksum file overwrites)
+        run: |
+          echo "======================================================================"
+          echo "==> macOS Wheels Checksum Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          if [ -f "dist/CHECKSUMS.sha256" ]; then
+            echo "Found CHECKSUMS.sha256 for macOS wheels"
+            cd dist
+
+            while IFS= read -r line; do
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ Missing wheel: $WHEEL_FILE"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+          else
+            echo "⚠️  No CHECKSUMS.sha256 found for macOS wheels"
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "❌ macOS wheel verification FAILED!"
+            exit 1
+          elif [ $WHEELS_VERIFIED -gt 0 ]; then
+            echo "✅ Verified $WHEELS_VERIFIED macOS wheels"
+          fi
+          echo ""
+        shell: bash
+
       - name: Download Windows wheels
         uses: actions/download-artifact@v4
         with:
@@ -1478,6 +1887,57 @@ jobs:
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Re-verify Windows wheels (immediate verification to prevent checksum file overwrites)
+        run: |
+          echo "======================================================================"
+          echo "==> Windows Wheels Checksum Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          if [ -f "dist/CHECKSUMS.sha256" ]; then
+            echo "Found CHECKSUMS.sha256 for Windows wheels"
+            cd dist
+
+            while IFS= read -r line; do
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ Missing wheel: $WHEEL_FILE"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+          else
+            echo "⚠️  No CHECKSUMS.sha256 found for Windows wheels"
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "❌ Windows wheel verification FAILED!"
+            exit 1
+          elif [ $WHEELS_VERIFIED -gt 0 ]; then
+            echo "✅ Verified $WHEELS_VERIFIED Windows wheels"
+          fi
+          echo ""
+        shell: bash
 
       - name: Download source distribution
         uses: actions/download-artifact@v4
@@ -1519,6 +1979,7 @@ jobs:
           echo ""
 
           HAS_ERRORS=0
+          TARBALLS_VERIFIED=0
 
           for tarball in dist/*.tar.gz; do
             if [ ! -f "$tarball" ]; then
@@ -1540,6 +2001,8 @@ jobs:
 
             echo "==> Re-verifying: $BASENAME"
             echo ""
+
+            TARBALLS_VERIFIED=$((TARBALLS_VERIFIED + 1))
 
             # Re-compute SHA256 hash
             echo "Computing current SHA256 fingerprint..."
@@ -1633,9 +2096,24 @@ jobs:
             echo "DO NOT PROCEED WITH RELEASE - investigate and fix first."
             echo ""
             exit 1
+          elif [ $TARBALLS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ RE-VERIFICATION FAILED - NO SOURCE DISTRIBUTIONS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero source distributions were verified. This means:"
+            echo "  1. No *.tar.gz files were found in dist/, OR"
+            echo "  2. Source distribution download from artifacts failed"
+            echo ""
+            echo "This is a critical failure - we cannot confirm source distribution integrity."
+            echo "This was the root cause of issue #1714 (corrupted v25.10.1 on PyPI)."
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE - investigate artifact download!"
+            echo ""
+            exit 1
           else
             echo "======================================================================"
-            echo "✅ All source distributions re-verified successfully"
+            echo "✅ All source distributions re-verified successfully ($TARBALLS_VERIFIED tarballs)"
             echo "======================================================================"
             echo ""
             echo "Chain of custody confirmed: wheels workflow → release workflow"
@@ -1651,6 +2129,57 @@ jobs:
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Re-verify Linux no-NVX wheels (immediate verification to prevent checksum file overwrites)
+        run: |
+          echo "======================================================================"
+          echo "==> Linux no-NVX Wheels Checksum Verification (Chain of Custody)"
+          echo "======================================================================"
+          echo ""
+
+          HAS_ERRORS=0
+          WHEELS_VERIFIED=0
+
+          if [ -f "dist/CHECKSUMS.sha256" ]; then
+            echo "Found CHECKSUMS.sha256 for Linux no-NVX wheels"
+            cd dist
+
+            while IFS= read -r line; do
+              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+
+              if [ ! -f "$WHEEL_FILE" ]; then
+                echo "❌ Missing wheel: $WHEEL_FILE"
+                HAS_ERRORS=1
+                continue
+              fi
+
+              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
+
+              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
+                echo "✅ $(basename $WHEEL_FILE): checksum verified"
+                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
+              else
+                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
+                echo "   Original:  $ORIGINAL_CHECKSUM"
+                echo "   Current:   $CURRENT_CHECKSUM"
+                HAS_ERRORS=1
+              fi
+            done < CHECKSUMS.sha256
+
+            cd ..
+          else
+            echo "⚠️  No CHECKSUMS.sha256 found for Linux no-NVX wheels"
+          fi
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "❌ Linux no-NVX wheel verification FAILED!"
+            exit 1
+          elif [ $WHEELS_VERIFIED -gt 0 ]; then
+            echo "✅ Verified $WHEELS_VERIFIED Linux no-NVX wheels"
+          fi
+          echo ""
+        shell: bash
 
       - name: Download manylinux wheels with NVX (from wheels-docker)
         uses: actions/download-artifact@v4
