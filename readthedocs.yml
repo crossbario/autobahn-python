@@ -9,5 +9,7 @@ build:
     - bash .github/scripts/rtd-download-artifacts.sh
     # Install package with all extras needed for docs
     - pip install -e ".[dev,twisted,compress,serialization,encryption,scram]"
-    # Build Sphinx documentation
-    - cd docs && sphinx-build -b html . _build/html
+    # Create RTD output directory (required by RTD)
+    - mkdir -p $READTHEDOCS_OUTPUT/html/
+    # Build Sphinx documentation to RTD output directory
+    - cd docs && sphinx-build -b html . $READTHEDOCS_OUTPUT/html
