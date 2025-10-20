@@ -915,7 +915,7 @@ publish-rtd tag="":
 
     # Trigger build via RTD API
     # See: https://docs.readthedocs.io/en/stable/api/v3.html#post--api-v3-projects-(string-project_slug)-versions-(string-version_slug)-builds-
-    RTD_PROJECT="autobahnpython"
+    RTD_PROJECT="autobahn"
     RTD_API_URL="https://readthedocs.org/api/v3/projects/${RTD_PROJECT}/versions/${TAG}/builds/"
 
     echo "==> Calling RTD API..."
