@@ -257,9 +257,9 @@ jobs:
           # Ensure pip is available for the Python being used
           python3 -m ensurepip --upgrade 2>/dev/null || true
           # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
-          # Use --break-system-packages for consistency (safe in CI containers)
-          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
-          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
+          # Note: No --break-system-packages needed in containers (isolated environment)
+          python3 -m pip install git+https://github.com/pypa/packaging.git
+          python3 -m pip install git+https://github.com/pypa/twine.git
           echo ""
 
           echo "==> Validation environment:"
