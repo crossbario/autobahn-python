@@ -19,7 +19,7 @@ Contents
    wamp/flatbuffers-schema
    wamp/aio-repl
    wamp/examples
-   autobahn-on-free-threaded-python
+   environments/index
    OVERVIEW.md
    AI_POLICY.md
    AI_GUIDELINES.md
