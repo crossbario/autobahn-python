@@ -192,6 +192,177 @@ jobs:
           just build-all
         shell: bash
 
+      - name: Force file system sync (post-build, pre-validation) - Linux
+        if: matrix.platform == 'linux'
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Build)"
+          echo "======================================================================"
+          echo ""
+          echo "Flushing all file system buffers to disk to ensure wheels are fully"
+          echo "written before validation and checksumming."
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+        shell: bash
+
+      - name: Validate wheels integrity (Linux only)
+        if: matrix.platform == 'linux'
+        run: |
+          set -o pipefail
+          echo "======================================================================"
+          echo "==> Validating Wheel Integrity (Fail Fast)"
+          echo "======================================================================"
+          echo ""
+          echo "Installing twine for validation..."
+          python3 -m pip install git+https://github.com/pypa/packaging.git
+          python3 -m pip install git+https://github.com/pypa/twine.git
+          echo ""
+
+          echo "==> Validation environment:"
+          echo "Python: $(python3 --version)"
+          echo "twine: $(twine --version)"
+          echo ""
+
+          # Initialize validation output file
+          VALIDATION_FILE="dist/VALIDATION.txt"
+          echo "Wheel Validation Results - Build Time (wheels workflow)" > "$VALIDATION_FILE"
+          echo "=========================================================" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+          echo "Validation Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$VALIDATION_FILE"
+          echo "Platform: Linux (pure Python, no NVX)" >> "$VALIDATION_FILE"
+          echo "Python: $(python3 --version)" >> "$VALIDATION_FILE"
+          echo "twine: $(twine --version)" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+
+          HAS_ERRORS=0
+
+          for wheel in dist/*.whl; do
+            if [ ! -f "$wheel" ]; then
+              echo "⚠️  No wheels found in dist/"
+              continue
+            fi
+
+            WHEEL_NAME=$(basename "$wheel")
+            echo "==> Validating: $WHEEL_NAME"
+            echo "" >> "$VALIDATION_FILE"
+            echo "Wheel: $WHEEL_NAME" >> "$VALIDATION_FILE"
+            echo "---" >> "$VALIDATION_FILE"
+
+            # Test 1: ZIP integrity
+            echo "  [1/3] ZIP integrity test..."
+            if unzip -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ ZIP test PASS"
+              echo "  ZIP test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ ZIP test FAIL - wheel is corrupted!"
+              echo "  ZIP test: FAIL - wheel is corrupted!" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            # Test 2: Python zipfile module
+            echo "  [2/3] Python zipfile test..."
+            if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ Python zipfile test PASS"
+              echo "  Python zipfile test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ Python zipfile test FAIL - wheel is corrupted!"
+              echo "  Python zipfile test: FAIL - wheel is corrupted!" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            # Test 3: twine check
+            echo "  [3/3] Twine validation..."
+            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
+            TWINE_EXIT=${PIPESTATUS[0]}
+
+            if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_output.txt; then
+              echo "  ✅ Twine check PASS"
+              echo "  Twine check: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ Twine check FAIL"
+              cat /tmp/twine_output.txt
+              echo "  Twine check: FAIL" >> "$VALIDATION_FILE"
+              cat /tmp/twine_output.txt >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+            rm -f /tmp/twine_output.txt
+
+            echo ""
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "" >> "$VALIDATION_FILE"
+            echo "RESULT: VALIDATION FAILED" >> "$VALIDATION_FILE"
+            echo "======================================================================"
+            echo "❌ WHEEL VALIDATION FAILED"
+            echo "======================================================================"
+            echo ""
+            echo "DO NOT PROCEED - corrupted wheels must NOT become artifacts!"
+            exit 1
+          else
+            echo "" >> "$VALIDATION_FILE"
+            echo "RESULT: ALL VALIDATIONS PASSED" >> "$VALIDATION_FILE"
+            echo "======================================================================"
+            echo "✅ All wheels validated successfully"
+            echo "======================================================================"
+            echo ""
+            echo "Validation results written to: $VALIDATION_FILE"
+          fi
+        shell: bash
+
+      - name: Generate SHA256 checksums (Linux only)
+        if: matrix.platform == 'linux'
+        run: |
+          echo "======================================================================"
+          echo "==> Generating SHA256 Checksums for Chain of Custody"
+          echo "======================================================================"
+          echo ""
+          echo "OpenSSL version:"
+          openssl version
+          echo ""
+
+          # Force sync before checksumming
+          echo "Forcing sync before checksumming..."
+          sync
+          echo "✅ Buffers flushed"
+          echo ""
+
+          # Change to dist directory to generate relative paths
+          cd dist
+
+          CHECKSUM_FILE="CHECKSUMS.sha256"
+
+          # Generate checksums for all wheels
+          echo "Generating checksums for wheels..."
+          for wheel in *.whl; do
+            if [ -f "$wheel" ]; then
+              sync
+              openssl sha256 "$wheel" | tee -a "$CHECKSUM_FILE"
+            fi
+          done
+
+          echo ""
+          echo "==> Generated checksum file:"
+          cat "$CHECKSUM_FILE"
+          echo ""
+
+          cd ..
+        shell: bash
+
+      - name: Force file system sync (post-checksum, pre-upload) - Linux
+        if: matrix.platform == 'linux'
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Checksum)"
+          echo "======================================================================"
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+        shell: bash
+
       - name: Build binary wheels with NVX (macOS)
         if: matrix.platform == 'macos'
         run: |
@@ -200,12 +371,204 @@ jobs:
           just build-all
         shell: bash
 
+      - name: Force file system sync (post-build, pre-validation) - macOS
+        if: matrix.platform == 'macos'
+        run: |
+          echo "======================================================================"
+          echo "==> Forcing File System Sync (Post-Build)"
+          echo "======================================================================"
+          echo ""
+          sync
+          echo "✅ All buffers flushed to disk"
+          echo ""
+        shell: bash
+
+      - name: Validate wheels integrity (macOS only)
+        if: matrix.platform == 'macos'
+        run: |
+          set -o pipefail
+          echo "======================================================================"
+          echo "==> Validating Wheel Integrity (macOS)"
+          echo "======================================================================"
+          echo ""
+          python3 -m pip install git+https://github.com/pypa/packaging.git
+          python3 -m pip install git+https://github.com/pypa/twine.git
+          echo ""
+
+          VALIDATION_FILE="dist/VALIDATION.txt"
+          echo "Wheel Validation Results - Build Time (wheels workflow)" > "$VALIDATION_FILE"
+          echo "=========================================================" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+          echo "Validation Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$VALIDATION_FILE"
+          echo "Platform: macOS ARM64 (binary with NVX)" >> "$VALIDATION_FILE"
+          echo "Python: $(python3 --version)" >> "$VALIDATION_FILE"
+          echo "twine: $(twine --version)" >> "$VALIDATION_FILE"
+          echo "" >> "$VALIDATION_FILE"
+
+          HAS_ERRORS=0
+          for wheel in dist/*.whl; do
+            [ -f "$wheel" ] || continue
+            WHEEL_NAME=$(basename "$wheel")
+            echo "==> Validating: $WHEEL_NAME"
+            echo "" >> "$VALIDATION_FILE"
+            echo "Wheel: $WHEEL_NAME" >> "$VALIDATION_FILE"
+            echo "---" >> "$VALIDATION_FILE"
+
+            if unzip -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ ZIP test PASS"
+              echo "  ZIP test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ ZIP test FAIL"
+              echo "  ZIP test: FAIL" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            if python3 -m zipfile -t "$wheel" > /dev/null 2>&1; then
+              echo "  ✅ Python zipfile test PASS"
+              echo "  Python zipfile test: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ Python zipfile test FAIL"
+              echo "  Python zipfile test: FAIL" >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+
+            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
+            if [ ${PIPESTATUS[0]} -eq 0 ] && ! grep -Eqi "ERROR|FAILED" /tmp/twine_output.txt; then
+              echo "  ✅ Twine check PASS"
+              echo "  Twine check: PASS" >> "$VALIDATION_FILE"
+            else
+              echo "  ❌ Twine check FAIL"
+              echo "  Twine check: FAIL" >> "$VALIDATION_FILE"
+              cat /tmp/twine_output.txt >> "$VALIDATION_FILE"
+              HAS_ERRORS=1
+            fi
+            rm -f /tmp/twine_output.txt
+          done
+
+          if [ $HAS_ERRORS -eq 1 ]; then
+            echo "RESULT: VALIDATION FAILED" >> "$VALIDATION_FILE"
+            echo "❌ WHEEL VALIDATION FAILED"
+            exit 1
+          else
+            echo "RESULT: ALL VALIDATIONS PASSED" >> "$VALIDATION_FILE"
+            echo "✅ All wheels validated successfully"
+          fi
+        shell: bash
+
+      - name: Generate SHA256 checksums (macOS only)
+        if: matrix.platform == 'macos'
+        run: |
+          echo "==> Generating SHA256 checksums..."
+          sync
+          cd dist
+          for wheel in *.whl; do
+            [ -f "$wheel" ] && openssl sha256 "$wheel" | tee -a CHECKSUMS.sha256
+          done
+          cat CHECKSUMS.sha256
+          cd ..
+        shell: bash
+
+      - name: Force file system sync (post-checksum) - macOS
+        if: matrix.platform == 'macos'
+        run: sync
+        shell: bash
+
       - name: Build binary wheels with NVX (Windows)
         if: matrix.platform == 'windows'
         run: |
           # Build binary wheels WITH NVX acceleration for Windows
           $env:AUTOBAHN_USE_NVX = "1"
           just build-all
+        shell: pwsh
+
+      - name: Validate wheels integrity (Windows only)
+        if: matrix.platform == 'windows'
+        run: |
+          Write-Host "======================================================================"
+          Write-Host "==> Validating Wheel Integrity (Windows)"
+          Write-Host "======================================================================"
+          Write-Host ""
+          python -m pip install git+https://github.com/pypa/packaging.git
+          python -m pip install git+https://github.com/pypa/twine.git
+          Write-Host ""
+
+          $validationFile = "dist\VALIDATION.txt"
+          "Wheel Validation Results - Build Time (wheels workflow)" | Out-File -FilePath $validationFile -Encoding UTF8
+          "=========================================================" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "Validation Date: $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm:ss UTC'))" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "Platform: Windows x86_64 (binary with NVX)" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "Python: $(python --version)" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "twine: $(twine --version)" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+          "" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+
+          $hasErrors = $false
+          Get-ChildItem dist\*.whl | ForEach-Object {
+            $wheelName = $_.Name
+            Write-Host "==> Validating: $wheelName"
+            "" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            "Wheel: $wheelName" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            "---" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+
+            # Test 1: ZIP integrity (using Expand-Archive test)
+            try {
+              [System.IO.Compression.ZipFile]::OpenRead($_.FullName).Dispose()
+              Write-Host "  ✅ ZIP test PASS"
+              "  ZIP test: PASS" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            } catch {
+              Write-Host "  ❌ ZIP test FAIL"
+              "  ZIP test: FAIL" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+              $hasErrors = $true
+            }
+
+            # Test 2: Python zipfile module
+            $zipfileTest = python -m zipfile -t $_.FullName 2>&1
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "  ✅ Python zipfile test PASS"
+              "  Python zipfile test: PASS" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            } else {
+              Write-Host "  ❌ Python zipfile test FAIL"
+              "  Python zipfile test: FAIL" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+              $hasErrors = $true
+            }
+
+            # Test 3: twine check
+            $twineOutput = twine check $_.FullName 2>&1 | Out-String
+            if ($LASTEXITCODE -eq 0 -and $twineOutput -notmatch "ERROR|FAILED") {
+              Write-Host "  ✅ Twine check PASS"
+              "  Twine check: PASS" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            } else {
+              Write-Host "  ❌ Twine check FAIL"
+              "  Twine check: FAIL" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+              $twineOutput | Out-File -FilePath $validationFile -Append -Encoding UTF8
+              $hasErrors = $true
+            }
+          }
+
+          if ($hasErrors) {
+            "RESULT: VALIDATION FAILED" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            Write-Host "❌ WHEEL VALIDATION FAILED"
+            exit 1
+          } else {
+            "RESULT: ALL VALIDATIONS PASSED" | Out-File -FilePath $validationFile -Append -Encoding UTF8
+            Write-Host "✅ All wheels validated successfully"
+          }
+        shell: pwsh
+
+      - name: Generate SHA256 checksums (Windows only)
+        if: matrix.platform == 'windows'
+        run: |
+          Write-Host "==> Generating SHA256 checksums..."
+          Set-Location dist
+          $checksumFile = "CHECKSUMS.sha256"
+          Get-ChildItem *.whl | ForEach-Object {
+            $hash = (Get-FileHash -Algorithm SHA256 $_.Name).Hash.ToLower()
+            $line = "SHA256($($_.Name))= $hash"
+            Write-Host $line
+            $line | Out-File -FilePath $checksumFile -Append -Encoding UTF8
+          }
+          Get-Content $checksumFile
+          Set-Location ..
         shell: pwsh
 
       - name: List built artifacts (Linux/macOS)
@@ -222,11 +585,14 @@ jobs:
           Get-ChildItem dist
         shell: pwsh
 
-      - name: Upload wheel artifacts
+      - name: Upload wheel artifacts with verification files
         uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
-          path: dist/*.whl
+          path: |
+            dist/*.whl
+            dist/CHECKSUMS.sha256
+            dist/VALIDATION.txt
           retention-days: 30
 
       - name: Verify wheels built without NVX (Linux x86_64 only)
@@ -414,12 +780,15 @@ jobs:
             dist/*.verify.txt
           retention-days: 30
 
-      - name: Upload Linux wheels without NVX (Linux x86_64 only)
+      - name: Upload Linux wheels without NVX with verification files (Linux x86_64 only)
         if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
         uses: actions/upload-artifact@v4
         with:
           name: linux-wheels-no-nvx
-          path: dist/*.whl
+          path: |
+            dist/*.whl
+            dist/CHECKSUMS.sha256
+            dist/VALIDATION.txt
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow
