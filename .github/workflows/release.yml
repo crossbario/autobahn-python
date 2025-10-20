@@ -398,9 +398,9 @@ jobs:
             cd wheelhouse
 
             while IFS= read -r line; do
-              # Parse openssl output: "SHA256(file.whl)= checksum"
+              # Parse openssl output: "SHA256(file.whl)= checksum" or "SHA2-256(file.whl)= checksum"
               ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
 
               if [ ! -f "$WHEEL_FILE" ]; then
                 echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
@@ -441,9 +441,9 @@ jobs:
             cd wheelhouse-arm64
 
             while IFS= read -r line; do
-              # Parse openssl output: "SHA256(file.whl)= checksum"
+              # Parse openssl output: "SHA256(file.whl)= checksum" or "SHA2-256(file.whl)= checksum"
               ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
 
               if [ ! -f "$WHEEL_FILE" ]; then
                 echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
@@ -1059,9 +1059,9 @@ jobs:
             cd wheelhouse
 
             while IFS= read -r line; do
-              # Parse openssl output: "SHA256(file.whl)= checksum"
+              # Parse openssl output: "SHA256(file.whl)= checksum" or "SHA2-256(file.whl)= checksum"
               ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
 
               if [ ! -f "$WHEEL_FILE" ]; then
                 echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
@@ -1102,9 +1102,9 @@ jobs:
             cd wheelhouse-arm64
 
             while IFS= read -r line; do
-              # Parse openssl output: "SHA256(file.whl)= checksum"
+              # Parse openssl output: "SHA256(file.whl)= checksum" or "SHA2-256(file.whl)= checksum"
               ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
+              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
 
               if [ ! -f "$WHEEL_FILE" ]; then
                 echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
@@ -1720,9 +1720,9 @@ jobs:
               cd "$CHECKSUM_DIR"
 
               while IFS= read -r line; do
-                # Parse openssl output: "SHA256(file.whl)= checksum"
+                # Parse openssl output: "SHA256(file.whl)= checksum" or "SHA2-256(file.whl)= checksum"
                 ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-                WHEEL_FILE=$(echo "$line" | sed 's/SHA256(\(.*\))=.*/\1/')
+                WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
 
                 if [ ! -f "$WHEEL_FILE" ]; then
                   echo "❌ CRITICAL: Checksum file references missing wheel: $WHEEL_FILE"
