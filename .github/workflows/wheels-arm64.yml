@@ -173,6 +173,7 @@ jobs:
               -w /io \
               -e AUTOBAHN_USE_NVX=1 \
               -e PYTHON_VERSIONS="${{ matrix.target.python_versions }}" \
+              -e GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}" \
               $IMAGE \
               /bin/bash /io/.github/scripts/build-arm64-wheel.sh
 
