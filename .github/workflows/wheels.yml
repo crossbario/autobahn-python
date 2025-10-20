@@ -216,8 +216,9 @@ jobs:
           echo "======================================================================"
           echo ""
           echo "Installing twine for validation..."
-          python3 -m pip install git+https://github.com/pypa/packaging.git
-          python3 -m pip install git+https://github.com/pypa/twine.git
+          # Use --break-system-packages for consistency (safe in CI)
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
           echo ""
 
           echo "==> Validation environment:"
@@ -391,8 +392,9 @@ jobs:
           echo "==> Validating Wheel Integrity (macOS)"
           echo "======================================================================"
           echo ""
-          python3 -m pip install git+https://github.com/pypa/packaging.git
-          python3 -m pip install git+https://github.com/pypa/twine.git
+          # Use --break-system-packages since this is an ephemeral CI runner
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
           echo ""
 
           VALIDATION_FILE="dist/VALIDATION.txt"
@@ -488,8 +490,9 @@ jobs:
           Write-Host "==> Validating Wheel Integrity (Windows)"
           Write-Host "======================================================================"
           Write-Host ""
-          python -m pip install git+https://github.com/pypa/packaging.git
-          python -m pip install git+https://github.com/pypa/twine.git
+          # Use --break-system-packages for consistency (safe in CI)
+          python -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python -m pip install --break-system-packages git+https://github.com/pypa/twine.git
           Write-Host ""
 
           $validationFile = "dist\VALIDATION.txt"

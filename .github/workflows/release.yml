@@ -520,22 +520,51 @@ jobs:
           echo "==> Consolidating all artifacts into unified release directory..."
           mkdir -p release-artifacts
 
-          # Copy wheels from wheels workflow
+          # Copy wheels and verification files from wheels workflow
           if [ -d "dist" ]; then
             echo "Copying wheels workflow artifacts..."
             find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} release-artifacts/ \;
+            # Copy verification escort files with "wheels-" prefix to avoid naming collisions
+            if [ -f "dist/CHECKSUMS.sha256" ]; then
+              cp dist/CHECKSUMS.sha256 release-artifacts/wheels-CHECKSUMS.sha256
+            fi
+            if [ -f "dist/VALIDATION.txt" ]; then
+              cp dist/VALIDATION.txt release-artifacts/wheels-VALIDATION.txt
+            fi
+            # Copy source distribution verification reports (already have unique names)
+            find dist -type f -name "*.verify.txt" -exec cp {} release-artifacts/ \; 2>/dev/null || true
           fi
 
-          # Copy wheels from wheels-docker workflow
+          # Copy wheels and verification files from wheels-docker workflow
           if [ -d "wheelhouse" ]; then
             echo "Copying wheels-docker workflow artifacts..."
             find wheelhouse -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} release-artifacts/ \;
+            # Copy verification escort files with "docker-" prefix to avoid naming collisions
+            if [ -f "wheelhouse/CHECKSUMS.sha256" ]; then
+              cp wheelhouse/CHECKSUMS.sha256 release-artifacts/docker-CHECKSUMS.sha256
+            fi
+            if [ -f "wheelhouse/VALIDATION.txt" ]; then
+              cp wheelhouse/VALIDATION.txt release-artifacts/docker-VALIDATION.txt
+            fi
+            if [ -f "wheelhouse/build-info.txt" ]; then
+              cp wheelhouse/build-info.txt release-artifacts/docker-build-info.txt
+            fi
           fi
 
-          # Copy ARM64 wheels from wheels-arm64 workflow
+          # Copy ARM64 wheels and verification files from wheels-arm64 workflow
           if [ -d "wheelhouse-arm64" ]; then
             echo "Copying wheels-arm64 workflow artifacts..."
             find wheelhouse-arm64 -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} release-artifacts/ \;
+            # Copy verification escort files with "arm64-" prefix to avoid naming collisions
+            if [ -f "wheelhouse-arm64/CHECKSUMS.sha256" ]; then
+              cp wheelhouse-arm64/CHECKSUMS.sha256 release-artifacts/arm64-CHECKSUMS.sha256
+            fi
+            if [ -f "wheelhouse-arm64/VALIDATION.txt" ]; then
+              cp wheelhouse-arm64/VALIDATION.txt release-artifacts/arm64-VALIDATION.txt
+            fi
+            if [ -f "wheelhouse-arm64/build-info.txt" ]; then
+              cp wheelhouse-arm64/build-info.txt release-artifacts/arm64-build-info.txt
+            fi
           fi
 
           # Copy wstest conformance results
@@ -564,6 +593,11 @@ jobs:
           echo ""
           echo "Wheels: $(find release-artifacts -name "*.whl" | wc -l)"
           echo "Source dists: $(find release-artifacts -name "*.tar.gz" ! -name "flatbuffers-schema.tar.gz" ! -name "autobahn-python-websocket-conformance-*.tar.gz" | wc -l)"
+          echo "Verification files (chain-of-custody):"
+          echo "  - SHA256 checksums: $(find release-artifacts -name "*CHECKSUMS.sha256" | wc -l)"
+          echo "  - Build validation: $(find release-artifacts -name "*VALIDATION.txt" | wc -l)"
+          echo "  - Source verification: $(find release-artifacts -name "*.verify.txt" | wc -l)"
+          echo "  - Build metadata: $(find release-artifacts -name "*build-info.txt" | wc -l)"
           echo "Wstest reports: $(find release-artifacts -name "*wstest*" | wc -l)"
           echo "FlatBuffers schema: $(ls release-artifacts/flatbuffers-schema.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
           echo "Conformance reports: $(ls release-artifacts/autobahn-python-websocket-conformance-*.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
@@ -580,8 +614,9 @@ jobs:
           echo ""
           echo "Installing twine for validation..."
           # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
-          python3 -m pip install git+https://github.com/pypa/packaging.git
-          python3 -m pip install git+https://github.com/pypa/twine.git
+          # Use --break-system-packages for consistency (safe in CI)
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
           echo ""
 
           echo "==> Validation environment:"
@@ -1146,22 +1181,51 @@ jobs:
           echo "==> Consolidating all artifacts into unified release directory..."
           mkdir -p release-artifacts
 
-          # Copy wheels from wheels workflow
+          # Copy wheels and verification files from wheels workflow
           if [ -d "dist" ]; then
             echo "Copying wheels workflow artifacts..."
             find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} release-artifacts/ \;
+            # Copy verification escort files with "wheels-" prefix to avoid naming collisions
+            if [ -f "dist/CHECKSUMS.sha256" ]; then
+              cp dist/CHECKSUMS.sha256 release-artifacts/wheels-CHECKSUMS.sha256
+            fi
+            if [ -f "dist/VALIDATION.txt" ]; then
+              cp dist/VALIDATION.txt release-artifacts/wheels-VALIDATION.txt
+            fi
+            # Copy source distribution verification reports (already have unique names)
+            find dist -type f -name "*.verify.txt" -exec cp {} release-artifacts/ \; 2>/dev/null || true
           fi
 
-          # Copy wheels from wheels-docker workflow
+          # Copy wheels and verification files from wheels-docker workflow
           if [ -d "wheelhouse" ]; then
             echo "Copying wheels-docker workflow artifacts..."
             find wheelhouse -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} release-artifacts/ \;
+            # Copy verification escort files with "docker-" prefix to avoid naming collisions
+            if [ -f "wheelhouse/CHECKSUMS.sha256" ]; then
+              cp wheelhouse/CHECKSUMS.sha256 release-artifacts/docker-CHECKSUMS.sha256
+            fi
+            if [ -f "wheelhouse/VALIDATION.txt" ]; then
+              cp wheelhouse/VALIDATION.txt release-artifacts/docker-VALIDATION.txt
+            fi
+            if [ -f "wheelhouse/build-info.txt" ]; then
+              cp wheelhouse/build-info.txt release-artifacts/docker-build-info.txt
+            fi
           fi
 
-          # Copy ARM64 wheels from wheels-arm64 workflow
+          # Copy ARM64 wheels and verification files from wheels-arm64 workflow
           if [ -d "wheelhouse-arm64" ]; then
             echo "Copying wheels-arm64 workflow artifacts..."
             find wheelhouse-arm64 -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} release-artifacts/ \;
+            # Copy verification escort files with "arm64-" prefix to avoid naming collisions
+            if [ -f "wheelhouse-arm64/CHECKSUMS.sha256" ]; then
+              cp wheelhouse-arm64/CHECKSUMS.sha256 release-artifacts/arm64-CHECKSUMS.sha256
+            fi
+            if [ -f "wheelhouse-arm64/VALIDATION.txt" ]; then
+              cp wheelhouse-arm64/VALIDATION.txt release-artifacts/arm64-VALIDATION.txt
+            fi
+            if [ -f "wheelhouse-arm64/build-info.txt" ]; then
+              cp wheelhouse-arm64/build-info.txt release-artifacts/arm64-build-info.txt
+            fi
           fi
 
           # Copy wstest conformance results
@@ -1190,6 +1254,11 @@ jobs:
           echo ""
           echo "Wheels: $(find release-artifacts -name "*.whl" | wc -l)"
           echo "Source dists: $(find release-artifacts -name "*.tar.gz" ! -name "flatbuffers-schema.tar.gz" ! -name "autobahn-python-websocket-conformance-*.tar.gz" | wc -l)"
+          echo "Verification files (chain-of-custody):"
+          echo "  - SHA256 checksums: $(find release-artifacts -name "*CHECKSUMS.sha256" | wc -l)"
+          echo "  - Build validation: $(find release-artifacts -name "*VALIDATION.txt" | wc -l)"
+          echo "  - Source verification: $(find release-artifacts -name "*.verify.txt" | wc -l)"
+          echo "  - Build metadata: $(find release-artifacts -name "*build-info.txt" | wc -l)"
           echo "Wstest reports: $(find release-artifacts -name "*wstest*" | wc -l)"
           echo "FlatBuffers schema: $(ls release-artifacts/flatbuffers-schema.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
           echo "Conformance reports: $(ls release-artifacts/autobahn-python-websocket-conformance-*.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
@@ -1206,8 +1275,9 @@ jobs:
           echo ""
           echo "Installing twine for validation..."
           # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
-          python3 -m pip install git+https://github.com/pypa/packaging.git
-          python3 -m pip install git+https://github.com/pypa/twine.git
+          # Use --break-system-packages for consistency (safe in CI)
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
           echo ""
 
           echo "==> Validation environment:"
@@ -1792,8 +1862,9 @@ jobs:
           echo "Last chance to catch corrupted packages before PyPI upload."
           echo ""
           # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
-          python3 -m pip install git+https://github.com/pypa/packaging.git
-          python3 -m pip install git+https://github.com/pypa/twine.git
+          # Use --break-system-packages for consistency (safe in CI)
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
           echo ""
 
           echo "==> Validation environment:"
@@ -1885,8 +1956,9 @@ jobs:
         run: |
           echo "==> Publishing to PyPI using twine from master..."
           # Install bleeding-edge packaging and twine for PEP 639 support
-          python3 -m pip install git+https://github.com/pypa/packaging.git
-          python3 -m pip install git+https://github.com/pypa/twine.git
+          # Use --break-system-packages for consistency (safe in CI)
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
 
           echo "Upload environment:"
           echo "twine: $(twine --version)"

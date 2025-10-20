@@ -201,8 +201,9 @@ jobs:
           echo ""
           echo "Installing twine for validation..."
           # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
-          python3 -m pip install git+https://github.com/pypa/packaging.git
-          python3 -m pip install git+https://github.com/pypa/twine.git
+          # Use --break-system-packages for consistency (safe in CI)
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
+          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
           echo ""
 
           echo "==> Validation environment:"
