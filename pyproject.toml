@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autobahn"
-version = "25.10.1"
+version = "25.10.2"
 description = "WebSocket client & server library, WAMP real-time framework"
 readme = "README.md"
 requires-python = ">=3.11"
