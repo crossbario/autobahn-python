@@ -122,133 +122,37 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download macOS wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify macOS wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: wheels-macos-arm64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
-      - name: Re-verify macOS wheels (immediate verification to prevent checksum file overwrites)
-        run: |
-          echo "======================================================================"
-          echo "==> macOS Wheels Checksum Verification (Chain of Custody)"
-          echo "======================================================================"
-          echo ""
-
-          HAS_ERRORS=0
-          WHEELS_VERIFIED=0
-
-          if [ -f "dist/CHECKSUMS.sha256" ]; then
-            echo "Found CHECKSUMS.sha256 for macOS wheels"
-            cd dist
-
-            while IFS= read -r line; do
-              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
-
-              if [ ! -f "$WHEEL_FILE" ]; then
-                echo "❌ Missing wheel: $WHEEL_FILE"
-                HAS_ERRORS=1
-                continue
-              fi
-
-              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
-
-              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
-                echo "✅ $(basename $WHEEL_FILE): checksum verified"
-                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
-              else
-                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
-                echo "   Original:  $ORIGINAL_CHECKSUM"
-                echo "   Current:   $CURRENT_CHECKSUM"
-                HAS_ERRORS=1
-              fi
-            done < CHECKSUMS.sha256
-
-            cd ..
-          else
-            echo "⚠️  No CHECKSUMS.sha256 found for macOS wheels"
-          fi
-
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "❌ macOS wheel verification FAILED!"
-            exit 1
-          elif [ $WHEELS_VERIFIED -gt 0 ]; then
-            echo "✅ Verified $WHEELS_VERIFIED macOS wheels"
-          fi
-          echo ""
-        shell: bash
-
-      - name: Download Windows wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify Windows wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: wheels-windows-x86_64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
-      - name: Re-verify Windows wheels (immediate verification to prevent checksum file overwrites)
-        run: |
-          echo "======================================================================"
-          echo "==> Windows Wheels Checksum Verification (Chain of Custody)"
-          echo "======================================================================"
-          echo ""
-
-          HAS_ERRORS=0
-          WHEELS_VERIFIED=0
-
-          if [ -f "dist/CHECKSUMS.sha256" ]; then
-            echo "Found CHECKSUMS.sha256 for Windows wheels"
-            cd dist
-
-            while IFS= read -r line; do
-              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
-
-              if [ ! -f "$WHEEL_FILE" ]; then
-                echo "❌ Missing wheel: $WHEEL_FILE"
-                HAS_ERRORS=1
-                continue
-              fi
-
-              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
-
-              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
-                echo "✅ $(basename $WHEEL_FILE): checksum verified"
-                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
-              else
-                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
-                echo "   Original:  $ORIGINAL_CHECKSUM"
-                echo "   Current:   $CURRENT_CHECKSUM"
-                HAS_ERRORS=1
-              fi
-            done < CHECKSUMS.sha256
-
-            cd ..
-          else
-            echo "⚠️  No CHECKSUMS.sha256 found for Windows wheels"
-          fi
-
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "❌ Windows wheel verification FAILED!"
-            exit 1
-          elif [ $WHEELS_VERIFIED -gt 0 ]; then
-            echo "✅ Verified $WHEELS_VERIFIED Windows wheels"
-          fi
-          echo ""
-        shell: bash
-
-      - name: Download source distribution
-        uses: actions/download-artifact@v4
+      - name: Download and verify source distribution with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: source-distribution
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
       - name: Debug - List downloaded files
@@ -424,65 +328,16 @@ jobs:
           fi
         shell: bash
 
-      - name: Download Linux wheels without NVX
-        uses: actions/download-artifact@v4
+      - name: Download and verify Linux wheels without NVX with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: linux-wheels-no-nvx
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
-
-      - name: Re-verify Linux no-NVX wheels (immediate verification to prevent checksum file overwrites)
-        run: |
-          echo "======================================================================"
-          echo "==> Linux no-NVX Wheels Checksum Verification (Chain of Custody)"
-          echo "======================================================================"
-          echo ""
-
-          HAS_ERRORS=0
-          WHEELS_VERIFIED=0
-
-          if [ -f "dist/CHECKSUMS.sha256" ]; then
-            echo "Found CHECKSUMS.sha256 for Linux no-NVX wheels"
-            cd dist
-
-            while IFS= read -r line; do
-              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
-
-              if [ ! -f "$WHEEL_FILE" ]; then
-                echo "❌ Missing wheel: $WHEEL_FILE"
-                HAS_ERRORS=1
-                continue
-              fi
-
-              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
-
-              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
-                echo "✅ $(basename $WHEEL_FILE): checksum verified"
-                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
-              else
-                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
-                echo "   Original:  $ORIGINAL_CHECKSUM"
-                echo "   Current:   $CURRENT_CHECKSUM"
-                HAS_ERRORS=1
-              fi
-            done < CHECKSUMS.sha256
-
-            cd ..
-          else
-            echo "⚠️  No CHECKSUMS.sha256 found for Linux no-NVX wheels"
-          fi
-
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "❌ Linux no-NVX wheel verification FAILED!"
-            exit 1
-          elif [ $WHEELS_VERIFIED -gt 0 ]; then
-            echo "✅ Verified $WHEELS_VERIFIED Linux no-NVX wheels"
-          fi
-          echo ""
-        shell: bash
 
       - name: Download manylinux wheel artifacts (from wheels-docker workflow)
         uses: actions/download-artifact@v4
@@ -962,133 +817,37 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download macOS wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify macOS wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: wheels-macos-arm64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
-      - name: Re-verify macOS wheels (immediate verification to prevent checksum file overwrites)
-        run: |
-          echo "======================================================================"
-          echo "==> macOS Wheels Checksum Verification (Chain of Custody)"
-          echo "======================================================================"
-          echo ""
-
-          HAS_ERRORS=0
-          WHEELS_VERIFIED=0
-
-          if [ -f "dist/CHECKSUMS.sha256" ]; then
-            echo "Found CHECKSUMS.sha256 for macOS wheels"
-            cd dist
-
-            while IFS= read -r line; do
-              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
-
-              if [ ! -f "$WHEEL_FILE" ]; then
-                echo "❌ Missing wheel: $WHEEL_FILE"
-                HAS_ERRORS=1
-                continue
-              fi
-
-              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
-
-              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
-                echo "✅ $(basename $WHEEL_FILE): checksum verified"
-                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
-              else
-                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
-                echo "   Original:  $ORIGINAL_CHECKSUM"
-                echo "   Current:   $CURRENT_CHECKSUM"
-                HAS_ERRORS=1
-              fi
-            done < CHECKSUMS.sha256
-
-            cd ..
-          else
-            echo "⚠️  No CHECKSUMS.sha256 found for macOS wheels"
-          fi
-
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "❌ macOS wheel verification FAILED!"
-            exit 1
-          elif [ $WHEELS_VERIFIED -gt 0 ]; then
-            echo "✅ Verified $WHEELS_VERIFIED macOS wheels"
-          fi
-          echo ""
-        shell: bash
-
-      - name: Download Windows wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify Windows wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: wheels-windows-x86_64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
-      - name: Re-verify Windows wheels (immediate verification to prevent checksum file overwrites)
-        run: |
-          echo "======================================================================"
-          echo "==> Windows Wheels Checksum Verification (Chain of Custody)"
-          echo "======================================================================"
-          echo ""
-
-          HAS_ERRORS=0
-          WHEELS_VERIFIED=0
-
-          if [ -f "dist/CHECKSUMS.sha256" ]; then
-            echo "Found CHECKSUMS.sha256 for Windows wheels"
-            cd dist
-
-            while IFS= read -r line; do
-              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
-
-              if [ ! -f "$WHEEL_FILE" ]; then
-                echo "❌ Missing wheel: $WHEEL_FILE"
-                HAS_ERRORS=1
-                continue
-              fi
-
-              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
-
-              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
-                echo "✅ $(basename $WHEEL_FILE): checksum verified"
-                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
-              else
-                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
-                echo "   Original:  $ORIGINAL_CHECKSUM"
-                echo "   Current:   $CURRENT_CHECKSUM"
-                HAS_ERRORS=1
-              fi
-            done < CHECKSUMS.sha256
-
-            cd ..
-          else
-            echo "⚠️  No CHECKSUMS.sha256 found for Windows wheels"
-          fi
-
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "❌ Windows wheel verification FAILED!"
-            exit 1
-          elif [ $WHEELS_VERIFIED -gt 0 ]; then
-            echo "✅ Verified $WHEELS_VERIFIED Windows wheels"
-          fi
-          echo ""
-        shell: bash
-
-      - name: Download source distribution
-        uses: actions/download-artifact@v4
+      - name: Download and verify source distribution with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: source-distribution
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
       - name: Debug - List downloaded files
@@ -1264,65 +1023,16 @@ jobs:
           fi
         shell: bash
 
-      - name: Download Linux wheels without NVX
-        uses: actions/download-artifact@v4
+      - name: Download and verify Linux wheels without NVX with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: linux-wheels-no-nvx
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
-
-      - name: Re-verify Linux no-NVX wheels (immediate verification to prevent checksum file overwrites)
-        run: |
-          echo "======================================================================"
-          echo "==> Linux no-NVX Wheels Checksum Verification (Chain of Custody)"
-          echo "======================================================================"
-          echo ""
-
-          HAS_ERRORS=0
-          WHEELS_VERIFIED=0
-
-          if [ -f "dist/CHECKSUMS.sha256" ]; then
-            echo "Found CHECKSUMS.sha256 for Linux no-NVX wheels"
-            cd dist
-
-            while IFS= read -r line; do
-              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
-
-              if [ ! -f "$WHEEL_FILE" ]; then
-                echo "❌ Missing wheel: $WHEEL_FILE"
-                HAS_ERRORS=1
-                continue
-              fi
-
-              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
-
-              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
-                echo "✅ $(basename $WHEEL_FILE): checksum verified"
-                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
-              else
-                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
-                echo "   Original:  $ORIGINAL_CHECKSUM"
-                echo "   Current:   $CURRENT_CHECKSUM"
-                HAS_ERRORS=1
-              fi
-            done < CHECKSUMS.sha256
-
-            cd ..
-          else
-            echo "⚠️  No CHECKSUMS.sha256 found for Linux no-NVX wheels"
-          fi
-
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "❌ Linux no-NVX wheel verification FAILED!"
-            exit 1
-          elif [ $WHEELS_VERIFIED -gt 0 ]; then
-            echo "✅ Verified $WHEELS_VERIFIED Linux no-NVX wheels"
-          fi
-          echo ""
-        shell: bash
 
       - name: Download manylinux wheel artifacts (from wheels-docker workflow)
         uses: actions/download-artifact@v4
@@ -1819,133 +1529,37 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download macOS wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify macOS wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: wheels-macos-arm64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
-      - name: Re-verify macOS wheels (immediate verification to prevent checksum file overwrites)
-        run: |
-          echo "======================================================================"
-          echo "==> macOS Wheels Checksum Verification (Chain of Custody)"
-          echo "======================================================================"
-          echo ""
-
-          HAS_ERRORS=0
-          WHEELS_VERIFIED=0
-
-          if [ -f "dist/CHECKSUMS.sha256" ]; then
-            echo "Found CHECKSUMS.sha256 for macOS wheels"
-            cd dist
-
-            while IFS= read -r line; do
-              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
-
-              if [ ! -f "$WHEEL_FILE" ]; then
-                echo "❌ Missing wheel: $WHEEL_FILE"
-                HAS_ERRORS=1
-                continue
-              fi
-
-              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
-
-              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
-                echo "✅ $(basename $WHEEL_FILE): checksum verified"
-                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
-              else
-                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
-                echo "   Original:  $ORIGINAL_CHECKSUM"
-                echo "   Current:   $CURRENT_CHECKSUM"
-                HAS_ERRORS=1
-              fi
-            done < CHECKSUMS.sha256
-
-            cd ..
-          else
-            echo "⚠️  No CHECKSUMS.sha256 found for macOS wheels"
-          fi
-
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "❌ macOS wheel verification FAILED!"
-            exit 1
-          elif [ $WHEELS_VERIFIED -gt 0 ]; then
-            echo "✅ Verified $WHEELS_VERIFIED macOS wheels"
-          fi
-          echo ""
-        shell: bash
-
-      - name: Download Windows wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify Windows wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: wheels-windows-x86_64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
-      - name: Re-verify Windows wheels (immediate verification to prevent checksum file overwrites)
-        run: |
-          echo "======================================================================"
-          echo "==> Windows Wheels Checksum Verification (Chain of Custody)"
-          echo "======================================================================"
-          echo ""
-
-          HAS_ERRORS=0
-          WHEELS_VERIFIED=0
-
-          if [ -f "dist/CHECKSUMS.sha256" ]; then
-            echo "Found CHECKSUMS.sha256 for Windows wheels"
-            cd dist
-
-            while IFS= read -r line; do
-              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
-
-              if [ ! -f "$WHEEL_FILE" ]; then
-                echo "❌ Missing wheel: $WHEEL_FILE"
-                HAS_ERRORS=1
-                continue
-              fi
-
-              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
-
-              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
-                echo "✅ $(basename $WHEEL_FILE): checksum verified"
-                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
-              else
-                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
-                echo "   Original:  $ORIGINAL_CHECKSUM"
-                echo "   Current:   $CURRENT_CHECKSUM"
-                HAS_ERRORS=1
-              fi
-            done < CHECKSUMS.sha256
-
-            cd ..
-          else
-            echo "⚠️  No CHECKSUMS.sha256 found for Windows wheels"
-          fi
-
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "❌ Windows wheel verification FAILED!"
-            exit 1
-          elif [ $WHEELS_VERIFIED -gt 0 ]; then
-            echo "✅ Verified $WHEELS_VERIFIED Windows wheels"
-          fi
-          echo ""
-        shell: bash
-
-      - name: Download source distribution
-        uses: actions/download-artifact@v4
+      - name: Download and verify source distribution with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: source-distribution
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
       - name: Debug - List downloaded files
@@ -2121,65 +1735,16 @@ jobs:
           fi
         shell: bash
 
-      - name: Download Linux wheels without NVX
-        uses: actions/download-artifact@v4
+      - name: Download and verify Linux wheels without NVX with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: linux-wheels-no-nvx
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
-
-      - name: Re-verify Linux no-NVX wheels (immediate verification to prevent checksum file overwrites)
-        run: |
-          echo "======================================================================"
-          echo "==> Linux no-NVX Wheels Checksum Verification (Chain of Custody)"
-          echo "======================================================================"
-          echo ""
-
-          HAS_ERRORS=0
-          WHEELS_VERIFIED=0
-
-          if [ -f "dist/CHECKSUMS.sha256" ]; then
-            echo "Found CHECKSUMS.sha256 for Linux no-NVX wheels"
-            cd dist
-
-            while IFS= read -r line; do
-              ORIGINAL_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
-              WHEEL_FILE=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
-
-              if [ ! -f "$WHEEL_FILE" ]; then
-                echo "❌ Missing wheel: $WHEEL_FILE"
-                HAS_ERRORS=1
-                continue
-              fi
-
-              CURRENT_CHECKSUM=$(openssl sha256 "$WHEEL_FILE" | awk '{print $2}')
-
-              if [ "$CURRENT_CHECKSUM" = "$ORIGINAL_CHECKSUM" ]; then
-                echo "✅ $(basename $WHEEL_FILE): checksum verified"
-                WHEELS_VERIFIED=$((WHEELS_VERIFIED + 1))
-              else
-                echo "❌ $(basename $WHEEL_FILE): CHECKSUM MISMATCH!"
-                echo "   Original:  $ORIGINAL_CHECKSUM"
-                echo "   Current:   $CURRENT_CHECKSUM"
-                HAS_ERRORS=1
-              fi
-            done < CHECKSUMS.sha256
-
-            cd ..
-          else
-            echo "⚠️  No CHECKSUMS.sha256 found for Linux no-NVX wheels"
-          fi
-
-          if [ $HAS_ERRORS -eq 1 ]; then
-            echo "❌ Linux no-NVX wheel verification FAILED!"
-            exit 1
-          elif [ $WHEELS_VERIFIED -gt 0 ]; then
-            echo "✅ Verified $WHEELS_VERIFIED Linux no-NVX wheels"
-          fi
-          echo ""
-        shell: bash
 
       - name: Download manylinux wheels with NVX (from wheels-docker)
         uses: actions/download-artifact@v4
