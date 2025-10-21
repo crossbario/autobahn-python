@@ -588,14 +588,11 @@ jobs:
           Get-ChildItem dist
         shell: pwsh
 
-      - name: Upload wheel artifacts with verification files
-        uses: actions/upload-artifact@v4
+      - name: Upload wheel artifacts with cryptographic verification
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            dist/*.whl
-            dist/CHECKSUMS.sha256
-            dist/VALIDATION.txt
+          path: dist/
           retention-days: 30
 
       - name: Verify wheels built without NVX (Linux x86_64 only)
@@ -773,25 +770,20 @@ jobs:
           ls -lh dist/*.verify.txt
         shell: bash
 
-      - name: Upload source distribution with verification reports (Linux x86_64 only)
+      - name: Upload source distribution with cryptographic verification (Linux x86_64 only)
         if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: source-distribution
-          path: |
-            dist/*.tar.gz
-            dist/*.verify.txt
+          path: dist/
           retention-days: 30
 
-      - name: Upload Linux wheels without NVX with verification files (Linux x86_64 only)
+      - name: Upload Linux wheels without NVX with cryptographic verification (Linux x86_64 only)
         if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: linux-wheels-no-nvx
-          path: |
-            dist/*.whl
-            dist/CHECKSUMS.sha256
-            dist/VALIDATION.txt
+          path: dist/
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow
