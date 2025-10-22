@@ -4,6 +4,8 @@ on:
   # Build wheels on feature branches and PRs (test only)
   push:
     branches: ["**"]
+    tags:
+      - 'v*'
   pull_request:
     branches: [master]
 
