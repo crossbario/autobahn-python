@@ -217,8 +217,6 @@ jobs:
               cp "$wheel" wheelhouse/
             fi
           done
-          echo "Copying source distribution"
-          cp dist/*.tar.gz wheelhouse/
 
           echo ""
           echo "==> Final wheel inventory after manylinux conversion:"
