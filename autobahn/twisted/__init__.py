@@ -80,6 +80,37 @@ else:
         platform.python_implementation(),
         platform.python_version(),
     )
+
 """
-AutobahnPython library implementation (eg. "Autobahn/0.13.0-Twisted/15.5.0-CPython/3.5.1")
+Identification string for the Autobahn|Python Twisted backend.
+
+This string identifies the library version, networking framework, and runtime
+environment. It's commonly used in protocol handshakes (e.g., WebSocket Upgrade
+headers, WAMP HELLO metadata) to identify the client/server implementation.
+
+Format with NVX acceleration enabled::
+
+    "Autobahn/{version}-NVXCFFI/{cffi_version}-Twisted/{twisted_version}-{python_impl}/{python_version}"
+
+Format without NVX acceleration::
+
+    "Autobahn/{version}-Twisted/{twisted_version}-{python_impl}/{python_version}"
+
+The presence of ``NVXCFFI`` in the identification string indicates that NVX
+(Native Vector Extensions) native acceleration is enabled, providing high-performance
+UTF-8 validation and XOR masking using SIMD instructions.
+
+:type: str
+
+Example values::
+
+    # With NVX acceleration on CPython
+    "Autobahn/25.10.2-NVXCFFI/1.15.1-Twisted/24.7.0-CPython/3.11.9"
+
+    # Without NVX acceleration on PyPy
+    "Autobahn/25.10.2-Twisted/24.7.0-PyPy/7.3.16"
+
+See Also:
+    :data:`autobahn.asyncio.__ident__` - Identification string for asyncio backend
+    :data:`autobahn.websocket.USES_NVX` - Whether NVX acceleration is enabled
 """

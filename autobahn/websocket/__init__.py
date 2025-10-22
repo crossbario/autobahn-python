@@ -48,7 +48,37 @@ try:
 except ImportError:
     # NVX not available (not built or CFFI compilation failed)
     pass
+
 HAS_NVX = _has_nvx
+"""
+Boolean flag indicating whether NVX (Native Vector Extensions) native acceleration
+modules are available in this installation.
+
+This is a build-time capability check - it's ``True`` if the NVX native extensions
+were successfully compiled and can be imported, ``False`` otherwise.
+
+NVX provides native implementations for performance-critical WebSocket operations:
+
+* UTF-8 validation using SIMD instructions
+* XOR masking using vectorized operations
+
+The value of ``HAS_NVX`` is independent of the runtime setting ``AUTOBAHN_USE_NVX``.
+To check if NVX is actually being used at runtime, see :data:`USES_NVX`.
+
+:type: bool
+
+Example::
+
+    from autobahn.websocket import HAS_NVX
+
+    if HAS_NVX:
+        print("NVX native acceleration is available")
+    else:
+        print("NVX not built - using pure Python implementations")
+
+See Also:
+    :data:`USES_NVX` - Whether NVX is actually enabled at runtime
+"""
 
 # Step 2: Parse AUTOBAHN_USE_NVX environment variable
 env_val = os.environ.get("AUTOBAHN_USE_NVX", "").strip().lower()
@@ -87,6 +117,43 @@ if explicit_disable and HAS_NVX:
 else:
     # Case 5: Default behavior - use NVX if available
     USES_NVX = HAS_NVX
+
+"""
+Boolean flag indicating whether NVX (Native Vector Extensions) native acceleration
+is actually being used at runtime.
+
+This reflects the runtime configuration after considering both:
+
+* **Build-time availability** (:data:`HAS_NVX`) - Were NVX modules compiled?
+* **Runtime configuration** (``AUTOBAHN_USE_NVX`` environment variable) - Is NVX enabled?
+
+Possible scenarios:
+
+* ``USES_NVX = True``: NVX is built AND enabled (default when available)
+* ``USES_NVX = False``: Either NVX not built OR explicitly disabled via ``AUTOBAHN_USE_NVX=0``
+
+Control NVX at runtime using the ``AUTOBAHN_USE_NVX`` environment variable:
+
+* ``AUTOBAHN_USE_NVX=1`` - Force enable (raises error if not built)
+* ``AUTOBAHN_USE_NVX=0`` - Force disable (falls back to pure Python)
+* Unset or empty - Auto-enable if available (default)
+
+:type: bool
+
+Example::
+
+    from autobahn.websocket import USES_NVX, HAS_NVX
+
+    if USES_NVX:
+        print("Using NVX native acceleration for WebSocket operations")
+    elif HAS_NVX:
+        print("NVX available but disabled (AUTOBAHN_USE_NVX=0)")
+    else:
+        print("NVX not built - using pure Python implementations")
+
+See Also:
+    :data:`HAS_NVX` - Whether NVX was built and is available
+"""
 
 # ============================================================================
 # End of NVX Runtime Configuration
