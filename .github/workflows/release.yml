@@ -129,8 +129,8 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Download and verify Windows wheels with retry logic
@@ -140,8 +140,8 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Download and verify source distribution with retry logic
@@ -151,8 +151,8 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Debug - List downloaded files
@@ -335,28 +335,63 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
-      - name: Download manylinux wheel artifacts (from wheels-docker workflow)
-        uses: actions/download-artifact@v4
+      - name: Download and verify manylinux x86_64 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          pattern: artifacts-*
-          merge-multiple: true
+          name: artifacts-manylinux_2_34_x86_64
           path: wheelhouse/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
-      - name: Download ARM64 wheel artifacts (from wheels-arm64 workflow)
-        uses: actions/download-artifact@v4
+      - name: Download and verify ARM64 CPython 3.11 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          pattern: artifacts-arm64-*
-          merge-multiple: true
+          name: artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64
           path: wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.13 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64
+          path: wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.11 Bookworm artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64
+          path: wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.11 Trixie artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64
+          path: wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Download wstest conformance summary
@@ -824,8 +859,8 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Download and verify Windows wheels with retry logic
@@ -835,8 +870,8 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Download and verify source distribution with retry logic
@@ -846,8 +881,8 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Debug - List downloaded files
@@ -1030,28 +1065,63 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
-      - name: Download manylinux wheel artifacts (from wheels-docker workflow)
-        uses: actions/download-artifact@v4
+      - name: Download and verify manylinux x86_64 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          pattern: artifacts-*
-          merge-multiple: true
+          name: artifacts-manylinux_2_34_x86_64
           path: wheelhouse/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
-      - name: Download ARM64 wheel artifacts (from wheels-arm64 workflow)
-        uses: actions/download-artifact@v4
+      - name: Download and verify ARM64 CPython 3.11 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          pattern: artifacts-arm64-*
-          merge-multiple: true
+          name: artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64
           path: wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.13 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64
+          path: wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.11 Bookworm artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64
+          path: wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.11 Trixie artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64
+          path: wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Download wstest conformance summary
@@ -1536,8 +1606,8 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Download and verify Windows wheels with retry logic
@@ -1547,8 +1617,8 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Download and verify source distribution with retry logic
@@ -1558,8 +1628,8 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Debug - List downloaded files
@@ -1742,28 +1812,63 @@ jobs:
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          max-attempts: 3
-          retry-delay: 60
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
-      - name: Download manylinux wheels with NVX (from wheels-docker)
-        uses: actions/download-artifact@v4
+      - name: Download and verify manylinux x86_64 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          pattern: artifacts-*
-          merge-multiple: true
+          name: artifacts-manylinux_2_34_x86_64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
-      - name: Download ARM64 wheels with NVX (from wheels-arm64)
-        uses: actions/download-artifact@v4
+      - name: Download and verify ARM64 CPython 3.11 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          pattern: artifacts-arm64-*
-          merge-multiple: true
+          name: artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.13 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64
+          path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.11 Bookworm artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64
+          path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.11 Trixie artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64
+          path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
         continue-on-error: true
 
       - name: Force file system sync (post-download, pre-verification)
