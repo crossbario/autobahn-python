@@ -20,6 +20,16 @@ jobs:
       wheels_arm64_run_id: ${{ steps.check.outputs.wheels_arm64_run_id }}
       wstest_run_id: ${{ steps.check.outputs.wstest_run_id }}
       main_run_id: ${{ steps.check.outputs.main_run_id }}
+      # Dynamic artifact names (with meta-checksum suffixes)
+      artifact_macos_wheels: ${{ steps.check.outputs.artifact_macos_wheels }}
+      artifact_windows_wheels: ${{ steps.check.outputs.artifact_windows_wheels }}
+      artifact_source_dist: ${{ steps.check.outputs.artifact_source_dist }}
+      artifact_linux_no_nvx: ${{ steps.check.outputs.artifact_linux_no_nvx }}
+      artifact_manylinux_x86_64: ${{ steps.check.outputs.artifact_manylinux_x86_64 }}
+      artifact_arm64_cp311: ${{ steps.check.outputs.artifact_arm64_cp311 }}
+      artifact_arm64_cp313: ${{ steps.check.outputs.artifact_arm64_cp313 }}
+      artifact_arm64_pypy_bookworm: ${{ steps.check.outputs.artifact_arm64_pypy_bookworm }}
+      artifact_arm64_pypy_trixie: ${{ steps.check.outputs.artifact_arm64_pypy_trixie }}
 
     steps:
       - name: Check all required workflows completed
@@ -88,6 +98,57 @@ jobs:
             core.setOutput('wstest_run_id', latestRuns['wstest']?.id || '');
             core.setOutput('main_run_id', latestRuns['main']?.id || '');
 
+            // Query artifact names with meta-checksum suffixes
+            if (allComplete) {
+              console.log('');
+              console.log('─────────────────────────────────────────────────');
+              console.log('🔍 Querying unique artifact names');
+              console.log('─────────────────────────────────────────────────');
+
+              // Helper function to find artifact by prefix
+              async function findArtifact(runId, prefix) {
+                if (!runId) return '';
+                try {
+                  const { data: artifacts } = await github.rest.actions.listWorkflowRunArtifacts({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    run_id: runId
+                  });
+                  const artifact = artifacts.artifacts.find(a => a.name.startsWith(prefix + '-'));
+                  if (artifact) {
+                    console.log(`  ✅ ${prefix.padEnd(45)} → ${artifact.name}`);
+                    return artifact.name;
+                  } else {
+                    console.log(`  ⚠️  ${prefix.padEnd(45)} → NOT FOUND`);
+                    return '';
+                  }
+                } catch (error) {
+                  console.log(`  ❌ ${prefix.padEnd(45)} → ERROR: ${error.message}`);
+                  return '';
+                }
+              }
+
+              // Query artifacts from wheels workflow
+              const wheelsRunId = latestRuns['wheels']?.id;
+              core.setOutput('artifact_macos_wheels', await findArtifact(wheelsRunId, 'wheels-macos-arm64'));
+              core.setOutput('artifact_windows_wheels', await findArtifact(wheelsRunId, 'wheels-windows-x86_64'));
+              core.setOutput('artifact_source_dist', await findArtifact(wheelsRunId, 'source-distribution'));
+              core.setOutput('artifact_linux_no_nvx', await findArtifact(wheelsRunId, 'linux-wheels-no-nvx'));
+
+              // Query artifacts from wheels-docker workflow
+              const wheelsDockerRunId = latestRuns['wheels-docker']?.id;
+              core.setOutput('artifact_manylinux_x86_64', await findArtifact(wheelsDockerRunId, 'artifacts-manylinux_2_34_x86_64'));
+
+              // Query artifacts from wheels-arm64 workflow
+              const wheelsArm64RunId = latestRuns['wheels-arm64']?.id;
+              core.setOutput('artifact_arm64_cp311', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64'));
+              core.setOutput('artifact_arm64_cp313', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64'));
+              core.setOutput('artifact_arm64_pypy_bookworm', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64'));
+              core.setOutput('artifact_arm64_pypy_trixie', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64'));
+
+              console.log('─────────────────────────────────────────────────');
+            }
+
   identifiers:
     needs: check-all-workflows
     if: needs.check-all-workflows.outputs.all_complete == 'true'
@@ -125,7 +186,7 @@ jobs:
       - name: Download and verify macOS wheels with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-macos-arm64
+          name: ${{ needs.check-all-workflows.outputs.artifact_macos_wheels }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -136,7 +197,7 @@ jobs:
       - name: Download and verify Windows wheels with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-windows-x86_64
+          name: ${{ needs.check-all-workflows.outputs.artifact_windows_wheels }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -147,7 +208,7 @@ jobs:
       - name: Download and verify source distribution with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: source-distribution
+          name: ${{ needs.check-all-workflows.outputs.artifact_source_dist }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -331,7 +392,7 @@ jobs:
       - name: Download and verify Linux wheels without NVX with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: linux-wheels-no-nvx
+          name: ${{ needs.check-all-workflows.outputs.artifact_linux_no_nvx }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -342,7 +403,7 @@ jobs:
       - name: Download and verify manylinux x86_64 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: artifacts-manylinux_2_34_x86_64
+          name: ${{ needs.check-all-workflows.outputs.artifact_manylinux_x86_64 }}
           path: wheelhouse/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -353,7 +414,7 @@ jobs:
       - name: Download and verify ARM64 CPython 3.11 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp311 }}
           path: wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -364,7 +425,7 @@ jobs:
       - name: Download and verify ARM64 CPython 3.13 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313 }}
           path: wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -375,7 +436,7 @@ jobs:
       - name: Download and verify ARM64 PyPy 3.11 Bookworm artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_bookworm }}
           path: wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -386,7 +447,7 @@ jobs:
       - name: Download and verify ARM64 PyPy 3.11 Trixie artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_trixie }}
           path: wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -855,7 +916,7 @@ jobs:
       - name: Download and verify macOS wheels with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-macos-arm64
+          name: ${{ needs.check-all-workflows.outputs.artifact_macos_wheels }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -866,7 +927,7 @@ jobs:
       - name: Download and verify Windows wheels with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-windows-x86_64
+          name: ${{ needs.check-all-workflows.outputs.artifact_windows_wheels }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -877,7 +938,7 @@ jobs:
       - name: Download and verify source distribution with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: source-distribution
+          name: ${{ needs.check-all-workflows.outputs.artifact_source_dist }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1061,7 +1122,7 @@ jobs:
       - name: Download and verify Linux wheels without NVX with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: linux-wheels-no-nvx
+          name: ${{ needs.check-all-workflows.outputs.artifact_linux_no_nvx }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1072,7 +1133,7 @@ jobs:
       - name: Download and verify manylinux x86_64 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: artifacts-manylinux_2_34_x86_64
+          name: ${{ needs.check-all-workflows.outputs.artifact_manylinux_x86_64 }}
           path: wheelhouse/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1083,7 +1144,7 @@ jobs:
       - name: Download and verify ARM64 CPython 3.11 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp311 }}
           path: wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1094,7 +1155,7 @@ jobs:
       - name: Download and verify ARM64 CPython 3.13 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313 }}
           path: wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1105,7 +1166,7 @@ jobs:
       - name: Download and verify ARM64 PyPy 3.11 Bookworm artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_bookworm }}
           path: wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1116,7 +1177,7 @@ jobs:
       - name: Download and verify ARM64 PyPy 3.11 Trixie artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_trixie }}
           path: wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1602,7 +1663,7 @@ jobs:
       - name: Download and verify macOS wheels with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-macos-arm64
+          name: ${{ needs.check-all-workflows.outputs.artifact_macos_wheels }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1613,7 +1674,7 @@ jobs:
       - name: Download and verify Windows wheels with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: wheels-windows-x86_64
+          name: ${{ needs.check-all-workflows.outputs.artifact_windows_wheels }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1624,7 +1685,7 @@ jobs:
       - name: Download and verify source distribution with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: source-distribution
+          name: ${{ needs.check-all-workflows.outputs.artifact_source_dist }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1808,7 +1869,7 @@ jobs:
       - name: Download and verify Linux wheels without NVX with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: linux-wheels-no-nvx
+          name: ${{ needs.check-all-workflows.outputs.artifact_linux_no_nvx }}
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
