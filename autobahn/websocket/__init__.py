@@ -24,8 +24,11 @@
 #
 ###############################################################################
 
+import logging
 import os
 import warnings
+
+log = logging.getLogger(__name__)
 
 # ============================================================================
 # NVX (Native Vector Extensions) Runtime Configuration
@@ -107,11 +110,9 @@ if explicit_enable and not HAS_NVX:
 
 if explicit_disable and HAS_NVX:
     # Case 4: NVX available but user explicitly disabled it at runtime
-    warnings.warn(
+    log.info(
         "NVX native acceleration is available but explicitly disabled via "
-        "AUTOBAHN_USE_NVX=0. Falling back to pure Python implementations.",
-        RuntimeWarning,
-        stacklevel=2,
+        "AUTOBAHN_USE_NVX=0. Falling back to pure Python implementations."
     )
     USES_NVX = False
 else:
