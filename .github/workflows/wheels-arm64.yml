@@ -411,16 +411,11 @@ jobs:
           echo "==> Wheel inventory:"
           find wheelhouse/ -name "*.whl" -exec basename {} \; 2>/dev/null | sort || echo "No wheels found"
 
-      - name: Upload wheels and build metadata artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload wheels and build metadata with cryptographic verification
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: artifacts-arm64-${{ matrix.target.name }}
-          path: |
-            wheelhouse/*.whl
-            wheelhouse/*.tar.gz
-            wheelhouse/build-info.txt
-            wheelhouse/CHECKSUMS.sha256
-            wheelhouse/VALIDATION.txt
+          path: wheelhouse/
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow

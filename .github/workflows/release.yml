@@ -122,23 +122,37 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download all wheel artifacts (from wheels workflow)
-        uses: actions/download-artifact@v4
+      - name: Download and verify macOS wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          pattern: wheels-*
-          merge-multiple: true
+          name: wheels-macos-arm64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
-      - name: Download source distribution
-        uses: actions/download-artifact@v4
+      - name: Download and verify Windows wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: wheels-windows-x86_64
+          path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
+        continue-on-error: true
+
+      - name: Download and verify source distribution with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: source-distribution
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
       - name: Debug - List downloaded files
@@ -172,6 +186,7 @@ jobs:
           echo ""
 
           HAS_ERRORS=0
+          TARBALLS_VERIFIED=0
 
           for tarball in dist/*.tar.gz; do
             if [ ! -f "$tarball" ]; then
@@ -193,6 +208,8 @@ jobs:
 
             echo "==> Re-verifying: $BASENAME"
             echo ""
+
+            TARBALLS_VERIFIED=$((TARBALLS_VERIFIED + 1))
 
             # Re-compute SHA256 hash
             echo "Computing current SHA256 fingerprint..."
@@ -286,9 +303,24 @@ jobs:
             echo "DO NOT PROCEED WITH RELEASE - investigate and fix first."
             echo ""
             exit 1
+          elif [ $TARBALLS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ RE-VERIFICATION FAILED - NO SOURCE DISTRIBUTIONS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero source distributions were verified. This means:"
+            echo "  1. No *.tar.gz files were found in dist/, OR"
+            echo "  2. Source distribution download from artifacts failed"
+            echo ""
+            echo "This is a critical failure - we cannot confirm source distribution integrity."
+            echo "This was the root cause of issue #1714 (corrupted v25.10.1 on PyPI)."
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE - investigate artifact download!"
+            echo ""
+            exit 1
           else
             echo "======================================================================"
-            echo "✅ All source distributions re-verified successfully"
+            echo "✅ All source distributions re-verified successfully ($TARBALLS_VERIFIED tarballs)"
             echo "======================================================================"
             echo ""
             echo "Chain of custody confirmed: wheels workflow → release workflow"
@@ -296,13 +328,15 @@ jobs:
           fi
         shell: bash
 
-      - name: Download Linux wheels without NVX
-        uses: actions/download-artifact@v4
+      - name: Download and verify Linux wheels without NVX with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: linux-wheels-no-nvx
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
       - name: Download manylinux wheel artifacts (from wheels-docker workflow)
@@ -783,23 +817,37 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download all wheel artifacts (from wheels workflow)
-        uses: actions/download-artifact@v4
+      - name: Download and verify macOS wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          pattern: wheels-*
-          merge-multiple: true
+          name: wheels-macos-arm64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
-      - name: Download source distribution
-        uses: actions/download-artifact@v4
+      - name: Download and verify Windows wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: wheels-windows-x86_64
+          path: dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
+        continue-on-error: true
+
+      - name: Download and verify source distribution with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: source-distribution
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
       - name: Debug - List downloaded files
@@ -833,6 +881,7 @@ jobs:
           echo ""
 
           HAS_ERRORS=0
+          TARBALLS_VERIFIED=0
 
           for tarball in dist/*.tar.gz; do
             if [ ! -f "$tarball" ]; then
@@ -854,6 +903,8 @@ jobs:
 
             echo "==> Re-verifying: $BASENAME"
             echo ""
+
+            TARBALLS_VERIFIED=$((TARBALLS_VERIFIED + 1))
 
             # Re-compute SHA256 hash
             echo "Computing current SHA256 fingerprint..."
@@ -947,9 +998,24 @@ jobs:
             echo "DO NOT PROCEED WITH RELEASE - investigate and fix first."
             echo ""
             exit 1
+          elif [ $TARBALLS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ RE-VERIFICATION FAILED - NO SOURCE DISTRIBUTIONS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero source distributions were verified. This means:"
+            echo "  1. No *.tar.gz files were found in dist/, OR"
+            echo "  2. Source distribution download from artifacts failed"
+            echo ""
+            echo "This is a critical failure - we cannot confirm source distribution integrity."
+            echo "This was the root cause of issue #1714 (corrupted v25.10.1 on PyPI)."
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE - investigate artifact download!"
+            echo ""
+            exit 1
           else
             echo "======================================================================"
-            echo "✅ All source distributions re-verified successfully"
+            echo "✅ All source distributions re-verified successfully ($TARBALLS_VERIFIED tarballs)"
             echo "======================================================================"
             echo ""
             echo "Chain of custody confirmed: wheels workflow → release workflow"
@@ -957,13 +1023,15 @@ jobs:
           fi
         shell: bash
 
-      - name: Download Linux wheels without NVX
-        uses: actions/download-artifact@v4
+      - name: Download and verify Linux wheels without NVX with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: linux-wheels-no-nvx
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
       - name: Download manylinux wheel artifacts (from wheels-docker workflow)
@@ -1461,31 +1529,37 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Download macOS wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify macOS wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: wheels-macos-arm64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
-      - name: Download Windows wheels
-        uses: actions/download-artifact@v4
+      - name: Download and verify Windows wheels with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: wheels-windows-x86_64
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
-      - name: Download source distribution
-        uses: actions/download-artifact@v4
+      - name: Download and verify source distribution with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: source-distribution
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
       - name: Debug - List downloaded files
@@ -1519,6 +1593,7 @@ jobs:
           echo ""
 
           HAS_ERRORS=0
+          TARBALLS_VERIFIED=0
 
           for tarball in dist/*.tar.gz; do
             if [ ! -f "$tarball" ]; then
@@ -1540,6 +1615,8 @@ jobs:
 
             echo "==> Re-verifying: $BASENAME"
             echo ""
+
+            TARBALLS_VERIFIED=$((TARBALLS_VERIFIED + 1))
 
             # Re-compute SHA256 hash
             echo "Computing current SHA256 fingerprint..."
@@ -1633,9 +1710,24 @@ jobs:
             echo "DO NOT PROCEED WITH RELEASE - investigate and fix first."
             echo ""
             exit 1
+          elif [ $TARBALLS_VERIFIED -eq 0 ]; then
+            echo "======================================================================"
+            echo "❌ RE-VERIFICATION FAILED - NO SOURCE DISTRIBUTIONS VERIFIED"
+            echo "======================================================================"
+            echo ""
+            echo "Zero source distributions were verified. This means:"
+            echo "  1. No *.tar.gz files were found in dist/, OR"
+            echo "  2. Source distribution download from artifacts failed"
+            echo ""
+            echo "This is a critical failure - we cannot confirm source distribution integrity."
+            echo "This was the root cause of issue #1714 (corrupted v25.10.1 on PyPI)."
+            echo ""
+            echo "DO NOT PROCEED WITH RELEASE - investigate artifact download!"
+            echo ""
+            exit 1
           else
             echo "======================================================================"
-            echo "✅ All source distributions re-verified successfully"
+            echo "✅ All source distributions re-verified successfully ($TARBALLS_VERIFIED tarballs)"
             echo "======================================================================"
             echo ""
             echo "Chain of custody confirmed: wheels workflow → release workflow"
@@ -1643,13 +1735,15 @@ jobs:
           fi
         shell: bash
 
-      - name: Download Linux wheels without NVX
-        uses: actions/download-artifact@v4
+      - name: Download and verify Linux wheels without NVX with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: linux-wheels-no-nvx
           path: dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 60
         continue-on-error: true
 
       - name: Download manylinux wheels with NVX (from wheels-docker)

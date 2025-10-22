@@ -1,4 +1,4 @@
-.. _autobahn-on-free-threaded-python:
+.. _free-threaded-python:
 
 ==========================================
 Autobahn on Free-Threaded Python (PEP 703)
