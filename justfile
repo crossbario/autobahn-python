@@ -789,7 +789,7 @@ docs-clean:
 # -- Building and Publishing
 # -----------------------------------------------------------------------------
 
-# Build distribution packages (wheels and source tarball)
+# Build wheel only (usage: `just build cpy314`)
 build venv="": (install-build-tools venv)
     #!/usr/bin/env bash
     set -e
@@ -801,9 +801,25 @@ build venv="": (install-build-tools venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
-    echo "==> Building distribution packages..."
-    # Set environment variable for NVX acceleration
-    AUTOBAHN_USE_NVX=1 ${VENV_PYTHON} -m build
+    echo "==> Building wheel package..."
+    # Set environment variable for NVX acceleration (only affects wheels)
+    AUTOBAHN_USE_NVX=1 ${VENV_PYTHON} -m build --wheel
+    ls -la dist/
+
+# Build source distribution only (no wheels, no NVX flag needed)
+build-sourcedist venv="": (install-build-tools venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Building source distribution..."
+    ${VENV_PYTHON} -m build --sdist
     ls -la dist/
 
 # Meta-recipe to run `build` on all environments

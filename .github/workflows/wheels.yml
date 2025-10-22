@@ -192,6 +192,14 @@ jobs:
           just build-all
         shell: bash
 
+      - name: Build source distribution (Linux x86_64 only)
+        if: matrix.platform == 'linux' && matrix.arch == 'x86_64'
+        run: |
+          # Build source distribution (only once, on Linux x86_64)
+          # Source distributions are platform-independent
+          just build-sourcedist
+        shell: bash
+
       - name: Force file system sync (post-build, pre-validation) - Linux
         if: matrix.platform == 'linux'
         run: |
