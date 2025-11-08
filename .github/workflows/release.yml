@@ -1667,11 +1667,13 @@ jobs:
           # Delete existing release if it exists (for nightly builds)
           gh release delete "$RELEASE_NAME" --repo "$GITHUB_REPOSITORY" --yes || true
 
-          # Set release title based on type
+          # Set release title and discussion category based on type
           if [ "$RELEASE_TYPE" = "stable" ]; then
             TITLE="Release $RELEASE_NAME"
+            DISCUSSION_FLAG="--discussion-category ci-cd"
           else
             TITLE="Nightly Build $RELEASE_NAME"
+            DISCUSSION_FLAG=""
           fi
 
           # Create the release using rendered notes
@@ -1679,6 +1681,7 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "$TITLE" \
             --notes-file release-notes.md \
+            $DISCUSSION_FLAG \
             release-artifacts/*
 
           echo "✅ Release $RELEASE_NAME created successfully"
