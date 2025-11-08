@@ -732,6 +732,31 @@ jobs:
           echo "FlatBuffers schema: $(ls release-artifacts/flatbuffers-schema.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
           echo "Conformance reports: $(ls release-artifacts/autobahn-python-websocket-conformance-*.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
 
+      - name: Validate and clean release fileset for GitHub
+        uses: wamp-proto/wamp-cicd/actions/check-release-fileset@main
+        with:
+          distdir: release-artifacts
+          mode: strict
+          keep-metadata: true  # Keep CHECKSUMS for user verification
+          targets: |
+            cpy311-linux-x86_64-manylinux_2_34
+            cpy311-linux-aarch64-manylinux_2_28
+            cpy311-win-amd64
+            cpy312-linux-x86_64-manylinux_2_34
+            cpy312-win-amd64
+            cpy313-macos-arm64
+            cpy313-linux-x86_64-manylinux_2_34
+            cpy313-linux-aarch64-manylinux_2_28
+            cpy313-win-amd64
+            cpy314-macos-arm64
+            cpy314-linux-x86_64-manylinux_2_34
+            cpy314-win-amd64
+            pypy311-macos-arm64
+            pypy311-linux-x86_64-manylinux_2_34
+            pypy311-linux-aarch64-manylinux_2_17
+            pypy311-win-amd64
+            source
+
       - name: Validate all wheels before release (Final Gate)
         run: |
           set -o pipefail
@@ -1462,6 +1487,31 @@ jobs:
           echo "FlatBuffers schema: $(ls release-artifacts/flatbuffers-schema.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
           echo "Conformance reports: $(ls release-artifacts/autobahn-python-websocket-conformance-*.tar.gz 2>/dev/null && echo 'packaged' || echo 'not found')"
 
+      - name: Validate and clean release fileset for GitHub
+        uses: wamp-proto/wamp-cicd/actions/check-release-fileset@main
+        with:
+          distdir: release-artifacts
+          mode: strict
+          keep-metadata: true  # Keep CHECKSUMS for user verification
+          targets: |
+            cpy311-linux-x86_64-manylinux_2_34
+            cpy311-linux-aarch64-manylinux_2_28
+            cpy311-win-amd64
+            cpy312-linux-x86_64-manylinux_2_34
+            cpy312-win-amd64
+            cpy313-macos-arm64
+            cpy313-linux-x86_64-manylinux_2_34
+            cpy313-linux-aarch64-manylinux_2_28
+            cpy313-win-amd64
+            cpy314-macos-arm64
+            cpy314-linux-x86_64-manylinux_2_34
+            cpy314-win-amd64
+            pypy311-macos-arm64
+            pypy311-linux-x86_64-manylinux_2_34
+            pypy311-linux-aarch64-manylinux_2_17
+            pypy311-win-amd64
+            source
+
       - name: Validate all wheels before release (Final Gate)
         run: |
           set -o pipefail
@@ -2054,34 +2104,30 @@ jobs:
             echo "Safe to proceed with PyPI upload."
           fi
 
-      - name: List artifacts for PyPI publishing
-        run: |
-          echo "Publishing to PyPI for release: $RELEASE_NAME"
-          ls -la dist/
-          echo ""
-          echo "macOS wheels: $(find dist -name "*macos*.whl" 2>/dev/null | wc -l)"
-          echo "Windows wheels: $(find dist -name "*win*.whl" 2>/dev/null | wc -l)"
-          echo "Linux manylinux wheels: $(find dist -name "*manylinux*.whl" 2>/dev/null | wc -l)"
-          echo "Linux fallback wheels: $(find dist -name "*linux*.whl" ! -name "*manylinux*.whl" 2>/dev/null | wc -l)"
-          echo "Source distributions: $(find dist -name "*.tar.gz" 2>/dev/null | wc -l)"
-          echo ""
-          echo "Total PyPI artifacts: $(find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) | wc -l)"
-
-      - name: Clean non-package files and unsupported wheels from dist/
-        run: |
-          echo "==> Removing non-package files from dist/ before PyPI upload..."
-          find dist/ -type f ! \( -name "*.whl" -o -name "*.tar.gz" \) -delete
-
-          echo "==> Removing plain linux_* wheels (PyPI only accepts manylinux_*)..."
-          # PyPI rejects plain linux_x86_64/linux_aarch64 tags - they must be manylinux_*
-          find dist/ -name "*-linux_x86_64.whl" -delete
-          find dist/ -name "*-linux_aarch64.whl" -delete
-
-          echo ""
-          echo "Remaining files for PyPI:"
-          ls -la dist/
-          echo ""
-          echo "Total PyPI artifacts: $(find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) | wc -l)"
+      - name: Validate and clean release fileset for PyPI
+        uses: wamp-proto/wamp-cicd/actions/check-release-fileset@main
+        with:
+          distdir: dist
+          mode: strict
+          # keep-metadata: false (default - removes CHECKSUMS for PyPI)
+          targets: |
+            cpy311-linux-x86_64-manylinux_2_34
+            cpy311-linux-aarch64-manylinux_2_28
+            cpy311-win-amd64
+            cpy312-linux-x86_64-manylinux_2_34
+            cpy312-win-amd64
+            cpy313-macos-arm64
+            cpy313-linux-x86_64-manylinux_2_34
+            cpy313-linux-aarch64-manylinux_2_28
+            cpy313-win-amd64
+            cpy314-macos-arm64
+            cpy314-linux-x86_64-manylinux_2_34
+            cpy314-win-amd64
+            pypy311-macos-arm64
+            pypy311-linux-x86_64-manylinux_2_34
+            pypy311-linux-aarch64-manylinux_2_17
+            pypy311-win-amd64
+            source
 
       - name: Check if version already exists on PyPI
         id: pypi_check
