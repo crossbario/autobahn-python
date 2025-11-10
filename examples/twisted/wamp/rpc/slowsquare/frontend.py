@@ -41,14 +41,14 @@ class Component(ApplicationSession):
         print("session attached")
 
         def got(res, started, msg):
-            duration = 1000.0 * (time.clock() - started)
+            duration = 1000.0 * (time.perf_counter() - started)
             print("{}: {} in {}".format(msg, res, duration))
 
-        t1 = time.clock()
+        t1 = time.perf_counter()
         d1 = self.call("com.math.slowsquare", 3)
         d1.addCallback(got, t1, "Slow Square")
 
-        t2 = time.clock()
+        t2 = time.perf_counter()
         d2 = self.call("com.math.square", 3)
         d2.addCallback(got, t2, "Quick Square")
 

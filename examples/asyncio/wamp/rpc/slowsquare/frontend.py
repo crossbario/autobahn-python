@@ -40,14 +40,14 @@ class Component(ApplicationSession):
     async def onJoin(self, details):
         def got(started, msg, f):
             res = f.result()
-            duration = 1000.0 * (time.clock() - started)
+            duration = 1000.0 * (time.perf_counter() - started)
             print("{}: {} in {}".format(msg, res, duration))
 
-        t1 = time.clock()
+        t1 = time.perf_counter()
         d1 = self.call("com.math.slowsquare", 3, 2)
         d1.add_done_callback(partial(got, t1, "Slow Square"))
 
-        t2 = time.clock()
+        t2 = time.perf_counter()
         d2 = self.call("com.math.square", 3)
         d2.add_done_callback(partial(got, t2, "Quick Square"))
 

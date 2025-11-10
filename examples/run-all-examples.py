@@ -133,6 +133,93 @@ def print_banner(title):
     print()
 
 
+def categorize_example(example_path):
+    """Categorize an example by backend and feature type."""
+    if example_path.startswith("./twisted/"):
+        backend = "twisted"
+        path = example_path[len("./twisted/"):]
+    elif example_path.startswith("./asyncio/"):
+        backend = "asyncio"
+        path = example_path[len("./asyncio/"):]
+    else:
+        backend = "unknown"
+        path = example_path
+
+    if path.startswith("wamp/overview"):
+        feature = "overview"
+    elif path.startswith("wamp/pubsub/"):
+        feature = "pubsub"
+    elif path.startswith("wamp/rpc/"):
+        feature = "rpc"
+    else:
+        feature = "unknown"
+
+    return backend, feature
+
+
+def print_summary(results):
+    """Print comprehensive test summary with categorization."""
+    print()
+    print("=" * 80)
+    print("Test Results Summary")
+    print("=" * 80)
+    print()
+
+    # Count totals
+    total = len(results)
+    passed = sum(1 for r in results if r["passed"])
+    failed = total - passed
+
+    # Print individual results
+    print("Individual Examples:")
+    print("-" * 80)
+    for result in results:
+        status_symbol = "✓" if result["passed"] else "✗"
+        status_color = Fore.GREEN if result["passed"] else Fore.RED
+        print(f"{status_color}{status_symbol}{Fore.RESET} {result['backend']:8s} {result['feature']:8s} {result['path']}")
+    print()
+
+    # Aggregate by backend
+    print("By Backend:")
+    print("-" * 80)
+    for backend in ["twisted", "asyncio"]:
+        backend_results = [r for r in results if r["backend"] == backend]
+        if backend_results:
+            backend_passed = sum(1 for r in backend_results if r["passed"])
+            backend_total = len(backend_results)
+            backend_failed = backend_total - backend_passed
+            status_symbol = "✓" if backend_failed == 0 else "✗"
+            status_color = Fore.GREEN if backend_failed == 0 else Fore.RED
+            print(f"{status_color}{status_symbol}{Fore.RESET} {backend:8s}: {backend_passed}/{backend_total} passed, {backend_failed} failed")
+    print()
+
+    # Aggregate by feature
+    print("By WAMP Feature:")
+    print("-" * 80)
+    for feature in ["overview", "pubsub", "rpc"]:
+        feature_results = [r for r in results if r["feature"] == feature]
+        if feature_results:
+            feature_passed = sum(1 for r in feature_results if r["passed"])
+            feature_total = len(feature_results)
+            feature_failed = feature_total - feature_passed
+            status_symbol = "✓" if feature_failed == 0 else "✗"
+            status_color = Fore.GREEN if feature_failed == 0 else Fore.RED
+            print(f"{status_color}{status_symbol}{Fore.RESET} {feature:8s}: {feature_passed}/{feature_total} passed, {feature_failed} failed")
+    print()
+
+    # Overall summary
+    print("=" * 80)
+    if failed == 0:
+        print(f"{Fore.GREEN}✓ ALL TESTS PASSED{Fore.RESET}")
+        print(f"  Total: {passed}/{total} examples completed successfully")
+    else:
+        print(f"{Fore.RED}✗ SOME TESTS FAILED{Fore.RESET}")
+        print(f"  Passed: {passed}/{total}")
+        print(f"  Failed: {failed}/{total}")
+    print("=" * 80)
+    print()
+
+
 @inlineCallbacks
 def main(reactor):
     colorama.init()
@@ -175,9 +262,12 @@ def main(reactor):
     if cb_proto.all_done.called:
         raise RuntimeError("crossbar exited already")
 
-    success = True
+    results = []
+    overall_success = True
+
     for exdir in examples:
         py = sys.executable
+        original_exdir = exdir
         if exdir.startswith("py3 "):
             exdir = exdir[4:]
             if sys.version_info.major < 3:
@@ -190,28 +280,45 @@ def main(reactor):
             continue
 
         print_banner("Running example: " + exdir)
-        print("  starting backend")
-        back_proto = yield start_example(backend, Fore.GREEN, " backend: ", exe=py)
-        yield sleep(1)
-        print("  starting frontend")
-        front_proto = yield start_example(frontend, Fore.BLUE, "frontend: ", exe=py)
-        yield sleep(3)
 
-        for p in [back_proto, front_proto]:
-            try:
-                if p.all_done.called:
-                    yield p.all_done
-            except Exception as e:
-                print("FAILED:", e)
-                success = False
+        example_passed = True
+        try:
+            print("  starting backend")
+            back_proto = yield start_example(backend, Fore.GREEN, " backend: ", exe=py)
+            yield sleep(1)
+            print("  starting frontend")
+            front_proto = yield start_example(frontend, Fore.BLUE, "frontend: ", exe=py)
+            yield sleep(3)
 
-        for p in [front_proto, back_proto]:
-            try:
-                p.transport.signalProcess("KILL")
-            except ProcessExitedAlready:
-                pass
+            for p in [back_proto, front_proto]:
+                try:
+                    if p.all_done.called:
+                        yield p.all_done
+                except Exception as e:
+                    print("FAILED:", e)
+                    example_passed = False
+                    overall_success = False
 
-        if not success:
+            for p in [front_proto, back_proto]:
+                try:
+                    p.transport.signalProcess("KILL")
+                except ProcessExitedAlready:
+                    pass
+        except Exception as e:
+            print("EXCEPTION:", e)
+            example_passed = False
+            overall_success = False
+
+        # Record result
+        backend_type, feature_type = categorize_example(exdir)
+        results.append({
+            "path": exdir,
+            "backend": backend_type,
+            "feature": feature_type,
+            "passed": example_passed
+        })
+
+        if not overall_success:
             break
         yield sleep(1)
 
@@ -221,10 +328,11 @@ def main(reactor):
         yield cb_proto.all_done
     except:
         pass
-    if success:
-        print()
-        print("Success!")
-        print("  ...all the examples neither crashed nor burned...")
+
+    # Print comprehensive summary
+    print_summary(results)
+
+    if overall_success:
         return 0
     return 5
 
