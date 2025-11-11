@@ -674,8 +674,72 @@ check-coverage venv="" use_nvx="": (install-tools venv) (install venv)
 
     echo "--> Coverage report generated in docs/_build/html/coverage${NVX_SUFFIX}/index.html"
 
+# Verify all WebSocket compression methods are available (usage: `just check-compressors cpy314`)
+check-compressors venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+
+    echo "==> Checking WebSocket compression methods in ${VENV_NAME}..."
+    TMP_SCRIPT="/tmp/check_compressors_$$.py"
+    {
+        echo "from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION"
+        echo ""
+        echo "print('Available WebSocket Compression Methods:')"
+        echo "print('=' * 70)"
+        echo "for ext_name in sorted(PERMESSAGE_COMPRESSION_EXTENSION.keys()):"
+        echo "    ext_classes = PERMESSAGE_COMPRESSION_EXTENSION[ext_name]"
+        echo "    pmce_class = ext_classes.get('PMCE')"
+        echo "    if pmce_class:"
+        echo "        class_ref = f\"{pmce_class.__module__}.{pmce_class.__name__}\""
+        echo "        print(f'  {ext_name:25s} -> {class_ref}')"
+        echo "    else:"
+        echo "        print(f'  {ext_name:25s} -> (no PMCE class found)')"
+        echo "print('=' * 70)"
+        echo "print(f'Total: {len(PERMESSAGE_COMPRESSION_EXTENSION)} compression methods available')"
+    } > "${TMP_SCRIPT}"
+    "${VENV_PATH}/bin/python" "${TMP_SCRIPT}"
+    rm "${TMP_SCRIPT}"
+    echo "✅ Compression methods check completed"
+
+# Verify all WAMP serializers are available (usage: `just check-serializers cpy314`)
+check-serializers venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+
+    echo "==> Checking WAMP serializers in ${VENV_NAME}..."
+    TMP_SCRIPT="/tmp/check_serializers_$$.py"
+    {
+        echo "from autobahn.wamp.serializer import SERID_TO_OBJSER"
+        echo ""
+        echo "print('Available WAMP Serializers:')"
+        echo "print('=' * 70)"
+        echo "for ser_name in sorted(SERID_TO_OBJSER.keys()):"
+        echo "    ser_class = SERID_TO_OBJSER[ser_name]"
+        echo "    class_ref = f\"{ser_class.__module__}.{ser_class.__name__}\""
+        echo "    print(f'  {ser_name:25s} -> {class_ref}')"
+        echo "print('=' * 70)"
+        echo "print(f'Total: {len(SERID_TO_OBJSER)} serializers available')"
+    } > "${TMP_SCRIPT}"
+    "${VENV_PATH}/bin/python" "${TMP_SCRIPT}"
+    rm "${TMP_SCRIPT}"
+    echo "✅ Serializers check completed"
+
 # Run all checks in single environment (usage: `just check cpy314`)
-check venv="": (check-format venv) (check-typing venv) (check-coverage-combined venv)
+check venv="": (check-compressors venv) (check-serializers venv) (check-format venv) (check-typing venv) (check-coverage-combined venv)
 
 # -----------------------------------------------------------------------------
 # -- Unit tests
