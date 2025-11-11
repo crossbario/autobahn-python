@@ -52,7 +52,11 @@ from typing import Any, Dict, List, Optional
 
 import humanize
 import jinja2
+import txaio
 import vmprof
+
+# Initialize txaio framework BEFORE importing autobahn (required for serializers)
+txaio.use_asyncio()
 
 from autobahn import util
 from autobahn.wamp.message import Event, Publish

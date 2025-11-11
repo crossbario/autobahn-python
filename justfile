@@ -1253,7 +1253,7 @@ fix-audit-filenames:
 # -----------------------------------------------------------------------------
 
 # Run a single WAMP serialization benchmark (usage: `just benchmark-serialization-run cpy314 cbor normal small 10`)
-benchmark-serialization-run venv="" serializer="cbor" payload_mode="normal" payload_size="small" iterations="10": (install venv)
+benchmark-serialization-run venv="" serializer="cbor" payload_mode="normal" payload_size="small" iterations="10": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1280,7 +1280,14 @@ benchmark-serialization-run venv="" serializer="cbor" payload_mode="normal" payl
     echo "    Iterations: ${ITERATIONS}"
     echo ""
 
-    cd examples/benchmarks/serialization
+    BENCHMARK_DIR="{{ PROJECT_DIR }}/examples/benchmarks/serialization"
+    cd "${BENCHMARK_DIR}"
+
+    # Convert relative venv path to absolute if needed
+    if [[ "${VENV_PYTHON}" != /* ]]; then
+        VENV_PYTHON="{{ PROJECT_DIR }}/${VENV_PYTHON}"
+    fi
+
     ${VENV_PYTHON} main.py run \
         --serializer "${SERIALIZER}" \
         --payload_mode "${PAYLOAD_MODE}" \
@@ -1290,7 +1297,7 @@ benchmark-serialization-run venv="" serializer="cbor" payload_mode="normal" payl
         --results build
 
 # Run full WAMP serialization benchmark suite across all serializers and payload configurations (usage: `just benchmark-serialization-suite cpy314`)
-benchmark-serialization-suite venv="" iterations="10": (install venv)
+benchmark-serialization-suite venv="" iterations="10": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1334,7 +1341,7 @@ benchmark-serialization-suite venv="" iterations="10": (install venv)
     echo "    Profiles: examples/benchmarks/serialization/build/*.dat"
 
 # Generate HTML report from WAMP serialization benchmark results (usage: `just benchmark-serialization-report cpy314`)
-benchmark-serialization-report venv="": (install venv)
+benchmark-serialization-report venv="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1359,7 +1366,14 @@ benchmark-serialization-report venv="": (install venv)
 
     echo "==> Generating HTML report from benchmark results..."
 
-    cd examples/benchmarks/serialization
+    BENCHMARK_DIR="{{ PROJECT_DIR }}/examples/benchmarks/serialization"
+    cd "${BENCHMARK_DIR}"
+
+    # Convert relative venv path to absolute if needed
+    if [[ "${VENV_PYTHON}" != /* ]]; then
+        VENV_PYTHON="{{ PROJECT_DIR }}/${VENV_PYTHON}"
+    fi
+
     ${VENV_PYTHON} main.py index --output build
 
     echo ""
