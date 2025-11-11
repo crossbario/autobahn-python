@@ -1249,6 +1249,141 @@ fix-audit-filenames:
     echo "These files are now Windows-compatible."
 
 # -----------------------------------------------------------------------------
+# -- WAMP Message Serialization Benchmarks
+# -----------------------------------------------------------------------------
+
+# Run a single WAMP serialization benchmark (usage: `just benchmark-serialization-run cpy314 cbor normal small 10`)
+benchmark-serialization-run venv="" serializer="cbor" payload_mode="normal" payload_size="small" iterations="10": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    SERIALIZER="{{ serializer }}"
+    PAYLOAD_MODE="{{ payload_mode }}"
+    PAYLOAD_SIZE="{{ payload_size }}"
+    ITERATIONS="{{ iterations }}"
+
+    # Ensure build directory exists
+    mkdir -p examples/benchmarks/serialization/build
+
+    echo "==> Running WAMP serialization benchmark in ${VENV_NAME}..."
+    echo "    Serializer: ${SERIALIZER}"
+    echo "    Payload mode: ${PAYLOAD_MODE}"
+    echo "    Payload size: ${PAYLOAD_SIZE}"
+    echo "    Iterations: ${ITERATIONS}"
+    echo ""
+
+    cd examples/benchmarks/serialization
+    ${VENV_PYTHON} main.py run \
+        --serializer "${SERIALIZER}" \
+        --payload_mode "${PAYLOAD_MODE}" \
+        --payload_size "${PAYLOAD_SIZE}" \
+        --iterations "${ITERATIONS}" \
+        --profile "build/profile_${SERIALIZER}_${PAYLOAD_MODE}_${PAYLOAD_SIZE}.dat" \
+        --results build
+
+# Run full WAMP serialization benchmark suite across all serializers and payload configurations (usage: `just benchmark-serialization-suite cpy314`)
+benchmark-serialization-suite venv="" iterations="10": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    ITERATIONS="{{ iterations }}"
+
+    echo "==> Running full WAMP serialization benchmark suite in ${VENV_NAME}..."
+    echo "    Iterations per benchmark: ${ITERATIONS}"
+    echo ""
+
+    # Test all serializers with small payload (normal mode)
+    for serializer in json msgpack cbor ubjson flatbuffers; do
+        for mode in normal transparent; do
+            for size in empty small medium large xl xxl; do
+                echo ""
+                echo "==> Running: ${serializer}, ${mode}, ${size}"
+                just benchmark-serialization-run "${VENV_NAME}" "${serializer}" "${mode}" "${size}" "${ITERATIONS}" || true
+            done
+        done
+    done
+
+    # Test ujson variant (if available)
+    echo ""
+    echo "==> Testing ujson variant..."
+    AUTOBAHN_USE_UJSON=1 just benchmark-serialization-run "${VENV_NAME}" json normal small "${ITERATIONS}" || true
+    AUTOBAHN_USE_UJSON=1 just benchmark-serialization-run "${VENV_NAME}" json transparent small "${ITERATIONS}" || true
+
+    # Test cbor2 variant (if available)
+    echo ""
+    echo "==> Testing cbor2 variant..."
+    AUTOBAHN_USE_CBOR2=1 just benchmark-serialization-run "${VENV_NAME}" cbor normal small "${ITERATIONS}" || true
+    AUTOBAHN_USE_CBOR2=1 just benchmark-serialization-run "${VENV_NAME}" cbor transparent small "${ITERATIONS}" || true
+
+    echo ""
+    echo "==> Full benchmark suite completed!"
+    echo "    Results: examples/benchmarks/serialization/build/*.json"
+    echo "    Profiles: examples/benchmarks/serialization/build/*.dat"
+
+# Generate HTML report from WAMP serialization benchmark results (usage: `just benchmark-serialization-report cpy314`)
+benchmark-serialization-report venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    if [ ! -d "examples/benchmarks/serialization/build" ]; then
+        echo "❌ ERROR: No benchmark results found in examples/benchmarks/serialization/build/"
+        echo ""
+        echo "Please run benchmarks first using:"
+        echo "  just benchmark-serialization-run"
+        echo "  or"
+        echo "  just benchmark-serialization-suite"
+        echo ""
+        exit 1
+    fi
+
+    echo "==> Generating HTML report from benchmark results..."
+
+    cd examples/benchmarks/serialization
+    ${VENV_PYTHON} main.py index --output build
+
+    echo ""
+    echo "✅ HTML report generated!"
+    echo "    Report: examples/benchmarks/serialization/build/index.html"
+    echo ""
+    echo "To view the report:"
+    echo "  python -m http.server 8000 -d examples/benchmarks/serialization/build"
+    echo "  then visit http://localhost:8000"
+
+# Clean WAMP serialization benchmark artifacts (usage: `just benchmark-serialization-clean`)
+benchmark-serialization-clean:
+    #!/usr/bin/env bash
+    set -e
+    echo "==> Cleaning WAMP serialization benchmark artifacts..."
+
+    if [ -d "examples/benchmarks/serialization/build" ]; then
+        rm -rf examples/benchmarks/serialization/build
+        echo "✅ Removed examples/benchmarks/serialization/build/"
+    else
+        echo "ℹ️  No benchmark artifacts to clean (build directory doesn't exist)"
+    fi
+
+# -----------------------------------------------------------------------------
 # -- WebSocket compliance testing
 # -----------------------------------------------------------------------------
 
