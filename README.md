@@ -321,31 +321,65 @@ masking) and UTF-8 validation.
 
 ### WAMP Serializers
 
-- `serialization`: To install additional WAMP serializers: CBOR,
-  MessagePack, UBJSON and Flatbuffers
+**As of v25.11.1, all WAMP serializers are included by default** - batteries included!
 
-**Above is for advanced uses. In general we recommend to use CBOR
-where you can, and JSON (from the standard library) otherwise.**
+Autobahn|Python now ships with full support for all WAMP serializers out-of-the-box:
 
----
+- **JSON** (standard library) - always available
+- **MessagePack** - high-performance binary serialization
+- **CBOR** - IETF standard binary serialization (RFC 8949)
+- **UBJSON** - Universal Binary JSON
+- **Flatbuffers** - Google's zero-copy serialization (vendored)
 
-To install Autobahn with all available serializers:
+#### Architecture & Performance
 
-    pip install autobahn[serializers]
+The serializer dependencies are optimized for both **CPython** and **PyPy**:
 
-or (development install)
+| Serializer | CPython | PyPy | Wheel Type | Notes |
+|------------|---------|------|------------|-------|
+| **json** | stdlib | stdlib | - | Always available |
+| **msgpack** | Binary wheel (C extension) | u-msgpack-python (pure Python) | Native + Universal | PyPy JIT makes pure Python faster than C |
+| **ujson** | Binary wheel | Binary wheel | Native | Available for both implementations |
+| **cbor2** | Binary wheel | Pure Python fallback | Native + Universal | Binary wheels + py3-none-any |
+| **ubjson** | Pure Python | Pure Python | Source | Set `PYUBJSON_NO_EXTENSION=1` to skip C build |
+| **flatbuffers** | Vendored | Vendored | Included | Always available, no external dependency |
 
-    pip install -e .[serializers]
+**Key Design Principles:**
 
-Further, to speed up JSON on CPython using `ujson`, set the
-environment variable:
+1. **Batteries Included**: All serializers available without extra install steps
+2. **PyPy Optimization**: Pure Python implementations leverage PyPy's JIT for superior performance
+3. **Binary Wheels**: Native wheels for all major platforms (Linux x86_64/ARM64, macOS x86_64/ARM64, Windows x86_64)
+4. **Zero System Pollution**: All dependencies install cleanly via wheels or pure Python
+5. **WAMP Compliance**: Full protocol support out-of-the-box
+
+**Total Additional Size**: ~590KB (negligible compared to full application install)
+
+#### Platform Coverage
+
+All serializer dependencies provide binary wheels for:
+- **Linux**: x86_64, ARM64 (manylinux, musllinux)
+- **macOS**: x86_64 (Intel), ARM64 (Apple Silicon)
+- **Windows**: x86_64 (AMD64), ARM64
+- **Python**: 3.11, 3.12, 3.13, 3.14 (including 3.14t free-threaded)
+- **Implementations**: CPython, PyPy 3.11+
+
+#### Backwards Compatibility
+
+The `serialization` optional dependency is maintained for backwards compatibility:
+
+    pip install autobahn[serialization]  # Still works, but now a no-op
+
+#### ujson Acceleration
+
+To speed up JSON on CPython using the faster `ujson`, set:
 
     AUTOBAHN_USE_UJSON=1
 
-Warning
+> **Warning**: Using `ujson` will break the ability of Autobahn to transport and translate binary application payloads in WAMP transparently. This ability depends on features of the standard library `json` module not available in `ujson`.
 
-Using `ujson` (on both CPython and PyPy) will break the ability
-of Autobahn to transport and translate binary application
-payloads in WAMP transparently. This ability depends on features
-of the regular JSON standard library module not available on
-`ujson`.
+#### Recommendations
+
+- **General use**: JSON (stdlib) or CBOR
+- **High performance**: MessagePack or Flatbuffers
+- **Strict standards**: CBOR (IETF RFC 8949)
+- **Zero-copy**: Flatbuffers (for large payloads)
