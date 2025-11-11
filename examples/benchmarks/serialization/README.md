@@ -152,14 +152,20 @@ See `justfile` in repository root for recipe definitions.
 
 The benchmark suite tests 6 different payload sizes:
 
-| Size | Description | Approximate Size |
-|------|-------------|------------------|
-| `empty` | Minimal empty payload | ~0 bytes |
-| `small` | Base vehicle telemetry (GPS, sensors) | ~200-300 bytes |
-| `medium` | Small + JSON_DATA1 (widget config) | ~500-800 bytes |
-| `large` | Medium + JSON_DATA2 (actors) + JSON_DATA3 (nested donuts) | ~1-2 KB |
-| `xl` | Small + 16KB binary frame | ~16 KB |
-| `xxl` | Small + 128KB binary frame | ~128 KB |
+| Size | Description | Approximate Size | Event Limit | Total Data |
+|------|-------------|------------------|-------------|------------|
+| `empty` | Minimal empty payload | ~0 bytes | 42,039 | ~0 MB |
+| `small` | Base vehicle telemetry (GPS, sensors) | ~200-300 bytes | 42,039 | ~12 MB |
+| `medium` | Small + JSON_DATA1 (widget config) | ~500-800 bytes | 42,039 | ~33 MB |
+| `large` | Medium + JSON_DATA2 (actors) + JSON_DATA3 (nested donuts) | ~1-2 KB | 42,039 | ~84 MB |
+| `xl` | Small + 16KB binary frame | ~16 KB | 1,000 | ~16 MB |
+| `xxl` | Small + 128KB binary frame | ~128 KB | 100 | ~12.8 MB |
+
+**Note**: xl and xxl payloads are automatically limited to prevent memory exhaustion:
+- xl: Limited to 1,000 events (from 42K total) to keep memory usage reasonable
+- xxl: Limited to 100 events (from 42K total) for the same reason
+- Binary frame data is cached per event to avoid repeated regeneration
+- These limits still provide statistically valid benchmark samples
 
 ## Performance Metrics
 
