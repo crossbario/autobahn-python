@@ -675,7 +675,7 @@ check-coverage venv="" use_nvx="": (install-tools venv) (install venv)
     echo "--> Coverage report generated in docs/_build/html/coverage${NVX_SUFFIX}/index.html"
 
 # Verify all WebSocket compression methods are available (usage: `just check-compressors cpy314 "permessage-deflate, permessage-brotli"`)
-check-compressors venv="" expect="": (install venv)
+check-compressors venv="" expect="permessage-brotli,permessage-bzip2,permessage-deflate,permessage-snappy": (install venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -740,14 +740,14 @@ check-compressors venv="" expect="": (install venv)
             echo "Extra:    $(comm -13 <(printf '%s\n' "${EXPECTED_SORTED[@]}") <(printf '%s\n' "${ACTUAL_SORTED[@]}") | tr '\n' ' ')"
             exit 1
         else
-            echo "✅ Compression methods match expected list"
+            echo "✅ Compression methods match expected list (${EXPECTED_SORTED[*]})"
         fi
     else
         echo "✅ Compression methods check completed"
     fi
 
 # Verify all WAMP serializers are available (usage: `just check-serializers cpy314 "json, msgpack, cbor, ubjson, flatbuffers"`)
-check-serializers venv="" expect="": (install venv)
+check-serializers venv="" expect="cbor,flatbuffers,json,msgpack,ubjson": (install venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -808,7 +808,7 @@ check-serializers venv="" expect="": (install venv)
             echo "Extra:    $(comm -13 <(printf '%s\n' "${EXPECTED_SORTED[@]}") <(printf '%s\n' "${ACTUAL_SORTED[@]}") | tr '\n' ' ')"
             exit 1
         else
-            echo "✅ WAMP serializers match expected list"
+            echo "✅ WAMP serializers match expected list (${EXPECTED_SORTED[*]})"
         fi
     else
         echo "✅ Serializers check completed"
