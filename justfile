@@ -457,6 +457,42 @@ install-tools-all:
         just install-tools ${venv}
     done
 
+# Install benchmark dependencies (Python 3.11+ only - vmprof requires binary wheels)
+install-benchmark venv="": (create venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    # Check Python version is 3.11+
+    PY_VERSION=$(${VENV_PYTHON} -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    PY_MAJOR=$(echo ${PY_VERSION} | cut -d. -f1)
+    PY_MINOR=$(echo ${PY_VERSION} | cut -d. -f2)
+
+    if [ "${PY_MAJOR}" -lt 3 ] || ([ "${PY_MAJOR}" -eq 3 ] && [ "${PY_MINOR}" -lt 11 ]); then
+        echo "❌ ERROR: Benchmarking requires Python 3.11+ (vmprof binary wheels)"
+        echo "   Current venv '${VENV_NAME}' has Python ${PY_VERSION}"
+        echo ""
+        echo "Supported venvs for benchmarking:"
+        echo "  - cpy311 (CPython 3.11)"
+        echo "  - cpy312 (CPython 3.12)"
+        echo "  - cpy313 (CPython 3.13)"
+        echo "  - cpy314 (CPython 3.14)"
+        echo "  - pypy311 (PyPy 3.11)"
+        exit 1
+    fi
+
+    echo "==> Installing benchmark dependencies in ${VENV_NAME} (Python ${PY_VERSION})..."
+    ${VENV_PYTHON} -V
+    ${VENV_PYTHON} -m pip -V
+    ${VENV_PYTHON} -m pip install -e .[benchmark]
+
 # Install Rust (rustc & cargo) from upstream via rustup.
 install-rust:
     #!/usr/bin/env bash
@@ -1252,8 +1288,8 @@ fix-audit-filenames:
 # -- WAMP Message Serialization Benchmarks
 # -----------------------------------------------------------------------------
 
-# Run a single WAMP serialization benchmark (usage: `just benchmark-serialization-run cpy314 cbor normal small 10`)
-benchmark-serialization-run venv="" serializer="cbor" payload_mode="normal" payload_size="small" iterations="10": (install-tools venv) (install venv)
+# Run a single WAMP serialization benchmark (usage: `just benchmark-serialization-run cpy311 cbor normal small 10`)
+benchmark-serialization-run venv="" serializer="cbor" payload_mode="normal" payload_size="small" iterations="10": (install-benchmark venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1296,8 +1332,8 @@ benchmark-serialization-run venv="" serializer="cbor" payload_mode="normal" payl
         --profile "build/profile_${SERIALIZER}_${PAYLOAD_MODE}_${PAYLOAD_SIZE}.dat" \
         --results build
 
-# Run full WAMP serialization benchmark suite across all serializers and payload configurations (usage: `just benchmark-serialization-suite cpy314`)
-benchmark-serialization-suite venv="" iterations="10": (install-tools venv) (install venv)
+# Run full WAMP serialization benchmark suite across all serializers and payload configurations (usage: `just benchmark-serialization-suite cpy311`)
+benchmark-serialization-suite venv="" iterations="10": (install-benchmark venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1340,8 +1376,8 @@ benchmark-serialization-suite venv="" iterations="10": (install-tools venv) (ins
     echo "    Results: examples/benchmarks/serialization/build/*.json"
     echo "    Profiles: examples/benchmarks/serialization/build/*.dat"
 
-# Generate HTML report from WAMP serialization benchmark results (usage: `just benchmark-serialization-report cpy314`)
-benchmark-serialization-report venv="": (install-tools venv) (install venv)
+# Generate HTML report from WAMP serialization benchmark results (usage: `just benchmark-serialization-report cpy311`)
+benchmark-serialization-report venv="": (install-benchmark venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
