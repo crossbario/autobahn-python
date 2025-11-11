@@ -197,6 +197,8 @@ exclude = [
     "__pycache__",
     "autobahn/wamp/message_fbs.py",
     "autobahn/wamp/gen/*",
+    "flatbuffers/*",  # Vendored Flatbuffers Python runtime
+    "deps/*",  # Git submodules (includes deps/flatbuffers)
 ]
 
 # --- Violations to Ignore ---
