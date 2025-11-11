@@ -131,6 +131,14 @@ class VehicleEvent:
         self.pothole_depth: Optional[float] = None
         self.pothole_type: Optional[str] = None
 
+        # Pre-generate binary frame data for xl/xxl payloads to avoid memory exhaustion
+        # Generating 128KB × 42K events repeatedly would create ~5.5GB per iteration
+        self._frame_data: Optional[bytes] = None
+        if self._size == PAYLOAD_SIZE_XL:
+            self._frame_data = os.urandom(16 * 1024)  # 16KB binary frame
+        elif self._size == PAYLOAD_SIZE_XXL:
+            self._frame_data = os.urandom(128 * 1024)  # 128KB binary frame
+
     @staticmethod
     def from_row(row: Dict[str, str], fleet: str, size: str) -> 'VehicleEvent':
         """
@@ -207,11 +215,9 @@ class VehicleEvent:
             obj.update(JSON_DATA2)
             obj.update(JSON_DATA3)
 
-        if self._size == PAYLOAD_SIZE_XL:
-            obj['frame'] = os.urandom(16 * 1024)  # 16KB binary frame
-
-        if self._size == PAYLOAD_SIZE_XXL:
-            obj['frame'] = os.urandom(128 * 1024)  # 128KB binary frame
+        # Use cached frame data for xl/xxl payloads (pre-generated in __init__)
+        if self._frame_data is not None:
+            obj['frame'] = self._frame_data
 
         return obj
 
@@ -233,6 +239,15 @@ def load_dataset(
         Tuple of (sample_event, vehicles_dict)
         where vehicles_dict maps vehicle_id to list of (topic, payload) tuples
     """
+    # Limit events for xl/xxl payloads to prevent memory exhaustion
+    # xl: 16KB per event → limit to 1000 events (~16MB)
+    # xxl: 128KB per event → limit to 100 events (~12.8MB)
+    event_limits = {
+        PAYLOAD_SIZE_XL: 1000,
+        PAYLOAD_SIZE_XXL: 100,
+    }
+    max_events = event_limits.get(payload_size, None)
+
     data: Dict[str, List[Tuple[str, Any]]] = {}
     sample: Optional[VehicleEvent] = None
 
@@ -242,7 +257,11 @@ def load_dataset(
 
         with open(fn, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
-            vehicle_events = [from_row(row, fleet, size=payload_size) for row in reader]
+            # Limit events for large payloads to prevent memory issues
+            if max_events:
+                vehicle_events = [from_row(row, fleet, size=payload_size) for i, row in enumerate(reader) if i < max_events]
+            else:
+                vehicle_events = [from_row(row, fleet, size=payload_size) for row in reader]
 
         for evt in vehicle_events:
             if not sample:
