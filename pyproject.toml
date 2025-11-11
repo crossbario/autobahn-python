@@ -69,8 +69,12 @@ accelerate = [
 ]
 
 # non-standard WebSocket compression support
+# Note: zlib/deflate is always available (Python stdlib)
 compress = [
-    "python-snappy>=0.6.0",
+    "brotli>=1.0.0; platform_python_implementation == 'CPython'",  # CPyExt for CPython
+    "brotlicffi>=1.0.0; platform_python_implementation != 'CPython'",  # CFFI for PyPy
+    # python-snappy is optional - only available if installed separately
+    # Users who need snappy: pip install python-snappy
 ]
 
 # Backwards compatibility - serialization now included by default in base install

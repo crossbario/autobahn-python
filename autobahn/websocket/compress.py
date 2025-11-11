@@ -138,3 +138,45 @@ else:
             "PerMessageSnappyResponseAccept",
         ]
     )
+
+
+# include 'permessage-brotli' classes if Brotli is available
+# Use 'brotli' on CPython (CPyExt), 'brotlicffi' on PyPy (CFFI)
+try:
+    import platform
+    if platform.python_implementation() == 'PyPy':
+        # noinspection PyPackageRequirements
+        import brotlicffi as brotli
+    else:
+        # noinspection PyPackageRequirements
+        import brotli
+except ImportError:
+    brotli = None
+else:
+    from autobahn.websocket.compress_brotli import (
+        PerMessageBrotli,
+        PerMessageBrotliMixin,
+        PerMessageBrotliOffer,
+        PerMessageBrotliOfferAccept,
+        PerMessageBrotliResponse,
+        PerMessageBrotliResponseAccept,
+    )
+
+    PMCE = {
+        "Offer": PerMessageBrotliOffer,
+        "OfferAccept": PerMessageBrotliOfferAccept,
+        "Response": PerMessageBrotliResponse,
+        "ResponseAccept": PerMessageBrotliResponseAccept,
+        "PMCE": PerMessageBrotli,
+    }
+    PERMESSAGE_COMPRESSION_EXTENSION[PerMessageBrotliMixin.EXTENSION_NAME] = PMCE
+
+    __all__.extend(
+        [
+            "PerMessageBrotli",
+            "PerMessageBrotliOffer",
+            "PerMessageBrotliOfferAccept",
+            "PerMessageBrotliResponse",
+            "PerMessageBrotliResponseAccept",
+        ]
+    )
