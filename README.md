@@ -277,13 +277,57 @@ respective netoworking framework, install flavor:
 
 ---
 
-### WebSocket acceleration and compression
+### WebSocket Acceleration and Compression
 
-- `accelerate`: Install WebSocket acceleration - _Only use on
-  CPython - not on PyPy (which is faster natively)_
-- `compress`: Install (non-standard) WebSocket compressors
-  **bzip2** and **snappy** (standard **deflate** based WebSocket
-  compression is already included in the base install)
+#### Acceleration (Deprecated)
+
+The `accelerate` optional dependency is **no longer recommended**. Autobahn now includes **NVX** (Native Vector Extensions), which provides SIMD-accelerated native code for WebSocket operations (XOR masking and UTF-8 validation) using CFFI. See the [NVX section](#native-vector-extensions-nvx) below for details.
+
+- ~~`accelerate`~~: Deprecated - Use NVX instead
+
+#### Compression
+
+Autobahn supports multiple WebSocket per-message compression algorithms via the `compress` optional dependency:
+
+    pip install autobahn[compress]
+
+**Compression Methods Available:**
+
+| Method | Availability | Standard | Implementation | Notes |
+|--------|--------------|----------|----------------|-------|
+| **permessage-deflate** | Always | [RFC 7692](https://datatracker.ietf.org/doc/html/rfc7692) | Python stdlib (zlib) | Standard WebSocket compression |
+| **permessage-brotli** | `[compress]` | [RFC 7932](https://datatracker.ietf.org/doc/html/rfc7932) | brotli / brotlicffi | **Recommended** - Best compression ratio |
+| **permessage-bzip2** | Optional | Non-standard | Python stdlib (bz2) | Requires Python built with libbz2 |
+| **permessage-snappy** | Manual install | Non-standard | python-snappy | Requires separate installation |
+
+**Platform-Optimized Brotli Support:**
+
+Autobahn includes **Brotli compression** with full binary wheel coverage optimized for both CPython and PyPy:
+
+- **CPython**: Uses [brotli](https://github.com/google/brotli) (Google's official package, CPyExt)
+- **PyPy**: Uses [brotlicffi](https://github.com/python-hyper/brotlicffi) (CFFI-based, optimized for PyPy)
+
+**Advantages of Brotli:**
+- **Superior compression ratio** compared to deflate or snappy
+- **Binary wheels** for all major platforms (Linux x86_64/ARM64, macOS x86_64/ARM64, Windows x86_64)
+- **IETF standard** ([RFC 7932](https://datatracker.ietf.org/doc/html/rfc7932)) for HTTP compression
+- **Fast decompression** suitable for real-time applications
+- **Widely adopted** by browsers and CDNs
+
+**Resources:**
+- [RFC 7932 - Brotli Compressed Data Format](https://datatracker.ietf.org/doc/html/rfc7932)
+- [Google Brotli](https://github.com/google/brotli) - Official implementation
+- [brotlicffi](https://github.com/python-hyper/brotlicffi) - CFFI bindings for PyPy
+- [PyPI: brotlicffi](https://pypi.org/project/brotlicffi/)
+- [WAMP Brotli Extension Discussion](https://github.com/wamp-proto/wamp-proto/issues/555)
+
+**Note on Snappy:**
+
+[Snappy](https://github.com/google/snappy) compression is available but requires manual installation of [python-snappy](https://pypi.org/project/python-snappy/) (no binary wheels):
+
+    pip install python-snappy  # Requires libsnappy-dev system library
+
+For most use cases, **Brotli is recommended** over Snappy due to better compression ratios and included binary wheels.
 
 ---
 
