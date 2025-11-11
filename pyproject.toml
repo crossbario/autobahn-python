@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autobahn"
-version = "25.10.2"
+version = "25.11.1"
 description = "WebSocket client & server library, WAMP real-time framework"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -45,6 +45,14 @@ dependencies = [
     "cryptography>=3.4.6",
     "hyperlink>=21.0.0",
     "importlib-resources>=5.0.0; python_version < '3.10'",
+    # WAMP serializers - batteries included for optimal WAMP protocol support
+    # CPython uses native binary wheels where available; PyPy uses pure Python (faster with JIT)
+    "msgpack>=1.0.2; platform_python_implementation == 'CPython'",
+    "u-msgpack-python>=2.1; platform_python_implementation != 'CPython'",
+    "ujson>=4.0.2",  # Binary wheels for both CPython and PyPy
+    "cbor2>=5.2.0",  # Binary wheels + pure Python fallback
+    "py-ubjson>=0.16.1",  # Pure Python implementation (set PYUBJSON_NO_EXTENSION=1 to skip C extension build)
+    # flatbuffers is vendored - no external dependency needed
 ]
 
 [project.optional-dependencies]
@@ -61,19 +69,17 @@ accelerate = [
 ]
 
 # non-standard WebSocket compression support
+# Note: zlib/deflate is always available (Python stdlib)
 compress = [
-    "python-snappy>=0.6.0",
+    "brotli>=1.0.0; platform_python_implementation == 'CPython'",  # CPyExt for CPython
+    "brotlicffi>=1.0.0; platform_python_implementation != 'CPython'",  # CFFI for PyPy
+    # python-snappy is optional - only available if installed separately
+    # Users who need snappy: pip install python-snappy
 ]
 
-# accelerated JSON and non-JSON WAMP serialization support
-serialization = [
-    "msgpack>=1.0.2; platform_python_implementation == 'CPython'",
-    "ujson>=4.0.2; platform_python_implementation == 'CPython'",
-    "u-msgpack-python>=2.1; platform_python_implementation != 'CPython'",
-    "cbor2>=5.2.0",
-    "py-ubjson>=0.16.1",
-    "flatbuffers>=22.12.6",
-]
+# Backwards compatibility - serialization now included by default in base install
+# All WAMP serializers (JSON, MessagePack, CBOR, UBJSON, Flatbuffers) are always available
+serialization = []
 
 # TLS transport encryption, WAMP-cryptosign end-to-end encryption and authentication
 encryption = [
@@ -158,7 +164,7 @@ asyncio = []
 wamp = "autobahn.__main__:_main"
 
 [tool.setuptools.packages.find]
-include = ["autobahn*", "twisted.plugins"]
+include = ["autobahn*", "twisted.plugins", "flatbuffers*"]
 
 [tool.setuptools]
 include-package-data = true
@@ -195,6 +201,8 @@ exclude = [
     "__pycache__",
     "autobahn/wamp/message_fbs.py",
     "autobahn/wamp/gen/*",
+    "flatbuffers/*",  # Vendored Flatbuffers Python runtime
+    "deps/*",  # Git submodules (includes deps/flatbuffers)
 ]
 
 # --- Violations to Ignore ---
