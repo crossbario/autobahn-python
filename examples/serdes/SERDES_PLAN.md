@@ -376,30 +376,138 @@ for serializer in [JsonSerializer(), MsgPackSerializer(), FlatBuffersSerializer(
 
 ## Implementation Plan
 
-### Phase 1: Foundation (Current) ✅
-- [x] Performance benchmarking infrastructure
+### Strategic Approach: Vertical Slice Methodology
+
+**Philosophy**: Prove the entire pipeline end-to-end with ONE example before scaling horizontally.
+
+**Why Vertical Slice?**
+1. **Early Validation**: Discover design issues with real implementation
+2. **Fast Feedback**: Working tests provide immediate value
+3. **Template Creation**: First example becomes the pattern for all others
+4. **Risk Reduction**: Find problems before investing in full coverage
+5. **Iterative Refinement**: Adjust based on lessons learned
+
+**Vertical Slice Definition**:
+- Pick ONE WAMP message type (e.g., PUBLISH)
+- Implement ENTIRE pipeline:
+  - Test vector in wamp-proto repository ✅
+  - Test framework in autobahn-python ✅
+  - All three test dimensions ✅
+  - Local pytest execution ✅
+  - GitHub Actions CI/CD integration (next)
+- Get it working, polished, and reviewed
+- THEN scale to all other message types
+
+### Phase 1: Foundation ✅ COMPLETED
+- [x] Performance benchmarking infrastructure (`examples/benchmarks/serialization/`)
 - [x] Flamegraph visualization
 - [x] Multi-serializer testing
 - [x] Normal vs Transparent mode benchmarks
 
-### Phase 2: Single-Serializer Correctness ⚠️ **TODO**
-- [ ] Design test framework for roundtrip testing
-- [ ] Implement test generator for all WAMP message types
-- [ ] Create reference test data (manual + generated)
-- [ ] Test all serializers against reference data
-- [ ] Document failures and edge cases
+### Phase 2: Vertical Slice - PUBLISH Message ✅ COMPLETED
 
-### Phase 3: Cross-Serializer Correctness ⚠️ **TODO**
-- [ ] Cross-serializer comparison framework
-- [ ] Systematic testing across all serializer pairs
-- [ ] Identify and fix any attribute loss issues
+**Rationale**: PUBLISH is a good starting point because:
+- Representative complexity (Options dict, args, kwargs)
+- Used in common workflows
+- Tests both basic and advanced features (publisher exclusion, etc.)
 
-### Phase 4: Protocol Test Vectors 🔮 **Future**
-- [ ] Design machine-readable test vector format
-- [ ] Extract examples from WAMP spec
-- [ ] Generate comprehensive test vector suite
-- [ ] Integrate into Autobahn|Python test suite
-- [ ] Contribute to wamp-proto repository
+**Implementation**:
+- [x] Create test vector schema in wamp-proto (Issue #556, PR #557)
+- [x] Implement testsuite/singlemessage/basic/publish.json ✅
+- [x] Design test framework structure in autobahn-python ✅
+- [x] Implement examples/serdes/tests/ directory ✅
+  - [x] conftest.py - pytest fixtures and configuration
+  - [x] utils.py - helper functions (load_test_vector, validate_message, etc.)
+  - [x] test_publish.py - complete test suite
+- [x] Implement all three test dimensions:
+  - [x] Dimension 2: Single-serializer roundtrip correctness
+    - [x] test_publish_deserialize_from_bytes
+    - [x] test_publish_serialize_to_bytes
+    - [x] test_publish_roundtrip
+  - [x] Dimension 3: Cross-serializer preservation
+    - [x] test_publish_cross_serializer_preservation
+  - [x] Expected attributes validation
+    - [x] test_publish_expected_attributes
+- [x] Validate locally with pytest (20/20 tests passing)
+- [x] Document design decisions and lessons learned
+
+**Key Technical Discoveries**:
+1. **txaio initialization required**: Must call `txaio.use_asyncio()` before importing autobahn serializers
+2. **Autobahn serializer API**: `serialize()` returns `(bytes, is_binary)`, `unserialize()` returns `List[IMessage]`
+3. **Publish message structure**: No `options` attribute - individual option fields instead
+4. **Non-bijective serialization**: JSON has multiple valid representations (whitespace variations)
+5. **"At least one" semantics**: Critical for handling serialization variants
+
+**Test Results**:
+- ✅ 20 tests passing (JSON, msgpack serializers)
+- ✅ All three dimensions validated
+- ✅ Template established for other message types
+
+### Phase 3: Horizontal Scaling - All Basic Message Types ⚠️ **IN PROGRESS**
+
+**Approach**: Now that the vertical slice is proven, scale horizontally using the established template.
+
+**Priority Order** (by usage frequency and complexity):
+1. [x] PUBLISH (16) - ✅ Complete (vertical slice)
+2. [ ] EVENT (36) - Subscriber receives
+3. [ ] SUBSCRIBE (32) - Simple subscription
+4. [ ] SUBSCRIBED (33) - Subscription confirmed
+5. [ ] CALL (48) - RPC invocation
+6. [ ] RESULT (50) - RPC result
+7. [ ] REGISTER (64) - Procedure registration
+8. [ ] REGISTERED (65) - Registration confirmed
+9. [ ] INVOCATION (68) - Callee receives
+10. [ ] YIELD (70) - Callee responds
+11. [ ] HELLO (1) - Session establishment
+12. [ ] WELCOME (2) - Session accepted
+13. [ ] UNSUBSCRIBE (34), UNSUBSCRIBED (35)
+14. [ ] UNREGISTER (66), UNREGISTERED (67)
+15. [ ] GOODBYE (6) - Session close
+16. [ ] ABORT (3) - Session rejected
+17. [ ] ERROR (8) - Generic error (all contexts)
+18. [ ] PUBLISHED (17) - Acknowledgment (if requested)
+
+**For Each Message Type**:
+1. Create test vector in wamp-proto: `testsuite/singlemessage/basic/<message>.json`
+2. Add tests in autobahn-python: `examples/serdes/tests/test_<message>.py`
+3. Run pytest locally
+4. Commit and push
+
+### Phase 4: Advanced Features & Edge Cases ⚠️ **TODO**
+- [ ] Multiple samples per message type (args only, kwargs only, both, payload)
+- [ ] Advanced profile options:
+  - [ ] Publisher exclusion/inclusion (PUBLISH options)
+  - [ ] Pattern-based subscriptions (SUBSCRIBE match policies)
+  - [ ] Shared registration (REGISTER invocation policies)
+  - [ ] Progressive call results (CALL/RESULT)
+  - [ ] Caller/publisher identification (Details)
+- [ ] Edge cases:
+  - [ ] Empty args/kwargs
+  - [ ] Null values
+  - [ ] Binary data in payload
+  - [ ] Deeply nested structures
+  - [ ] Unicode handling
+  - [ ] Large payloads
+
+### Phase 5: Additional Serializers ⚠️ **TODO**
+- [ ] Add CBOR byte representations to test vectors
+- [ ] Add UBJSON byte representations to test vectors
+- [ ] Test flatbuffers (if applicable to test vector format)
+- [ ] Ensure all serializers pass all tests
+
+### Phase 6: CI/CD Integration ⚠️ **TODO**
+- [ ] Add GitHub Actions workflow for serdes tests
+- [ ] Test on CPython 3.9, 3.10, 3.11, 3.12, 3.13
+- [ ] Test on PyPy 3.9, 3.10, 3.11
+- [ ] Test on multiple platforms (Linux, macOS, Windows)
+- [ ] Add coverage reporting
+- [ ] Badge in README
+
+### Phase 7: Protocol Test Vectors Expansion 🔮 **Future**
+- [ ] Multi-message sequences (singlesession/)
+- [ ] Multi-session interactions (multisession/)
+- [ ] Router behavior validation (requires Crossbar.io)
+- [ ] Advanced feature semantics (publisher exclusion, pattern matching, etc.)
 
 ### Phase 5: Advanced Features ⚠️ **TODO**
 - [ ] Message batching tests

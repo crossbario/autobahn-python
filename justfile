@@ -930,6 +930,22 @@ test-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
     USE_ASYNCIO=1 ${VENV_PYTHON} -m pytest -s -v -rfP \
         --ignore=./autobahn/twisted ./autobahn
 
+# Run WAMP message serdes conformance tests (usage: `just test-serdes cpy311`)
+test-serdes venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    echo "==> Running WAMP message serdes conformance tests in ${VENV_NAME}..."
+    echo "==> Test vectors loaded from: wamp-proto/testsuite/"
+    ${VENV_PYTHON} -m pytest -v examples/serdes/tests/test_publish.py
+
 # -----------------------------------------------------------------------------
 # -- Documentation
 # -----------------------------------------------------------------------------
