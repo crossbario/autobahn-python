@@ -106,8 +106,10 @@ nvx = [
 
 # WAMP serialization benchmarking (Python 3.11+ only, requires binary wheels)
 # vmprof has wheels for CPython 3.11 and PyPy3 on Linux/macOS/Windows
+# Note: Flamegraph generation also requires Perl (for flamegraph.pl script)
 benchmark = [
     "vmprof>=0.4.15; python_version >= '3.11'",
+    "vmprof-flamegraph>=0.0.1; python_version >= '3.11'",
     "jinja2>=3.0.0",
     "humanize>=4.0.0",
 ]

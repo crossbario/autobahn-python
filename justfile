@@ -1420,6 +1420,46 @@ benchmark-serialization-report venv="": (install-benchmark venv)
     echo "  python -m http.server 8000 -d examples/benchmarks/serialization/build"
     echo "  then visit http://localhost:8000"
 
+# Generate flamegraph SVGs from vmprof profile data (usage: `just benchmark-serialization-flamegraphs cpy311`)
+benchmark-serialization-flamegraphs venv="": (install-benchmark venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    if [ ! -d "examples/benchmarks/serialization/build" ]; then
+        echo "❌ ERROR: No benchmark results found in examples/benchmarks/serialization/build/"
+        echo ""
+        echo "Please run benchmarks first using:"
+        echo "  just benchmark-serialization-run"
+        echo "  or"
+        echo "  just benchmark-serialization-suite"
+        echo ""
+        exit 1
+    fi
+
+    # Convert relative venv path to absolute if needed
+    if [[ "${VENV_PYTHON}" != /* ]]; then
+        VENV_PYTHON="{{ PROJECT_DIR }}/${VENV_PYTHON}"
+    fi
+
+    BENCHMARK_DIR="{{ PROJECT_DIR }}/examples/benchmarks/serialization"
+
+    # Ensure logo is in build directory
+    if [ ! -f "${BENCHMARK_DIR}/build/crossbarfx_black.svg" ]; then
+        echo "==> Copying logo to build directory..."
+        cp "${BENCHMARK_DIR}/crossbarfx_black.svg" "${BENCHMARK_DIR}/build/"
+    fi
+
+    echo "==> Generating flamegraph SVGs from vmprof profiles..."
+    ${BENCHMARK_DIR}/generate_flamegraphs.sh "${BENCHMARK_DIR}/build" "${VENV_PYTHON}"
+
 # Clean WAMP serialization benchmark artifacts (usage: `just benchmark-serialization-clean`)
 benchmark-serialization-clean:
     #!/usr/bin/env bash
