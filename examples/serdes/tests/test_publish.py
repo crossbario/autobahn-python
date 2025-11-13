@@ -286,21 +286,75 @@ def test_publish_expected_attributes(publish_samples):
 # Payload Mode Tests
 # =============================================================================
 
-def test_publish_normal_mode():
+def test_publish_normal_mode(publish_samples):
     """
     Test PUBLISH in normal payload mode.
 
     In normal mode, both WAMP metadata and application payload are serialized.
+    Router deserializes and can inspect args/kwargs.
     """
-    # This will be expanded when we add payload mode to test vectors
-    pytest.skip("Payload mode testing not yet implemented")
+    # Find the normal mode sample (has args, not payload)
+    normal_samples = [s for s in publish_samples if 'args' in s['expected_attributes'] and s['expected_attributes']['args'] is not None]
+
+    assert len(normal_samples) > 0, "Should have at least one normal mode sample"
+
+    for sample in normal_samples:
+        # Verify expected attributes show normal mode
+        expected = sample['expected_attributes']
+        assert expected.get('args') is not None or expected.get('kwargs') is not None
+        assert expected.get('payload') is None or expected['payload'] is None
 
 
-def test_publish_transparent_mode():
+def test_publish_transparent_mode(publish_samples, create_serializer):
     """
     Test PUBLISH in transparent (passthru) payload mode.
 
     In transparent mode, application payload is treated as opaque bytes.
+    Router does NOT deserialize payload - enables E2E encryption.
     """
-    # This will be expanded when we add payload mode to test vectors
-    pytest.skip("Payload mode testing not yet implemented")
+    # Find the transparent mode sample (has payload, not args/kwargs)
+    transparent_samples = [s for s in publish_samples if 'payload' in s['expected_attributes'] and s['expected_attributes']['payload'] is not None]
+
+    if not transparent_samples:
+        pytest.skip("No transparent payload mode samples in test vector")
+
+    for sample in transparent_samples:
+        # Verify expected attributes show transparent mode
+        expected = sample['expected_attributes']
+        assert expected.get('payload') is not None
+        assert expected.get('args') is None
+        assert expected.get('kwargs') is None
+
+        # Test roundtrip for each serializer
+        construction_code = sample['construction'].get('autobahn-python')
+        if not construction_code:
+            continue
+
+        validation_codes = sample['validation'].get('autobahn-python', [])
+        if not validation_codes:
+            continue
+
+        # Construct message with transparent payload
+        msg_original = construct_message_with_code(construction_code)
+
+        # Verify it's in transparent mode
+        assert msg_original.payload is not None
+        assert isinstance(msg_original.payload, bytes)
+        assert msg_original.args is None
+        assert msg_original.kwargs is None
+
+        # Test with JSON serializer (most common)
+        serializer = create_serializer('json')
+        serialized, is_binary = serializer.serialize(msg_original)
+        msgs = serializer.unserialize(serialized)
+        assert len(msgs) == 1
+        msg_roundtrip = msgs[0]
+
+        # Validate roundtrip preserved transparent payload
+        error = validates_with_any_code(msg_roundtrip, validation_codes)
+        if error:
+            pytest.fail(f"Transparent mode validation failed: {error}")
+
+        # Critical: payload bytes must be preserved exactly (byte-for-byte)
+        assert msg_roundtrip.payload == msg_original.payload, \
+            "Transparent payload must be preserved byte-for-byte through serialization"
