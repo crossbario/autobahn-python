@@ -145,7 +145,7 @@ def test_publish_roundtrip(serializer_id, publish_samples, create_serializer):
         # See: https://github.com/crossbario/autobahn-python/issues/1766
         # flatbuffers serializer incorrectly handles enc_algo (expects uint8, gets string)
         if serializer_id == 'flatbuffers' and sample.get('expected_attributes', {}).get('payload') is not None:
-            pytest.skip(f"Flatbuffers with transparent payload not supported (issue #1766)")
+            pytest.skip("Flatbuffers with transparent payload not supported (issue #1766)")
         # Skip if no construction code
         construction_code = sample["construction"].get("autobahn-python")
         if not construction_code:
@@ -187,10 +187,14 @@ def test_publish_cross_serializer_preservation(serializer_pair, publish_samples)
     Test that PUBLISH message attributes are preserved across different serializers.
 
     For each pair of serializers (ser1, ser2):
-    1. Construct message
-    2. Roundtrip through ser1: construct → serialize(ser1) → deserialize(ser1)
-    3. Roundtrip through ser2: construct → serialize(ser2) → deserialize(ser2)
-    4. Validate that both resulting messages are equivalent
+    1. Take canonical bytes_hex for ser1 from test vector
+    2. Deserialize with ser1 → get message object
+    3. Serialize object with ser2 → get new bytes
+    4. Check new bytes match ANY of the bytes_hex variants for ser2 in test vector
+
+    This verifies that the object representation is equivalent across serializers,
+    i.e., that deserializing from one serializer and reserializing with another
+    produces valid canonical bytes.
     """
     ser1_id, ser2_id = serializer_pair
     ser1 = create_transport_serializer(ser1_id)
@@ -202,45 +206,49 @@ def test_publish_cross_serializer_preservation(serializer_pair, publish_samples)
         # flatbuffers serializer incorrectly handles enc_algo (expects uint8, gets string)
         has_payload = sample.get('expected_attributes', {}).get('payload') is not None
         if has_payload and ('flatbuffers' in [ser1_id, ser2_id]):
-            pytest.skip(f"Flatbuffers with transparent payload not supported (issue #1766)")
-        # Skip if no construction code
-        construction_code = sample["construction"].get("autobahn-python")
-        if not construction_code:
-            pytest.skip("No construction code for autobahn-python")
+            pytest.skip("Flatbuffers with transparent payload not supported (issue #1766)")
 
-        # Skip if no validation code
-        validation_codes = sample["validation"].get("autobahn-python", [])
-        if not validation_codes:
-            pytest.skip("No validation code for autobahn-python")
+        # Skip if ser1 not in test vector
+        if ser1_id not in sample["serializers"]:
+            pytest.skip(f"Serializer {ser1_id} not in test vector")
 
-        # Construct original message
-        msg_original = construct_message_with_code(construction_code)
+        # Skip if ser2 not in test vector
+        if ser2_id not in sample["serializers"]:
+            pytest.skip(f"Serializer {ser2_id} not in test vector")
 
-        # Roundtrip through ser1
-        bytes1, _ = ser1.serialize(msg_original)
-        msgs1 = ser1.unserialize(bytes1)
-        assert len(msgs1) == 1, "Expected exactly one message from ser1"
-        msg_from_ser1 = msgs1[0]
+        # Get byte variants for both serializers
+        ser1_variants = sample["serializers"][ser1_id]
+        ser2_variants = sample["serializers"][ser2_id]
 
-        # Roundtrip through ser2
-        bytes2, _ = ser2.serialize(msg_original)
-        msgs2 = ser2.unserialize(bytes2)
-        assert len(msgs2) == 1, "Expected exactly one message from ser2"
-        msg_from_ser2 = msgs2[0]
+        if not ser1_variants or not ser2_variants:
+            pytest.skip(f"No byte variants for {ser1_id} or {ser2_id}")
 
-        # Both should validate
-        error1 = validates_with_any_code(msg_from_ser1, validation_codes)
-        error2 = validates_with_any_code(msg_from_ser2, validation_codes)
+        # Take the first canonical byte representation from ser1
+        variant1 = ser1_variants[0]
+        if 'bytes_hex' in variant1:
+            bytes1 = bytes_from_hex(variant1['bytes_hex'])
+        elif 'bytes' in variant1:
+            bytes1 = variant1['bytes'].encode('utf-8')
+        else:
+            pytest.skip(f"No bytes representation in {ser1_id} variant")
 
-        if error1:
-            pytest.fail(f"Validation failed for {ser1_id}: {error1}")
-        if error2:
-            pytest.fail(f"Validation failed for {ser2_id}: {error2}")
+        # Deserialize with ser1
+        msgs = ser1.unserialize(bytes1)
+        assert len(msgs) == 1, f"Expected exactly one message from {ser1_id}"
+        msg = msgs[0]
 
-        # Both should be equal (if __eq__ is implemented)
-        if hasattr(msg_from_ser1, '__eq__'):
-            assert msg_from_ser1 == msg_from_ser2, \
-                f"Messages not equal across {ser1_id} and {ser2_id}"
+        # Serialize with ser2
+        bytes2, _ = ser2.serialize(msg)
+
+        # Check if bytes2 matches ANY of the canonical bytes for ser2
+        matches = matches_any_byte_representation(bytes2, ser2_variants)
+
+        if not matches:
+            pytest.fail(
+                f"Cross-serializer conversion failed: {ser1_id} → {ser2_id}. "
+                f"Serialized bytes don't match any canonical representation for {ser2_id}. "
+                f"Got: {bytes2.hex()}"
+            )
 
 
 # =============================================================================
