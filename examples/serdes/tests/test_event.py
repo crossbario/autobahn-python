@@ -34,8 +34,9 @@ def event_test_vector():
 
 @pytest.fixture(scope="module")
 def event_samples(event_test_vector):
-    """Extract samples from EVENT test vector"""
-    return event_test_vector["samples"]
+    """Extract serialization samples from EVENT test vector (excludes validation samples)"""
+    # Filter out validation samples - they don't have 'serializers' key
+    return [s for s in event_test_vector["samples"] if "serializers" in s]
 
 
 # =============================================================================
@@ -742,3 +743,66 @@ def test_event_details_enc_serializer_invalid_value():
         with pytest.raises(ProtocolError) as exc_info:
             Event.parse(wmsg)
         assert "enc_serializer" in str(exc_info.value).lower()
+
+
+# =============================================================================
+# Dimension 5: Details Validation (Language-Agnostic JSON Test Vectors)
+# =============================================================================
+
+@pytest.fixture(scope="module")
+def event_validation_samples(event_test_vector):
+    """Extract validation samples from EVENT test vector"""
+    return [s for s in event_test_vector["samples"] if s.get("test_category") == "details_validation"]
+
+
+def test_event_details_validation_sample_count(event_validation_samples):
+    """Verify we have the expected number of validation samples"""
+    # We should have validation samples for all EVENT.Details attributes
+    assert len(event_validation_samples) > 0, "No validation samples found"
+    print(f"\nLoaded {len(event_validation_samples)} EVENT.Details validation samples from JSON")
+
+
+@pytest.mark.parametrize("sample_index", range(21))  # We have 21 validation samples
+def test_event_details_validation_from_json(event_validation_samples, sample_index):
+    """Test EVENT.Details validation using language-agnostic JSON test vectors
+
+    This test loads validation samples from wamp-proto/testsuite/singlemessage/basic/event.json
+    Each sample specifies a wmsg (deserialized message) and optionally an expected_error.
+
+    This approach makes the test vectors reusable across all WAMP implementations:
+    - AutobahnPython (this test)
+    - AutobahnJS
+    - AutobahnJava
+    - AutobahnC++
+    """
+    # Skip if sample_index is beyond available samples (allows running all tests)
+    if sample_index >= len(event_validation_samples):
+        pytest.skip(f"Sample index {sample_index} beyond available samples")
+
+    sample = event_validation_samples[sample_index]
+    wmsg = sample["wmsg"][:]  # Make a copy to avoid modifying the original
+    expected_error = sample.get("expected_error")
+    description = sample.get("description", f"Sample {sample_index}")
+
+    # Convert payload from hex string to bytes if present
+    # EVENT: [36, subscription, publication, details, (payload_hex)]
+    if len(wmsg) == 5 and isinstance(wmsg[4], str):
+        # Transparent payload mode - convert hex string to bytes
+        wmsg[4] = bytes_from_hex(wmsg[4])
+
+    if expected_error:
+        # This sample should trigger a ProtocolError
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+
+        # Verify the error message contains the expected attribute name
+        error_msg = str(exc_info.value).lower()
+        assert expected_error["contains"].lower() in error_msg, \
+            f"{description}: Expected error message to contain '{expected_error['contains']}', got: {exc_info.value}"
+    else:
+        # This sample should parse successfully
+        msg = Event.parse(wmsg)
+        assert isinstance(msg, Event), f"{description}: Failed to parse as Event message"
+
+        # Verify the message type
+        assert msg.MESSAGE_TYPE == 36, f"{description}: Wrong message type"

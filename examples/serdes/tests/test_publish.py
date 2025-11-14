@@ -34,8 +34,9 @@ def publish_test_vector():
 
 @pytest.fixture(scope="module")
 def publish_samples(publish_test_vector):
-    """Extract samples from PUBLISH test vector"""
-    return publish_test_vector["samples"]
+    """Extract serialization samples from PUBLISH test vector (excludes validation samples)"""
+    # Filter out validation samples - they don't have 'serializers' key
+    return [s for s in publish_test_vector["samples"] if "serializers" in s]
 
 
 # =============================================================================
@@ -929,3 +930,66 @@ def test_publish_options_enc_serializer_invalid_value():
         with pytest.raises(ProtocolError) as exc_info:
             Publish.parse(wmsg)
         assert "enc_serializer" in str(exc_info.value).lower()
+
+
+# =============================================================================
+# Dimension 5: Options Validation (Language-Agnostic JSON Test Vectors)
+# =============================================================================
+
+@pytest.fixture(scope="module")
+def publish_validation_samples(publish_test_vector):
+    """Extract validation samples from PUBLISH test vector"""
+    return [s for s in publish_test_vector["samples"] if s.get("test_category") == "options_validation"]
+
+
+def test_publish_options_validation_sample_count(publish_validation_samples):
+    """Verify we have the expected number of validation samples"""
+    # We should have validation samples for all PUBLISH.Options attributes
+    assert len(publish_validation_samples) > 0, "No validation samples found"
+    print(f"\nLoaded {len(publish_validation_samples)} PUBLISH.Options validation samples from JSON")
+
+
+@pytest.mark.parametrize("sample_index", range(35))  # We have 35 validation samples
+def test_publish_options_validation_from_json(publish_validation_samples, sample_index):
+    """Test PUBLISH.Options validation using language-agnostic JSON test vectors
+
+    This test loads validation samples from wamp-proto/testsuite/singlemessage/basic/publish.json
+    Each sample specifies a wmsg (deserialized message) and optionally an expected_error.
+
+    This approach makes the test vectors reusable across all WAMP implementations:
+    - AutobahnPython (this test)
+    - AutobahnJS
+    - AutobahnJava
+    - AutobahnC++
+    """
+    # Skip if sample_index is beyond available samples (allows running all tests)
+    if sample_index >= len(publish_validation_samples):
+        pytest.skip(f"Sample index {sample_index} beyond available samples")
+
+    sample = publish_validation_samples[sample_index]
+    wmsg = sample["wmsg"][:]  # Make a copy to avoid modifying the original
+    expected_error = sample.get("expected_error")
+    description = sample.get("description", f"Sample {sample_index}")
+
+    # Convert payload from hex string to bytes if present
+    # PUBLISH: [16, request_id, options, topic, (payload_hex)]
+    if len(wmsg) == 5 and isinstance(wmsg[4], str):
+        # Transparent payload mode - convert hex string to bytes
+        wmsg[4] = bytes_from_hex(wmsg[4])
+
+    if expected_error:
+        # This sample should trigger a ProtocolError
+        with pytest.raises(ProtocolError) as exc_info:
+            Publish.parse(wmsg)
+
+        # Verify the error message contains the expected attribute name
+        error_msg = str(exc_info.value).lower()
+        assert expected_error["contains"].lower() in error_msg, \
+            f"{description}: Expected error message to contain '{expected_error['contains']}', got: {exc_info.value}"
+    else:
+        # This sample should parse successfully
+        msg = Publish.parse(wmsg)
+        assert isinstance(msg, Publish), f"{description}: Failed to parse as Publish message"
+
+        # Verify the message type
+        assert msg.MESSAGE_TYPE == 16, f"{description}: Wrong message type"
