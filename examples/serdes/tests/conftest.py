@@ -18,6 +18,12 @@ def wamp_test_vector_publish():
 
 
 @pytest.fixture(scope="session")
+def wamp_test_vector_event():
+    """Load EVENT test vector"""
+    return load_test_vector("singlemessage/basic/event.json")
+
+
+@pytest.fixture(scope="session")
 def all_serializer_ids():
     """Get all available WAMP serializer IDs"""
     return get_serializer_ids()

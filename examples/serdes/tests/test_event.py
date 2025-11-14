@@ -1,0 +1,382 @@
+"""
+WAMP EVENT Message SerDes Tests
+
+Tests EVENT message serialization and deserialization across all dimensions:
+1. Single-serializer roundtrip correctness
+2. Cross-serializer preservation
+3. Payload mode handling (normal vs transparent)
+
+Uses test vectors from: wamp-proto/testsuite/singlemessage/basic/event.json
+"""
+import pytest
+from autobahn.wamp.message import Event
+from autobahn.wamp.serializer import create_transport_serializer
+
+from .utils import (
+    load_test_vector,
+    bytes_from_hex,
+    validate_message_with_code,
+    construct_message_with_code,
+    matches_any_byte_representation,
+    validates_with_any_code,
+)
+
+
+# =============================================================================
+# Test Vector Loading
+# =============================================================================
+
+@pytest.fixture(scope="module")
+def event_test_vector():
+    """Load EVENT test vector from wamp-proto"""
+    return load_test_vector("singlemessage/basic/event.json")
+
+
+@pytest.fixture(scope="module")
+def event_samples(event_test_vector):
+    """Extract samples from EVENT test vector"""
+    return event_test_vector["samples"]
+
+
+# =============================================================================
+# Dimension 1: Performance (covered by examples/benchmarks/serialization/)
+# =============================================================================
+# Performance testing is handled by the benchmark suite.
+# See: examples/benchmarks/serialization/
+
+
+# =============================================================================
+# Dimension 2: Single-Serializer Roundtrip Correctness
+# =============================================================================
+
+def test_event_deserialize_from_bytes(serializer_id, event_samples, create_serializer):
+    """
+    Test EVENT deserialization from canonical bytes.
+
+    For each serializer:
+    1. Take canonical bytes from test vector
+    2. Deserialize to message object
+    3. Validate with at least one validation code block
+    """
+    serializer = create_serializer(serializer_id)
+
+    for sample in event_samples:
+        # Skip if this serializer is not in the test vector
+        if serializer_id not in sample["serializers"]:
+            pytest.skip(f"Serializer {serializer_id} not in test vector")
+
+        # Get byte representations for this serializer
+        byte_variants = sample["serializers"][serializer_id]
+
+        # Try deserializing each byte variant
+        for variant in byte_variants:
+            # Get bytes
+            if "bytes_hex" in variant:
+                test_bytes = bytes_from_hex(variant["bytes_hex"])
+            elif "bytes" in variant:
+                test_bytes = variant["bytes"].encode('utf-8')
+            else:
+                continue
+
+            # Deserialize
+            msgs = serializer.unserialize(test_bytes)
+            assert len(msgs) == 1, "Expected exactly one message"
+            msg = msgs[0]
+
+            # Validate with at least one validation code block
+            validation_codes = sample["validation"].get("autobahn-python", [])
+            if not validation_codes:
+                pytest.skip("No validation code for autobahn-python")
+
+            error = validates_with_any_code(msg, validation_codes)
+            if error:
+                # Debug: print sample description
+                sample_desc = sample.get('description', 'unknown')
+                pytest.fail(f"Validation failed for {serializer_id} on sample '{sample_desc}': {error}")
+
+
+def test_event_serialize_to_bytes(serializer_id, event_samples, create_serializer):
+    """
+    Test EVENT serialization to bytes.
+
+    For each serializer:
+    1. Construct message from construction code
+    2. Serialize to bytes
+    3. Check bytes match at least one canonical representation
+    """
+    serializer = create_serializer(serializer_id)
+
+    for sample in event_samples:
+        # Skip if this serializer is not in the test vector
+        if serializer_id not in sample["serializers"]:
+            pytest.skip(f"Serializer {serializer_id} not in test vector")
+
+        # Skip if no construction code for autobahn-python
+        construction_code = sample["construction"].get("autobahn-python")
+        if not construction_code:
+            pytest.skip("No construction code for autobahn-python")
+
+        # Construct message
+        msg = construct_message_with_code(construction_code)
+
+        # Serialize
+        serialized, is_binary = serializer.serialize(msg)
+
+        # Check if it matches at least one canonical byte representation
+        expected_variants = sample["serializers"][serializer_id]
+        matches = matches_any_byte_representation(serialized, expected_variants)
+
+        if not matches:
+            pytest.fail(
+                f"Serialized bytes don't match any canonical representation for {serializer_id}. "
+                f"Got: {serialized.hex()}"
+            )
+
+
+def test_event_roundtrip(serializer_id, event_samples, create_serializer):
+    """
+    Test EVENT roundtrip: construct → serialize → deserialize → validate.
+
+    This is the core correctness test combining construction, serialization,
+    deserialization, and validation.
+    """
+    serializer = create_serializer(serializer_id)
+
+    for sample in event_samples:
+        # Skip flatbuffers with transparent payload mode due to autobahn bug
+        # See: https://github.com/crossbario/autobahn-python/issues/1766
+        # flatbuffers serializer incorrectly handles enc_algo (expects uint8, gets string)
+        if serializer_id == 'flatbuffers' and sample.get('expected_attributes', {}).get('payload') is not None:
+            pytest.skip("Flatbuffers with transparent payload not supported (issue #1766)")
+        # Skip if no construction code
+        construction_code = sample["construction"].get("autobahn-python")
+        if not construction_code:
+            pytest.skip("No construction code for autobahn-python")
+
+        # Skip if no validation code
+        validation_codes = sample["validation"].get("autobahn-python", [])
+        if not validation_codes:
+            pytest.skip("No validation code for autobahn-python")
+
+        # 1. Construct message
+        msg_original = construct_message_with_code(construction_code)
+
+        # 2. Serialize
+        serialized, is_binary = serializer.serialize(msg_original)
+
+        # 3. Deserialize
+        msgs = serializer.unserialize(serialized)
+        assert len(msgs) == 1, "Expected exactly one message"
+        msg_roundtrip = msgs[0]
+
+        # 4. Validate
+        error = validates_with_any_code(msg_roundtrip, validation_codes)
+        if error:
+            pytest.fail(f"Roundtrip validation failed for {serializer_id}: {error}")
+
+        # 5. Check equality (if message class implements __eq__)
+        # Note: Skip equality check for flatbuffers due to known __eq__ issues
+        if hasattr(msg_original, '__eq__') and serializer_id != 'flatbuffers':
+            assert msg_original == msg_roundtrip, \
+                f"Roundtrip message not equal to original for {serializer_id}"
+
+
+# =============================================================================
+# Dimension 3: Cross-Serializer Preservation
+# =============================================================================
+
+def test_event_cross_serializer_preservation(serializer_pair, event_samples):
+    """
+    Test that EVENT message attributes are preserved across different serializers.
+
+    For each pair of serializers (ser1, ser2):
+    1. Take canonical bytes_hex for ser1 from test vector
+    2. Deserialize with ser1 → get message object
+    3. Serialize object with ser2 → get new bytes
+    4. Check new bytes match ANY of the bytes_hex variants for ser2 in test vector
+
+    This verifies that the object representation is equivalent across serializers,
+    i.e., that deserializing from one serializer and reserializing with another
+    produces valid canonical bytes.
+    """
+    ser1_id, ser2_id = serializer_pair
+    ser1 = create_transport_serializer(ser1_id)
+    ser2 = create_transport_serializer(ser2_id)
+
+    for sample in event_samples:
+        # Skip flatbuffers with transparent payload mode due to autobahn bug
+        # See: https://github.com/crossbario/autobahn-python/issues/1766
+        # flatbuffers serializer incorrectly handles enc_algo (expects uint8, gets string)
+        has_payload = sample.get('expected_attributes', {}).get('payload') is not None
+        if has_payload and ('flatbuffers' in [ser1_id, ser2_id]):
+            pytest.skip("Flatbuffers with transparent payload not supported (issue #1766)")
+
+        # Skip if ser1 not in test vector
+        if ser1_id not in sample["serializers"]:
+            pytest.skip(f"Serializer {ser1_id} not in test vector")
+
+        # Skip if ser2 not in test vector
+        if ser2_id not in sample["serializers"]:
+            pytest.skip(f"Serializer {ser2_id} not in test vector")
+
+        # Get byte variants for both serializers
+        ser1_variants = sample["serializers"][ser1_id]
+        ser2_variants = sample["serializers"][ser2_id]
+
+        if not ser1_variants or not ser2_variants:
+            pytest.skip(f"No byte variants for {ser1_id} or {ser2_id}")
+
+        # Take the first canonical byte representation from ser1
+        variant1 = ser1_variants[0]
+        if 'bytes_hex' in variant1:
+            bytes1 = bytes_from_hex(variant1['bytes_hex'])
+        elif 'bytes' in variant1:
+            bytes1 = variant1['bytes'].encode('utf-8')
+        else:
+            pytest.skip(f"No bytes representation in {ser1_id} variant")
+
+        # Deserialize with ser1
+        msgs = ser1.unserialize(bytes1)
+        assert len(msgs) == 1, f"Expected exactly one message from {ser1_id}"
+        msg = msgs[0]
+
+        # Serialize with ser2
+        bytes2, _ = ser2.serialize(msg)
+
+        # Check if bytes2 matches ANY of the canonical bytes for ser2
+        matches = matches_any_byte_representation(bytes2, ser2_variants)
+
+        if not matches:
+            pytest.fail(
+                f"Cross-serializer conversion failed: {ser1_id} → {ser2_id}. "
+                f"Serialized bytes don't match any canonical representation for {ser2_id}. "
+                f"Got: {bytes2.hex()}"
+            )
+
+
+# =============================================================================
+# Expected Attributes Validation
+# =============================================================================
+
+def test_event_expected_attributes(event_samples):
+    """
+    Test that deserialized EVENT message has expected attributes.
+
+    This validates against the abstract WAMP semantic type specified
+    in the test vector's expected_attributes field.
+    """
+    # Use JSON serializer as reference
+    serializer = create_transport_serializer("json")
+
+    for sample in event_samples:
+        # Get JSON bytes
+        if "json" not in sample["serializers"]:
+            pytest.skip("No JSON serializer in test vector")
+
+        json_variants = sample["serializers"]["json"]
+        if not json_variants:
+            pytest.skip("No JSON byte variants")
+
+        # Deserialize from first JSON variant
+        variant = json_variants[0]
+        if "bytes" in variant:
+            test_bytes = variant["bytes"].encode('utf-8')
+        elif "bytes_hex" in variant:
+            test_bytes = bytes_from_hex(variant["bytes_hex"])
+        else:
+            pytest.skip("No bytes in JSON variant")
+
+        msgs = serializer.unserialize(test_bytes)
+        assert len(msgs) == 1, "Expected exactly one message"
+        msg = msgs[0]
+
+        # Check expected attributes
+        expected = sample["expected_attributes"]
+
+        assert msg.subscription == expected["subscription"], "subscription mismatch"
+        assert msg.publication == expected["publication"], "publication mismatch"
+        assert msg.args == expected["args"], "args mismatch"
+
+        # kwargs can be None or {} depending on implementation
+        if expected["kwargs"] is None:
+            assert msg.kwargs is None or msg.kwargs == {}, "kwargs should be None or empty"
+        else:
+            assert msg.kwargs == expected["kwargs"], "kwargs mismatch"
+
+
+# =============================================================================
+# Payload Mode Tests
+# =============================================================================
+
+def test_event_normal_mode(event_samples):
+    """
+    Test EVENT in normal payload mode.
+
+    In normal mode, both WAMP metadata and application payload are serialized.
+    Router deserializes and can inspect args/kwargs.
+    """
+    # Find the normal mode sample (has args, not payload)
+    normal_samples = [s for s in event_samples if 'args' in s['expected_attributes'] and s['expected_attributes']['args'] is not None]
+
+    assert len(normal_samples) > 0, "Should have at least one normal mode sample"
+
+    for sample in normal_samples:
+        # Verify expected attributes show normal mode
+        expected = sample['expected_attributes']
+        assert expected.get('args') is not None or expected.get('kwargs') is not None
+        assert expected.get('payload') is None or expected['payload'] is None
+
+
+def test_event_transparent_mode(event_samples, create_serializer):
+    """
+    Test EVENT in transparent (passthru) payload mode.
+
+    In transparent mode, application payload is treated as opaque bytes.
+    Router does NOT deserialize payload - enables E2E encryption.
+    """
+    # Find the transparent mode sample (has payload, not args/kwargs)
+    transparent_samples = [s for s in event_samples if 'payload' in s['expected_attributes'] and s['expected_attributes']['payload'] is not None]
+
+    if not transparent_samples:
+        pytest.skip("No transparent payload mode samples in test vector")
+
+    for sample in transparent_samples:
+        # Verify expected attributes show transparent mode
+        expected = sample['expected_attributes']
+        assert expected.get('payload') is not None
+        assert expected.get('args') is None
+        assert expected.get('kwargs') is None
+
+        # Test roundtrip for each serializer
+        construction_code = sample['construction'].get('autobahn-python')
+        if not construction_code:
+            continue
+
+        validation_codes = sample['validation'].get('autobahn-python', [])
+        if not validation_codes:
+            continue
+
+        # Construct message with transparent payload
+        msg_original = construct_message_with_code(construction_code)
+
+        # Verify it's in transparent mode
+        assert msg_original.payload is not None
+        assert isinstance(msg_original.payload, bytes)
+        assert msg_original.args is None
+        assert msg_original.kwargs is None
+
+        # Test with JSON serializer (most common)
+        serializer = create_serializer('json')
+        serialized, is_binary = serializer.serialize(msg_original)
+        msgs = serializer.unserialize(serialized)
+        assert len(msgs) == 1
+        msg_roundtrip = msgs[0]
+
+        # Validate roundtrip preserved transparent payload
+        error = validates_with_any_code(msg_roundtrip, validation_codes)
+        if error:
+            pytest.fail(f"Transparent mode validation failed: {error}")
+
+        # Critical: payload bytes must be preserved exactly (byte-for-byte)
+        assert msg_roundtrip.payload == msg_original.payload, \
+            "Transparent payload must be preserved byte-for-byte through serialization"
