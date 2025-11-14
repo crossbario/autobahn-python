@@ -475,6 +475,18 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Download SerDes conformance test results
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          pattern: serdes-test-results-*
+          merge-multiple: true
+          path: serdes-test-results/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 10
+        continue-on-error: true
+
       - name: Download WebSocket conformance HTML reports with-nvx (for RTD)
         uses: actions/download-artifact@v4
         with:
@@ -1228,6 +1240,18 @@ jobs:
           path: flatbuffers-schema/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download SerDes conformance test results
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          pattern: serdes-test-results-*
+          merge-multiple: true
+          path: serdes-test-results/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 3
+          retry-delay: 10
         continue-on-error: true
 
       - name: Download WebSocket conformance HTML reports with-nvx (for RTD)
