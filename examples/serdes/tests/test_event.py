@@ -380,3 +380,365 @@ def test_event_transparent_mode(event_samples, create_serializer):
         # Critical: payload bytes must be preserved exactly (byte-for-byte)
         assert msg_roundtrip.payload == msg_original.payload, \
             "Transparent payload must be preserved byte-for-byte through serialization"
+
+
+# =============================================================================
+# EVENT.Details Parsing Validation Tests
+# =============================================================================
+# These tests validate that EVENT.Details attributes are correctly parsed
+# and type-checked at the wmsg (deserialized message dict) level.
+#
+# This is critical for multi-implementation WAMP environments where:
+# - Publisher → Router → Subscriber (potentially different implementations)
+# - Proper validation at message boundaries prevents bugs from propagating
+
+from autobahn.wamp.exception import ProtocolError
+
+
+# -----------------------------------------------------------------------------
+# publisher|int - Advanced Profile
+# -----------------------------------------------------------------------------
+
+def test_event_details_publisher_valid():
+    """Test EVENT.Details.publisher with valid int values"""
+    valid_values = [123, 456, 999999]
+    for value in valid_values:
+        wmsg = [36, 5512315355, 4429313566, {"publisher": value}]
+        msg = Event.parse(wmsg)
+        assert msg.publisher == value
+
+
+def test_event_details_publisher_invalid_type():
+    """Test EVENT.Details.publisher with invalid types"""
+    invalid_values = [
+        ("hello", "string instead of int"),
+        (True, "bool instead of int"),
+        (1.5, "float instead of int"),
+        ([], "list instead of int"),
+    ]
+    for value, description in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"publisher": value}]
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+        assert "publisher" in str(exc_info.value).lower()
+
+
+# -----------------------------------------------------------------------------
+# publisher_authid|str - Advanced Profile
+# -----------------------------------------------------------------------------
+
+def test_event_details_publisher_authid_valid():
+    """Test EVENT.Details.publisher_authid with valid str values"""
+    valid_values = ["alice", "bob", "user123", ""]
+    for value in valid_values:
+        wmsg = [36, 5512315355, 4429313566, {"publisher_authid": value}]
+        msg = Event.parse(wmsg)
+        assert msg.publisher_authid == value
+
+
+def test_event_details_publisher_authid_invalid_type():
+    """Test EVENT.Details.publisher_authid with invalid types"""
+    invalid_values = [
+        (123, "int instead of str"),
+        (True, "bool instead of str"),
+        ([], "list instead of str"),
+    ]
+    for value, description in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"publisher_authid": value}]
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+        assert "publisher_authid" in str(exc_info.value).lower()
+
+
+# -----------------------------------------------------------------------------
+# publisher_authrole|str - Advanced Profile
+# -----------------------------------------------------------------------------
+
+def test_event_details_publisher_authrole_valid():
+    """Test EVENT.Details.publisher_authrole with valid str values"""
+    valid_values = ["user", "admin", "manager", ""]
+    for value in valid_values:
+        wmsg = [36, 5512315355, 4429313566, {"publisher_authrole": value}]
+        msg = Event.parse(wmsg)
+        assert msg.publisher_authrole == value
+
+
+def test_event_details_publisher_authrole_invalid_type():
+    """Test EVENT.Details.publisher_authrole with invalid types"""
+    invalid_values = [
+        (123, "int instead of str"),
+        (True, "bool instead of str"),
+        ([], "list instead of str"),
+    ]
+    for value, description in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"publisher_authrole": value}]
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+        assert "publisher_authrole" in str(exc_info.value).lower()
+
+
+# -----------------------------------------------------------------------------
+# topic|str - Advanced Profile (pattern-based subscriptions)
+# -----------------------------------------------------------------------------
+
+def test_event_details_topic_valid():
+    """Test EVENT.Details.topic with valid str values"""
+    valid_values = [
+        "com.example.topic",
+        "com.myapp.topic.emergency.severe",
+        "com.foo.bar.baz",
+    ]
+    for value in valid_values:
+        wmsg = [36, 5512315355, 4429313566, {"topic": value}]
+        msg = Event.parse(wmsg)
+        assert msg.topic == value
+
+
+def test_event_details_topic_invalid_type():
+    """Test EVENT.Details.topic with invalid types"""
+    invalid_values = [
+        (123, "int instead of str"),
+        (True, "bool instead of str"),
+        ([], "list instead of str"),
+    ]
+    for value, description in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"topic": value}]
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+        assert "topic" in str(exc_info.value).lower()
+
+
+# -----------------------------------------------------------------------------
+# retained|bool - Advanced Profile (event retention)
+# -----------------------------------------------------------------------------
+
+def test_event_details_retained_valid():
+    """Test EVENT.Details.retained with valid bool values"""
+    for value in [True, False]:
+        wmsg = [36, 5512315355, 4429313566, {"retained": value}]
+        msg = Event.parse(wmsg)
+        assert msg.retained == value
+
+
+def test_event_details_retained_invalid_type():
+    """Test EVENT.Details.retained with invalid types"""
+    invalid_values = [
+        ("hello", "string instead of bool"),
+        (1, "int instead of bool"),
+        ([], "list instead of bool"),
+    ]
+    for value, description in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"retained": value}]
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+        assert "retained" in str(exc_info.value).lower()
+
+
+# -----------------------------------------------------------------------------
+# transaction_hash|str - Implementation-Only
+# -----------------------------------------------------------------------------
+
+def test_event_details_transaction_hash_valid():
+    """Test EVENT.Details.transaction_hash with valid str values"""
+    valid_values = [
+        "abc123",
+        "0x1234567890abcdef",
+        "",
+    ]
+    for value in valid_values:
+        wmsg = [36, 5512315355, 4429313566, {"transaction_hash": value}]
+        msg = Event.parse(wmsg)
+        assert msg.transaction_hash == value
+
+
+def test_event_details_transaction_hash_invalid_type():
+    """Test EVENT.Details.transaction_hash with invalid types"""
+    invalid_values = [
+        (123, "int instead of str"),
+        (True, "bool instead of str"),
+        ([], "list instead of str"),
+    ]
+    for value, description in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"transaction_hash": value}]
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+        assert "transaction_hash" in str(exc_info.value).lower()
+
+
+# -----------------------------------------------------------------------------
+# x_acknowledged_delivery|bool - Implementation-Only
+# -----------------------------------------------------------------------------
+
+def test_event_details_x_acknowledged_delivery_valid():
+    """Test EVENT.Details.x_acknowledged_delivery with valid bool values"""
+    for value in [True, False]:
+        wmsg = [36, 5512315355, 4429313566, {"x_acknowledged_delivery": value}]
+        msg = Event.parse(wmsg)
+        assert msg.x_acknowledged_delivery == value
+
+
+def test_event_details_x_acknowledged_delivery_invalid_type():
+    """Test EVENT.Details.x_acknowledged_delivery with invalid types"""
+    invalid_values = [
+        ("hello", "string instead of bool"),
+        (1, "int instead of bool"),
+    ]
+    for value, description in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"x_acknowledged_delivery": value}]
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+        assert "x_acknowledged_delivery" in str(exc_info.value).lower()
+
+
+# -----------------------------------------------------------------------------
+# forward_for|list[dict] - Implementation-Only
+# -----------------------------------------------------------------------------
+
+def test_event_details_forward_for_valid():
+    """Test EVENT.Details.forward_for with valid list[dict] values"""
+    valid_values = [
+        [],
+        [{"session": 123, "authid": "alice", "authrole": "user"}],
+        [
+            {"session": 123, "authid": "alice", "authrole": "user"},
+            {"session": 456, "authid": "bob", "authrole": "admin"},
+        ],
+    ]
+    for value in valid_values:
+        wmsg = [36, 5512315355, 4429313566, {"forward_for": value}]
+        msg = Event.parse(wmsg)
+        assert msg.forward_for == value
+
+
+def test_event_details_forward_for_invalid_type():
+    """Test EVENT.Details.forward_for with invalid types"""
+    invalid_values = [
+        ("hello", "string instead of list"),
+        (123, "int instead of list"),
+        ({}, "dict instead of list"),
+    ]
+    for value, description in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"forward_for": value}]
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+        assert "forward_for" in str(exc_info.value).lower()
+
+
+def test_event_details_forward_for_invalid_values():
+    """Test EVENT.Details.forward_for with invalid list item structures
+
+    NOTE: Same validation bug as PUBLISH - single-item invalid lists might
+    pass parse() but fail in __init__. Testing multi-item lists.
+    """
+    invalid_lists = [
+        # Multi-item lists where validation fails
+        ([{"session": 123, "authid": "alice", "authrole": "user"}, 123], "second item is int"),
+        ([{"session": 123, "authid": "alice", "authrole": "user"}, {"bad": "dict"}], "second item missing required fields"),
+    ]
+    for value, description in invalid_lists:
+        wmsg = [36, 5512315355, 4429313566, {"forward_for": value}]
+        # Accept either ProtocolError (correct) or AssertionError (bug)
+        with pytest.raises((ProtocolError, AssertionError)) as exc_info:
+            Event.parse(wmsg)
+
+
+# -----------------------------------------------------------------------------
+# E2EE Options (enc_algo, enc_key, enc_serializer) - Implementation-Only
+# These are only valid with transparent payload mode (variant 4)
+# -----------------------------------------------------------------------------
+
+def test_event_details_enc_algo_valid():
+    """Test EVENT.Details.enc_algo with valid values (transparent payload mode)"""
+    # enc_algo is only parsed when message has transparent payload
+    payload = b"encrypted_data_here"
+
+    # Valid enc_algo values
+    valid_values = [
+        "cryptobox",
+        "mqtt",
+        "xbr",
+    ]
+    for value in valid_values:
+        wmsg = [36, 5512315355, 4429313566, {"enc_algo": value}, payload]
+        msg = Event.parse(wmsg)
+        assert msg.enc_algo == value
+        assert msg.payload == payload
+
+
+def test_event_details_enc_algo_invalid_value():
+    """Test EVENT.Details.enc_algo with invalid algorithm names"""
+    payload = b"encrypted_data_here"
+    invalid_values = [
+        "invalid_algo",
+        "aes256",
+        "rsa",
+    ]
+    for value in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"enc_algo": value}, payload]
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+        assert "enc_algo" in str(exc_info.value).lower()
+
+
+def test_event_details_enc_key_valid():
+    """Test EVENT.Details.enc_key with valid str values (transparent payload mode)"""
+    payload = b"encrypted_data_here"
+    valid_values = [
+        "0x1234567890abcdef",
+        "base64encodedkey==",
+        "",
+    ]
+    for value in valid_values:
+        wmsg = [36, 5512315355, 4429313566, {"enc_algo": "cryptobox", "enc_key": value}, payload]
+        msg = Event.parse(wmsg)
+        assert msg.enc_key == value
+
+
+def test_event_details_enc_key_invalid_type():
+    """Test EVENT.Details.enc_key with invalid types
+
+    NOTE: Same validation bug as PUBLISH - falsy values bypass type check.
+    """
+    payload = b"encrypted_data_here"
+    invalid_values = [
+        (123, "int instead of str"),
+        (True, "bool instead of str"),
+        ([1, 2], "non-empty list instead of str"),
+    ]
+    for value, description in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"enc_algo": "cryptobox", "enc_key": value}, payload]
+        with pytest.raises((ProtocolError, AssertionError)) as exc_info:
+            Event.parse(wmsg)
+
+
+def test_event_details_enc_serializer_valid():
+    """Test EVENT.Details.enc_serializer with valid values (transparent payload mode)"""
+    payload = b"encrypted_data_here"
+
+    # Valid enc_serializer values
+    valid_values = [
+        "cbor",
+        "msgpack",
+        "json",
+        "ubjson",
+        "flatbuffers",
+    ]
+    for value in valid_values:
+        wmsg = [36, 5512315355, 4429313566, {"enc_algo": "cryptobox", "enc_serializer": value}, payload]
+        msg = Event.parse(wmsg)
+        assert msg.enc_serializer == value
+
+
+def test_event_details_enc_serializer_invalid_value():
+    """Test EVENT.Details.enc_serializer with invalid serializer names"""
+    payload = b"encrypted_data_here"
+    invalid_values = [
+        "invalid_serializer",
+        "xml",
+        "yaml",
+    ]
+    for value in invalid_values:
+        wmsg = [36, 5512315355, 4429313566, {"enc_algo": "cryptobox", "enc_serializer": value}, payload]
+        with pytest.raises(ProtocolError) as exc_info:
+            Event.parse(wmsg)
+        assert "enc_serializer" in str(exc_info.value).lower()

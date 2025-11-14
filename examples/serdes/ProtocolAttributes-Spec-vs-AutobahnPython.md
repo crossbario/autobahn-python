@@ -1,0 +1,147 @@
+# WAMP Protocol Attributes: Spec vs Autobahn-Python Implementation
+
+This document compares WAMP protocol message attributes as defined in the WAMP specification
+against their implementation in Autobahn-Python.
+
+## Summary Matrix
+
+| Message Type | Matched | Spec-Only | Implementation-Only | Naming Differences |
+|--------------|---------|-----------|---------------------|-------------------|
+| PUBLISH.Options      | 9  | 1 (+4 ppt_*) | 2 (+3 enc_*) | E2EE: ppt_* vs enc_* |
+| EVENT.Details        | 5  | 1 (+4 ppt_*) | 3 (+3 enc_*) | E2EE: ppt_* vs enc_* |
+
+## PUBLISH.Options
+
+### Matched Attributes (9)
+
+These attributes appear in both the spec and implementation with consistent naming and types:
+
+| Attribute | Type | Spec Section | Implementation |
+|-----------|------|--------------|----------------|
+| acknowledge | bool | Basic Profile: publish_subscribe.md | message.py:2792-2801 |
+| exclude_me | bool | Advanced: pubsub_publisher_exclusion.md | message.py:2803-2812 |
+| exclude | list[int] | Advanced: pubsub_subscriber_blackwhite_listing.md | message.py:2814-2833 |
+| exclude_authid | list[string] | Advanced: pubsub_subscriber_blackwhite_listing.md | message.py:2835-2858 |
+| exclude_authrole | list[string] | Advanced: pubsub_subscriber_blackwhite_listing.md | message.py:2860-2883 |
+| eligible | list[int] | Advanced: pubsub_subscriber_blackwhite_listing.md | message.py:2885-2904 |
+| eligible_authid | list[string] | Advanced: pubsub_subscriber_blackwhite_listing.md | message.py:2906-2929 |
+| eligible_authrole | list[string] | Advanced: pubsub_subscriber_blackwhite_listing.md | message.py:2931-2954 |
+| retain | bool | Advanced: pubsub_event_retention.md | message.py:2956-2964 |
+
+### Spec-Only Attributes (1)
+
+These attributes are defined in the spec but NOT implemented in Autobahn-Python:
+
+| Attribute | Type | Spec Section | Notes |
+|-----------|------|--------------|-------|
+| disclose_me | bool | Advanced: pubsub_publisher_identification.md | NOT implemented |
+
+### Implementation-Only Attributes (2)
+
+These attributes are implemented in Autobahn-Python but NOT defined in the WAMP spec:
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| transaction_hash | str | message.py:2966-2976 | Application-level transaction ID for throttling/deduplication |
+| forward_for | list[dict] | message.py:2978-2988 | Router-to-router forwarding chain |
+
+### Naming Differences: Payload Passthru Mode (E2EE)
+
+The spec defines 4 attributes with `ppt_*` prefix (Payload Passthru), while
+Autobahn-Python implements 3 attributes with `enc_*` prefix (Encryption).
+
+**WAMP Spec (Advanced: payload_passthru_mode.md):**
+- `ppt_scheme|string` - Required: Payload schema identifier (e.g., "wamp", "mqtt")
+- `ppt_serializer|string` - Optional: Serializer used (e.g., "cbor", "flatbuffers", "native")
+- `ppt_cipher|string` - Optional: Encryption cipher (e.g., "xsalsa20poly1305", "aes256gcm")
+- `ppt_keyid|string` - Optional: Encryption key identifier
+
+**Autobahn-Python Implementation (message.py:2737-2759):**
+- `enc_algo|str` - Encryption algorithm (mapped to ppt_cipher?)
+- `enc_key|str` - Encryption key (mapped to ppt_keyid?)
+- `enc_serializer|str` - Payload serializer (mapped to ppt_serializer?)
+
+**Analysis:**
+- Implementation predates current spec terminology
+- Missing `ppt_scheme` (required in spec)
+- `enc_algo` likely maps to `ppt_cipher`
+- `enc_key` likely maps to `ppt_keyid`
+- `enc_serializer` likely maps to `ppt_serializer`
+
+## EVENT.Details
+
+### Matched Attributes (5)
+
+These attributes appear in both the spec and implementation with consistent naming and types:
+
+| Attribute | Type | Spec Section | Implementation |
+|-----------|------|--------------|----------------|
+| publisher | int | Advanced: pubsub_publisher_identification.md | message.py:4203-4212 |
+| publisher_authid | str | Advanced: pubsub_publisher_identification.md | message.py:4214-4223 |
+| publisher_authrole | str | Advanced: pubsub_publisher_identification.md | message.py:4225-4234 |
+| topic | uri | Advanced: pubsub_pattern_based_subscription.md | message.py:4236-4245 |
+| retained | bool | Advanced: pubsub_event_retention.md | message.py:4247-4254 |
+
+### Spec-Only Attributes (1)
+
+These attributes are defined in the spec but NOT implemented in Autobahn-Python:
+
+| Attribute | Type | Spec Section | Notes |
+|-----------|------|--------------|-------|
+| trustlevel | int | Advanced: pubsub_publication_trustlevels.md | NOT implemented |
+
+### Implementation-Only Attributes (3)
+
+These attributes are implemented in Autobahn-Python but NOT defined in the WAMP spec:
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| transaction_hash | str | message.py:4256-4265 | Application-level transaction ID |
+| x_acknowledged_delivery | bool | message.py:4267-4274 | Event acknowledgement flag (FIXME comment in code) |
+| forward_for | list[dict] | message.py:4276-4294 | Router-to-router forwarding chain |
+
+### Naming Differences: Payload Passthru Mode (E2EE)
+
+Same as PUBLISH.Options - the spec uses `ppt_*` prefix while implementation uses `enc_*` prefix.
+
+**WAMP Spec (Advanced: payload_passthru_mode.md):**
+- `ppt_scheme|string`
+- `ppt_serializer|string`
+- `ppt_cipher|string`
+- `ppt_keyid|string`
+
+**Autobahn-Python Implementation (message.py:4158-4178):**
+- `enc_algo|str`
+- `enc_key|str`
+- `enc_serializer|str`
+
+## Recommendations
+
+### For Autobahn-Python Implementation
+
+1. **Add missing spec-defined attributes:**
+   - `PUBLISH.Options.disclose_me|bool`
+   - `EVENT.Details.trustlevel|int`
+
+2. **Consider renaming E2EE attributes** to match current spec:
+   - `enc_algo` → `ppt_cipher`
+   - `enc_key` → `ppt_keyid`
+   - `enc_serializer` → `ppt_serializer`
+   - Add `ppt_scheme` (required in spec)
+
+3. **Document implementation-only attributes:**
+   - Clarify purpose and usage of `transaction_hash`
+   - Document `forward_for` structure and use case
+   - Resolve FIXME for `x_acknowledged_delivery` naming
+
+### For WAMP Specification
+
+1. **Consider adding to spec:**
+   - `transaction_hash` for call/publish deduplication (see [wamp-proto#391](https://github.com/wamp-proto/wamp-proto/issues/391))
+   - `forward_for` for router-to-router link tracking
+
+## Version Information
+
+- **WAMP Spec**: /home/oberstet/work/wamp/wamp-proto/rfc/text/
+- **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
+- **Analysis Date**: 2025-11-14
