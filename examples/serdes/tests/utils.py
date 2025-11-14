@@ -85,7 +85,19 @@ def validate_message_with_code(msg: Any, validation_code: str) -> None:
     namespace = {'msg': msg}
 
     # Execute validation code
-    exec(validation_code, namespace)
+    try:
+        exec(validation_code, namespace)
+    except AssertionError as e:
+        # Re-raise with line number context if possible
+        if not str(e):
+            # Empty assertion - add context
+            import traceback
+            tb_lines = traceback.format_exc().split('\n')
+            # Find the line that failed
+            for line in tb_lines:
+                if 'assert' in line.lower():
+                    raise AssertionError(f"Assertion failed: {line.strip()}") from e
+        raise
 
 
 def construct_message_with_code(construction_code: str) -> Any:
@@ -168,9 +180,12 @@ def validates_with_any_code(
             validate_message_with_code(msg, code)
             return None  # Success!
         except AssertionError as e:
-            errors.append(f"Validation block {idx}: {e}")
+            # Include code snippet for debugging
+            code_preview = code[:200] + "..." if len(code) > 200 else code
+            errors.append(f"Validation block {idx}: {e}\n  Code: {code_preview}")
         except Exception as e:
-            errors.append(f"Validation block {idx} error: {e}")
+            code_preview = code[:200] + "..." if len(code) > 200 else code
+            errors.append(f"Validation block {idx} error: {e}\n  Code: {code_preview}")
 
     # All validation attempts failed
     return "; ".join(errors)

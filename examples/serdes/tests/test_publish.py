@@ -90,7 +90,9 @@ def test_publish_deserialize_from_bytes(serializer_id, publish_samples, create_s
 
             error = validates_with_any_code(msg, validation_codes)
             if error:
-                pytest.fail(f"Validation failed for {serializer_id}: {error}")
+                # Debug: print sample description
+                sample_desc = sample.get('description', 'unknown')
+                pytest.fail(f"Validation failed for {serializer_id} on sample '{sample_desc}': {error}")
 
 
 def test_publish_serialize_to_bytes(serializer_id, publish_samples, create_serializer):
