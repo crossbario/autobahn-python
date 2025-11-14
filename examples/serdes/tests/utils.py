@@ -11,20 +11,38 @@ def get_wamp_proto_path() -> Path:
     """
     Get path to wamp-proto repository.
 
-    Assumes wamp-proto is a sibling directory to autobahn-python:
-    ~/work/wamp/autobahn-python/
-    ~/work/wamp/wamp-proto/
+    Tries multiple locations in order:
+    1. Git submodule at autobahn-python/.proto (preferred for CI/CD)
+    2. Sibling directory at ../wamp-proto (local development)
+
+    Directory structure:
+      ~/work/wamp/autobahn-python/.proto/         (submodule - CI)
+      ~/work/wamp/autobahn-python/                (this repo)
+      ~/work/wamp/wamp-proto/                     (sibling - local dev)
     """
     current_file = Path(__file__).resolve()
-    # Go up from tests/ -> serdes/ -> examples/ -> autobahn-python/ -> wamp/
+    # Go up from tests/ -> serdes/ -> examples/ -> autobahn-python/
     autobahn_root = current_file.parent.parent.parent.parent
-    wamp_proto = autobahn_root.parent / "wamp-proto"
 
-    if not wamp_proto.exists():
-        raise FileNotFoundError(
-            f"wamp-proto repository not found at {wamp_proto}. "
-            "Please ensure wamp-proto is in the same parent directory as autobahn-python."
-        )
+    # Try 1: Check for .proto submodule (CI/CD and new developers)
+    wamp_proto_submodule = autobahn_root / ".proto"
+    if wamp_proto_submodule.exists() and (wamp_proto_submodule / "testsuite").exists():
+        return wamp_proto_submodule
+
+    # Try 2: Check for sibling directory (local development)
+    wamp_proto_sibling = autobahn_root.parent / "wamp-proto"
+    if wamp_proto_sibling.exists() and (wamp_proto_sibling / "testsuite").exists():
+        return wamp_proto_sibling
+
+    # Neither location found
+    raise FileNotFoundError(
+        f"wamp-proto repository not found. Tried:\n"
+        f"  1. Submodule: {wamp_proto_submodule}\n"
+        f"  2. Sibling:   {wamp_proto_sibling}\n\n"
+        f"Please either:\n"
+        f"  - Run 'git submodule update --init --recursive' to initialize submodules, OR\n"
+        f"  - Clone wamp-proto as a sibling directory to autobahn-python"
+    )
 
     return wamp_proto
 
