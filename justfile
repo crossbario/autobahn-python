@@ -944,7 +944,7 @@ test-serdes venv="": (install-tools venv) (install venv)
 
     echo "==> Running WAMP message serdes conformance tests in ${VENV_NAME}..."
     echo "==> Test vectors loaded from: wamp-proto/testsuite/"
-    ${VENV_PYTHON} -m pytest -v examples/serdes/tests/test_publish.py
+    ${VENV_PYTHON} -m pytest -v examples/serdes/tests/test_publish.py examples/serdes/tests/test_event.py
 
 # -----------------------------------------------------------------------------
 # -- Documentation
