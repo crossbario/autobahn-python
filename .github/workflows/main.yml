@@ -208,7 +208,7 @@ jobs:
 
       - name: Upload SerDes test results
         if: always()
-        uses: wamp-proto/wamp-cicd/.github/actions/upload-artifact-verified@main
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: serdes-test-results-${{ matrix.python-env }}
           path: test-results/serdes-${{ matrix.python-env }}/
