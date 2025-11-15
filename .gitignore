@@ -54,3 +54,4 @@ wheelhouse/
 docs/_static/websocket/conformance/
 docs/_static/flatbuffers/
 .coverage.*
+examples/benchmarks/serialization/build/

@@ -104,6 +104,16 @@ nvx = [
     "cffi>=1.14.5",
 ]
 
+# WAMP serialization benchmarking (Python 3.11+ only, requires binary wheels)
+# vmprof has wheels for CPython 3.11 and PyPy3 on Linux/macOS/Windows
+# Note: Flamegraph generation also requires Perl (for flamegraph.pl script)
+benchmark = [
+    "vmprof>=0.4.15; python_version >= '3.11'",
+    "vmprof-flamegraph>=0.0.1; python_version >= '3.11'",
+    "jinja2>=3.0.0",
+    "humanize>=4.0.0",
+]
+
 # Minimal build dependencies (for building wheels in CI/CD)
 # Excludes tools like twine (which depends on nh3, a Rust package that
 # segfaults under QEMU ARM64 emulation) as twine is only needed for uploading
@@ -120,7 +130,7 @@ dev = [
     "build>=1.0.0",
     "bumpversion>=0.5.3",
     "codecov>=2.0.15",
-    "humanize>=0.5.1",
+    "humanize>=4.0.0",
     "mypy>=0.610; python_version >= '3.4' and platform_python_implementation != 'PyPy'",
     "myst-parser>=4.0.1",
     "passlib",

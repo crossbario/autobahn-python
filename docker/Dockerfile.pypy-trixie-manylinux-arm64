@@ -6,6 +6,12 @@ LABEL maintainer="The Crossbar.io Project <support@crossbario.com>"
 LABEL manylinux.tag="manylinux_2_38_aarch64"
 LABEL glibc.version="2.38"
 
+# PyPy QEMU stability workarounds
+# Disable JIT compiler and force single-threaded execution for stable QEMU emulation
+ENV PYPY_DISABLE_JIT=1
+ENV PYPY_GC_NTHREADS=1
+ENV PYPY_FORCE_CPU_COUNT=1
+
 # Install build essentials for wheel compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \

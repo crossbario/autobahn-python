@@ -101,6 +101,13 @@ jobs:
       # QEMU + Docker Buildx Setup
       # ============================================================
 
+      - name: Install modern QEMU (tonistiigi/binfmt)
+        run: |
+          echo "==> Installing modern QEMU 8.x via tonistiigi/binfmt"
+          echo "This provides much better stability for PyPy on ARM64 emulation"
+          docker run --rm --privileged tonistiigi/binfmt --install all
+          echo "✅ Modern QEMU installed"
+
       - name: Set up QEMU for ARM64 emulation
         uses: docker/setup-qemu-action@v3
         with:
