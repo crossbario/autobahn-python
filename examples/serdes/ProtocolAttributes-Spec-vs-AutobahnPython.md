@@ -25,8 +25,8 @@ against their implementation in Autobahn-Python.
 - [RESULT.Details](#resultdetails)
 - [REGISTER.Options](#registeroptions)
 - [REGISTERED](#registered)
-- [UNREGISTER.Options](#unregisteroptions) (TODO)
-- [UNREGISTERED](#unregistered) (TODO)
+- [UNREGISTER.Options](#unregisteroptions)
+- [UNREGISTERED](#unregistered)
 - [INVOCATION.Details](#invocationdetails) (TODO)
 - [YIELD.Options](#yieldoptions) (TODO)
 - [ERROR.Details](#errordetails) (TODO)
@@ -59,8 +59,8 @@ against their implementation in Autobahn-Python.
 | RESULT.Details       | 1  | 0 (+4 ppt_*) | 4 (+3 enc_*) | E2EE: ppt_* vs enc_* |
 | REGISTER.Options     | 2  | 0           | 3            | None |
 | REGISTERED           | N/A | N/A         | N/A          | No Options/Details |
-| UNREGISTER.Options   | -  | -           | -            | TODO |
-| UNREGISTERED         | -  | -           | -            | TODO |
+| UNREGISTER.Options   | 0  | 0           | 1            | None |
+| UNREGISTERED         | 2  | 0           | 0            | None |
 | INVOCATION.Details   | -  | -           | -            | TODO |
 | YIELD.Options        | -  | -           | -            | TODO |
 | ERROR.Details        | -  | -           | -            | TODO (shared PubSub+RPC) |
@@ -616,6 +616,74 @@ REGISTERED has perfect spec compliance:
 
 ---
 
+## UNREGISTER.Options
+
+UNREGISTER allows a Callee to unregister a previously registered procedure endpoint.
+
+**Message Format**: `[UNREGISTER, Request|id, REGISTERED.Registration|id]` (basic) or
+`[UNREGISTER, Request|id, REGISTERED.Registration|id, Options|dict]` (with Options)
+
+**WAMP Spec** (Basic Profile: remote_procedure_calls.md):
+- No Options defined in basic or advanced profile
+
+**Autobahn-Python Implementation** (message.py:5708-5814):
+- `forward_for` (list[dict]) - Router-to-router forwarding chain metadata
+
+### Implementation-Only Attributes (1)
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| forward_for | list[dict] | message.py:5726, 5775-5794, 5807-5810 | Router-to-router forwarding chain |
+
+### Analysis
+
+UNREGISTER.Options analysis:
+- ✅ No spec-defined Options (basic or advanced profile)
+- ✅ Only implementation-specific attribute is `forward_for` (consistent with other messages)
+- ✅ Simple request-response pattern with no complexity
+- ✅ No E2EE attributes needed for this message type
+
+---
+
+## UNREGISTERED
+
+UNREGISTERED is an acknowledgment message sent by a Dealer to a Callee to confirm an unregistration,
+or can be sent unsolicited by the Dealer to indicate a registration has been revoked.
+
+**Message Format**:
+- Basic acknowledgment: `[UNREGISTERED, UNREGISTER.Request|id]`
+- Router-initiated revocation: `[UNREGISTERED, 0, Details|dict]` (Advanced profile)
+
+**WAMP Spec** (Basic Profile: remote_procedure_calls.md, Advanced: rpc_registration_revocation.md):
+- Basic: `UNREGISTER.Request|id` (int) - The ID from the original UNREGISTER request
+- Advanced (registration_revocation feature):
+  - `Details.registration|int` - Required: The registration ID being revoked
+  - `Details.reason|string` - Optional: Reason why the registration was revoked
+
+**Autobahn-Python Implementation** (message.py:5816-5923):
+- `request` (int) - The request ID of the original UNREGISTER request (or 0 for router-initiated)
+- `registration` (int|None) - If unregister was actively triggered by router, the ID of the registration revoked
+- `reason` (str|None) - The reason (a URI) for revocation
+
+### Matched Attributes (2)
+
+| Attribute | Type | Spec Section | Implementation |
+|-----------|------|--------------|----------------|
+| registration | int | Advanced: rpc_registration_revocation.md | message.py:5833, 5882-5896, 5918 |
+| reason | str | Advanced: rpc_registration_revocation.md | message.py:5834, 5898-5901, 5916-5917 |
+
+### Analysis
+
+UNREGISTERED has excellent spec compliance:
+- ✅ All spec-defined attributes implemented correctly
+- ✅ Supports both basic acknowledgment and advanced router-initiated revocation
+- ✅ `registration` and `reason` match advanced profile specification
+- ✅ Correctly uses request=0 for router-initiated revocations
+- ✅ No implementation-specific extensions
+- ✅ Attribute names match spec semantics
+
+---
+
 ## Recommendations
 
 ### For Autobahn-Python Implementation
@@ -660,8 +728,8 @@ REGISTERED has perfect spec compliance:
 - RESULT.Details ✅
 - REGISTER.Options ✅
 - REGISTERED ✅
-- UNREGISTER.Options ⏳ TODO
-- UNREGISTERED ⏳ TODO
+- UNREGISTER.Options ✅
+- UNREGISTERED ✅
 - INVOCATION.Details ⏳ TODO
 - YIELD.Options ⏳ TODO
 
@@ -671,9 +739,9 @@ REGISTERED has perfect spec compliance:
 ### Test Coverage
 
 **SerDes Conformance Tests:**
-- Total: 278 passed, 41 skipped
+- Total: 302 passed, 47 skipped
 - Phase 1 (Pub/Sub): 218 tests (8 message types × ~27 tests/type avg)
-- Phase 2 (RPC so far): 48 tests (4 message types × 12 tests/type)
+- Phase 2 (RPC so far): 72 tests (6 message types × 12 tests/type)
 - Serializers tested: JSON, MsgPack, CBOR, UBJSON (FlatBuffers skipped)
 
 ### Source Information
@@ -682,7 +750,7 @@ REGISTERED has perfect spec compliance:
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
 - **Test Vectors**: /home/oberstet/work/wamp/wamp-proto/testsuite/singlemessage/basic/
 - **Analysis Date**: 2025-11-17
-- **Last Updated**: Phase 2 - CALL/RESULT/REGISTER/REGISTERED complete
+- **Last Updated**: Phase 2 - CALL/RESULT/REGISTER/REGISTERED/UNREGISTER/UNREGISTERED complete
 
 ### Related Issues
 
