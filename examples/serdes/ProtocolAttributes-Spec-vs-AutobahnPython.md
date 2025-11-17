@@ -10,6 +10,7 @@ against their implementation in Autobahn-Python.
 | PUBLISH.Options      | 9  | 1 (+4 ppt_*) | 2 (+3 enc_*) | E2EE: ppt_* vs enc_* |
 | EVENT.Details        | 5  | 1 (+4 ppt_*) | 3 (+3 enc_*) | E2EE: ppt_* vs enc_* |
 | SUBSCRIBE.Options    | 2  | 0           | 1            | None |
+| SUBSCRIBED           | N/A | N/A         | N/A          | No Options/Details |
 
 ## PUBLISH.Options
 
@@ -164,6 +165,42 @@ SUBSCRIBE.Options has excellent spec compliance:
 - ✅ Only 1 implementation-specific attribute (`forward_for` for router-to-router links)
 - ✅ No E2EE complexity (unlike PUBLISH/EVENT)
 
+## SUBSCRIBED
+
+SUBSCRIBED is an acknowledgment message sent by a Router to a Client to confirm a subscription.
+
+**Message Format**: `[SUBSCRIBED, SUBSCRIBE.Request|id, Subscription|id]`
+
+**WAMP Spec** (Basic Profile: publish_subscribe.md):
+- `SUBSCRIBE.Request|id` (int) - The ID from the original SUBSCRIBE request
+- `Subscription|id` (int) - The subscription ID assigned by the Broker
+
+**Autobahn-Python Implementation** (message.py:3323-3372):
+- `request` (int) - The request ID of the original SUBSCRIBE request
+- `subscription` (int) - The subscription ID for the subscribed topic
+
+### Analysis
+
+SUBSCRIBED has perfect spec compliance:
+- ✅ Simple acknowledgment message with no Options or Details dictionaries
+- ✅ Only contains two ID fields as defined in spec
+- ✅ Attribute names match spec semantics exactly
+- ✅ No implementation-specific extensions
+- ✅ Message format: `[33, request_id, subscription_id]`
+
+**Example** (from test vectors):
+```json
+{
+  "description": "SUBSCRIBED acknowledgment",
+  "wmsg": [33, 713845233, 5512315355],
+  "expected_attributes": {
+    "message_type": 33,
+    "request_id": 713845233,
+    "subscription_id": 5512315355
+  }
+}
+```
+
 ## Recommendations
 
 ### For Autobahn-Python Implementation
@@ -193,4 +230,4 @@ SUBSCRIBE.Options has excellent spec compliance:
 
 - **WAMP Spec**: /home/oberstet/work/wamp/wamp-proto/rfc/text/
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
-- **Analysis Date**: 2025-11-17 (updated with SUBSCRIBE.Options)
+- **Analysis Date**: 2025-11-17 (updated with SUBSCRIBE.Options and SUBSCRIBED)
