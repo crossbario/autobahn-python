@@ -960,7 +960,13 @@ test-serdes venv="": (install-tools venv) (install venv)
         examples/serdes/tests/test_unregistered.py \
         examples/serdes/tests/test_invocation.py \
         examples/serdes/tests/test_yield.py \
-        examples/serdes/tests/test_error.py
+        examples/serdes/tests/test_error.py \
+        examples/serdes/tests/test_hello.py \
+        examples/serdes/tests/test_welcome.py \
+        examples/serdes/tests/test_abort.py \
+        examples/serdes/tests/test_challenge.py \
+        examples/serdes/tests/test_authenticate.py \
+        examples/serdes/tests/test_goodbye.py
 
 # -----------------------------------------------------------------------------
 # -- Documentation
