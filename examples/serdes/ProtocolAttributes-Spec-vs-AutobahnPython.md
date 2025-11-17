@@ -27,8 +27,8 @@ against their implementation in Autobahn-Python.
 - [REGISTERED](#registered)
 - [UNREGISTER.Options](#unregisteroptions)
 - [UNREGISTERED](#unregistered)
-- [INVOCATION.Details](#invocationdetails) (TODO)
-- [YIELD.Options](#yieldoptions) (TODO)
+- [INVOCATION.Details](#invocationdetails)
+- [YIELD.Options](#yieldoptions)
 - [ERROR.Details](#errordetails) (TODO)
 
 ### Appendix
@@ -61,8 +61,8 @@ against their implementation in Autobahn-Python.
 | REGISTERED           | N/A | N/A         | N/A          | No Options/Details |
 | UNREGISTER.Options   | 0  | 0           | 1            | None |
 | UNREGISTERED         | 2  | 0           | 0            | None |
-| INVOCATION.Details   | -  | -           | -            | TODO |
-| YIELD.Options        | -  | -           | -            | TODO |
+| INVOCATION.Details   | 6  | 1 (+4 ppt_*) | 2 (+3 enc_*) | E2EE: ppt_* vs enc_* |
+| YIELD.Options        | 1  | 0 (+4 ppt_*) | 4 (+3 enc_*) | E2EE: ppt_* vs enc_* |
 | ERROR.Details        | -  | -           | -            | TODO (shared PubSub+RPC) |
 
 ### Phase 1+2 Summary
@@ -684,6 +684,137 @@ UNREGISTERED has excellent spec compliance:
 
 ---
 
+## INVOCATION.Details
+
+INVOCATION is sent by a Dealer to a Callee to invoke a registered procedure, forwarding the call from a Caller.
+
+**Message Format**: `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict]` (basic) with optional args/kwargs or payload
+
+**WAMP Spec** (Basic and Advanced Profiles):
+- Basic: Empty Details `{}` (basic/remote_procedure_call.md)
+- Advanced attributes from various features:
+  - `caller|int` - Caller's session ID (advanced/rpc_caller_identification.md)
+  - `caller_authid|str` - Caller's authid (advanced/rpc_caller_identification.md)
+  - `caller_authrole|str` - Caller's authrole (advanced/rpc_caller_identification.md)
+  - `procedure|str` - Actual procedure URI for pattern-based registrations (advanced/rpc_pattern_based_registration.md)
+  - `timeout|int` - Call timeout in ms (advanced/rpc_call_timeout.md)
+  - `receive_progress|bool` - Callee should produce progressive results (advanced/rpc_progressive_call_results.md)
+  - `trustlevel|int` - Trustlevel of caller (advanced/rpc_call_trustlevels.md)
+  - `ppt_scheme|str`, `ppt_serializer|str`, `ppt_cipher|str`, `ppt_keyid|str` - Payload passthru mode (advanced/payload_passthru_mode.md)
+
+**Autobahn-Python Implementation** (message.py:5925-6400):
+- `timeout` (int) - Call timeout in ms
+- `receive_progress` (bool) - Indicates if callee should produce progressive results
+- `caller` (int) - Caller's session ID
+- `caller_authid` (str) - Caller's authid
+- `caller_authrole` (str) - Caller's authrole
+- `procedure` (str) - Actual procedure for pattern-based registrations
+- `transaction_hash` (str) - Application-level transaction ID
+- `enc_algo` (str) - Encryption algorithm (maps to ppt_cipher)
+- `enc_key` (str) - Encryption key (maps to ppt_keyid)
+- `enc_serializer` (str) - Payload serializer (maps to ppt_serializer)
+- `forward_for` (list[dict]) - Router-to-router forwarding chain
+
+### Matched Attributes (6)
+
+| Attribute | Type | Spec Section | Implementation |
+|-----------|------|--------------|----------------|
+| caller | int | Advanced: rpc_caller_identification.md | message.py:6198-6207 |
+| caller_authid | str | Advanced: rpc_caller_identification.md | message.py:6209-6218 |
+| caller_authrole | str | Advanced: rpc_caller_identification.md | message.py:6220-6229 |
+| procedure | str | Advanced: rpc_pattern_based_registration.md | message.py:6231-6240 |
+| timeout | int | Advanced: rpc_call_timeout.md | message.py:6169-6185 |
+| receive_progress | bool | Advanced: rpc_progressive_call_results.md | message.py:6187-6196 |
+
+### Spec-Only Attributes (1)
+
+| Attribute | Type | Spec Section | Notes |
+|-----------|------|--------------|-------|
+| trustlevel | int | Advanced: rpc_call_trustlevels.md | NOT implemented |
+
+### Implementation-Only Attributes (2)
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| transaction_hash | str | message.py:6242-6251 | Application-level transaction ID for throttling/deduplication |
+| forward_for | list[dict] | message.py:6253-6271 | Router-to-router forwarding chain |
+
+### Naming Differences: Payload Passthru Mode (E2EE)
+
+**WAMP Spec** uses `ppt_*` prefix while **Autobahn-Python** uses `enc_*` prefix (same as CALL, RESULT):
+- Missing: `ppt_scheme` (required in spec)
+- `enc_algo` maps to `ppt_cipher`
+- `enc_key` maps to `ppt_keyid`
+- `enc_serializer` maps to `ppt_serializer`
+
+### Analysis
+
+INVOCATION.Details has excellent spec compliance for most attributes:
+- ✅ All major spec-defined attributes implemented (caller identification, pattern-based, progressive calls, timeout)
+- ⚠️  Missing `trustlevel` (advanced feature for call trust levels)
+- ⚠️  E2EE naming mismatch: uses `enc_*` instead of spec's `ppt_*` prefix
+- ⚠️  Missing `ppt_scheme` (required in spec for payload passthru)
+- ✅ Implementation-only: `transaction_hash` for deduplication (useful feature)
+- ✅ Implementation-only: `forward_for` for router-to-router scenarios
+
+---
+
+## YIELD.Options
+
+YIELD is sent by a Callee to a Dealer to return results from a procedure invocation.
+
+**Message Format**: `[YIELD, INVOCATION.Request|id, Options|dict]` (basic) with optional args/kwargs or payload
+
+**WAMP Spec** (Basic and Advanced Profiles):
+- Basic: Empty Options `{}` (basic/remote_procedure_call.md)
+- Advanced attributes:
+  - `progress|bool` - Indicates progressive result (advanced/rpc_progressive_call_results.md)
+  - `ppt_scheme|str`, `ppt_serializer|str`, `ppt_cipher|str`, `ppt_keyid|str` - Payload passthru mode (advanced/payload_passthru_mode.md)
+
+**Autobahn-Python Implementation** (message.py:6530-6900):
+- `progress` (bool) - Progressive invocation result indicator
+- `enc_algo` (str) - Encryption algorithm (maps to ppt_cipher)
+- `enc_key` (str) - Encryption key (maps to ppt_keyid)
+- `enc_serializer` (str) - Payload serializer (maps to ppt_serializer)
+- `callee` (int) - Callee's session ID (router-added disclosure)
+- `callee_authid` (str) - Callee's authid (router-added disclosure)
+- `callee_authrole` (str) - Callee's authrole (router-added disclosure)
+- `forward_for` (list[dict]) - Router-to-router forwarding chain
+
+### Matched Attributes (1)
+
+| Attribute | Type | Spec Section | Implementation |
+|-----------|------|--------------|----------------|
+| progress | bool | Advanced: rpc_progressive_call_results.md | message.py:6552, 6806-6815, 6884-6885 |
+
+### Implementation-Only Attributes (4)
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| callee | int | message.py:6556, 6816-6825 | Router-added callee disclosure (session ID) |
+| callee_authid | str | message.py:6557, 6827-6836 | Router-added callee disclosure (authid) |
+| callee_authrole | str | message.py:6558, 6838-6847 | Router-added callee disclosure (authrole) |
+| forward_for | list[dict] | message.py:6849-6867 | Router-to-router forwarding chain |
+
+### Naming Differences: Payload Passthru Mode (E2EE)
+
+**WAMP Spec** uses `ppt_*` prefix while **Autobahn-Python** uses `enc_*` prefix (same pattern as CALL, RESULT, INVOCATION):
+- Missing: `ppt_scheme` (required in spec)
+- `enc_algo` maps to `ppt_cipher`
+- `enc_key` maps to `ppt_keyid`
+- `enc_serializer` maps to `ppt_serializer`
+
+### Analysis
+
+YIELD.Options has good spec compliance with useful router extensions:
+- ✅ Core `progress` attribute implemented correctly for progressive call results
+- ⚠️  E2EE naming mismatch: uses `enc_*` instead of spec's `ppt_*` prefix
+- ⚠️  Missing `ppt_scheme` (required in spec for payload passthru)
+- ✅ Implementation-only: `callee*` attributes for router-added disclosure (mirrors `caller*` in RESULT)
+- ✅ Implementation-only: `forward_for` for router-to-router scenarios
+
+---
+
 ## Recommendations
 
 ### For Autobahn-Python Implementation
@@ -723,15 +854,15 @@ UNREGISTERED has excellent spec compliance:
 - UNSUBSCRIBE.Options ✅
 - UNSUBSCRIBED ✅
 
-**Phase 2: RPC Messages** 🚧 **IN PROGRESS**
+**Phase 2: RPC Messages** ✅ **COMPLETE**
 - CALL.Options ✅
 - RESULT.Details ✅
 - REGISTER.Options ✅
 - REGISTERED ✅
 - UNREGISTER.Options ✅
 - UNREGISTERED ✅
-- INVOCATION.Details ⏳ TODO
-- YIELD.Options ⏳ TODO
+- INVOCATION.Details ✅
+- YIELD.Options ✅
 
 **Phase 3: Shared Messages** ⏳ **TODO**
 - ERROR.Details (used in both Pub/Sub and RPC)
@@ -739,9 +870,9 @@ UNREGISTERED has excellent spec compliance:
 ### Test Coverage
 
 **SerDes Conformance Tests:**
-- Total: 302 passed, 47 skipped
+- Total: 326 passed, 53 skipped
 - Phase 1 (Pub/Sub): 218 tests (8 message types × ~27 tests/type avg)
-- Phase 2 (RPC so far): 72 tests (6 message types × 12 tests/type)
+- Phase 2 (RPC): 96 tests (8 message types × 12 tests/type) ✅ COMPLETE
 - Serializers tested: JSON, MsgPack, CBOR, UBJSON (FlatBuffers skipped)
 
 ### Source Information
@@ -750,7 +881,7 @@ UNREGISTERED has excellent spec compliance:
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
 - **Test Vectors**: /home/oberstet/work/wamp/wamp-proto/testsuite/singlemessage/basic/
 - **Analysis Date**: 2025-11-17
-- **Last Updated**: Phase 2 - CALL/RESULT/REGISTER/REGISTERED/UNREGISTER/UNREGISTERED complete
+- **Last Updated**: Phase 2 - RPC Messages COMPLETE (all 8 message types)
 
 ### Related Issues
 
