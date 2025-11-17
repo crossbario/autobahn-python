@@ -3,7 +3,43 @@
 This document compares WAMP protocol message attributes as defined in the WAMP specification
 against their implementation in Autobahn-Python.
 
+## Table of Contents
+
+### Summary
+- [Summary Matrix](#summary-matrix)
+  - [Phase 1: Pub/Sub Messages (Complete)](#phase-1-pubsub-messages-complete)
+  - [Phase 2: RPC Messages (In Progress)](#phase-2-rpc-messages-in-progress)
+  - [Phase 1+2 Summary](#phase-12-summary)
+
+### Phase 1: Pub/Sub Messages
+- [PUBLISH.Options](#publishoptions)
+- [EVENT.Details](#eventdetails)
+- [SUBSCRIBE.Options](#subscribeoptions)
+- [SUBSCRIBED](#subscribed)
+- [PUBLISHED](#published)
+- [UNSUBSCRIBE.Options](#unsubscribeoptions)
+- [UNSUBSCRIBED](#unsubscribed)
+
+### Phase 2: RPC Messages
+- [CALL.Options](#calloptions)
+- [RESULT.Details](#resultdetails)
+- [REGISTER.Options](#registeroptions) (TODO)
+- [REGISTERED](#registered) (TODO)
+- [UNREGISTER.Options](#unregisteroptions) (TODO)
+- [UNREGISTERED](#unregistered) (TODO)
+- [INVOCATION.Details](#invocationdetails) (TODO)
+- [YIELD.Options](#yieldoptions) (TODO)
+- [ERROR.Details](#errordetails) (TODO)
+
+### Appendix
+- [Recommendations](#recommendations)
+- [Version Information](#version-information)
+
+---
+
 ## Summary Matrix
+
+### Phase 1: Pub/Sub Messages (Complete)
 
 | Message Type | Matched | Spec-Only | Implementation-Only | Naming Differences |
 |--------------|---------|-----------|---------------------|-------------------|
@@ -14,6 +50,35 @@ against their implementation in Autobahn-Python.
 | PUBLISHED            | N/A | N/A         | N/A          | No Options/Details |
 | UNSUBSCRIBE.Options  | 0  | 0           | 1            | None |
 | UNSUBSCRIBED         | N/A | N/A         | N/A          | No Details (basic) |
+
+### Phase 2: RPC Messages (In Progress)
+
+| Message Type | Matched | Spec-Only | Implementation-Only | Naming Differences |
+|--------------|---------|-----------|---------------------|-------------------|
+| CALL.Options         | 2  | 1 (+4 ppt_*) | 5 (+3 enc_*) | E2EE: ppt_* vs enc_* |
+| RESULT.Details       | 1  | 0 (+4 ppt_*) | 4 (+3 enc_*) | E2EE: ppt_* vs enc_* |
+| REGISTER.Options     | -  | -           | -            | TODO |
+| REGISTERED           | -  | -           | -            | TODO |
+| UNREGISTER.Options   | -  | -           | -            | TODO |
+| UNREGISTERED         | -  | -           | -            | TODO |
+| INVOCATION.Details   | -  | -           | -            | TODO |
+| YIELD.Options        | -  | -           | -            | TODO |
+| ERROR.Details        | -  | -           | -            | TODO (shared PubSub+RPC) |
+
+### Phase 1+2 Summary
+
+**Spec Compliance:**
+- ✅ Core functionality: All basic profile features implemented
+- ⚠️  Missing disclosure initiation: `disclose_me` not implemented (PUBLISH, CALL)
+- ⚠️  E2EE naming: Uses `enc_*` prefix instead of spec's `ppt_*` prefix
+- ⚠️  Missing E2EE: `ppt_scheme` not implemented (required in spec)
+- ⚠️  Missing trustlevel: `EVENT.Details.trustlevel` not implemented
+
+**Implementation Extensions:**
+- ✅ Router-to-router forwarding: `forward_for` (all messages with Options/Details)
+- ✅ Transaction deduplication: `transaction_hash` (PUBLISH, CALL)
+- ✅ Disclosure metadata: Router-added `publisher*`, `caller*`, `callee*` attributes
+- ✅ Event acknowledgement: `x_acknowledged_delivery` (EVENT - needs naming review)
 
 ## PUBLISH.Options
 
@@ -507,6 +572,47 @@ RESULT.Details has similar patterns as CALL.Options:
 
 ## Version Information
 
+### Analysis Status
+
+**Phase 1: Pub/Sub Messages** ✅ **COMPLETE**
+- PUBLISH.Options ✅
+- EVENT.Details ✅
+- SUBSCRIBE.Options ✅
+- SUBSCRIBED ✅
+- PUBLISHED ✅
+- UNSUBSCRIBE.Options ✅
+- UNSUBSCRIBED ✅
+
+**Phase 2: RPC Messages** 🚧 **IN PROGRESS**
+- CALL.Options ✅
+- RESULT.Details ✅
+- REGISTER.Options ⏳ TODO
+- REGISTERED ⏳ TODO
+- UNREGISTER.Options ⏳ TODO
+- UNREGISTERED ⏳ TODO
+- INVOCATION.Details ⏳ TODO
+- YIELD.Options ⏳ TODO
+
+**Phase 3: Shared Messages** ⏳ **TODO**
+- ERROR.Details (used in both Pub/Sub and RPC)
+
+### Test Coverage
+
+**SerDes Conformance Tests:**
+- Total: 254 passed, 35 skipped
+- Phase 1 (Pub/Sub): 218 tests (8 message types × ~27 tests/type avg)
+- Phase 2 (RPC so far): 24 tests (2 message types × 12 tests/type)
+- Serializers tested: JSON, MsgPack, CBOR, UBJSON (FlatBuffers skipped)
+
+### Source Information
+
 - **WAMP Spec**: /home/oberstet/work/wamp/wamp-proto/rfc/text/
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
-- **Analysis Date**: 2025-11-17 (Phase 1 complete: all Pub/Sub messages analyzed; Phase 2 in progress: RPC messages)
+- **Test Vectors**: /home/oberstet/work/wamp/wamp-proto/testsuite/singlemessage/basic/
+- **Analysis Date**: 2025-11-17
+- **Last Updated**: Phase 2 - CALL/RESULT complete
+
+### Related Issues
+
+- **wamp-proto#556**: Add comprehensive test vectors for all WAMP message types
+- **autobahn-python#1764**: Add SerDes conformance tests using wamp-proto test vectors
