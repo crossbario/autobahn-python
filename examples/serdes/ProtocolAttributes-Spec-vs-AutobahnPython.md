@@ -13,6 +13,7 @@ against their implementation in Autobahn-Python.
 | SUBSCRIBED           | N/A | N/A         | N/A          | No Options/Details |
 | PUBLISHED            | N/A | N/A         | N/A          | No Options/Details |
 | UNSUBSCRIBE.Options  | 0  | 0           | 1            | None |
+| UNSUBSCRIBED         | N/A | N/A         | N/A          | No Details (basic) |
 
 ## PUBLISH.Options
 
@@ -286,6 +287,43 @@ UNSUBSCRIBE.Options has consistent implementation:
 - ✅ Consistent with SUBSCRIBE.Options (both have only `forward_for`)
 - ✅ Optional Options dictionary (message works without it)
 
+## UNSUBSCRIBED
+
+UNSUBSCRIBED is an acknowledgment message sent by a Router to a Client to confirm an unsubscription.
+
+**Message Format**: `[UNSUBSCRIBED, UNSUBSCRIBE.Request|id]` or `[UNSUBSCRIBED, UNSUBSCRIBE.Request|id, Details|dict]`
+
+**WAMP Spec** (Basic Profile: publish_subscribe.md):
+- `UNSUBSCRIBE.Request|id` (int) - The ID from the original UNSUBSCRIBE request
+
+**Autobahn-Python Implementation** (message.py:3507-3615):
+- `request` (int) - The request ID of the original UNSUBSCRIBE request
+- `subscription` (int or None) - For router-triggered unsubscribe (router revocation signaling)
+- `reason` (str or None) - Reason URI for router-initiated revocation
+
+### Analysis
+
+UNSUBSCRIBED has perfect spec compliance for basic form:
+- ✅ Simple acknowledgment message with just one ID field in basic form
+- ✅ Attribute names match spec semantics exactly
+- ✅ Basic message format: `[35, request_id]`
+- ✅ Optional Details dict for advanced features (router-initiated revocation)
+- ⚠️  Implementation extends spec with router revocation signaling (when request=0, subscription and reason are set)
+
+**Example** (from test vectors):
+```json
+{
+  "description": "UNSUBSCRIBED acknowledgment",
+  "wmsg": [35, 85346237],
+  "expected_attributes": {
+    "message_type": 35,
+    "request_id": 85346237
+  }
+}
+```
+
+**Note**: The implementation supports advanced router-initiated unsubscribe ("router revocation signaling") where `request=0` and `subscription` and `reason` fields are used. This is an implementation-specific extension not yet in the spec.
+
 ## Recommendations
 
 ### For Autobahn-Python Implementation
@@ -315,4 +353,4 @@ UNSUBSCRIBE.Options has consistent implementation:
 
 - **WAMP Spec**: /home/oberstet/work/wamp/wamp-proto/rfc/text/
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
-- **Analysis Date**: 2025-11-17 (updated with SUBSCRIBE.Options, SUBSCRIBED, PUBLISHED, and UNSUBSCRIBE.Options)
+- **Analysis Date**: 2025-11-17 (Phase 1 complete: all Pub/Sub messages analyzed)
