@@ -57,14 +57,27 @@ def load_test_vector(relative_path: str) -> Dict[str, Any]:
     Returns:
         Parsed JSON test vector
     """
-    wamp_proto = get_wamp_proto_path()
-    test_vector_path = wamp_proto / "testsuite" / relative_path
+    current_file = Path(__file__).resolve()
+    autobahn_root = current_file.parent.parent.parent.parent
 
-    if not test_vector_path.exists():
-        raise FileNotFoundError(f"Test vector not found: {test_vector_path}")
+    # Try multiple locations for the test vector file
+    # This allows for graceful fallback when submodule is outdated
+    locations = [
+        autobahn_root / ".proto" / "testsuite" / relative_path,  # Submodule
+        autobahn_root.parent / "wamp-proto" / "testsuite" / relative_path,  # Sibling
+    ]
 
-    with open(test_vector_path, 'r') as f:
-        return json.load(f)
+    for test_vector_path in locations:
+        if test_vector_path.exists():
+            with open(test_vector_path, 'r') as f:
+                return json.load(f)
+
+    # Neither location has the file
+    raise FileNotFoundError(
+        f"Test vector not found: {relative_path}\n"
+        f"Tried locations:\n" +
+        "\n".join(f"  - {loc}" for loc in locations)
+    )
 
 
 def get_serializer_ids() -> List[str]:
