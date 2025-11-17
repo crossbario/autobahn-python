@@ -324,6 +324,91 @@ UNSUBSCRIBED has perfect spec compliance for basic form:
 
 **Note**: The implementation supports advanced router-initiated unsubscribe ("router revocation signaling") where `request=0` and `subscription` and `reason` fields are used. This is an implementation-specific extension not yet in the spec.
 
+---
+
+# Phase 2: RPC Messages
+
+## CALL.Options
+
+CALL is a message from Caller to Dealer to invoke a remote procedure.
+
+**Message Format**:
+- `[CALL, Request|id, Options|dict, Procedure|uri]`
+- `[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list]`
+- `[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list, ArgumentsKw|dict]`
+- `[CALL, Request|id, Options|dict, Procedure|uri, Payload|binary]`
+
+**WAMP Spec** (Advanced Profile):
+- `timeout|int` - Advanced: rpc_call_timeout.md
+- `receive_progress|bool` - Advanced: rpc_progressive_call_results.md
+- `disclose_me|bool` - Advanced: rpc_caller_identification.md
+
+**Autobahn-Python Implementation** (message.py:4468-4869):
+- `timeout|int` - Call timeout in milliseconds
+- `receive_progress|bool` - Caller wants progressive results
+- `transaction_hash|str` - Application-level transaction ID for deduplication
+- `enc_algo|str` - Encryption algorithm for payload transparency
+- `enc_key|str` - Encryption key for payload transparency
+- `enc_serializer|str` - Payload serializer for payload transparency
+- `caller|int` - Caller session ID (when disclosed)
+- `caller_authid|str` - Caller auth ID (when disclosed)
+- `caller_authrole|str` - Caller auth role (when disclosed)
+- `forward_for|list[dict]` - Router-to-router forwarding chain
+
+### Matched Attributes (2)
+
+| Attribute | Type | Spec Section | Implementation |
+|-----------|------|--------------|----------------|
+| timeout | int | Advanced: rpc_call_timeout.md | message.py:4474, 4687-4703, 4803-4804 |
+| receive_progress | bool | Advanced: rpc_progressive_call_results.md | message.py:4475, 4705-4714, 4806-4807 |
+
+### Spec-Only Attributes (1)
+
+| Attribute | Type | Spec Section | Notes |
+|-----------|------|--------------|-------|
+| disclose_me | bool | Advanced: rpc_caller_identification.md | NOT implemented |
+
+### Implementation-Only Attributes (3)
+
+These attributes are implemented in Autobahn-Python but NOT defined in the WAMP spec:
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| transaction_hash | str | message.py:4476, 4716-4725, 4809-4810 | Application-level transaction ID for deduplication (see wamp-proto#391) |
+| caller | int | message.py:4480, 4727-4736, 4820-4821 | Caller session ID - router-added when caller discloses |
+| caller_authid | str | message.py:4481, 4738-4747, 4822-4823 | Caller auth ID - router-added when caller discloses |
+| caller_authrole | str | message.py:4482, 4749-4758, 4824-4825 | Caller auth role - router-added when caller discloses |
+| forward_for | list[dict] | message.py:4483, 4760-4778, 4827-4828 | Router-to-router forwarding chain |
+
+**Note**: The `caller`, `caller_authid`, and `caller_authrole` options are set by the router when the caller uses `disclose_me=true`. These are router-added metadata, not caller-provided options.
+
+### Naming Differences: Payload Passthru Mode (E2EE)
+
+Same pattern as PUBLISH.Options and EVENT.Details - the spec uses `ppt_*` prefix while implementation uses `enc_*` prefix.
+
+**WAMP Spec** (Advanced: payload_passthru_mode.md):
+- `ppt_scheme|string`
+- `ppt_serializer|string`
+- `ppt_cipher|string`
+- `ppt_keyid|string`
+
+**Autobahn-Python Implementation** (message.py:4477-4479, 4642-4662, 4812-4818):
+- `enc_algo|str`
+- `enc_key|str`
+- `enc_serializer|str`
+
+### Analysis
+
+CALL.Options has similar compliance issues as PUBLISH.Options:
+- ✅ Core RPC options implemented (`timeout`, `receive_progress`)
+- ❌ Missing `disclose_me` (caller identification initiation)
+- ✅ Router-added caller disclosure metadata (`caller`, `caller_authid`, `caller_authrole`)
+- ⚠️  E2EE uses `enc_*` prefix instead of `ppt_*` prefix from spec
+- ⚠️  Missing `ppt_scheme` (required in spec)
+- ✅ Implementation-specific extensions (`transaction_hash`, `forward_for`)
+
+---
+
 ## Recommendations
 
 ### For Autobahn-Python Implementation
@@ -331,6 +416,7 @@ UNSUBSCRIBED has perfect spec compliance for basic form:
 1. **Add missing spec-defined attributes:**
    - `PUBLISH.Options.disclose_me|bool`
    - `EVENT.Details.trustlevel|int`
+   - `CALL.Options.disclose_me|bool`
 
 2. **Consider renaming E2EE attributes** to match current spec:
    - `enc_algo` → `ppt_cipher`
@@ -353,4 +439,4 @@ UNSUBSCRIBED has perfect spec compliance for basic form:
 
 - **WAMP Spec**: /home/oberstet/work/wamp/wamp-proto/rfc/text/
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
-- **Analysis Date**: 2025-11-17 (Phase 1 complete: all Pub/Sub messages analyzed)
+- **Analysis Date**: 2025-11-17 (Phase 1 complete: all Pub/Sub messages analyzed; Phase 2 in progress: RPC messages)
