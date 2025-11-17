@@ -948,7 +948,8 @@ test-serdes venv="": (install-tools venv) (install venv)
         examples/serdes/tests/test_publish.py \
         examples/serdes/tests/test_event.py \
         examples/serdes/tests/test_subscribe.py \
-        examples/serdes/tests/test_subscribed.py
+        examples/serdes/tests/test_subscribed.py \
+        examples/serdes/tests/test_published.py
 
 # -----------------------------------------------------------------------------
 # -- Documentation

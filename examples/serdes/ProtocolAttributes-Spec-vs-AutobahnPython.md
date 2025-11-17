@@ -11,6 +11,7 @@ against their implementation in Autobahn-Python.
 | EVENT.Details        | 5  | 1 (+4 ppt_*) | 3 (+3 enc_*) | E2EE: ppt_* vs enc_* |
 | SUBSCRIBE.Options    | 2  | 0           | 1            | None |
 | SUBSCRIBED           | N/A | N/A         | N/A          | No Options/Details |
+| PUBLISHED            | N/A | N/A         | N/A          | No Options/Details |
 
 ## PUBLISH.Options
 
@@ -201,6 +202,42 @@ SUBSCRIBED has perfect spec compliance:
 }
 ```
 
+## PUBLISHED
+
+PUBLISHED is an acknowledgment message sent by a Router to a Client to confirm a publication (when `PUBLISH.Options.acknowledge` is true).
+
+**Message Format**: `[PUBLISHED, PUBLISH.Request|id, Publication|id]`
+
+**WAMP Spec** (Basic Profile: publish_subscribe.md):
+- `PUBLISH.Request|id` (int) - The ID from the original PUBLISH request
+- `Publication|id` (int) - The publication ID assigned by the Broker
+
+**Autobahn-Python Implementation** (message.py:3067-3116):
+- `request` (int) - The request ID of the original PUBLISH request
+- `publication` (int) - The publication ID for the published event
+
+### Analysis
+
+PUBLISHED has perfect spec compliance:
+- ✅ Simple acknowledgment message with no Options or Details dictionaries
+- ✅ Only contains two ID fields as defined in spec
+- ✅ Attribute names match spec semantics exactly
+- ✅ No implementation-specific extensions
+- ✅ Message format: `[17, request_id, publication_id]`
+
+**Example** (from test vectors):
+```json
+{
+  "description": "PUBLISHED acknowledgment",
+  "wmsg": [17, 239714735, 4429313566],
+  "expected_attributes": {
+    "message_type": 17,
+    "request_id": 239714735,
+    "publication_id": 4429313566
+  }
+}
+```
+
 ## Recommendations
 
 ### For Autobahn-Python Implementation
@@ -230,4 +267,4 @@ SUBSCRIBED has perfect spec compliance:
 
 - **WAMP Spec**: /home/oberstet/work/wamp/wamp-proto/rfc/text/
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
-- **Analysis Date**: 2025-11-17 (updated with SUBSCRIBE.Options and SUBSCRIBED)
+- **Analysis Date**: 2025-11-17 (updated with SUBSCRIBE.Options, SUBSCRIBED, and PUBLISHED)
