@@ -9,6 +9,7 @@ against their implementation in Autobahn-Python.
 |--------------|---------|-----------|---------------------|-------------------|
 | PUBLISH.Options      | 9  | 1 (+4 ppt_*) | 2 (+3 enc_*) | E2EE: ppt_* vs enc_* |
 | EVENT.Details        | 5  | 1 (+4 ppt_*) | 3 (+3 enc_*) | E2EE: ppt_* vs enc_* |
+| SUBSCRIBE.Options    | 2  | 0           | 1            | None |
 
 ## PUBLISH.Options
 
@@ -115,6 +116,54 @@ Same as PUBLISH.Options - the spec uses `ppt_*` prefix while implementation uses
 - `enc_key|str`
 - `enc_serializer|str`
 
+## SUBSCRIBE.Options
+
+### Matched Attributes (2)
+
+These attributes appear in both the spec and implementation with consistent naming and types:
+
+| Attribute | Type | Spec Section | Implementation |
+|-----------|------|--------------|----------------|
+| match | string | Advanced: pubsub_pattern_based_subscription.md | message.py:3232-3252 |
+| get_retained | bool | Advanced: pubsub_event_retention.md | message.py:3254-3262 |
+
+**match values:**
+- `"exact"` (default) - Exact topic match
+- `"prefix"` - Prefix-based pattern matching
+- `"wildcard"` - Wildcard-based pattern matching
+
+**get_retained:**
+- Requests retained message if available when subscribing
+
+### Spec-Only Attributes (0)
+
+All spec-defined SUBSCRIBE.Options attributes are implemented in Autobahn-Python.
+
+### Implementation-Only Attributes (1)
+
+These attributes are implemented in Autobahn-Python but NOT defined in the WAMP spec:
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| forward_for | list[dict] | message.py:3264-3282 | Router-to-router forwarding chain |
+
+**forward_for structure:**
+```python
+[{
+    "session": int,      # Session ID
+    "authid": str,       # Authentication ID
+    "authrole": str      # Authentication role
+}]
+```
+
+### Analysis
+
+SUBSCRIBE.Options has excellent spec compliance:
+- ✅ All spec-defined attributes implemented
+- ✅ Consistent naming with spec
+- ✅ Only 1 implementation-specific attribute (`forward_for` for router-to-router links)
+- ✅ No E2EE complexity (unlike PUBLISH/EVENT)
+
 ## Recommendations
 
 ### For Autobahn-Python Implementation
@@ -144,4 +193,4 @@ Same as PUBLISH.Options - the spec uses `ppt_*` prefix while implementation uses
 
 - **WAMP Spec**: /home/oberstet/work/wamp/wamp-proto/rfc/text/
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
-- **Analysis Date**: 2025-11-14
+- **Analysis Date**: 2025-11-17 (updated with SUBSCRIBE.Options)
