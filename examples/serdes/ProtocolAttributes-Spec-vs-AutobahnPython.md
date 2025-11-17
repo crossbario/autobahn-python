@@ -8,8 +8,9 @@ against their implementation in Autobahn-Python.
 ### Summary
 - [Summary Matrix](#summary-matrix)
   - [Phase 1: Pub/Sub Messages (Complete)](#phase-1-pubsub-messages-complete)
-  - [Phase 2: RPC Messages (In Progress)](#phase-2-rpc-messages-in-progress)
-  - [Phase 1+2 Summary](#phase-12-summary)
+  - [Phase 2: RPC Messages (Complete)](#phase-2-rpc-messages-complete)
+  - [Phase 3: Shared Messages (Complete)](#phase-3-shared-messages-complete)
+  - [Overall Summary](#overall-summary)
 
 ### Phase 1: Pub/Sub Messages
 - [PUBLISH.Options](#publishoptions)
@@ -29,7 +30,7 @@ against their implementation in Autobahn-Python.
 - [UNREGISTERED](#unregistered)
 - [INVOCATION.Details](#invocationdetails)
 - [YIELD.Options](#yieldoptions)
-- [ERROR.Details](#errordetails) (TODO)
+- [ERROR.Details](#errordetails)
 
 ### Appendix
 - [Recommendations](#recommendations)
@@ -51,7 +52,7 @@ against their implementation in Autobahn-Python.
 | UNSUBSCRIBE.Options  | 0  | 0           | 1            | None |
 | UNSUBSCRIBED         | N/A | N/A         | N/A          | No Details (basic) |
 
-### Phase 2: RPC Messages (In Progress)
+### Phase 2: RPC Messages (Complete)
 
 | Message Type | Matched | Spec-Only | Implementation-Only | Naming Differences |
 |--------------|---------|-----------|---------------------|-------------------|
@@ -63,9 +64,14 @@ against their implementation in Autobahn-Python.
 | UNREGISTERED         | 2  | 0           | 0            | None |
 | INVOCATION.Details   | 6  | 1 (+4 ppt_*) | 2 (+3 enc_*) | E2EE: ppt_* vs enc_* |
 | YIELD.Options        | 1  | 0 (+4 ppt_*) | 4 (+3 enc_*) | E2EE: ppt_* vs enc_* |
-| ERROR.Details        | -  | -           | -            | TODO (shared PubSub+RPC) |
 
-### Phase 1+2 Summary
+### Phase 3: Shared Messages (Complete)
+
+| Message Type | Matched | Spec-Only | Implementation-Only | Naming Differences |
+|--------------|---------|-----------|---------------------|-------------------|
+| ERROR.Details        | 0  | 0 (+4 ppt_*) | 4 (+3 enc_*) | E2EE: ppt_* vs enc_* |
+
+### Overall Summary
 
 **Spec Compliance:**
 - ✅ Core functionality: All basic profile features implemented
@@ -815,6 +821,60 @@ YIELD.Options has good spec compliance with useful router extensions:
 
 ---
 
+## ERROR.Details
+
+ERROR is a universal error response message used by both Pub/Sub and RPC patterns to indicate failures.
+
+**Message Format**: `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri]` (basic) with optional args/kwargs or payload
+
+**WAMP Spec** (Basic and Advanced Profiles):
+- Basic: Empty Details `{}` (basic/messages.md)
+- Advanced attributes:
+  - `ppt_scheme|str`, `ppt_serializer|str`, `ppt_cipher|str`, `ppt_keyid|str` - Payload passthru mode (advanced/payload_passthru_mode.md)
+
+**Autobahn-Python Implementation** (message.py:1602-1900):
+- `enc_algo` (str) - Encryption algorithm (maps to ppt_cipher)
+- `enc_key` (str) - Encryption key (maps to ppt_keyid)
+- `enc_serializer` (str) - Payload serializer (maps to ppt_serializer)
+- `callee` (int) - Callee's session ID (router-added disclosure)
+- `callee_authid` (str) - Callee's authid (router-added disclosure)
+- `callee_authrole` (str) - Callee's authrole (router-added disclosure)
+- `forward_for` (list[dict]) - Router-to-router forwarding chain
+
+**Request Types** that ERROR can respond to:
+- Pub/Sub: SUBSCRIBE (32), UNSUBSCRIBE (34), PUBLISH (16)
+- RPC: CALL (48), REGISTER (64), UNREGISTER (66), INVOCATION (68)
+
+### Implementation-Only Attributes (4)
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| callee | int | message.py:1629, 1830-1839 | Router-added callee disclosure (session ID) |
+| callee_authid | str | message.py:1630, 1841-1850 | Router-added callee disclosure (authid) |
+| callee_authrole | str | message.py:1631, 1852-1861 | Router-added callee disclosure (authrole) |
+| forward_for | list[dict] | message.py:1632, 1863-1881 | Router-to-router forwarding chain |
+
+### Naming Differences: Payload Passthru Mode (E2EE)
+
+**WAMP Spec** uses `ppt_*` prefix while **Autobahn-Python** uses `enc_*` prefix (consistent with all other message types):
+- Missing: `ppt_scheme` (required in spec)
+- `enc_algo` maps to `ppt_cipher`
+- `enc_key` maps to `ppt_keyid`
+- `enc_serializer` maps to `ppt_serializer`
+
+### Analysis
+
+ERROR.Details has minimal spec-defined attributes with useful router extensions:
+- ✅ Universal error response for both Pub/Sub and RPC
+- ✅ No spec-defined Details in basic profile (empty dict)
+- ⚠️  E2EE naming mismatch: uses `enc_*` instead of spec's `ppt_*` prefix
+- ⚠️  Missing `ppt_scheme` (required in spec for payload passthru)
+- ✅ Implementation-only: `callee*` attributes for router-added disclosure (consistent with RESULT and YIELD)
+- ✅ Implementation-only: `forward_for` for router-to-router scenarios
+- ✅ Clean and consistent implementation across all error scenarios
+
+---
+
 ## Recommendations
 
 ### For Autobahn-Python Implementation
@@ -864,16 +924,18 @@ YIELD.Options has good spec compliance with useful router extensions:
 - INVOCATION.Details ✅
 - YIELD.Options ✅
 
-**Phase 3: Shared Messages** ⏳ **TODO**
-- ERROR.Details (used in both Pub/Sub and RPC)
+**Phase 3: Shared Messages** ✅ **COMPLETE**
+- ERROR.Details ✅ (used in both Pub/Sub and RPC)
 
 ### Test Coverage
 
 **SerDes Conformance Tests:**
-- Total: 326 passed, 53 skipped
-- Phase 1 (Pub/Sub): 218 tests (8 message types × ~27 tests/type avg)
+- Total: 338 passed, 56 skipped ✅ ALL PHASES COMPLETE
+- Phase 1 (Pub/Sub): 218 tests (8 message types × ~27 tests/type avg) ✅ COMPLETE
 - Phase 2 (RPC): 96 tests (8 message types × 12 tests/type) ✅ COMPLETE
+- Phase 3 (Shared): 12 tests (1 message type × 12 tests/type) ✅ COMPLETE
 - Serializers tested: JSON, MsgPack, CBOR, UBJSON (FlatBuffers skipped)
+- Coverage: 17 out of 17 WAMP message types tested! 🎉
 
 ### Source Information
 
@@ -881,7 +943,7 @@ YIELD.Options has good spec compliance with useful router extensions:
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
 - **Test Vectors**: /home/oberstet/work/wamp/wamp-proto/testsuite/singlemessage/basic/
 - **Analysis Date**: 2025-11-17
-- **Last Updated**: Phase 2 - RPC Messages COMPLETE (all 8 message types)
+- **Last Updated**: ALL PHASES COMPLETE - All 17 WAMP message types analyzed and tested
 
 ### Related Issues
 
