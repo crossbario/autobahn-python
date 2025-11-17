@@ -12,6 +12,7 @@ against their implementation in Autobahn-Python.
 | SUBSCRIBE.Options    | 2  | 0           | 1            | None |
 | SUBSCRIBED           | N/A | N/A         | N/A          | No Options/Details |
 | PUBLISHED            | N/A | N/A         | N/A          | No Options/Details |
+| UNSUBSCRIBE.Options  | 0  | 0           | 1            | None |
 
 ## PUBLISH.Options
 
@@ -238,6 +239,53 @@ PUBLISHED has perfect spec compliance:
 }
 ```
 
+## UNSUBSCRIBE.Options
+
+UNSUBSCRIBE is a message from Subscriber to Broker to unsubscribe from a topic.
+
+**Message Format**:
+- `[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]`
+- `[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id, Options|dict]`
+
+**WAMP Spec** (Basic Profile: publish_subscribe.md):
+- No Options defined in spec
+
+**Autobahn-Python Implementation** (message.py:3391-3505):
+- `forward_for` (list[dict]) - Router-to-router forwarding chain
+
+### Matched Attributes (0)
+
+No attributes defined in spec.
+
+### Spec-Only Attributes (0)
+
+All spec-defined UNSUBSCRIBE attributes are implemented in Autobahn-Python (none in spec).
+
+### Implementation-Only Attributes (1)
+
+These attributes are implemented in Autobahn-Python but NOT defined in the WAMP spec:
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| forward_for | list[dict] | message.py:3409, 3466-3485 | Router-to-router forwarding chain |
+
+**forward_for structure:**
+```python
+[{
+    "session": int,      # Session ID
+    "authid": str,       # Authentication ID
+    "authrole": str      # Authentication role
+}]
+```
+
+### Analysis
+
+UNSUBSCRIBE.Options has consistent implementation:
+- ✅ No spec-defined Options (WAMP spec defines no Options for UNSUBSCRIBE)
+- ✅ Only 1 implementation-specific attribute (`forward_for` for router-to-router links)
+- ✅ Consistent with SUBSCRIBE.Options (both have only `forward_for`)
+- ✅ Optional Options dictionary (message works without it)
+
 ## Recommendations
 
 ### For Autobahn-Python Implementation
@@ -267,4 +315,4 @@ PUBLISHED has perfect spec compliance:
 
 - **WAMP Spec**: /home/oberstet/work/wamp/wamp-proto/rfc/text/
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
-- **Analysis Date**: 2025-11-17 (updated with SUBSCRIBE.Options, SUBSCRIBED, and PUBLISHED)
+- **Analysis Date**: 2025-11-17 (updated with SUBSCRIBE.Options, SUBSCRIBED, PUBLISHED, and UNSUBSCRIBE.Options)
