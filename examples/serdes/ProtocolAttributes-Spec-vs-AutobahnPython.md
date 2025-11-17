@@ -11,6 +11,7 @@ against their implementation in Autobahn-Python.
   - [Phase 2: RPC Messages (Complete)](#phase-2-rpc-messages-complete)
   - [Phase 3: Shared Messages (Complete)](#phase-3-shared-messages-complete)
   - [Phase 4: Session Lifecycle Messages (Complete)](#phase-4-session-lifecycle-messages-complete)
+  - [Phase 5: Advanced Profile Messages (Complete)](#phase-5-advanced-profile-messages-complete)
   - [Overall Summary](#overall-summary)
 
 ### Phase 1: Pub/Sub Messages
@@ -82,6 +83,14 @@ against their implementation in Autobahn-Python.
 | CHALLENGE    | N/A | N/A         | N/A          | Authentication challenge |
 | AUTHENTICATE | N/A | N/A         | N/A          | Authentication response |
 | GOODBYE      | N/A | N/A         | N/A          | Session close message |
+
+### Phase 5: Advanced Profile Messages (Complete)
+
+| Message Type | Matched | Spec-Only | Implementation-Only | Naming Differences |
+|--------------|---------|-----------|---------------------|-------------------|
+| CANCEL       | N/A | N/A         | N/A          | Advanced RPC - Call Canceling |
+| INTERRUPT    | N/A | N/A         | N/A          | Advanced RPC - Call Canceling |
+| EventReceived| N/A | N/A         | N/A          | Advanced Pub/Sub - Event Acknowledgment |
 
 ### Overall Summary
 
@@ -887,6 +896,169 @@ ERROR.Details has minimal spec-defined attributes with useful router extensions:
 
 ---
 
+## Phase 4: Session Lifecycle Messages
+
+### HELLO.Details
+
+HELLO is sent by Client to Router to initiate a WAMP session.
+
+**Format:** `[HELLO, Realm|uri, Details|dict]`
+
+#### Required Attributes
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| roles | dict | message.py:673, 725-729 | Client roles (subscriber, publisher, caller, callee) with features |
+
+#### Optional Attributes (Authentication)
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| authmethods | list[str] | message.py:674, 703-705 | Authentication methods to announce |
+| authid | str | message.py:675, 707-709 | Authentication ID |
+| authrole | str | message.py:676, 709-710 | Authentication role |
+| authextra | dict | message.py:677, 712-713 | Application-specific auth data |
+
+#### Optional Attributes (Session Resumption)
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| resumable | bool | message.py:678, 715-716 | Session can be resumed |
+| resume_session | int | message.py:679, 718-719 | Session ID to resume |
+| resume_token | str | message.py:680, 721-722 | Authorization token for resumption |
+
+#### Analysis
+
+HELLO.Details is the client's initial handshake:
+- ✅ Required `roles` announces client capabilities
+- ✅ Optional authentication parameters (authid, authrole, authmethods, authextra)
+- ✅ Session resumption support (resumable, resume_session, resume_token)
+- ✅ Clean separation between authentication and session management
+
+---
+
+### WELCOME.Details
+
+WELCOME is sent by Router to Client to accept the WAMP session.
+
+**Format:** `[WELCOME, Session|id, Details|dict]`
+
+#### Required Attributes
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| roles | dict | message.py:978, 1012-1013 | Router roles (broker, dealer) with features |
+
+#### Optional Attributes (Authentication Result)
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| authid | str | message.py:980, 996-997 | Effective authentication ID |
+| authrole | str | message.py:981, 997-998 | Effective authentication role |
+| authmethod | str | message.py:982, 998-999 | Authentication method used |
+| authprovider | str | message.py:983, 999-1001 | Authentication provider |
+| authextra | dict | message.py:984, 1001-1002 | Authentication result data |
+
+#### Optional Attributes (Session Info)
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| realm | str | message.py:979, 1014-1015 | Effective realm |
+| resumed | bool | message.py:985, 1002-1003 | Session was resumed |
+| resumable | bool | message.py:986, 1003-1004 | Session can be resumed |
+| resume_token | str | message.py:987, 1005-1006 | Token for future resumption |
+
+#### Implementation-Only Attributes
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| custom | dict | message.py:988, 1007-1008 | Custom attributes with x_ prefix |
+
+#### Analysis
+
+WELCOME.Details completes the session handshake:
+- ✅ Required `roles` announces router capabilities
+- ✅ Authentication result (authid, authrole, authmethod, authprovider, authextra)
+- ✅ Session resumption info (resumed, resumable, resume_token)
+- ✅ Support for custom attributes via `custom` dict
+
+---
+
+### ABORT.Details
+
+ABORT is sent by either peer to abort session opening.
+
+**Format:** `[ABORT, Details|dict, Reason|uri]`
+
+#### Optional Attributes
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| message | str | message.py:1274, 1277-1278 | Human-readable abort message |
+
+#### Analysis
+
+ABORT is a simple session abort message:
+- ✅ Minimal Details (typically empty dict in basic profile)
+- ✅ Optional `message` for human-readable error info
+- ✅ Required `Reason|uri` as separate parameter (not in Details)
+
+---
+
+### CHALLENGE.Extra
+
+CHALLENGE is sent by Router to Client during authentication.
+
+**Format:** `[CHALLENGE, Method|string, Extra|dict]`
+
+#### Analysis
+
+CHALLENGE.Extra is method-specific:
+- ✅ `Method|string` specifies auth method (wampcra, ticket, cryptosign, etc.)
+- ✅ `Extra|dict` contains method-specific challenge data
+- ✅ Flexible structure allows various authentication schemes
+- ✅ Implementation stores as simple dict (message.py:1359, 1376)
+
+---
+
+### AUTHENTICATE.Extra
+
+AUTHENTICATE is sent by Client to Router in response to CHALLENGE.
+
+**Format:** `[AUTHENTICATE, Signature|string, Extra|dict]`
+
+#### Analysis
+
+AUTHENTICATE.Extra is method-specific:
+- ✅ `Signature|string` contains authentication proof
+- ✅ `Extra|dict` contains method-specific auth data
+- ✅ Flexible structure allows various authentication schemes
+- ✅ Implementation stores as simple dict (message.py:1432, 1449)
+
+---
+
+### GOODBYE.Details
+
+GOODBYE is sent by either peer to gracefully close the session.
+
+**Format:** `[GOODBYE, Details|dict, Reason|uri]`
+
+#### Optional Attributes
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| message | str | message.py:1509, 1512-1513 | Human-readable close message |
+
+#### Analysis
+
+GOODBYE is a simple session close message:
+- ✅ Minimal Details (typically empty dict in basic profile)
+- ✅ Optional `message` for human-readable close info
+- ✅ Required `Reason|uri` as separate parameter (not in Details)
+- ✅ Must be echo'ed by receiving peer
+
+---
+
 ## Recommendations
 
 ### For Autobahn-Python Implementation
@@ -947,24 +1119,30 @@ ERROR.Details has minimal spec-defined attributes with useful router extensions:
 - AUTHENTICATE ✅
 - GOODBYE ✅
 
+**Phase 5: Advanced Profile Messages** ✅ **COMPLETE**
+- CANCEL ✅ (Advanced RPC - Call Canceling)
+- INTERRUPT ✅ (Advanced RPC - Call Canceling)
+- EventReceived ✅ (Advanced Pub/Sub - Event Acknowledgment)
+
 ### Test Coverage
 
 **SerDes Conformance Tests:**
-- Total: 410 passed, 74 skipped ✅ ALL PHASES COMPLETE
+- Total: 446 passed, 83 skipped ✅ ALL PHASES COMPLETE
 - Phase 1 (Pub/Sub): 218 tests (8 message types × ~27 tests/type avg) ✅ COMPLETE
 - Phase 2 (RPC): 96 tests (8 message types × 12 tests/type) ✅ COMPLETE
 - Phase 3 (Shared): 12 tests (1 message type × 12 tests/type) ✅ COMPLETE
 - Phase 4 (Session Lifecycle): 72 tests (6 message types × 12 tests/type) ✅ COMPLETE
+- Phase 5 (Advanced): 36 tests (3 message types × 12 tests/type) ✅ COMPLETE
 - Serializers tested: JSON, MsgPack, CBOR, UBJSON (FlatBuffers skipped)
-- Coverage: 23 out of 25+ WAMP message types tested! 🎉
+- Coverage: **ALL 25 WAMP message types tested!** 🎉🎉🎉
 
 ### Source Information
 
 - **WAMP Spec**: /home/oberstet/work/wamp/wamp-proto/rfc/text/
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
-- **Test Vectors**: /home/oberstet/work/wamp/wamp-proto/testsuite/singlemessage/basic/
-- **Analysis Date**: 2025-11-17
-- **Last Updated**: Phase 4 COMPLETE - 23 WAMP message types analyzed and tested (Session Lifecycle messages added)
+- **Test Vectors**: /home/oberstet/work/wamp/wamp-proto/testsuite/singlemessage/
+- **Analysis Date**: 2025-11-17/18
+- **Last Updated**: ALL PHASES COMPLETE - All 25 WAMP message types analyzed and tested! 🎉
 
 ### Related Issues
 
