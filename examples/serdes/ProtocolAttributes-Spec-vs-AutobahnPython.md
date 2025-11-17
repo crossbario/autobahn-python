@@ -11,7 +11,6 @@ against their implementation in Autobahn-Python.
   - [Phase 2: RPC Messages (Complete)](#phase-2-rpc-messages-complete)
   - [Phase 3: Shared Messages (Complete)](#phase-3-shared-messages-complete)
   - [Phase 4: Session Lifecycle Messages (Complete)](#phase-4-session-lifecycle-messages-complete)
-  - [Phase 5: Advanced Profile Messages (Complete)](#phase-5-advanced-profile-messages-complete)
   - [Overall Summary](#overall-summary)
 
 ### Phase 1: Pub/Sub Messages
@@ -22,6 +21,7 @@ against their implementation in Autobahn-Python.
 - [PUBLISHED](#published)
 - [UNSUBSCRIBE.Options](#unsubscribeoptions)
 - [UNSUBSCRIBED](#unsubscribed)
+- [EventReceived](#eventreceived) (Advanced Profile)
 
 ### Phase 2: RPC Messages
 - [CALL.Options](#calloptions)
@@ -32,6 +32,8 @@ against their implementation in Autobahn-Python.
 - [UNREGISTERED](#unregistered)
 - [INVOCATION.Details](#invocationdetails)
 - [YIELD.Options](#yieldoptions)
+- [CANCEL.Options](#canceloptions) (Advanced Profile)
+- [INTERRUPT.Options](#interruptoptions) (Advanced Profile)
 - [ERROR.Details](#errordetails)
 
 ### Appendix
@@ -53,6 +55,7 @@ against their implementation in Autobahn-Python.
 | PUBLISHED            | N/A | N/A         | N/A          | No Options/Details |
 | UNSUBSCRIBE.Options  | 0  | 0           | 1            | None |
 | UNSUBSCRIBED         | N/A | N/A         | N/A          | No Details (basic) |
+| EventReceived        | N/A | N/A         | N/A          | Advanced Profile - Event Acknowledgment |
 
 ### Phase 2: RPC Messages (Complete)
 
@@ -66,6 +69,8 @@ against their implementation in Autobahn-Python.
 | UNREGISTERED         | 2  | 0           | 0            | None |
 | INVOCATION.Details   | 6  | 1 (+4 ppt_*) | 2 (+3 enc_*) | E2EE: ppt_* vs enc_* |
 | YIELD.Options        | 1  | 0 (+4 ppt_*) | 4 (+3 enc_*) | E2EE: ppt_* vs enc_* |
+| CANCEL.Options       | N/A | N/A         | N/A          | Advanced Profile - Call Canceling |
+| INTERRUPT.Options    | N/A | N/A         | N/A          | Advanced Profile - Call Canceling |
 
 ### Phase 3: Shared Messages (Complete)
 
@@ -83,14 +88,6 @@ against their implementation in Autobahn-Python.
 | CHALLENGE    | N/A | N/A         | N/A          | Authentication challenge |
 | AUTHENTICATE | N/A | N/A         | N/A          | Authentication response |
 | GOODBYE      | N/A | N/A         | N/A          | Session close message |
-
-### Phase 5: Advanced Profile Messages (Complete)
-
-| Message Type | Matched | Spec-Only | Implementation-Only | Naming Differences |
-|--------------|---------|-----------|---------------------|-------------------|
-| CANCEL       | N/A | N/A         | N/A          | Advanced RPC - Call Canceling |
-| INTERRUPT    | N/A | N/A         | N/A          | Advanced RPC - Call Canceling |
-| EventReceived| N/A | N/A         | N/A          | Advanced Pub/Sub - Event Acknowledgment |
 
 ### Overall Summary
 
@@ -415,6 +412,42 @@ UNSUBSCRIBED has perfect spec compliance for basic form:
 ```
 
 **Note**: The implementation supports advanced router-initiated unsubscribe ("router revocation signaling") where `request=0` and `subscription` and `reason` fields are used. This is an implementation-specific extension not yet in the spec.
+
+## EventReceived
+
+EventReceived is an Advanced Profile acknowledgment message sent by Subscriber to Broker to confirm receipt of an EVENT (when event acknowledgment is enabled).
+
+**Message Format**: `[EVENT_RECEIVED, EVENT.Publication|id]`
+
+**WAMP Spec** (Advanced Profile: pubsub_subscriber_event_acknowledgment.md):
+- `EVENT.Publication|id` (int) - The publication ID from the received EVENT
+
+**Autobahn-Python Implementation** (message.py:4391-4448):
+- `publication` (int) - The publication ID of the acknowledged event
+
+**Note**: This message uses type code 337 (implementation-specific), but should be 37 upon WAMP specification ratification.
+
+### Analysis
+
+EventReceived has perfect spec compliance for Advanced Profile event acknowledgment:
+- ✅ Simple acknowledgment message with just one ID field
+- ✅ Attribute name matches spec semantics exactly
+- ✅ No Options or Details dictionaries
+- ✅ No implementation-specific extensions
+- ✅ Message format: `[337, publication_id]`
+- ⚠️  Uses implementation-specific type code 337 (should be 37 on ratification)
+
+**Example** (from test vectors):
+```json
+{
+  "description": "EVENT_RECEIVED acknowledgment",
+  "wmsg": [337, 5512315355],
+  "expected_attributes": {
+    "message_type": 337,
+    "publication_id": 5512315355
+  }
+}
+```
 
 ---
 
@@ -842,6 +875,82 @@ YIELD.Options has good spec compliance with useful router extensions:
 
 ---
 
+## CANCEL.Options
+
+CANCEL is an Advanced Profile message sent by Caller to Dealer to cancel a pending CALL.
+
+**Message Format**: `[CANCEL, CALL.Request|id, Options|dict]`
+
+**WAMP Spec** (Advanced Profile: rpc_call_canceling.md):
+- `CALL.Request|id` (int) - The request ID of the CALL to cancel
+- `Options|dict` - Options dictionary (typically empty or with mode)
+
+**Autobahn-Python Implementation** (message.py:4871-4970):
+- `request` (int) - The request ID of the CALL to cancel
+- `mode` (str or None) - Cancellation mode ("skip", "kill", "killnowait")
+
+### Analysis
+
+CANCEL has good spec compliance for Advanced Profile call canceling:
+- ✅ Simple cancellation message with request ID
+- ✅ Optional Options dictionary for cancellation mode
+- ✅ Supports different cancellation semantics (skip, kill, killnowait)
+- ✅ No implementation-specific extensions
+- ✅ Message format: `[49, request_id, options]`
+
+**Example** (from test vectors):
+```json
+{
+  "description": "CANCEL with empty Options",
+  "wmsg": [49, 7814135, {}],
+  "expected_attributes": {
+    "message_type": 49,
+    "request_id": 7814135,
+    "options": {}
+  }
+}
+```
+
+---
+
+## INTERRUPT.Options
+
+INTERRUPT is an Advanced Profile message sent by Dealer to Callee to interrupt a pending INVOCATION (in response to CANCEL from Caller).
+
+**Message Format**: `[INTERRUPT, INVOCATION.Request|id, Options|dict]`
+
+**WAMP Spec** (Advanced Profile: rpc_call_canceling.md):
+- `INVOCATION.Request|id` (int) - The request ID of the INVOCATION to interrupt
+- `Options|dict` - Options dictionary (typically empty or with mode)
+
+**Autobahn-Python Implementation** (message.py:6368-6467):
+- `request` (int) - The request ID of the INVOCATION to interrupt
+- `mode` (str or None) - Interruption mode ("skip", "kill", "killnowait")
+
+### Analysis
+
+INTERRUPT has good spec compliance for Advanced Profile call canceling:
+- ✅ Simple interruption message with request ID
+- ✅ Optional Options dictionary for interruption mode
+- ✅ Supports different interruption semantics (mirrors CANCEL)
+- ✅ No implementation-specific extensions
+- ✅ Message format: `[69, request_id, options]`
+
+**Example** (from test vectors):
+```json
+{
+  "description": "INTERRUPT with empty Options",
+  "wmsg": [69, 6131533, {}],
+  "expected_attributes": {
+    "message_type": 69,
+    "request_id": 6131533,
+    "options": {}
+  }
+}
+```
+
+---
+
 ## ERROR.Details
 
 ERROR is a universal error response message used by both Pub/Sub and RPC patterns to indicate failures.
@@ -1089,7 +1198,7 @@ GOODBYE is a simple session close message:
 
 ### Analysis Status
 
-**Phase 1: Pub/Sub Messages** ✅ **COMPLETE**
+**Phase 1: Pub/Sub Messages** ✅ **COMPLETE** (8 message types)
 - PUBLISH.Options ✅
 - EVENT.Details ✅
 - SUBSCRIBE.Options ✅
@@ -1097,8 +1206,9 @@ GOODBYE is a simple session close message:
 - PUBLISHED ✅
 - UNSUBSCRIBE.Options ✅
 - UNSUBSCRIBED ✅
+- EventReceived ✅ (Advanced Profile)
 
-**Phase 2: RPC Messages** ✅ **COMPLETE**
+**Phase 2: RPC Messages** ✅ **COMPLETE** (10 message types)
 - CALL.Options ✅
 - RESULT.Details ✅
 - REGISTER.Options ✅
@@ -1107,11 +1217,13 @@ GOODBYE is a simple session close message:
 - UNREGISTERED ✅
 - INVOCATION.Details ✅
 - YIELD.Options ✅
+- CANCEL.Options ✅ (Advanced Profile)
+- INTERRUPT.Options ✅ (Advanced Profile)
 
-**Phase 3: Shared Messages** ✅ **COMPLETE**
+**Phase 3: Shared Messages** ✅ **COMPLETE** (1 message type)
 - ERROR.Details ✅ (used in both Pub/Sub and RPC)
 
-**Phase 4: Session Lifecycle Messages** ✅ **COMPLETE**
+**Phase 4: Session Lifecycle Messages** ✅ **COMPLETE** (6 message types)
 - HELLO ✅
 - WELCOME ✅
 - ABORT ✅
@@ -1119,22 +1231,23 @@ GOODBYE is a simple session close message:
 - AUTHENTICATE ✅
 - GOODBYE ✅
 
-**Phase 5: Advanced Profile Messages** ✅ **COMPLETE**
-- CANCEL ✅ (Advanced RPC - Call Canceling)
-- INTERRUPT ✅ (Advanced RPC - Call Canceling)
-- EventReceived ✅ (Advanced Pub/Sub - Event Acknowledgment)
-
 ### Test Coverage
 
 **SerDes Conformance Tests:**
 - Total: 446 passed, 83 skipped ✅ ALL PHASES COMPLETE
-- Phase 1 (Pub/Sub): 218 tests (8 message types × ~27 tests/type avg) ✅ COMPLETE
-- Phase 2 (RPC): 96 tests (8 message types × 12 tests/type) ✅ COMPLETE
-- Phase 3 (Shared): 12 tests (1 message type × 12 tests/type) ✅ COMPLETE
-- Phase 4 (Session Lifecycle): 72 tests (6 message types × 12 tests/type) ✅ COMPLETE
-- Phase 5 (Advanced): 36 tests (3 message types × 12 tests/type) ✅ COMPLETE
+- Phase 1 (Pub/Sub): 254 tests (8 message types including EventReceived) ✅ COMPLETE
+- Phase 2 (RPC): 120 tests (10 message types including CANCEL and INTERRUPT) ✅ COMPLETE
+- Phase 3 (Shared): 12 tests (1 message type - ERROR) ✅ COMPLETE
+- Phase 4 (Session Lifecycle): 72 tests (6 message types) ✅ COMPLETE
 - Serializers tested: JSON, MsgPack, CBOR, UBJSON (FlatBuffers skipped)
 - Coverage: **ALL 25 WAMP message types tested!** 🎉🎉🎉
+
+**Message Type Distribution:**
+- Pub/Sub (Phase 1): 8 messages (7 basic + 1 advanced)
+- RPC (Phase 2): 10 messages (8 basic + 2 advanced)
+- Shared (Phase 3): 1 message (ERROR)
+- Session Lifecycle (Phase 4): 6 messages
+- **Total: 25 WAMP message types**
 
 ### Source Information
 
