@@ -407,6 +407,76 @@ CALL.Options has similar compliance issues as PUBLISH.Options:
 - ⚠️  Missing `ppt_scheme` (required in spec)
 - ✅ Implementation-specific extensions (`transaction_hash`, `forward_for`)
 
+## RESULT.Details
+
+RESULT is a message from Dealer to Caller returning the result of a remote procedure call.
+
+**Message Format**:
+- `[RESULT, CALL.Request|id, Details|dict]`
+- `[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list]`
+- `[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]`
+- `[RESULT, CALL.Request|id, Details|dict, Payload|binary]`
+
+**WAMP Spec** (Advanced Profile):
+- `progress|bool` - Advanced: rpc_progressive_call_results.md
+
+**Autobahn-Python Implementation** (message.py:5030-5346):
+- `progress|bool` - Progressive result indicator
+- `enc_algo|str` - Encryption algorithm for payload transparency
+- `enc_key|str` - Encryption key for payload transparency
+- `enc_serializer|str` - Payload serializer for payload transparency
+- `callee|int` - Callee session ID (when disclosed)
+- `callee_authid|str` - Callee auth ID (when disclosed)
+- `callee_authrole|str` - Callee auth role (when disclosed)
+- `forward_for|list[dict]` - Router-to-router forwarding chain
+
+### Matched Attributes (1)
+
+| Attribute | Type | Spec Section | Implementation |
+|-----------|------|--------------|----------------|
+| progress | bool | Advanced: rpc_progressive_call_results.md | message.py:5035, 5224-5233, 5314-5315 |
+
+### Spec-Only Attributes (0)
+
+All spec-defined RESULT.Details attributes are implemented in Autobahn-Python.
+
+### Implementation-Only Attributes (4)
+
+These attributes are implemented in Autobahn-Python but NOT defined in the WAMP spec:
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| callee | int | message.py:5039, 5235-5244, 5317-5318 | Callee session ID - router-added when callee discloses |
+| callee_authid | str | message.py:5040, 5246-5255, 5319-5320 | Callee auth ID - router-added when callee discloses |
+| callee_authrole | str | message.py:5041, 5257-5266, 5321-5322 | Callee auth role - router-added when callee discloses |
+| forward_for | list[dict] | message.py:5042, 5268-5286, 5323-5324 | Router-to-router forwarding chain |
+
+**Note**: The `callee`, `callee_authid`, and `callee_authrole` details are set by the router when the callee uses disclosure. These are router-added metadata, not callee-provided details.
+
+### Naming Differences: Payload Passthru Mode (E2EE)
+
+Same pattern as CALL.Options - the spec uses `ppt_*` prefix while implementation uses `enc_*` prefix.
+
+**WAMP Spec** (Advanced: payload_passthru_mode.md):
+- `ppt_scheme|string`
+- `ppt_serializer|string`
+- `ppt_cipher|string`
+- `ppt_keyid|string`
+
+**Autobahn-Python Implementation** (message.py:5036-5038, 5187-5207, 5326-5332):
+- `enc_algo|str`
+- `enc_key|str`
+- `enc_serializer|str`
+
+### Analysis
+
+RESULT.Details has similar patterns as CALL.Options:
+- ✅ Core RPC detail implemented (`progress`)
+- ✅ Router-added callee disclosure metadata (`callee`, `callee_authid`, `callee_authrole`)
+- ⚠️  E2EE uses `enc_*` prefix instead of `ppt_*` prefix from spec
+- ⚠️  Missing `ppt_scheme` (required in spec)
+- ✅ Implementation-specific extension (`forward_for`)
+
 ---
 
 ## Recommendations
