@@ -125,7 +125,7 @@ def test_subscribe_serialize_to_bytes(serializer_id, subscribe_samples, create_s
         )
 
         # Serialize
-        serialized_bytes = serializer.serialize(msg)
+        serialized_bytes, is_binary = serializer.serialize(msg)
 
         # Verify it matches at least one valid byte representation
         assert matches_any_byte_representation(
@@ -167,7 +167,7 @@ def test_subscribe_roundtrip(serializer_id, subscribe_samples, create_serializer
         assert isinstance(msg1, Subscribe)
 
         # Serialize
-        serialized_bytes = serializer.serialize(msg1)
+        serialized_bytes, is_binary = serializer.serialize(msg1)
 
         # Second deserialization
         msg2 = serializer.unserialize(serialized_bytes)[0]
