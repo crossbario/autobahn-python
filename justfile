@@ -953,7 +953,9 @@ test-serdes venv="": (install-tools venv) (install venv)
         examples/serdes/tests/test_unsubscribe.py \
         examples/serdes/tests/test_unsubscribed.py \
         examples/serdes/tests/test_call.py \
-        examples/serdes/tests/test_result.py
+        examples/serdes/tests/test_result.py \
+        examples/serdes/tests/test_register.py \
+        examples/serdes/tests/test_registered.py
 
 # -----------------------------------------------------------------------------
 # -- Documentation

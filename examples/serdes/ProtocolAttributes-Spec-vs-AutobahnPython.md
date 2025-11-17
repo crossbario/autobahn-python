@@ -23,8 +23,8 @@ against their implementation in Autobahn-Python.
 ### Phase 2: RPC Messages
 - [CALL.Options](#calloptions)
 - [RESULT.Details](#resultdetails)
-- [REGISTER.Options](#registeroptions) (TODO)
-- [REGISTERED](#registered) (TODO)
+- [REGISTER.Options](#registeroptions)
+- [REGISTERED](#registered)
 - [UNREGISTER.Options](#unregisteroptions) (TODO)
 - [UNREGISTERED](#unregistered) (TODO)
 - [INVOCATION.Details](#invocationdetails) (TODO)
@@ -57,8 +57,8 @@ against their implementation in Autobahn-Python.
 |--------------|---------|-----------|---------------------|-------------------|
 | CALL.Options         | 2  | 1 (+4 ppt_*) | 5 (+3 enc_*) | E2EE: ppt_* vs enc_* |
 | RESULT.Details       | 1  | 0 (+4 ppt_*) | 4 (+3 enc_*) | E2EE: ppt_* vs enc_* |
-| REGISTER.Options     | -  | -           | -            | TODO |
-| REGISTERED           | -  | -           | -            | TODO |
+| REGISTER.Options     | 2  | 0           | 3            | None |
+| REGISTERED           | N/A | N/A         | N/A          | No Options/Details |
 | UNREGISTER.Options   | -  | -           | -            | TODO |
 | UNREGISTERED         | -  | -           | -            | TODO |
 | INVOCATION.Details   | -  | -           | -            | TODO |
@@ -542,6 +542,78 @@ RESULT.Details has similar patterns as CALL.Options:
 - ⚠️  Missing `ppt_scheme` (required in spec)
 - ✅ Implementation-specific extension (`forward_for`)
 
+## REGISTER.Options
+
+REGISTER is a message from Callee to Dealer to register a procedure endpoint.
+
+**Message Format**:
+- `[REGISTER, Request|id, Options|dict, Procedure|uri]`
+
+**WAMP Spec** (Advanced Profile):
+- `match|string` - Advanced: rpc_pattern_based_registration.md
+- `invoke|string` - Advanced: rpc_shared_registration.md
+
+**Autobahn-Python Implementation** (message.py:5372-5637):
+- `match|str` - Pattern matching policy ("exact", "prefix", "wildcard")
+- `invoke|str` - Invocation policy ("single", "first", "last", "roundrobin", "random")
+- `concurrency|int` - Maximum concurrency for the registration
+- `force_reregister|bool` - Force re-registration
+- `forward_for|list[dict]` - Router-to-router forwarding chain
+
+### Matched Attributes (2)
+
+| Attribute | Type | Spec Section | Implementation |
+|-----------|------|--------------|----------------|
+| match | str | Advanced: rpc_pattern_based_registration.md | message.py:5375, 5477-5497, 5608-5609 |
+| invoke | str | Advanced: rpc_shared_registration.md | message.py:5376, 5521-5543, 5611-5612 |
+
+### Spec-Only Attributes (0)
+
+All spec-defined REGISTER.Options attributes are implemented in Autobahn-Python.
+
+### Implementation-Only Attributes (3)
+
+These attributes are implemented in Autobahn-Python but NOT defined in the WAMP spec:
+
+| Attribute | Type | Implementation | Notes |
+|-----------|------|----------------|-------|
+| concurrency | int | message.py:5377, 5545-5561, 5614-5615 | Maximum concurrency (>0) - controls concurrent invocations |
+| force_reregister | bool | message.py:5378, 5563-5571, 5617-5618 | Force re-registration even if already registered |
+| forward_for | list[dict] | message.py:5379, 5573-5591, 5620-5621 | Router-to-router forwarding chain |
+
+### Analysis
+
+REGISTER.Options has excellent spec compliance:
+- ✅ All spec-defined attributes implemented (`match`, `invoke`)
+- ✅ Defaults properly handled (match="exact", invoke="single")
+- ✅ Pattern-based registration supported (prefix, wildcard)
+- ✅ Shared registration policies supported (first, last, roundrobin, random)
+- ✅ Implementation extensions (`concurrency`, `force_reregister`, `forward_for`)
+- ✅ No E2EE complexity (unlike CALL/RESULT)
+
+## REGISTERED
+
+REGISTERED is an acknowledgment message sent by a Dealer to a Callee to confirm a registration.
+
+**Message Format**: `[REGISTERED, REGISTER.Request|id, Registration|id]`
+
+**WAMP Spec** (Basic Profile: remote_procedure_calls.md):
+- `REGISTER.Request|id` (int) - The ID from the original REGISTER request
+- `Registration|id` (int) - The registration ID assigned by the Dealer
+
+**Autobahn-Python Implementation** (message.py:5640-5705):
+- `request` (int) - The request ID of the original REGISTER request
+- `registration` (int) - The registration ID for the registered procedure
+
+### Analysis
+
+REGISTERED has perfect spec compliance:
+- ✅ Simple acknowledgment message with no Options or Details dictionaries
+- ✅ Only contains two ID fields as defined in spec
+- ✅ Attribute names match spec semantics exactly
+- ✅ No implementation-specific extensions
+- ✅ Message format: `[65, request_id, registration_id]`
+
 ---
 
 ## Recommendations
@@ -586,8 +658,8 @@ RESULT.Details has similar patterns as CALL.Options:
 **Phase 2: RPC Messages** 🚧 **IN PROGRESS**
 - CALL.Options ✅
 - RESULT.Details ✅
-- REGISTER.Options ⏳ TODO
-- REGISTERED ⏳ TODO
+- REGISTER.Options ✅
+- REGISTERED ✅
 - UNREGISTER.Options ⏳ TODO
 - UNREGISTERED ⏳ TODO
 - INVOCATION.Details ⏳ TODO
@@ -599,9 +671,9 @@ RESULT.Details has similar patterns as CALL.Options:
 ### Test Coverage
 
 **SerDes Conformance Tests:**
-- Total: 254 passed, 35 skipped
+- Total: 278 passed, 41 skipped
 - Phase 1 (Pub/Sub): 218 tests (8 message types × ~27 tests/type avg)
-- Phase 2 (RPC so far): 24 tests (2 message types × 12 tests/type)
+- Phase 2 (RPC so far): 48 tests (4 message types × 12 tests/type)
 - Serializers tested: JSON, MsgPack, CBOR, UBJSON (FlatBuffers skipped)
 
 ### Source Information
@@ -610,7 +682,7 @@ RESULT.Details has similar patterns as CALL.Options:
 - **Autobahn-Python**: /home/oberstet/work/wamp/autobahn-python/autobahn/wamp/message.py
 - **Test Vectors**: /home/oberstet/work/wamp/wamp-proto/testsuite/singlemessage/basic/
 - **Analysis Date**: 2025-11-17
-- **Last Updated**: Phase 2 - CALL/RESULT complete
+- **Last Updated**: Phase 2 - CALL/RESULT/REGISTER/REGISTERED complete
 
 ### Related Issues
 
