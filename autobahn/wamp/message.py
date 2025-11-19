@@ -2534,12 +2534,32 @@ class Publish(Message):
 
     @property
     def forward_for(self):
-        # FIXME
+        if self._forward_for is None and self._from_fbs:
+            if self._from_fbs.ForwardForLength():
+                forward_for = []
+                for j in range(self._from_fbs.ForwardForLength()):
+                    principal = self._from_fbs.ForwardFor(j)
+                    # Principal struct currently only has session field
+                    # (authid/authrole are commented out in schema due to FlatBuffers struct limitations)
+                    forward_for.append({
+                        'session': principal.Session(),
+                        'authid': None,
+                        'authrole': None,
+                    })
+                self._forward_for = forward_for
         return self._forward_for
 
     @forward_for.setter
     def forward_for(self, value):
-        # FIXME
+        assert value is None or type(value) == list
+        if value:
+            for ff in value:
+                assert type(ff) == dict
+                assert "session" in ff and type(ff["session"]) == int
+                assert "authid" in ff and (
+                    ff["authid"] is None or type(ff["authid"]) == str
+                )
+                assert "authrole" in ff and type(ff["authrole"]) == str
         self._forward_for = value
 
     @staticmethod
@@ -4500,6 +4520,7 @@ class Call(Message):
         caller_authid=None,
         caller_authrole=None,
         forward_for=None,
+        from_fbs=None,
     ):
         """
 
@@ -4588,26 +4609,233 @@ class Call(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
-        Message.__init__(self)
-        self.request = request
-        self.procedure = procedure
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
-        self.timeout = timeout
-        self.receive_progress = receive_progress
-        self.transaction_hash = transaction_hash
+        Message.__init__(self, from_fbs=from_fbs)
+        self._request = request
+        self._procedure = procedure
+        self._args = args
+        self._kwargs = _validate_kwargs(kwargs)
+        self._payload = payload
+        self._timeout = timeout
+        self._receive_progress = receive_progress
+        self._transaction_hash = transaction_hash
 
         # payload transparency related knobs
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
+        self._enc_algo = enc_algo
+        self._enc_key = enc_key
+        self._enc_serializer = enc_serializer
 
         # message forwarding
-        self.caller = caller
-        self.caller_authid = caller_authid
-        self.caller_authrole = caller_authrole
-        self.forward_for = forward_for
+        self._caller = caller
+        self._caller_authid = caller_authid
+        self._caller_authrole = caller_authrole
+        self._forward_for = forward_for
+
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    @property
+    def procedure(self):
+        if self._procedure is None and self._from_fbs:
+            s = self._from_fbs.Procedure()
+            if s:
+                self._procedure = s.decode("utf8")
+        return self._procedure
+
+    @procedure.setter
+    def procedure(self, value):
+        assert value is None or type(value) == str
+        self._procedure = value
+
+    @property
+    def args(self):
+        if self._args is None and self._from_fbs:
+            if self._from_fbs.ArgsLength():
+                self._args = cbor2.loads(bytes(self._from_fbs.ArgsAsBytes()))
+        return self._args
+
+    @args.setter
+    def args(self, value):
+        assert value is None or type(value) in [list, tuple]
+        self._args = value
+
+    @property
+    def kwargs(self):
+        if self._kwargs is None and self._from_fbs:
+            if self._from_fbs.KwargsLength():
+                self._kwargs = cbor2.loads(bytes(self._from_fbs.KwargsAsBytes()))
+        return self._kwargs
+
+    @kwargs.setter
+    def kwargs(self, value):
+        assert value is None or type(value) == dict
+        self._kwargs = value
+
+    @property
+    def payload(self):
+        if self._payload is None and self._from_fbs:
+            if self._from_fbs.PayloadLength():
+                self._payload = self._from_fbs.PayloadAsBytes()
+        return self._payload
+
+    @payload.setter
+    def payload(self, value):
+        assert value is None or type(value) == bytes
+        self._payload = value
+
+    @property
+    def timeout(self):
+        if self._timeout is None and self._from_fbs:
+            timeout = self._from_fbs.Timeout()
+            if timeout:
+                self._timeout = timeout
+        return self._timeout
+
+    @timeout.setter
+    def timeout(self, value):
+        assert value is None or type(value) == int
+        self._timeout = value
+
+    @property
+    def receive_progress(self):
+        if self._receive_progress is None and self._from_fbs:
+            receive_progress = self._from_fbs.ReceiveProgress()
+            if receive_progress:
+                self._receive_progress = receive_progress
+        return self._receive_progress
+
+    @receive_progress.setter
+    def receive_progress(self, value):
+        assert value is None or type(value) == bool
+        self._receive_progress = value
+
+    @property
+    def transaction_hash(self):
+        if self._transaction_hash is None and self._from_fbs:
+            s = self._from_fbs.TransactionHash()
+            if s:
+                self._transaction_hash = s.decode("utf8")
+        return self._transaction_hash
+
+    @transaction_hash.setter
+    def transaction_hash(self, value):
+        assert value is None or type(value) == str
+        self._transaction_hash = value
+
+    @property
+    def enc_algo(self):
+        if self._enc_algo is None and self._from_fbs:
+            s = self._from_fbs.EncAlgo()
+            if s:
+                self._enc_algo = s.decode("utf8")
+        return self._enc_algo
+
+    @enc_algo.setter
+    def enc_algo(self, value):
+        assert value is None or is_valid_enc_algo(value)
+        self._enc_algo = value
+
+    @property
+    def enc_key(self):
+        if self._enc_key is None and self._from_fbs:
+            s = self._from_fbs.EncKey()
+            if s:
+                self._enc_key = s.decode("utf8")
+        return self._enc_key
+
+    @enc_key.setter
+    def enc_key(self, value):
+        assert value is None or type(value) == str
+        self._enc_key = value
+
+    @property
+    def enc_serializer(self):
+        if self._enc_serializer is None and self._from_fbs:
+            s = self._from_fbs.EncSerializer()
+            if s:
+                self._enc_serializer = s.decode("utf8")
+        return self._enc_serializer
+
+    @enc_serializer.setter
+    def enc_serializer(self, value):
+        assert value is None or is_valid_enc_serializer(value)
+        self._enc_serializer = value
+
+    @property
+    def caller(self):
+        if self._caller is None and self._from_fbs:
+            caller = self._from_fbs.Caller()
+            if caller:
+                self._caller = caller
+        return self._caller
+
+    @caller.setter
+    def caller(self, value):
+        assert value is None or type(value) == int
+        self._caller = value
+
+    @property
+    def caller_authid(self):
+        if self._caller_authid is None and self._from_fbs:
+            s = self._from_fbs.CallerAuthid()
+            if s:
+                self._caller_authid = s.decode("utf8")
+        return self._caller_authid
+
+    @caller_authid.setter
+    def caller_authid(self, value):
+        assert value is None or type(value) == str
+        self._caller_authid = value
+
+    @property
+    def caller_authrole(self):
+        if self._caller_authrole is None and self._from_fbs:
+            s = self._from_fbs.CallerAuthrole()
+            if s:
+                self._caller_authrole = s.decode("utf8")
+        return self._caller_authrole
+
+    @caller_authrole.setter
+    def caller_authrole(self, value):
+        assert value is None or type(value) == str
+        self._caller_authrole = value
+
+    @property
+    def forward_for(self):
+        if self._forward_for is None and self._from_fbs:
+            if self._from_fbs.ForwardForLength():
+                forward_for = []
+                for j in range(self._from_fbs.ForwardForLength()):
+                    principal = self._from_fbs.ForwardFor(j)
+                    # Principal struct currently only has session field
+                    # (authid/authrole are commented out in schema due to FlatBuffers struct limitations)
+                    forward_for.append({
+                        'session': principal.Session(),
+                        'authid': None,
+                        'authrole': None,
+                    })
+                self._forward_for = forward_for
+        return self._forward_for
+
+    @forward_for.setter
+    def forward_for(self, value):
+        assert value is None or type(value) == list
+        if value:
+            for ff in value:
+                assert type(ff) == dict
+                assert "session" in ff and type(ff["session"]) == int
+                assert "authid" in ff and (
+                    ff["authid"] is None or type(ff["authid"]) == str
+                )
+                assert "authrole" in ff and type(ff["authrole"]) == str
+        self._forward_for = value
 
     @staticmethod
     def parse(wmsg):
