@@ -4486,21 +4486,21 @@ class Call(Message):
     """
 
     __slots__ = (
-        "request",
-        "procedure",
-        "args",
-        "kwargs",
-        "payload",
-        "timeout",
-        "receive_progress",
-        "transaction_hash",
-        "enc_algo",
-        "enc_key",
-        "enc_serializer",
-        "caller",
-        "caller_authid",
-        "caller_authrole",
-        "forward_for",
+        "_request",
+        "_procedure",
+        "_args",
+        "_kwargs",
+        "_payload",
+        "_timeout",
+        "_receive_progress",
+        "_transaction_hash",
+        "_enc_algo",
+        "_enc_key",
+        "_enc_serializer",
+        "_caller",
+        "_caller_authid",
+        "_caller_authrole",
+        "_forward_for",
     )
 
     def __init__(
@@ -4629,6 +4629,46 @@ class Call(Message):
         self._caller_authid = caller_authid
         self._caller_authrole = caller_authrole
         self._forward_for = forward_for
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.request != self.request:
+            return False
+        if other.procedure != self.procedure:
+            return False
+        if other.args != self.args:
+            return False
+        if other.kwargs != self.kwargs:
+            return False
+        if other.payload != self.payload:
+            return False
+        if other.timeout != self.timeout:
+            return False
+        if other.receive_progress != self.receive_progress:
+            return False
+        if other.transaction_hash != self.transaction_hash:
+            return False
+        if other.enc_algo != self.enc_algo:
+            return False
+        if other.enc_key != self.enc_key:
+            return False
+        if other.enc_serializer != self.enc_serializer:
+            return False
+        if other.caller != self.caller:
+            return False
+        if other.caller_authid != self.caller_authid:
+            return False
+        if other.caller_authrole != self.caller_authrole:
+            return False
+        if other.forward_for != self.forward_for:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     @property
     def request(self):
