@@ -177,8 +177,32 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         return o == 0
 
+    # Error
+    def ForwardFor(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
+        if o != 0:
+            x = self._tab.Vector(o)
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
+            from wamp.proto.Principal import Principal
+            obj = Principal()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # Error
+    def ForwardForLength(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
+        if o != 0:
+            return self._tab.VectorLen(o)
+        return 0
+
+    # Error
+    def ForwardForIsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
+        return o == 0
+
 def ErrorStart(builder):
-    builder.StartObject(10)
+    builder.StartObject(11)
 
 def Start(builder):
     ErrorStart(builder)
@@ -266,6 +290,18 @@ def ErrorStartEncKeyVector(builder, numElems):
 
 def StartEncKeyVector(builder, numElems: int) -> int:
     return ErrorStartEncKeyVector(builder, numElems)
+
+def ErrorAddForwardFor(builder, forwardFor):
+    builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
+
+def AddForwardFor(builder, forwardFor):
+    ErrorAddForwardFor(builder, forwardFor)
+
+def ErrorStartForwardForVector(builder, numElems):
+    return builder.StartVector(8, numElems, 8)
+
+def StartForwardForVector(builder, numElems: int) -> int:
+    return ErrorStartForwardForVector(builder, numElems)
 
 def ErrorEnd(builder):
     return builder.EndObject()

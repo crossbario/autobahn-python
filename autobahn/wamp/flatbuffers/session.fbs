@@ -179,4 +179,7 @@ table Error
 
     // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
     enc_key: [uint8];
+
+    // R2R-link message forwarding route that was taken.
+    forward_for: [Principal];
 }
