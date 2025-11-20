@@ -683,14 +683,23 @@ class Hello(Message):
     """
 
     __slots__ = (
+        # string (uri)
         "_realm",
+        # ClientRoles (required)
         "_roles",
+        # [AuthMethod]
         "_authmethods",
+        # string (principal)
         "_authid",
+        # string (principal)
         "_authrole",
+        # Map
         "_authextra",
+        # bool
         "_resumable",
+        # uint64
         "_resume_session",
+        # string
         "_resume_token",
     )
 
@@ -765,6 +774,34 @@ class Hello(Message):
         self._resume_session = resume_session
         self._resume_token = resume_token
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.realm != self.realm:
+            return False
+        if other.roles != self.roles:
+            return False
+        if other.authmethods != self.authmethods:
+            return False
+        if other.authid != self.authid:
+            return False
+        if other.authrole != self.authrole:
+            return False
+        if other.authextra != self.authextra:
+            return False
+        if other.resumable != self.resumable:
+            return False
+        if other.resume_session != self.resume_session:
+            return False
+        if other.resume_token != self.resume_token:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def realm(self):
         if self._realm is None and self._from_fbs:
@@ -772,6 +809,11 @@ class Hello(Message):
             if realm_bytes:
                 self._realm = realm_bytes.decode("utf-8")
         return self._realm
+
+    @realm.setter
+    def realm(self, value):
+        assert value is None or type(value) == str
+        self._realm = value
 
     @property
     def roles(self):
@@ -782,12 +824,22 @@ class Hello(Message):
             self._roles = {}
         return self._roles
 
+    @roles.setter
+    def roles(self, value):
+        assert value is None or type(value) == dict
+        self._roles = value
+
     @property
     def authmethods(self):
         if self._authmethods is None and self._from_fbs:
             # Note: AuthMethod enum array deserialization deferred
             self._authmethods = []
         return self._authmethods
+
+    @authmethods.setter
+    def authmethods(self, value):
+        assert value is None or type(value) == list
+        self._authmethods = value
 
     @property
     def authid(self):
@@ -797,6 +849,11 @@ class Hello(Message):
                 self._authid = authid_bytes.decode("utf-8")
         return self._authid
 
+    @authid.setter
+    def authid(self, value):
+        assert value is None or type(value) == str
+        self._authid = value
+
     @property
     def authrole(self):
         if self._authrole is None and self._from_fbs:
@@ -805,6 +862,11 @@ class Hello(Message):
                 self._authrole = authrole_bytes.decode("utf-8")
         return self._authrole
 
+    @authrole.setter
+    def authrole(self, value):
+        assert value is None or type(value) == str
+        self._authrole = value
+
     @property
     def authextra(self):
         if self._authextra is None and self._from_fbs:
@@ -812,17 +874,32 @@ class Hello(Message):
             self._authextra = {}
         return self._authextra
 
+    @authextra.setter
+    def authextra(self, value):
+        assert value is None or type(value) == dict
+        self._authextra = value
+
     @property
     def resumable(self):
         if self._resumable is None and self._from_fbs:
             self._resumable = self._from_fbs.Resumable()
         return self._resumable
 
+    @resumable.setter
+    def resumable(self, value):
+        assert value is None or type(value) == bool
+        self._resumable = value
+
     @property
     def resume_session(self):
         if self._resume_session is None and self._from_fbs:
             self._resume_session = self._from_fbs.ResumeSession()
         return self._resume_session
+
+    @resume_session.setter
+    def resume_session(self, value):
+        assert value is None or type(value) == int
+        self._resume_session = value
 
     @property
     def resume_token(self):
@@ -831,6 +908,11 @@ class Hello(Message):
             if resume_token_bytes:
                 self._resume_token = resume_token_bytes.decode("utf-8")
         return self._resume_token
+
+    @resume_token.setter
+    def resume_token(self, value):
+        assert value is None or type(value) == str
+        self._resume_token = value
 
     @staticmethod
     def cast(buf):
@@ -1129,17 +1211,29 @@ class Welcome(Message):
     """
 
     __slots__ = (
+        # uint64
         "_session",
+        # RouterRoles (required)
         "_roles",
+        # string (required, uri)
         "_realm",
+        # string (required, principal)
         "_authid",
+        # string (required, principal)
         "_authrole",
+        # AuthMethod
         "_authmethod",
+        # string
         "_authprovider",
+        # Map
         "_authextra",
+        # bool
         "_resumed",
+        # bool
         "_resumable",
+        # string
         "_resume_token",
+        # dict
         "_custom",
     )
 
@@ -1232,11 +1326,50 @@ class Welcome(Message):
         self._resume_token = resume_token
         self._custom = custom or {} if custom is not None or not from_fbs else None
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.session != self.session:
+            return False
+        if other.roles != self.roles:
+            return False
+        if other.realm != self.realm:
+            return False
+        if other.authid != self.authid:
+            return False
+        if other.authrole != self.authrole:
+            return False
+        if other.authmethod != self.authmethod:
+            return False
+        if other.authprovider != self.authprovider:
+            return False
+        if other.authextra != self.authextra:
+            return False
+        if other.resumed != self.resumed:
+            return False
+        if other.resumable != self.resumable:
+            return False
+        if other.resume_token != self.resume_token:
+            return False
+        if other.custom != self.custom:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def session(self):
         if self._session is None and self._from_fbs:
             self._session = self._from_fbs.Session()
         return self._session
+
+    @session.setter
+    def session(self, value):
+        assert value is None or type(value) == int
+        self._session = value
 
     @property
     def roles(self):
@@ -1247,6 +1380,11 @@ class Welcome(Message):
             self._roles = {}
         return self._roles
 
+    @roles.setter
+    def roles(self, value):
+        assert value is None or type(value) == dict
+        self._roles = value
+
     @property
     def realm(self):
         if self._realm is None and self._from_fbs:
@@ -1254,6 +1392,11 @@ class Welcome(Message):
             if realm_bytes:
                 self._realm = realm_bytes.decode("utf-8")
         return self._realm
+
+    @realm.setter
+    def realm(self, value):
+        assert value is None or type(value) == str
+        self._realm = value
 
     @property
     def authid(self):
@@ -1263,6 +1406,11 @@ class Welcome(Message):
                 self._authid = authid_bytes.decode("utf-8")
         return self._authid
 
+    @authid.setter
+    def authid(self, value):
+        assert value is None or type(value) == str
+        self._authid = value
+
     @property
     def authrole(self):
         if self._authrole is None and self._from_fbs:
@@ -1270,6 +1418,11 @@ class Welcome(Message):
             if authrole_bytes:
                 self._authrole = authrole_bytes.decode("utf-8")
         return self._authrole
+
+    @authrole.setter
+    def authrole(self, value):
+        assert value is None or type(value) == str
+        self._authrole = value
 
     @property
     def authmethod(self):
@@ -1280,6 +1433,11 @@ class Welcome(Message):
                 self._authmethod = f"authmethod_{method_val}"
         return self._authmethod
 
+    @authmethod.setter
+    def authmethod(self, value):
+        assert value is None or type(value) == str
+        self._authmethod = value
+
     @property
     def authprovider(self):
         if self._authprovider is None and self._from_fbs:
@@ -1288,6 +1446,11 @@ class Welcome(Message):
                 self._authprovider = authprovider_bytes.decode("utf-8")
         return self._authprovider
 
+    @authprovider.setter
+    def authprovider(self, value):
+        assert value is None or type(value) == str
+        self._authprovider = value
+
     @property
     def authextra(self):
         if self._authextra is None and self._from_fbs:
@@ -1295,17 +1458,32 @@ class Welcome(Message):
             self._authextra = {}
         return self._authextra
 
+    @authextra.setter
+    def authextra(self, value):
+        assert value is None or type(value) == dict
+        self._authextra = value
+
     @property
     def resumed(self):
         if self._resumed is None and self._from_fbs:
             self._resumed = self._from_fbs.Resumed()
         return self._resumed
 
+    @resumed.setter
+    def resumed(self, value):
+        assert value is None or type(value) == bool
+        self._resumed = value
+
     @property
     def resumable(self):
         if self._resumable is None and self._from_fbs:
             self._resumable = self._from_fbs.Resumable()
         return self._resumable
+
+    @resumable.setter
+    def resumable(self, value):
+        assert value is None or type(value) == bool
+        self._resumable = value
 
     @property
     def resume_token(self):
@@ -1315,12 +1493,22 @@ class Welcome(Message):
                 self._resume_token = resume_token_bytes.decode("utf-8")
         return self._resume_token
 
+    @resume_token.setter
+    def resume_token(self, value):
+        assert value is None or type(value) == str
+        self._resume_token = value
+
     @property
     def custom(self):
         if self._custom is None and self._from_fbs:
             # Note: custom attributes deserialization deferred
             self._custom = {}
         return self._custom if self._custom is not None else {}
+
+    @custom.setter
+    def custom(self, value):
+        assert value is None or type(value) == dict
+        self._custom = value
 
     @staticmethod
     def cast(buf):
@@ -1595,7 +1783,9 @@ class Abort(Message):
     """
 
     __slots__ = (
+        # string (required, uri)
         "_reason",
+        # string
         "_message",
     )
 
@@ -1615,6 +1805,20 @@ class Abort(Message):
         self._reason = reason
         self._message = message
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.reason != self.reason:
+            return False
+        if other.message != self.message:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def reason(self):
         if self._reason is None and self._from_fbs:
@@ -1623,6 +1827,11 @@ class Abort(Message):
                 self._reason = reason_bytes.decode("utf-8")
         return self._reason
 
+    @reason.setter
+    def reason(self, value):
+        assert value is None or type(value) == str
+        self._reason = value
+
     @property
     def message(self):
         if self._message is None and self._from_fbs:
@@ -1630,6 +1839,11 @@ class Abort(Message):
             if message_bytes:
                 self._message = message_bytes.decode("utf-8")
         return self._message
+
+    @message.setter
+    def message(self, value):
+        assert value is None or type(value) == str
+        self._message = value
 
     @staticmethod
     def cast(buf):
@@ -1744,7 +1958,9 @@ class Challenge(Message):
     """
 
     __slots__ = (
+        # AuthMethod (enum)
         "_method",
+        # Map
         "_extra",
     )
 
@@ -1764,6 +1980,20 @@ class Challenge(Message):
         self._method = method
         self._extra = extra or {} if extra is not None or not from_fbs else None
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.method != self.method:
+            return False
+        if other.extra != self.extra:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def method(self):
         if self._method is None and self._from_fbs:
@@ -1775,6 +2005,11 @@ class Challenge(Message):
             self._method = f"authmethod_{method_val}" if method_val else None
         return self._method
 
+    @method.setter
+    def method(self, value):
+        assert value is None or type(value) == str
+        self._method = value
+
     @property
     def extra(self):
         if self._extra is None and self._from_fbs:
@@ -1783,6 +2018,11 @@ class Challenge(Message):
             # For now, return empty dict
             self._extra = {}
         return self._extra if self._extra is not None else {}
+
+    @extra.setter
+    def extra(self, value):
+        assert value is None or type(value) == dict
+        self._extra = value
 
     @staticmethod
     def cast(buf):
@@ -1887,7 +2127,9 @@ class Authenticate(Message):
     """
 
     __slots__ = (
+        # string (required)
         "_signature",
+        # Map
         "_extra",
     )
 
@@ -1907,6 +2149,20 @@ class Authenticate(Message):
         self._signature = signature
         self._extra = extra or {} if extra is not None or not from_fbs else None
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.signature != self.signature:
+            return False
+        if other.extra != self.extra:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def signature(self):
         if self._signature is None and self._from_fbs:
@@ -1914,6 +2170,11 @@ class Authenticate(Message):
             if signature_bytes:
                 self._signature = signature_bytes.decode("utf-8")
         return self._signature
+
+    @signature.setter
+    def signature(self, value):
+        assert value is None or type(value) == str
+        self._signature = value
 
     @property
     def extra(self):
@@ -1923,6 +2184,11 @@ class Authenticate(Message):
             # For now, return empty dict
             self._extra = {}
         return self._extra if self._extra is not None else {}
+
+    @extra.setter
+    def extra(self, value):
+        assert value is None or type(value) == dict
+        self._extra = value
 
     @staticmethod
     def cast(buf):
@@ -2035,8 +2301,11 @@ class Goodbye(Message):
     """
 
     __slots__ = (
+        # string (required, uri)
         "_reason",
+        # string
         "_message",
+        # bool
         "_resumable",
     )
 
@@ -2061,6 +2330,22 @@ class Goodbye(Message):
         self._message = message
         self._resumable = resumable
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.reason != self.reason:
+            return False
+        if other.message != self.message:
+            return False
+        if other.resumable != self.resumable:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def reason(self):
         if self._reason is None and self._from_fbs:
@@ -2068,6 +2353,11 @@ class Goodbye(Message):
             if reason_bytes:
                 self._reason = reason_bytes.decode("utf-8")
         return self._reason
+
+    @reason.setter
+    def reason(self, value):
+        assert value is None or type(value) == str
+        self._reason = value
 
     @property
     def message(self):
@@ -2077,11 +2367,21 @@ class Goodbye(Message):
                 self._message = message_bytes.decode("utf-8")
         return self._message
 
+    @message.setter
+    def message(self, value):
+        assert value is None or type(value) == str
+        self._message = value
+
     @property
     def resumable(self):
         if self._resumable is None and self._from_fbs:
             self._resumable = self._from_fbs.Resumable()
         return self._resumable
+
+    @resumable.setter
+    def resumable(self, value):
+        assert value is None or type(value) == bool
+        self._resumable = value
 
     @staticmethod
     def cast(buf):
@@ -3898,10 +4198,15 @@ class Subscribe(Message):
     MATCH_WILDCARD = "wildcard"
 
     __slots__ = (
+        # uint64 (key)
         "_request",
+        # string (required, uri_pattern)
         "_topic",
+        # Match (enum)
         "_match",
+        # bool
         "_get_retained",
+        # [Principal]
         "_forward_for",
     )
 
@@ -3950,11 +4255,36 @@ class Subscribe(Message):
         self._get_retained = get_retained
         self._forward_for = forward_for
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.request != self.request:
+            return False
+        if other.topic != self.topic:
+            return False
+        if other.match != self.match:
+            return False
+        if other.get_retained != self.get_retained:
+            return False
+        if other.forward_for != self.forward_for:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def request(self):
         if self._request is None and self._from_fbs:
             self._request = self._from_fbs.Request()
         return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
 
     @property
     def topic(self):
@@ -3963,6 +4293,11 @@ class Subscribe(Message):
             if topic_bytes:
                 self._topic = topic_bytes.decode("utf-8")
         return self._topic
+
+    @topic.setter
+    def topic(self, value):
+        assert value is None or type(value) == str
+        self._topic = value
 
     @property
     def match(self):
@@ -3978,16 +4313,31 @@ class Subscribe(Message):
                 self._match = Subscribe.MATCH_EXACT
         return self._match
 
+    @match.setter
+    def match(self, value):
+        assert value is None or type(value) == str
+        self._match = value
+
     @property
     def get_retained(self):
         if self._get_retained is None and self._from_fbs:
             self._get_retained = self._from_fbs.GetRetained()
         return self._get_retained
 
+    @get_retained.setter
+    def get_retained(self, value):
+        assert value is None or type(value) == bool
+        self._get_retained = value
+
     @property
     def forward_for(self):
         # forward_for is not in FlatBuffers schema yet
         return self._forward_for
+
+    @forward_for.setter
+    def forward_for(self, value):
+        assert value is None or type(value) == list
+        self._forward_for = value
 
     @staticmethod
     def parse(wmsg):
@@ -4259,8 +4609,11 @@ class Unsubscribe(Message):
     """
 
     __slots__ = (
+        # uint64 (key)
         "_request",
+        # uint64
         "_subscription",
+        # [Principal]
         "_forward_for",
     )
 
@@ -4293,11 +4646,32 @@ class Unsubscribe(Message):
         self._subscription = subscription
         self._forward_for = forward_for
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.request != self.request:
+            return False
+        if other.subscription != self.subscription:
+            return False
+        if other.forward_for != self.forward_for:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def request(self):
         if self._request is None and self._from_fbs:
             self._request = self._from_fbs.Request()
         return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
 
     @property
     def subscription(self):
@@ -4305,10 +4679,20 @@ class Unsubscribe(Message):
             self._subscription = self._from_fbs.Subscription()
         return self._subscription
 
+    @subscription.setter
+    def subscription(self, value):
+        assert value is None or type(value) == int
+        self._subscription = value
+
     @property
     def forward_for(self):
         # forward_for is not in FlatBuffers schema yet
         return self._forward_for
+
+    @forward_for.setter
+    def forward_for(self, value):
+        assert value is None or type(value) == list
+        self._forward_for = value
 
     @staticmethod
     def parse(wmsg):
@@ -4413,8 +4797,11 @@ class Unsubscribed(Message):
     """
 
     __slots__ = (
+        # uint64 (key)
         "_request",
+        # uint64
         "_subscription",
+        # string (uri)
         "_reason",
     )
 
@@ -4445,17 +4832,43 @@ class Unsubscribed(Message):
         self._subscription = subscription
         self._reason = reason
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.request != self.request:
+            return False
+        if other.subscription != self.subscription:
+            return False
+        if other.reason != self.reason:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def request(self):
         if self._request is None and self._from_fbs:
             self._request = self._from_fbs.Request()
         return self._request
 
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
     @property
     def subscription(self):
         if self._subscription is None and self._from_fbs:
             self._subscription = self._from_fbs.Subscription()
         return self._subscription
+
+    @subscription.setter
+    def subscription(self, value):
+        assert value is None or type(value) == int
+        self._subscription = value
 
     @property
     def reason(self):
@@ -4464,6 +4877,11 @@ class Unsubscribed(Message):
             if reason_bytes:
                 self._reason = reason_bytes.decode("utf-8")
         return self._reason
+
+    @reason.setter
+    def reason(self, value):
+        assert value is None or type(value) == str
+        self._reason = value
 
     @staticmethod
     def parse(wmsg):
@@ -5354,7 +5772,10 @@ class EventReceived(Message):
     The WAMP message code for this type of message.
     """
 
-    __slots__ = ("_publication",)
+    __slots__ = (
+        # uint64
+        "_publication",
+    )
 
     def __init__(self, publication=None, from_fbs=None):
         """
@@ -5367,11 +5788,28 @@ class EventReceived(Message):
         Message.__init__(self, from_fbs=from_fbs)
         self._publication = publication
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.publication != self.publication:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def publication(self):
         if self._publication is None and self._from_fbs:
             self._publication = self._from_fbs.Publication()
         return self._publication
+
+    @publication.setter
+    def publication(self, value):
+        assert value is None or type(value) == int
+        self._publication = value
 
     @staticmethod
     def parse(wmsg):
@@ -6224,8 +6662,11 @@ class Cancel(Message):
     KILLNOWAIT = "killnowait"
 
     __slots__ = (
+        # uint64 (key)
         "_request",
+        # CancelMode (enum)
         "_mode",
+        # [Principal]
         "_forward_for",
     )
 
@@ -6260,11 +6701,32 @@ class Cancel(Message):
         self._mode = mode
         self._forward_for = forward_for
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.request != self.request:
+            return False
+        if other.mode != self.mode:
+            return False
+        if other.forward_for != self.forward_for:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def request(self):
         if self._request is None and self._from_fbs:
             self._request = self._from_fbs.Request()
         return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
 
     @property
     def mode(self):
@@ -6277,10 +6739,20 @@ class Cancel(Message):
             # Note: KILLNOWAIT and ABORT not in FlatBuffers enum mapping
         return self._mode
 
+    @mode.setter
+    def mode(self, value):
+        assert value is None or type(value) == str
+        self._mode = value
+
     @property
     def forward_for(self):
         # forward_for in FlatBuffers uses Principal struct, complex to deserialize
         return self._forward_for
+
+    @forward_for.setter
+    def forward_for(self, value):
+        assert value is None or type(value) == list
+        self._forward_for = value
 
     @staticmethod
     def parse(wmsg):
@@ -6846,12 +7318,19 @@ class Register(Message):
     INVOKE_ALL = "all"
 
     __slots__ = (
+        # uint64 (key)
         "_request",
+        # string (required, uri_pattern)
         "_procedure",
+        # Match (enum)
         "_match",
+        # InvocationPolicy (enum)
         "_invoke",
+        # uint16
         "_concurrency",
+        # bool
         "_force_reregister",
+        # [Principal]
         "_forward_for",
     )
 
@@ -6924,11 +7403,40 @@ class Register(Message):
         self._force_reregister = force_reregister
         self._forward_for = forward_for
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.request != self.request:
+            return False
+        if other.procedure != self.procedure:
+            return False
+        if other.match != self.match:
+            return False
+        if other.invoke != self.invoke:
+            return False
+        if other.concurrency != self.concurrency:
+            return False
+        if other.force_reregister != self.force_reregister:
+            return False
+        if other.forward_for != self.forward_for:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def request(self):
         if self._request is None and self._from_fbs:
             self._request = self._from_fbs.Request()
         return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
 
     @property
     def procedure(self):
@@ -6937,6 +7445,11 @@ class Register(Message):
             if procedure_bytes:
                 self._procedure = procedure_bytes.decode("utf-8")
         return self._procedure
+
+    @procedure.setter
+    def procedure(self, value):
+        assert value is None or type(value) == str
+        self._procedure = value
 
     @property
     def match(self):
@@ -6949,6 +7462,11 @@ class Register(Message):
             else:
                 self._match = Register.MATCH_EXACT
         return self._match
+
+    @match.setter
+    def match(self, value):
+        assert value is None or type(value) == str
+        self._match = value
 
     @property
     def invoke(self):
@@ -6966,11 +7484,21 @@ class Register(Message):
                 self._invoke = Register.INVOKE_SINGLE
         return self._invoke
 
+    @invoke.setter
+    def invoke(self, value):
+        assert value is None or type(value) == str
+        self._invoke = value
+
     @property
     def concurrency(self):
         if self._concurrency is None and self._from_fbs:
             self._concurrency = self._from_fbs.Concurrency()
         return self._concurrency
+
+    @concurrency.setter
+    def concurrency(self, value):
+        assert value is None or type(value) == int
+        self._concurrency = value
 
     @property
     def force_reregister(self):
@@ -6978,10 +7506,20 @@ class Register(Message):
             self._force_reregister = self._from_fbs.ForceReregister()
         return self._force_reregister
 
+    @force_reregister.setter
+    def force_reregister(self, value):
+        assert value is None or type(value) == bool
+        self._force_reregister = value
+
     @property
     def forward_for(self):
         # forward_for is not in FlatBuffers schema yet
         return self._forward_for
+
+    @forward_for.setter
+    def forward_for(self, value):
+        assert value is None or type(value) == list
+        self._forward_for = value
 
     @staticmethod
     def parse(wmsg):
@@ -7243,7 +7781,9 @@ class Registered(Message):
     """
 
     __slots__ = (
+        # uint64 (key)
         "_request",
+        # uint64
         "_registration",
     )
 
@@ -7263,17 +7803,41 @@ class Registered(Message):
         self._request = request
         self._registration = registration
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.request != self.request:
+            return False
+        if other.registration != self.registration:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def request(self):
         if self._request is None and self._from_fbs:
             self._request = self._from_fbs.Request()
         return self._request
 
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
     @property
     def registration(self):
         if self._registration is None and self._from_fbs:
             self._registration = self._from_fbs.Registration()
         return self._registration
+
+    @registration.setter
+    def registration(self, value):
+        assert value is None or type(value) == int
+        self._registration = value
 
     @staticmethod
     def parse(wmsg):
@@ -7453,8 +8017,11 @@ class Unregistered(Message):
     """
 
     __slots__ = (
+        # uint64 (key)
         "_request",
+        # uint64
         "_registration",
+        # string (uri)
         "_reason",
     )
 
@@ -7484,17 +8051,43 @@ class Unregistered(Message):
         self._registration = registration
         self._reason = reason
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.request != self.request:
+            return False
+        if other.registration != self.registration:
+            return False
+        if other.reason != self.reason:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def request(self):
         if self._request is None and self._from_fbs:
             self._request = self._from_fbs.Request()
         return self._request
 
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
     @property
     def registration(self):
         if self._registration is None and self._from_fbs:
             self._registration = self._from_fbs.Registration()
         return self._registration
+
+    @registration.setter
+    def registration(self, value):
+        assert value is None or type(value) == int
+        self._registration = value
 
     @property
     def reason(self):
@@ -7503,6 +8096,11 @@ class Unregistered(Message):
             if reason_bytes:
                 self._reason = reason_bytes.decode("utf-8")
         return self._reason
+
+    @reason.setter
+    def reason(self, value):
+        assert value is None or type(value) == str
+        self._reason = value
 
     @staticmethod
     def parse(wmsg):
@@ -8168,9 +8766,13 @@ class Interrupt(Message):
     KILLNOWAIT = "killnowait"
 
     __slots__ = (
+        # uint64 (key)
         "_request",
+        # CancelMode (enum)
         "_mode",
+        # string (uri)
         "_reason",
+        # [Principal]
         "_forward_for",
     )
 
@@ -8217,11 +8819,34 @@ class Interrupt(Message):
         self._reason = reason
         self._forward_for = forward_for
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if not Message.__eq__(self, other):
+            return False
+        if other.request != self.request:
+            return False
+        if other.mode != self.mode:
+            return False
+        if other.reason != self.reason:
+            return False
+        if other.forward_for != self.forward_for:
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @property
     def request(self):
         if self._request is None and self._from_fbs:
             self._request = self._from_fbs.Request()
         return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
 
     @property
     def mode(self):
@@ -8233,6 +8858,11 @@ class Interrupt(Message):
             # Note: KILLNOWAIT not in FlatBuffers enum
         return self._mode
 
+    @mode.setter
+    def mode(self, value):
+        assert value is None or type(value) == str
+        self._mode = value
+
     @property
     def reason(self):
         if self._reason is None and self._from_fbs:
@@ -8241,10 +8871,20 @@ class Interrupt(Message):
                 self._reason = reason_bytes.decode("utf-8")
         return self._reason
 
+    @reason.setter
+    def reason(self, value):
+        assert value is None or type(value) == str
+        self._reason = value
+
     @property
     def forward_for(self):
         # forward_for in FlatBuffers uses Principal struct, complex to deserialize
         return self._forward_for
+
+    @forward_for.setter
+    def forward_for(self, value):
+        assert value is None or type(value) == list
+        self._forward_for = value
 
     @staticmethod
     def parse(wmsg):
