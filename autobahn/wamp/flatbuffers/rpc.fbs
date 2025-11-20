@@ -24,7 +24,13 @@ table Call
     // The WAMP or application URI of the procedure which should be called.
     procedure: string (required, uri);
 
-    // Raw application payload: call arguments. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    /// Positional values for application-defined call arguments.
+    args: [uint8];
+
+    /// Keyword values for application-defined call arguments.
+    kwargs: [uint8];
+
+    /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
     // The encoding algorithm that was used to encode the payload.
@@ -85,7 +91,13 @@ table Result
     // The request ID of the original CALL request.
     request: uint64 (key);
 
-    // Raw application payload: call result. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    /// Positional values for application-defined call result.
+    args: [uint8];
+
+    /// Keyword values for application-defined call result.
+    kwargs: [uint8];
+
+    /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
     // The encoding algorithm that was used to encode the payload.
@@ -197,7 +209,13 @@ table Invocation
     // The registration ID of the endpoint to be invoked.
     registration: uint64;
 
-    // Raw application payload: call arguments. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    /// Positional values for application-defined call arguments.
+    args: [uint8];
+
+    /// Keyword values for application-defined call arguments.
+    kwargs: [uint8];
+
+    /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
     // The encoding algorithm that was used to encode the payload.
@@ -264,7 +282,13 @@ table Yield
     // The WAMP request ID of this request.
     request: uint64 (key);
 
-    // Raw application payload: call result. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    /// Positional values for application-defined invocation result.
+    args: [uint8];
+
+    /// Keyword values for application-defined invocation result.
+    kwargs: [uint8];
+
+    /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
     // The encoding algorithm that was used to encode the payload.

@@ -2,7 +2,6 @@
 
 # namespace: proto
 
-
 class InvocationPolicy(object):
     SINGLE = 0
     FIRST = 1

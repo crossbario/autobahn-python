@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class Unsubscribe(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class Unsubscribe(object):
     def GetRootAsUnsubscribe(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # Unsubscribe
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -31,65 +28,49 @@ class Unsubscribe(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Unsubscribe
     def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Unsubscribe
     def Subscription(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
-
 
 def UnsubscribeStart(builder):
     builder.StartObject(3)
 
-
 def Start(builder):
     UnsubscribeStart(builder)
-
 
 def UnsubscribeAddSession(builder, session):
     builder.PrependUint64Slot(0, session, 0)
 
-
 def AddSession(builder, session):
     UnsubscribeAddSession(builder, session)
-
 
 def UnsubscribeAddRequest(builder, request):
     builder.PrependUint64Slot(1, request, 0)
 
-
 def AddRequest(builder, request):
     UnsubscribeAddRequest(builder, request)
-
 
 def UnsubscribeAddSubscription(builder, subscription):
     builder.PrependUint64Slot(2, subscription, 0)
 
-
 def AddSubscription(builder, subscription):
     UnsubscribeAddSubscription(builder, subscription)
 
-
 def UnsubscribeEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return UnsubscribeEnd(builder)

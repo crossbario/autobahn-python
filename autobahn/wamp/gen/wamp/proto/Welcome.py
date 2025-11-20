@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class Welcome(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class Welcome(object):
     def GetRootAsWelcome(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # Welcome
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -31,9 +28,7 @@ class Welcome(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Welcome
@@ -42,7 +37,6 @@ class Welcome(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.proto.RouterRoles import RouterRoles
-
             obj = RouterRoles()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -89,7 +83,6 @@ class Welcome(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.Map import Map
-
             obj = Map()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -99,18 +92,14 @@ class Welcome(object):
     def Resumed(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
-            return bool(
-                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-            )
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # Welcome
     def Resumable(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
-            return bool(
-                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-            )
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # Welcome
@@ -120,120 +109,80 @@ class Welcome(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-
 def WelcomeStart(builder):
     builder.StartObject(11)
-
 
 def Start(builder):
     WelcomeStart(builder)
 
-
 def WelcomeAddSession(builder, session):
     builder.PrependUint64Slot(0, session, 0)
-
 
 def AddSession(builder, session):
     WelcomeAddSession(builder, session)
 
-
 def WelcomeAddRoles(builder, roles):
-    builder.PrependUOffsetTRelativeSlot(
-        1, flatbuffers.number_types.UOffsetTFlags.py_type(roles), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(roles), 0)
 
 def AddRoles(builder, roles):
     WelcomeAddRoles(builder, roles)
 
-
 def WelcomeAddRealm(builder, realm):
-    builder.PrependUOffsetTRelativeSlot(
-        2, flatbuffers.number_types.UOffsetTFlags.py_type(realm), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(realm), 0)
 
 def AddRealm(builder, realm):
     WelcomeAddRealm(builder, realm)
 
-
 def WelcomeAddAuthid(builder, authid):
-    builder.PrependUOffsetTRelativeSlot(
-        3, flatbuffers.number_types.UOffsetTFlags.py_type(authid), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(authid), 0)
 
 def AddAuthid(builder, authid):
     WelcomeAddAuthid(builder, authid)
 
-
 def WelcomeAddAuthrole(builder, authrole):
-    builder.PrependUOffsetTRelativeSlot(
-        4, flatbuffers.number_types.UOffsetTFlags.py_type(authrole), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(authrole), 0)
 
 def AddAuthrole(builder, authrole):
     WelcomeAddAuthrole(builder, authrole)
 
-
 def WelcomeAddAuthmethod(builder, authmethod):
     builder.PrependUint8Slot(5, authmethod, 0)
-
 
 def AddAuthmethod(builder, authmethod):
     WelcomeAddAuthmethod(builder, authmethod)
 
-
 def WelcomeAddAuthprovider(builder, authprovider):
-    builder.PrependUOffsetTRelativeSlot(
-        6, flatbuffers.number_types.UOffsetTFlags.py_type(authprovider), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(authprovider), 0)
 
 def AddAuthprovider(builder, authprovider):
     WelcomeAddAuthprovider(builder, authprovider)
 
-
 def WelcomeAddAuthextra(builder, authextra):
-    builder.PrependUOffsetTRelativeSlot(
-        7, flatbuffers.number_types.UOffsetTFlags.py_type(authextra), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(7, flatbuffers.number_types.UOffsetTFlags.py_type(authextra), 0)
 
 def AddAuthextra(builder, authextra):
     WelcomeAddAuthextra(builder, authextra)
 
-
 def WelcomeAddResumed(builder, resumed):
     builder.PrependBoolSlot(8, resumed, 0)
-
 
 def AddResumed(builder, resumed):
     WelcomeAddResumed(builder, resumed)
 
-
 def WelcomeAddResumable(builder, resumable):
     builder.PrependBoolSlot(9, resumable, 0)
-
 
 def AddResumable(builder, resumable):
     WelcomeAddResumable(builder, resumable)
 
-
 def WelcomeAddResumeToken(builder, resumeToken):
-    builder.PrependUOffsetTRelativeSlot(
-        10, flatbuffers.number_types.UOffsetTFlags.py_type(resumeToken), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(resumeToken), 0)
 
 def AddResumeToken(builder, resumeToken):
     WelcomeAddResumeToken(builder, resumeToken)
 
-
 def WelcomeEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return WelcomeEnd(builder)

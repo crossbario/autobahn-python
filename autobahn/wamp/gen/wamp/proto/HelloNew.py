@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class HelloNew(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class HelloNew(object):
     def GetRootAsHelloNew(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # HelloNew
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -33,7 +30,6 @@ class HelloNew(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.proto.ClientRoles import ClientRoles
-
             obj = ClientRoles()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -79,7 +75,6 @@ class HelloNew(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
             from flatbuffers.table import Table
-
             obj = Table(bytearray(), 0)
             self._tab.Union(obj, o)
             return obj
@@ -97,7 +92,6 @@ class HelloNew(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
             from flatbuffers.table import Table
-
             obj = Table(bytearray(), 0)
             self._tab.Union(obj, o)
             return obj
@@ -115,7 +109,6 @@ class HelloNew(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
             from flatbuffers.table import Table
-
             obj = Table(bytearray(), 0)
             self._tab.Union(obj, o)
             return obj
@@ -125,18 +118,14 @@ class HelloNew(object):
     def Resumable(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         if o != 0:
-            return bool(
-                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-            )
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # HelloNew
     def ResumeSession(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # HelloNew
@@ -146,146 +135,98 @@ class HelloNew(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-
 def HelloNewStart(builder):
     builder.StartObject(14)
-
 
 def Start(builder):
     HelloNewStart(builder)
 
-
 def HelloNewAddRoles(builder, roles):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(roles), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(roles), 0)
 
 def AddRoles(builder, roles):
     HelloNewAddRoles(builder, roles)
 
-
 def HelloNewAddRealm(builder, realm):
-    builder.PrependUOffsetTRelativeSlot(
-        1, flatbuffers.number_types.UOffsetTFlags.py_type(realm), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(realm), 0)
 
 def AddRealm(builder, realm):
     HelloNewAddRealm(builder, realm)
 
-
 def HelloNewAddAuthid(builder, authid):
-    builder.PrependUOffsetTRelativeSlot(
-        2, flatbuffers.number_types.UOffsetTFlags.py_type(authid), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(authid), 0)
 
 def AddAuthid(builder, authid):
     HelloNewAddAuthid(builder, authid)
 
-
 def HelloNewAddAuthrole(builder, authrole):
-    builder.PrependUOffsetTRelativeSlot(
-        3, flatbuffers.number_types.UOffsetTFlags.py_type(authrole), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(authrole), 0)
 
 def AddAuthrole(builder, authrole):
     HelloNewAddAuthrole(builder, authrole)
 
-
 def HelloNewAddAuthmode(builder, authmode):
     builder.PrependUint8Slot(4, authmode, 0)
-
 
 def AddAuthmode(builder, authmode):
     HelloNewAddAuthmode(builder, authmode)
 
-
 def HelloNewAddAuthfactor1Type(builder, authfactor1Type):
     builder.PrependUint8Slot(5, authfactor1Type, 0)
-
 
 def AddAuthfactor1Type(builder, authfactor1Type):
     HelloNewAddAuthfactor1Type(builder, authfactor1Type)
 
-
 def HelloNewAddAuthfactor1(builder, authfactor1):
-    builder.PrependUOffsetTRelativeSlot(
-        6, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor1), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor1), 0)
 
 def AddAuthfactor1(builder, authfactor1):
     HelloNewAddAuthfactor1(builder, authfactor1)
 
-
 def HelloNewAddAuthfactor2Type(builder, authfactor2Type):
     builder.PrependUint8Slot(7, authfactor2Type, 0)
-
 
 def AddAuthfactor2Type(builder, authfactor2Type):
     HelloNewAddAuthfactor2Type(builder, authfactor2Type)
 
-
 def HelloNewAddAuthfactor2(builder, authfactor2):
-    builder.PrependUOffsetTRelativeSlot(
-        8, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor2), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(8, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor2), 0)
 
 def AddAuthfactor2(builder, authfactor2):
     HelloNewAddAuthfactor2(builder, authfactor2)
 
-
 def HelloNewAddAuthfactor3Type(builder, authfactor3Type):
     builder.PrependUint8Slot(9, authfactor3Type, 0)
-
 
 def AddAuthfactor3Type(builder, authfactor3Type):
     HelloNewAddAuthfactor3Type(builder, authfactor3Type)
 
-
 def HelloNewAddAuthfactor3(builder, authfactor3):
-    builder.PrependUOffsetTRelativeSlot(
-        10, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor3), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(authfactor3), 0)
 
 def AddAuthfactor3(builder, authfactor3):
     HelloNewAddAuthfactor3(builder, authfactor3)
 
-
 def HelloNewAddResumable(builder, resumable):
     builder.PrependBoolSlot(11, resumable, 0)
-
 
 def AddResumable(builder, resumable):
     HelloNewAddResumable(builder, resumable)
 
-
 def HelloNewAddResumeSession(builder, resumeSession):
     builder.PrependUint64Slot(12, resumeSession, 0)
-
 
 def AddResumeSession(builder, resumeSession):
     HelloNewAddResumeSession(builder, resumeSession)
 
-
 def HelloNewAddResumeToken(builder, resumeToken):
-    builder.PrependUOffsetTRelativeSlot(
-        13, flatbuffers.number_types.UOffsetTFlags.py_type(resumeToken), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(13, flatbuffers.number_types.UOffsetTFlags.py_type(resumeToken), 0)
 
 def AddResumeToken(builder, resumeToken):
     HelloNewAddResumeToken(builder, resumeToken)
 
-
 def HelloNewEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return HelloNewEnd(builder)

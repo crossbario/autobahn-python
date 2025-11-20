@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class ClientRoles(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class ClientRoles(object):
     def GetRootAsClientRoles(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # ClientRoles
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -33,7 +30,6 @@ class ClientRoles(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.proto.PublisherFeatures import PublisherFeatures
-
             obj = PublisherFeatures()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -45,7 +41,6 @@ class ClientRoles(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.proto.SubscriberFeatures import SubscriberFeatures
-
             obj = SubscriberFeatures()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -57,7 +52,6 @@ class ClientRoles(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.proto.CallerFeatures import CallerFeatures
-
             obj = CallerFeatures()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -69,64 +63,43 @@ class ClientRoles(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.proto.CalleeFeatures import CalleeFeatures
-
             obj = CalleeFeatures()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-
 def ClientRolesStart(builder):
     builder.StartObject(4)
-
 
 def Start(builder):
     ClientRolesStart(builder)
 
-
 def ClientRolesAddPublisher(builder, publisher):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(publisher), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(publisher), 0)
 
 def AddPublisher(builder, publisher):
     ClientRolesAddPublisher(builder, publisher)
 
-
 def ClientRolesAddSubscriber(builder, subscriber):
-    builder.PrependUOffsetTRelativeSlot(
-        1, flatbuffers.number_types.UOffsetTFlags.py_type(subscriber), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(subscriber), 0)
 
 def AddSubscriber(builder, subscriber):
     ClientRolesAddSubscriber(builder, subscriber)
 
-
 def ClientRolesAddCaller(builder, caller):
-    builder.PrependUOffsetTRelativeSlot(
-        2, flatbuffers.number_types.UOffsetTFlags.py_type(caller), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(caller), 0)
 
 def AddCaller(builder, caller):
     ClientRolesAddCaller(builder, caller)
 
-
 def ClientRolesAddCallee(builder, callee):
-    builder.PrependUOffsetTRelativeSlot(
-        3, flatbuffers.number_types.UOffsetTFlags.py_type(callee), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(callee), 0)
 
 def AddCallee(builder, callee):
     ClientRolesAddCallee(builder, callee)
 
-
 def ClientRolesEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return ClientRolesEnd(builder)

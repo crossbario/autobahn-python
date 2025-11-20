@@ -162,7 +162,13 @@ table Error
     // The WAMP or application error URI for the error that occurred.
     error: string (required, uri);
 
-    // Raw application payload: error arguments. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    /// Positional values for application-defined error details.
+    args: [uint8];
+
+    /// Keyword values for application-defined error details.
+    kwargs: [uint8];
+
+    /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
     // The encoding algorithm that was used to encode the payload.
