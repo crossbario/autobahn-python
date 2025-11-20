@@ -3216,7 +3216,7 @@ class Published(Message):
         "publication",
     )
 
-    def __init__(self, request, publication):
+    def __init__(self, request=None, publication=None, from_fbs=None):
         """
 
         :param request: The request ID of the original `PUBLISH` request.
@@ -3225,12 +3225,24 @@ class Published(Message):
         :param publication: The publication ID for the published event.
         :type publication: int
         """
-        assert type(request) == int
-        assert type(publication) == int
+        assert request is None or type(request) == int
+        assert publication is None or type(publication) == int
 
-        Message.__init__(self)
-        self.request = request
-        self.publication = publication
+        Message.__init__(self, from_fbs=from_fbs)
+        self._request = request
+        self._publication = publication
+
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @property
+    def publication(self):
+        if self._publication is None and self._from_fbs:
+            self._publication = self._from_fbs.Publication()
+        return self._publication
 
     @staticmethod
     def parse(wmsg):
@@ -3265,6 +3277,23 @@ class Published(Message):
         :rtype: list
         """
         return [Published.MESSAGE_TYPE, self.request, self.publication]
+
+    @staticmethod
+    def cast(buf):
+        return Published(from_fbs=message_fbs.Published.GetRootAsPublished(buf, 0))
+
+    def build(self, builder, serializer=None):
+        message_fbs.PublishedGen.PublishedStart(builder)
+
+        if self.session:
+            message_fbs.PublishedGen.PublishedAddSession(builder, self.session)
+        if self.request:
+            message_fbs.PublishedGen.PublishedAddRequest(builder, self.request)
+        if self.publication:
+            message_fbs.PublishedGen.PublishedAddPublication(builder, self.publication)
+
+        msg = message_fbs.PublishedGen.PublishedEnd(builder)
+        return msg
 
 
 class Subscribe(Message):
@@ -3472,7 +3501,7 @@ class Subscribed(Message):
         "subscription",
     )
 
-    def __init__(self, request, subscription):
+    def __init__(self, request=None, subscription=None, from_fbs=None):
         """
 
         :param request: The request ID of the original ``SUBSCRIBE`` request.
@@ -3481,12 +3510,24 @@ class Subscribed(Message):
         :param subscription: The subscription ID for the subscribed topic (or topic pattern).
         :type subscription: int
         """
-        assert type(request) == int
-        assert type(subscription) == int
+        assert request is None or type(request) == int
+        assert subscription is None or type(subscription) == int
 
-        Message.__init__(self)
-        self.request = request
-        self.subscription = subscription
+        Message.__init__(self, from_fbs=from_fbs)
+        self._request = request
+        self._subscription = subscription
+
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @property
+    def subscription(self):
+        if self._subscription is None and self._from_fbs:
+            self._subscription = self._from_fbs.Subscription()
+        return self._subscription
 
     @staticmethod
     def parse(wmsg):
@@ -3521,6 +3562,23 @@ class Subscribed(Message):
         :rtype: list
         """
         return [Subscribed.MESSAGE_TYPE, self.request, self.subscription]
+
+    @staticmethod
+    def cast(buf):
+        return Subscribed(from_fbs=message_fbs.Subscribed.GetRootAsSubscribed(buf, 0))
+
+    def build(self, builder, serializer=None):
+        message_fbs.SubscribedGen.SubscribedStart(builder)
+
+        if self.session:
+            message_fbs.SubscribedGen.SubscribedAddSession(builder, self.session)
+        if self.request:
+            message_fbs.SubscribedGen.SubscribedAddRequest(builder, self.request)
+        if self.subscription:
+            message_fbs.SubscribedGen.SubscribedAddSubscription(builder, self.subscription)
+
+        msg = message_fbs.SubscribedGen.SubscribedEnd(builder)
+        return msg
 
 
 class Unsubscribe(Message):
