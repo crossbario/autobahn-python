@@ -614,7 +614,18 @@ class Message(object):
     def cast(buf):
         raise NotImplementedError()
 
-    def build(self, builder):
+    def build(self, builder, serializer=None):
+        """
+        Build a FlatBuffers representation of this message.
+
+        :param builder: A FlatBuffers builder to serialize into.
+        :type builder: flatbuffers.Builder
+        :param serializer: The transport serializer (ISerializer) to use for
+            application payload serialization. Uses PAYLOAD_SERIALIZER_ID to
+            determine how to serialize args/kwargs/payload.
+        :type serializer: ISerializer or None
+        :returns: Offset to the serialized message in the builder.
+        """
         raise NotImplementedError()
 
     def uncache(self):
@@ -641,9 +652,12 @@ class Message(object):
                 # flatbuffers get special treatment ..
                 builder = flatbuffers.Builder(1024)
 
+                # Get parent ISerializer to access payload serialization
+                parent_serializer = getattr(serializer, '_parent_serializer', None)
+
                 # this is the core method writing out this message (self) to a (new) flatbuffer
                 # FIXME: implement this method for all classes derived from Message
-                obj = self.build(builder)
+                obj = self.build(builder, parent_serializer)
 
                 builder.Finish(obj)
                 buf = builder.Output()
@@ -2566,14 +2580,22 @@ class Publish(Message):
     def cast(buf):
         return Publish(from_fbs=message_fbs.Publish.GetRootAsPublish(buf, 0))
 
-    def build(self, builder):
+    def build(self, builder, serializer=None):
         args = self.args
         if args:
-            args = builder.CreateByteVector(cbor2.dumps(args))
+            if serializer:
+                args = builder.CreateByteVector(serializer.serialize_payload(args))
+            else:
+                # Fallback for backwards compatibility (shouldn't happen)
+                args = builder.CreateByteVector(cbor2.dumps(args))
 
         kwargs = self.kwargs
         if kwargs:
-            kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
+            if serializer:
+                kwargs = builder.CreateByteVector(serializer.serialize_payload(kwargs))
+            else:
+                # Fallback for backwards compatibility (shouldn't happen)
+                kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
 
         payload = self.payload
         if payload:
@@ -4060,14 +4082,22 @@ class Event(Message):
     def cast(buf):
         return Event(from_fbs=message_fbs.Event.GetRootAsEvent(buf, 0))
 
-    def build(self, builder):
+    def build(self, builder, serializer=None):
         args = self.args
         if args:
-            args = builder.CreateByteVector(cbor2.dumps(args))
+            if serializer:
+                args = builder.CreateByteVector(serializer.serialize_payload(args))
+            else:
+                # Fallback for backwards compatibility (shouldn't happen)
+                args = builder.CreateByteVector(cbor2.dumps(args))
 
         kwargs = self.kwargs
         if kwargs:
-            kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
+            if serializer:
+                kwargs = builder.CreateByteVector(serializer.serialize_payload(kwargs))
+            else:
+                # Fallback for backwards compatibility (shouldn't happen)
+                kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
 
         payload = self.payload
         if payload:

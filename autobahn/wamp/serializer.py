@@ -98,6 +98,8 @@ class Serializer(object):
         :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
         """
         self._serializer = serializer
+        # Store back-reference so Message.build() can access parent ISerializer
+        self._serializer._parent_serializer = self
 
         self._stats_reset = time_ns()
         self._stats_cycle = 0
@@ -277,6 +279,23 @@ class Serializer(object):
             self._autoreset_callback(stats)
 
         return data, is_binary
+
+    def serialize_payload(self, data):
+        """
+        Serialize application payload data (args/kwargs/payload).
+
+        Uses the payload serializer configured for this transport serializer.
+        For traditional serializers (JSON, CBOR, MsgPack, UBJSON), this is the
+        same as the envelope serializer. For FlatBuffers, this can be different.
+
+        :param data: The data to serialize (list for args, dict for kwargs).
+        :return: Serialized bytes.
+        :rtype: bytes
+        """
+        # FlatBuffersSerializer has _payload_serializer (separate from envelope)
+        # Traditional serializers use _serializer (same for envelope and payload)
+        payload_ser = getattr(self, '_payload_serializer', self._serializer)
+        return payload_ser.serialize(data)
 
     def unserialize(
         self, payload: bytes, isBinary: Optional[bool] = None
