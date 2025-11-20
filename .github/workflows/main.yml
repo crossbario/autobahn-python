@@ -416,16 +416,29 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install FlatBuffers compiler
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Install exact same version as used in development (v25.9.23)
           FLATC_VERSION="25.9.23"
-          FLATC_URL="https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/Linux.flatc.binary.g++-13.zip"
           TEMP_DIR=$(mktemp -d)
 
           echo "==> Installing FlatBuffers compiler v${FLATC_VERSION}..."
           cd "${TEMP_DIR}"
-          curl -L -o flatc.zip "${FLATC_URL}"
-          unzip flatc.zip
+
+          # Use gh to download with proper authentication and redirect handling
+          gh release download "v${FLATC_VERSION}" \
+            --repo google/flatbuffers \
+            --pattern "Linux.flatc.binary.g++-13.zip"
+
+          # Verify download
+          if [ ! -f "Linux.flatc.binary.g++-13.zip" ]; then
+            echo "ERROR: Failed to download flatc binary"
+            exit 1
+          fi
+
+          ls -lh Linux.flatc.binary.g++-13.zip
+          unzip Linux.flatc.binary.g++-13.zip
           sudo mv flatc /usr/local/bin/flatc
           sudo chmod +x /usr/local/bin/flatc
           rm -rf "${TEMP_DIR}"
