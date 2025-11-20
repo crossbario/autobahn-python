@@ -353,6 +353,256 @@ These patterns ensure that:
 * Deserialization only occurs when attributes are actually accessed (zero-copy benefits)
 * All message operations (equality, serialization, etc.) work correctly in both modes
 
+Serialization Architecture
+---------------------------
+
+Autobahn|Python's FlatBuffers implementation uses a **dual-serializer architecture** that separates envelope serialization from application payload serialization. This architecture enables flexible composition patterns while maintaining clean separation of concerns.
+
+Protocol-Level Architecture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+At the WAMP protocol level, messages have two conceptually distinct parts:
+
+**Message Envelope (Fixed Structure)**
+   The WAMP message structure itself with fixed fields defined by the protocol specification:
+
+   * Message type code (PUBLISH, CALL, RESULT, etc.)
+   * Request/session IDs
+   * URIs (topics, procedures, error URIs)
+   * Options and details dictionaries
+   * Metadata (forwarding info, caller disclosure, etc.)
+
+**Application Payload (Dynamic Content)**
+   The actual application data being transmitted:
+
+   * ``args`` - Positional arguments (list)
+   * ``kwargs`` - Keyword arguments (dict)
+   * ``payload`` - Transparent payload (bytes, for E2EE or embedded FlatBuffers)
+
+These two parts can be serialized using **different formats** to optimize for different requirements:
+
+* **Envelope**: Benefits from FlatBuffers' zero-copy deserialization and static typing
+* **Payload**: May use dynamic serializers (JSON/CBOR/MsgPack) for flexibility or embedded FlatBuffers for static typing
+
+Implementation-Level Architecture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The implementation uses three key abstractions to support dual serialization:
+
+**ISerializer (Transport Serializer)**
+   Responsible for serializing the complete WAMP message (envelope + payload).
+
+   Key properties:
+
+   * ``SERIALIZER_ID`` - Transport format ID (e.g., ``"flatbuffers"``, ``"json"``, ``"cbor"``)
+   * ``PAYLOAD_SERIALIZER_ID`` - Application payload format ID (may differ from ``SERIALIZER_ID``)
+   * ``serialize(msg)`` - Serialize complete WAMP message to bytes
+   * ``serialize_payload(data)`` - Serialize application payload (args/kwargs) to bytes
+
+   Implementations:
+
+   * ``JsonSerializer`` - Both envelope and payload use JSON
+   * ``CBORSerializer`` - Both envelope and payload use CBOR
+   * ``MsgPackSerializer`` - Both envelope and payload use MessagePack
+   * ``FlatBuffersSerializer`` - Envelope uses FlatBuffers, payload is **configurable**
+
+**IObjectSerializer (Format-Specific Serializer)**
+   Low-level serializer for a specific format (JSON, CBOR, etc.).
+
+   Properties:
+
+   * ``NAME`` - Format name (e.g., ``"json"``, ``"cbor"``)
+   * ``BINARY`` - Whether format requires binary-clean transport
+   * ``serialize(obj)`` / ``unserialize(bytes)`` - Format conversion
+
+   Implementations:
+
+   * ``JsonObjectSerializer`` - JSON format serialization
+   * ``CBORObjectSerializer`` - CBOR format serialization
+   * ``MsgPackObjectSerializer`` - MessagePack format serialization
+   * ``FlatBuffersObjectSerializer`` - FlatBuffers format serialization
+
+**Message.build(builder, serializer)**
+   Builds FlatBuffers representation of a WAMP message.
+
+   * ``builder`` - FlatBuffers builder instance
+   * ``serializer`` - ISerializer instance for payload serialization
+   * Uses ``serializer.serialize_payload()`` to serialize args/kwargs according to ``PAYLOAD_SERIALIZER_ID``
+
+Serialization Flow
+~~~~~~~~~~~~~~~~~~
+
+The complete serialization flow for a WAMP message with FlatBuffers envelope:
+
+.. code-block:: text
+
+   User creates message:
+      msg = Publish(topic="com.example.topic", args=[1, 2, 3])
+
+   User calls serializer:
+      data = serializer.serialize(msg)
+      ↓
+   ISerializer (FlatBuffersSerializer):
+      - SERIALIZER_ID = "flatbuffers" (envelope format)
+      - PAYLOAD_SERIALIZER_ID = "cbor" (payload format, configurable)
+      ↓
+   Message.serialize(object_serializer):
+      - Receives IObjectSerializer (FlatBuffersObjectSerializer)
+      - Accesses parent ISerializer via _parent_serializer back-reference
+      - Creates FlatBuffers builder
+      - Calls self.build(builder, parent_serializer)
+      ↓
+   Message.build(builder, serializer):
+      - Serializes message envelope to FlatBuffers
+      - Calls serializer.serialize_payload(args) for args
+      - Calls serializer.serialize_payload(kwargs) for kwargs
+      - ISerializer uses configured payload serializer (e.g., CBOR)
+      ↓
+   Result:
+      - WAMP message envelope: FlatBuffers (zero-copy, static typing)
+      - Application payload: CBOR (dynamic typing, compact)
+
+Composition Patterns
+~~~~~~~~~~~~~~~~~~~~
+
+The dual-serializer architecture supports multiple composition patterns:
+
+**Traditional (Homogeneous Serialization)**
+   Envelope and payload use the same format:
+
+   .. code-block:: python
+
+      # JSON for everything
+      serializer = JsonSerializer()
+      # SERIALIZER_ID = "json"
+      # PAYLOAD_SERIALIZER_ID = "json"
+
+      # CBOR for everything
+      serializer = CBORSerializer()
+      # SERIALIZER_ID = "cbor"
+      # PAYLOAD_SERIALIZER_ID = "cbor"
+
+**FlatBuffers-CBOR (Default Composition)**
+   FlatBuffers envelope with CBOR payload (optimal for most use cases):
+
+   .. code-block:: python
+
+      serializer = FlatBuffersSerializer(payload_serializer="cbor")
+      # SERIALIZER_ID = "flatbuffers"
+      # PAYLOAD_SERIALIZER_ID = "cbor"
+
+   Benefits:
+
+   * Zero-copy envelope parsing (FlatBuffers)
+   * Compact, flexible payload (CBOR)
+   * Best general-purpose performance
+
+**FlatBuffers-JSON**
+   FlatBuffers envelope with JSON payload (debugging, browser compatibility):
+
+   .. code-block:: python
+
+      serializer = FlatBuffersSerializer(payload_serializer="json")
+      # SERIALIZER_ID = "flatbuffers"
+      # PAYLOAD_SERIALIZER_ID = "json"
+
+   Benefits:
+
+   * Zero-copy envelope parsing (FlatBuffers)
+   * Human-readable payload (JSON)
+   * Useful for debugging and web applications
+
+**FlatBuffers-FlatBuffers (Static Typing)**
+   Both envelope and payload use FlatBuffers (maximum performance and type safety):
+
+   .. code-block:: python
+
+      serializer = FlatBuffersSerializer(payload_serializer="flatbuffers")
+      # SERIALIZER_ID = "flatbuffers"
+      # PAYLOAD_SERIALIZER_ID = "flatbuffers"
+
+   Benefits:
+
+   * Complete zero-copy deserialization
+   * Static typing for both envelope and payload
+   * Maximum performance for typed APIs
+   * Enables WAMP IDL with embedded FlatBuffers schemas
+
+This pattern enables **WAMP IDL** where procedure arguments and results are defined using FlatBuffers schemas, providing compile-time type checking and runtime validation.
+
+Configuration and Usage
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Creating serializers with different payload formats:
+
+.. code-block:: python
+
+   from autobahn.wamp.serializer import FlatBuffersSerializer
+
+   # Default: FlatBuffers envelope + CBOR payload
+   ser1 = FlatBuffersSerializer()
+
+   # FlatBuffers envelope + JSON payload
+   ser2 = FlatBuffersSerializer(payload_serializer="json")
+
+   # FlatBuffers envelope + MessagePack payload
+   ser3 = FlatBuffersSerializer(payload_serializer="msgpack")
+
+   # FlatBuffers envelope + FlatBuffers payload (WAMP IDL)
+   ser4 = FlatBuffersSerializer(payload_serializer="flatbuffers")
+
+   # Access serializer properties
+   print(ser1.SERIALIZER_ID)          # "flatbuffers"
+   print(ser1.PAYLOAD_SERIALIZER_ID)  # "cbor"
+   print(ser2.PAYLOAD_SERIALIZER_ID)  # "json"
+
+Using serializers with WAMP sessions:
+
+.. code-block:: python
+
+   from autobahn.wamp.serializer import create_transport_serializers
+
+   # Configure transport with FlatBuffers-CBOR
+   transport = {
+       'serializers': ['flatbuffers']  # Uses CBOR payload by default
+   }
+   serializers = create_transport_serializers(transport)
+
+   # Use with ApplicationSession
+   session = ApplicationSession()
+   session._transport.serializers = serializers
+
+Design Benefits
+~~~~~~~~~~~~~~~
+
+This dual-serializer architecture provides several key benefits:
+
+**Explicit Separation of Concerns**
+   * Envelope serialization (protocol structure) is decoupled from payload serialization (application data)
+   * Each can be optimized independently for its specific requirements
+   * Clear architectural boundaries match protocol semantics
+
+**Flexible Composition**
+   * Mix and match envelope and payload formats
+   * Optimize for different use cases (debugging, performance, type safety)
+   * Smooth migration path from traditional to FlatBuffers serialization
+
+**Performance Optimization**
+   * FlatBuffers envelope: Zero-copy deserialization of protocol structure
+   * CBOR payload: Compact encoding of dynamic application data
+   * Best of both worlds: Static typing where needed, dynamic typing where useful
+
+**WAMP IDL Support**
+   * FlatBuffers-FlatBuffers enables typed WAMP APIs
+   * Embedded schemas provide runtime validation
+   * Code generation from interface definitions
+   * Type-safe RPC and pub/sub
+
+**Backwards Compatibility**
+   * Traditional serializers (JSON, CBOR, MsgPack) continue to work unchanged
+   * ``PAYLOAD_SERIALIZER_ID`` defaults to ``SERIALIZER_ID`` for traditional serializers
+   * Smooth adoption path for existing applications
+
 Message Type Mapping
 --------------------
 
