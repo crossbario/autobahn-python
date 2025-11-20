@@ -142,6 +142,23 @@ class ISerializer(abc.ABC):
     @public
     @property
     @abc.abstractmethod
+    def PAYLOAD_SERIALIZER_ID(self) -> str:
+        """
+        The WAMP serialization format ID for application payload (args/kwargs/payload).
+
+        Normally identical to SERIALIZER_ID (e.g., both ``"cbor"``), but may differ
+        when using FlatBuffers envelopes with different payload serialization
+        (e.g., ``SERIALIZER_ID="flatbuffers"``, ``PAYLOAD_SERIALIZER_ID="cbor"``).
+
+        This enables the composition pattern where the WAMP message envelope is
+        serialized using one format (e.g., FlatBuffers for zero-copy, static typing)
+        while application payload is serialized using another format (e.g., CBOR for
+        dynamic typing, or embedded FlatBuffers for static typing).
+        """
+
+    @public
+    @property
+    @abc.abstractmethod
     def MIME_TYPE(self) -> str:
         """
         The WAMP serialization format MIME type, e.g. ``"application/json"`` for JSON.
