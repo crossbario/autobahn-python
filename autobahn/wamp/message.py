@@ -1758,6 +1758,99 @@ class Error(Message):
         self.forward_for = forward_for
 
     @staticmethod
+    def cast(buf):
+        return Error(from_fbs=message_fbs.Error.GetRootAsError(buf, 0))
+
+    def build(self, builder, serializer=None):
+        args = self.args
+        if args:
+            if serializer:
+                args = builder.CreateByteVector(serializer.serialize_payload(args))
+            else:
+                args = builder.CreateByteVector(cbor2.dumps(args))
+
+        kwargs = self.kwargs
+        if kwargs:
+            if serializer:
+                kwargs = builder.CreateByteVector(serializer.serialize_payload(kwargs))
+            else:
+                kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
+
+        payload = self.payload
+        if payload:
+            payload = builder.CreateByteVector(payload)
+
+        error = self.error
+        if error:
+            error = builder.CreateString(error)
+
+        enc_key = self.enc_key
+        if enc_key:
+            enc_key = builder.CreateByteVector(enc_key)
+
+        callee_authid = self.callee_authid
+        if callee_authid:
+            callee_authid = builder.CreateString(callee_authid)
+
+        callee_authrole = self.callee_authrole
+        if callee_authrole:
+            callee_authrole = builder.CreateString(callee_authrole)
+
+        # forward_for: [Principal]
+        forward_for = self.forward_for
+        if forward_for:
+            from wamp.proto import Principal as PrincipalGen
+
+            _forward_for = []
+            for principal in forward_for:
+                _session = principal.get("session", 0)
+                _authid = principal.get("authid", None)
+                _authrole = principal.get("authrole", "")
+
+                if _authid:
+                    _authid = builder.CreateString(_authid)
+                _authrole = builder.CreateString(_authrole)
+
+                PrincipalGen.Start(builder)
+                PrincipalGen.AddSession(builder, _session)
+                if _authid:
+                    PrincipalGen.AddAuthid(builder, _authid)
+                PrincipalGen.AddAuthrole(builder, _authrole)
+                _forward_for.append(PrincipalGen.End(builder))
+
+            message_fbs.ErrorGen.ErrorStartForwardForVector(builder, len(_forward_for))
+            for principal in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(principal)
+            forward_for = builder.EndVector()
+
+        # build ErrorGen
+        message_fbs.ErrorGen.ErrorStart(builder)
+
+        if self.request_type:
+            message_fbs.ErrorGen.ErrorAddRequestType(builder, self.request_type)
+        if self.request:
+            message_fbs.ErrorGen.ErrorAddRequest(builder, self.request)
+        if error:
+            message_fbs.ErrorGen.ErrorAddError(builder, error)
+        if args:
+            message_fbs.ErrorGen.ErrorAddArgs(builder, args)
+        if kwargs:
+            message_fbs.ErrorGen.ErrorAddKwargs(builder, kwargs)
+        if payload:
+            message_fbs.ErrorGen.ErrorAddPayload(builder, payload)
+        if self.enc_algo:
+            message_fbs.ErrorGen.ErrorAddEncAlgo(builder, self.enc_algo)
+        if self.enc_serializer:
+            message_fbs.ErrorGen.ErrorAddEncSerializer(builder, self.enc_serializer)
+        if enc_key:
+            message_fbs.ErrorGen.ErrorAddEncKey(builder, enc_key)
+        if forward_for:
+            message_fbs.ErrorGen.ErrorAddForwardFor(builder, forward_for)
+
+        msg = message_fbs.ErrorGen.ErrorEnd(builder)
+        return msg
+
+    @staticmethod
     def parse(wmsg):
         """
         Verifies and parses an unserialized raw message into an actual WAMP message instance.
@@ -4908,6 +5001,117 @@ class Call(Message):
         self._forward_for = value
 
     @staticmethod
+    def cast(buf):
+        return Call(from_fbs=message_fbs.Call.GetRootAsCall(buf, 0))
+
+    def build(self, builder, serializer=None):
+        args = self.args
+        if args:
+            if serializer:
+                args = builder.CreateByteVector(serializer.serialize_payload(args))
+            else:
+                # Fallback for backwards compatibility (shouldn't happen)
+                args = builder.CreateByteVector(cbor2.dumps(args))
+
+        kwargs = self.kwargs
+        if kwargs:
+            if serializer:
+                kwargs = builder.CreateByteVector(serializer.serialize_payload(kwargs))
+            else:
+                # Fallback for backwards compatibility (shouldn't happen)
+                kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
+
+        payload = self.payload
+        if payload:
+            payload = builder.CreateByteVector(payload)
+
+        procedure = self.procedure
+        if procedure:
+            procedure = builder.CreateString(procedure)
+
+        transaction_hash = self.transaction_hash
+        if transaction_hash:
+            transaction_hash = builder.CreateString(transaction_hash)
+
+        caller_authid = self.caller_authid
+        if caller_authid:
+            caller_authid = builder.CreateString(caller_authid)
+
+        caller_authrole = self.caller_authrole
+        if caller_authrole:
+            caller_authrole = builder.CreateString(caller_authrole)
+
+        enc_key = self.enc_key
+        if enc_key:
+            enc_key = builder.CreateByteVector(enc_key)
+
+        # forward_for: [Principal]
+        forward_for = self.forward_for
+        if forward_for:
+            from wamp.proto import Principal as PrincipalGen
+
+            _forward_for = []
+            for principal in forward_for:
+                _session = principal.get("session", 0)
+                _authid = principal.get("authid", None)
+                _authrole = principal.get("authrole", "")
+
+                if _authid:
+                    _authid = builder.CreateString(_authid)
+                _authrole = builder.CreateString(_authrole)
+
+                PrincipalGen.Start(builder)
+                PrincipalGen.AddSession(builder, _session)
+                if _authid:
+                    PrincipalGen.AddAuthid(builder, _authid)
+                PrincipalGen.AddAuthrole(builder, _authrole)
+                _forward_for.append(PrincipalGen.End(builder))
+
+            message_fbs.CallGen.CallStartForwardForVector(builder, len(_forward_for))
+            for principal in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(principal)
+            forward_for = builder.EndVector()
+
+        # build CallGen
+        message_fbs.CallGen.CallStart(builder)
+
+        if self.session:
+            message_fbs.CallGen.CallAddSession(builder, self.session)
+        if self.request:
+            message_fbs.CallGen.CallAddRequest(builder, self.request)
+        if procedure:
+            message_fbs.CallGen.CallAddProcedure(builder, procedure)
+        if args:
+            message_fbs.CallGen.CallAddArgs(builder, args)
+        if kwargs:
+            message_fbs.CallGen.CallAddKwargs(builder, kwargs)
+        if payload:
+            message_fbs.CallGen.CallAddPayload(builder, payload)
+        if self.enc_algo:
+            message_fbs.CallGen.CallAddEncAlgo(builder, self.enc_algo)
+        if self.enc_serializer:
+            message_fbs.CallGen.CallAddEncSerializer(builder, self.enc_serializer)
+        if enc_key:
+            message_fbs.CallGen.CallAddEncKey(builder, enc_key)
+        if self.timeout:
+            message_fbs.CallGen.CallAddTimeout(builder, self.timeout)
+        if self.receive_progress:
+            message_fbs.CallGen.CallAddReceiveProgress(builder, self.receive_progress)
+        if transaction_hash:
+            message_fbs.CallGen.CallAddTransactionHash(builder, transaction_hash)
+        if self.caller:
+            message_fbs.CallGen.CallAddCaller(builder, self.caller)
+        if caller_authid:
+            message_fbs.CallGen.CallAddCallerAuthid(builder, caller_authid)
+        if caller_authrole:
+            message_fbs.CallGen.CallAddCallerAuthrole(builder, caller_authrole)
+        if forward_for:
+            message_fbs.CallGen.CallAddForwardFor(builder, forward_for)
+
+        msg = message_fbs.CallGen.CallEnd(builder)
+        return msg
+
+    @staticmethod
     def parse(wmsg):
         """
         Verifies and parses an unserialized raw message into an actual WAMP message instance.
@@ -5445,6 +5649,99 @@ class Result(Message):
 
         # message forwarding
         self.forward_for = forward_for
+
+    @staticmethod
+    def cast(buf):
+        return Result(from_fbs=message_fbs.Result.GetRootAsResult(buf, 0))
+
+    def build(self, builder, serializer=None):
+        args = self.args
+        if args:
+            if serializer:
+                args = builder.CreateByteVector(serializer.serialize_payload(args))
+            else:
+                args = builder.CreateByteVector(cbor2.dumps(args))
+
+        kwargs = self.kwargs
+        if kwargs:
+            if serializer:
+                kwargs = builder.CreateByteVector(serializer.serialize_payload(kwargs))
+            else:
+                kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
+
+        payload = self.payload
+        if payload:
+            payload = builder.CreateByteVector(payload)
+
+        enc_key = self.enc_key
+        if enc_key:
+            enc_key = builder.CreateByteVector(enc_key)
+
+        callee_authid = self.callee_authid
+        if callee_authid:
+            callee_authid = builder.CreateString(callee_authid)
+
+        callee_authrole = self.callee_authrole
+        if callee_authrole:
+            callee_authrole = builder.CreateString(callee_authrole)
+
+        # forward_for: [Principal]
+        forward_for = self.forward_for
+        if forward_for:
+            from wamp.proto import Principal as PrincipalGen
+
+            _forward_for = []
+            for principal in forward_for:
+                _session = principal.get("session", 0)
+                _authid = principal.get("authid", None)
+                _authrole = principal.get("authrole", "")
+
+                if _authid:
+                    _authid = builder.CreateString(_authid)
+                _authrole = builder.CreateString(_authrole)
+
+                PrincipalGen.Start(builder)
+                PrincipalGen.AddSession(builder, _session)
+                if _authid:
+                    PrincipalGen.AddAuthid(builder, _authid)
+                PrincipalGen.AddAuthrole(builder, _authrole)
+                _forward_for.append(PrincipalGen.End(builder))
+
+            message_fbs.ResultGen.ResultStartForwardForVector(builder, len(_forward_for))
+            for principal in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(principal)
+            forward_for = builder.EndVector()
+
+        # build ResultGen
+        message_fbs.ResultGen.ResultStart(builder)
+
+        if self.request:
+            message_fbs.ResultGen.ResultAddRequest(builder, self.request)
+        if args:
+            message_fbs.ResultGen.ResultAddArgs(builder, args)
+        if kwargs:
+            message_fbs.ResultGen.ResultAddKwargs(builder, kwargs)
+        if payload:
+            message_fbs.ResultGen.ResultAddPayload(builder, payload)
+        if self.enc_algo:
+            message_fbs.ResultGen.ResultAddEncAlgo(builder, self.enc_algo)
+        if self.enc_serializer:
+            message_fbs.ResultGen.ResultAddEncSerializer(builder, self.enc_serializer)
+        if enc_key:
+            message_fbs.ResultGen.ResultAddEncKey(builder, enc_key)
+        if self.progress:
+            message_fbs.ResultGen.ResultAddProgress(builder, self.progress)
+        if self.callee:
+            message_fbs.ResultGen.ResultAddCallee(builder, self.callee)
+        if callee_authid:
+            message_fbs.ResultGen.ResultAddCalleeAuthid(builder, callee_authid)
+        if callee_authrole:
+            message_fbs.ResultGen.ResultAddCalleeAuthrole(builder, callee_authrole)
+        if forward_for:
+            message_fbs.ResultGen.ResultAddForwardFor(builder, forward_for)
+
+        msg = message_fbs.ResultGen.ResultEnd(builder)
+        return msg
 
     @staticmethod
     def parse(wmsg):
@@ -6383,6 +6680,115 @@ class Invocation(Message):
         self.forward_for = forward_for
 
     @staticmethod
+    def cast(buf):
+        return Invocation(from_fbs=message_fbs.Invocation.GetRootAsInvocation(buf, 0))
+
+    def build(self, builder, serializer=None):
+        args = self.args
+        if args:
+            if serializer:
+                args = builder.CreateByteVector(serializer.serialize_payload(args))
+            else:
+                args = builder.CreateByteVector(cbor2.dumps(args))
+
+        kwargs = self.kwargs
+        if kwargs:
+            if serializer:
+                kwargs = builder.CreateByteVector(serializer.serialize_payload(kwargs))
+            else:
+                kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
+
+        payload = self.payload
+        if payload:
+            payload = builder.CreateByteVector(payload)
+
+        procedure = self.procedure
+        if procedure:
+            procedure = builder.CreateString(procedure)
+
+        transaction_hash = self.transaction_hash
+        if transaction_hash:
+            transaction_hash = builder.CreateString(transaction_hash)
+
+        caller_authid = self.caller_authid
+        if caller_authid:
+            caller_authid = builder.CreateString(caller_authid)
+
+        caller_authrole = self.caller_authrole
+        if caller_authrole:
+            caller_authrole = builder.CreateString(caller_authrole)
+
+        enc_key = self.enc_key
+        if enc_key:
+            enc_key = builder.CreateByteVector(enc_key)
+
+        # forward_for: [Principal]
+        forward_for = self.forward_for
+        if forward_for:
+            from wamp.proto import Principal as PrincipalGen
+
+            _forward_for = []
+            for principal in forward_for:
+                _session = principal.get("session", 0)
+                _authid = principal.get("authid", None)
+                _authrole = principal.get("authrole", "")
+
+                if _authid:
+                    _authid = builder.CreateString(_authid)
+                _authrole = builder.CreateString(_authrole)
+
+                PrincipalGen.Start(builder)
+                PrincipalGen.AddSession(builder, _session)
+                if _authid:
+                    PrincipalGen.AddAuthid(builder, _authid)
+                PrincipalGen.AddAuthrole(builder, _authrole)
+                _forward_for.append(PrincipalGen.End(builder))
+
+            message_fbs.InvocationGen.InvocationStartForwardForVector(builder, len(_forward_for))
+            for principal in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(principal)
+            forward_for = builder.EndVector()
+
+        # build InvocationGen
+        message_fbs.InvocationGen.InvocationStart(builder)
+
+        if self.request:
+            message_fbs.InvocationGen.InvocationAddRequest(builder, self.request)
+        if self.registration:
+            message_fbs.InvocationGen.InvocationAddRegistration(builder, self.registration)
+        if args:
+            message_fbs.InvocationGen.InvocationAddArgs(builder, args)
+        if kwargs:
+            message_fbs.InvocationGen.InvocationAddKwargs(builder, kwargs)
+        if payload:
+            message_fbs.InvocationGen.InvocationAddPayload(builder, payload)
+        if self.timeout:
+            message_fbs.InvocationGen.InvocationAddTimeout(builder, self.timeout)
+        if self.receive_progress:
+            message_fbs.InvocationGen.InvocationAddReceiveProgress(builder, self.receive_progress)
+        if self.caller:
+            message_fbs.InvocationGen.InvocationAddCaller(builder, self.caller)
+        if caller_authid:
+            message_fbs.InvocationGen.InvocationAddCallerAuthid(builder, caller_authid)
+        if caller_authrole:
+            message_fbs.InvocationGen.InvocationAddCallerAuthrole(builder, caller_authrole)
+        if procedure:
+            message_fbs.InvocationGen.InvocationAddProcedure(builder, procedure)
+        if self.enc_algo:
+            message_fbs.InvocationGen.InvocationAddEncAlgo(builder, self.enc_algo)
+        if self.enc_serializer:
+            message_fbs.InvocationGen.InvocationAddEncSerializer(builder, self.enc_serializer)
+        if enc_key:
+            message_fbs.InvocationGen.InvocationAddEncKey(builder, enc_key)
+        if transaction_hash:
+            message_fbs.InvocationGen.InvocationAddTransactionHash(builder, transaction_hash)
+        if forward_for:
+            message_fbs.InvocationGen.InvocationAddForwardFor(builder, forward_for)
+
+        msg = message_fbs.InvocationGen.InvocationEnd(builder)
+        return msg
+
+    @staticmethod
     def parse(wmsg):
         """
         Verifies and parses an unserialized raw message into an actual WAMP message instance.
@@ -6959,6 +7365,99 @@ class Yield(Message):
 
         # message forwarding
         self.forward_for = forward_for
+
+    @staticmethod
+    def cast(buf):
+        return Yield(from_fbs=message_fbs.Yield.GetRootAsYield(buf, 0))
+
+    def build(self, builder, serializer=None):
+        args = self.args
+        if args:
+            if serializer:
+                args = builder.CreateByteVector(serializer.serialize_payload(args))
+            else:
+                args = builder.CreateByteVector(cbor2.dumps(args))
+
+        kwargs = self.kwargs
+        if kwargs:
+            if serializer:
+                kwargs = builder.CreateByteVector(serializer.serialize_payload(kwargs))
+            else:
+                kwargs = builder.CreateByteVector(cbor2.dumps(kwargs))
+
+        payload = self.payload
+        if payload:
+            payload = builder.CreateByteVector(payload)
+
+        enc_key = self.enc_key
+        if enc_key:
+            enc_key = builder.CreateByteVector(enc_key)
+
+        callee_authid = self.callee_authid
+        if callee_authid:
+            callee_authid = builder.CreateString(callee_authid)
+
+        callee_authrole = self.callee_authrole
+        if callee_authrole:
+            callee_authrole = builder.CreateString(callee_authrole)
+
+        # forward_for: [Principal]
+        forward_for = self.forward_for
+        if forward_for:
+            from wamp.proto import Principal as PrincipalGen
+
+            _forward_for = []
+            for principal in forward_for:
+                _session = principal.get("session", 0)
+                _authid = principal.get("authid", None)
+                _authrole = principal.get("authrole", "")
+
+                if _authid:
+                    _authid = builder.CreateString(_authid)
+                _authrole = builder.CreateString(_authrole)
+
+                PrincipalGen.Start(builder)
+                PrincipalGen.AddSession(builder, _session)
+                if _authid:
+                    PrincipalGen.AddAuthid(builder, _authid)
+                PrincipalGen.AddAuthrole(builder, _authrole)
+                _forward_for.append(PrincipalGen.End(builder))
+
+            message_fbs.YieldGen.YieldStartForwardForVector(builder, len(_forward_for))
+            for principal in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(principal)
+            forward_for = builder.EndVector()
+
+        # build YieldGen
+        message_fbs.YieldGen.YieldStart(builder)
+
+        if self.request:
+            message_fbs.YieldGen.YieldAddRequest(builder, self.request)
+        if args:
+            message_fbs.YieldGen.YieldAddArgs(builder, args)
+        if kwargs:
+            message_fbs.YieldGen.YieldAddKwargs(builder, kwargs)
+        if payload:
+            message_fbs.YieldGen.YieldAddPayload(builder, payload)
+        if self.progress:
+            message_fbs.YieldGen.YieldAddProgress(builder, self.progress)
+        if self.enc_algo:
+            message_fbs.YieldGen.YieldAddEncAlgo(builder, self.enc_algo)
+        if self.enc_serializer:
+            message_fbs.YieldGen.YieldAddEncSerializer(builder, self.enc_serializer)
+        if enc_key:
+            message_fbs.YieldGen.YieldAddEncKey(builder, enc_key)
+        if self.callee:
+            message_fbs.YieldGen.YieldAddCallee(builder, self.callee)
+        if callee_authid:
+            message_fbs.YieldGen.YieldAddCalleeAuthid(builder, callee_authid)
+        if callee_authrole:
+            message_fbs.YieldGen.YieldAddCalleeAuthrole(builder, callee_authrole)
+        if forward_for:
+            message_fbs.YieldGen.YieldAddForwardFor(builder, forward_for)
+
+        msg = message_fbs.YieldGen.YieldEnd(builder)
+        return msg
 
     @staticmethod
     def parse(wmsg):
