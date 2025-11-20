@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Registered(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class Registered(object):
     def GetRootAsRegistered(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # Registered
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,49 +31,65 @@ class Registered(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Registered
     def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Registered
     def Registration(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
+
 
 def RegisteredStart(builder):
     builder.StartObject(3)
 
+
 def Start(builder):
     RegisteredStart(builder)
+
 
 def RegisteredAddSession(builder, session):
     builder.PrependUint64Slot(0, session, 0)
 
+
 def AddSession(builder, session):
     RegisteredAddSession(builder, session)
+
 
 def RegisteredAddRequest(builder, request):
     builder.PrependUint64Slot(1, request, 0)
 
+
 def AddRequest(builder, request):
     RegisteredAddRequest(builder, request)
+
 
 def RegisteredAddRegistration(builder, registration):
     builder.PrependUint64Slot(2, registration, 0)
 
+
 def AddRegistration(builder, registration):
     RegisteredAddRegistration(builder, registration)
 
+
 def RegisteredEnd(builder):
     return builder.EndObject()
+
 
 def End(builder):
     return RegisteredEnd(builder)

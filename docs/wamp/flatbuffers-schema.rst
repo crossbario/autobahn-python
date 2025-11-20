@@ -467,6 +467,36 @@ Composition Patterns
 
 The dual-serializer architecture supports multiple composition patterns:
 
+Serializer Composition Overview
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following table shows the available transport-payload serializer compositions:
+
+.. list-table:: Transport-Payload Serializer Compositions
+   :header-rows: 1
+   :widths: 25 25 25 25
+
+   * - Serializer ID
+     - WAMP Message
+     - App Payload
+     - Schema Needed?
+   * - flatbuffers-cbor
+     - FlatBuffers
+     - CBOR (dynamic)
+     - ❌ Just WAMP schemas
+   * - flatbuffers-json
+     - FlatBuffers
+     - JSON (dynamic)
+     - ❌ Just WAMP schemas
+   * - flatbuffers-flatbuffers
+     - FlatBuffers
+     - FlatBuffers (static)
+     - ✅ WAMP + App schemas
+   * - cbor-flatbuffers
+     - CBOR (dynamic)
+     - FlatBuffers (static)
+     - ✅ App schemas only
+
 **Traditional (Homogeneous Serialization)**
    Envelope and payload use the same format:
 

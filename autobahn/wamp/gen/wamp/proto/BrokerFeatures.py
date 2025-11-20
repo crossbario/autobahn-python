@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class BrokerFeatures(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class BrokerFeatures(object):
     def GetRootAsBrokerFeatures(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # BrokerFeatures
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,192 +31,256 @@ class BrokerFeatures(object):
     def PublisherIdentification(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def PublisherExclusion(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def SubscriberBlackwhiteListing(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def PatternBasedSubscription(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def PublicationTrustlevels(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def SubscriptionRevocation(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def SessionMetaApi(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def SubscriptionMetaApi(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def EventRetention(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def EventHistory(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def AcknowledgeEventReceived(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def AcknowledgeSubscriberReceived(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def PayloadTransparency(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # BrokerFeatures
     def PayloadEncryptionCryptobox(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
+
 
 def BrokerFeaturesStart(builder):
     builder.StartObject(14)
 
+
 def Start(builder):
     BrokerFeaturesStart(builder)
+
 
 def BrokerFeaturesAddPublisherIdentification(builder, publisherIdentification):
     builder.PrependBoolSlot(0, publisherIdentification, 0)
 
+
 def AddPublisherIdentification(builder, publisherIdentification):
     BrokerFeaturesAddPublisherIdentification(builder, publisherIdentification)
+
 
 def BrokerFeaturesAddPublisherExclusion(builder, publisherExclusion):
     builder.PrependBoolSlot(1, publisherExclusion, 0)
 
+
 def AddPublisherExclusion(builder, publisherExclusion):
     BrokerFeaturesAddPublisherExclusion(builder, publisherExclusion)
+
 
 def BrokerFeaturesAddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing):
     builder.PrependBoolSlot(2, subscriberBlackwhiteListing, 0)
 
+
 def AddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing):
     BrokerFeaturesAddSubscriberBlackwhiteListing(builder, subscriberBlackwhiteListing)
+
 
 def BrokerFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription):
     builder.PrependBoolSlot(3, patternBasedSubscription, 0)
 
+
 def AddPatternBasedSubscription(builder, patternBasedSubscription):
     BrokerFeaturesAddPatternBasedSubscription(builder, patternBasedSubscription)
+
 
 def BrokerFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels):
     builder.PrependBoolSlot(4, publicationTrustlevels, 0)
 
+
 def AddPublicationTrustlevels(builder, publicationTrustlevels):
     BrokerFeaturesAddPublicationTrustlevels(builder, publicationTrustlevels)
+
 
 def BrokerFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation):
     builder.PrependBoolSlot(5, subscriptionRevocation, 0)
 
+
 def AddSubscriptionRevocation(builder, subscriptionRevocation):
     BrokerFeaturesAddSubscriptionRevocation(builder, subscriptionRevocation)
+
 
 def BrokerFeaturesAddSessionMetaApi(builder, sessionMetaApi):
     builder.PrependBoolSlot(6, sessionMetaApi, 0)
 
+
 def AddSessionMetaApi(builder, sessionMetaApi):
     BrokerFeaturesAddSessionMetaApi(builder, sessionMetaApi)
+
 
 def BrokerFeaturesAddSubscriptionMetaApi(builder, subscriptionMetaApi):
     builder.PrependBoolSlot(7, subscriptionMetaApi, 0)
 
+
 def AddSubscriptionMetaApi(builder, subscriptionMetaApi):
     BrokerFeaturesAddSubscriptionMetaApi(builder, subscriptionMetaApi)
+
 
 def BrokerFeaturesAddEventRetention(builder, eventRetention):
     builder.PrependBoolSlot(8, eventRetention, 0)
 
+
 def AddEventRetention(builder, eventRetention):
     BrokerFeaturesAddEventRetention(builder, eventRetention)
+
 
 def BrokerFeaturesAddEventHistory(builder, eventHistory):
     builder.PrependBoolSlot(9, eventHistory, 0)
 
+
 def AddEventHistory(builder, eventHistory):
     BrokerFeaturesAddEventHistory(builder, eventHistory)
+
 
 def BrokerFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceived):
     builder.PrependBoolSlot(10, acknowledgeEventReceived, 0)
 
+
 def AddAcknowledgeEventReceived(builder, acknowledgeEventReceived):
     BrokerFeaturesAddAcknowledgeEventReceived(builder, acknowledgeEventReceived)
 
-def BrokerFeaturesAddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived):
+
+def BrokerFeaturesAddAcknowledgeSubscriberReceived(
+    builder, acknowledgeSubscriberReceived
+):
     builder.PrependBoolSlot(11, acknowledgeSubscriberReceived, 0)
 
+
 def AddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived):
-    BrokerFeaturesAddAcknowledgeSubscriberReceived(builder, acknowledgeSubscriberReceived)
+    BrokerFeaturesAddAcknowledgeSubscriberReceived(
+        builder, acknowledgeSubscriberReceived
+    )
+
 
 def BrokerFeaturesAddPayloadTransparency(builder, payloadTransparency):
     builder.PrependBoolSlot(12, payloadTransparency, 0)
 
+
 def AddPayloadTransparency(builder, payloadTransparency):
     BrokerFeaturesAddPayloadTransparency(builder, payloadTransparency)
+
 
 def BrokerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
     builder.PrependBoolSlot(13, payloadEncryptionCryptobox, 0)
 
+
 def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
     BrokerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
 
+
 def BrokerFeaturesEnd(builder):
     return builder.EndObject()
+
 
 def End(builder):
     return BrokerFeaturesEnd(builder)

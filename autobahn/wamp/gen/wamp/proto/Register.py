@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class Register(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class Register(object):
     def GetRootAsRegister(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # Register
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,14 +31,18 @@ class Register(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Register
     def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
+            )
         return 0
 
     # Register
@@ -63,66 +70,90 @@ class Register(object):
     def Concurrency(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint16Flags, o + self._tab.Pos)
+            return self._tab.Get(
+                flatbuffers.number_types.Uint16Flags, o + self._tab.Pos
+            )
         return 0
 
     # Register
     def ForceReregister(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
+
 
 def RegisterStart(builder):
     builder.StartObject(7)
 
+
 def Start(builder):
     RegisterStart(builder)
+
 
 def RegisterAddSession(builder, session):
     builder.PrependUint64Slot(0, session, 0)
 
+
 def AddSession(builder, session):
     RegisterAddSession(builder, session)
+
 
 def RegisterAddRequest(builder, request):
     builder.PrependUint64Slot(1, request, 0)
 
+
 def AddRequest(builder, request):
     RegisterAddRequest(builder, request)
 
+
 def RegisterAddProcedure(builder, procedure):
-    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(procedure), 0)
+    builder.PrependUOffsetTRelativeSlot(
+        2, flatbuffers.number_types.UOffsetTFlags.py_type(procedure), 0
+    )
+
 
 def AddProcedure(builder, procedure):
     RegisterAddProcedure(builder, procedure)
 
+
 def RegisterAddMatch(builder, match):
     builder.PrependUint8Slot(3, match, 0)
+
 
 def AddMatch(builder, match):
     RegisterAddMatch(builder, match)
 
+
 def RegisterAddInvoke(builder, invoke):
     builder.PrependUint8Slot(4, invoke, 0)
+
 
 def AddInvoke(builder, invoke):
     RegisterAddInvoke(builder, invoke)
 
+
 def RegisterAddConcurrency(builder, concurrency):
     builder.PrependUint16Slot(5, concurrency, 0)
+
 
 def AddConcurrency(builder, concurrency):
     RegisterAddConcurrency(builder, concurrency)
 
+
 def RegisterAddForceReregister(builder, forceReregister):
     builder.PrependBoolSlot(6, forceReregister, 0)
+
 
 def AddForceReregister(builder, forceReregister):
     RegisterAddForceReregister(builder, forceReregister)
 
+
 def RegisterEnd(builder):
     return builder.EndObject()
+
 
 def End(builder):
     return RegisterEnd(builder)
