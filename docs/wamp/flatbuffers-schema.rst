@@ -105,6 +105,254 @@ These files are included in the Python package distribution and can be accessed 
    fbs_pkg = files('autobahn.wamp.flatbuffers')
    wamp_fbs = fbs_pkg.joinpath('wamp.fbs').read_text()
 
+Schema Design Patterns
+----------------------
+
+The FlatBuffers schemas follow consistent design patterns for application payload handling and router-to-router message forwarding. These patterns ensure compatibility, consistency, and correct behavior across all WAMP message types.
+
+Application Payload Handling (6-Field Set)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All WAMP message types that carry **application payload** (Publish, Event, Call, Result, Invocation, Yield, Error) consistently include a **6-field set** that supports both normal mode and transparent mode payload handling:
+
+.. code-block:: fbs
+
+   /// Positional values for application-defined payload.
+   args: [uint8];
+
+   /// Keyword values for application-defined payload.
+   kwargs: [uint8];
+
+   /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
+   payload: [uint8];
+
+   // The encoding algorithm that was used to encode the payload.
+   enc_algo: Payload;
+
+   // The payload object serializer that was used encoding the payload.
+   enc_serializer: Serializer;
+
+   // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
+   enc_key: [uint8];
+
+**Two Operational Modes:**
+
+1. **Normal Mode** (Dynamic Typing)
+
+   * Uses ``args`` and ``kwargs`` fields
+   * ``payload`` field must be empty/unset
+   * Each field (args, kwargs) is independently serialized using ``enc_serializer``
+   * Supports JSON, MessagePack, CBOR, UBJSON serializers
+   * Enables dynamic, schema-less application payloads
+
+   Example:
+
+   .. code-block:: python
+
+      # Publishing with args/kwargs (CBOR-serialized)
+      publish = Publish(
+          topic='com.example.topic',
+          args=[1, 2, 3],
+          kwargs={'key': 'value'},
+          enc_serializer='cbor'  # Serializer used for args/kwargs
+      )
+
+2. **Transparent Mode** (Static Typing / E2EE)
+
+   * Uses ``payload`` field
+   * ``args`` and ``kwargs`` fields must be empty/unset
+   * Payload is opaque bytes, potentially encrypted or statically typed
+   * Supports end-to-end encryption (E2EE) via Payload.CRYPTOBOX
+   * Supports embedded FlatBuffers for static typing (ENC_SER_FLATBUFFERS)
+
+   Example:
+
+   .. code-block:: python
+
+      # Publishing with encrypted payload
+      publish = Publish(
+          topic='com.example.topic',
+          payload=encrypted_bytes,
+          enc_algo=Payload.CRYPTOBOX,
+          enc_serializer='cbor',  # Serializer of original data before encryption
+          enc_key=public_key
+      )
+
+      # Publishing with embedded FlatBuffers (static typing)
+      result = Result(
+          request=12345,
+          payload=flatbuffers_bytes,  # Pre-serialized FlatBuffers data
+          enc_serializer='flatbuffers'  # ENC_SER_FLATBUFFERS
+      )
+
+**The "FlatBuffers-CBOR" Pattern:**
+
+The most common pattern is using FlatBuffers for WAMP message structure while using CBOR (or other serializers) for application payload:
+
+* **WAMP message envelope**: FlatBuffers (zero-copy, high performance)
+* **Application payload (args/kwargs)**: CBOR-encoded bytes in args/kwargs fields
+* **Configurable**: Can use JSON, MessagePack, UBJSON instead of CBOR via ``enc_serializer``
+* **Extensible**: Can embed statically-typed FlatBuffers payloads via ENC_SER_FLATBUFFERS
+
+This composition provides flexibility while maintaining high performance.
+
+Router-to-Router Message Forwarding
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+All WAMP message types that carry application payload also support **Router-to-Router (R2R) link message forwarding** via the ``forward_for`` field:
+
+.. code-block:: fbs
+
+   // R2R-link message forwarding route that was taken.
+   forward_for: [Principal];
+
+Where ``Principal`` is defined as:
+
+.. code-block:: fbs
+
+   struct Principal
+   {
+       // WAMP session ID.
+       session: uint64;
+
+       // Note: authid and authrole are commented out in schema due to
+       // FlatBuffers struct limitation (structs can only contain scalars)
+   }
+
+**Message Types with forward_for:**
+
+The following message types include the ``forward_for`` field for R2R routing:
+
+**Messages with Application Payload:**
+
+* Publish - Events published by clients, forwarded through routers
+* Event - Events delivered to subscribers, may traverse multiple routers
+* Call - RPC calls from callers, routed to callees
+* Result - RPC results from callees, routed back to callers
+* Invocation - RPC invocations to callees, may be forwarded
+* Yield - RPC yields from callees, routed back through intermediaries
+* Error - Error messages from any role, must be routed back to originator
+
+**Control Messages (No Application Payload):**
+
+* Cancel - Call cancellation requests, routed through R2R links
+* Interrupt - Invocation interruption requests, routed through R2R links
+
+**Purpose:**
+
+The ``forward_for`` field tracks the routing path taken by a message as it traverses multiple WAMP routers in distributed deployments. Each intermediate router appends its principal (session information) to the array, enabling:
+
+* **Message provenance tracking** - Know which routers handled the message
+* **Loop detection** - Prevent circular routing in complex topologies
+* **Audit trails** - Security and compliance logging of message paths
+* **Federation support** - Essential for router-to-router federation scenarios
+
+**Example:**
+
+.. code-block:: python
+
+   # Error with forwarding information
+   error = Error(
+       request_type=MessageType.CALL,
+       request=12345,
+       error='wamp.error.runtime_error',
+       args=['Callee encountered an error'],
+       forward_for=[
+           {'session': 9876543210, 'authid': None, 'authrole': None},  # Router 1
+           {'session': 1234567890, 'authid': None, 'authrole': None},  # Router 2
+       ]
+   )
+
+Python Implementation Patterns
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Python message classes in :mod:`autobahn.wamp.message` implement lazy deserialization patterns for FlatBuffers support:
+
+**1. Initialization Pattern:**
+
+.. code-block:: python
+
+   def __init__(self,
+                request=None,
+                topic=None,
+                args=None,
+                kwargs=None,
+                # ... other parameters ...
+                from_fbs=None):  # FlatBuffers support parameter
+       """
+       Constructor supports both direct instantiation and lazy FlatBuffers deserialization.
+
+       :param from_fbs: Optional FlatBuffers message object for lazy deserialization
+       """
+       Message.__init__(self, from_fbs=from_fbs)  # Pass to parent
+
+       # Use underscore-prefixed private attributes
+       self._request = request
+       self._topic = topic
+       self._args = args
+       self._kwargs = _validate_kwargs(kwargs)
+       # ... initialize all attributes with underscore prefix
+
+**2. Lazy Property Pattern:**
+
+Properties provide lazy deserialization from FlatBuffers when accessed:
+
+.. code-block:: python
+
+   @property
+   def args(self):
+       """Lazy deserialize args from FlatBuffers."""
+       if self._args is None and self._from_fbs:
+           if self._from_fbs.ArgsLength():
+               # Deserialize using CBOR (respects enc_serializer in future)
+               self._args = cbor2.loads(bytes(self._from_fbs.ArgsAsBytes()))
+       return self._args
+
+   @args.setter
+   def args(self, value):
+       assert value is None or type(value) in [list, tuple]
+       self._args = value
+
+**3. __slots__ Pattern:**
+
+All attributes use underscore-prefixed names to match private storage:
+
+.. code-block:: python
+
+   __slots__ = (
+       '_request',
+       '_topic',
+       '_args',
+       '_kwargs',
+       '_payload',
+       # ... all attributes with underscore prefix
+   )
+
+**4. Equality Pattern:**
+
+Comparison uses property getters (not direct attribute access) to support lazy deserialization:
+
+.. code-block:: python
+
+   def __eq__(self, other):
+       if not isinstance(other, self.__class__):
+           return False
+       if not Message.__eq__(self, other):
+           return False
+       # Use property getters, not self._args
+       if other.args != self.args:
+           return False
+       if other.kwargs != self.kwargs:
+           return False
+       # ... compare all attributes via properties
+       return True
+
+These patterns ensure that:
+
+* Messages can be constructed directly (normal mode) or from FlatBuffers (lazy mode)
+* Deserialization only occurs when attributes are actually accessed (zero-copy benefits)
+* All message operations (equality, serialization, etc.) work correctly in both modes
+
 Message Type Mapping
 --------------------
 
