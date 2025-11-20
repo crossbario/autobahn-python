@@ -280,7 +280,7 @@ def ErrorStartArgsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartArgsVector(builder, numElems: int) -> int:
+def StartArgsVector(builder, numElems):
     return ErrorStartArgsVector(builder, numElems)
 
 
@@ -298,7 +298,7 @@ def ErrorStartKwargsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartKwargsVector(builder, numElems: int) -> int:
+def StartKwargsVector(builder, numElems):
     return ErrorStartKwargsVector(builder, numElems)
 
 
@@ -316,7 +316,7 @@ def ErrorStartPayloadVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartPayloadVector(builder, numElems: int) -> int:
+def StartPayloadVector(builder, numElems):
     return ErrorStartPayloadVector(builder, numElems)
 
 
@@ -350,7 +350,7 @@ def ErrorStartEncKeyVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartEncKeyVector(builder, numElems: int) -> int:
+def StartEncKeyVector(builder, numElems):
     return ErrorStartEncKeyVector(builder, numElems)
 
 
@@ -368,7 +368,7 @@ def ErrorStartForwardForVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartForwardForVector(builder, numElems: int) -> int:
+def StartForwardForVector(builder, numElems):
     return ErrorStartForwardForVector(builder, numElems)
 
 

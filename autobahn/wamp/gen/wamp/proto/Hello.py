@@ -187,7 +187,7 @@ def HelloStartAuthmethodsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartAuthmethodsVector(builder, numElems: int) -> int:
+def StartAuthmethodsVector(builder, numElems):
     return HelloStartAuthmethodsVector(builder, numElems)
 
 

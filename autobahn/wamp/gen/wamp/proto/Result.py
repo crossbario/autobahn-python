@@ -278,7 +278,7 @@ def ResultStartArgsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartArgsVector(builder, numElems: int) -> int:
+def StartArgsVector(builder, numElems):
     return ResultStartArgsVector(builder, numElems)
 
 
@@ -296,7 +296,7 @@ def ResultStartKwargsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartKwargsVector(builder, numElems: int) -> int:
+def StartKwargsVector(builder, numElems):
     return ResultStartKwargsVector(builder, numElems)
 
 
@@ -314,7 +314,7 @@ def ResultStartPayloadVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartPayloadVector(builder, numElems: int) -> int:
+def StartPayloadVector(builder, numElems):
     return ResultStartPayloadVector(builder, numElems)
 
 
@@ -348,7 +348,7 @@ def ResultStartEncKeyVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
 
 
-def StartEncKeyVector(builder, numElems: int) -> int:
+def StartEncKeyVector(builder, numElems):
     return ResultStartEncKeyVector(builder, numElems)
 
 
@@ -402,7 +402,7 @@ def ResultStartForwardForVector(builder, numElems):
     return builder.StartVector(8, numElems, 8)
 
 
-def StartForwardForVector(builder, numElems: int) -> int:
+def StartForwardForVector(builder, numElems):
     return ResultStartForwardForVector(builder, numElems)
 
 
