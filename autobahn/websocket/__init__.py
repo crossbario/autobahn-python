@@ -43,9 +43,11 @@ log = logging.getLogger(__name__)
 # Step 1: Probe for NVX availability (was it built and can we import it?)
 _has_nvx = False
 try:
-    # Try importing both NVX modules to verify they're available
-    from autobahn.nvx._xormasker import create_xor_masker as _nvx_xor_test  # noqa: F401
-    from autobahn.nvx._utf8validator import Utf8Validator as _nvx_utf8_test  # noqa: F401
+    # Try importing the actual CFFI extension modules directly
+    # (not just the Python wrappers which are always importable)
+    # This correctly detects if NVX was actually built at install time
+    import _nvx_utf8validator  # noqa: F401
+    import _nvx_xormasker  # noqa: F401
 
     _has_nvx = True
 except ImportError:
