@@ -3482,7 +3482,8 @@ class Publish(Message):
         if self._enc_algo is None and self._from_fbs:
             enc_algo = self._from_fbs.EncAlgo()
             if enc_algo:
-                self._enc_algo = enc_algo
+                # Convert FlatBuffers enum integer to string
+                self._enc_algo = ENC_ALGOS.get(enc_algo)
         return self._enc_algo
 
     @enc_algo.setter
@@ -3511,7 +3512,8 @@ class Publish(Message):
         if self._enc_serializer is None and self._from_fbs:
             enc_serializer = self._from_fbs.EncSerializer()
             if enc_serializer:
-                self._enc_serializer = enc_serializer
+                # Convert FlatBuffers enum integer to string
+                self._enc_serializer = ENC_SERS.get(enc_serializer)
         return self._enc_serializer
 
     @enc_serializer.setter
@@ -3531,12 +3533,17 @@ class Publish(Message):
                 forward_for = []
                 for j in range(self._from_fbs.ForwardForLength()):
                     principal = self._from_fbs.ForwardFor(j)
-                    # Principal struct currently only has session field
-                    # (authid/authrole are commented out in schema due to FlatBuffers struct limitations)
+                    # Principal is now a table and supports authid/authrole
+                    authid = principal.Authid()
+                    if authid:
+                        authid = authid.decode('utf-8') if isinstance(authid, bytes) else authid
+                    authrole = principal.Authrole()
+                    if authrole:
+                        authrole = authrole.decode('utf-8') if isinstance(authrole, bytes) else authrole
                     forward_for.append({
                         'session': principal.Session(),
-                        'authid': None,
-                        'authrole': None,
+                        'authid': authid,
+                        'authrole': authrole,
                     })
                 self._forward_for = forward_for
         return self._forward_for
@@ -3663,6 +3670,37 @@ class Publish(Message):
                 builder.PrependUOffsetTRelative(o)
             eligible_authrole = builder.EndVector(len(_eligible_authrole))
 
+        # forward_for: [Principal]
+        forward_for = None
+        if self.forward_for:
+            from autobahn.wamp.gen.wamp.proto.Principal import (
+                PrincipalStart,
+                PrincipalAddSession,
+                PrincipalAddAuthid,
+                PrincipalAddAuthrole,
+                PrincipalEnd,
+            )
+
+            _forward_for = []
+            for ff in self.forward_for:
+                # Build Principal table
+                authid = builder.CreateString(ff['authid']) if ff.get('authid') else None
+                authrole = builder.CreateString(ff['authrole']) if ff.get('authrole') else None
+
+                PrincipalStart(builder)
+                PrincipalAddSession(builder, ff['session'])
+                if authid:
+                    PrincipalAddAuthid(builder, authid)
+                if authrole:
+                    PrincipalAddAuthrole(builder, authrole)
+                _forward_for.append(PrincipalEnd(builder))
+
+            # Create vector of Principal tables
+            message_fbs.PublishGen.PublishStartForwardForVector(builder, len(_forward_for))
+            for o in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(o)
+            forward_for = builder.EndVector(len(_forward_for))
+
         # now start and build a new object ..
         message_fbs.PublishGen.PublishStart(builder)
 
@@ -3680,9 +3718,13 @@ class Publish(Message):
             message_fbs.PublishGen.PublishAddPayload(builder, payload)
 
         if self.enc_algo:
-            message_fbs.PublishGen.PublishAddEncAlgo(builder, self.enc_algo)
+            # Convert string enc_algo to FlatBuffers enum value
+            enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
+            message_fbs.PublishGen.PublishAddEncAlgo(builder, enc_algo_int)
         if self.enc_serializer:
-            message_fbs.PublishGen.PublishAddEncSerializer(builder, self.enc_serializer)
+            # Convert string enc_serializer to FlatBuffers enum value
+            enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
+            message_fbs.PublishGen.PublishAddEncSerializer(builder, enc_serializer_int)
         if enc_key:
             message_fbs.PublishGen.PublishAddEncKey(builder, enc_key)
 
@@ -3711,10 +3753,11 @@ class Publish(Message):
             message_fbs.PublishGen.PublishAddRetain(builder, self.retain)
         if transaction_hash is not None:
             message_fbs.PublishGen.PublishAddTransactionHash(
-                builder, self.transaction_hash
+                builder, transaction_hash
             )
 
-        # FIXME: add forward_for
+        if forward_for:
+            message_fbs.PublishGen.PublishAddForwardFor(builder, forward_for)
 
         msg = message_fbs.PublishGen.PublishEnd(builder)
 
@@ -4055,12 +4098,14 @@ class Publish(Message):
         options = self.marshal_options()
 
         if self.payload:
+            # Convert memoryview to bytes for non-FlatBuffers serializers
+            payload = bytes(self.payload) if isinstance(self.payload, memoryview) else self.payload
             return [
                 Publish.MESSAGE_TYPE,
                 self.request,
                 options,
                 self.topic,
-                self.payload,
+                payload,
             ]
         else:
             if self.kwargs:
@@ -5308,7 +5353,10 @@ class Event(Message):
     @property
     def retained(self):
         if self._retained is None and self._from_fbs:
-            self._retained = self._from_fbs.Retained()
+            # Only set if non-default (True). FlatBuffers returns False for unset booleans.
+            val = self._from_fbs.Retained()
+            if val:  # Only set if True (non-default)
+                self._retained = val
         return self._retained
 
     @retained.setter
@@ -5347,7 +5395,8 @@ class Event(Message):
         if self._enc_algo is None and self._from_fbs:
             enc_algo = self._from_fbs.EncAlgo()
             if enc_algo:
-                self._enc_algo = enc_algo
+                # Convert FlatBuffers enum integer to string
+                self._enc_algo = ENC_ALGOS.get(enc_algo)
         return self._enc_algo
 
     @enc_algo.setter
@@ -5376,7 +5425,8 @@ class Event(Message):
         if self._enc_serializer is None and self._from_fbs:
             enc_serializer = self._from_fbs.EncSerializer()
             if enc_serializer:
-                self._enc_serializer = enc_serializer
+                # Convert FlatBuffers enum integer to string
+                self._enc_serializer = ENC_SERS.get(enc_serializer)
         return self._enc_serializer
 
     @enc_serializer.setter
@@ -5391,7 +5441,24 @@ class Event(Message):
 
     @property
     def forward_for(self):
-        # FIXME
+        if self._forward_for is None and self._from_fbs:
+            if self._from_fbs.ForwardForLength():
+                forward_for = []
+                for j in range(self._from_fbs.ForwardForLength()):
+                    principal = self._from_fbs.ForwardFor(j)
+                    # Principal is now a table and supports authid/authrole
+                    authid = principal.Authid()
+                    if authid:
+                        authid = authid.decode('utf-8') if isinstance(authid, bytes) else authid
+                    authrole = principal.Authrole()
+                    if authrole:
+                        authrole = authrole.decode('utf-8') if isinstance(authrole, bytes) else authrole
+                    forward_for.append({
+                        'session': principal.Session(),
+                        'authid': authid,
+                        'authrole': authrole,
+                    })
+                self._forward_for = forward_for
         return self._forward_for
 
     @forward_for.setter
@@ -5444,6 +5511,37 @@ class Event(Message):
         if enc_key:
             enc_key = builder.CreateByteVector(enc_key)
 
+        # forward_for: [Principal]
+        forward_for = None
+        if self.forward_for:
+            from autobahn.wamp.gen.wamp.proto.Principal import (
+                PrincipalStart,
+                PrincipalAddSession,
+                PrincipalAddAuthid,
+                PrincipalAddAuthrole,
+                PrincipalEnd,
+            )
+
+            _forward_for = []
+            for ff in self.forward_for:
+                # Build Principal table
+                authid = builder.CreateString(ff['authid']) if ff.get('authid') else None
+                authrole = builder.CreateString(ff['authrole']) if ff.get('authrole') else None
+
+                PrincipalStart(builder)
+                PrincipalAddSession(builder, ff['session'])
+                if authid:
+                    PrincipalAddAuthid(builder, authid)
+                if authrole:
+                    PrincipalAddAuthrole(builder, authrole)
+                _forward_for.append(PrincipalEnd(builder))
+
+            # Create vector of Principal tables
+            message_fbs.EventGen.EventStartForwardForVector(builder, len(_forward_for))
+            for o in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(o)
+            forward_for = builder.EndVector(len(_forward_for))
+
         message_fbs.EventGen.EventStart(builder)
 
         if self.subscription:
@@ -5477,13 +5575,18 @@ class Event(Message):
             )
 
         if self.enc_algo:
-            message_fbs.EventGen.EventAddEncAlgo(builder, self.enc_algo)
+            # Convert string enc_algo to FlatBuffers enum value
+            enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
+            message_fbs.EventGen.EventAddEncAlgo(builder, enc_algo_int)
         if enc_key:
             message_fbs.EventGen.EventAddEncKey(builder, enc_key)
         if self.enc_serializer:
-            message_fbs.EventGen.EventAddEncSerializer(builder, self.enc_serializer)
+            # Convert string enc_serializer to FlatBuffers enum value
+            enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
+            message_fbs.EventGen.EventAddEncSerializer(builder, enc_serializer_int)
 
-        # FIXME: add forward_for
+        if forward_for:
+            message_fbs.EventGen.EventAddForwardFor(builder, forward_for)
 
         msg = message_fbs.EventGen.EventEnd(builder)
 
@@ -5725,12 +5828,14 @@ class Event(Message):
                 details["enc_key"] = self.enc_key
             if self.enc_serializer is not None:
                 details["enc_serializer"] = self.enc_serializer
+            # Convert memoryview to bytes for non-FlatBuffers serializers
+            payload = bytes(self.payload) if isinstance(self.payload, memoryview) else self.payload
             return [
                 Event.MESSAGE_TYPE,
                 self.subscription,
                 self.publication,
                 details,
-                self.payload,
+                payload,
             ]
         else:
             if self.kwargs:
@@ -6250,12 +6355,17 @@ class Call(Message):
                 forward_for = []
                 for j in range(self._from_fbs.ForwardForLength()):
                     principal = self._from_fbs.ForwardFor(j)
-                    # Principal struct currently only has session field
-                    # (authid/authrole are commented out in schema due to FlatBuffers struct limitations)
+                    # Principal is now a table and supports authid/authrole
+                    authid = principal.Authid()
+                    if authid:
+                        authid = authid.decode('utf-8') if isinstance(authid, bytes) else authid
+                    authrole = principal.Authrole()
+                    if authrole:
+                        authrole = authrole.decode('utf-8') if isinstance(authrole, bytes) else authrole
                     forward_for.append({
                         'session': principal.Session(),
-                        'authid': None,
-                        'authrole': None,
+                        'authid': authid,
+                        'authrole': authrole,
                     })
                 self._forward_for = forward_for
         return self._forward_for
