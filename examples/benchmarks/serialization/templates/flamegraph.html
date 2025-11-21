@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<center>
+    <img id="logo" src="crossbarfx_black.svg" />
+</center>
+<br><br>
+
+<h1>WAMP Message Serialization Benchmarks: CPU profile</h1>
+
+<p>
+    CPU profile recorded with vmprof during benchmark run:
+</p>
+
+<ul>
+    <li>
+        python: <b>{{ python_version }}</b>
+    </li>
+    <li>
+        serializer: <b>{{ serializer }}</b>
+    </li>
+    <li>
+        payload mode: <b>{{ payload_mode }}</b>
+    </li>
+    <li>
+        payload size: <b>{{ payload_size }}</b>
+    </li>
+</ul>
+
+with benchmark results:
+
+<ul>
+    <li>
+        <b>{{ intcomma(msgs_per_sec) }} messages/s</b>
+    </li>
+    <li>
+        <b>{{ naturalsize(bytes_per_sec) }}/s</b>
+    </li>
+    <li>
+       {{ msg_bytes }} bytes avg message size
+    </li>
+</ul>
+
+and CPU profile:
+
+<div class="flamechart">
+    <object data="{{ 'vmprof_{}_{}_{}_{}.svg'.format(python, serializer, payload_mode, payload_size) }}" type="image/svg+xml" width="1200"></object>
+</div>
+
+<b>Data Sample</b>
+<p class="sample">
+    {{ sample }}
+</p>
+
+{% endblock %}

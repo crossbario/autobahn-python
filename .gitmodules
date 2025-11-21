@@ -7,3 +7,6 @@
 [submodule "deps/flatbuffers"]
 	path = deps/flatbuffers
 	url = https://github.com/google/flatbuffers.git
+[submodule ".proto"]
+	path = .proto
+	url = https://github.com/wamp-proto/wamp-proto.git

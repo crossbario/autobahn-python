@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<center>
+    <img id="logo" src="crossbarfx_black.svg"></img>
+</center>
+<br><br>
+
+<h1>WAMP Message Serialization Benchmarks</h1>
+<p>
+    Report generated on {{ generated }}.
+</p>
+
+{% for payload_size in ['empty', 'small', 'medium', 'large', 'xl', 'xxl'] %}
+
+<h2>Payload size <b>"{{ payload_size }}"</b></h2>
+
+{% for payload_mode in ['normal', 'transparent'] %}
+
+<p>
+    Payload mode <b>"{{ payload_mode }}"</b>
+</p>
+<hr>
+
+{% for python in ['pypy', 'cpy'] %}
+<b style="font-size: 140%;">{{ python }}:</b>
+<table id="results">
+    <tr>
+        <td class="col1"></td>
+        <td><b>message rate</b></td>
+        <td><b>transfer speed</b></td>
+        <td><b>message size</b></td>
+        <td><b>CPU profile</b></td>
+    </tr>
+
+{% for serializer in results[python] %}
+{% if payload_mode in results[python][serializer] %}
+{% if payload_size in results[python][serializer][payload_mode] %}
+
+    <tr>
+        <td style="text-align: left; padding-left: 140px; width: 300px;">
+            <b>{{ serializer }}</b>
+        </td>
+        <td>
+           {{ intcomma(results[python][serializer][payload_mode][payload_size]['msgs_per_sec']) }} messages/s
+        </td>
+        <td>
+            {{ naturalsize(results[python][serializer][payload_mode][payload_size]['bytes_per_sec']) }}/s
+        </td>
+        <td>
+           {{ results[python][serializer][payload_mode][payload_size]['msg_bytes'] }} bytes
+        </td>
+        <td>
+            <a href="vmprof_{{ python }}_{{ serializer }}_{{ payload_mode }}_{{ payload_size }}.html">link</a>
+        </td>
+    </tr>
+
+{% endif %}
+{% endif %}
+{% endfor %}
+
+</table>
+<br><br>
+{% endfor %}
+{% endfor %}
+
+
+{% endfor %}
+
+{% endblock %}

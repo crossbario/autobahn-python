@@ -98,6 +98,8 @@ class Serializer(object):
         :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
         """
         self._serializer = serializer
+        # Store back-reference so Message.build() can access parent ISerializer
+        self._serializer._parent_serializer = self
 
         self._stats_reset = time_ns()
         self._stats_cycle = 0
@@ -277,6 +279,23 @@ class Serializer(object):
             self._autoreset_callback(stats)
 
         return data, is_binary
+
+    def serialize_payload(self, data):
+        """
+        Serialize application payload data (args/kwargs/payload).
+
+        Uses the payload serializer configured for this transport serializer.
+        For traditional serializers (JSON, CBOR, MsgPack, UBJSON), this is the
+        same as the envelope serializer. For FlatBuffers, this can be different.
+
+        :param data: The data to serialize (list for args, dict for kwargs).
+        :return: Serialized bytes.
+        :rtype: bytes
+        """
+        # FlatBuffersSerializer has _payload_serializer (separate from envelope)
+        # Traditional serializers use _serializer (same for envelope and payload)
+        payload_ser = getattr(self, '_payload_serializer', self._serializer)
+        return payload_ser.serialize(data)
 
     def unserialize(
         self, payload: bytes, isBinary: Optional[bool] = None
@@ -577,6 +596,12 @@ class JsonSerializer(Serializer):
     handshake identify the serializer with WAMP-over-RawSocket.
     """
 
+    PAYLOAD_SERIALIZER_ID = "json"
+    """
+    Serializer for application payload. For JSON transport, both envelope
+    and payload use JSON serialization.
+    """
+
     MIME_TYPE = "application/json"
     """
     MIME type announced in HTTP request/response headers when running
@@ -725,6 +750,12 @@ if _HAS_MSGPACK:
         handshake identify the serializer with WAMP-over-RawSocket.
         """
 
+        PAYLOAD_SERIALIZER_ID = "msgpack"
+        """
+        Serializer for application payload. For MessagePack transport, both envelope
+        and payload use MessagePack serialization.
+        """
+
         MIME_TYPE = "application/x-msgpack"
         """
         MIME type announced in HTTP request/response headers when running
@@ -852,6 +883,12 @@ if _HAS_CBOR:
         handshake identify the serializer with WAMP-over-RawSocket.
         """
 
+        PAYLOAD_SERIALIZER_ID = "cbor"
+        """
+        Serializer for application payload. For CBOR transport, both envelope
+        and payload use CBOR serialization.
+        """
+
         MIME_TYPE = "application/cbor"
         """
         MIME type announced in HTTP request/response headers when running
@@ -963,6 +1000,12 @@ else:
         """
         ID used in lower four bits of second octet in RawSocket opening
         handshake identify the serializer with WAMP-over-RawSocket.
+        """
+
+        PAYLOAD_SERIALIZER_ID = "ubjson"
+        """
+        Serializer for application payload. For UBJSON transport, both envelope
+        and payload use UBJSON serialization.
         """
 
         MIME_TYPE = "application/ubjson"
@@ -1077,15 +1120,38 @@ if _HAS_FLATBUFFERS:
         WAMP-over-Longpoll HTTP fallback.
         """
 
-        def __init__(self, batched=False):
+        def __init__(self, batched=False, payload_serializer="cbor"):
             """
 
             :param batched: Flag to control whether to put this serialized into batched mode.
             :type batched: bool
+            :param payload_serializer: Serializer ID for application payload (args/kwargs/payload).
+                Can be "json", "msgpack", "cbor", "ubjson", or "flatbuffers". Defaults to "cbor".
+            :type payload_serializer: str
             """
             Serializer.__init__(self, FlatBuffersObjectSerializer(batched=batched))
             if batched:
                 self.SERIALIZER_ID = "flatbuffers.batched"
+
+            # Store payload serializer ID and create instance
+            self._payload_serializer_id = payload_serializer
+            if payload_serializer in SERID_TO_OBJSER:
+                payload_ser_class = SERID_TO_OBJSER[payload_serializer]
+                self._payload_serializer = payload_ser_class()
+            else:
+                raise ValueError(
+                    f"Unknown payload serializer '{payload_serializer}'. "
+                    f"Available: {sorted(SERID_TO_OBJSER.keys())}"
+                )
+
+        @property
+        def PAYLOAD_SERIALIZER_ID(self):
+            """
+            Serializer for application payload. For FlatBuffers transport, this can
+            differ from the envelope serializer to enable composition patterns like
+            FlatBuffers envelope with CBOR payload.
+            """
+            return self._payload_serializer_id
 
     ISerializer.register(FlatBuffersSerializer)
     SERID_TO_SER[FlatBuffersSerializer.SERIALIZER_ID] = FlatBuffersSerializer

@@ -126,6 +126,94 @@ jobs:
         continue-on-error: true
         run: just test-asyncio cpy314 0
 
+  test-serdes:
+    name: SerDes Conformance Tests
+    needs: identifiers
+    runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
+    strategy:
+      matrix:
+        python-env: [cpy314, cpy311, pypy311]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install uv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Verify toolchain installation
+        run: |
+          just --version
+          uv --version
+
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key:
+            uv-cache-ubuntu-serdes-${{ matrix.python-env }}-${{
+            hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-ubuntu-serdes-${{ matrix.python-env }}-
+            uv-cache-ubuntu-serdes-
+
+      - name: Create Python environment
+        run: |
+          just create ${{ matrix.python-env }}
+          just install-tools ${{ matrix.python-env }}
+
+      - name: Run SerDes conformance tests
+        run: |
+          echo "==> Running WAMP message SerDes conformance tests..."
+          echo "==> Python environment: ${{ matrix.python-env }}"
+          echo "==> Test vectors from: wamp-proto/testsuite/"
+
+          # Create output directory for test results
+          mkdir -p test-results/serdes-${{ matrix.python-env }}
+
+          # Run tests and generate reports
+          VENV_PYTHON=$(just --quiet _get-venv-python ${{ matrix.python-env }})
+          ${VENV_PYTHON} -m pytest -v \
+            --junitxml=test-results/serdes-${{ matrix.python-env }}/junit.xml \
+            examples/serdes/tests/test_publish.py \
+            examples/serdes/tests/test_event.py
+
+          # Create summary
+          echo "SerDes Conformance Test Results - ${{ matrix.python-env }}" > test-results/serdes-${{ matrix.python-env }}/summary.txt
+          echo "======================================================" >> test-results/serdes-${{ matrix.python-env }}/summary.txt
+          echo "Test run completed at: $(date)" >> test-results/serdes-${{ matrix.python-env }}/summary.txt
+          echo "Python environment: ${{ matrix.python-env }}" >> test-results/serdes-${{ matrix.python-env }}/summary.txt
+
+      - name: Upload SerDes test results
+        if: always()
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
+        with:
+          name: serdes-test-results-${{ matrix.python-env }}
+          path: test-results/serdes-${{ matrix.python-env }}/
+          retention-days: 7
+
   documentation:
     name: Documentation Build
     needs: identifiers
@@ -328,16 +416,29 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Install FlatBuffers compiler
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Install exact same version as used in development (v25.9.23)
           FLATC_VERSION="25.9.23"
-          FLATC_URL="https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/Linux.flatc.binary.g++-13.zip"
           TEMP_DIR=$(mktemp -d)
 
           echo "==> Installing FlatBuffers compiler v${FLATC_VERSION}..."
           cd "${TEMP_DIR}"
-          curl -L -o flatc.zip "${FLATC_URL}"
-          unzip flatc.zip
+
+          # Use gh to download with proper authentication and redirect handling
+          gh release download "v${FLATC_VERSION}" \
+            --repo google/flatbuffers \
+            --pattern "Linux.flatc.binary.g++-13.zip"
+
+          # Verify download
+          if [ ! -f "Linux.flatc.binary.g++-13.zip" ]; then
+            echo "ERROR: Failed to download flatc binary"
+            exit 1
+          fi
+
+          ls -lh Linux.flatc.binary.g++-13.zip
+          unzip Linux.flatc.binary.g++-13.zip
           sudo mv flatc /usr/local/bin/flatc
           sudo chmod +x /usr/local/bin/flatc
           rm -rf "${TEMP_DIR}"
@@ -422,8 +523,8 @@ jobs:
   build-package:
     name: Package Build
     runs-on: ubuntu-24.04
-    needs: [identifiers, quality-checks, build-schema]
-    #    needs: [identifiers, quality-checks, tests, build-schema]
+    needs: [identifiers, quality-checks, build-schema, test-serdes]
+    #    needs: [identifiers, quality-checks, tests, build-schema, test-serdes]
 
     env:
       BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
