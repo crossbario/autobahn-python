@@ -144,11 +144,6 @@ def test_publish_roundtrip(serializer_id, publish_samples, create_serializer):
     serializer = create_serializer(serializer_id)
 
     for sample in publish_samples:
-        # Skip flatbuffers with transparent payload mode due to autobahn bug
-        # See: https://github.com/crossbario/autobahn-python/issues/1766
-        # flatbuffers serializer incorrectly handles enc_algo (expects uint8, gets string)
-        if serializer_id == 'flatbuffers' and sample.get('expected_attributes', {}).get('payload') is not None:
-            pytest.skip("Flatbuffers with transparent payload not supported (issue #1766)")
         # Skip if no construction code
         construction_code = sample["construction"].get("autobahn-python")
         if not construction_code:
@@ -204,13 +199,6 @@ def test_publish_cross_serializer_preservation(serializer_pair, publish_samples)
     ser2 = create_transport_serializer(ser2_id)
 
     for sample in publish_samples:
-        # Skip flatbuffers with transparent payload mode due to autobahn bug
-        # See: https://github.com/crossbario/autobahn-python/issues/1766
-        # flatbuffers serializer incorrectly handles enc_algo (expects uint8, gets string)
-        has_payload = sample.get('expected_attributes', {}).get('payload') is not None
-        if has_payload and ('flatbuffers' in [ser1_id, ser2_id]):
-            pytest.skip("Flatbuffers with transparent payload not supported (issue #1766)")
-
         # Skip if ser1 not in test vector
         if ser1_id not in sample["serializers"]:
             pytest.skip(f"Serializer {ser1_id} not in test vector")

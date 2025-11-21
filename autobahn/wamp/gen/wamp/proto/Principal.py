@@ -4,30 +4,73 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class Principal(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
-    def SizeOf(cls):
-        return 8
+    def GetRootAs(cls, buf, offset=0):
+        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
+        x = Principal()
+        x.Init(buf, n + offset)
+        return x
 
+    @classmethod
+    def GetRootAsPrincipal(cls, buf, offset=0):
+        """This method is deprecated. Please switch to GetRootAs."""
+        return cls.GetRootAs(buf, offset)
     # Principal
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # Principal
     def Session(self):
-        return self._tab.Get(
-            flatbuffers.number_types.Uint64Flags,
-            self._tab.Pos + flatbuffers.number_types.UOffsetTFlags.py_type(0),
-        )
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
+        if o != 0:
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
+        return 0
 
+    # Principal
+    def Authid(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
 
-def CreatePrincipal(builder, session):
-    builder.Prep(8, 8)
-    builder.PrependUint64(session)
-    return builder.Offset()
+    # Principal
+    def Authrole(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+def PrincipalStart(builder):
+    builder.StartObject(3)
+
+def Start(builder):
+    PrincipalStart(builder)
+
+def PrincipalAddSession(builder, session):
+    builder.PrependUint64Slot(0, session, 0)
+
+def AddSession(builder, session):
+    PrincipalAddSession(builder, session)
+
+def PrincipalAddAuthid(builder, authid):
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(authid), 0)
+
+def AddAuthid(builder, authid):
+    PrincipalAddAuthid(builder, authid)
+
+def PrincipalAddAuthrole(builder, authrole):
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(authrole), 0)
+
+def AddAuthrole(builder, authrole):
+    PrincipalAddAuthrole(builder, authrole)
+
+def PrincipalEnd(builder):
+    return builder.EndObject()
+
+def End(builder):
+    return PrincipalEnd(builder)

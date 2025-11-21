@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class AuthCryptosignChallenge(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class AuthCryptosignChallenge(object):
     def GetRootAsAuthCryptosignChallenge(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # AuthCryptosignChallenge
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -34,26 +31,20 @@ class AuthCryptosignChallenge(object):
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
-
 def AuthCryptosignChallengeStart(builder):
     builder.StartObject(1)
-
 
 def Start(builder):
     AuthCryptosignChallengeStart(builder)
 
-
 def AuthCryptosignChallengeAddChannelBinding(builder, channelBinding):
     builder.PrependUint8Slot(0, channelBinding, 0)
-
 
 def AddChannelBinding(builder, channelBinding):
     AuthCryptosignChallengeAddChannelBinding(builder, channelBinding)
 
-
 def AuthCryptosignChallengeEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return AuthCryptosignChallengeEnd(builder)

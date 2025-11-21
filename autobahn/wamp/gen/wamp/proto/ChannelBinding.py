@@ -2,7 +2,6 @@
 
 # namespace: proto
 
-
 class ChannelBinding(object):
     NONE = 0
     TLS_UNIQUE = 1

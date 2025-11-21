@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class RouterRoles(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class RouterRoles(object):
     def GetRootAsRouterRoles(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # RouterRoles
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -33,7 +30,6 @@ class RouterRoles(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.proto.BrokerFeatures import BrokerFeatures
-
             obj = BrokerFeatures()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -45,44 +41,31 @@ class RouterRoles(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from wamp.proto.DealerFeatures import DealerFeatures
-
             obj = DealerFeatures()
             obj.Init(self._tab.Bytes, x)
             return obj
         return None
 
-
 def RouterRolesStart(builder):
     builder.StartObject(2)
-
 
 def Start(builder):
     RouterRolesStart(builder)
 
-
 def RouterRolesAddBroker(builder, broker):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(broker), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(broker), 0)
 
 def AddBroker(builder, broker):
     RouterRolesAddBroker(builder, broker)
 
-
 def RouterRolesAddDealer(builder, dealer):
-    builder.PrependUOffsetTRelativeSlot(
-        1, flatbuffers.number_types.UOffsetTFlags.py_type(dealer), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(dealer), 0)
 
 def AddDealer(builder, dealer):
     RouterRolesAddDealer(builder, dealer)
 
-
 def RouterRolesEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return RouterRolesEnd(builder)

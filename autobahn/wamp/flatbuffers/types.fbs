@@ -83,18 +83,16 @@ enum MessageType: uint16
 
 
 // WAMP session identity information.
-struct Principal
+table Principal
 {
     // WAMP session ID.
     session: uint64;
 
-// FIXME: error: structs may contain only scalar or struct fields
-//
-//     // WAMP session authentication ID.
-//     authid: string (principal);
-//
-//     // WAMP session authentication role.
-//     authrole: string (principal);
+    // WAMP session authentication ID.
+    authid: string (principal);
+
+    // WAMP session authentication role.
+    authrole: string (principal);
 }
 
 

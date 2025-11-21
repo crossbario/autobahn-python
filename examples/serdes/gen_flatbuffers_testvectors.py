@@ -137,12 +137,7 @@ def create_message_from_attributes(message_type_name, attributes):
 
     # PubSub messages
     elif message_type_name == "PUBLISH":
-        # Convert enc_algo and enc_serializer strings to enum values
-        enc_algo_str = attributes.get("options", {}).get("enc_algo")
-        enc_algo = PAYLOAD_ALGO_MAP.get(enc_algo_str.lower()) if enc_algo_str else None
-        enc_serializer_str = attributes.get("options", {}).get("enc_serializer")
-        enc_serializer = SERIALIZER_MAP.get(enc_serializer_str.lower()) if enc_serializer_str else None
-
+        # Keep enc_algo and enc_serializer as strings (build() converts to enums)
         return message_class(
             request=attributes["request_id"],
             topic=attributes["topic"],
@@ -153,8 +148,8 @@ def create_message_from_attributes(message_type_name, attributes):
             exclude_me=attributes.get("options", {}).get("exclude_me"),
             retain=attributes.get("options", {}).get("retain"),
             forward_for=attributes.get("options", {}).get("forward_for"),
-            enc_algo=enc_algo,
-            enc_serializer=enc_serializer
+            enc_algo=attributes.get("options", {}).get("enc_algo"),
+            enc_serializer=attributes.get("options", {}).get("enc_serializer")
         )
     elif message_type_name == "PUBLISHED":
         return message_class(
@@ -185,12 +180,7 @@ def create_message_from_attributes(message_type_name, attributes):
             request=attributes["request_id"]
         )
     elif message_type_name == "EVENT":
-        # Convert enc_algo and enc_serializer strings to enum values
-        enc_algo_str = attributes.get("details", {}).get("enc_algo")
-        enc_algo = PAYLOAD_ALGO_MAP.get(enc_algo_str.lower()) if enc_algo_str else None
-        enc_serializer_str = attributes.get("details", {}).get("enc_serializer")
-        enc_serializer = SERIALIZER_MAP.get(enc_serializer_str.lower()) if enc_serializer_str else None
-
+        # Keep enc_algo and enc_serializer as strings (build() converts to enums)
         return message_class(
             subscription=attributes["subscription"],
             publication=attributes["publication"],
@@ -203,8 +193,8 @@ def create_message_from_attributes(message_type_name, attributes):
             topic=attributes.get("details", {}).get("topic"),
             retained=attributes.get("details", {}).get("retained"),
             forward_for=attributes.get("details", {}).get("forward_for"),
-            enc_algo=enc_algo,
-            enc_serializer=enc_serializer
+            enc_algo=attributes.get("details", {}).get("enc_algo"),
+            enc_serializer=attributes.get("details", {}).get("enc_serializer")
         )
 
     # RPC messages

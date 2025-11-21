@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class Cancel(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class Cancel(object):
     def GetRootAsCancel(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # Cancel
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -31,18 +28,14 @@ class Cancel(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Cancel
     def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Cancel
@@ -57,9 +50,9 @@ class Cancel(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             x = self._tab.Vector(o)
-            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
-            from wamp.proto.Principal import Principal
-
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
+            x = self._tab.Indirect(x)
+            from autobahn.wamp.gen.wamp.proto.Principal import Principal
             obj = Principal()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -77,60 +70,44 @@ class Cancel(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         return o == 0
 
-
 def CancelStart(builder):
     builder.StartObject(4)
-
 
 def Start(builder):
     CancelStart(builder)
 
-
 def CancelAddSession(builder, session):
     builder.PrependUint64Slot(0, session, 0)
-
 
 def AddSession(builder, session):
     CancelAddSession(builder, session)
 
-
 def CancelAddRequest(builder, request):
     builder.PrependUint64Slot(1, request, 0)
-
 
 def AddRequest(builder, request):
     CancelAddRequest(builder, request)
 
-
 def CancelAddMode(builder, mode):
     builder.PrependUint8Slot(2, mode, 0)
-
 
 def AddMode(builder, mode):
     CancelAddMode(builder, mode)
 
-
 def CancelAddForwardFor(builder, forwardFor):
-    builder.PrependUOffsetTRelativeSlot(
-        3, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
 
 def AddForwardFor(builder, forwardFor):
     CancelAddForwardFor(builder, forwardFor)
 
-
 def CancelStartForwardForVector(builder, numElems):
-    return builder.StartVector(8, numElems, 8)
-
+    return builder.StartVector(4, numElems, 4)
 
 def StartForwardForVector(builder, numElems):
     return CancelStartForwardForVector(builder, numElems)
 
-
 def CancelEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return CancelEnd(builder)

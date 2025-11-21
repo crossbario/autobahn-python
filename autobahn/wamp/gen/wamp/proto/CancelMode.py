@@ -2,7 +2,6 @@
 
 # namespace: proto
 
-
 class CancelMode(object):
     SKIP = 0
     ABORT = 1

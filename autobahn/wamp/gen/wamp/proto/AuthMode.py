@@ -2,7 +2,6 @@
 
 # namespace: proto
 
-
 class AuthMode(object):
     FIRST = 0
     MULTIFACTOR = 1

@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class Void(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,23 +20,18 @@ class Void(object):
     def GetRootAsVoid(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # Void
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
-
 def VoidStart(builder):
     builder.StartObject(0)
-
 
 def Start(builder):
     VoidStart(builder)
 
-
 def VoidEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return VoidEnd(builder)

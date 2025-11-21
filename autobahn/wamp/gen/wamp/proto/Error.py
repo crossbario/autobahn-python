@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class Error(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,7 +20,6 @@ class Error(object):
     def GetRootAsError(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     # Error
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -31,27 +28,21 @@ class Error(object):
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Error
     def RequestType(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint16Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint16Flags, o + self._tab.Pos)
         return 0
 
     # Error
     def Request(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint64Flags, o + self._tab.Pos)
         return 0
 
     # Error
@@ -67,10 +58,7 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
         return 0
 
     # Error
@@ -98,10 +86,7 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
         return 0
 
     # Error
@@ -129,10 +114,7 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
         return 0
 
     # Error
@@ -173,10 +155,7 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1))
         return 0
 
     # Error
@@ -203,9 +182,9 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
             x = self._tab.Vector(o)
-            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
-            from wamp.proto.Principal import Principal
-
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
+            x = self._tab.Indirect(x)
+            from autobahn.wamp.gen.wamp.proto.Principal import Principal
             obj = Principal()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -223,158 +202,110 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         return o == 0
 
-
 def ErrorStart(builder):
     builder.StartObject(11)
-
 
 def Start(builder):
     ErrorStart(builder)
 
-
 def ErrorAddSession(builder, session):
     builder.PrependUint64Slot(0, session, 0)
-
 
 def AddSession(builder, session):
     ErrorAddSession(builder, session)
 
-
 def ErrorAddRequestType(builder, requestType):
     builder.PrependUint16Slot(1, requestType, 0)
-
 
 def AddRequestType(builder, requestType):
     ErrorAddRequestType(builder, requestType)
 
-
 def ErrorAddRequest(builder, request):
     builder.PrependUint64Slot(2, request, 0)
-
 
 def AddRequest(builder, request):
     ErrorAddRequest(builder, request)
 
-
 def ErrorAddError(builder, error):
-    builder.PrependUOffsetTRelativeSlot(
-        3, flatbuffers.number_types.UOffsetTFlags.py_type(error), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(error), 0)
 
 def AddError(builder, error):
     ErrorAddError(builder, error)
 
-
 def ErrorAddArgs(builder, args):
-    builder.PrependUOffsetTRelativeSlot(
-        4, flatbuffers.number_types.UOffsetTFlags.py_type(args), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(args), 0)
 
 def AddArgs(builder, args):
     ErrorAddArgs(builder, args)
 
-
 def ErrorStartArgsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
-
 
 def StartArgsVector(builder, numElems):
     return ErrorStartArgsVector(builder, numElems)
 
-
 def ErrorAddKwargs(builder, kwargs):
-    builder.PrependUOffsetTRelativeSlot(
-        5, flatbuffers.number_types.UOffsetTFlags.py_type(kwargs), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(5, flatbuffers.number_types.UOffsetTFlags.py_type(kwargs), 0)
 
 def AddKwargs(builder, kwargs):
     ErrorAddKwargs(builder, kwargs)
 
-
 def ErrorStartKwargsVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
-
 
 def StartKwargsVector(builder, numElems):
     return ErrorStartKwargsVector(builder, numElems)
 
-
 def ErrorAddPayload(builder, payload):
-    builder.PrependUOffsetTRelativeSlot(
-        6, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(6, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0)
 
 def AddPayload(builder, payload):
     ErrorAddPayload(builder, payload)
 
-
 def ErrorStartPayloadVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
-
 
 def StartPayloadVector(builder, numElems):
     return ErrorStartPayloadVector(builder, numElems)
 
-
 def ErrorAddEncAlgo(builder, encAlgo):
     builder.PrependUint8Slot(7, encAlgo, 0)
-
 
 def AddEncAlgo(builder, encAlgo):
     ErrorAddEncAlgo(builder, encAlgo)
 
-
 def ErrorAddEncSerializer(builder, encSerializer):
     builder.PrependUint8Slot(8, encSerializer, 0)
-
 
 def AddEncSerializer(builder, encSerializer):
     ErrorAddEncSerializer(builder, encSerializer)
 
-
 def ErrorAddEncKey(builder, encKey):
-    builder.PrependUOffsetTRelativeSlot(
-        9, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0)
 
 def AddEncKey(builder, encKey):
     ErrorAddEncKey(builder, encKey)
 
-
 def ErrorStartEncKeyVector(builder, numElems):
     return builder.StartVector(1, numElems, 1)
-
 
 def StartEncKeyVector(builder, numElems):
     return ErrorStartEncKeyVector(builder, numElems)
 
-
 def ErrorAddForwardFor(builder, forwardFor):
-    builder.PrependUOffsetTRelativeSlot(
-        10, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0)
 
 def AddForwardFor(builder, forwardFor):
     ErrorAddForwardFor(builder, forwardFor)
 
-
 def ErrorStartForwardForVector(builder, numElems):
-    return builder.StartVector(8, numElems, 8)
-
+    return builder.StartVector(4, numElems, 4)
 
 def StartForwardForVector(builder, numElems):
     return ErrorStartForwardForVector(builder, numElems)
 
-
 def ErrorEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return ErrorEnd(builder)

@@ -2,7 +2,6 @@
 
 # namespace: proto
 
-
 class AnyMessage(object):
     NONE = 0
     Hello = 1

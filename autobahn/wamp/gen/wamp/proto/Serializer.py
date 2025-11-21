@@ -2,7 +2,6 @@
 
 # namespace: proto
 
-
 class Serializer(object):
     TRANSPORT = 0
     JSON = 1
