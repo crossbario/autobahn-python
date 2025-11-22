@@ -32,7 +32,7 @@ class RouterRoles(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from wamp.proto.BrokerFeatures import BrokerFeatures
+            from autobahn.wamp.gen.wamp.proto.BrokerFeatures import BrokerFeatures
 
             obj = BrokerFeatures()
             obj.Init(self._tab.Bytes, x)
@@ -44,7 +44,7 @@ class RouterRoles(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from wamp.proto.DealerFeatures import DealerFeatures
+            from autobahn.wamp.gen.wamp.proto.DealerFeatures import DealerFeatures
 
             obj = DealerFeatures()
             obj.Init(self._tab.Bytes, x)

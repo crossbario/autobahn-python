@@ -32,7 +32,7 @@ class ClientRoles(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from wamp.proto.PublisherFeatures import PublisherFeatures
+            from autobahn.wamp.gen.wamp.proto.PublisherFeatures import PublisherFeatures
 
             obj = PublisherFeatures()
             obj.Init(self._tab.Bytes, x)
@@ -44,7 +44,7 @@ class ClientRoles(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from wamp.proto.SubscriberFeatures import SubscriberFeatures
+            from autobahn.wamp.gen.wamp.proto.SubscriberFeatures import SubscriberFeatures
 
             obj = SubscriberFeatures()
             obj.Init(self._tab.Bytes, x)
@@ -56,7 +56,7 @@ class ClientRoles(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from wamp.proto.CallerFeatures import CallerFeatures
+            from autobahn.wamp.gen.wamp.proto.CallerFeatures import CallerFeatures
 
             obj = CallerFeatures()
             obj.Init(self._tab.Bytes, x)
@@ -68,7 +68,7 @@ class ClientRoles(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from wamp.proto.CalleeFeatures import CalleeFeatures
+            from autobahn.wamp.gen.wamp.proto.CalleeFeatures import CalleeFeatures
 
             obj = CalleeFeatures()
             obj.Init(self._tab.Bytes, x)

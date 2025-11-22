@@ -1274,6 +1274,12 @@ build-fbs venv="": (install-tools venv)
     touch ./autobahn/wamp/gen/__init__.py
     echo "--> Generated $(find ./autobahn/wamp/gen/ -name '*.py' | wc -l) .py files"
 
+    # Fix import paths in generated files (flatc generates relative imports)
+    # Change: from wamp.proto.X import X
+    # To:     from autobahn.wamp.gen.wamp.proto.X import X
+    find ./autobahn/wamp/gen/wamp/proto/ -name "*.py" -exec sed -i 's/from wamp\.proto\./from autobahn.wamp.gen.wamp.proto./g' {} +
+    echo "--> Fixed import paths in generated files"
+
     echo "Auto-formatting code using ruff after flatc code generation .."
     "${VENV_PATH}/bin/ruff" format ./autobahn/wamp/gen/
     "${VENV_PATH}/bin/ruff" check --fix ./autobahn/wamp/gen/
