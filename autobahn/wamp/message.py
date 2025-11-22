@@ -5181,7 +5181,7 @@ class Unsubscribed(Message):
         return msg
 
 
-class Event(Message):
+class Event(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``EVENT`` message.
 
@@ -5198,39 +5198,27 @@ class Event(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64
-        "_subscription",
-        # uint64
-        "_publication",
-        # [uint8]
-        "_args",
-        # [uint8]
-        "_kwargs",
-        # [uint8]
-        "_payload",
-        # Payload => uint8
-        "_enc_algo",
-        # Serializer => uint8
-        "_enc_serializer",
-        # [uint8]
-        "_enc_key",
-        # uint64
-        "_publisher",
-        # string (principal)
-        "_publisher_authid",
-        # string (principal)
-        "_publisher_authrole",
-        # string (uri)
-        "_topic",
-        # bool
-        "_retained",
-        # string
-        "_transaction_hash",
-        # bool - FIXME: rename to "acknowledge"
-        "_x_acknowledged_delivery",
-        # [Principal]
-        "_forward_for",
+        # Event-specific slots (FlatBuffers schema types in comments)
+        "_subscription",  # uint64
+        "_publication",  # uint64
+        "_publisher",  # uint64
+        "_publisher_authid",  # string (principal)
+        "_publisher_authrole",  # string (principal)
+        "_topic",  # string (uri)
+        "_retained",  # bool
+        "_transaction_hash",  # string
+        "_x_acknowledged_delivery",  # bool - FIXME: rename to "acknowledge"
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
@@ -5339,12 +5327,19 @@ class Event(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args, kwargs=kwargs, payload=payload,
+            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Event-specific attributes
         self._subscription = subscription
         self._publication = publication
-        self._args = args
-        self._kwargs = _validate_kwargs(kwargs)
-        self._payload = payload
         self._publisher = publisher
         self._publisher_authid = publisher_authid
         self._publisher_authrole = publisher_authrole
@@ -5352,10 +5347,6 @@ class Event(Message):
         self._retained = retained
         self._transaction_hash = transaction_hash
         self._x_acknowledged_delivery = x_acknowledged_delivery
-        self._enc_algo = enc_algo
-        self._enc_key = enc_key
-        self._enc_serializer = enc_serializer
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -5421,41 +5412,7 @@ class Event(Message):
         assert value is None or type(value) == int
         self._publication = value
 
-    @property
-    def args(self):
-        if self._args is None and self._from_fbs:
-            if self._from_fbs.ArgsLength():
-                self._args = cbor2.loads(bytes(self._from_fbs.ArgsAsBytes()))
-        return self._args
-
-    @args.setter
-    def args(self, value):
-        assert value is None or type(value) in [list, tuple]
-        self._args = value
-
-    @property
-    def kwargs(self):
-        if self._kwargs is None and self._from_fbs:
-            if self._from_fbs.KwargsLength():
-                self._kwargs = cbor2.loads(bytes(self._from_fbs.KwargsAsBytes()))
-        return self._kwargs
-
-    @kwargs.setter
-    def kwargs(self, value):
-        assert value is None or type(value) == dict
-        self._kwargs = value
-
-    @property
-    def payload(self):
-        if self._payload is None and self._from_fbs:
-            if self._from_fbs.PayloadLength():
-                self._payload = self._from_fbs.PayloadAsBytes()
-        return self._payload
-
-    @payload.setter
-    def payload(self, value):
-        assert value is None or type(value) == bytes
-        self._payload = value
+    # Note: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
 
     @property
     def publisher(self):
@@ -5549,81 +5506,7 @@ class Event(Message):
         assert value is None or type(value) == bool
         self._x_acknowledged_delivery = value
 
-    @property
-    def enc_algo(self):
-        if self._enc_algo is None and self._from_fbs:
-            enc_algo = self._from_fbs.EncAlgo()
-            if enc_algo:
-                # Convert FlatBuffers enum integer to string
-                self._enc_algo = ENC_ALGOS.get(enc_algo)
-        return self._enc_algo
-
-    @enc_algo.setter
-    def enc_algo(self, value):
-        assert value is None or value in [
-            ENC_ALGO_CRYPTOBOX,
-            ENC_ALGO_MQTT,
-            ENC_ALGO_XBR,
-        ]
-        self._enc_algo = value
-
-    @property
-    def enc_key(self):
-        if self._enc_key is None and self._from_fbs:
-            if self._from_fbs.EncKeyLength():
-                self._enc_key = self._from_fbs.EncKeyAsBytes()
-        return self._enc_key
-
-    @enc_key.setter
-    def enc_key(self, value):
-        assert value is None or type(value) == bytes
-        self._enc_key = value
-
-    @property
-    def enc_serializer(self):
-        if self._enc_serializer is None and self._from_fbs:
-            enc_serializer = self._from_fbs.EncSerializer()
-            if enc_serializer:
-                # Convert FlatBuffers enum integer to string
-                self._enc_serializer = ENC_SERS.get(enc_serializer)
-        return self._enc_serializer
-
-    @enc_serializer.setter
-    def enc_serializer(self, value):
-        assert value is None or value in [
-            ENC_SER_JSON,
-            ENC_SER_MSGPACK,
-            ENC_SER_CBOR,
-            ENC_SER_UBJSON,
-        ]
-        self._enc_serializer = value
-
-    @property
-    def forward_for(self):
-        if self._forward_for is None and self._from_fbs:
-            if self._from_fbs.ForwardForLength():
-                forward_for = []
-                for j in range(self._from_fbs.ForwardForLength()):
-                    principal = self._from_fbs.ForwardFor(j)
-                    # Principal is now a table and supports authid/authrole
-                    authid = principal.Authid()
-                    if authid:
-                        authid = authid.decode('utf-8') if isinstance(authid, bytes) else authid
-                    authrole = principal.Authrole()
-                    if authrole:
-                        authrole = authrole.decode('utf-8') if isinstance(authrole, bytes) else authrole
-                    forward_for.append({
-                        'session': principal.Session(),
-                        'authid': authid,
-                        'authrole': authrole,
-                    })
-                self._forward_for = forward_for
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        # FIXME
-        self._forward_for = value
+    # Note: enc_algo, enc_key, enc_serializer, forward_for properties are provided by mixins
 
     @staticmethod
     def cast(buf):
@@ -6128,7 +6011,7 @@ class EventReceived(Message):
         return msg
 
 
-class Call(Message):
+class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``CALL`` message.
 
@@ -6145,22 +6028,26 @@ class Call(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "_request",
-        "_procedure",
-        "_args",
-        "_kwargs",
-        "_payload",
-        "_timeout",
-        "_receive_progress",
-        "_transaction_hash",
-        "_enc_algo",
-        "_enc_key",
-        "_enc_serializer",
-        "_caller",
-        "_caller_authid",
-        "_caller_authrole",
-        "_forward_for",
+        # Call-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_procedure",  # string (required, uri)
+        "_timeout",  # uint32
+        "_receive_progress",  # bool
+        "_transaction_hash",  # string
+        "_caller",  # uint64
+        "_caller_authid",  # string (principal)
+        "_caller_authrole",  # string (principal)
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
@@ -6269,26 +6156,25 @@ class Call(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args, kwargs=kwargs, payload=payload,
+            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Call-specific attributes
         self._request = request
         self._procedure = procedure
-        self._args = args
-        self._kwargs = _validate_kwargs(kwargs)
-        self._payload = payload
         self._timeout = timeout
         self._receive_progress = receive_progress
         self._transaction_hash = transaction_hash
-
-        # payload transparency related knobs
-        self._enc_algo = enc_algo
-        self._enc_key = enc_key
-        self._enc_serializer = enc_serializer
-
-        # message forwarding
         self._caller = caller
         self._caller_authid = caller_authid
         self._caller_authrole = caller_authrole
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -6354,41 +6240,7 @@ class Call(Message):
         assert value is None or type(value) == str
         self._procedure = value
 
-    @property
-    def args(self):
-        if self._args is None and self._from_fbs:
-            if self._from_fbs.ArgsLength():
-                self._args = cbor2.loads(bytes(self._from_fbs.ArgsAsBytes()))
-        return self._args
-
-    @args.setter
-    def args(self, value):
-        assert value is None or type(value) in [list, tuple]
-        self._args = value
-
-    @property
-    def kwargs(self):
-        if self._kwargs is None and self._from_fbs:
-            if self._from_fbs.KwargsLength():
-                self._kwargs = cbor2.loads(bytes(self._from_fbs.KwargsAsBytes()))
-        return self._kwargs
-
-    @kwargs.setter
-    def kwargs(self, value):
-        assert value is None or type(value) == dict
-        self._kwargs = value
-
-    @property
-    def payload(self):
-        if self._payload is None and self._from_fbs:
-            if self._from_fbs.PayloadLength():
-                self._payload = self._from_fbs.PayloadAsBytes()
-        return self._payload
-
-    @payload.setter
-    def payload(self, value):
-        assert value is None or type(value) == bytes
-        self._payload = value
+    # Note: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
 
     @property
     def timeout(self):
@@ -6429,44 +6281,7 @@ class Call(Message):
         assert value is None or type(value) == str
         self._transaction_hash = value
 
-    @property
-    def enc_algo(self):
-        if self._enc_algo is None and self._from_fbs:
-            s = self._from_fbs.EncAlgo()
-            if s:
-                self._enc_algo = s.decode("utf8")
-        return self._enc_algo
-
-    @enc_algo.setter
-    def enc_algo(self, value):
-        assert value is None or is_valid_enc_algo(value)
-        self._enc_algo = value
-
-    @property
-    def enc_key(self):
-        if self._enc_key is None and self._from_fbs:
-            s = self._from_fbs.EncKey()
-            if s:
-                self._enc_key = s.decode("utf8")
-        return self._enc_key
-
-    @enc_key.setter
-    def enc_key(self, value):
-        assert value is None or type(value) == str
-        self._enc_key = value
-
-    @property
-    def enc_serializer(self):
-        if self._enc_serializer is None and self._from_fbs:
-            s = self._from_fbs.EncSerializer()
-            if s:
-                self._enc_serializer = s.decode("utf8")
-        return self._enc_serializer
-
-    @enc_serializer.setter
-    def enc_serializer(self, value):
-        assert value is None or is_valid_enc_serializer(value)
-        self._enc_serializer = value
+    # Note: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
 
     @property
     def caller(self):
@@ -6507,40 +6322,7 @@ class Call(Message):
         assert value is None or type(value) == str
         self._caller_authrole = value
 
-    @property
-    def forward_for(self):
-        if self._forward_for is None and self._from_fbs:
-            if self._from_fbs.ForwardForLength():
-                forward_for = []
-                for j in range(self._from_fbs.ForwardForLength()):
-                    principal = self._from_fbs.ForwardFor(j)
-                    # Principal is now a table and supports authid/authrole
-                    authid = principal.Authid()
-                    if authid:
-                        authid = authid.decode('utf-8') if isinstance(authid, bytes) else authid
-                    authrole = principal.Authrole()
-                    if authrole:
-                        authrole = authrole.decode('utf-8') if isinstance(authrole, bytes) else authrole
-                    forward_for.append({
-                        'session': principal.Session(),
-                        'authid': authid,
-                        'authrole': authrole,
-                    })
-                self._forward_for = forward_for
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        if value:
-            for ff in value:
-                assert type(ff) == dict
-                assert "session" in ff and type(ff["session"]) == int
-                assert "authid" in ff and (
-                    ff["authid"] is None or type(ff["authid"]) == str
-                )
-                assert "authrole" in ff and type(ff["authrole"]) == str
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
