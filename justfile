@@ -529,11 +529,13 @@ autoformat venv="": (install-tools venv)
     echo "==> Automatically formatting code with ${VENV_NAME}..."
 
     # 1. Run the FORMATTER first. This will handle line lengths, quotes, etc.
-    "${VENV_PATH}/bin/ruff" format --exclude ./tests ./autobahn
+    #    Uses exclude list from pyproject.toml (includes autobahn/wamp/gen/*, tests, etc.)
+    "${VENV_PATH}/bin/ruff" format .
 
     # 2. Run the LINTER'S FIXER second. This will handle things like
     #    removing unused imports, sorting __all__, etc.
-    "${VENV_PATH}/bin/ruff" check --fix --exclude ./tests ./autobahn
+    #    Uses exclude list from pyproject.toml (includes autobahn/wamp/gen/*, tests, etc.)
+    "${VENV_PATH}/bin/ruff" check --fix .
     echo "--> Formatting complete."
 
 # Lint code using Ruff in a single environment
