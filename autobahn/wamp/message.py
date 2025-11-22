@@ -683,14 +683,28 @@ class MessageWithAppPayload(object):
 
     These six attributes form an inseparable unit. In E2EE mode, attributes
     enc_algo/enc_key/enc_serializer must all be present or all be None.
+
+    Note on __slots__:
+        This mixin has __slots__ = () (empty tuple). This is REQUIRED for multiple
+        inheritance with __slots__. DO NOT REMOVE! Empty __slots__ means "I add no
+        new slots but allow derived classes to use slots". Without this, the class
+        would get a __dict__ and break the slots chain. See docs/wamp/message-design.rst
+        for detailed explanation.
+
+    Note on initialization:
+        Uses _init_app_payload() method instead of __init__() to avoid complex super()
+        chains in multiple inheritance. Concrete classes call this method explicitly.
     """
 
-    __slots__ = ()
+    __slots__ = ()  # REQUIRED: Empty slots for mixin pattern. DO NOT REMOVE!
 
     def _init_app_payload(self, args=None, kwargs=None, payload=None,
                           enc_algo=None, enc_key=None, enc_serializer=None):
         """
         Initialize application payload attributes.
+
+        Note: This is NOT __init__() to avoid super() complexity in multiple inheritance.
+        Concrete message classes call this method explicitly after Message.__init__().
 
         :param args: Positional arguments (list/tuple)
         :param kwargs: Keyword arguments (dict)
@@ -857,13 +871,27 @@ class MessageWithForwardFor(object):
 
     Category 3: Subscribe, Unsubscribe, Register, Unregister, Cancel, Interrupt
     Category 4: PUBLISH, EVENT, CALL, INVOCATION, YIELD, RESULT, ERROR
+
+    Note on __slots__:
+        This mixin has __slots__ = () (empty tuple). This is REQUIRED for multiple
+        inheritance with __slots__. DO NOT REMOVE! Empty __slots__ means "I add no
+        new slots but allow derived classes to use slots". Without this, the class
+        would get a __dict__ and break the slots chain. See docs/wamp/message-design.rst
+        for detailed explanation.
+
+    Note on initialization:
+        Uses _init_forward_for() method instead of __init__() to avoid complex super()
+        chains in multiple inheritance. Concrete classes call this method explicitly.
     """
 
-    __slots__ = ()
+    __slots__ = ()  # REQUIRED: Empty slots for mixin pattern. DO NOT REMOVE!
 
     def _init_forward_for(self, forward_for=None):
         """
         Initialize forwarding attributes.
+
+        Note: This is NOT __init__() to avoid super() complexity in multiple inheritance.
+        Concrete message classes call this method explicitly after Message.__init__().
 
         :param forward_for: Forwarding chain metadata (list of dicts)
         """
@@ -871,7 +899,24 @@ class MessageWithForwardFor(object):
 
     @property
     def forward_for(self):
-        """Lazy deserialization of forward_for from FlatBuffers"""
+        """
+        Property-based access to WAMP message forward_for attribute.
+
+        Primary purpose: Provides property-based access to the forward_for attribute
+        for ALL WAMP serializers (JSON, MessagePack, CBOR, UBJSON, FlatBuffers).
+
+        FlatBuffers detail: For FlatBuffers serialization specifically, this property
+        performs lazy deserialization - the forward_for list is only deserialized from
+        the underlying FlatBuffers Principal objects when first accessed. For other
+        serializers (JSON, CBOR, etc.), the entire WAMP message is deserialized in one
+        go during message parsing, so this property simply returns the pre-parsed value.
+
+        :return: List of forwarding chain entries, each a dict with keys:
+                 - 'session' (int): WAMP session ID
+                 - 'authid' (str or None): Authentication ID
+                 - 'authrole' (str): Authentication role
+        :rtype: list[dict] or None
+        """
         if self._forward_for is None and self._from_fbs:
             if self._from_fbs.ForwardForLength():
                 forward_for = []
@@ -894,6 +939,15 @@ class MessageWithForwardFor(object):
 
     @forward_for.setter
     def forward_for(self, value):
+        """
+        Set the forward_for attribute.
+
+        :param value: List of forwarding chain entries, each a dict with keys:
+                      - 'session' (int): WAMP session ID
+                      - 'authid' (str or None): Authentication ID
+                      - 'authrole' (str): Authentication role
+        :type value: list[dict] or None
+        """
         assert value is None or type(value) == list
         if value:
             for ff in value:
@@ -3214,40 +3268,30 @@ class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # string (required, uri)
-        "_topic",
-        # bool
-        "_acknowledge",
-        # bool
-        "_exclude_me",
-        # [uint64]
-        "_exclude",
-        # [string] (principal)
-        "_exclude_authid",
-        # [string] (principal)
-        "_exclude_authrole",
-        # [uint64]
-        "_eligible",
-        # [string] (principal)
-        "_eligible_authid",
-        # [string] (principal)
-        "_eligible_authrole",
-        # bool
-        "_retain",
-        # string
-        "_transaction_hash",
+        # Publish-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_topic",  # string (required, uri)
+        "_acknowledge",  # bool
+        "_exclude_me",  # bool
+        "_exclude",  # [uint64]
+        "_exclude_authid",  # [string] (principal)
+        "_exclude_authrole",  # [string] (principal)
+        "_eligible",  # [uint64]
+        "_eligible_authid",  # [string] (principal)
+        "_eligible_authrole",  # [string] (principal)
+        "_retain",  # bool
+        "_transaction_hash",  # string
         # From MessageWithAppPayload mixin
-        "_args",
-        "_kwargs",
-        "_payload",
-        "_enc_algo",
-        "_enc_key",
-        "_enc_serializer",
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
         # From MessageWithForwardFor mixin
-        "_forward_for",
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(

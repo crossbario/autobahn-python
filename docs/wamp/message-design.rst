@@ -179,6 +179,200 @@ Python's C3 linearization ensures predictable method resolution:
 
 Since mixins are orthogonal (no overlapping methods), MRO conflicts cannot occur.
 
+Technical Implementation: ``__slots__`` and Initialization
+-----------------------------------------------------------
+
+The implementation uses sophisticated Python patterns to combine multiple inheritance with ``__slots__`` for memory efficiency.
+
+The ``__slots__`` Pattern
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Challenge**: Python's ``__slots__`` mechanism has strict rules for multiple inheritance.
+
+**Rule**: You cannot have multiple base classes that both define non-empty, non-overlapping ``__slots__``.
+
+Attempting this causes: ``TypeError: multiple bases have instance lay-out conflict``
+
+**Solution**: Mixins use **empty** ``__slots__ = ()`` while the concrete message class defines all slots.
+
+Empty ``__slots__ = ()`` vs No ``__slots__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This distinction is **critical**:
+
+**Empty slots** (``__slots__ = ()``):
+
+.. code-block:: python
+
+   class MessageWithAppPayload(object):
+       __slots__ = ()  # ✓ "I add no new slots, but use slots from derived classes"
+
+**Effect**:
+
+- Class has NO ``__dict__`` (memory efficient)
+- Class adds NO new slot attributes
+- Derived classes can still use ``__slots__``
+- Acts as a "pure mixin" for methods only
+
+**No slots defined**:
+
+.. code-block:: python
+
+   class MessageWithAppPayload(object):
+       # No __slots__ defined  # ✗ "I use __dict__ for attributes"
+
+**Effect**:
+
+- Class gets a ``__dict__`` for dynamic attributes
+- Breaks the ``__slots__`` chain
+- Derived classes can't benefit from slots
+- Wastes memory with unnecessary ``__dict__``
+
+**DO NOT REMOVE** the ``__slots__ = ()`` from mixin classes!
+
+How It Works
+^^^^^^^^^^^^
+
+The pattern combines three elements:
+
+1. **Message base class**: Defines ``__slots__`` for base attributes (``_from_fbs``, ``_serialized``, etc.)
+2. **Mixin classes**: Have ``__slots__ = ()`` (empty) and provide methods only
+3. **Concrete classes**: Define ``__slots__`` for their own attributes PLUS mixin attributes
+
+Example with ``Publish``:
+
+.. code-block:: python
+
+   class Message(object):
+       __slots__ = ('_from_fbs', '_serialized', ...)  # Base slots
+
+   class MessageWithAppPayload(object):
+       __slots__ = ()  # Empty - adds no storage
+
+   class MessageWithForwardFor(object):
+       __slots__ = ()  # Empty - adds no storage
+
+   class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
+       __slots__ = (
+           # From Message base (inherited, not redefined)
+           # Publish-specific slots
+           '_request',
+           '_topic',
+           '_acknowledge',
+           # ... other Publish attributes
+           # From MessageWithAppPayload mixin (storage defined here, methods in mixin)
+           '_args',
+           '_kwargs',
+           '_payload',
+           '_enc_algo',
+           '_enc_key',
+           '_enc_serializer',
+           # From MessageWithForwardFor mixin (storage defined here, methods in mixin)
+           '_forward_for',
+       )
+
+**Memory layout**: All slots from ``Message`` and ``Publish`` are allocated in the instance. The mixins provide the **methods** (properties) to access their logical slots, but the **storage** is defined in the concrete class.
+
+**Why this works**:
+
+- Only ONE class in the inheritance chain (``Message``) defines actual base slots
+- Mixins have empty ``__slots__``, so no conflict
+- ``Publish`` adds more slots for itself and the mixins
+- Mixins provide property accessors for "their" slots
+- No ``__dict__`` anywhere - pure slot-based storage
+
+Method Resolution Order (MRO):
+
+.. code-block:: python
+
+   >>> Publish.__mro__
+   (<class 'Publish'>,
+    <class 'MessageWithAppPayload'>,    # ← Provides args/kwargs/payload properties
+    <class 'MessageWithForwardFor'>,    # ← Provides forward_for property
+    <class 'Message'>,                  # ← Base functionality
+    <class 'object'>)
+
+When accessing ``publish_instance.args``:
+
+1. Python looks in ``Publish`` → not found
+2. Looks in ``MessageWithAppPayload`` → **found** (the ``@property`` method)
+3. That property accesses ``self._args`` which exists in ``Publish.__slots__``
+
+Initialization Pattern
+~~~~~~~~~~~~~~~~~~~~~~
+
+**Challenge**: Cannot use ``__init__()`` in mixins with multiple inheritance.
+
+**Problem with mixin ``__init__()``**:
+
+.. code-block:: python
+
+   class MessageWithAppPayload(object):
+       def __init__(self, args=None, kwargs=None, ...):
+           super().__init__(...)  # ✗ Complicated MRO chain!
+           self._args = args
+
+Issues:
+
+- ``super().__init__()`` follows MRO, causing ``Message.__init__()`` to be called multiple times
+- Confusing initialization order
+- Hard to debug and reason about
+
+**Solution: Explicit initialization methods**:
+
+.. code-block:: python
+
+   class MessageWithAppPayload(object):
+       def _init_app_payload(self, args=None, kwargs=None, ...):
+           """Initialize application payload attributes (no super() call)."""
+           self._args = args
+           self._kwargs = kwargs
+           # ...
+
+   class Publish(...):
+       def __init__(self, request, topic, args=None, ...):
+           # Call Message.__init__() exactly once
+           Message.__init__(self, from_fbs=from_fbs)
+
+           # Call mixin initialization methods explicitly
+           self._init_app_payload(args=args, kwargs=kwargs, ...)
+           self._init_forward_for(forward_for=forward_for)
+
+           # Initialize Publish-specific attributes
+           self._request = request
+           self._topic = topic
+
+**Benefits**:
+
+- Clear, explicit initialization order
+- ``Message.__init__()`` called exactly once
+- No confusing ``super()`` chains
+- Easy to debug and understand
+- Each initialization step is explicit and traceable
+
+**Why not use ``super()``?**
+
+With multiple inheritance, ``super()`` follows the MRO chain. For ``Publish``:
+
+.. code-block:: python
+
+   # If mixins used __init__ with super():
+   Publish.__init__()
+     → super().__init__()  # Calls MessageWithAppPayload.__init__()
+       → super().__init__()  # Calls MessageWithForwardFor.__init__()
+         → super().__init__()  # Calls Message.__init__()
+
+This works, but requires ALL classes in the chain to properly use ``super()`` and accept ``**kwargs`` to pass along unknown arguments. It's fragile and hard to maintain.
+
+Our explicit pattern is more verbose but much clearer:
+
+.. code-block:: python
+
+   Publish.__init__()
+     → Message.__init__(from_fbs=from_fbs)  # Explicit, called once
+     → self._init_app_payload(...)          # Explicit
+     → self._init_forward_for(...)          # Explicit
+
 The MessageWithAppPayload Mixin
 --------------------------------
 
