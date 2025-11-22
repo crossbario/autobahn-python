@@ -61,6 +61,8 @@ __all__ = (
     "Interrupt",
     "Invocation",
     "Message",
+    "MessageWithAppPayload",
+    "MessageWithForwardFor",
     "Publish",
     "Published",
     "Register",
@@ -668,6 +670,240 @@ class Message(object):
 
         # cache is filled now: return serialized, cached bytes
         return self._serialized[serializer]
+
+
+class MessageWithAppPayload(object):
+    """
+    Mixin for WAMP messages carrying application payload (Category 4).
+
+    The 7 data plane messages: PUBLISH, EVENT, CALL, INVOCATION, YIELD, RESULT, ERROR
+
+    Attributes (the "6-set"):
+        args, kwargs, payload, enc_algo, enc_key, enc_serializer
+
+    These six attributes form an inseparable unit. In E2EE mode, attributes
+    enc_algo/enc_key/enc_serializer must all be present or all be None.
+    """
+
+    __slots__ = ()
+
+    def _init_app_payload(self, args=None, kwargs=None, payload=None,
+                          enc_algo=None, enc_key=None, enc_serializer=None):
+        """
+        Initialize application payload attributes.
+
+        :param args: Positional arguments (list/tuple)
+        :param kwargs: Keyword arguments (dict)
+        :param payload: Opaque payload bytes (for E2EE)
+        :param enc_algo: Encoding/encryption algorithm identifier
+        :param enc_key: Key identifier for decryption
+        :param enc_serializer: Payload serializer ID (e.g., "cbor", "json")
+        """
+        self._args = args
+        self._kwargs = _validate_kwargs(kwargs)
+        self._payload = payload
+        self._enc_algo = enc_algo
+        self._enc_key = enc_key
+        self._enc_serializer = enc_serializer
+
+    def _get_payload_serializer_id(self):
+        """
+        Get the serializer ID to use for payload deserialization.
+
+        Returns the enc_serializer if set, otherwise defaults to "cbor"
+        for backward compatibility.
+        """
+        return self._enc_serializer if self._enc_serializer else "cbor"
+
+    def _deserialize_payload(self, data_bytes, ser_id):
+        """
+        Deserialize payload data using the specified serializer.
+
+        Uses memoryview (zero-copy) where possible. Converts to bytes
+        only for JSON and FlexBuffers which don't support memoryview.
+
+        :param data_bytes: memoryview of the serialized data
+        :param ser_id: Serializer ID string ("json", "cbor", "msgpack", etc.)
+        :return: Deserialized Python object (list, dict, etc.)
+        """
+        # Special case: FlexBuffers (quasi-dynamic typing)
+        if ser_id == "flexbuffers":
+            import flatbuffers.flexbuffers as flexbuffers
+            root = flexbuffers.GetRoot(bytes(data_bytes))
+            return root
+
+        # Import the appropriate deserializer
+        if ser_id == "json":
+            import json
+            # JSON requires bytes() conversion
+            return json.loads(bytes(data_bytes))
+        elif ser_id == "cbor":
+            import cbor2
+            # cbor2 supports memoryview (zero-copy)
+            return cbor2.loads(data_bytes)
+        elif ser_id == "msgpack":
+            import msgpack
+            # msgpack supports memoryview (zero-copy)
+            return msgpack.unpackb(data_bytes)
+        elif ser_id == "ubjson":
+            import ubjson
+            # ubjson supports memoryview (zero-copy)
+            return ubjson.loadb(data_bytes)
+        else:
+            # Fallback to CBOR for unknown serializers
+            import cbor2
+            return cbor2.loads(data_bytes)
+
+    @property
+    def args(self):
+        """Lazy deserialization of args from FlatBuffers"""
+        if self._args is None and self._from_fbs:
+            if self._from_fbs.ArgsLength():
+                ser_id = self._get_payload_serializer_id()
+                args_bytes = self._from_fbs.ArgsAsBytes()  # Returns memoryview
+
+                if ser_id == "flexbuffers":
+                    root = self._deserialize_payload(args_bytes, ser_id)
+                    self._args = root.AsVector.Value  # Returns Python list
+                else:
+                    self._args = self._deserialize_payload(args_bytes, ser_id)
+        return self._args
+
+    @args.setter
+    def args(self, value):
+        assert value is None or type(value) in [list, tuple]
+        self._args = value
+
+    @property
+    def kwargs(self):
+        """Lazy deserialization of kwargs from FlatBuffers"""
+        if self._kwargs is None and self._from_fbs:
+            if self._from_fbs.KwargsLength():
+                ser_id = self._get_payload_serializer_id()
+                kwargs_bytes = self._from_fbs.KwargsAsBytes()  # Returns memoryview
+
+                if ser_id == "flexbuffers":
+                    root = self._deserialize_payload(kwargs_bytes, ser_id)
+                    self._kwargs = root.AsMap.Value  # Returns Python dict
+                else:
+                    self._kwargs = self._deserialize_payload(kwargs_bytes, ser_id)
+        return self._kwargs
+
+    @kwargs.setter
+    def kwargs(self, value):
+        assert value is None or type(value) == dict
+        self._kwargs = value
+
+    @property
+    def payload(self):
+        """Lazy deserialization of payload from FlatBuffers"""
+        if self._payload is None and self._from_fbs:
+            if self._from_fbs.PayloadLength():
+                self._payload = self._from_fbs.PayloadAsBytes()
+        return self._payload
+
+    @payload.setter
+    def payload(self, value):
+        assert value is None or type(value) == bytes
+        self._payload = value
+
+    @property
+    def enc_algo(self):
+        """Lazy deserialization of enc_algo from FlatBuffers"""
+        if self._enc_algo is None and self._from_fbs:
+            enc_algo = self._from_fbs.EncAlgo()
+            if enc_algo:
+                # Convert FlatBuffers enum integer to string
+                self._enc_algo = ENC_ALGOS.get(enc_algo)
+        return self._enc_algo
+
+    @enc_algo.setter
+    def enc_algo(self, value):
+        assert value is None or is_valid_enc_algo(value)
+        self._enc_algo = value
+
+    @property
+    def enc_key(self):
+        """Lazy deserialization of enc_key from FlatBuffers"""
+        if self._enc_key is None and self._from_fbs:
+            if self._from_fbs.EncKeyLength():
+                self._enc_key = self._from_fbs.EncKeyAsBytes()
+        return self._enc_key
+
+    @enc_key.setter
+    def enc_key(self, value):
+        assert value is None or type(value) == bytes
+        self._enc_key = value
+
+    @property
+    def enc_serializer(self):
+        """Lazy deserialization of enc_serializer from FlatBuffers"""
+        if self._enc_serializer is None and self._from_fbs:
+            enc_serializer = self._from_fbs.EncSerializer()
+            if enc_serializer:
+                # Convert FlatBuffers enum integer to string
+                self._enc_serializer = ENC_SERS.get(enc_serializer)
+        return self._enc_serializer
+
+    @enc_serializer.setter
+    def enc_serializer(self, value):
+        assert value is None or is_valid_enc_serializer(value)
+        self._enc_serializer = value
+
+
+class MessageWithForwardFor(object):
+    """
+    Mixin for WAMP messages with forward_for (Category 3 & 4).
+
+    Category 3: Subscribe, Unsubscribe, Register, Unregister, Cancel, Interrupt
+    Category 4: PUBLISH, EVENT, CALL, INVOCATION, YIELD, RESULT, ERROR
+    """
+
+    __slots__ = ()
+
+    def _init_forward_for(self, forward_for=None):
+        """
+        Initialize forwarding attributes.
+
+        :param forward_for: Forwarding chain metadata (list of dicts)
+        """
+        self._forward_for = forward_for
+
+    @property
+    def forward_for(self):
+        """Lazy deserialization of forward_for from FlatBuffers"""
+        if self._forward_for is None and self._from_fbs:
+            if self._from_fbs.ForwardForLength():
+                forward_for = []
+                for j in range(self._from_fbs.ForwardForLength()):
+                    principal = self._from_fbs.ForwardFor(j)
+                    # Principal is now a table and supports authid/authrole
+                    authid = principal.Authid()
+                    if authid:
+                        authid = authid.decode('utf-8') if isinstance(authid, bytes) else authid
+                    authrole = principal.Authrole()
+                    if authrole:
+                        authrole = authrole.decode('utf-8') if isinstance(authrole, bytes) else authrole
+                    forward_for.append({
+                        'session': principal.Session(),
+                        'authid': authid,
+                        'authrole': authrole,
+                    })
+                self._forward_for = forward_for
+        return self._forward_for
+
+    @forward_for.setter
+    def forward_for(self, value):
+        assert value is None or type(value) == list
+        if value:
+            for ff in value:
+                assert type(ff) == dict
+                assert "session" in ff and type(ff["session"]) == int
+                assert "authid" in ff and (
+                    ff["authid"] is None or type(ff["authid"]) == str
+                )
+                assert "authrole" in ff and type(ff["authrole"]) == str
+        self._forward_for = value
 
 
 class Hello(Message):
@@ -2961,7 +3197,7 @@ class Error(Message):
                 ]
 
 
-class Publish(Message):
+class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``PUBLISH`` message.
 
@@ -2983,18 +3219,6 @@ class Publish(Message):
         "_request",
         # string (required, uri)
         "_topic",
-        # [uint8]
-        "_args",
-        # [uint8]
-        "_kwargs",
-        # [uint8]
-        "_payload",
-        # Payload => uint8
-        "_enc_algo",
-        # Serializer => uint8
-        "_enc_serializer",
-        # [uint8]
-        "_enc_key",
         # bool
         "_acknowledge",
         # bool
@@ -3015,7 +3239,14 @@ class Publish(Message):
         "_retain",
         # string
         "_transaction_hash",
-        # [Principal]
+        # From MessageWithAppPayload mixin
+        "_args",
+        "_kwargs",
+        "_payload",
+        "_enc_algo",
+        "_enc_key",
+        "_enc_serializer",
+        # From MessageWithForwardFor mixin
         "_forward_for",
     )
 
@@ -3170,12 +3401,19 @@ class Publish(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args, kwargs=kwargs, payload=payload,
+            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Publish-specific attributes
         self._request = request
         self._topic = topic
-        self._args = args
-        self._kwargs = _validate_kwargs(kwargs)
-        self._payload = payload
         self._acknowledge = acknowledge
 
         # publisher exlusion and black-/whitelisting
@@ -3192,14 +3430,6 @@ class Publish(Message):
 
         # application provided transaction hash for event
         self._transaction_hash = transaction_hash
-
-        # payload transparency related knobs
-        self._enc_algo = enc_algo
-        self._enc_key = enc_key
-        self._enc_serializer = enc_serializer
-
-        # message forwarding
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -3273,41 +3503,7 @@ class Publish(Message):
         assert value is None or type(value) == str
         self._topic = value
 
-    @property
-    def args(self):
-        if self._args is None and self._from_fbs:
-            if self._from_fbs.ArgsLength():
-                self._args = cbor2.loads(bytes(self._from_fbs.ArgsAsBytes()))
-        return self._args
-
-    @args.setter
-    def args(self, value):
-        assert value is None or type(value) in [list, tuple]
-        self._args = value
-
-    @property
-    def kwargs(self):
-        if self._kwargs is None and self._from_fbs:
-            if self._from_fbs.KwargsLength():
-                self._kwargs = cbor2.loads(bytes(self._from_fbs.KwargsAsBytes()))
-        return self._kwargs
-
-    @kwargs.setter
-    def kwargs(self, value):
-        assert value is None or type(value) == dict
-        self._kwargs = value
-
-    @property
-    def payload(self):
-        if self._payload is None and self._from_fbs:
-            if self._from_fbs.PayloadLength():
-                self._payload = self._from_fbs.PayloadAsBytes()
-        return self._payload
-
-    @payload.setter
-    def payload(self, value):
-        assert value is None or type(value) == bytes
-        self._payload = value
+    # NOTE: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
 
     @property
     def acknowledge(self):
@@ -3477,89 +3673,8 @@ class Publish(Message):
         assert value is None or type(value) == str
         self._transaction_hash = value
 
-    @property
-    def enc_algo(self):
-        if self._enc_algo is None and self._from_fbs:
-            enc_algo = self._from_fbs.EncAlgo()
-            if enc_algo:
-                # Convert FlatBuffers enum integer to string
-                self._enc_algo = ENC_ALGOS.get(enc_algo)
-        return self._enc_algo
-
-    @enc_algo.setter
-    def enc_algo(self, value):
-        assert value is None or value in [
-            ENC_ALGO_CRYPTOBOX,
-            ENC_ALGO_MQTT,
-            ENC_ALGO_XBR,
-        ]
-        self._enc_algo = value
-
-    @property
-    def enc_key(self):
-        if self._enc_key is None and self._from_fbs:
-            if self._from_fbs.EncKeyLength():
-                self._enc_key = self._from_fbs.EncKeyAsBytes()
-        return self._enc_key
-
-    @enc_key.setter
-    def enc_key(self, value):
-        assert value is None or type(value) == bytes
-        self._enc_key = value
-
-    @property
-    def enc_serializer(self):
-        if self._enc_serializer is None and self._from_fbs:
-            enc_serializer = self._from_fbs.EncSerializer()
-            if enc_serializer:
-                # Convert FlatBuffers enum integer to string
-                self._enc_serializer = ENC_SERS.get(enc_serializer)
-        return self._enc_serializer
-
-    @enc_serializer.setter
-    def enc_serializer(self, value):
-        assert value is None or value in [
-            ENC_SER_JSON,
-            ENC_SER_MSGPACK,
-            ENC_SER_CBOR,
-            ENC_SER_UBJSON,
-        ]
-        self._enc_serializer = value
-
-    @property
-    def forward_for(self):
-        if self._forward_for is None and self._from_fbs:
-            if self._from_fbs.ForwardForLength():
-                forward_for = []
-                for j in range(self._from_fbs.ForwardForLength()):
-                    principal = self._from_fbs.ForwardFor(j)
-                    # Principal is now a table and supports authid/authrole
-                    authid = principal.Authid()
-                    if authid:
-                        authid = authid.decode('utf-8') if isinstance(authid, bytes) else authid
-                    authrole = principal.Authrole()
-                    if authrole:
-                        authrole = authrole.decode('utf-8') if isinstance(authrole, bytes) else authrole
-                    forward_for.append({
-                        'session': principal.Session(),
-                        'authid': authid,
-                        'authrole': authrole,
-                    })
-                self._forward_for = forward_for
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        if value:
-            for ff in value:
-                assert type(ff) == dict
-                assert "session" in ff and type(ff["session"]) == int
-                assert "authid" in ff and (
-                    ff["authid"] is None or type(ff["authid"]) == str
-                )
-                assert "authrole" in ff and type(ff["authrole"]) == str
-        self._forward_for = value
+    # NOTE: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
+    # NOTE: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
