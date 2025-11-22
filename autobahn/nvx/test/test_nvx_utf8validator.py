@@ -327,6 +327,7 @@ class TestNvxUtf8Validator(unittest.TestCase):
         information which is sufficient for real-world usage.
         """
         from autobahn.websocket import USES_NVX
+
         if USES_NVX:
             self.skipTest("NVX prioritizes performance over detailed position tracking")
         validator = StandardUtf8Validator()

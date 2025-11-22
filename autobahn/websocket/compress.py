@@ -144,7 +144,8 @@ else:
 # Use 'brotli' on CPython (CPyExt), 'brotlicffi' on PyPy (CFFI)
 try:
     import platform
-    if platform.python_implementation() == 'PyPy':
+
+    if platform.python_implementation() == "PyPy":
         # noinspection PyPackageRequirements
         import brotlicffi as brotli
     else:

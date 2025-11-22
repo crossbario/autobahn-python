@@ -66,6 +66,7 @@ __all__ = (
 # Build identification string with optional NVX acceleration indicator
 if USES_NVX:
     import cffi
+
     __ident__ = "Autobahn/{}-NVXCFFI/{}-Twisted/{}-{}/{}".format(
         autobahn.__version__,
         cffi.__version__,
