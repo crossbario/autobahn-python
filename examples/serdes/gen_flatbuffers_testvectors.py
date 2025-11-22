@@ -16,23 +16,24 @@ Requirements:
     - autobahn-python with FlatBuffers support installed
     - wamp-proto repo in sibling directory: ../../../wamp-proto
 """
+
 import json
 import sys
-from pathlib import Path
 from binascii import hexlify
+from pathlib import Path
 
 # Add autobahn to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # Initialize txaio before importing autobahn modules
 import txaio
+
 txaio.use_asyncio()
 
 from autobahn.wamp import message as wamp_messages
-from autobahn.wamp.serializer import FlatBuffersSerializer
 from autobahn.wamp.gen.wamp.proto.Payload import Payload
 from autobahn.wamp.gen.wamp.proto.Serializer import Serializer
-
+from autobahn.wamp.serializer import FlatBuffersSerializer
 
 # Enum mappings for E2EE payloads
 PAYLOAD_ALGO_MAP = {
@@ -94,34 +95,27 @@ def create_message_from_attributes(message_type_name, attributes):
 
     # Session establishment messages
     if message_type_name == "HELLO":
-        return message_class(
-            realm=attributes["realm"],
-            roles=attributes["roles"]
-        )
+        return message_class(realm=attributes["realm"], roles=attributes["roles"])
     elif message_type_name == "WELCOME":
         return message_class(
-            session=attributes["session_id"],
-            roles=attributes["roles"]
+            session=attributes["session_id"], roles=attributes["roles"]
         )
     elif message_type_name == "ABORT":
         return message_class(
-            reason=attributes["reason"],
-            message=attributes.get("message")
+            reason=attributes["reason"], message=attributes.get("message")
         )
     elif message_type_name == "CHALLENGE":
         return message_class(
-            method=attributes["method"],
-            extra=attributes.get("extra", {})
+            method=attributes["method"], extra=attributes.get("extra", {})
         )
     elif message_type_name == "AUTHENTICATE":
         return message_class(
-            signature=attributes["signature"],
-            extra=attributes.get("extra", {})
+            signature=attributes["signature"], extra=attributes.get("extra", {})
         )
     elif message_type_name == "GOODBYE":
         return message_class(
             reason=attributes.get("reason", "wamp.close.normal"),
-            message=attributes.get("message")
+            message=attributes.get("message"),
         )
 
     # Error message
@@ -132,7 +126,9 @@ def create_message_from_attributes(message_type_name, attributes):
             error=attributes["error"],
             args=attributes.get("args"),
             kwargs=attributes.get("kwargs"),
-            payload=bytes.fromhex(attributes["payload"]) if attributes.get("payload") else None
+            payload=bytes.fromhex(attributes["payload"])
+            if attributes.get("payload")
+            else None,
         )
 
     # PubSub messages
@@ -143,18 +139,19 @@ def create_message_from_attributes(message_type_name, attributes):
             topic=attributes["topic"],
             args=attributes.get("args"),
             kwargs=attributes.get("kwargs"),
-            payload=bytes.fromhex(attributes["payload"]) if attributes.get("payload") else None,
+            payload=bytes.fromhex(attributes["payload"])
+            if attributes.get("payload")
+            else None,
             acknowledge=attributes.get("options", {}).get("acknowledge"),
             exclude_me=attributes.get("options", {}).get("exclude_me"),
             retain=attributes.get("options", {}).get("retain"),
             forward_for=attributes.get("options", {}).get("forward_for"),
             enc_algo=attributes.get("options", {}).get("enc_algo"),
-            enc_serializer=attributes.get("options", {}).get("enc_serializer")
+            enc_serializer=attributes.get("options", {}).get("enc_serializer"),
         )
     elif message_type_name == "PUBLISHED":
         return message_class(
-            request=attributes["request_id"],
-            publication=attributes["publication_id"]
+            request=attributes["request_id"], publication=attributes["publication_id"]
         )
     elif message_type_name == "SUBSCRIBE":
         return message_class(
@@ -162,23 +159,20 @@ def create_message_from_attributes(message_type_name, attributes):
             topic=attributes["topic"],
             match=attributes.get("options", {}).get("match"),
             get_retained=attributes.get("options", {}).get("get_retained"),
-            forward_for=attributes.get("options", {}).get("forward_for")
+            forward_for=attributes.get("options", {}).get("forward_for"),
         )
     elif message_type_name == "SUBSCRIBED":
         return message_class(
-            request=attributes["request_id"],
-            subscription=attributes["subscription_id"]
+            request=attributes["request_id"], subscription=attributes["subscription_id"]
         )
     elif message_type_name == "UNSUBSCRIBE":
         return message_class(
             request=attributes["request_id"],
             subscription=attributes["subscription_id"],
-            forward_for=attributes.get("options", {}).get("forward_for")
+            forward_for=attributes.get("options", {}).get("forward_for"),
         )
     elif message_type_name == "UNSUBSCRIBED":
-        return message_class(
-            request=attributes["request_id"]
-        )
+        return message_class(request=attributes["request_id"])
     elif message_type_name == "EVENT":
         # Keep enc_algo and enc_serializer as strings (build() converts to enums)
         return message_class(
@@ -186,7 +180,9 @@ def create_message_from_attributes(message_type_name, attributes):
             publication=attributes["publication"],
             args=attributes.get("args"),
             kwargs=attributes.get("kwargs"),
-            payload=bytes.fromhex(attributes["payload"]) if attributes.get("payload") else None,
+            payload=bytes.fromhex(attributes["payload"])
+            if attributes.get("payload")
+            else None,
             publisher=attributes.get("details", {}).get("publisher"),
             publisher_authid=attributes.get("details", {}).get("publisher_authid"),
             publisher_authrole=attributes.get("details", {}).get("publisher_authrole"),
@@ -194,7 +190,7 @@ def create_message_from_attributes(message_type_name, attributes):
             retained=attributes.get("details", {}).get("retained"),
             forward_for=attributes.get("details", {}).get("forward_for"),
             enc_algo=attributes.get("details", {}).get("enc_algo"),
-            enc_serializer=attributes.get("details", {}).get("enc_serializer")
+            enc_serializer=attributes.get("details", {}).get("enc_serializer"),
         )
 
     # RPC messages
@@ -204,32 +200,36 @@ def create_message_from_attributes(message_type_name, attributes):
             procedure=attributes["procedure"],
             args=attributes.get("args"),
             kwargs=attributes.get("kwargs"),
-            payload=bytes.fromhex(attributes["payload"]) if attributes.get("payload") else None,
+            payload=bytes.fromhex(attributes["payload"])
+            if attributes.get("payload")
+            else None,
             timeout=attributes.get("options", {}).get("timeout"),
             receive_progress=attributes.get("options", {}).get("receive_progress"),
             forward_for=attributes.get("options", {}).get("forward_for"),
             enc_algo=attributes.get("options", {}).get("enc_algo"),
-            enc_serializer=attributes.get("options", {}).get("enc_serializer")
+            enc_serializer=attributes.get("options", {}).get("enc_serializer"),
         )
     elif message_type_name == "CANCEL":
         return message_class(
             request=attributes["request_id"],
             mode=attributes.get("options", {}).get("mode"),
-            forward_for=attributes.get("options", {}).get("forward_for")
+            forward_for=attributes.get("options", {}).get("forward_for"),
         )
     elif message_type_name == "RESULT":
         return message_class(
             request=attributes["request_id"],
             args=attributes.get("args"),
             kwargs=attributes.get("kwargs"),
-            payload=bytes.fromhex(attributes["payload"]) if attributes.get("payload") else None,
+            payload=bytes.fromhex(attributes["payload"])
+            if attributes.get("payload")
+            else None,
             progress=attributes.get("details", {}).get("progress"),
             enc_algo=attributes.get("details", {}).get("enc_algo"),
             enc_serializer=attributes.get("details", {}).get("enc_serializer"),
             callee=attributes.get("details", {}).get("callee"),
             callee_authid=attributes.get("details", {}).get("callee_authid"),
             callee_authrole=attributes.get("details", {}).get("callee_authrole"),
-            forward_for=attributes.get("details", {}).get("forward_for")
+            forward_for=attributes.get("details", {}).get("forward_for"),
         )
     elif message_type_name == "REGISTER":
         return message_class(
@@ -239,30 +239,29 @@ def create_message_from_attributes(message_type_name, attributes):
             invoke=attributes.get("options", {}).get("invoke"),
             concurrency=attributes.get("options", {}).get("concurrency"),
             force_reregister=attributes.get("options", {}).get("force_reregister"),
-            forward_for=attributes.get("options", {}).get("forward_for")
+            forward_for=attributes.get("options", {}).get("forward_for"),
         )
     elif message_type_name == "REGISTERED":
         return message_class(
-            request=attributes["request_id"],
-            registration=attributes["registration_id"]
+            request=attributes["request_id"], registration=attributes["registration_id"]
         )
     elif message_type_name == "UNREGISTER":
         return message_class(
             request=attributes["request_id"],
             registration=attributes["registration_id"],
-            forward_for=attributes.get("options", {}).get("forward_for")
+            forward_for=attributes.get("options", {}).get("forward_for"),
         )
     elif message_type_name == "UNREGISTERED":
-        return message_class(
-            request=attributes["request_id"]
-        )
+        return message_class(request=attributes["request_id"])
     elif message_type_name == "INVOCATION":
         return message_class(
             request=attributes["request_id"],
             registration=attributes["registration"],
             args=attributes.get("args"),
             kwargs=attributes.get("kwargs"),
-            payload=bytes.fromhex(attributes["payload"]) if attributes.get("payload") else None,
+            payload=bytes.fromhex(attributes["payload"])
+            if attributes.get("payload")
+            else None,
             timeout=attributes.get("details", {}).get("timeout"),
             receive_progress=attributes.get("details", {}).get("receive_progress"),
             caller=attributes.get("details", {}).get("caller"),
@@ -271,29 +270,33 @@ def create_message_from_attributes(message_type_name, attributes):
             procedure=attributes.get("details", {}).get("procedure"),
             enc_algo=attributes.get("details", {}).get("enc_algo"),
             enc_serializer=attributes.get("details", {}).get("enc_serializer"),
-            forward_for=attributes.get("details", {}).get("forward_for")
+            forward_for=attributes.get("details", {}).get("forward_for"),
         )
     elif message_type_name == "INTERRUPT":
         return message_class(
             request=attributes["request_id"],
             mode=attributes.get("options", {}).get("mode"),
             reason=attributes.get("options", {}).get("reason"),
-            forward_for=attributes.get("options", {}).get("forward_for")
+            forward_for=attributes.get("options", {}).get("forward_for"),
         )
     elif message_type_name == "YIELD":
         return message_class(
             request=attributes["request_id"],
             args=attributes.get("args"),
             kwargs=attributes.get("kwargs"),
-            payload=bytes.fromhex(attributes["payload"]) if attributes.get("payload") else None,
+            payload=bytes.fromhex(attributes["payload"])
+            if attributes.get("payload")
+            else None,
             progress=attributes.get("options", {}).get("progress"),
             enc_algo=attributes.get("options", {}).get("enc_algo"),
             enc_serializer=attributes.get("options", {}).get("enc_serializer"),
-            forward_for=attributes.get("options", {}).get("forward_for")
+            forward_for=attributes.get("options", {}).get("forward_for"),
         )
 
     else:
-        raise NotImplementedError(f"Message creation not implemented for {message_type_name}")
+        raise NotImplementedError(
+            f"Message creation not implemented for {message_type_name}"
+        )
 
 
 def generate_flatbuffers_bytes(message_obj):
@@ -317,7 +320,7 @@ def generate_flatbuffers_bytes(message_obj):
     # Get the serialized bytes
     serialized_bytes = bytes(builder.Output())
 
-    return hexlify(serialized_bytes).decode('ascii')
+    return hexlify(serialized_bytes).decode("ascii")
 
 
 def process_test_vector_file(json_path):
@@ -329,7 +332,7 @@ def process_test_vector_file(json_path):
     print(f"\nProcessing: {json_path.name}")
 
     # Load test vector
-    with open(json_path, 'r') as f:
+    with open(json_path, "r") as f:
         test_vector = json.load(f)
 
     message_type_name = test_vector["wamp_message_type"]
@@ -347,19 +350,18 @@ def process_test_vector_file(json_path):
 
         # Check if flatbuffers already exists
         if "flatbuffers" in sample["serializers"]:
-            print(f"  ✓ Sample {i+1}: flatbuffers already present")
+            print(f"  ✓ Sample {i + 1}: flatbuffers already present")
             continue
 
         # Check if we have expected_attributes
         if "expected_attributes" not in sample:
-            print(f"  ⚠ Sample {i+1}: no expected_attributes, skipping")
+            print(f"  ⚠ Sample {i + 1}: no expected_attributes, skipping")
             continue
 
         try:
             # Create message object
             message_obj = create_message_from_attributes(
-                message_type_name,
-                sample["expected_attributes"]
+                message_type_name, sample["expected_attributes"]
             )
 
             # Generate FlatBuffers bytes
@@ -369,26 +371,28 @@ def process_test_vector_file(json_path):
             sample["serializers"]["flatbuffers"] = [
                 {
                     "bytes_hex": bytes_hex,
-                    "note": "Generated by autobahn-python FlatBuffers serializer"
+                    "note": "Generated by autobahn-python FlatBuffers serializer",
                 }
             ]
 
             modified = True
-            print(f"  ✓ Sample {i+1}: added flatbuffers ({len(bytes_hex)//2} bytes)")
+            print(
+                f"  ✓ Sample {i + 1}: added flatbuffers ({len(bytes_hex) // 2} bytes)"
+            )
 
         except NotImplementedError as e:
-            print(f"  ⚠ Sample {i+1}: {e}")
+            print(f"  ⚠ Sample {i + 1}: {e}")
             continue
         except Exception as e:
-            print(f"  ✗ Sample {i+1}: Error - {e}")
+            print(f"  ✗ Sample {i + 1}: Error - {e}")
             continue
 
     # Save if modified
     if modified:
-        with open(json_path, 'w') as f:
+        with open(json_path, "w") as f:
             json.dump(test_vector, f, indent=2)
-            f.write('\n')  # Add trailing newline
-        print(f"  💾 Saved updated test vector")
+            f.write("\n")  # Add trailing newline
+        print("  💾 Saved updated test vector")
         return True
 
     return False

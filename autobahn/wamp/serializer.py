@@ -294,7 +294,7 @@ class Serializer(object):
         """
         # FlatBuffersSerializer has _payload_serializer (separate from envelope)
         # Traditional serializers use _serializer (same for envelope and payload)
-        payload_ser = getattr(self, '_payload_serializer', self._serializer)
+        payload_ser = getattr(self, "_payload_serializer", self._serializer)
         return payload_ser.serialize(data)
 
     def unserialize(

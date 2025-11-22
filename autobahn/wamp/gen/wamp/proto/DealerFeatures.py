@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class DealerFeatures(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,6 +22,7 @@ class DealerFeatures(object):
     def GetRootAsDealerFeatures(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # DealerFeatures
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
@@ -28,179 +31,235 @@ class DealerFeatures(object):
     def CallerIdentification(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def CallTrustlevels(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def CallTimeout(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def CallCanceling(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def ProgressiveCallResults(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def RegistrationRevocation(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def PatternBasedRegistration(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def SharedRegistration(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def SessionMetaApi(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def RegistrationMetaApi(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def TestamentMetaApi(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def PayloadTransparency(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
 
     # DealerFeatures
     def PayloadEncryptionCryptobox(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
+            return bool(
+                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
+            )
         return False
+
 
 def DealerFeaturesStart(builder):
     builder.StartObject(13)
 
+
 def Start(builder):
     DealerFeaturesStart(builder)
+
 
 def DealerFeaturesAddCallerIdentification(builder, callerIdentification):
     builder.PrependBoolSlot(0, callerIdentification, 0)
 
+
 def AddCallerIdentification(builder, callerIdentification):
     DealerFeaturesAddCallerIdentification(builder, callerIdentification)
+
 
 def DealerFeaturesAddCallTrustlevels(builder, callTrustlevels):
     builder.PrependBoolSlot(1, callTrustlevels, 0)
 
+
 def AddCallTrustlevels(builder, callTrustlevels):
     DealerFeaturesAddCallTrustlevels(builder, callTrustlevels)
+
 
 def DealerFeaturesAddCallTimeout(builder, callTimeout):
     builder.PrependBoolSlot(2, callTimeout, 0)
 
+
 def AddCallTimeout(builder, callTimeout):
     DealerFeaturesAddCallTimeout(builder, callTimeout)
+
 
 def DealerFeaturesAddCallCanceling(builder, callCanceling):
     builder.PrependBoolSlot(3, callCanceling, 0)
 
+
 def AddCallCanceling(builder, callCanceling):
     DealerFeaturesAddCallCanceling(builder, callCanceling)
+
 
 def DealerFeaturesAddProgressiveCallResults(builder, progressiveCallResults):
     builder.PrependBoolSlot(4, progressiveCallResults, 0)
 
+
 def AddProgressiveCallResults(builder, progressiveCallResults):
     DealerFeaturesAddProgressiveCallResults(builder, progressiveCallResults)
+
 
 def DealerFeaturesAddRegistrationRevocation(builder, registrationRevocation):
     builder.PrependBoolSlot(5, registrationRevocation, 0)
 
+
 def AddRegistrationRevocation(builder, registrationRevocation):
     DealerFeaturesAddRegistrationRevocation(builder, registrationRevocation)
+
 
 def DealerFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration):
     builder.PrependBoolSlot(6, patternBasedRegistration, 0)
 
+
 def AddPatternBasedRegistration(builder, patternBasedRegistration):
     DealerFeaturesAddPatternBasedRegistration(builder, patternBasedRegistration)
+
 
 def DealerFeaturesAddSharedRegistration(builder, sharedRegistration):
     builder.PrependBoolSlot(7, sharedRegistration, 0)
 
+
 def AddSharedRegistration(builder, sharedRegistration):
     DealerFeaturesAddSharedRegistration(builder, sharedRegistration)
+
 
 def DealerFeaturesAddSessionMetaApi(builder, sessionMetaApi):
     builder.PrependBoolSlot(8, sessionMetaApi, 0)
 
+
 def AddSessionMetaApi(builder, sessionMetaApi):
     DealerFeaturesAddSessionMetaApi(builder, sessionMetaApi)
+
 
 def DealerFeaturesAddRegistrationMetaApi(builder, registrationMetaApi):
     builder.PrependBoolSlot(9, registrationMetaApi, 0)
 
+
 def AddRegistrationMetaApi(builder, registrationMetaApi):
     DealerFeaturesAddRegistrationMetaApi(builder, registrationMetaApi)
+
 
 def DealerFeaturesAddTestamentMetaApi(builder, testamentMetaApi):
     builder.PrependBoolSlot(10, testamentMetaApi, 0)
 
+
 def AddTestamentMetaApi(builder, testamentMetaApi):
     DealerFeaturesAddTestamentMetaApi(builder, testamentMetaApi)
+
 
 def DealerFeaturesAddPayloadTransparency(builder, payloadTransparency):
     builder.PrependBoolSlot(11, payloadTransparency, 0)
 
+
 def AddPayloadTransparency(builder, payloadTransparency):
     DealerFeaturesAddPayloadTransparency(builder, payloadTransparency)
+
 
 def DealerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
     builder.PrependBoolSlot(12, payloadEncryptionCryptobox, 0)
 
+
 def AddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox):
     DealerFeaturesAddPayloadEncryptionCryptobox(builder, payloadEncryptionCryptobox)
 
+
 def DealerFeaturesEnd(builder):
     return builder.EndObject()
+
 
 def End(builder):
     return DealerFeaturesEnd(builder)

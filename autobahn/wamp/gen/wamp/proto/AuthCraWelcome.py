@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class AuthCraWelcome(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,18 +22,23 @@ class AuthCraWelcome(object):
     def GetRootAsAuthCraWelcome(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # AuthCraWelcome
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
+
 def AuthCraWelcomeStart(builder):
     builder.StartObject(0)
+
 
 def Start(builder):
     AuthCraWelcomeStart(builder)
 
+
 def AuthCraWelcomeEnd(builder):
     return builder.EndObject()
+
 
 def End(builder):
     return AuthCraWelcomeEnd(builder)

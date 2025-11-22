@@ -655,7 +655,7 @@ class Message(object):
                 builder = flatbuffers.Builder(1024)
 
                 # Get parent ISerializer to access payload serialization
-                parent_serializer = getattr(serializer, '_parent_serializer', None)
+                parent_serializer = getattr(serializer, "_parent_serializer", None)
 
                 # this is the core method writing out this message (self) to a (new) flatbuffer
                 # FIXME: implement this method for all classes derived from Message
@@ -698,8 +698,15 @@ class MessageWithAppPayload(object):
 
     __slots__ = ()  # REQUIRED: Empty slots for mixin pattern. DO NOT REMOVE!
 
-    def _init_app_payload(self, args=None, kwargs=None, payload=None,
-                          enc_algo=None, enc_key=None, enc_serializer=None):
+    def _init_app_payload(
+        self,
+        args=None,
+        kwargs=None,
+        payload=None,
+        enc_algo=None,
+        enc_key=None,
+        enc_serializer=None,
+    ):
         """
         Initialize application payload attributes.
 
@@ -743,29 +750,35 @@ class MessageWithAppPayload(object):
         # Special case: FlexBuffers (quasi-dynamic typing)
         if ser_id == "flexbuffers":
             import flatbuffers.flexbuffers as flexbuffers
+
             root = flexbuffers.GetRoot(bytes(data_bytes))
             return root
 
         # Import the appropriate deserializer
         if ser_id == "json":
             import json
+
             # JSON requires bytes() conversion
             return json.loads(bytes(data_bytes))
         elif ser_id == "cbor":
             import cbor2
+
             # cbor2 supports memoryview (zero-copy)
             return cbor2.loads(data_bytes)
         elif ser_id == "msgpack":
             import msgpack
+
             # msgpack supports memoryview (zero-copy)
             return msgpack.unpackb(data_bytes)
         elif ser_id == "ubjson":
             import ubjson
+
             # ubjson supports memoryview (zero-copy)
             return ubjson.loadb(data_bytes)
         else:
             # Fallback to CBOR for unknown serializers
             import cbor2
+
             return cbor2.loads(data_bytes)
 
     @property
@@ -925,15 +938,25 @@ class MessageWithForwardFor(object):
                     # Principal is now a table and supports authid/authrole
                     authid = principal.Authid()
                     if authid:
-                        authid = authid.decode('utf-8') if isinstance(authid, bytes) else authid
+                        authid = (
+                            authid.decode("utf-8")
+                            if isinstance(authid, bytes)
+                            else authid
+                        )
                     authrole = principal.Authrole()
                     if authrole:
-                        authrole = authrole.decode('utf-8') if isinstance(authrole, bytes) else authrole
-                    forward_for.append({
-                        'session': principal.Session(),
-                        'authid': authid,
-                        'authrole': authrole,
-                    })
+                        authrole = (
+                            authrole.decode("utf-8")
+                            if isinstance(authrole, bytes)
+                            else authrole
+                        )
+                    forward_for.append(
+                        {
+                            "session": principal.Session(),
+                            "authid": authid,
+                            "authrole": authrole,
+                        }
+                    )
                 self._forward_for = forward_for
         return self._forward_for
 
@@ -1041,7 +1064,9 @@ class Hello(Message):
             assert len(roles) > 0
             for role in roles:
                 assert role in ["subscriber", "publisher", "caller", "callee"]
-                assert isinstance(roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role])
+                assert isinstance(
+                    roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]
+                )
         if authmethods:
             assert type(authmethods) == list
             for authmethod in authmethods:
@@ -1587,7 +1612,9 @@ class Welcome(Message):
             assert len(roles) > 0
             for role in roles:
                 assert role in ["broker", "dealer"]
-                assert isinstance(roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role])
+                assert isinstance(
+                    roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]
+                )
         assert realm is None or type(realm) == str
         assert authid is None or type(authid) == str
         assert authrole is None or type(authrole) == str
@@ -2353,7 +2380,9 @@ class Challenge(Message):
         # For simplicity, default to ANONYMOUS (0) for now
         # Full implementation would require reverse lookup table
         if self.method:
-            message_fbs.ChallengeGen.ChallengeAddMethod(builder, 0)  # Default to ANONYMOUS
+            message_fbs.ChallengeGen.ChallengeAddMethod(
+                builder, 0
+            )  # Default to ANONYMOUS
 
         # TODO: Add proper Map serialization for extra field
         # if self.extra:
@@ -2490,7 +2519,9 @@ class Authenticate(Message):
 
         :returns: An instance of this class.
         """
-        return Authenticate(from_fbs=message_fbs.Authenticate.GetRootAsAuthenticate(buf, 0))
+        return Authenticate(
+            from_fbs=message_fbs.Authenticate.GetRootAsAuthenticate(buf, 0)
+        )
 
     def build(self, builder, serializer=None):
         """
@@ -2599,7 +2630,9 @@ class Goodbye(Message):
         "_resumable",
     )
 
-    def __init__(self, reason=DEFAULT_REASON, message=None, resumable=None, from_fbs=None):
+    def __init__(
+        self, reason=DEFAULT_REASON, message=None, resumable=None, from_fbs=None
+    ):
         """
 
         :param reason: Optional WAMP or application error URI for closing reason.
@@ -2921,8 +2954,12 @@ class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         # Initialize mixin attributes
         self._init_app_payload(
-            args=args, kwargs=kwargs, payload=payload,
-            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
         )
         self._init_forward_for(forward_for=forward_for)
 
@@ -3533,8 +3570,12 @@ class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         # Initialize mixin attributes
         self._init_app_payload(
-            args=args, kwargs=kwargs, payload=payload,
-            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
         )
         self._init_forward_for(forward_for=forward_for)
 
@@ -3926,11 +3967,15 @@ class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
             _forward_for = []
             for ff in self.forward_for:
                 # Build Principal table
-                authid = builder.CreateString(ff['authid']) if ff.get('authid') else None
-                authrole = builder.CreateString(ff['authrole']) if ff.get('authrole') else None
+                authid = (
+                    builder.CreateString(ff["authid"]) if ff.get("authid") else None
+                )
+                authrole = (
+                    builder.CreateString(ff["authrole"]) if ff.get("authrole") else None
+                )
 
                 PrincipalStart(builder)
-                PrincipalAddSession(builder, ff['session'])
+                PrincipalAddSession(builder, ff["session"])
                 if authid:
                     PrincipalAddAuthid(builder, authid)
                 if authrole:
@@ -3938,7 +3983,9 @@ class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
                 _forward_for.append(PrincipalEnd(builder))
 
             # Create vector of Principal tables
-            message_fbs.PublishGen.PublishStartForwardForVector(builder, len(_forward_for))
+            message_fbs.PublishGen.PublishStartForwardForVector(
+                builder, len(_forward_for)
+            )
             for o in reversed(_forward_for):
                 builder.PrependUOffsetTRelative(o)
             forward_for = builder.EndVector(len(_forward_for))
@@ -3994,9 +4041,7 @@ class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
         if self.retain is not None:
             message_fbs.PublishGen.PublishAddRetain(builder, self.retain)
         if transaction_hash is not None:
-            message_fbs.PublishGen.PublishAddTransactionHash(
-                builder, transaction_hash
-            )
+            message_fbs.PublishGen.PublishAddTransactionHash(builder, transaction_hash)
 
         if forward_for:
             message_fbs.PublishGen.PublishAddForwardFor(builder, forward_for)
@@ -4341,7 +4386,11 @@ class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         if self.payload:
             # Convert memoryview to bytes for non-FlatBuffers serializers
-            payload = bytes(self.payload) if isinstance(self.payload, memoryview) else self.payload
+            payload = (
+                bytes(self.payload)
+                if isinstance(self.payload, memoryview)
+                else self.payload
+            )
             return [
                 Publish.MESSAGE_TYPE,
                 self.request,
@@ -4495,7 +4544,15 @@ class Subscribe(MessageWithForwardFor, Message):
         "_forward_for",  # [Principal]
     )
 
-    def __init__(self, request=None, topic=None, match=None, get_retained=None, forward_for=None, from_fbs=None):
+    def __init__(
+        self,
+        request=None,
+        topic=None,
+        match=None,
+        get_retained=None,
+        forward_for=None,
+        from_fbs=None,
+    ):
         """
 
         :param request: The WAMP request ID of this request.
@@ -4869,7 +4926,9 @@ class Subscribed(Message):
         if self.request:
             message_fbs.SubscribedGen.SubscribedAddRequest(builder, self.request)
         if self.subscription:
-            message_fbs.SubscribedGen.SubscribedAddSubscription(builder, self.subscription)
+            message_fbs.SubscribedGen.SubscribedAddSubscription(
+                builder, self.subscription
+            )
 
         msg = message_fbs.SubscribedGen.SubscribedEnd(builder)
         return msg
@@ -4899,7 +4958,9 @@ class Unsubscribe(MessageWithForwardFor, Message):
         "_forward_for",  # [Principal]
     )
 
-    def __init__(self, request=None, subscription=None, forward_for=None, from_fbs=None):
+    def __init__(
+        self, request=None, subscription=None, forward_for=None, from_fbs=None
+    ):
         """
 
         :param request: The WAMP request ID of this request.
@@ -5407,8 +5468,12 @@ class Event(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         # Initialize mixin attributes
         self._init_app_payload(
-            args=args, kwargs=kwargs, payload=payload,
-            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
         )
         self._init_forward_for(forward_for=forward_for)
 
@@ -5642,11 +5707,15 @@ class Event(MessageWithAppPayload, MessageWithForwardFor, Message):
             _forward_for = []
             for ff in self.forward_for:
                 # Build Principal table
-                authid = builder.CreateString(ff['authid']) if ff.get('authid') else None
-                authrole = builder.CreateString(ff['authrole']) if ff.get('authrole') else None
+                authid = (
+                    builder.CreateString(ff["authid"]) if ff.get("authid") else None
+                )
+                authrole = (
+                    builder.CreateString(ff["authrole"]) if ff.get("authrole") else None
+                )
 
                 PrincipalStart(builder)
-                PrincipalAddSession(builder, ff['session'])
+                PrincipalAddSession(builder, ff["session"])
                 if authid:
                     PrincipalAddAuthid(builder, authid)
                 if authrole:
@@ -5946,7 +6015,11 @@ class Event(MessageWithAppPayload, MessageWithForwardFor, Message):
             if self.enc_serializer is not None:
                 details["enc_serializer"] = self.enc_serializer
             # Convert memoryview to bytes for non-FlatBuffers serializers
-            payload = bytes(self.payload) if isinstance(self.payload, memoryview) else self.payload
+            payload = (
+                bytes(self.payload)
+                if isinstance(self.payload, memoryview)
+                else self.payload
+            )
             return [
                 Event.MESSAGE_TYPE,
                 self.subscription,
@@ -6236,8 +6309,12 @@ class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         # Initialize mixin attributes
         self._init_app_payload(
-            args=args, kwargs=kwargs, payload=payload,
-            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
         )
         self._init_forward_for(forward_for=forward_for)
 
@@ -7116,8 +7193,12 @@ class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         # Initialize mixin attributes
         self._init_app_payload(
-            args=args, kwargs=kwargs, payload=payload,
-            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
         )
         self._init_forward_for(forward_for=forward_for)
 
@@ -7255,7 +7336,9 @@ class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
                 PrincipalGen.AddAuthrole(builder, _authrole)
                 _forward_for.append(PrincipalGen.End(builder))
 
-            message_fbs.ResultGen.ResultStartForwardForVector(builder, len(_forward_for))
+            message_fbs.ResultGen.ResultStartForwardForVector(
+                builder, len(_forward_for)
+            )
             for principal in reversed(_forward_for):
                 builder.PrependUOffsetTRelative(principal)
             forward_for = builder.EndVector()
@@ -8105,7 +8188,9 @@ class Unregister(MessageWithForwardFor, Message):
         "_forward_for",  # [Principal]
     )
 
-    def __init__(self, request=None, registration=None, forward_for=None, from_fbs=None):
+    def __init__(
+        self, request=None, registration=None, forward_for=None, from_fbs=None
+    ):
         """
 
         :param request: The WAMP request ID of this request.
@@ -8568,8 +8653,12 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         # Initialize mixin attributes
         self._init_app_payload(
-            args=args, kwargs=kwargs, payload=payload,
-            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
         )
         self._init_forward_for(forward_for=forward_for)
 
@@ -8767,7 +8856,9 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
                 PrincipalGen.AddAuthrole(builder, _authrole)
                 _forward_for.append(PrincipalGen.End(builder))
 
-            message_fbs.InvocationGen.InvocationStartForwardForVector(builder, len(_forward_for))
+            message_fbs.InvocationGen.InvocationStartForwardForVector(
+                builder, len(_forward_for)
+            )
             for principal in reversed(_forward_for):
                 builder.PrependUOffsetTRelative(principal)
             forward_for = builder.EndVector()
@@ -8778,7 +8869,9 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
         if self.request:
             message_fbs.InvocationGen.InvocationAddRequest(builder, self.request)
         if self.registration:
-            message_fbs.InvocationGen.InvocationAddRegistration(builder, self.registration)
+            message_fbs.InvocationGen.InvocationAddRegistration(
+                builder, self.registration
+            )
         if args:
             message_fbs.InvocationGen.InvocationAddArgs(builder, args)
         if kwargs:
@@ -8788,23 +8881,31 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
         if self.timeout:
             message_fbs.InvocationGen.InvocationAddTimeout(builder, self.timeout)
         if self.receive_progress:
-            message_fbs.InvocationGen.InvocationAddReceiveProgress(builder, self.receive_progress)
+            message_fbs.InvocationGen.InvocationAddReceiveProgress(
+                builder, self.receive_progress
+            )
         if self.caller:
             message_fbs.InvocationGen.InvocationAddCaller(builder, self.caller)
         if caller_authid:
             message_fbs.InvocationGen.InvocationAddCallerAuthid(builder, caller_authid)
         if caller_authrole:
-            message_fbs.InvocationGen.InvocationAddCallerAuthrole(builder, caller_authrole)
+            message_fbs.InvocationGen.InvocationAddCallerAuthrole(
+                builder, caller_authrole
+            )
         if procedure:
             message_fbs.InvocationGen.InvocationAddProcedure(builder, procedure)
         if self.enc_algo:
             message_fbs.InvocationGen.InvocationAddEncAlgo(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.InvocationGen.InvocationAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.InvocationGen.InvocationAddEncSerializer(
+                builder, self.enc_serializer
+            )
         if enc_key:
             message_fbs.InvocationGen.InvocationAddEncKey(builder, enc_key)
         if transaction_hash:
-            message_fbs.InvocationGen.InvocationAddTransactionHash(builder, transaction_hash)
+            message_fbs.InvocationGen.InvocationAddTransactionHash(
+                builder, transaction_hash
+            )
         if forward_for:
             message_fbs.InvocationGen.InvocationAddForwardFor(builder, forward_for)
 
@@ -9119,7 +9220,9 @@ class Interrupt(MessageWithForwardFor, Message):
         "_forward_for",  # [Principal]
     )
 
-    def __init__(self, request=None, mode=None, reason=None, forward_for=None, from_fbs=None):
+    def __init__(
+        self, request=None, mode=None, reason=None, forward_for=None, from_fbs=None
+    ):
         """
 
         :param request: The WAMP request ID of the original ``INVOCATION`` to interrupt.
@@ -9480,8 +9583,12 @@ class Yield(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         # Initialize mixin attributes
         self._init_app_payload(
-            args=args, kwargs=kwargs, payload=payload,
-            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
         )
         self._init_forward_for(forward_for=forward_for)
 

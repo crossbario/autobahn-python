@@ -106,8 +106,7 @@ class XorMaskerNvx:
         # Keep mask buffer alive for the lifetime of the masker
         self._mask_buffer = self.ffi.new("uint8_t[4]", mask)
         self._masker = self.ffi.gc(
-            self.lib.nvx_xormask_new(self._mask_buffer),
-            self.lib.nvx_xormask_free
+            self.lib.nvx_xormask_new(self._mask_buffer), self.lib.nvx_xormask_free
         )
 
         # Set implementation: 1=Simple (scalar), 2=SSE2 (SIMD)
@@ -140,6 +139,7 @@ class XorMaskerSimple(XorMaskerNvx):
     Simple scalar XOR masker for small payloads.
     :noindex:
     """
+
     def __init__(self, mask):
         super().__init__(mask, use_simd=False)
 
@@ -149,6 +149,7 @@ class XorMaskerShifted1(XorMaskerNvx):
     SIMD-optimized XOR masker for large payloads.
     :noindex:
     """
+
     def __init__(self, mask):
         super().__init__(mask, use_simd=True)
 

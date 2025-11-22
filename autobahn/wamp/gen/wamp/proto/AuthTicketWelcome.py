@@ -4,10 +4,12 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
+
 np = import_numpy()
 
+
 class AuthTicketWelcome(object):
-    __slots__ = ['_tab']
+    __slots__ = ["_tab"]
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -20,18 +22,23 @@ class AuthTicketWelcome(object):
     def GetRootAsAuthTicketWelcome(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
+
     # AuthTicketWelcome
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
+
 def AuthTicketWelcomeStart(builder):
     builder.StartObject(0)
+
 
 def Start(builder):
     AuthTicketWelcomeStart(builder)
 
+
 def AuthTicketWelcomeEnd(builder):
     return builder.EndObject()
+
 
 def End(builder):
     return AuthTicketWelcomeEnd(builder)
