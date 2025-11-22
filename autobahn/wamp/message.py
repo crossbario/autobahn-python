@@ -2788,7 +2788,7 @@ class Goodbye(Message):
         return [Goodbye.MESSAGE_TYPE, details, self.reason]
 
 
-class Error(Message):
+class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``ERROR`` message.
 
@@ -2805,27 +2805,31 @@ class Error(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "request_type",
-        "request",
-        "error",
-        "args",
-        "kwargs",
-        "payload",
-        "enc_algo",
-        "enc_key",
-        "enc_serializer",
-        "callee",
-        "callee_authid",
-        "callee_authrole",
-        "forward_for",
+        # Error-specific slots (FlatBuffers schema types in comments)
+        "_request_type",  # uint8 (message type)
+        "_request",  # uint64 (key)
+        "_error",  # string (required, uri)
+        "_callee",  # uint64 (session id)
+        "_callee_authid",  # string (principal)
+        "_callee_authrole",  # string (principal)
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
         self,
-        request_type,
-        request,
-        error,
+        request_type=None,
+        request=None,
+        error=None,
         args=None,
         kwargs=None,
         payload=None,
@@ -2836,6 +2840,7 @@ class Error(Message):
         callee_authid=None,
         callee_authrole=None,
         forward_for=None,
+        from_fbs=None,
     ):
         """
 
@@ -2880,11 +2885,11 @@ class Error(Message):
         :param forward_for: When this Error is forwarded for a client/callee (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert type(request_type) == int
-        assert type(request) == int
-        assert type(error) == str
-        assert args is None or type(args) in [list, tuple]
-        assert kwargs is None or type(kwargs) == dict
+        assert request_type is None or type(request_type) == int
+        assert request is None or type(request) == int
+        assert error is None or type(error) == str
+        assert args is None or type(args) in [list, tuple, str, bytes]
+        assert kwargs is None or type(kwargs) in [dict, str, bytes]
         assert payload is None or type(payload) == bytes
         assert payload is None or (
             payload is not None and args is None and kwargs is None
@@ -2911,26 +2916,104 @@ class Error(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
-        Message.__init__(self)
-        self.request_type = request_type
-        self.request = request
-        self.error = error
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
+        # Initialize Message base class
+        Message.__init__(self, from_fbs=from_fbs)
 
-        # payload transparency related knobs
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args, kwargs=kwargs, payload=payload,
+            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Error-specific attributes
+        self._request_type = request_type
+        self._request = request
+        self._error = error
 
         # effective callee that responded with the error
-        self.callee = callee
-        self.callee_authid = callee_authid
-        self.callee_authrole = callee_authrole
+        self._callee = callee
+        self._callee_authid = callee_authid
+        self._callee_authrole = callee_authrole
 
-        # message forwarding
-        self.forward_for = forward_for
+    @property
+    def request_type(self):
+        if self._request_type is None and self._from_fbs:
+            self._request_type = self._from_fbs.RequestType()
+        return self._request_type
+
+    @request_type.setter
+    def request_type(self, value):
+        assert value is None or type(value) == int
+        self._request_type = value
+
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    @property
+    def error(self):
+        if self._error is None and self._from_fbs:
+            s = self._from_fbs.Error()
+            if s:
+                self._error = s.decode("utf8")
+        return self._error
+
+    @error.setter
+    def error(self, value):
+        assert value is None or type(value) == str
+        self._error = value
+
+    # NOTE: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
+
+    @property
+    def callee(self):
+        if self._callee is None and self._from_fbs:
+            callee = self._from_fbs.Callee()
+            if callee:
+                self._callee = callee
+        return self._callee
+
+    @callee.setter
+    def callee(self, value):
+        assert value is None or type(value) == int
+        self._callee = value
+
+    @property
+    def callee_authid(self):
+        if self._callee_authid is None and self._from_fbs:
+            s = self._from_fbs.CalleeAuthid()
+            if s:
+                self._callee_authid = s.decode("utf8")
+        return self._callee_authid
+
+    @callee_authid.setter
+    def callee_authid(self, value):
+        assert value is None or type(value) == str
+        self._callee_authid = value
+
+    @property
+    def callee_authrole(self):
+        if self._callee_authrole is None and self._from_fbs:
+            s = self._from_fbs.CalleeAuthrole()
+            if s:
+                self._callee_authrole = s.decode("utf8")
+        return self._callee_authrole
+
+    @callee_authrole.setter
+    def callee_authrole(self, value):
+        assert value is None or type(value) == str
+        self._callee_authrole = value
+
+    # NOTE: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
+    # NOTE: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
@@ -6916,7 +6999,7 @@ class Cancel(Message):
         return msg
 
 
-class Result(Message):
+class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``RESULT`` message.
 
@@ -6933,24 +7016,28 @@ class Result(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "request",
-        "args",
-        "kwargs",
-        "payload",
-        "progress",
-        "enc_algo",
-        "enc_key",
-        "enc_serializer",
-        "callee",
-        "callee_authid",
-        "callee_authrole",
-        "forward_for",
+        # Result-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_progress",  # bool
+        "_callee",  # uint64 (session id)
+        "_callee_authid",  # string (principal)
+        "_callee_authrole",  # string (principal)
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
         self,
-        request,
+        request=None,
         args=None,
         kwargs=None,
         payload=None,
@@ -6962,6 +7049,7 @@ class Result(Message):
         callee_authid=None,
         callee_authrole=None,
         forward_for=None,
+        from_fbs=None,
     ):
         """
 
@@ -7004,9 +7092,9 @@ class Result(Message):
         :param forward_for: When this Result is forwarded for a client/callee (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert type(request) == int
-        assert args is None or type(args) in [list, tuple]
-        assert kwargs is None or type(kwargs) == dict
+        assert request is None or type(request) == int
+        assert args is None or type(args) in [list, tuple, str, bytes]
+        assert kwargs is None or type(kwargs) in [dict, str, bytes]
         assert payload is None or type(payload) == bytes
         assert payload is None or (
             payload is not None and args is None and kwargs is None
@@ -7034,25 +7122,92 @@ class Result(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
-        Message.__init__(self)
-        self.request = request
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
-        self.progress = progress
+        # Initialize Message base class
+        Message.__init__(self, from_fbs=from_fbs)
 
-        # payload transparency related knobs
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args, kwargs=kwargs, payload=payload,
+            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Result-specific attributes
+        self._request = request
+        self._progress = progress
 
         # effective callee that responded with the result
-        self.callee = callee
-        self.callee_authid = callee_authid
-        self.callee_authrole = callee_authrole
+        self._callee = callee
+        self._callee_authid = callee_authid
+        self._callee_authrole = callee_authrole
 
-        # message forwarding
-        self.forward_for = forward_for
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    # NOTE: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
+
+    @property
+    def progress(self):
+        if self._progress is None and self._from_fbs:
+            progress = self._from_fbs.Progress()
+            if progress:
+                self._progress = progress
+        return self._progress
+
+    @progress.setter
+    def progress(self, value):
+        assert value is None or type(value) == bool
+        self._progress = value
+
+    @property
+    def callee(self):
+        if self._callee is None and self._from_fbs:
+            callee = self._from_fbs.Callee()
+            if callee:
+                self._callee = callee
+        return self._callee
+
+    @callee.setter
+    def callee(self, value):
+        assert value is None or type(value) == int
+        self._callee = value
+
+    @property
+    def callee_authid(self):
+        if self._callee_authid is None and self._from_fbs:
+            s = self._from_fbs.CalleeAuthid()
+            if s:
+                self._callee_authid = s.decode("utf8")
+        return self._callee_authid
+
+    @callee_authid.setter
+    def callee_authid(self, value):
+        assert value is None or type(value) == str
+        self._callee_authid = value
+
+    @property
+    def callee_authrole(self):
+        if self._callee_authrole is None and self._from_fbs:
+            s = self._from_fbs.CalleeAuthrole()
+            if s:
+                self._callee_authrole = s.decode("utf8")
+        return self._callee_authrole
+
+    @callee_authrole.setter
+    def callee_authrole(self, value):
+        assert value is None or type(value) == str
+        self._callee_authrole = value
+
+    # NOTE: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
+    # NOTE: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
@@ -8247,7 +8402,7 @@ class Unregistered(Message):
         return msg
 
 
-class Invocation(Message):
+class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``INVOCATION`` message.
 
@@ -8264,29 +8419,33 @@ class Invocation(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "request",
-        "registration",
-        "args",
-        "kwargs",
-        "payload",
-        "timeout",
-        "receive_progress",
-        "caller",
-        "caller_authid",
-        "caller_authrole",
-        "procedure",
-        "transaction_hash",
-        "enc_algo",
-        "enc_key",
-        "enc_serializer",
-        "forward_for",
+        # Invocation-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_registration",  # uint64 (key)
+        "_timeout",  # uint32
+        "_receive_progress",  # bool
+        "_caller",  # uint64 (session id)
+        "_caller_authid",  # string (principal)
+        "_caller_authrole",  # string (principal)
+        "_procedure",  # string (uri)
+        "_transaction_hash",  # string
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
         self,
-        request,
-        registration,
+        request=None,
+        registration=None,
         args=None,
         kwargs=None,
         payload=None,
@@ -8301,6 +8460,7 @@ class Invocation(Message):
         enc_key=None,
         enc_serializer=None,
         forward_for=None,
+        from_fbs=None,
     ):
         """
 
@@ -8357,10 +8517,10 @@ class Invocation(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert type(request) == int
-        assert type(registration) == int
-        assert args is None or type(args) in [list, tuple]
-        assert kwargs is None or type(kwargs) == dict
+        assert request is None or type(request) == int
+        assert registration is None or type(registration) == int
+        assert args is None or type(args) in [list, tuple, str, bytes]
+        assert kwargs is None or type(kwargs) in [dict, str, bytes]
         assert payload is None or type(payload) == bytes
         assert payload is None or (
             payload is not None and args is None and kwargs is None
@@ -8389,25 +8549,144 @@ class Invocation(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
-        Message.__init__(self)
-        self.request = request
-        self.registration = registration
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
-        self.timeout = timeout
-        self.receive_progress = receive_progress
-        self.caller = caller
-        self.caller_authid = caller_authid
-        self.caller_authrole = caller_authrole
-        self.procedure = procedure
-        self.transaction_hash = transaction_hash
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
+        # Initialize Message base class
+        Message.__init__(self, from_fbs=from_fbs)
 
-        # message forwarding
-        self.forward_for = forward_for
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args, kwargs=kwargs, payload=payload,
+            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Invocation-specific attributes
+        self._request = request
+        self._registration = registration
+        self._timeout = timeout
+        self._receive_progress = receive_progress
+        self._caller = caller
+        self._caller_authid = caller_authid
+        self._caller_authrole = caller_authrole
+        self._procedure = procedure
+        self._transaction_hash = transaction_hash
+
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    @property
+    def registration(self):
+        if self._registration is None and self._from_fbs:
+            self._registration = self._from_fbs.Registration()
+        return self._registration
+
+    @registration.setter
+    def registration(self, value):
+        assert value is None or type(value) == int
+        self._registration = value
+
+    # NOTE: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
+
+    @property
+    def timeout(self):
+        if self._timeout is None and self._from_fbs:
+            timeout = self._from_fbs.Timeout()
+            if timeout:
+                self._timeout = timeout
+        return self._timeout
+
+    @timeout.setter
+    def timeout(self, value):
+        assert value is None or type(value) == int
+        self._timeout = value
+
+    @property
+    def receive_progress(self):
+        if self._receive_progress is None and self._from_fbs:
+            receive_progress = self._from_fbs.ReceiveProgress()
+            if receive_progress:
+                self._receive_progress = receive_progress
+        return self._receive_progress
+
+    @receive_progress.setter
+    def receive_progress(self, value):
+        assert value is None or type(value) == bool
+        self._receive_progress = value
+
+    @property
+    def caller(self):
+        if self._caller is None and self._from_fbs:
+            caller = self._from_fbs.Caller()
+            if caller:
+                self._caller = caller
+        return self._caller
+
+    @caller.setter
+    def caller(self, value):
+        assert value is None or type(value) == int
+        self._caller = value
+
+    @property
+    def caller_authid(self):
+        if self._caller_authid is None and self._from_fbs:
+            s = self._from_fbs.CallerAuthid()
+            if s:
+                self._caller_authid = s.decode("utf8")
+        return self._caller_authid
+
+    @caller_authid.setter
+    def caller_authid(self, value):
+        assert value is None or type(value) == str
+        self._caller_authid = value
+
+    @property
+    def caller_authrole(self):
+        if self._caller_authrole is None and self._from_fbs:
+            s = self._from_fbs.CallerAuthrole()
+            if s:
+                self._caller_authrole = s.decode("utf8")
+        return self._caller_authrole
+
+    @caller_authrole.setter
+    def caller_authrole(self, value):
+        assert value is None or type(value) == str
+        self._caller_authrole = value
+
+    @property
+    def procedure(self):
+        if self._procedure is None and self._from_fbs:
+            s = self._from_fbs.Procedure()
+            if s:
+                self._procedure = s.decode("utf8")
+        return self._procedure
+
+    @procedure.setter
+    def procedure(self, value):
+        assert value is None or type(value) == str
+        self._procedure = value
+
+    @property
+    def transaction_hash(self):
+        if self._transaction_hash is None and self._from_fbs:
+            s = self._from_fbs.TransactionHash()
+            if s:
+                self._transaction_hash = s.decode("utf8")
+        return self._transaction_hash
+
+    @transaction_hash.setter
+    def transaction_hash(self, value):
+        assert value is None or type(value) == str
+        self._transaction_hash = value
+
+    # NOTE: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
+    # NOTE: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
@@ -9064,7 +9343,7 @@ class Interrupt(Message):
         return msg
 
 
-class Yield(Message):
+class Yield(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``YIELD`` message.
 
@@ -9081,24 +9360,28 @@ class Yield(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "request",
-        "args",
-        "kwargs",
-        "payload",
-        "progress",
-        "enc_algo",
-        "enc_key",
-        "enc_serializer",
-        "callee",
-        "callee_authid",
-        "callee_authrole",
-        "forward_for",
+        # Yield-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_progress",  # bool
+        "_callee",  # uint64 (session id)
+        "_callee_authid",  # string (principal)
+        "_callee_authrole",  # string (principal)
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
         self,
-        request,
+        request=None,
         args=None,
         kwargs=None,
         payload=None,
@@ -9110,6 +9393,7 @@ class Yield(Message):
         callee_authid=None,
         callee_authrole=None,
         forward_for=None,
+        from_fbs=None,
     ):
         """
 
@@ -9152,9 +9436,9 @@ class Yield(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert type(request) == int
-        assert args is None or type(args) in [list, tuple]
-        assert kwargs is None or type(kwargs) == dict
+        assert request is None or type(request) == int
+        assert args is None or type(args) in [list, tuple, str, bytes]
+        assert kwargs is None or type(kwargs) in [dict, str, bytes]
         assert payload is None or type(payload) == bytes
         assert payload is None or (
             payload is not None and args is None and kwargs is None
@@ -9181,23 +9465,92 @@ class Yield(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
-        Message.__init__(self)
-        self.request = request
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
-        self.progress = progress
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
+        # Initialize Message base class
+        Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args, kwargs=kwargs, payload=payload,
+            enc_algo=enc_algo, enc_key=enc_key, enc_serializer=enc_serializer
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Yield-specific attributes
+        self._request = request
+        self._progress = progress
 
         # effective callee that responded with the result
-        self.callee = callee
-        self.callee_authid = callee_authid
-        self.callee_authrole = callee_authrole
+        self._callee = callee
+        self._callee_authid = callee_authid
+        self._callee_authrole = callee_authrole
 
-        # message forwarding
-        self.forward_for = forward_for
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    # NOTE: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
+
+    @property
+    def progress(self):
+        if self._progress is None and self._from_fbs:
+            progress = self._from_fbs.Progress()
+            if progress:
+                self._progress = progress
+        return self._progress
+
+    @progress.setter
+    def progress(self, value):
+        assert value is None or type(value) == bool
+        self._progress = value
+
+    @property
+    def callee(self):
+        if self._callee is None and self._from_fbs:
+            callee = self._from_fbs.Callee()
+            if callee:
+                self._callee = callee
+        return self._callee
+
+    @callee.setter
+    def callee(self, value):
+        assert value is None or type(value) == int
+        self._callee = value
+
+    @property
+    def callee_authid(self):
+        if self._callee_authid is None and self._from_fbs:
+            s = self._from_fbs.CalleeAuthid()
+            if s:
+                self._callee_authid = s.decode("utf8")
+        return self._callee_authid
+
+    @callee_authid.setter
+    def callee_authid(self, value):
+        assert value is None or type(value) == str
+        self._callee_authid = value
+
+    @property
+    def callee_authrole(self):
+        if self._callee_authrole is None and self._from_fbs:
+            s = self._from_fbs.CalleeAuthrole()
+            if s:
+                self._callee_authrole = s.decode("utf8")
+        return self._callee_authrole
+
+    @callee_authrole.setter
+    def callee_authrole(self, value):
+        assert value is None or type(value) == str
+        self._callee_authrole = value
+
+    # NOTE: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
+    # NOTE: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
