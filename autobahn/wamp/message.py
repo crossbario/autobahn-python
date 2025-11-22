@@ -4468,7 +4468,7 @@ class Published(Message):
         return msg
 
 
-class Subscribe(Message):
+class Subscribe(MessageWithForwardFor, Message):
     """
     A WAMP ``SUBSCRIBE`` message.
 
@@ -4484,17 +4484,15 @@ class Subscribe(Message):
     MATCH_PREFIX = "prefix"
     MATCH_WILDCARD = "wildcard"
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # string (required, uri_pattern)
-        "_topic",
-        # Match (enum)
-        "_match",
-        # bool
-        "_get_retained",
-        # [Principal]
-        "_forward_for",
+        # Subscribe-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_topic",  # string (required, uri_pattern)
+        "_match",  # Match (enum)
+        "_get_retained",  # bool
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
     def __init__(self, request=None, topic=None, match=None, get_retained=None, forward_for=None, from_fbs=None):
@@ -4535,12 +4533,17 @@ class Subscribe(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Subscribe-specific attributes
         self._request = request
         self._topic = topic
         self._match = match or Subscribe.MATCH_EXACT
         self._get_retained = get_retained
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -4616,15 +4619,7 @@ class Subscribe(Message):
         assert value is None or type(value) == bool
         self._get_retained = value
 
-    @property
-    def forward_for(self):
-        # forward_for is not in FlatBuffers schema yet
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -4880,7 +4875,7 @@ class Subscribed(Message):
         return msg
 
 
-class Unsubscribe(Message):
+class Unsubscribe(MessageWithForwardFor, Message):
     """
     A WAMP ``UNSUBSCRIBE`` message.
 
@@ -4895,13 +4890,13 @@ class Unsubscribe(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # uint64
-        "_subscription",
-        # [Principal]
-        "_forward_for",
+        # Unsubscribe-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_subscription",  # uint64
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
     def __init__(self, request=None, subscription=None, forward_for=None, from_fbs=None):
@@ -4928,10 +4923,15 @@ class Unsubscribe(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Unsubscribe-specific attributes
         self._request = request
         self._subscription = subscription
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -4971,15 +4971,7 @@ class Unsubscribe(Message):
         assert value is None or type(value) == int
         self._subscription = value
 
-    @property
-    def forward_for(self):
-        # forward_for is not in FlatBuffers schema yet
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -6777,7 +6769,7 @@ class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
                 return [Call.MESSAGE_TYPE, self.request, options, self.procedure]
 
 
-class Cancel(Message):
+class Cancel(MessageWithForwardFor, Message):
     """
     A WAMP ``CANCEL`` message.
 
@@ -6795,13 +6787,13 @@ class Cancel(Message):
     KILL = "kill"
     KILLNOWAIT = "killnowait"
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # CancelMode (enum)
-        "_mode",
-        # [Principal]
-        "_forward_for",
+        # Cancel-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_mode",  # CancelMode (enum)
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
     def __init__(self, request=None, mode=None, forward_for=None, from_fbs=None):
@@ -6830,10 +6822,15 @@ class Cancel(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Cancel-specific attributes
         self._request = request
         self._mode = mode
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -6878,15 +6875,7 @@ class Cancel(Message):
         assert value is None or type(value) == str
         self._mode = value
 
-    @property
-    def forward_for(self):
-        # forward_for in FlatBuffers uses Principal struct, complex to deserialize
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -7500,7 +7489,7 @@ class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
                 return [Result.MESSAGE_TYPE, self.request, details]
 
 
-class Register(Message):
+class Register(MessageWithForwardFor, Message):
     """
     A WAMP ``REGISTER`` message.
 
@@ -7523,21 +7512,17 @@ class Register(Message):
     INVOKE_RANDOM = "random"
     INVOKE_ALL = "all"
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # string (required, uri_pattern)
-        "_procedure",
-        # Match (enum)
-        "_match",
-        # InvocationPolicy (enum)
-        "_invoke",
-        # uint16
-        "_concurrency",
-        # bool
-        "_force_reregister",
-        # [Principal]
-        "_forward_for",
+        # Register-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_procedure",  # string (required, uri_pattern)
+        "_match",  # Match (enum)
+        "_invoke",  # InvocationPolicy (enum)
+        "_concurrency",  # uint16
+        "_force_reregister",  # bool
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
     def __init__(
@@ -7600,14 +7585,19 @@ class Register(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Register-specific attributes
         self._request = request
         self._procedure = procedure
         self._match = match or Register.MATCH_EXACT
         self._invoke = invoke or Register.INVOKE_SINGLE
         self._concurrency = concurrency
         self._force_reregister = force_reregister
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -7717,15 +7707,7 @@ class Register(Message):
         assert value is None or type(value) == bool
         self._force_reregister = value
 
-    @property
-    def forward_for(self):
-        # forward_for is not in FlatBuffers schema yet
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -8099,7 +8081,7 @@ class Registered(Message):
         return msg
 
 
-class Unregister(Message):
+class Unregister(MessageWithForwardFor, Message):
     """
     A WAMP `UNREGISTER` message.
 
@@ -8114,13 +8096,16 @@ class Unregister(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "request",
-        "registration",
-        "forward_for",
+        # Unregister-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_registration",  # uint64
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
-    def __init__(self, request, registration, forward_for=None):
+    def __init__(self, request=None, registration=None, forward_for=None, from_fbs=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -8133,13 +8118,42 @@ class Unregister(Message):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert type(request) == int
-        assert type(registration) == int
+        assert request is None or type(request) == int
+        assert registration is None or type(registration) == int
 
-        Message.__init__(self)
-        self.request = request
-        self.registration = registration
-        self.forward_for = forward_for
+        # Initialize Message base class
+        Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Unregister-specific attributes
+        self._request = request
+        self._registration = registration
+
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    @property
+    def registration(self):
+        if self._registration is None and self._from_fbs:
+            self._registration = self._from_fbs.Registration()
+        return self._registration
+
+    @registration.setter
+    def registration(self, value):
+        assert value is None or type(value) == int
+        self._registration = value
+
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -9078,7 +9092,7 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
                 ]
 
 
-class Interrupt(Message):
+class Interrupt(MessageWithForwardFor, Message):
     """
     A WAMP ``INTERRUPT`` message.
 
@@ -9095,15 +9109,14 @@ class Interrupt(Message):
     KILL = "kill"
     KILLNOWAIT = "killnowait"
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # CancelMode (enum)
-        "_mode",
-        # string (uri)
-        "_reason",
-        # [Principal]
-        "_forward_for",
+        # Interrupt-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_mode",  # CancelMode (enum)
+        "_reason",  # string (uri)
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
     def __init__(self, request=None, mode=None, reason=None, forward_for=None, from_fbs=None):
@@ -9143,11 +9156,16 @@ class Interrupt(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Interrupt-specific attributes
         self._request = request
         self._mode = mode
         self._reason = reason
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -9206,15 +9224,7 @@ class Interrupt(Message):
         assert value is None or type(value) == str
         self._reason = value
 
-    @property
-    def forward_for(self):
-        # forward_for in FlatBuffers uses Principal struct, complex to deserialize
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
