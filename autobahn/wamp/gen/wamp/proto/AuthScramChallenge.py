@@ -46,7 +46,7 @@ class AuthScramChallenge(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
-        return 2
+        return 1
 
     # AuthScramChallenge
     def Iterations(self):
@@ -103,7 +103,7 @@ def AddSalt(builder, salt):
 
 
 def AuthScramChallengeAddKdf(builder, kdf):
-    builder.PrependUint8Slot(2, kdf, 2)
+    builder.PrependUint8Slot(2, kdf, 1)
 
 
 def AddKdf(builder, kdf):

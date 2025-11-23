@@ -13,47 +13,57 @@ include "roles.fbs";
 namespace wamp.proto;
 
 
-// WAMP authentication method.
+/// WAMP authentication method (see: WAMP protocol spec, "13. Authentication Methods").
 enum AuthMethod: uint8
 {
-    // Pseudo anonymous authentication.
-    ANONYMOUS = 0,
+    /// Not set / not authenticated: `anonymous`.
+    NULL = 0,
 
-    // Trnasport level authentication based on HTTP header cookie set.
-    COOKIE = 1,
+    /// WAMP Ticket authentication: `ticket` (see: WAMP protocol spec, "13.1. Ticket-based Authentication").
+    TICKET = 1,
 
-    // Transport level authentication based on TLS client certificate presented.
-    TLS = 2,
+    /// WAMP Challenge-Response authentication: `wampcra` (see: WAMP protocol spec, "13.2. Challenge Response Authentication").
+    CRA = 2,
 
-    // Authentication using WAMP-Ticket, a flexible one time token/password scheme..
-    TICKET = 3,
+    /// WAMP Salted Challenge Response authentication: `wamp-scram` (see: WAMP protocol spec, "13.3. Salted Challenge Response Authentication").
+    SCRAM = 3,
 
-    // Authentication using WAMP-CRA, a simple challenge-response scheme.
-    CRA = 4,
-
-    // Authentication using WAMP-SCRAM, a sophisticated challenge-response scheme.
-    SCRAM = 5,
-
-    // Authentication using WAMP-Cryptosign, a highly secure public-private-key scheme.
-    CRYPTOSIGN = 6
+    /// WAMP Cryptosign authentication: `cryptosign` (see: WAMP protocol spec, "13.4. Cryptosign-based Authentication").
+    CRYPTOSIGN = 4
 }
 
 
-enum ChannelBinding: uint8
+/// TLS channel binding type (see: RFC5929 https://www.rfc-editor.org/rfc/rfc5929 and RFC9266 https://www.rfc-editor.org/rfc/rfc9266).
+enum TLSChannelBinding: uint8
 {
-    NONE = 0,
+    /// Not set / no channel binding.
+    NULL = 0,
+
+    // RFC 5929 `tls-unique`. Available for TLS connections; historically used as the default for many SASL/SCRAM uses over TLS ≤ 1.2. Care needed with renegotiation and with TLS versions where the triple-handshake / EMS issues apply (see RFCs).
     TLS_UNIQUE = 1,
+
+    /// RFC 5929 `tls-unique-for-telnet`. Only relevant to TELNET / TELNET AUTH usage. See RFC 5929 for details and applicability guidance.
+    TLS_UNIQUE_TELNET = 2,
+
+    /// RFC 5929 `tls-server-end-point`. Only available when a server certificate is used (i.e., cipher suites that include the Certificate handshake message / PKIX). Not applicable to OpenPGP server certificates. Recommended for situations where server-side proxies must interoperate without changes.
+    TLS_SERVER_ENDPOINT = 3,
+
+    /// RFC 9266 `tls-exporter`. Defined to address TLS 1.3 (where the older tls-unique semantics are not reliably available). RFC 9266 updates defaults for TLS ≥ 1.3: when channel bindings are used for TLS 1.3, tls-exporter is the mandatory/expected mechanism. Not defined for connections where TLS renegotiation is enabled.
+    TLS_EXPORTER = 4
 }
 
 
-enum Kdf: uint8
+/// Key Derivation Functions, e.g. WAMP SCRAM uses a password-based key derivation function (KDF) to hash user passwords. WAMP-SCRAM supports both Argon2 and PBKDF2 as the KDF (see: WAMP protocol specification, "SCRAM Algorithms").
+enum KDF: uint8
 {
-    NONE = 0,
+    /// Not set / no TLS channel binding.
+    NULL = 0,
 
-    PBKDF2 = 1,
+    /// Argon2id variant of Argon2, version 1.3 - `argon2id13`.
+    ARGON2ID13 = 1,
 
-    // Argon2id variant of Argon2, version 1.3 (`argon2id13`).
-    ARGON2 = 2
+    /// PBKDF2 - `pbkdf2`.
+    PBKDF2 = 2
 }
 
 
@@ -115,23 +125,23 @@ table AuthScramRequest
     nonce: string (required, base64);
 
     // Optional requested channel binding type.
-    channel_binding: ChannelBinding;
+    channel_binding: TLSChannelBinding;
 }
 
 table AuthScramChallenge
 {
     // A server-generatated nonce that is appended to the client-generated
-    // nonce sent in the previous HELLO message. 
+    // nonce sent in the previous HELLO message.
     nonce: string (required, base64);
 
     // The base64-encoded salt for this user, to be passed to the key
     // derivation function. This value is stored with each user record in
-    // the authentication database. 
+    // the authentication database.
     salt: string (required, base64);
 
     // The key derivation function (KDF) used to hash the password. This
-    // value is stored with each user record in the authentication database. 
-    kdf: Kdf = ARGON2;
+    // value is stored with each user record in the authentication database.
+    kdf: KDF = ARGON2ID13;
 
     // The execution time cost factor to use for generating the
     // SaltedPassword hash. This value is stored with each user record in
@@ -144,7 +154,7 @@ table AuthScramChallenge
     memory: uint32;
 
     // Channel binding type, if channel binding was requested and is actually used.
-    channel_binding: ChannelBinding;
+    channel_binding: TLSChannelBinding;
 }
 
 table AuthScramWelcome
@@ -164,14 +174,14 @@ table AuthCryptosignRequest
     pubkey: string (required, hex);
 
     // Optional requested channel binding type.
-    channel_binding: ChannelBinding;
+    channel_binding: TLSChannelBinding;
 }
 
 
 table AuthCryptosignChallenge
 {
     // Channel binding type, if channel binding was requested and is actually used.
-    channel_binding: ChannelBinding;
+    channel_binding: TLSChannelBinding;
 }
 
 table AuthCryptosignWelcome

@@ -2,12 +2,15 @@
 
 # namespace: proto
 
-
+# WAMP authentication method (see: WAMP protocol spec, "13. Authentication Methods").
 class AuthMethod(object):
-    ANONYMOUS = 0
-    COOKIE = 1
-    TLS = 2
-    TICKET = 3
-    CRA = 4
-    SCRAM = 5
-    CRYPTOSIGN = 6
+    # Not set / not authenticated: `anonymous`.
+    NULL = 0
+    # WAMP Ticket authentication: `ticket` (see: WAMP protocol spec, "13.1. Ticket-based Authentication").
+    TICKET = 1
+    # WAMP Challenge-Response authentication: `wampcra` (see: WAMP protocol spec, "13.2. Challenge Response Authentication").
+    CRA = 2
+    # WAMP Salted Challenge Response authentication: `wamp-scram` (see: WAMP protocol spec, "13.3. Salted Challenge Response Authentication").
+    SCRAM = 3
+    # WAMP Cryptosign authentication: `cryptosign` (see: WAMP protocol spec, "13.4. Cryptosign-based Authentication").
+    CRYPTOSIGN = 4

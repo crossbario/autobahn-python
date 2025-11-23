@@ -218,3 +218,78 @@ enum CancelMode: uint8
     /// Kill running invocation and call without waiting.
     KILLNOWAIT = 2
 }
+
+
+/// WAMP transport channel type (`channel_type`). WAMP can run over any Transport which is message-based (requiring no WAMP transport channel framing) or stream-based (requiring WAMP transport channel framing), and bidirectional, reliable and ordered.
+enum TransportChannelType: uint8
+{
+    /// Not set or applicable.
+    NULL = 0,
+
+    /// Host language native function call transport, e.g. inherently message-based already (function call).
+    FUNCTION = 1,
+
+    /// Host run-time / OS level in-memory transport, e.g. (unframed / stream-based) memory buffer.
+    MEMORY = 2,
+
+    /// Serial (UART) based transport (unframed / stream-based).
+    SERIAL = 3,
+
+    /// TCP (non-TLS) based transport (unframed / stream-based).
+    TCP = 4,
+
+    /// TLS (over TCP) based transport (unframed / stream-based).
+    TLS = 5
+
+    /// FUTURE (?):
+    /// - add WireGuard (over UDP) based transport.
+    /// - add QUIC (over UDP; using TLS 1.3 handshake messages; WebTransport browser API) based transport.
+    /// - add WebRTC data channels (SCTP over DTLS; RTCDataChannel browser API) based transport.
+    /// - add VirtIO (in-memory queues) based transport.
+}
+
+
+/// WAMP transport channel framing (`channel_framing`).
+enum TransportChannelFraming: uint8
+{
+    /// Not set.
+    NULL = 0,
+
+    /// Raw transport itself is inherently message-based already (e.g. FUNCTION or VIRTIO).
+    NATIVE = 1,
+
+    /// Raw transport itself (e.g. TCP) is stream-based and channel framing applied is WebSocket (RFC6455).
+    WEBSOCKET = 2,
+
+    /// Raw transport itself (e.g. TCP) is stream-based and channel framing applied is RawSocket (WAMP).
+    RAWSOCKET = 3
+}
+
+
+/// WAMP transport channel serializer (`channel_serializer`).
+enum TransportChannelSerializer: uint8
+{
+    /// Not set or applicable.
+    NULL = 0,
+
+    /// Use JSON serializer (for dynamically typed app payload).
+    JSON = 1,
+
+    /// Use MsgPack serializer (for dynamically typed app payload).
+    MSGPACK = 2,
+
+    /// Use CBOR serializer (for dynamically typed app payload).
+    CBOR = 3,
+
+    /// Use UBJSON serializer (for dynamically typed app payload).
+    UBJSON = 4,
+
+    /// Raw pass-through of app payload, uninterpreted in any way.
+    OPAQUE = 5,
+
+    /// Use FlatBuffers serialized (statically typed) payload (https://google.github.io/flatbuffers/index.html).
+    FLATBUFFERS = 6,
+
+    /// Use FlexBuffers serialized (dynamically typed) payload (https://google.github.io/flatbuffers/flexbuffers.html).
+    FLEXBUFFERS = 7
+}
