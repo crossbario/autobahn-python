@@ -12,7 +12,7 @@ include "types.fbs";
 namespace wamp.proto;
 
 
-// CALL message (message_type = 48): [CALL, Request|id, Options|dict, Procedure|uri, Payload|binary]
+// [Category 4: Both Payload and Forwarding] CALL message (message_type = 48): Client calls a procedure with application payload.
 table Call
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -68,7 +68,7 @@ table Call
 }
 
 
-// CANCEL message (message_type = 49): [CANCEL, CALL.Request|id, Options|dict]
+// [Category 3: Forwarding Only] CANCEL message (message_type = 49): Client cancels a pending call.
 table Cancel
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -85,7 +85,7 @@ table Cancel
 }
 
 
-// RESULT message (message_type = 50): [RESULT, CALL.Request|id, Details|dict, Payload|binary]
+// [Category 4: Both Payload and Forwarding] RESULT message (message_type = 50): Callee returns call result with application payload.
 table Result
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -132,7 +132,7 @@ table Result
 }
 
 
-// REGISTER message (message_type = 64): [REGISTER, Request|id, Options|dict, Procedure|uri]
+// [Category 1: Neither Payload nor Forwarding] REGISTER message (message_type = 64): Callee registers a procedure.
 table Register
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -158,7 +158,7 @@ table Register
 }
 
 
-// REGISTERED message (message_type = 65): [REGISTERED, REGISTER.Request|id, Registration|id]
+// [Category 1: Neither Payload nor Forwarding] REGISTERED message (message_type = 65): Router acknowledges registration.
 table Registered
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -172,7 +172,7 @@ table Registered
 }
 
 
-// UNREGISTER message (message_type = 66): [UNREGISTER, Request|id, REGISTERED.Registration|id]
+// [Category 1: Neither Payload nor Forwarding] UNREGISTER message (message_type = 66): Callee unregisters a procedure.
 table Unregister
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -186,7 +186,7 @@ table Unregister
 }
 
 
-// UNREGISTERED message (message_type = 67): [UNREGISTERED, UNREGISTER.Request|id, Details|dict]
+// [Category 1: Neither Payload nor Forwarding] UNREGISTERED message (message_type = 67): Router acknowledges unregistration.
 table Unregistered
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -203,7 +203,7 @@ table Unregistered
 }
 
 
-// INVOCATION message (message_type = 68): [INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Payload|binary]
+// [Category 4: Both Payload and Forwarding] INVOCATION message (message_type = 68): Router invokes registered procedure with application payload.
 table Invocation
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -262,7 +262,7 @@ table Invocation
 }
 
 
-// INTERRUPT message (message_type = 69): [INTERRUPT, INVOCATION.Request|id, Options|dict]
+// [Category 3: Forwarding Only] INTERRUPT message (message_type = 69): Router interrupts a pending invocation.
 table Interrupt
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -282,7 +282,7 @@ table Interrupt
 }
 
 
-// YIELD message (message_type = 70): [YIELD, INVOCATION.Request|id, Options|dict, Payload|binary]
+// [Category 4: Both Payload and Forwarding] YIELD message (message_type = 70): Callee yields invocation result with application payload.
 table Yield
 {
     // The WAMP session ID on the node this session is (directly) attached to.

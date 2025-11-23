@@ -43,13 +43,17 @@ table Void
 namespace wamp.proto;
 
 
-/// WAMP message type IDs.
+/// WAMP message type IDs organized by message categories:
+/// - Category 1: Neither Payload nor Forwarding (12 messages)
+/// - Category 2: Payload Only (0 messages) - architecturally empty
+/// - Category 3: Forwarding Only (3 messages)
+/// - Category 4: Both Payload and Forwarding (7 messages)
 enum MessageType: uint16
 {
     /// No valid message type
     NULL = 0,
 
-    /// Session opening, authentication and closing
+    /// [Category 1] Session opening, authentication and closing
     HELLO = 1,
     WELCOME = 2,
     ABORT = 3,
@@ -57,31 +61,30 @@ enum MessageType: uint16
     AUTHENTICATE = 5,
     GOODBYE = 6,
 
-    /// Used in both PubSub and RPC
+    /// [Category 4] Used in both PubSub and RPC
     ERROR = 8,
 
     /// Publish & Subscribe (PubSub)
-    PUBLISH = 16,
-    PUBLISHED = 17,
-    SUBSCRIBE = 32,
-    SUBSCRIBED = 33,
-    UNSUBSCRIBE = 34,
-    UNSUBSCRIBED = 35,
-    EVENT = 36,
-    /// NEW: for QoS level 2 PubSub ("exactly once delivery") as well as "survey mode" PubSub response carrying
-    EVENT_RECEIVED = 37,
+    PUBLISH = 16,          // [Category 4] Publisher sends event with application payload
+    PUBLISHED = 17,        // [Category 1] Router acknowledges publication
+    SUBSCRIBE = 32,        // [Category 1] Client subscribes to topic
+    SUBSCRIBED = 33,       // [Category 1] Router acknowledges subscription
+    UNSUBSCRIBE = 34,      // [Category 1] Client unsubscribes from topic
+    UNSUBSCRIBED = 35,     // [Category 1] Router acknowledges unsubscription
+    EVENT = 36,            // [Category 4] Router dispatches event with application payload
+    EVENT_RECEIVED = 37,   // [Category 3] Subscriber acknowledges event reception (QoS level 2)
 
     /// Remote Procedure Calls (RPC)
-    CALL = 48,
-    CANCEL = 49,
-    RESULT = 50,
-    REGISTER = 64,
-    REGISTERED = 65,
-    UNREGISTER = 66,
-    UNREGISTERED = 67,
-    INVOCATION = 68,
-    INTERRUPT = 69,
-    YIELD = 70
+    CALL = 48,             // [Category 4] Caller invokes procedure with application payload
+    CANCEL = 49,           // [Category 3] Caller cancels pending call
+    RESULT = 50,           // [Category 4] Callee returns result with application payload
+    REGISTER = 64,         // [Category 1] Callee registers procedure
+    REGISTERED = 65,       // [Category 1] Router acknowledges registration
+    UNREGISTER = 66,       // [Category 1] Callee unregisters procedure
+    UNREGISTERED = 67,     // [Category 1] Router acknowledges unregistration
+    INVOCATION = 68,       // [Category 4] Router invokes procedure with application payload
+    INTERRUPT = 69,        // [Category 3] Router interrupts pending invocation
+    YIELD = 70             // [Category 4] Callee yields result with application payload
 }
 
 

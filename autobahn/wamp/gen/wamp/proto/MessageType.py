@@ -2,18 +2,22 @@
 
 # namespace: proto
 
-# WAMP message type IDs.
+# WAMP message type IDs organized by message categories:
+# - Category 1: Neither Payload nor Forwarding (12 messages)
+# - Category 2: Payload Only (0 messages) - architecturally empty
+# - Category 3: Forwarding Only (3 messages)
+# - Category 4: Both Payload and Forwarding (7 messages)
 class MessageType(object):
     # No valid message type
     NULL = 0
-    # Session opening, authentication and closing
+    # [Category 1] Session opening, authentication and closing
     HELLO = 1
     WELCOME = 2
     ABORT = 3
     CHALLENGE = 4
     AUTHENTICATE = 5
     GOODBYE = 6
-    # Used in both PubSub and RPC
+    # [Category 4] Used in both PubSub and RPC
     ERROR = 8
     # Publish & Subscribe (PubSub)
     PUBLISH = 16
@@ -23,7 +27,6 @@ class MessageType(object):
     UNSUBSCRIBE = 34
     UNSUBSCRIBED = 35
     EVENT = 36
-    # NEW: for QoS level 2 PubSub ("exactly once delivery") as well as "survey mode" PubSub response carrying
     EVENT_RECEIVED = 37
     # Remote Procedure Calls (RPC)
     CALL = 48

@@ -46,70 +46,34 @@ class EventReceived(object):
         return 0
 
     # EventReceived
-    def Payload(self, j):
+    def ForwardFor(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
-        return 0
+            x = self._tab.Vector(o)
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
+            x = self._tab.Indirect(x)
+            from autobahn.wamp.gen.wamp.proto.Principal import Principal
+
+            obj = Principal()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
 
     # EventReceived
-    def PayloadAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
-        if o != 0:
-            return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Uint8Flags, o)
-        return 0
-
-    # EventReceived
-    def PayloadLength(self):
+    def ForwardForLength(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # EventReceived
-    def PayloadIsNone(self):
+    def ForwardForIsNone(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         return o == 0
 
-    # The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
-    # EventReceived
-    def PptScheme(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
-        return 0
-
-    # The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
-    # EventReceived
-    def PptSerializer(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
-        return 0
-
-    # The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
-    # EventReceived
-    def PptCipher(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
-        return 0
-
-    # The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
-    # EventReceived
-    def PptKeyid(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
 
 def EventReceivedStart(builder):
-    builder.StartObject(7)
+    builder.StartObject(3)
 
 
 def Start(builder):
@@ -132,56 +96,22 @@ def AddPublication(builder, publication):
     EventReceivedAddPublication(builder, publication)
 
 
-def EventReceivedAddPayload(builder, payload):
+def EventReceivedAddForwardFor(builder, forwardFor):
     builder.PrependUOffsetTRelativeSlot(
-        2, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0
+        2, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0
     )
 
 
-def AddPayload(builder, payload):
-    EventReceivedAddPayload(builder, payload)
+def AddForwardFor(builder, forwardFor):
+    EventReceivedAddForwardFor(builder, forwardFor)
 
 
-def EventReceivedStartPayloadVector(builder, numElems):
-    return builder.StartVector(1, numElems, 1)
+def EventReceivedStartForwardForVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
 
 
-def StartPayloadVector(builder, numElems):
-    return EventReceivedStartPayloadVector(builder, numElems)
-
-
-def EventReceivedAddPptScheme(builder, pptScheme):
-    builder.PrependUint8Slot(3, pptScheme, 0)
-
-
-def AddPptScheme(builder, pptScheme):
-    EventReceivedAddPptScheme(builder, pptScheme)
-
-
-def EventReceivedAddPptSerializer(builder, pptSerializer):
-    builder.PrependUint8Slot(4, pptSerializer, 0)
-
-
-def AddPptSerializer(builder, pptSerializer):
-    EventReceivedAddPptSerializer(builder, pptSerializer)
-
-
-def EventReceivedAddPptCipher(builder, pptCipher):
-    builder.PrependUint8Slot(5, pptCipher, 0)
-
-
-def AddPptCipher(builder, pptCipher):
-    EventReceivedAddPptCipher(builder, pptCipher)
-
-
-def EventReceivedAddPptKeyid(builder, pptKeyid):
-    builder.PrependUOffsetTRelativeSlot(
-        6, flatbuffers.number_types.UOffsetTFlags.py_type(pptKeyid), 0
-    )
-
-
-def AddPptKeyid(builder, pptKeyid):
-    EventReceivedAddPptKeyid(builder, pptKeyid)
+def StartForwardForVector(builder, numElems):
+    return EventReceivedStartForwardForVector(builder, numElems)
 
 
 def EventReceivedEnd(builder):

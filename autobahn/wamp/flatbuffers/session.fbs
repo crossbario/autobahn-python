@@ -14,7 +14,7 @@ include "auth.fbs";
 namespace wamp.proto;
 
 
-// HELLO message (message_type = 1): [HELLO, Realm|uri, Details|dict]
+// [Category 1: Neither Payload nor Forwarding] HELLO message (message_type = 1): Client initiates session.
 table Hello
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -50,7 +50,7 @@ table Hello
 }
 
 
-// WELCOME message (message_type = 2): [WELCOME, Session|id, Details|dict]
+// [Category 1: Neither Payload nor Forwarding] WELCOME message (message_type = 2): Router accepts session.
 table Welcome
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -88,7 +88,7 @@ table Welcome
 }
 
 
-// ABORT message (message_type = 3): [ABORT, Details|dict, Reason|uri]
+// [Category 1: Neither Payload nor Forwarding] ABORT message (message_type = 3): Session aborted during handshake.
 table Abort
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -102,7 +102,7 @@ table Abort
 }
 
 
-// CHALLENGE message (message_type = 4): [CHALLENGE, Method|string, Extra|dict]
+// [Category 1: Neither Payload nor Forwarding] CHALLENGE message (message_type = 4): Router sends authentication challenge.
 table Challenge
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -116,7 +116,7 @@ table Challenge
 }
 
 
-// AUTHENTICATE message (message_type = 5): [AUTHENTICATE, Signature|string, Extra|dict]
+// [Category 1: Neither Payload nor Forwarding] AUTHENTICATE message (message_type = 5): Client responds to authentication challenge.
 table Authenticate
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -130,7 +130,7 @@ table Authenticate
 }
 
 
-// GOODBYE message (message_type = 6): [GOODBYE, Details|dict, Reason|uri]
+// [Category 1: Neither Payload nor Forwarding] GOODBYE message (message_type = 6): Session closed gracefully.
 table Goodbye
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -147,7 +147,7 @@ table Goodbye
 }
 
 
-// ERROR message (message_type = 8): [ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Payload|binary]
+// [Category 4: Both Payload and Forwarding] ERROR message (message_type = 8): Error response with optional application payload.
 table Error
 {
     // The WAMP session ID on the node this session is (directly) attached to.
