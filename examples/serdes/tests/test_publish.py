@@ -8,6 +8,7 @@ Tests PUBLISH message serialization and deserialization across all dimensions:
 
 Uses test vectors from: wamp-proto/testsuite/singlemessage/basic/publish.json
 """
+
 import pytest
 from autobahn.wamp.message import Publish
 from autobahn.wamp.serializer import create_transport_serializer
@@ -25,6 +26,7 @@ from .utils import (
 # =============================================================================
 # Test Vector Loading
 # =============================================================================
+
 
 @pytest.fixture(scope="module")
 def publish_test_vector():
@@ -50,7 +52,10 @@ def publish_samples(publish_test_vector):
 # Dimension 2: Single-Serializer Roundtrip Correctness
 # =============================================================================
 
-def test_publish_deserialize_from_bytes(serializer_id, publish_samples, create_serializer):
+
+def test_publish_deserialize_from_bytes(
+    serializer_id, publish_samples, create_serializer
+):
     """
     Test PUBLISH deserialization from canonical bytes.
 
@@ -75,7 +80,7 @@ def test_publish_deserialize_from_bytes(serializer_id, publish_samples, create_s
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
             elif "bytes" in variant:
-                test_bytes = variant["bytes"].encode('utf-8')
+                test_bytes = variant["bytes"].encode("utf-8")
             else:
                 continue
 
@@ -92,8 +97,10 @@ def test_publish_deserialize_from_bytes(serializer_id, publish_samples, create_s
             error = validates_with_any_code(msg, validation_codes)
             if error:
                 # Debug: print sample description
-                sample_desc = sample.get('description', 'unknown')
-                pytest.fail(f"Validation failed for {serializer_id} on sample '{sample_desc}': {error}")
+                sample_desc = sample.get("description", "unknown")
+                pytest.fail(
+                    f"Validation failed for {serializer_id} on sample '{sample_desc}': {error}"
+                )
 
 
 def test_publish_serialize_to_bytes(serializer_id, publish_samples, create_serializer):
@@ -171,14 +178,16 @@ def test_publish_roundtrip(serializer_id, publish_samples, create_serializer):
             pytest.fail(f"Roundtrip validation failed for {serializer_id}: {error}")
 
         # 5. Check equality (if message class implements __eq__)
-        if hasattr(msg_original, '__eq__'):
-            assert msg_original == msg_roundtrip, \
+        if hasattr(msg_original, "__eq__"):
+            assert msg_original == msg_roundtrip, (
                 f"Roundtrip message not equal to original for {serializer_id}"
+            )
 
 
 # =============================================================================
 # Dimension 3: Cross-Serializer Preservation
 # =============================================================================
+
 
 def test_publish_cross_serializer_preservation(serializer_pair, publish_samples):
     """
@@ -216,10 +225,10 @@ def test_publish_cross_serializer_preservation(serializer_pair, publish_samples)
 
         # Take the first canonical byte representation from ser1
         variant1 = ser1_variants[0]
-        if 'bytes_hex' in variant1:
-            bytes1 = bytes_from_hex(variant1['bytes_hex'])
-        elif 'bytes' in variant1:
-            bytes1 = variant1['bytes'].encode('utf-8')
+        if "bytes_hex" in variant1:
+            bytes1 = bytes_from_hex(variant1["bytes_hex"])
+        elif "bytes" in variant1:
+            bytes1 = variant1["bytes"].encode("utf-8")
         else:
             pytest.skip(f"No bytes representation in {ser1_id} variant")
 
@@ -246,6 +255,7 @@ def test_publish_cross_serializer_preservation(serializer_pair, publish_samples)
 # Expected Attributes Validation
 # =============================================================================
 
+
 def test_publish_expected_attributes(publish_samples):
     """
     Test that deserialized PUBLISH message has expected attributes.
@@ -268,7 +278,7 @@ def test_publish_expected_attributes(publish_samples):
         # Deserialize from first JSON variant
         variant = json_variants[0]
         if "bytes" in variant:
-            test_bytes = variant["bytes"].encode('utf-8')
+            test_bytes = variant["bytes"].encode("utf-8")
         elif "bytes_hex" in variant:
             test_bytes = bytes_from_hex(variant["bytes_hex"])
         else:
@@ -287,7 +297,9 @@ def test_publish_expected_attributes(publish_samples):
 
         # kwargs can be None or {} depending on implementation
         if expected["kwargs"] is None:
-            assert msg.kwargs is None or msg.kwargs == {}, "kwargs should be None or empty"
+            assert msg.kwargs is None or msg.kwargs == {}, (
+                "kwargs should be None or empty"
+            )
         else:
             assert msg.kwargs == expected["kwargs"], "kwargs mismatch"
 
@@ -295,6 +307,7 @@ def test_publish_expected_attributes(publish_samples):
 # =============================================================================
 # Payload Mode Tests
 # =============================================================================
+
 
 def test_publish_normal_mode(publish_samples):
     """
@@ -304,15 +317,20 @@ def test_publish_normal_mode(publish_samples):
     Router deserializes and can inspect args/kwargs.
     """
     # Find the normal mode sample (has args, not payload)
-    normal_samples = [s for s in publish_samples if 'args' in s['expected_attributes'] and s['expected_attributes']['args'] is not None]
+    normal_samples = [
+        s
+        for s in publish_samples
+        if "args" in s["expected_attributes"]
+        and s["expected_attributes"]["args"] is not None
+    ]
 
     assert len(normal_samples) > 0, "Should have at least one normal mode sample"
 
     for sample in normal_samples:
         # Verify expected attributes show normal mode
-        expected = sample['expected_attributes']
-        assert expected.get('args') is not None or expected.get('kwargs') is not None
-        assert expected.get('payload') is None or expected['payload'] is None
+        expected = sample["expected_attributes"]
+        assert expected.get("args") is not None or expected.get("kwargs") is not None
+        assert expected.get("payload") is None or expected["payload"] is None
 
 
 def test_publish_transparent_mode(publish_samples, create_serializer):
@@ -323,24 +341,29 @@ def test_publish_transparent_mode(publish_samples, create_serializer):
     Router does NOT deserialize payload - enables E2E encryption.
     """
     # Find the transparent mode sample (has payload, not args/kwargs)
-    transparent_samples = [s for s in publish_samples if 'payload' in s['expected_attributes'] and s['expected_attributes']['payload'] is not None]
+    transparent_samples = [
+        s
+        for s in publish_samples
+        if "payload" in s["expected_attributes"]
+        and s["expected_attributes"]["payload"] is not None
+    ]
 
     if not transparent_samples:
         pytest.skip("No transparent payload mode samples in test vector")
 
     for sample in transparent_samples:
         # Verify expected attributes show transparent mode
-        expected = sample['expected_attributes']
-        assert expected.get('payload') is not None
-        assert expected.get('args') is None
-        assert expected.get('kwargs') is None
+        expected = sample["expected_attributes"]
+        assert expected.get("payload") is not None
+        assert expected.get("args") is None
+        assert expected.get("kwargs") is None
 
         # Test roundtrip for each serializer
-        construction_code = sample['construction'].get('autobahn-python')
+        construction_code = sample["construction"].get("autobahn-python")
         if not construction_code:
             continue
 
-        validation_codes = sample['validation'].get('autobahn-python', [])
+        validation_codes = sample["validation"].get("autobahn-python", [])
         if not validation_codes:
             continue
 
@@ -354,7 +377,7 @@ def test_publish_transparent_mode(publish_samples, create_serializer):
         assert msg_original.kwargs is None
 
         # Test with JSON serializer (most common)
-        serializer = create_serializer('json')
+        serializer = create_serializer("json")
         serialized, is_binary = serializer.serialize(msg_original)
         msgs = serializer.unserialize(serialized)
         assert len(msgs) == 1
@@ -366,8 +389,9 @@ def test_publish_transparent_mode(publish_samples, create_serializer):
             pytest.fail(f"Transparent mode validation failed: {error}")
 
         # Critical: payload bytes must be preserved exactly (byte-for-byte)
-        assert msg_roundtrip.payload == msg_original.payload, \
+        assert msg_roundtrip.payload == msg_original.payload, (
             "Transparent payload must be preserved byte-for-byte through serialization"
+        )
 
 
 # =============================================================================
@@ -386,6 +410,7 @@ from autobahn.wamp.exception import ProtocolError
 # -----------------------------------------------------------------------------
 # acknowledge|bool - Basic Profile
 # -----------------------------------------------------------------------------
+
 
 def test_publish_options_acknowledge_valid():
     """Test PUBLISH.Options.acknowledge with valid bool values"""
@@ -409,13 +434,15 @@ def test_publish_options_acknowledge_invalid_type():
         wmsg = [16, 123, {"acknowledge": value}, "com.example.topic"]
         with pytest.raises(ProtocolError) as exc_info:
             Publish.parse(wmsg)
-        assert "acknowledge" in str(exc_info.value).lower(), \
+        assert "acknowledge" in str(exc_info.value).lower(), (
             f"ProtocolError should mention 'acknowledge' for {description}"
+        )
 
 
 # -----------------------------------------------------------------------------
 # exclude_me|bool - Advanced Profile
 # -----------------------------------------------------------------------------
+
 
 def test_publish_options_exclude_me_valid():
     """Test PUBLISH.Options.exclude_me with valid bool values"""
@@ -441,6 +468,7 @@ def test_publish_options_exclude_me_invalid_type():
 # -----------------------------------------------------------------------------
 # exclude|list[int] - Advanced Profile
 # -----------------------------------------------------------------------------
+
 
 def test_publish_options_exclude_valid():
     """Test PUBLISH.Options.exclude with valid list[int] values"""
@@ -490,6 +518,7 @@ def test_publish_options_exclude_invalid_values():
 # exclude_authid|list[str] - Advanced Profile
 # -----------------------------------------------------------------------------
 
+
 def test_publish_options_exclude_authid_valid():
     """Test PUBLISH.Options.exclude_authid with valid list[str] values"""
     valid_values = [
@@ -534,6 +563,7 @@ def test_publish_options_exclude_authid_invalid_values():
 # exclude_authrole|list[str] - Advanced Profile
 # -----------------------------------------------------------------------------
 
+
 def test_publish_options_exclude_authrole_valid():
     """Test PUBLISH.Options.exclude_authrole with valid list[str] values"""
     valid_values = [
@@ -576,6 +606,7 @@ def test_publish_options_exclude_authrole_invalid_values():
 # -----------------------------------------------------------------------------
 # eligible|list[int] - Advanced Profile
 # -----------------------------------------------------------------------------
+
 
 def test_publish_options_eligible_valid():
     """Test PUBLISH.Options.eligible with valid list[int] values"""
@@ -620,6 +651,7 @@ def test_publish_options_eligible_invalid_values():
 # eligible_authid|list[str] - Advanced Profile
 # -----------------------------------------------------------------------------
 
+
 def test_publish_options_eligible_authid_valid():
     """Test PUBLISH.Options.eligible_authid with valid list[str] values"""
     valid_values = [
@@ -662,6 +694,7 @@ def test_publish_options_eligible_authid_invalid_values():
 # -----------------------------------------------------------------------------
 # eligible_authrole|list[str] - Advanced Profile
 # -----------------------------------------------------------------------------
+
 
 def test_publish_options_eligible_authrole_valid():
     """Test PUBLISH.Options.eligible_authrole with valid list[str] values"""
@@ -706,6 +739,7 @@ def test_publish_options_eligible_authrole_invalid_values():
 # retain|bool - Advanced Profile
 # -----------------------------------------------------------------------------
 
+
 def test_publish_options_retain_valid():
     """Test PUBLISH.Options.retain with valid bool values"""
     for value in [True, False]:
@@ -730,6 +764,7 @@ def test_publish_options_retain_invalid_type():
 # -----------------------------------------------------------------------------
 # transaction_hash|str - Implementation-Only
 # -----------------------------------------------------------------------------
+
 
 def test_publish_options_transaction_hash_valid():
     """Test PUBLISH.Options.transaction_hash with valid str values"""
@@ -761,6 +796,7 @@ def test_publish_options_transaction_hash_invalid_type():
 # -----------------------------------------------------------------------------
 # forward_for|list[dict] - Implementation-Only
 # -----------------------------------------------------------------------------
+
 
 def test_publish_options_forward_for_valid():
     """Test PUBLISH.Options.forward_for with valid list[dict] values"""
@@ -803,8 +839,14 @@ def test_publish_options_forward_for_invalid_values():
     """
     invalid_lists = [
         # Multi-item lists where validation fails
-        ([{"session": 123, "authid": "alice", "authrole": "user"}, 123], "second item is int"),
-        ([{"session": 123, "authid": "alice", "authrole": "user"}, {"bad": "dict"}], "second item missing required fields"),
+        (
+            [{"session": 123, "authid": "alice", "authrole": "user"}, 123],
+            "second item is int",
+        ),
+        (
+            [{"session": 123, "authid": "alice", "authrole": "user"}, {"bad": "dict"}],
+            "second item missing required fields",
+        ),
     ]
     for value, description in invalid_lists:
         wmsg = [16, 123, {"forward_for": value}, "com.example.topic"]
@@ -818,6 +860,7 @@ def test_publish_options_forward_for_invalid_values():
 # E2EE Options (enc_algo, enc_key, enc_serializer) - Implementation-Only
 # These are only valid with transparent payload mode (variant 4)
 # -----------------------------------------------------------------------------
+
 
 def test_publish_options_enc_algo_valid():
     """Test PUBLISH.Options.enc_algo with valid values (transparent payload mode)"""
@@ -862,7 +905,13 @@ def test_publish_options_enc_key_valid():
         "",
     ]
     for value in valid_values:
-        wmsg = [16, 123, {"enc_algo": "cryptobox", "enc_key": value}, "com.example.topic", payload]
+        wmsg = [
+            16,
+            123,
+            {"enc_algo": "cryptobox", "enc_key": value},
+            "com.example.topic",
+            payload,
+        ]
         msg = Publish.parse(wmsg)
         assert msg.enc_key == value
 
@@ -881,7 +930,13 @@ def test_publish_options_enc_key_invalid_type():
         ([1, 2], "non-empty list instead of str"),  # truthy, will be caught
     ]
     for value, description in invalid_values:
-        wmsg = [16, 123, {"enc_algo": "cryptobox", "enc_key": value}, "com.example.topic", payload]
+        wmsg = [
+            16,
+            123,
+            {"enc_algo": "cryptobox", "enc_key": value},
+            "com.example.topic",
+            payload,
+        ]
         # Due to validation bug with falsy values, might hit assert in __init__
         with pytest.raises((ProtocolError, AssertionError)) as exc_info:
             Publish.parse(wmsg)
@@ -900,7 +955,13 @@ def test_publish_options_enc_serializer_valid():
         "flatbuffers",
     ]
     for value in valid_values:
-        wmsg = [16, 123, {"enc_algo": "cryptobox", "enc_serializer": value}, "com.example.topic", payload]
+        wmsg = [
+            16,
+            123,
+            {"enc_algo": "cryptobox", "enc_serializer": value},
+            "com.example.topic",
+            payload,
+        ]
         msg = Publish.parse(wmsg)
         assert msg.enc_serializer == value
 
@@ -914,7 +975,13 @@ def test_publish_options_enc_serializer_invalid_value():
         "yaml",
     ]
     for value in invalid_values:
-        wmsg = [16, 123, {"enc_algo": "cryptobox", "enc_serializer": value}, "com.example.topic", payload]
+        wmsg = [
+            16,
+            123,
+            {"enc_algo": "cryptobox", "enc_serializer": value},
+            "com.example.topic",
+            payload,
+        ]
         with pytest.raises(ProtocolError) as exc_info:
             Publish.parse(wmsg)
         assert "enc_serializer" in str(exc_info.value).lower()
@@ -924,17 +991,24 @@ def test_publish_options_enc_serializer_invalid_value():
 # Dimension 5: Options Validation (Language-Agnostic JSON Test Vectors)
 # =============================================================================
 
+
 @pytest.fixture(scope="module")
 def publish_validation_samples(publish_test_vector):
     """Extract validation samples from PUBLISH test vector"""
-    return [s for s in publish_test_vector["samples"] if s.get("test_category") == "options_validation"]
+    return [
+        s
+        for s in publish_test_vector["samples"]
+        if s.get("test_category") == "options_validation"
+    ]
 
 
 def test_publish_options_validation_sample_count(publish_validation_samples):
     """Verify we have the expected number of validation samples"""
     # We should have validation samples for all PUBLISH.Options attributes
     assert len(publish_validation_samples) > 0, "No validation samples found"
-    print(f"\nLoaded {len(publish_validation_samples)} PUBLISH.Options validation samples from JSON")
+    print(
+        f"\nLoaded {len(publish_validation_samples)} PUBLISH.Options validation samples from JSON"
+    )
 
 
 @pytest.mark.parametrize("sample_index", range(35))  # We have 35 validation samples
@@ -972,12 +1046,15 @@ def test_publish_options_validation_from_json(publish_validation_samples, sample
 
         # Verify the error message contains the expected attribute name
         error_msg = str(exc_info.value).lower()
-        assert expected_error["contains"].lower() in error_msg, \
+        assert expected_error["contains"].lower() in error_msg, (
             f"{description}: Expected error message to contain '{expected_error['contains']}', got: {exc_info.value}"
+        )
     else:
         # This sample should parse successfully
         msg = Publish.parse(wmsg)
-        assert isinstance(msg, Publish), f"{description}: Failed to parse as Publish message"
+        assert isinstance(msg, Publish), (
+            f"{description}: Failed to parse as Publish message"
+        )
 
         # Verify the message type
         assert msg.MESSAGE_TYPE == 16, f"{description}: Wrong message type"

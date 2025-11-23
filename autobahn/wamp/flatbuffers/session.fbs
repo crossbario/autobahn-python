@@ -171,14 +171,17 @@ table Error
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // R2R-link message forwarding route that was taken.
     forward_for: [Principal];

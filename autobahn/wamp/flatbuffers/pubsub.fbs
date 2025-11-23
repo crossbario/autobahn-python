@@ -98,14 +98,17 @@ table Publish
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // If true, acknowledge the publication with a success or error response.
     acknowledge: bool;
@@ -177,14 +180,17 @@ table Event
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // The WAMP session ID of the pubisher. Only filled when the publisher is disclosed.
     publisher: uint64;
@@ -221,15 +227,18 @@ table EventReceived
     // The publication ID of the event that was received, and that is acknowledged.
     publication: uint64;
 
-    // Raw application payload: error arguments. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
+    // Raw application payload: error arguments. This might be encrypted (with PPTScheme==PPTScheme.CRYPTOBOX), and is serialized according to ppt_serializer.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 }

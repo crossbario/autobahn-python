@@ -75,53 +75,41 @@ class EventReceived(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         return o == 0
 
+    # The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
     # EventReceived
-    def EncAlgo(self):
+    def PptScheme(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
+    # The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
     # EventReceived
-    def EncSerializer(self):
+    def PptSerializer(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
+    # The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
     # EventReceived
-    def EncKey(self, j):
+    def PptCipher(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
-            a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
+    # The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
     # EventReceived
-    def EncKeyAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+    def PptKeyid(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
-            return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Uint8Flags, o)
-        return 0
-
-    # EventReceived
-    def EncKeyLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
-        if o != 0:
-            return self._tab.VectorLen(o)
-        return 0
-
-    # EventReceived
-    def EncKeyIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
-        return o == 0
+            return self._tab.String(o + self._tab.Pos)
+        return None
 
 
 def EventReceivedStart(builder):
-    builder.StartObject(6)
+    builder.StartObject(7)
 
 
 def Start(builder):
@@ -162,38 +150,38 @@ def StartPayloadVector(builder, numElems):
     return EventReceivedStartPayloadVector(builder, numElems)
 
 
-def EventReceivedAddEncAlgo(builder, encAlgo):
-    builder.PrependUint8Slot(3, encAlgo, 0)
+def EventReceivedAddPptScheme(builder, pptScheme):
+    builder.PrependUint8Slot(3, pptScheme, 0)
 
 
-def AddEncAlgo(builder, encAlgo):
-    EventReceivedAddEncAlgo(builder, encAlgo)
+def AddPptScheme(builder, pptScheme):
+    EventReceivedAddPptScheme(builder, pptScheme)
 
 
-def EventReceivedAddEncSerializer(builder, encSerializer):
-    builder.PrependUint8Slot(4, encSerializer, 0)
+def EventReceivedAddPptSerializer(builder, pptSerializer):
+    builder.PrependUint8Slot(4, pptSerializer, 0)
 
 
-def AddEncSerializer(builder, encSerializer):
-    EventReceivedAddEncSerializer(builder, encSerializer)
+def AddPptSerializer(builder, pptSerializer):
+    EventReceivedAddPptSerializer(builder, pptSerializer)
 
 
-def EventReceivedAddEncKey(builder, encKey):
+def EventReceivedAddPptCipher(builder, pptCipher):
+    builder.PrependUint8Slot(5, pptCipher, 0)
+
+
+def AddPptCipher(builder, pptCipher):
+    EventReceivedAddPptCipher(builder, pptCipher)
+
+
+def EventReceivedAddPptKeyid(builder, pptKeyid):
     builder.PrependUOffsetTRelativeSlot(
-        5, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0
+        6, flatbuffers.number_types.UOffsetTFlags.py_type(pptKeyid), 0
     )
 
 
-def AddEncKey(builder, encKey):
-    EventReceivedAddEncKey(builder, encKey)
-
-
-def EventReceivedStartEncKeyVector(builder, numElems):
-    return builder.StartVector(1, numElems, 1)
-
-
-def StartEncKeyVector(builder, numElems):
-    return EventReceivedStartEncKeyVector(builder, numElems)
+def AddPptKeyid(builder, pptKeyid):
+    EventReceivedAddPptKeyid(builder, pptKeyid)
 
 
 def EventReceivedEnd(builder):

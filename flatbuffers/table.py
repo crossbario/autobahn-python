@@ -17,132 +17,132 @@ from . import number_types as N
 
 
 class Table(object):
-  """Table wraps a byte slice and provides read access to its data.
+    """Table wraps a byte slice and provides read access to its data.
 
-  The variable `Pos` indicates the root of the FlatBuffers object therein.
-  """
-
-  __slots__ = ("Bytes", "Pos")
-
-  def __init__(self, buf, pos):
-    N.enforce_number(pos, N.UOffsetTFlags)
-
-    self.Bytes = buf
-    self.Pos = pos
-
-  def Offset(self, vtableOffset):
-    """Offset provides access into the Table's vtable.
-
-    Deprecated fields are ignored by checking the vtable's length.
+    The variable `Pos` indicates the root of the FlatBuffers object therein.
     """
 
-    vtable = self.Pos - self.Get(N.SOffsetTFlags, self.Pos)
-    vtableEnd = self.Get(N.VOffsetTFlags, vtable)
-    if vtableOffset < vtableEnd:
-      return self.Get(N.VOffsetTFlags, vtable + vtableOffset)
-    return 0
+    __slots__ = ("Bytes", "Pos")
 
-  def Indirect(self, off):
-    """Indirect retrieves the relative offset stored at `offset`."""
-    N.enforce_number(off, N.UOffsetTFlags)
-    return off + encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
+    def __init__(self, buf, pos):
+        N.enforce_number(pos, N.UOffsetTFlags)
 
-  def String(self, off):
-    """String gets a string from data stored inside the flatbuffer."""
-    N.enforce_number(off, N.UOffsetTFlags)
-    off += encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
-    start = off + N.UOffsetTFlags.bytewidth
-    length = encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
-    return bytes(self.Bytes[start : start + length])
+        self.Bytes = buf
+        self.Pos = pos
 
-  def VectorLen(self, off):
-    """VectorLen retrieves the length of the vector whose offset is stored
+    def Offset(self, vtableOffset):
+        """Offset provides access into the Table's vtable.
 
-    at "off" in this object.
-    """
-    N.enforce_number(off, N.UOffsetTFlags)
+        Deprecated fields are ignored by checking the vtable's length.
+        """
 
-    off += self.Pos
-    off += encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
-    ret = encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
-    return ret
+        vtable = self.Pos - self.Get(N.SOffsetTFlags, self.Pos)
+        vtableEnd = self.Get(N.VOffsetTFlags, vtable)
+        if vtableOffset < vtableEnd:
+            return self.Get(N.VOffsetTFlags, vtable + vtableOffset)
+        return 0
 
-  def Vector(self, off):
-    """Vector retrieves the start of data of the vector whose offset is
+    def Indirect(self, off):
+        """Indirect retrieves the relative offset stored at `offset`."""
+        N.enforce_number(off, N.UOffsetTFlags)
+        return off + encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
 
-    stored at "off" in this object.
-    """
-    N.enforce_number(off, N.UOffsetTFlags)
+    def String(self, off):
+        """String gets a string from data stored inside the flatbuffer."""
+        N.enforce_number(off, N.UOffsetTFlags)
+        off += encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
+        start = off + N.UOffsetTFlags.bytewidth
+        length = encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
+        return bytes(self.Bytes[start : start + length])
 
-    off += self.Pos
-    x = off + self.Get(N.UOffsetTFlags, off)
-    # data starts after metadata containing the vector length
-    x += N.UOffsetTFlags.bytewidth
-    return x
+    def VectorLen(self, off):
+        """VectorLen retrieves the length of the vector whose offset is stored
 
-  def Union(self, t2, off):
-    """Union initializes any Table-derived type to point to the union at
+        at "off" in this object.
+        """
+        N.enforce_number(off, N.UOffsetTFlags)
 
-    the given offset.
-    """
-    assert type(t2) is Table
-    N.enforce_number(off, N.UOffsetTFlags)
+        off += self.Pos
+        off += encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
+        ret = encode.Get(N.UOffsetTFlags.packer_type, self.Bytes, off)
+        return ret
 
-    off += self.Pos
-    t2.Pos = off + self.Get(N.UOffsetTFlags, off)
-    t2.Bytes = self.Bytes
+    def Vector(self, off):
+        """Vector retrieves the start of data of the vector whose offset is
 
-  def Get(self, flags, off):
-    """Get retrieves a value of the type specified by `flags`  at the
+        stored at "off" in this object.
+        """
+        N.enforce_number(off, N.UOffsetTFlags)
 
-    given offset.
-    """
-    N.enforce_number(off, N.UOffsetTFlags)
-    return flags.py_type(encode.Get(flags.packer_type, self.Bytes, off))
+        off += self.Pos
+        x = off + self.Get(N.UOffsetTFlags, off)
+        # data starts after metadata containing the vector length
+        x += N.UOffsetTFlags.bytewidth
+        return x
 
-  def GetSlot(self, slot, d, validator_flags):
-    N.enforce_number(slot, N.VOffsetTFlags)
-    if validator_flags is not None:
-      N.enforce_number(d, validator_flags)
-    off = self.Offset(slot)
-    if off == 0:
-      return d
-    return self.Get(validator_flags, self.Pos + off)
+    def Union(self, t2, off):
+        """Union initializes any Table-derived type to point to the union at
 
-  def GetVectorAsNumpy(self, flags, off):
-    """GetVectorAsNumpy returns the vector that starts at `Vector(off)`
+        the given offset.
+        """
+        assert type(t2) is Table
+        N.enforce_number(off, N.UOffsetTFlags)
 
-    as a numpy array with the type specified by `flags`. The array is
-    a `view` into Bytes, so modifying the returned array will
-    modify Bytes in place.
-    """
-    offset = self.Vector(off)
-    length = self.VectorLen(off)  # TODO: length accounts for bytewidth, right?
-    numpy_dtype = N.to_numpy_type(flags)
-    return encode.GetVectorAsNumpy(numpy_dtype, self.Bytes, length, offset)
+        off += self.Pos
+        t2.Pos = off + self.Get(N.UOffsetTFlags, off)
+        t2.Bytes = self.Bytes
 
-  def GetArrayAsNumpy(self, flags, off, length):
-    """GetArrayAsNumpy returns the array with fixed width that starts at `Vector(offset)`
+    def Get(self, flags, off):
+        """Get retrieves a value of the type specified by `flags`  at the
 
-    with length `length` as a numpy array with the type specified by `flags`.
-    The
-    array is a `view` into Bytes so modifying the returned will modify Bytes in
-    place.
-    """
-    numpy_dtype = N.to_numpy_type(flags)
-    return encode.GetVectorAsNumpy(numpy_dtype, self.Bytes, length, off)
+        given offset.
+        """
+        N.enforce_number(off, N.UOffsetTFlags)
+        return flags.py_type(encode.Get(flags.packer_type, self.Bytes, off))
 
-  def GetVOffsetTSlot(self, slot, d):
-    """GetVOffsetTSlot retrieves the VOffsetT that the given vtable location
+    def GetSlot(self, slot, d, validator_flags):
+        N.enforce_number(slot, N.VOffsetTFlags)
+        if validator_flags is not None:
+            N.enforce_number(d, validator_flags)
+        off = self.Offset(slot)
+        if off == 0:
+            return d
+        return self.Get(validator_flags, self.Pos + off)
 
-    points to. If the vtable value is zero, the default value `d`
-    will be returned.
-    """
+    def GetVectorAsNumpy(self, flags, off):
+        """GetVectorAsNumpy returns the vector that starts at `Vector(off)`
 
-    N.enforce_number(slot, N.VOffsetTFlags)
-    N.enforce_number(d, N.VOffsetTFlags)
+        as a numpy array with the type specified by `flags`. The array is
+        a `view` into Bytes, so modifying the returned array will
+        modify Bytes in place.
+        """
+        offset = self.Vector(off)
+        length = self.VectorLen(off)  # TODO: length accounts for bytewidth, right?
+        numpy_dtype = N.to_numpy_type(flags)
+        return encode.GetVectorAsNumpy(numpy_dtype, self.Bytes, length, offset)
 
-    off = self.Offset(slot)
-    if off == 0:
-      return d
-    return off
+    def GetArrayAsNumpy(self, flags, off, length):
+        """GetArrayAsNumpy returns the array with fixed width that starts at `Vector(offset)`
+
+        with length `length` as a numpy array with the type specified by `flags`.
+        The
+        array is a `view` into Bytes so modifying the returned will modify Bytes in
+        place.
+        """
+        numpy_dtype = N.to_numpy_type(flags)
+        return encode.GetVectorAsNumpy(numpy_dtype, self.Bytes, length, off)
+
+    def GetVOffsetTSlot(self, slot, d):
+        """GetVOffsetTSlot retrieves the VOffsetT that the given vtable location
+
+        points to. If the vtable value is zero, the default value `d`
+        will be returned.
+        """
+
+        N.enforce_number(slot, N.VOffsetTFlags)
+        N.enforce_number(d, N.VOffsetTFlags)
+
+        off = self.Offset(slot)
+        if off == 0:
+            return d
+        return off

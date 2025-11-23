@@ -8,6 +8,7 @@ from flatbuffers.compat import import_numpy
 np = import_numpy()
 
 
+# WAMP session identity information.
 class Principal(object):
     __slots__ = ["_tab"]
 
@@ -27,6 +28,7 @@ class Principal(object):
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
+    # WAMP session ID.
     # Principal
     def Session(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
@@ -36,6 +38,7 @@ class Principal(object):
             )
         return 0
 
+    # WAMP session authentication ID.
     # Principal
     def Authid(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
@@ -43,6 +46,7 @@ class Principal(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
+    # WAMP session authentication role.
     # Principal
     def Authrole(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))

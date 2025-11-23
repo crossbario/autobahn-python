@@ -2,8 +2,10 @@
 """
 Generate serialized bytes for HELLO message test vectors.
 """
+
 import binascii
 import txaio
+
 txaio.use_asyncio()
 
 from autobahn.wamp.message import Hello
@@ -15,8 +17,8 @@ msg = Hello(
     realm="com.example.realm",
     roles={
         "subscriber": RoleSubscriberFeatures(),
-        "publisher": RolePublisherFeatures()
-    }
+        "publisher": RolePublisherFeatures(),
+    },
 )
 
 print(f"Message: {msg}")

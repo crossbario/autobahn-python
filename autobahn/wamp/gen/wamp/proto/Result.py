@@ -138,53 +138,41 @@ class Result(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         return o == 0
 
+    # The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
     # Result
-    def EncAlgo(self):
+    def PptScheme(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
+    # The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
     # Result
-    def EncSerializer(self):
+    def PptSerializer(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
+    # The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
     # Result
-    def EncKey(self, j):
+    def PptCipher(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
-            a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
+    # The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
     # Result
-    def EncKeyAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
+    def PptKeyid(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
-            return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Uint8Flags, o)
-        return 0
-
-    # Result
-    def EncKeyLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
-        if o != 0:
-            return self._tab.VectorLen(o)
-        return 0
-
-    # Result
-    def EncKeyIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
-        return o == 0
+            return self._tab.String(o + self._tab.Pos)
+        return None
 
     # Result
     def Progress(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
             return bool(
                 self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
@@ -193,7 +181,7 @@ class Result(object):
 
     # Result
     def Callee(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
             return self._tab.Get(
                 flatbuffers.number_types.Uint64Flags, o + self._tab.Pos
@@ -202,21 +190,21 @@ class Result(object):
 
     # Result
     def CalleeAuthid(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
-        if o != 0:
-            return self._tab.String(o + self._tab.Pos)
-        return None
-
-    # Result
-    def CalleeAuthrole(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         if o != 0:
             return self._tab.String(o + self._tab.Pos)
         return None
 
     # Result
-    def ForwardFor(self, j):
+    def CalleeAuthrole(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
+        if o != 0:
+            return self._tab.String(o + self._tab.Pos)
+        return None
+
+    # Result
+    def ForwardFor(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         if o != 0:
             x = self._tab.Vector(o)
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
@@ -230,19 +218,19 @@ class Result(object):
 
     # Result
     def ForwardForLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Result
     def ForwardForIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         return o == 0
 
 
 def ResultStart(builder):
-    builder.StartObject(13)
+    builder.StartObject(14)
 
 
 def Start(builder):
@@ -319,42 +307,42 @@ def StartPayloadVector(builder, numElems):
     return ResultStartPayloadVector(builder, numElems)
 
 
-def ResultAddEncAlgo(builder, encAlgo):
-    builder.PrependUint8Slot(5, encAlgo, 0)
+def ResultAddPptScheme(builder, pptScheme):
+    builder.PrependUint8Slot(5, pptScheme, 0)
 
 
-def AddEncAlgo(builder, encAlgo):
-    ResultAddEncAlgo(builder, encAlgo)
+def AddPptScheme(builder, pptScheme):
+    ResultAddPptScheme(builder, pptScheme)
 
 
-def ResultAddEncSerializer(builder, encSerializer):
-    builder.PrependUint8Slot(6, encSerializer, 0)
+def ResultAddPptSerializer(builder, pptSerializer):
+    builder.PrependUint8Slot(6, pptSerializer, 0)
 
 
-def AddEncSerializer(builder, encSerializer):
-    ResultAddEncSerializer(builder, encSerializer)
+def AddPptSerializer(builder, pptSerializer):
+    ResultAddPptSerializer(builder, pptSerializer)
 
 
-def ResultAddEncKey(builder, encKey):
+def ResultAddPptCipher(builder, pptCipher):
+    builder.PrependUint8Slot(7, pptCipher, 0)
+
+
+def AddPptCipher(builder, pptCipher):
+    ResultAddPptCipher(builder, pptCipher)
+
+
+def ResultAddPptKeyid(builder, pptKeyid):
     builder.PrependUOffsetTRelativeSlot(
-        7, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0
+        8, flatbuffers.number_types.UOffsetTFlags.py_type(pptKeyid), 0
     )
 
 
-def AddEncKey(builder, encKey):
-    ResultAddEncKey(builder, encKey)
-
-
-def ResultStartEncKeyVector(builder, numElems):
-    return builder.StartVector(1, numElems, 1)
-
-
-def StartEncKeyVector(builder, numElems):
-    return ResultStartEncKeyVector(builder, numElems)
+def AddPptKeyid(builder, pptKeyid):
+    ResultAddPptKeyid(builder, pptKeyid)
 
 
 def ResultAddProgress(builder, progress):
-    builder.PrependBoolSlot(8, progress, 0)
+    builder.PrependBoolSlot(9, progress, 0)
 
 
 def AddProgress(builder, progress):
@@ -362,7 +350,7 @@ def AddProgress(builder, progress):
 
 
 def ResultAddCallee(builder, callee):
-    builder.PrependUint64Slot(9, callee, 0)
+    builder.PrependUint64Slot(10, callee, 0)
 
 
 def AddCallee(builder, callee):
@@ -371,7 +359,7 @@ def AddCallee(builder, callee):
 
 def ResultAddCalleeAuthid(builder, calleeAuthid):
     builder.PrependUOffsetTRelativeSlot(
-        10, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthid), 0
+        11, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthid), 0
     )
 
 
@@ -381,7 +369,7 @@ def AddCalleeAuthid(builder, calleeAuthid):
 
 def ResultAddCalleeAuthrole(builder, calleeAuthrole):
     builder.PrependUOffsetTRelativeSlot(
-        11, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthrole), 0
+        12, flatbuffers.number_types.UOffsetTFlags.py_type(calleeAuthrole), 0
     )
 
 
@@ -391,7 +379,7 @@ def AddCalleeAuthrole(builder, calleeAuthrole):
 
 def ResultAddForwardFor(builder, forwardFor):
     builder.PrependUOffsetTRelativeSlot(
-        12, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0
+        13, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0
     )
 
 

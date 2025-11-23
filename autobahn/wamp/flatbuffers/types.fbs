@@ -7,46 +7,49 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-// Define custom attributes to hint a string subtypes:
+/// Define custom attributes to hint a string subtypes:
 attribute "uri";
 attribute "uri_pattern";
 attribute "principal";
 attribute "hex";
 attribute "base64";
 
+/// WAMP Payload Passthru (PPT) encryption key id. The value can be a hex-encoded string, URI, DNS name, Ethereum address, UUID identifier - any meaningful value which allows the target peer to choose a private key without guessing. The format of the value may depend on the ppt_scheme attribute.
+attribute "ppt_keyid";
 
-// Namespace for WAMP.
+
+/// Namespace for WAMP.
 namespace wamp;
 
 
-// Simple mapping, from string keys to string values.
+/// Simple mapping, from string keys to string values.
 table Map {
-    // Key, which must match the regular expression `[A-Za-z_][A-Za-z0-9_]*`. That
-    // makes keys a valid identified in FlatBuffers (and most programming languages)
+    /// Key, which must match the regular expression `[A-Za-z_][A-Za-z0-9_]*`. That
+    /// makes keys a valid identified in FlatBuffers (and most programming languages)
     key: string (required, key);
 
-    // Value, which may be any (UTF8 encoded Unicode) string.
+    /// Value, which may be any (UTF8 encoded Unicode) string.
     value: string;
 }
 
-// Void type (table based) for use with services.
+/// Void type (table based) for use with services.
 table Void
 {
-    // nothing here!
+    /// nothing here!
 }
 
 
-// Namespace for WAMP protocol.
+/// Namespace for WAMP protocol.
 namespace wamp.proto;
 
 
-// WAMP message type IDs.
+/// WAMP message type IDs.
 enum MessageType: uint16
 {
-    // No valid message type
+    /// No valid message type
     NULL = 0,
 
-    // Session opening, authentication and closing
+    /// Session opening, authentication and closing
     HELLO = 1,
     WELCOME = 2,
     ABORT = 3,
@@ -54,10 +57,10 @@ enum MessageType: uint16
     AUTHENTICATE = 5,
     GOODBYE = 6,
 
-    // Used in both PubSub and RPC
+    /// Used in both PubSub and RPC
     ERROR = 8,
 
-    // Publish & Subscribe (PubSub)
+    /// Publish & Subscribe (PubSub)
     PUBLISH = 16,
     PUBLISHED = 17,
     SUBSCRIBE = 32,
@@ -65,10 +68,10 @@ enum MessageType: uint16
     UNSUBSCRIBE = 34,
     UNSUBSCRIBED = 35,
     EVENT = 36,
-    EVENT_RECEIVED = 37,        // NEW: for QoS level 2 PubSub ("exactly once delivery")
-                                // as well as "survey mode" PubSub response carrying
+    /// NEW: for QoS level 2 PubSub ("exactly once delivery") as well as "survey mode" PubSub response carrying
+    EVENT_RECEIVED = 37,
 
-    // Remote Procedure Calls (RPC)
+    /// Remote Procedure Calls (RPC)
     CALL = 48,
     CANCEL = 49,
     RESULT = 50,
@@ -82,117 +85,136 @@ enum MessageType: uint16
 }
 
 
-// WAMP session identity information.
+/// WAMP session identity information.
 table Principal
 {
-    // WAMP session ID.
+    /// WAMP session ID.
     session: uint64;
 
-    // WAMP session authentication ID.
+    /// WAMP session authentication ID.
     authid: string (principal);
 
-    // WAMP session authentication role.
+    /// WAMP session authentication role.
     authrole: string (principal);
 }
 
 
-// Application payload type.
-enum Payload: uint8
+/// WAMP Payload Passthru (PPT) scheme (renamed from `Payload`).
+enum PPTScheme: uint8
 {
-    // Plain WAMP application payload.
-    PLAIN = 0,
+    /// Unset (plain WAMP application payload)
+    NONE = 0,
 
-    // Encrypted WAMP application payload. This is using WAMP-cryptobox (Curve25519 / Cryptobox).
+    /// WAMP-cryptobox end-to-end encrypted application payload
     CRYPTOBOX = 1,
 
-    // Raw pass-through of app payload, uninterpreted in any way.
-    OPAQUE = 2
+    /// MQTT passthrough-mode application payload
+    MQTT = 2,
+
+    /// XBR end-to-end encrypted and Ethereum anchored application payload
+    XBR = 3,
+
+    /// Raw pass-through of app payload, uninterpreted in any way.
+    OPAQUE = 4
 }
 
 
-// Application payload serializer types.
-enum Serializer: uint8
+/// WAMP Payload Passthru (PPT) application payload serializer (renamed from `Serializer`).
+enum PPTSerializer: uint8
 {
-    // Use same (dynamic) serializer for the app payload as on the transport.
-    // This will be one of JSON, MSGPACK, CBOR or UBJSON.
+    /// Use same serializer (dynamically or statically typed) for the application payload as used on the transport for the WAMP message envelope.
     TRANSPORT = 0,
 
-    // Use JSON serializer (for dynamically typed app payload).
+    /// Use JSON serializer for dynamically typed application payload.
     JSON = 1,
 
-    // Use MsgPack serializer (for dynamically typed app payload).
+    /// Use MsgPack serializer for dynamically typed application payload.
     MSGPACK = 2,
 
-    // Use CBOR serializer (for dynamically typed app payload).
+    /// Use CBOR serializer for dynamically typed application payload.
     CBOR = 3,
 
-    // Use UBJSON serializer (for dynamically typed app payload).
+    /// Use UBJSON serializer for dynamically typed application payload.
     UBJSON = 4,
 
-    // Raw pass-through of app payload, uninterpreted in any way.
+    /// Raw pass-through of application payload, uninterpreted in any way.
     OPAQUE = 5,
 
-    // Use FlatBuffers serialized (statically typed) payload (https://google.github.io/flatbuffers/index.html).
+    /// Use FlatBuffers serializer for statically typed application payload (https://google.github.io/flatbuffers/index.html).
     FLATBUFFERS = 6,
 
-    // Use FlexBuffers serialized (dynamically typed) payload (https://google.github.io/flatbuffers/flexbuffers.html).
+    /// Use FlexBuffers serializer dynamically typed application payload (https://google.github.io/flatbuffers/flexbuffers.html).
     FLEXBUFFERS = 7
 }
 
 
-// Subscription topic matching method.
+/// WAMP Payload Passthru (PPT) application payload cipher (NEW!).
+enum PPTCipher: uint8
+{
+    /// No valid cipher (unfilled)
+    NULL = 0,
+
+    /// Particular combination of Salsa20 and Poly1305 specified in Daniel J. Bernstein, "Cryptography in NaCl" (https://cr.yp.to/highspeed/naclcrypto-20090310.pdf), see NaCl (https://nacl.cr.yp.to/) "crypto_secretbox_xsalsa20poly1305" (aka WAMP "cryptobox").
+    XSALSA20POLY1305 = 1,
+
+    /// Galois/Counter Mode (GCM), see https://en.wikipedia.org/wiki/Galois/Counter_Mode.
+    AES256GCM = 2
+}
+
+
+/// Subscription topic matching method.
 enum Match: uint8
 {
-    // Match URI exact.
+    /// Match URI exact.
     EXACT = 0,
 
-    // Match URI by prefix.
+    /// Match URI by prefix.
     PREFIX = 1,
 
-    // Match URI by wildcard.
+    /// Match URI by wildcard.
     WILDCARD = 2
 }
 
 
-// Remote procedure invocation policy, for use with shared registrations.
+/// Remote procedure invocation policy, for use with shared registrations.
 enum InvocationPolicy: uint8
 {
-    // Standard invocation policy: a procedure may only be registered by at most
-    // one callee at a time. This is the default.
+    /// Standard invocation policy: a procedure may only be registered by at most
+    /// one callee at a time. This is the default.
     SINGLE = 0,
 
-    // First callee invocation policy: all calls to a procedure are forwarded to
-    // the callee that first registered. Should that callee unregister, calls
-    // are forwarded to the callee that registered next after the former.
+    /// First callee invocation policy: all calls to a procedure are forwarded to
+    /// the callee that first registered. Should that callee unregister, calls
+    /// are forwarded to the callee that registered next after the former.
     FIRST = 1,
 
-    // Last callee invocation policy: all calls to a procedure are forwwrded to
-    // the callee that last registered. Should that callee unregister, calls
-    // are forwarded to the callee that registered next before the former.
+    /// Last callee invocation policy: all calls to a procedure are forwwrded to
+    /// the callee that last registered. Should that callee unregister, calls
+    /// are forwarded to the callee that registered next before the former.
     LAST = 2,
 
-    // Round-robin invocation policy: calls are forward to all registered callees
-    // in a round-robin fashion. Callees that unregister are removed from the
-    // round-robin list, and new callees registering will get calls immediately
-    // in the next dispatching round.
+    /// Round-robin invocation policy: calls are forward to all registered callees
+    /// in a round-robin fashion. Callees that unregister are removed from the
+    /// round-robin list, and new callees registering will get calls immediately
+    /// in the next dispatching round.
     ROUNDROBIN = 3,
 
-    // Random invocation policy: calls are forwarded to all registered callees
-    // in a random fashion. Callees that unregister are removed from the set
-    // of callees randomly drawn from to dispatch incoming calls.
+    /// Random invocation policy: calls are forwarded to all registered callees
+    /// in a random fashion. Callees that unregister are removed from the set
+    /// of callees randomly drawn from to dispatch incoming calls.
     RANDOM = 4
 }
 
 
-// Call cancel mode.
+/// Call cancel mode.
 enum CancelMode: uint8
 {
-    // Skip running invocation call.
+    /// Skip running invocation call.
     SKIP = 0,
 
-    // Abort running invocation and call.
-    ABORT = 1,
+    /// Kill running invocation and call.
+    KILL = 1,
 
-    // Kill running invocation and call.
-    KILL = 2
+    /// Kill running invocation and call without waiting.
+    KILLNOWAIT = 2
 }

@@ -8,6 +8,7 @@ EVENT_RECEIVED is sent by Subscriber to Broker to acknowledge EVENT receipt.
 
 Uses test vectors from: wamp-proto/testsuite/singlemessage/advanced/eventreceived.json
 """
+
 import pytest
 from autobahn.wamp.message import EventReceived
 from autobahn.wamp.serializer import create_transport_serializer
@@ -22,6 +23,7 @@ from .utils import (
 # =============================================================================
 # Test Vector Loading
 # =============================================================================
+
 
 @pytest.fixture(scope="module")
 def eventreceived_test_vector():
@@ -39,7 +41,10 @@ def eventreceived_samples(eventreceived_test_vector):
 # SerDes Tests
 # =============================================================================
 
-def test_eventreceived_deserialize_from_bytes(serializer_id, eventreceived_samples, create_serializer):
+
+def test_eventreceived_deserialize_from_bytes(
+    serializer_id, eventreceived_samples, create_serializer
+):
     """
     Test EVENT_RECEIVED deserialization from canonical bytes.
 
@@ -64,7 +69,7 @@ def test_eventreceived_deserialize_from_bytes(serializer_id, eventreceived_sampl
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
             elif "bytes" in variant:
-                test_bytes = variant["bytes"].encode('utf-8')
+                test_bytes = variant["bytes"].encode("utf-8")
             else:
                 continue
 
@@ -76,7 +81,9 @@ def test_eventreceived_deserialize_from_bytes(serializer_id, eventreceived_sampl
             assert msg.publication == sample["expected_attributes"]["publication_id"]
 
 
-def test_eventreceived_serialize_to_bytes(serializer_id, eventreceived_samples, create_serializer):
+def test_eventreceived_serialize_to_bytes(
+    serializer_id, eventreceived_samples, create_serializer
+):
     """
     Test EVENT_RECEIVED serialization to bytes.
 
@@ -105,7 +112,9 @@ def test_eventreceived_serialize_to_bytes(serializer_id, eventreceived_samples, 
         ), f"Serialized bytes don't match any valid representation for {serializer_id}"
 
 
-def test_eventreceived_roundtrip(serializer_id, eventreceived_samples, create_serializer):
+def test_eventreceived_roundtrip(
+    serializer_id, eventreceived_samples, create_serializer
+):
     """
     Test EVENT_RECEIVED roundtrip: deserialize → serialize → deserialize.
 
@@ -130,7 +139,7 @@ def test_eventreceived_roundtrip(serializer_id, eventreceived_samples, create_se
         if "bytes_hex" in variant:
             original_bytes = bytes_from_hex(variant["bytes_hex"])
         elif "bytes" in variant:
-            original_bytes = variant["bytes"].encode('utf-8')
+            original_bytes = variant["bytes"].encode("utf-8")
         else:
             continue
 

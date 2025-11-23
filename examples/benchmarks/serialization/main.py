@@ -69,7 +69,7 @@ from loader import (
     load,
 )
 
-__all__ = ['main_run', 'main_index']
+__all__ = ["main_run", "main_index"]
 
 
 def main_run(args: argparse.Namespace) -> None:
@@ -83,27 +83,27 @@ def main_run(args: argparse.Namespace) -> None:
     payload_mode = args.payload_mode
     payload_size = args.payload_size
 
-    python = 'cpy' if platform.python_implementation() == 'CPython' else 'pypy'
+    python = "cpy" if platform.python_implementation() == "CPython" else "pypy"
 
     filename_profile = args.profile
 
     # Detect actual serializer implementation (e.g., ujson vs json, cbor2 vs cbor)
-    if args.serializer == 'json' and 'AUTOBAHN_USE_UJSON' in os.environ:
-        _serializer = 'ujson'
-    elif args.serializer == 'cbor' and 'AUTOBAHN_USE_CBOR2' in os.environ:
-        _serializer = 'cbor2'
+    if args.serializer == "json" and "AUTOBAHN_USE_UJSON" in os.environ:
+        _serializer = "ujson"
+    elif args.serializer == "cbor" and "AUTOBAHN_USE_CBOR2" in os.environ:
+        _serializer = "cbor2"
     else:
         _serializer = args.serializer
 
     filename_results = os.path.join(
         args.results,
-        f'results_{python}_{_serializer}_{payload_mode}_{payload_size}.json'
+        f"results_{python}_{_serializer}_{payload_mode}_{payload_size}.json",
     )
 
     # Create serializer factory
     ser = create_transport_serializer(args.serializer)
 
-    print('Preparing benchmarking sample data ..')
+    print("Preparing benchmarking sample data ..")
     sample, vehicles = load(payload_mode=payload_mode, payload_size=payload_size)
 
     # Prepare sample for display
@@ -111,17 +111,21 @@ def main_run(args: argparse.Namespace) -> None:
         sample_display: Any = len(sample)
     elif isinstance(sample, VehicleEvent):
         sample_dict = sample.marshal()
-        if sample_dict and 'frame' in sample_dict:
-            sample_dict['frame'] = f'<<<<<<<<< BINARY data, {len(sample_dict["frame"])} bytes >>>>>>>>>>'
+        if sample_dict and "frame" in sample_dict:
+            sample_dict["frame"] = (
+                f"<<<<<<<<< BINARY data, {len(sample_dict['frame'])} bytes >>>>>>>>>>"
+            )
         sample_display = sample_dict
     else:
-        raise RuntimeError(f'unexpected type {type(sample)}')
+        raise RuntimeError(f"unexpected type {type(sample)}")
 
     total_events = sum(len(events) for events in vehicles.values())
 
-    print(f'Ok, data loaded from {len(vehicles)} vehicles, {total_events} events in total.')
-    print(f'Sample:\n{sample_display}')
-    print(f'Message serialization test starting with {ser.SERIALIZER_ID}-serializer ..')
+    print(
+        f"Ok, data loaded from {len(vehicles)} vehicles, {total_events} events in total."
+    )
+    print(f"Sample:\n{sample_display}")
+    print(f"Message serialization test starting with {ser.SERIALIZER_ID}-serializer ..")
 
     def loop(results: Optional[Dict[str, Any]] = None) -> None:
         """Inner benchmark loop."""
@@ -162,27 +166,27 @@ def main_run(args: argparse.Namespace) -> None:
         bytes_per_sec = int(round(float(total_bytes) / secs, 0))
 
         print(
-            f'Serialized {total_cnt} messages, {total_bytes} bytes in total, '
-            f'{total_bytes // total_cnt} bytes/msg, {msg_per_sec} msgs/sec, '
-            f'{bytes_per_sec} bytes/sec'
+            f"Serialized {total_cnt} messages, {total_bytes} bytes in total, "
+            f"{total_bytes // total_cnt} bytes/msg, {msg_per_sec} msgs/sec, "
+            f"{bytes_per_sec} bytes/sec"
         )
 
         if results is not None:
-            results['msg_bytes'] = int(round(total_bytes / total_cnt))
-            if 'msgs_per_sec' not in results:
-                results['msgs_per_sec'] = []
-            results['msgs_per_sec'].append(msg_per_sec)
-            if 'bytes_per_sec' not in results:
-                results['bytes_per_sec'] = []
-            results['bytes_per_sec'].append(bytes_per_sec)
+            results["msg_bytes"] = int(round(total_bytes / total_cnt))
+            if "msgs_per_sec" not in results:
+                results["msgs_per_sec"] = []
+            results["msgs_per_sec"].append(msg_per_sec)
+            if "bytes_per_sec" not in results:
+                results["bytes_per_sec"] = []
+            results["bytes_per_sec"].append(bytes_per_sec)
 
     # Warm-up phase
-    print(f'Warming up {ser.SERIALIZER_ID}-serializer for {iterations} iterations ..')
+    print(f"Warming up {ser.SERIALIZER_ID}-serializer for {iterations} iterations ..")
     t = Timer(lambda: loop())
     t.timeit(number=iterations)
 
     # Measurement phase with profiling
-    print(f'Measuring {ser.SERIALIZER_ID}-serializer {iterations} iterations ..')
+    print(f"Measuring {ser.SERIALIZER_ID}-serializer {iterations} iterations ..")
     results: Dict[str, Any] = {}
     fd = os.open(filename_profile, os.O_RDWR | os.O_CREAT | os.O_TRUNC, 0o644)
 
@@ -194,24 +198,28 @@ def main_run(args: argparse.Namespace) -> None:
     os.close(fd)
 
     # Calculate averages
-    msgs_per_sec = int(round(sum(results['msgs_per_sec']) / len(results['msgs_per_sec'])))
-    bytes_per_sec = int(round(sum(results['bytes_per_sec']) / len(results['bytes_per_sec'])))
+    msgs_per_sec = int(
+        round(sum(results["msgs_per_sec"]) / len(results["msgs_per_sec"]))
+    )
+    bytes_per_sec = int(
+        round(sum(results["bytes_per_sec"]) / len(results["bytes_per_sec"]))
+    )
 
     # Save results
-    with open(filename_results, 'w') as f:
+    with open(filename_results, "w") as f:
         obj = {
-            'python_version': sys.version,
-            'python': python,
-            'events': total_events,
-            'sample': sample_display,
-            'iterations': iterations,
-            'msg_bytes': results['msg_bytes'],
-            'msgs_per_sec': msgs_per_sec,
-            'bytes_per_sec': bytes_per_sec,
+            "python_version": sys.version,
+            "python": python,
+            "events": total_events,
+            "sample": sample_display,
+            "iterations": iterations,
+            "msg_bytes": results["msg_bytes"],
+            "msgs_per_sec": msgs_per_sec,
+            "bytes_per_sec": bytes_per_sec,
         }
         json.dump(obj, f)
 
-    print(f'Done: {msgs_per_sec} msgs/sec, {bytes_per_sec} bytes/sec')
+    print(f"Done: {msgs_per_sec} msgs/sec, {bytes_per_sec} bytes/sec")
 
 
 def main_index(args: argparse.Namespace) -> None:
@@ -224,166 +232,162 @@ def main_index(args: argparse.Namespace) -> None:
     output = args.output
 
     templates = jinja2.Environment(
-        loader=jinja2.FileSystemLoader('templates'),
+        loader=jinja2.FileSystemLoader("templates"),
         keep_trailing_newline=True,
-        autoescape=True
+        autoescape=True,
     )
 
-    template_index = templates.get_template('index.html')
-    template_flamegraph = templates.get_template('flamegraph.html')
+    template_index = templates.get_template("index.html")
+    template_flamegraph = templates.get_template("flamegraph.html")
 
     report_data: Dict[str, Any] = {
-        'generated': util.utcnow(),
-        'results': {
-            'cpy': {},
-            'pypy': {},
-        }
+        "generated": util.utcnow(),
+        "results": {
+            "cpy": {},
+            "pypy": {},
+        },
     }
 
     # All serializers and configurations
-    serializers = ['json', 'ujson', 'msgpack', 'cbor', 'cbor2', 'ubjson', 'flatbuffers']
-    payload_modes = ['normal', 'transparent']
-    payload_sizes = ['empty', 'small', 'medium', 'large', 'xl', 'xxl']
+    serializers = ["json", "ujson", "msgpack", "cbor", "cbor2", "ubjson", "flatbuffers"]
+    payload_modes = ["normal", "transparent"]
+    payload_sizes = ["empty", "small", "medium", "large", "xl", "xxl"]
 
-    for _python in report_data['results']:
+    for _python in report_data["results"]:
         for _ser in serializers:
-            if _ser not in report_data['results'][_python]:
-                report_data['results'][_python][_ser] = {}
+            if _ser not in report_data["results"][_python]:
+                report_data["results"][_python][_ser] = {}
             for _payload_mode in payload_modes:
-                if _payload_mode not in report_data['results'][_python][_ser]:
-                    report_data['results'][_python][_ser][_payload_mode] = {}
+                if _payload_mode not in report_data["results"][_python][_ser]:
+                    report_data["results"][_python][_ser][_payload_mode] = {}
                 for _payload_size in payload_sizes:
                     fn = os.path.join(
                         output,
-                        f'results_{_python}_{_ser}_{_payload_mode}_{_payload_size}.json'
+                        f"results_{_python}_{_ser}_{_payload_mode}_{_payload_size}.json",
                     )
                     if os.path.isfile(fn):
                         with open(fn) as f:
                             data = json.load(f)
-                            report_data['results'][_python][_ser][_payload_mode][_payload_size] = data
-                        print(f'File added    : {fn}')
+                            report_data["results"][_python][_ser][_payload_mode][
+                                _payload_size
+                            ] = data
+                        print(f"File added    : {fn}")
 
                         # Generate flamegraph HTML
                         fn_svg = os.path.join(
                             output,
-                            f'vmprof_{_python}_{_ser}_{_payload_mode}_{_payload_size}.html'
+                            f"vmprof_{_python}_{_ser}_{_payload_mode}_{_payload_size}.html",
                         )
-                        with open(fn_svg, 'w') as f:
-                            data['python'] = _python
-                            data['serializer'] = _ser
-                            data['payload_mode'] = _payload_mode
-                            data['payload_size'] = _payload_size
+                        with open(fn_svg, "w") as f:
+                            data["python"] = _python
+                            data["serializer"] = _ser
+                            data["payload_mode"] = _payload_mode
+                            data["payload_size"] = _payload_size
                             s = template_flamegraph.render(
                                 naturalsize=humanize.naturalsize,
                                 intword=humanize.intword,
                                 intcomma=humanize.intcomma,
                                 sorted=sorted,
-                                **data
+                                **data,
                             )
                             f.write(s)
                     else:
-                        print(f'File not found: {fn}')
+                        print(f"File not found: {fn}")
 
                 # Clean up empty configurations
-                if not report_data['results'][_python][_ser][_payload_mode]:
-                    del report_data['results'][_python][_ser][_payload_mode]
-            if not report_data['results'][_python][_ser]:
-                del report_data['results'][_python][_ser]
+                if not report_data["results"][_python][_ser][_payload_mode]:
+                    del report_data["results"][_python][_ser][_payload_mode]
+            if not report_data["results"][_python][_ser]:
+                del report_data["results"][_python][_ser]
 
     # Generate index HTML
-    with open(os.path.join(output, 'index.html'), 'w') as f:
+    with open(os.path.join(output, "index.html"), "w") as f:
         s = template_index.render(
             naturalsize=humanize.naturalsize,
             intword=humanize.intword,
             intcomma=humanize.intcomma,
             sorted=sorted,
-            **report_data
+            **report_data,
         )
         f.write(s)
 
-    print(f'Report generated: {os.path.join(output, "index.html")}')
+    print(f"Report generated: {os.path.join(output, 'index.html')}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='WAMP Message Serialization Benchmarks'
+        description="WAMP Message Serialization Benchmarks"
     )
     subparsers = parser.add_subparsers(
-        dest='command',
-        title='commands',
-        help='Command to run (required)'
+        dest="command", title="commands", help="Command to run (required)"
     )
     subparsers.required = True
 
     # Run benchmark subcommand
-    parser_run = subparsers.add_parser(
-        'run',
-        help='Run serialization benchmark'
-    )
+    parser_run = subparsers.add_parser("run", help="Run serialization benchmark")
 
     parser_run.add_argument(
-        '--iterations',
-        dest='iterations',
+        "--iterations",
+        dest="iterations",
         type=int,
         default=10,
-        help='Number of iterations in the benchmarking loop (default: 10)'
+        help="Number of iterations in the benchmarking loop (default: 10)",
     )
 
     parser_run.add_argument(
-        '--serializer',
-        dest='serializer',
-        choices=['json', 'cbor', 'msgpack', 'ubjson', 'flatbuffers'],
-        default='cbor',
-        help='Serializer to use (implementation variants like ujson/json or cbor2/cbor '
-             'can be selected via AUTOBAHN_USE_UJSON or AUTOBAHN_USE_CBOR2 env vars)'
+        "--serializer",
+        dest="serializer",
+        choices=["json", "cbor", "msgpack", "ubjson", "flatbuffers"],
+        default="cbor",
+        help="Serializer to use (implementation variants like ujson/json or cbor2/cbor "
+        "can be selected via AUTOBAHN_USE_UJSON or AUTOBAHN_USE_CBOR2 env vars)",
     )
 
     parser_run.add_argument(
-        '--payload_mode',
-        dest='payload_mode',
-        choices=['normal', 'transparent'],
-        default='normal',
-        help='WAMP payload mode: normal (args) or transparent (payload)'
+        "--payload_mode",
+        dest="payload_mode",
+        choices=["normal", "transparent"],
+        default="normal",
+        help="WAMP payload mode: normal (args) or transparent (payload)",
     )
 
     parser_run.add_argument(
-        '--payload_size',
-        dest='payload_size',
-        choices=['empty', 'small', 'medium', 'large', 'xl', 'xxl'],
-        default='small',
-        help='Payload size category'
+        "--payload_size",
+        dest="payload_size",
+        choices=["empty", "small", "medium", "large", "xl", "xxl"],
+        default="small",
+        help="Payload size category",
     )
 
     parser_run.add_argument(
-        '--profile',
-        dest='profile',
+        "--profile",
+        dest="profile",
         type=str,
         required=True,
-        help='vmprof profile output filename (.dat)'
+        help="vmprof profile output filename (.dat)",
     )
 
     parser_run.add_argument(
-        '--results',
-        dest='results',
+        "--results",
+        dest="results",
         type=str,
         required=True,
-        help='Results output directory'
+        help="Results output directory",
     )
 
     parser_run.set_defaults(func=main_run)
 
     # Index generation subcommand
     parser_index = subparsers.add_parser(
-        'index',
-        help='Generate HTML report index from benchmark results'
+        "index", help="Generate HTML report index from benchmark results"
     )
 
     parser_index.add_argument(
-        '--output',
-        dest='output',
+        "--output",
+        dest="output",
         type=str,
         required=True,
-        help='Output directory for HTML report'
+        help="Output directory for HTML report",
     )
 
     parser_index.set_defaults(func=main_index)

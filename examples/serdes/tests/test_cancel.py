@@ -8,6 +8,7 @@ CANCEL is sent by Caller to Dealer to cancel a pending CALL.
 
 Uses test vectors from: wamp-proto/testsuite/singlemessage/advanced/cancel.json
 """
+
 import pytest
 from autobahn.wamp.message import Cancel
 from autobahn.wamp.serializer import create_transport_serializer
@@ -22,6 +23,7 @@ from .utils import (
 # =============================================================================
 # Test Vector Loading
 # =============================================================================
+
 
 @pytest.fixture(scope="module")
 def cancel_test_vector():
@@ -39,7 +41,10 @@ def cancel_samples(cancel_test_vector):
 # SerDes Tests
 # =============================================================================
 
-def test_cancel_deserialize_from_bytes(serializer_id, cancel_samples, create_serializer):
+
+def test_cancel_deserialize_from_bytes(
+    serializer_id, cancel_samples, create_serializer
+):
     """
     Test CANCEL deserialization from canonical bytes.
 
@@ -64,7 +69,7 @@ def test_cancel_deserialize_from_bytes(serializer_id, cancel_samples, create_ser
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
             elif "bytes" in variant:
-                test_bytes = variant["bytes"].encode('utf-8')
+                test_bytes = variant["bytes"].encode("utf-8")
             else:
                 continue
 
@@ -130,7 +135,7 @@ def test_cancel_roundtrip(serializer_id, cancel_samples, create_serializer):
         if "bytes_hex" in variant:
             original_bytes = bytes_from_hex(variant["bytes_hex"])
         elif "bytes" in variant:
-            original_bytes = variant["bytes"].encode('utf-8')
+            original_bytes = variant["bytes"].encode("utf-8")
         else:
             continue
 

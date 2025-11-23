@@ -8,6 +8,7 @@ from flatbuffers.compat import import_numpy
 np = import_numpy()
 
 
+# Simple mapping, from string keys to string values.
 class Map(object):
     __slots__ = ["_tab"]
 
@@ -27,6 +28,8 @@ class Map(object):
     def Init(self, buf, pos):
         self._tab = flatbuffers.table.Table(buf, pos)
 
+    # Key, which must match the regular expression `[A-Za-z_][A-Za-z0-9_]*`. That
+    # makes keys a valid identified in FlatBuffers (and most programming languages)
     # Map
     def Key(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
@@ -34,6 +37,7 @@ class Map(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
+    # Value, which may be any (UTF8 encoded Unicode) string.
     # Map
     def Value(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))

@@ -8,6 +8,7 @@ Tests SUBSCRIBE message serialization and deserialization:
 
 Uses test vectors from: wamp-proto/testsuite/singlemessage/basic/subscribe.json
 """
+
 import pytest
 from autobahn.wamp.message import Subscribe
 from autobahn.wamp.serializer import create_transport_serializer
@@ -25,6 +26,7 @@ from .utils import (
 # =============================================================================
 # Test Vector Loading
 # =============================================================================
+
 
 @pytest.fixture(scope="module")
 def subscribe_test_vector():
@@ -49,7 +51,10 @@ def subscribe_validation_samples(subscribe_test_vector):
 # Dimension 1: Single-Serializer Roundtrip Correctness
 # =============================================================================
 
-def test_subscribe_deserialize_from_bytes(serializer_id, subscribe_samples, create_serializer):
+
+def test_subscribe_deserialize_from_bytes(
+    serializer_id, subscribe_samples, create_serializer
+):
     """
     Test SUBSCRIBE deserialization from canonical bytes.
 
@@ -74,7 +79,7 @@ def test_subscribe_deserialize_from_bytes(serializer_id, subscribe_samples, crea
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
             elif "bytes" in variant:
-                test_bytes = variant["bytes"].encode('utf-8')
+                test_bytes = variant["bytes"].encode("utf-8")
             else:
                 continue
 
@@ -96,7 +101,9 @@ def test_subscribe_deserialize_from_bytes(serializer_id, subscribe_samples, crea
                 assert msg.forward_for == expected_options["forward_for"]
 
 
-def test_subscribe_serialize_to_bytes(serializer_id, subscribe_samples, create_serializer):
+def test_subscribe_serialize_to_bytes(
+    serializer_id, subscribe_samples, create_serializer
+):
     """
     Test SUBSCRIBE serialization to bytes.
 
@@ -158,7 +165,7 @@ def test_subscribe_roundtrip(serializer_id, subscribe_samples, create_serializer
         if "bytes_hex" in variant:
             original_bytes = bytes_from_hex(variant["bytes_hex"])
         elif "bytes" in variant:
-            original_bytes = variant["bytes"].encode('utf-8')
+            original_bytes = variant["bytes"].encode("utf-8")
         else:
             continue
 
@@ -185,14 +192,19 @@ def test_subscribe_roundtrip(serializer_id, subscribe_samples, create_serializer
 # Dimension 2: Options Validation
 # =============================================================================
 
+
 def test_subscribe_options_validation_sample_count(subscribe_validation_samples):
     """Verify we have the expected number of validation samples"""
     assert len(subscribe_validation_samples) > 0, "No validation samples found"
-    print(f"\nLoaded {len(subscribe_validation_samples)} SUBSCRIBE.Options validation samples from JSON")
+    print(
+        f"\nLoaded {len(subscribe_validation_samples)} SUBSCRIBE.Options validation samples from JSON"
+    )
 
 
 @pytest.mark.parametrize("sample_index", range(11))  # We have 11 validation samples
-def test_subscribe_options_validation_from_json(subscribe_validation_samples, sample_index):
+def test_subscribe_options_validation_from_json(
+    subscribe_validation_samples, sample_index
+):
     """Test SUBSCRIBE.Options validation using language-agnostic JSON test vectors
 
     This test loads validation samples from wamp-proto/testsuite/singlemessage/basic/subscribe.json
@@ -231,8 +243,12 @@ def test_subscribe_options_validation_from_json(subscribe_validation_samples, sa
         # This sample should parse successfully
         try:
             msg = Subscribe.parse(wmsg)
-            assert isinstance(msg, Subscribe), f"parse() should return Subscribe instance for: {description}"
+            assert isinstance(msg, Subscribe), (
+                f"parse() should return Subscribe instance for: {description}"
+            )
             assert msg.request == wmsg[1], f"request mismatch for: {description}"
             assert msg.topic == wmsg[3], f"topic mismatch for: {description}"
         except Exception as e:
-            pytest.fail(f"Expected successful parse, but got {type(e).__name__}: {e}\nTest: {description}")
+            pytest.fail(
+                f"Expected successful parse, but got {type(e).__name__}: {e}\nTest: {description}"
+            )

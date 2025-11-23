@@ -2,16 +2,20 @@
 
 # namespace: proto
 
-
+# WAMP message type IDs.
 class MessageType(object):
+    # No valid message type
     NULL = 0
+    # Session opening, authentication and closing
     HELLO = 1
     WELCOME = 2
     ABORT = 3
     CHALLENGE = 4
     AUTHENTICATE = 5
     GOODBYE = 6
+    # Used in both PubSub and RPC
     ERROR = 8
+    # Publish & Subscribe (PubSub)
     PUBLISH = 16
     PUBLISHED = 17
     SUBSCRIBE = 32
@@ -19,7 +23,9 @@ class MessageType(object):
     UNSUBSCRIBE = 34
     UNSUBSCRIBED = 35
     EVENT = 36
+    # NEW: for QoS level 2 PubSub ("exactly once delivery") as well as "survey mode" PubSub response carrying
     EVENT_RECEIVED = 37
+    # Remote Procedure Calls (RPC)
     CALL = 48
     CANCEL = 49
     RESULT = 50

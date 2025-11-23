@@ -838,7 +838,7 @@ class MessageWithAppPayload(object):
     def enc_algo(self):
         """Lazy deserialization of enc_algo from FlatBuffers"""
         if self._enc_algo is None and self._from_fbs:
-            enc_algo = self._from_fbs.EncAlgo()
+            enc_algo = self._from_fbs.PptScheme()
             if enc_algo:
                 # Convert FlatBuffers enum integer to string
                 self._enc_algo = ENC_ALGOS.get(enc_algo)
@@ -853,20 +853,19 @@ class MessageWithAppPayload(object):
     def enc_key(self):
         """Lazy deserialization of enc_key from FlatBuffers"""
         if self._enc_key is None and self._from_fbs:
-            if self._from_fbs.EncKeyLength():
-                self._enc_key = self._from_fbs.EncKeyAsBytes()
+            self._enc_key = self._from_fbs.PptKeyid()
         return self._enc_key
 
     @enc_key.setter
     def enc_key(self, value):
-        assert value is None or type(value) == bytes
+        assert value is None or type(value) == str
         self._enc_key = value
 
     @property
     def enc_serializer(self):
         """Lazy deserialization of enc_serializer from FlatBuffers"""
         if self._enc_serializer is None and self._from_fbs:
-            enc_serializer = self._from_fbs.EncSerializer()
+            enc_serializer = self._from_fbs.PptSerializer()
             if enc_serializer:
                 # Convert FlatBuffers enum integer to string
                 self._enc_serializer = ENC_SERS.get(enc_serializer)
@@ -3081,7 +3080,7 @@ class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         callee_authid = self.callee_authid
         if callee_authid:
@@ -3134,11 +3133,11 @@ class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
         if payload:
             message_fbs.ErrorGen.ErrorAddPayload(builder, payload)
         if self.enc_algo:
-            message_fbs.ErrorGen.ErrorAddEncAlgo(builder, self.enc_algo)
+            message_fbs.ErrorGen.ErrorAddPptScheme(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.ErrorGen.ErrorAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.ErrorGen.ErrorAddPptSerializer(builder, self.enc_serializer)
         if enc_key:
-            message_fbs.ErrorGen.ErrorAddEncKey(builder, enc_key)
+            message_fbs.ErrorGen.ErrorAddPptKeyid(builder, enc_key)
         if forward_for:
             message_fbs.ErrorGen.ErrorAddForwardFor(builder, forward_for)
 
@@ -3879,7 +3878,7 @@ class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         # exclude: [int]
         exclude = self.exclude
@@ -4009,13 +4008,13 @@ class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
         if self.enc_algo:
             # Convert string enc_algo to FlatBuffers enum value
             enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
-            message_fbs.PublishGen.PublishAddEncAlgo(builder, enc_algo_int)
+            message_fbs.PublishGen.PublishAddPptScheme(builder, enc_algo_int)
         if self.enc_serializer:
             # Convert string enc_serializer to FlatBuffers enum value
             enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
-            message_fbs.PublishGen.PublishAddEncSerializer(builder, enc_serializer_int)
+            message_fbs.PublishGen.PublishAddPptSerializer(builder, enc_serializer_int)
         if enc_key:
-            message_fbs.PublishGen.PublishAddEncKey(builder, enc_key)
+            message_fbs.PublishGen.PublishAddPptKeyid(builder, enc_key)
 
         if self.acknowledge is not None:
             message_fbs.PublishGen.PublishAddAcknowledge(builder, self.acknowledge)
@@ -5691,7 +5690,7 @@ class Event(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         # forward_for: [Principal]
         forward_for = None
@@ -5763,13 +5762,13 @@ class Event(MessageWithAppPayload, MessageWithForwardFor, Message):
         if self.enc_algo:
             # Convert string enc_algo to FlatBuffers enum value
             enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
-            message_fbs.EventGen.EventAddEncAlgo(builder, enc_algo_int)
+            message_fbs.EventGen.EventAddPptScheme(builder, enc_algo_int)
         if enc_key:
-            message_fbs.EventGen.EventAddEncKey(builder, enc_key)
+            message_fbs.EventGen.EventAddPptKeyid(builder, enc_key)
         if self.enc_serializer:
             # Convert string enc_serializer to FlatBuffers enum value
             enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
-            message_fbs.EventGen.EventAddEncSerializer(builder, enc_serializer_int)
+            message_fbs.EventGen.EventAddPptSerializer(builder, enc_serializer_int)
 
         if forward_for:
             message_fbs.EventGen.EventAddForwardFor(builder, forward_for)
@@ -6519,7 +6518,7 @@ class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         # forward_for: [Principal]
         forward_for = self.forward_for
@@ -6564,11 +6563,11 @@ class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
         if payload:
             message_fbs.CallGen.CallAddPayload(builder, payload)
         if self.enc_algo:
-            message_fbs.CallGen.CallAddEncAlgo(builder, self.enc_algo)
+            message_fbs.CallGen.CallAddPptScheme(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.CallGen.CallAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.CallGen.CallAddPptSerializer(builder, self.enc_serializer)
         if enc_key:
-            message_fbs.CallGen.CallAddEncKey(builder, enc_key)
+            message_fbs.CallGen.CallAddPptKeyid(builder, enc_key)
         if self.timeout:
             message_fbs.CallGen.CallAddTimeout(builder, self.timeout)
         if self.receive_progress:
@@ -7304,7 +7303,7 @@ class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         callee_authid = self.callee_authid
         if callee_authid:
@@ -7355,11 +7354,11 @@ class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
         if payload:
             message_fbs.ResultGen.ResultAddPayload(builder, payload)
         if self.enc_algo:
-            message_fbs.ResultGen.ResultAddEncAlgo(builder, self.enc_algo)
+            message_fbs.ResultGen.ResultAddPptScheme(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.ResultGen.ResultAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.ResultGen.ResultAddPptSerializer(builder, self.enc_serializer)
         if enc_key:
-            message_fbs.ResultGen.ResultAddEncKey(builder, enc_key)
+            message_fbs.ResultGen.ResultAddPptKeyid(builder, enc_key)
         if self.progress:
             message_fbs.ResultGen.ResultAddProgress(builder, self.progress)
         if self.callee:
@@ -7593,7 +7592,6 @@ class Register(MessageWithForwardFor, Message):
     INVOKE_LAST = "last"
     INVOKE_ROUNDROBIN = "roundrobin"
     INVOKE_RANDOM = "random"
-    INVOKE_ALL = "all"
 
     # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
@@ -8832,7 +8830,7 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         # forward_for: [Principal]
         forward_for = self.forward_for
@@ -8895,13 +8893,13 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
         if procedure:
             message_fbs.InvocationGen.InvocationAddProcedure(builder, procedure)
         if self.enc_algo:
-            message_fbs.InvocationGen.InvocationAddEncAlgo(builder, self.enc_algo)
+            message_fbs.InvocationGen.InvocationAddPptScheme(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.InvocationGen.InvocationAddEncSerializer(
+            message_fbs.InvocationGen.InvocationAddPptSerializer(
                 builder, self.enc_serializer
             )
         if enc_key:
-            message_fbs.InvocationGen.InvocationAddEncKey(builder, enc_key)
+            message_fbs.InvocationGen.InvocationAddPptKeyid(builder, enc_key)
         if transaction_hash:
             message_fbs.InvocationGen.InvocationAddTransactionHash(
                 builder, transaction_hash
@@ -9694,7 +9692,7 @@ class Yield(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         callee_authid = self.callee_authid
         if callee_authid:
@@ -9745,11 +9743,11 @@ class Yield(MessageWithAppPayload, MessageWithForwardFor, Message):
         if self.progress:
             message_fbs.YieldGen.YieldAddProgress(builder, self.progress)
         if self.enc_algo:
-            message_fbs.YieldGen.YieldAddEncAlgo(builder, self.enc_algo)
+            message_fbs.YieldGen.YieldAddPptScheme(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.YieldGen.YieldAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.YieldGen.YieldAddPptSerializer(builder, self.enc_serializer)
         if enc_key:
-            message_fbs.YieldGen.YieldAddEncKey(builder, enc_key)
+            message_fbs.YieldGen.YieldAddPptKeyid(builder, enc_key)
         if self.callee:
             message_fbs.YieldGen.YieldAddCallee(builder, self.callee)
         if callee_authid:

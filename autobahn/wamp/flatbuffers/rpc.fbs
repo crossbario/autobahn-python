@@ -33,14 +33,17 @@ table Call
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // If present, cancel the call after this duration in ms.
     timeout: uint32;
@@ -100,14 +103,17 @@ table Result
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // If true, this result is a progressive call result, and subsequent results (or a final error) will follow.
     progress: bool;
@@ -218,14 +224,17 @@ table Invocation
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // For pattern-based registrations (not for exact matching registrations, the invocation MUST include the actual procedure being called.
     procedure: string (uri);
@@ -263,7 +272,7 @@ table Interrupt
     request: uint64 (key);
 
     // Specifies how to interrupt the invocation.
-    mode: CancelMode = ABORT;
+    mode: CancelMode = KILL;
 
     // The reason (an URI) for the invocation interrupt.
     reason: string (uri);
@@ -291,14 +300,17 @@ table Yield
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // If true, this result is a progressive invocation result, and subsequent results (or a final error) will follow.
     progress: bool;

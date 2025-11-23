@@ -9,6 +9,7 @@ just [UNSUBSCRIBED, UNSUBSCRIBE.Request|id]
 
 Uses test vectors from: wamp-proto/testsuite/singlemessage/basic/unsubscribed.json
 """
+
 import pytest
 from autobahn.wamp.message import Unsubscribed
 from autobahn.wamp.serializer import create_transport_serializer
@@ -23,6 +24,7 @@ from .utils import (
 # =============================================================================
 # Test Vector Loading
 # =============================================================================
+
 
 @pytest.fixture(scope="module")
 def unsubscribed_test_vector():
@@ -40,7 +42,10 @@ def unsubscribed_samples(unsubscribed_test_vector):
 # SerDes Tests
 # =============================================================================
 
-def test_unsubscribed_deserialize_from_bytes(serializer_id, unsubscribed_samples, create_serializer):
+
+def test_unsubscribed_deserialize_from_bytes(
+    serializer_id, unsubscribed_samples, create_serializer
+):
     """
     Test UNSUBSCRIBED deserialization from canonical bytes.
 
@@ -65,7 +70,7 @@ def test_unsubscribed_deserialize_from_bytes(serializer_id, unsubscribed_samples
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
             elif "bytes" in variant:
-                test_bytes = variant["bytes"].encode('utf-8')
+                test_bytes = variant["bytes"].encode("utf-8")
             else:
                 continue
 
@@ -77,7 +82,9 @@ def test_unsubscribed_deserialize_from_bytes(serializer_id, unsubscribed_samples
             assert msg.request == sample["expected_attributes"]["request_id"]
 
 
-def test_unsubscribed_serialize_to_bytes(serializer_id, unsubscribed_samples, create_serializer):
+def test_unsubscribed_serialize_to_bytes(
+    serializer_id, unsubscribed_samples, create_serializer
+):
     """
     Test UNSUBSCRIBED serialization to bytes.
 
@@ -95,9 +102,7 @@ def test_unsubscribed_serialize_to_bytes(serializer_id, unsubscribed_samples, cr
 
         # Construct message
         attrs = sample["expected_attributes"]
-        msg = Unsubscribed(
-            request=attrs["request_id"]
-        )
+        msg = Unsubscribed(request=attrs["request_id"])
 
         # Serialize
         serialized_bytes, is_binary = serializer.serialize(msg)
@@ -133,7 +138,7 @@ def test_unsubscribed_roundtrip(serializer_id, unsubscribed_samples, create_seri
         if "bytes_hex" in variant:
             original_bytes = bytes_from_hex(variant["bytes_hex"])
         elif "bytes" in variant:
-            original_bytes = variant["bytes"].encode('utf-8')
+            original_bytes = variant["bytes"].encode("utf-8")
         else:
             continue
 
