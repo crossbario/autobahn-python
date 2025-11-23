@@ -1277,8 +1277,9 @@ class Hello(Message):
         message_fbs.HelloGen.HelloStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.HelloGen.HelloAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.HelloGen.HelloAddSession(builder, session)
         if realm:
             message_fbs.HelloGen.HelloAddRealm(builder, realm)
         if authid:
@@ -2198,8 +2199,9 @@ class Abort(Message):
         message_fbs.AbortGen.AbortStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.AbortGen.AbortAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.AbortGen.AbortAddSession(builder, session)
         if reason:
             message_fbs.AbortGen.AbortAddReason(builder, reason)
         if message:
@@ -2372,8 +2374,9 @@ class Challenge(Message):
         message_fbs.ChallengeGen.ChallengeStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.ChallengeGen.ChallengeAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.ChallengeGen.ChallengeAddSession(builder, session)
 
         # Method: Map string to AuthMethod enum
         # For simplicity, default to ANONYMOUS (0) for now
@@ -2547,8 +2550,9 @@ class Authenticate(Message):
         message_fbs.AuthenticateGen.AuthenticateStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.AuthenticateGen.AuthenticateAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.AuthenticateGen.AuthenticateAddSession(builder, session)
         if signature:
             message_fbs.AuthenticateGen.AuthenticateAddSignature(builder, signature)
 
@@ -2742,8 +2746,9 @@ class Goodbye(Message):
         message_fbs.GoodbyeGen.GoodbyeStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.GoodbyeGen.GoodbyeAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.GoodbyeGen.GoodbyeAddSession(builder, session)
         if reason:
             message_fbs.GoodbyeGen.GoodbyeAddReason(builder, reason)
         if message:
@@ -4505,8 +4510,9 @@ class Published(Message):
     def build(self, builder, serializer=None):
         message_fbs.PublishedGen.PublishedStart(builder)
 
-        if self.session:
-            message_fbs.PublishedGen.PublishedAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.PublishedGen.PublishedAddSession(builder, session)
         if self.request:
             message_fbs.PublishedGen.PublishedAddRequest(builder, self.request)
         if self.publication:
@@ -4809,8 +4815,9 @@ class Subscribe(MessageWithForwardFor, Message):
         message_fbs.SubscribeGen.SubscribeStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.SubscribeGen.SubscribeAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.SubscribeGen.SubscribeAddSession(builder, session)
         if self.request:
             message_fbs.SubscribeGen.SubscribeAddRequest(builder, self.request)
         if topic:
@@ -4920,8 +4927,9 @@ class Subscribed(Message):
     def build(self, builder, serializer=None):
         message_fbs.SubscribedGen.SubscribedStart(builder)
 
-        if self.session:
-            message_fbs.SubscribedGen.SubscribedAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.SubscribedGen.SubscribedAddSession(builder, session)
         if self.request:
             message_fbs.SubscribedGen.SubscribedAddRequest(builder, self.request)
         if self.subscription:
@@ -5107,8 +5115,9 @@ class Unsubscribe(MessageWithForwardFor, Message):
     def build(self, builder, serializer=None):
         message_fbs.UnsubscribeGen.UnsubscribeStart(builder)
 
-        if self.session:
-            message_fbs.UnsubscribeGen.UnsubscribeAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.UnsubscribeGen.UnsubscribeAddSession(builder, session)
         if self.request:
             message_fbs.UnsubscribeGen.UnsubscribeAddRequest(builder, self.request)
         if self.subscription:
@@ -5300,8 +5309,9 @@ class Unsubscribed(Message):
         message_fbs.UnsubscribedGen.UnsubscribedStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.UnsubscribedGen.UnsubscribedAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.UnsubscribedGen.UnsubscribedAddSession(builder, session)
         if self.request:
             message_fbs.UnsubscribedGen.UnsubscribedAddRequest(builder, self.request)
         if self.subscription:
@@ -7993,8 +8003,9 @@ class Register(MessageWithForwardFor, Message):
         message_fbs.RegisterGen.RegisterStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.RegisterGen.RegisterAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.RegisterGen.RegisterAddSession(builder, session)
         if self.request:
             message_fbs.RegisterGen.RegisterAddRequest(builder, self.request)
         if procedure:
@@ -8149,8 +8160,9 @@ class Registered(Message):
     def build(self, builder, serializer=None):
         message_fbs.RegisteredGen.RegisteredStart(builder)
 
-        if self.session:
-            message_fbs.RegisteredGen.RegisteredAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.RegisteredGen.RegisteredAddSession(builder, session)
         if self.request:
             message_fbs.RegisteredGen.RegisteredAddRequest(builder, self.request)
         if self.registration:
@@ -8483,8 +8495,9 @@ class Unregistered(Message):
         message_fbs.UnregisteredGen.UnregisteredStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.UnregisteredGen.UnregisteredAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.UnregisteredGen.UnregisteredAddSession(builder, session)
         if self.request:
             message_fbs.UnregisteredGen.UnregisteredAddRequest(builder, self.request)
         if self.registration:

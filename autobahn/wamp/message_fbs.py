@@ -25,16 +25,64 @@
 ###############################################################################
 
 import flatbuffers
-from autobahn.wamp.gen.wamp.proto import Event as EventGen
-from autobahn.wamp.gen.wamp.proto import Publish as PublishGen
 
+# Message type and enums
 from autobahn.wamp.gen.wamp.proto import Message
 from autobahn.wamp.gen.wamp.proto.MessageType import MessageType
+
+# Enums used by message build() methods
+from autobahn.wamp.gen.wamp.proto.Match import Match
+from autobahn.wamp.gen.wamp.proto.InvocationPolicy import InvocationPolicy
+from autobahn.wamp.gen.wamp.proto.CancelMode import CancelMode
+
+# Category 1: Session lifecycle messages (neither payload nor forwarding)
+from autobahn.wamp.gen.wamp.proto import Hello as HelloGen
+from autobahn.wamp.gen.wamp.proto import Welcome as WelcomeGen
+from autobahn.wamp.gen.wamp.proto import Abort as AbortGen
+from autobahn.wamp.gen.wamp.proto import Challenge as ChallengeGen
+from autobahn.wamp.gen.wamp.proto import Authenticate as AuthenticateGen
+from autobahn.wamp.gen.wamp.proto import Goodbye as GoodbyeGen
+
+# Category 1: PubSub messages (neither payload nor forwarding)
+from autobahn.wamp.gen.wamp.proto import Subscribe as SubscribeGen
+from autobahn.wamp.gen.wamp.proto import Subscribed as SubscribedGen
+from autobahn.wamp.gen.wamp.proto import Unsubscribe as UnsubscribeGen
+from autobahn.wamp.gen.wamp.proto import Unsubscribed as UnsubscribedGen
+from autobahn.wamp.gen.wamp.proto import Published as PublishedGen
+
+# Category 1: RPC messages (neither payload nor forwarding)
+from autobahn.wamp.gen.wamp.proto import Register as RegisterGen
+from autobahn.wamp.gen.wamp.proto import Registered as RegisteredGen
+from autobahn.wamp.gen.wamp.proto import Unregister as UnregisterGen
+from autobahn.wamp.gen.wamp.proto import Unregistered as UnregisteredGen
+
+# Category 4: PubSub messages (both payload and forwarding)
+from autobahn.wamp.gen.wamp.proto import Event as EventGen
+from autobahn.wamp.gen.wamp.proto import Publish as PublishGen
 
 __all__ = (
     "Event",
     "Message",
     "MessageType",
+    "Match",
+    "InvocationPolicy",
+    "CancelMode",
+    "HelloGen",
+    "WelcomeGen",
+    "AbortGen",
+    "ChallengeGen",
+    "AuthenticateGen",
+    "GoodbyeGen",
+    "SubscribeGen",
+    "SubscribedGen",
+    "UnsubscribeGen",
+    "UnsubscribedGen",
+    "PublishedGen",
+    "RegisterGen",
+    "RegisteredGen",
+    "UnregisterGen",
+    "UnregisteredGen",
+    "PublishGen",
 )
 
 
