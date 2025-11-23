@@ -31,26 +31,29 @@ import txaio
 txaio.use_asyncio()
 
 from autobahn.wamp import message as wamp_messages
-from autobahn.wamp.gen.wamp.proto.Payload import Payload
-from autobahn.wamp.gen.wamp.proto.Serializer import Serializer
+from autobahn.wamp.gen.wamp.proto.PPTScheme import PPTScheme
+from autobahn.wamp.gen.wamp.proto.PPTSerializer import PPTSerializer
 from autobahn.wamp.serializer import FlatBuffersSerializer
 
-# Enum mappings for E2EE payloads
+# Enum mappings for E2EE payloads (renamed from Payload -> PPTScheme)
 PAYLOAD_ALGO_MAP = {
-    "plain": Payload.PLAIN,
-    "cryptobox": Payload.CRYPTOBOX,
-    "opaque": Payload.OPAQUE,
+    "none": PPTScheme.NONE,
+    "cryptobox": PPTScheme.CRYPTOBOX,
+    "mqtt": PPTScheme.MQTT,
+    "xbr": PPTScheme.XBR,
+    "opaque": PPTScheme.OPAQUE,
 }
 
+# Enum mappings for serializers (renamed from Serializer -> PPTSerializer)
 SERIALIZER_MAP = {
-    "transport": Serializer.TRANSPORT,
-    "json": Serializer.JSON,
-    "msgpack": Serializer.MSGPACK,
-    "cbor": Serializer.CBOR,
-    "ubjson": Serializer.UBJSON,
-    "opaque": Serializer.OPAQUE,
-    "flatbuffers": Serializer.FLATBUFFERS,
-    "flexbuffers": Serializer.FLEXBUFFERS,
+    "transport": PPTSerializer.TRANSPORT,
+    "json": PPTSerializer.JSON,
+    "msgpack": PPTSerializer.MSGPACK,
+    "cbor": PPTSerializer.CBOR,
+    "ubjson": PPTSerializer.UBJSON,
+    "opaque": PPTSerializer.OPAQUE,
+    "flatbuffers": PPTSerializer.FLATBUFFERS,
+    "flexbuffers": PPTSerializer.FLEXBUFFERS,
 }
 
 
@@ -348,10 +351,10 @@ def process_test_vector_file(json_path):
         if "serializers" not in sample:
             continue
 
-        # Check if flatbuffers already exists
-        if "flatbuffers" in sample["serializers"]:
-            print(f"  ✓ Sample {i + 1}: flatbuffers already present")
-            continue
+        # Check if flatbuffers already exists - we'll update it
+        updating = "flatbuffers" in sample["serializers"]
+        if updating:
+            print(f"  ↻ Sample {i + 1}: updating existing flatbuffers entry")
 
         # Check if we have expected_attributes
         if "expected_attributes" not in sample:
@@ -376,8 +379,9 @@ def process_test_vector_file(json_path):
             ]
 
             modified = True
+            action = "updated" if updating else "added"
             print(
-                f"  ✓ Sample {i + 1}: added flatbuffers ({len(bytes_hex) // 2} bytes)"
+                f"  ✓ Sample {i + 1}: {action} flatbuffers ({len(bytes_hex) // 2} bytes)"
             )
 
         except NotImplementedError as e:
@@ -406,12 +410,12 @@ def main():
 
     # Find wamp-proto testsuite directory
     autobahn_root = Path(__file__).parent.parent.parent
-    wamp_proto_root = autobahn_root.parent / "wamp-proto"
+    wamp_proto_root = autobahn_root / ".proto"
     testsuite_dir = wamp_proto_root / "testsuite" / "singlemessage" / "basic"
 
     if not testsuite_dir.exists():
         print(f"\n❌ Error: testsuite directory not found: {testsuite_dir}")
-        print("   Expected: ../../../wamp-proto/testsuite/singlemessage/basic/")
+        print("   Expected: .proto/testsuite/singlemessage/basic/")
         return 1
 
     print(f"\nTestsuite directory: {testsuite_dir}")
