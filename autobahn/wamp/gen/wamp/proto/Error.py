@@ -154,57 +154,46 @@ class Error(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         return o == 0
 
+    # The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
     # Error
-    def EncAlgo(self):
+    def PptScheme(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
+    # The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
     # Error
-    def EncSerializer(self):
+    def PptSerializer(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
+    # The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
     # Error
-    def EncKey(self, j):
+    def PptCipher(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
         if o != 0:
-            a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
         return 0
 
+    # The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
     # Error
-    def EncKeyAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+    def PptKeyid(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
-            return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Uint8Flags, o)
-        return 0
-
-    # Error
-    def EncKeyLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
-        if o != 0:
-            return self._tab.VectorLen(o)
-        return 0
-
-    # Error
-    def EncKeyIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
-        return o == 0
+            return self._tab.String(o + self._tab.Pos)
+        return None
 
     # Error
     def ForwardFor(self, j):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         if o != 0:
             x = self._tab.Vector(o)
-            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 8
-            from wamp.proto.Principal import Principal
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
+            x = self._tab.Indirect(x)
+            from autobahn.wamp.gen.wamp.proto.Principal import Principal
 
             obj = Principal()
             obj.Init(self._tab.Bytes, x)
@@ -213,19 +202,19 @@ class Error(object):
 
     # Error
     def ForwardForLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # Error
     def ForwardForIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         return o == 0
 
 
 def ErrorStart(builder):
-    builder.StartObject(11)
+    builder.StartObject(12)
 
 
 def Start(builder):
@@ -320,43 +309,43 @@ def StartPayloadVector(builder, numElems):
     return ErrorStartPayloadVector(builder, numElems)
 
 
-def ErrorAddEncAlgo(builder, encAlgo):
-    builder.PrependUint8Slot(7, encAlgo, 0)
+def ErrorAddPptScheme(builder, pptScheme):
+    builder.PrependUint8Slot(7, pptScheme, 0)
 
 
-def AddEncAlgo(builder, encAlgo):
-    ErrorAddEncAlgo(builder, encAlgo)
+def AddPptScheme(builder, pptScheme):
+    ErrorAddPptScheme(builder, pptScheme)
 
 
-def ErrorAddEncSerializer(builder, encSerializer):
-    builder.PrependUint8Slot(8, encSerializer, 0)
+def ErrorAddPptSerializer(builder, pptSerializer):
+    builder.PrependUint8Slot(8, pptSerializer, 0)
 
 
-def AddEncSerializer(builder, encSerializer):
-    ErrorAddEncSerializer(builder, encSerializer)
+def AddPptSerializer(builder, pptSerializer):
+    ErrorAddPptSerializer(builder, pptSerializer)
 
 
-def ErrorAddEncKey(builder, encKey):
+def ErrorAddPptCipher(builder, pptCipher):
+    builder.PrependUint8Slot(9, pptCipher, 0)
+
+
+def AddPptCipher(builder, pptCipher):
+    ErrorAddPptCipher(builder, pptCipher)
+
+
+def ErrorAddPptKeyid(builder, pptKeyid):
     builder.PrependUOffsetTRelativeSlot(
-        9, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0
+        10, flatbuffers.number_types.UOffsetTFlags.py_type(pptKeyid), 0
     )
 
 
-def AddEncKey(builder, encKey):
-    ErrorAddEncKey(builder, encKey)
-
-
-def ErrorStartEncKeyVector(builder, numElems):
-    return builder.StartVector(1, numElems, 1)
-
-
-def StartEncKeyVector(builder, numElems):
-    return ErrorStartEncKeyVector(builder, numElems)
+def AddPptKeyid(builder, pptKeyid):
+    ErrorAddPptKeyid(builder, pptKeyid)
 
 
 def ErrorAddForwardFor(builder, forwardFor):
     builder.PrependUOffsetTRelativeSlot(
-        10, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0
+        11, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0
     )
 
 
@@ -365,7 +354,7 @@ def AddForwardFor(builder, forwardFor):
 
 
 def ErrorStartForwardForVector(builder, numElems):
-    return builder.StartVector(8, numElems, 8)
+    return builder.StartVector(4, numElems, 4)
 
 
 def StartForwardForVector(builder, numElems):

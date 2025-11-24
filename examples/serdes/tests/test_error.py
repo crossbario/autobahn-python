@@ -8,6 +8,7 @@ ERROR is sent as an error response to various request types (SUBSCRIBE, PUBLISH,
 
 Uses test vectors from: wamp-proto/testsuite/singlemessage/basic/error.json
 """
+
 import pytest
 from autobahn.wamp.message import Error
 from autobahn.wamp.serializer import create_transport_serializer
@@ -22,6 +23,7 @@ from .utils import (
 # =============================================================================
 # Test Vector Loading
 # =============================================================================
+
 
 @pytest.fixture(scope="module")
 def error_test_vector():
@@ -38,6 +40,7 @@ def error_samples(error_test_vector):
 # =============================================================================
 # SerDes Tests
 # =============================================================================
+
 
 def test_error_deserialize_from_bytes(serializer_id, error_samples, create_serializer):
     """
@@ -64,7 +67,7 @@ def test_error_deserialize_from_bytes(serializer_id, error_samples, create_seria
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
             elif "bytes" in variant:
-                test_bytes = variant["bytes"].encode('utf-8')
+                test_bytes = variant["bytes"].encode("utf-8")
             else:
                 continue
 
@@ -99,7 +102,7 @@ def test_error_serialize_to_bytes(serializer_id, error_samples, create_serialize
         msg = Error(
             request_type=attrs["request_type"],
             request=attrs["request_id"],
-            error=attrs["error"]
+            error=attrs["error"],
         )
 
         # Serialize
@@ -136,7 +139,7 @@ def test_error_roundtrip(serializer_id, error_samples, create_serializer):
         if "bytes_hex" in variant:
             original_bytes = bytes_from_hex(variant["bytes_hex"])
         elif "bytes" in variant:
-            original_bytes = variant["bytes"].encode('utf-8')
+            original_bytes = variant["bytes"].encode("utf-8")
         else:
             continue
 

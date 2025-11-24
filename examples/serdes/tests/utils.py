@@ -1,6 +1,7 @@
 """
 Utility functions for WAMP serdes tests
 """
+
 import json
 import os
 from pathlib import Path
@@ -69,14 +70,13 @@ def load_test_vector(relative_path: str) -> Dict[str, Any]:
 
     for test_vector_path in locations:
         if test_vector_path.exists():
-            with open(test_vector_path, 'r') as f:
+            with open(test_vector_path, "r") as f:
                 return json.load(f)
 
     # Neither location has the file
     raise FileNotFoundError(
         f"Test vector not found: {relative_path}\n"
-        f"Tried locations:\n" +
-        "\n".join(f"  - {loc}" for loc in locations)
+        f"Tried locations:\n" + "\n".join(f"  - {loc}" for loc in locations)
     )
 
 
@@ -88,6 +88,7 @@ def get_serializer_ids() -> List[str]:
         List of serializer IDs (e.g., ["json", "msgpack", "cbor", ...])
     """
     from autobahn.wamp.serializer import SERID_TO_OBJSER
+
     return sorted(SERID_TO_OBJSER.keys())
 
 
@@ -113,7 +114,7 @@ def validate_message_with_code(msg: Any, validation_code: str) -> None:
         validation_code: Python code string with assertions
     """
     # Create namespace with msg available
-    namespace = {'msg': msg}
+    namespace = {"msg": msg}
 
     # Execute validation code
     try:
@@ -123,10 +124,11 @@ def validate_message_with_code(msg: Any, validation_code: str) -> None:
         if not str(e):
             # Empty assertion - add context
             import traceback
-            tb_lines = traceback.format_exc().split('\n')
+
+            tb_lines = traceback.format_exc().split("\n")
             # Find the line that failed
             for line in tb_lines:
-                if 'assert' in line.lower():
+                if "assert" in line.lower():
                     raise AssertionError(f"Assertion failed: {line.strip()}") from e
         raise
 
@@ -149,15 +151,14 @@ def construct_message_with_code(construction_code: str) -> Any:
     exec(construction_code, namespace)
 
     # Extract the constructed message
-    if 'msg' not in namespace:
+    if "msg" not in namespace:
         raise ValueError("Construction code must create a variable named 'msg'")
 
-    return namespace['msg']
+    return namespace["msg"]
 
 
 def matches_any_byte_representation(
-    actual_bytes: bytes,
-    expected_variants: List[Dict[str, str]]
+    actual_bytes: bytes, expected_variants: List[Dict[str, str]]
 ) -> bool:
     """
     Check if actual bytes match any of the expected byte representations.
@@ -172,25 +173,22 @@ def matches_any_byte_representation(
         True if actual_bytes matches at least one expected variant
     """
     for variant in expected_variants:
-        if 'bytes_hex' in variant:
-            expected = bytes_from_hex(variant['bytes_hex'])
+        if "bytes_hex" in variant:
+            expected = bytes_from_hex(variant["bytes_hex"])
             if actual_bytes == expected:
                 return True
 
-        if 'bytes' in variant:
+        if "bytes" in variant:
             # For JSON serializer, the 'bytes' field is the string representation
             # We need to encode it to bytes for comparison
-            expected = variant['bytes'].encode('utf-8')
+            expected = variant["bytes"].encode("utf-8")
             if actual_bytes == expected:
                 return True
 
     return False
 
 
-def validates_with_any_code(
-    msg: Any,
-    validation_codes: List[str]
-) -> Optional[str]:
+def validates_with_any_code(msg: Any, validation_codes: List[str]) -> Optional[str]:
     """
     Try to validate message with any of the validation code blocks.
 

@@ -2,8 +2,10 @@
 """
 Generate serialized bytes for GOODBYE message test vectors.
 """
+
 import binascii
 import txaio
+
 txaio.use_asyncio()
 
 from autobahn.wamp.message import Goodbye

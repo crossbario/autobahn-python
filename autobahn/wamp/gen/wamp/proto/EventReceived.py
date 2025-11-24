@@ -46,82 +46,34 @@ class EventReceived(object):
         return 0
 
     # EventReceived
-    def Payload(self, j):
+    def ForwardFor(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
-        return 0
+            x = self._tab.Vector(o)
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
+            x = self._tab.Indirect(x)
+            from autobahn.wamp.gen.wamp.proto.Principal import Principal
+
+            obj = Principal()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
 
     # EventReceived
-    def PayloadAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
-        if o != 0:
-            return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Uint8Flags, o)
-        return 0
-
-    # EventReceived
-    def PayloadLength(self):
+    def ForwardForLength(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # EventReceived
-    def PayloadIsNone(self):
+    def ForwardForIsNone(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
-        return o == 0
-
-    # EventReceived
-    def EncAlgo(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
-        return 0
-
-    # EventReceived
-    def EncSerializer(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
-        if o != 0:
-            return self._tab.Get(flatbuffers.number_types.Uint8Flags, o + self._tab.Pos)
-        return 0
-
-    # EventReceived
-    def EncKey(self, j):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
-        if o != 0:
-            a = self._tab.Vector(o)
-            return self._tab.Get(
-                flatbuffers.number_types.Uint8Flags,
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 1),
-            )
-        return 0
-
-    # EventReceived
-    def EncKeyAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
-        if o != 0:
-            return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Uint8Flags, o)
-        return 0
-
-    # EventReceived
-    def EncKeyLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
-        if o != 0:
-            return self._tab.VectorLen(o)
-        return 0
-
-    # EventReceived
-    def EncKeyIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         return o == 0
 
 
 def EventReceivedStart(builder):
-    builder.StartObject(6)
+    builder.StartObject(3)
 
 
 def Start(builder):
@@ -144,56 +96,22 @@ def AddPublication(builder, publication):
     EventReceivedAddPublication(builder, publication)
 
 
-def EventReceivedAddPayload(builder, payload):
+def EventReceivedAddForwardFor(builder, forwardFor):
     builder.PrependUOffsetTRelativeSlot(
-        2, flatbuffers.number_types.UOffsetTFlags.py_type(payload), 0
+        2, flatbuffers.number_types.UOffsetTFlags.py_type(forwardFor), 0
     )
 
 
-def AddPayload(builder, payload):
-    EventReceivedAddPayload(builder, payload)
+def AddForwardFor(builder, forwardFor):
+    EventReceivedAddForwardFor(builder, forwardFor)
 
 
-def EventReceivedStartPayloadVector(builder, numElems):
-    return builder.StartVector(1, numElems, 1)
+def EventReceivedStartForwardForVector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
 
 
-def StartPayloadVector(builder, numElems):
-    return EventReceivedStartPayloadVector(builder, numElems)
-
-
-def EventReceivedAddEncAlgo(builder, encAlgo):
-    builder.PrependUint8Slot(3, encAlgo, 0)
-
-
-def AddEncAlgo(builder, encAlgo):
-    EventReceivedAddEncAlgo(builder, encAlgo)
-
-
-def EventReceivedAddEncSerializer(builder, encSerializer):
-    builder.PrependUint8Slot(4, encSerializer, 0)
-
-
-def AddEncSerializer(builder, encSerializer):
-    EventReceivedAddEncSerializer(builder, encSerializer)
-
-
-def EventReceivedAddEncKey(builder, encKey):
-    builder.PrependUOffsetTRelativeSlot(
-        5, flatbuffers.number_types.UOffsetTFlags.py_type(encKey), 0
-    )
-
-
-def AddEncKey(builder, encKey):
-    EventReceivedAddEncKey(builder, encKey)
-
-
-def EventReceivedStartEncKeyVector(builder, numElems):
-    return builder.StartVector(1, numElems, 1)
-
-
-def StartEncKeyVector(builder, numElems):
-    return EventReceivedStartEncKeyVector(builder, numElems)
+def StartForwardForVector(builder, numElems):
+    return EventReceivedStartForwardForVector(builder, numElems)
 
 
 def EventReceivedEnd(builder):

@@ -37,60 +37,56 @@ These structures are used to create different payload sizes:
 
 from typing import Any, Dict, List
 
-__all__ = ['JSON_DATA1', 'JSON_DATA2', 'JSON_DATA3']
+__all__ = ["JSON_DATA1", "JSON_DATA2", "JSON_DATA3"]
 
 
 JSON_DATA1: Dict[str, Any] = {
-    'data': [
+    "data": [
         {
-            'attributes': {
-                'body': 'The shortest article. Ever.',
-                'created': '2015-05-22T14:56:29.000Z',
-                'title': 'JSON:API paints my bikeshed!',
-                'updated': '2015-05-22T14:56:28.000Z'
+            "attributes": {
+                "body": "The shortest article. Ever.",
+                "created": "2015-05-22T14:56:29.000Z",
+                "title": "JSON:API paints my bikeshed!",
+                "updated": "2015-05-22T14:56:28.000Z",
             },
-            'id': '1',
-            'relationships': {
-                'author': {
-                    'data': {'id': '42', 'type': 'people'}
-                }
-            },
-            'type': 'articles'
+            "id": "1",
+            "relationships": {"author": {"data": {"id": "42", "type": "people"}}},
+            "type": "articles",
         }
     ],
-    'included': [
+    "included": [
         {
-            'attributes': {'age': 80, 'gender': 'male', 'name': 'John'},
-            'id': '42',
-            'type': 'people'
+            "attributes": {"age": 80, "gender": "male", "name": "John"},
+            "id": "42",
+            "type": "people",
         }
     ],
-    'widget': {
-        'debug': 'on',
-        'image': {
-            'alignment': 'center',
-            'hOffset': 250,
-            'name': 'sun1',
-            'src': 'Images/Sun.png',
-            'vOffset': 250
+    "widget": {
+        "debug": "on",
+        "image": {
+            "alignment": "center",
+            "hOffset": 250,
+            "name": "sun1",
+            "src": "Images/Sun.png",
+            "vOffset": 250,
         },
-        'text': {
-            'alignment': 'center',
-            'data': 'Click Here',
-            'hOffset': 250,
-            'name': 'text1',
-            'onMouseUp': 'sun1.opacity = (sun1.opacity / 100) * 90;',
-            'size': 36,
-            'style': 'bold',
-            'vOffset': 100
+        "text": {
+            "alignment": "center",
+            "data": "Click Here",
+            "hOffset": 250,
+            "name": "text1",
+            "onMouseUp": "sun1.opacity = (sun1.opacity / 100) * 90;",
+            "size": 36,
+            "style": "bold",
+            "vOffset": 100,
         },
-        'window': {
-            'height': 500,
-            'name': 'main_window',
-            'title': 'Sample Konfabulator Widget',
-            'width': 500
-        }
-    }
+        "window": {
+            "height": 500,
+            "name": "main_window",
+            "title": "Sample Konfabulator Widget",
+            "width": 500,
+        },
+    },
 }
 
 
@@ -106,7 +102,7 @@ JSON_DATA2: Dict[str, List[Dict[str, Any]]] = {
             "weight": 67.5,
             "hasChildren": True,
             "hasGreyHair": False,
-            "children": ["Suri", "Isabella Jane", "Connor"]
+            "children": ["Suri", "Isabella Jane", "Connor"],
         },
         {
             "name": "Robert Downey Jr.",
@@ -118,8 +114,8 @@ JSON_DATA2: Dict[str, List[Dict[str, Any]]] = {
             "weight": 77.1,
             "hasChildren": True,
             "hasGreyHair": False,
-            "children": ["Indio Falconer", "Avri Roel", "Exton Elias"]
-        }
+            "children": ["Indio Falconer", "Avri Roel", "Exton Elias"],
+        },
     ]
 }
 
@@ -136,7 +132,7 @@ JSON_DATA3: Dict[str, List[Dict[str, Any]]] = {
                     {"id": "1001", "type": "Regular"},
                     {"id": "1002", "type": "Chocolate"},
                     {"id": "1003", "type": "Blueberry"},
-                    {"id": "1004", "type": "Devil's Food"}
+                    {"id": "1004", "type": "Devil's Food"},
                 ]
             },
             "topping": [
@@ -146,24 +142,22 @@ JSON_DATA3: Dict[str, List[Dict[str, Any]]] = {
                 {"id": "5007", "type": "Powdered Sugar"},
                 {"id": "5006", "type": "Chocolate with Sprinkles"},
                 {"id": "5003", "type": "Chocolate"},
-                {"id": "5004", "type": "Maple"}
-            ]
+                {"id": "5004", "type": "Maple"},
+            ],
         },
         {
             "id": "0002",
             "type": "donut",
             "name": "Raised",
             "ppu": 0.55,
-            "batters": {
-                "batter": [{"id": "1001", "type": "Regular"}]
-            },
+            "batters": {"batter": [{"id": "1001", "type": "Regular"}]},
             "topping": [
                 {"id": "5001", "type": "None"},
                 {"id": "5002", "type": "Glazed"},
                 {"id": "5005", "type": "Sugar"},
                 {"id": "5003", "type": "Chocolate"},
-                {"id": "5004", "type": "Maple"}
-            ]
+                {"id": "5004", "type": "Maple"},
+            ],
         },
         {
             "id": "0003",
@@ -173,15 +167,15 @@ JSON_DATA3: Dict[str, List[Dict[str, Any]]] = {
             "batters": {
                 "batter": [
                     {"id": "1001", "type": "Regular"},
-                    {"id": "1002", "type": "Chocolate"}
+                    {"id": "1002", "type": "Chocolate"},
                 ]
             },
             "topping": [
                 {"id": "5001", "type": "None"},
                 {"id": "5002", "type": "Glazed"},
                 {"id": "5003", "type": "Chocolate"},
-                {"id": "5004", "type": "Maple"}
-            ]
-        }
+                {"id": "5004", "type": "Maple"},
+            ],
+        },
     ]
 }

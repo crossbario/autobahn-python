@@ -2,8 +2,11 @@
 
 # namespace: proto
 
-
+# Call cancel mode.
 class CancelMode(object):
+    # Skip running invocation call.
     SKIP = 0
-    ABORT = 1
-    KILL = 2
+    # Kill running invocation and call.
+    KILL = 1
+    # Kill running invocation and call without waiting.
+    KILLNOWAIT = 2

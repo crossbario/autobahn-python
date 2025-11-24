@@ -2,10 +2,25 @@
 
 # namespace: proto
 
-
+# Remote procedure invocation policy, for use with shared registrations.
 class InvocationPolicy(object):
+    # Standard invocation policy: a procedure may only be registered by at most
+    # one callee at a time. This is the default.
     SINGLE = 0
+    # First callee invocation policy: all calls to a procedure are forwarded to
+    # the callee that first registered. Should that callee unregister, calls
+    # are forwarded to the callee that registered next after the former.
     FIRST = 1
+    # Last callee invocation policy: all calls to a procedure are forwwrded to
+    # the callee that last registered. Should that callee unregister, calls
+    # are forwarded to the callee that registered next before the former.
     LAST = 2
+    # Round-robin invocation policy: calls are forward to all registered callees
+    # in a round-robin fashion. Callees that unregister are removed from the
+    # round-robin list, and new callees registering will get calls immediately
+    # in the next dispatching round.
     ROUNDROBIN = 3
+    # Random invocation policy: calls are forwarded to all registered callees
+    # in a random fashion. Callees that unregister are removed from the set
+    # of callees randomly drawn from to dispatch incoming calls.
     RANDOM = 4

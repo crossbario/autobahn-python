@@ -137,10 +137,10 @@ def categorize_example(example_path):
     """Categorize an example by backend and feature type."""
     if example_path.startswith("./twisted/"):
         backend = "twisted"
-        path = example_path[len("./twisted/"):]
+        path = example_path[len("./twisted/") :]
     elif example_path.startswith("./asyncio/"):
         backend = "asyncio"
-        path = example_path[len("./asyncio/"):]
+        path = example_path[len("./asyncio/") :]
     else:
         backend = "unknown"
         path = example_path
@@ -176,7 +176,9 @@ def print_summary(results):
     for result in results:
         status_symbol = "✓" if result["passed"] else "✗"
         status_color = Fore.GREEN if result["passed"] else Fore.RED
-        print(f"{status_color}{status_symbol}{Fore.RESET} {result['backend']:8s} {result['feature']:8s} {result['path']}")
+        print(
+            f"{status_color}{status_symbol}{Fore.RESET} {result['backend']:8s} {result['feature']:8s} {result['path']}"
+        )
     print()
 
     # Aggregate by backend
@@ -190,7 +192,9 @@ def print_summary(results):
             backend_failed = backend_total - backend_passed
             status_symbol = "✓" if backend_failed == 0 else "✗"
             status_color = Fore.GREEN if backend_failed == 0 else Fore.RED
-            print(f"{status_color}{status_symbol}{Fore.RESET} {backend:8s}: {backend_passed}/{backend_total} passed, {backend_failed} failed")
+            print(
+                f"{status_color}{status_symbol}{Fore.RESET} {backend:8s}: {backend_passed}/{backend_total} passed, {backend_failed} failed"
+            )
     print()
 
     # Aggregate by feature
@@ -204,7 +208,9 @@ def print_summary(results):
             feature_failed = feature_total - feature_passed
             status_symbol = "✓" if feature_failed == 0 else "✗"
             status_color = Fore.GREEN if feature_failed == 0 else Fore.RED
-            print(f"{status_color}{status_symbol}{Fore.RESET} {feature:8s}: {feature_passed}/{feature_total} passed, {feature_failed} failed")
+            print(
+                f"{status_color}{status_symbol}{Fore.RESET} {feature:8s}: {feature_passed}/{feature_total} passed, {feature_failed} failed"
+            )
     print()
 
     # Overall summary
@@ -311,12 +317,14 @@ def main(reactor):
 
         # Record result
         backend_type, feature_type = categorize_example(exdir)
-        results.append({
-            "path": exdir,
-            "backend": backend_type,
-            "feature": feature_type,
-            "passed": example_passed
-        })
+        results.append(
+            {
+                "path": exdir,
+                "backend": backend_type,
+                "feature": feature_type,
+                "passed": example_passed,
+            }
+        )
 
         if not overall_success:
             break

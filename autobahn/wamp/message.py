@@ -61,6 +61,8 @@ __all__ = (
     "Interrupt",
     "Invocation",
     "Message",
+    "MessageWithAppPayload",
+    "MessageWithForwardFor",
     "Publish",
     "Published",
     "Register",
@@ -653,7 +655,7 @@ class Message(object):
                 builder = flatbuffers.Builder(1024)
 
                 # Get parent ISerializer to access payload serialization
-                parent_serializer = getattr(serializer, '_parent_serializer', None)
+                parent_serializer = getattr(serializer, "_parent_serializer", None)
 
                 # this is the core method writing out this message (self) to a (new) flatbuffer
                 # FIXME: implement this method for all classes derived from Message
@@ -668,6 +670,318 @@ class Message(object):
 
         # cache is filled now: return serialized, cached bytes
         return self._serialized[serializer]
+
+
+class MessageWithAppPayload(object):
+    """
+    Mixin for WAMP messages carrying application payload (Category 4).
+
+    The 7 data plane messages: PUBLISH, EVENT, CALL, INVOCATION, YIELD, RESULT, ERROR
+
+    Attributes (the "6-set"):
+        args, kwargs, payload, enc_algo, enc_key, enc_serializer
+
+    These six attributes form an inseparable unit. In E2EE mode, attributes
+    enc_algo/enc_key/enc_serializer must all be present or all be None.
+
+    Note on __slots__:
+        This mixin has __slots__ = () (empty tuple). This is REQUIRED for multiple
+        inheritance with __slots__. DO NOT REMOVE! Empty __slots__ means "I add no
+        new slots but allow derived classes to use slots". Without this, the class
+        would get a __dict__ and break the slots chain. See docs/wamp/message-design.rst
+        for detailed explanation.
+
+    Note on initialization:
+        Uses _init_app_payload() method instead of __init__() to avoid complex super()
+        chains in multiple inheritance. Concrete classes call this method explicitly.
+    """
+
+    __slots__ = ()  # REQUIRED: Empty slots for mixin pattern. DO NOT REMOVE!
+
+    def _init_app_payload(
+        self,
+        args=None,
+        kwargs=None,
+        payload=None,
+        enc_algo=None,
+        enc_key=None,
+        enc_serializer=None,
+    ):
+        """
+        Initialize application payload attributes.
+
+        Note: This is NOT __init__() to avoid super() complexity in multiple inheritance.
+        Concrete message classes call this method explicitly after Message.__init__().
+
+        :param args: Positional arguments (list/tuple)
+        :param kwargs: Keyword arguments (dict)
+        :param payload: Opaque payload bytes (for E2EE)
+        :param enc_algo: Encoding/encryption algorithm identifier
+        :param enc_key: Key identifier for decryption
+        :param enc_serializer: Payload serializer ID (e.g., "cbor", "json")
+        """
+        self._args = args
+        self._kwargs = _validate_kwargs(kwargs)
+        self._payload = payload
+        self._enc_algo = enc_algo
+        self._enc_key = enc_key
+        self._enc_serializer = enc_serializer
+
+    def _get_payload_serializer_id(self):
+        """
+        Get the serializer ID to use for payload deserialization.
+
+        Returns the enc_serializer if set, otherwise defaults to "cbor"
+        for backward compatibility.
+        """
+        return self._enc_serializer if self._enc_serializer else "cbor"
+
+    def _deserialize_payload(self, data_bytes, ser_id):
+        """
+        Deserialize payload data using the specified serializer.
+
+        Uses memoryview (zero-copy) where possible. Converts to bytes
+        only for JSON and FlexBuffers which don't support memoryview.
+
+        :param data_bytes: memoryview of the serialized data
+        :param ser_id: Serializer ID string ("json", "cbor", "msgpack", etc.)
+        :return: Deserialized Python object (list, dict, etc.)
+        """
+        # Special case: FlexBuffers (quasi-dynamic typing)
+        if ser_id == "flexbuffers":
+            import flatbuffers.flexbuffers as flexbuffers
+
+            root = flexbuffers.GetRoot(bytes(data_bytes))
+            return root
+
+        # Import the appropriate deserializer
+        if ser_id == "json":
+            import json
+
+            # JSON requires bytes() conversion
+            return json.loads(bytes(data_bytes))
+        elif ser_id == "cbor":
+            import cbor2
+
+            # cbor2 supports memoryview (zero-copy)
+            return cbor2.loads(data_bytes)
+        elif ser_id == "msgpack":
+            import msgpack
+
+            # msgpack supports memoryview (zero-copy)
+            return msgpack.unpackb(data_bytes)
+        elif ser_id == "ubjson":
+            import ubjson
+
+            # ubjson supports memoryview (zero-copy)
+            return ubjson.loadb(data_bytes)
+        else:
+            # Fallback to CBOR for unknown serializers
+            import cbor2
+
+            return cbor2.loads(data_bytes)
+
+    @property
+    def args(self):
+        """Lazy deserialization of args from FlatBuffers"""
+        if self._args is None and self._from_fbs:
+            if self._from_fbs.ArgsLength():
+                ser_id = self._get_payload_serializer_id()
+                args_bytes = self._from_fbs.ArgsAsBytes()  # Returns memoryview
+
+                if ser_id == "flexbuffers":
+                    root = self._deserialize_payload(args_bytes, ser_id)
+                    self._args = root.AsVector.Value  # Returns Python list
+                else:
+                    self._args = self._deserialize_payload(args_bytes, ser_id)
+        return self._args
+
+    @args.setter
+    def args(self, value):
+        assert value is None or type(value) in [list, tuple]
+        self._args = value
+
+    @property
+    def kwargs(self):
+        """Lazy deserialization of kwargs from FlatBuffers"""
+        if self._kwargs is None and self._from_fbs:
+            if self._from_fbs.KwargsLength():
+                ser_id = self._get_payload_serializer_id()
+                kwargs_bytes = self._from_fbs.KwargsAsBytes()  # Returns memoryview
+
+                if ser_id == "flexbuffers":
+                    root = self._deserialize_payload(kwargs_bytes, ser_id)
+                    self._kwargs = root.AsMap.Value  # Returns Python dict
+                else:
+                    self._kwargs = self._deserialize_payload(kwargs_bytes, ser_id)
+        return self._kwargs
+
+    @kwargs.setter
+    def kwargs(self, value):
+        assert value is None or type(value) == dict
+        self._kwargs = value
+
+    @property
+    def payload(self):
+        """Lazy deserialization of payload from FlatBuffers"""
+        if self._payload is None and self._from_fbs:
+            if self._from_fbs.PayloadLength():
+                self._payload = self._from_fbs.PayloadAsBytes()
+        return self._payload
+
+    @payload.setter
+    def payload(self, value):
+        assert value is None or type(value) == bytes
+        self._payload = value
+
+    @property
+    def enc_algo(self):
+        """Lazy deserialization of enc_algo from FlatBuffers"""
+        if self._enc_algo is None and self._from_fbs:
+            enc_algo = self._from_fbs.PptScheme()
+            if enc_algo:
+                # Convert FlatBuffers enum integer to string
+                self._enc_algo = ENC_ALGOS.get(enc_algo)
+        return self._enc_algo
+
+    @enc_algo.setter
+    def enc_algo(self, value):
+        assert value is None or is_valid_enc_algo(value)
+        self._enc_algo = value
+
+    @property
+    def enc_key(self):
+        """Lazy deserialization of enc_key from FlatBuffers"""
+        if self._enc_key is None and self._from_fbs:
+            self._enc_key = self._from_fbs.PptKeyid()
+        return self._enc_key
+
+    @enc_key.setter
+    def enc_key(self, value):
+        assert value is None or type(value) == str
+        self._enc_key = value
+
+    @property
+    def enc_serializer(self):
+        """Lazy deserialization of enc_serializer from FlatBuffers"""
+        if self._enc_serializer is None and self._from_fbs:
+            enc_serializer = self._from_fbs.PptSerializer()
+            if enc_serializer:
+                # Convert FlatBuffers enum integer to string
+                self._enc_serializer = ENC_SERS.get(enc_serializer)
+        return self._enc_serializer
+
+    @enc_serializer.setter
+    def enc_serializer(self, value):
+        assert value is None or is_valid_enc_serializer(value)
+        self._enc_serializer = value
+
+
+class MessageWithForwardFor(object):
+    """
+    Mixin for WAMP messages with forward_for (Category 3 & 4).
+
+    Category 3: Subscribe, Unsubscribe, Register, Unregister, Cancel, Interrupt
+    Category 4: PUBLISH, EVENT, CALL, INVOCATION, YIELD, RESULT, ERROR
+
+    Note on __slots__:
+        This mixin has __slots__ = () (empty tuple). This is REQUIRED for multiple
+        inheritance with __slots__. DO NOT REMOVE! Empty __slots__ means "I add no
+        new slots but allow derived classes to use slots". Without this, the class
+        would get a __dict__ and break the slots chain. See docs/wamp/message-design.rst
+        for detailed explanation.
+
+    Note on initialization:
+        Uses _init_forward_for() method instead of __init__() to avoid complex super()
+        chains in multiple inheritance. Concrete classes call this method explicitly.
+    """
+
+    __slots__ = ()  # REQUIRED: Empty slots for mixin pattern. DO NOT REMOVE!
+
+    def _init_forward_for(self, forward_for=None):
+        """
+        Initialize forwarding attributes.
+
+        Note: This is NOT __init__() to avoid super() complexity in multiple inheritance.
+        Concrete message classes call this method explicitly after Message.__init__().
+
+        :param forward_for: Forwarding chain metadata (list of dicts)
+        """
+        self._forward_for = forward_for
+
+    @property
+    def forward_for(self):
+        """
+        Property-based access to WAMP message forward_for attribute.
+
+        Primary purpose: Provides property-based access to the forward_for attribute
+        for ALL WAMP serializers (JSON, MessagePack, CBOR, UBJSON, FlatBuffers).
+
+        FlatBuffers detail: For FlatBuffers serialization specifically, this property
+        performs lazy deserialization - the forward_for list is only deserialized from
+        the underlying FlatBuffers Principal objects when first accessed. For other
+        serializers (JSON, CBOR, etc.), the entire WAMP message is deserialized in one
+        go during message parsing, so this property simply returns the pre-parsed value.
+
+        :return: List of forwarding chain entries, each a dict with keys:
+                 - 'session' (int): WAMP session ID
+                 - 'authid' (str or None): Authentication ID
+                 - 'authrole' (str): Authentication role
+        :rtype: list[dict] or None
+        """
+        if self._forward_for is None and self._from_fbs:
+            # Check if this message type has forward_for in FlatBuffers schema
+            # Category 1 messages don't have forward_for
+            if hasattr(self._from_fbs, 'ForwardForLength') and self._from_fbs.ForwardForLength():
+                forward_for = []
+                for j in range(self._from_fbs.ForwardForLength()):
+                    principal = self._from_fbs.ForwardFor(j)
+                    # Principal is now a table and supports authid/authrole
+                    authid = principal.Authid()
+                    if authid:
+                        authid = (
+                            authid.decode("utf-8")
+                            if isinstance(authid, bytes)
+                            else authid
+                        )
+                    authrole = principal.Authrole()
+                    if authrole:
+                        authrole = (
+                            authrole.decode("utf-8")
+                            if isinstance(authrole, bytes)
+                            else authrole
+                        )
+                    forward_for.append(
+                        {
+                            "session": principal.Session(),
+                            "authid": authid,
+                            "authrole": authrole,
+                        }
+                    )
+                self._forward_for = forward_for
+        return self._forward_for
+
+    @forward_for.setter
+    def forward_for(self, value):
+        """
+        Set the forward_for attribute.
+
+        :param value: List of forwarding chain entries, each a dict with keys:
+                      - 'session' (int): WAMP session ID
+                      - 'authid' (str or None): Authentication ID
+                      - 'authrole' (str): Authentication role
+        :type value: list[dict] or None
+        """
+        assert value is None or type(value) == list
+        if value:
+            for ff in value:
+                assert type(ff) == dict
+                assert "session" in ff and type(ff["session"]) == int
+                assert "authid" in ff and (
+                    ff["authid"] is None or type(ff["authid"]) == str
+                )
+                assert "authrole" in ff and type(ff["authrole"]) == str
+        self._forward_for = value
 
 
 class Hello(Message):
@@ -751,7 +1065,9 @@ class Hello(Message):
             assert len(roles) > 0
             for role in roles:
                 assert role in ["subscriber", "publisher", "caller", "callee"]
-                assert isinstance(roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role])
+                assert isinstance(
+                    roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]
+                )
         if authmethods:
             assert type(authmethods) == list
             for authmethod in authmethods:
@@ -963,8 +1279,9 @@ class Hello(Message):
         message_fbs.HelloGen.HelloStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.HelloGen.HelloAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.HelloGen.HelloAddSession(builder, session)
         if realm:
             message_fbs.HelloGen.HelloAddRealm(builder, realm)
         if authid:
@@ -1297,7 +1614,9 @@ class Welcome(Message):
             assert len(roles) > 0
             for role in roles:
                 assert role in ["broker", "dealer"]
-                assert isinstance(roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role])
+                assert isinstance(
+                    roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]
+                )
         assert realm is None or type(realm) == str
         assert authid is None or type(authid) == str
         assert authrole is None or type(authrole) == str
@@ -1882,8 +2201,9 @@ class Abort(Message):
         message_fbs.AbortGen.AbortStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.AbortGen.AbortAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.AbortGen.AbortAddSession(builder, session)
         if reason:
             message_fbs.AbortGen.AbortAddReason(builder, reason)
         if message:
@@ -1891,7 +2211,14 @@ class Abort(Message):
 
         # End and return
         msg = message_fbs.AbortGen.AbortEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.ABORT)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -1999,10 +2326,15 @@ class Challenge(Message):
         if self._method is None and self._from_fbs:
             method_val = self._from_fbs.Method()
             # Map AuthMethod enum to string
-            # Note: FlatBuffers uses AuthMethod enum, Python uses string
-            # For now, return a default string representation
-            # Full enum mapping would require auth method lookup table
-            self._method = f"authmethod_{method_val}" if method_val else None
+            # AuthMethod: NULL=0, TICKET=1, CRA=2, SCRAM=3, CRYPTOSIGN=4
+            AUTH_METHOD_MAP = {
+                0: None,           # NULL/anonymous
+                1: "ticket",       # TICKET
+                2: "wampcra",      # CRA (Challenge-Response Authentication)
+                3: "wamp-scram",   # SCRAM
+                4: "cryptosign",   # CRYPTOSIGN
+            }
+            self._method = AUTH_METHOD_MAP.get(method_val)
         return self._method
 
     @method.setter
@@ -2056,14 +2388,22 @@ class Challenge(Message):
         message_fbs.ChallengeGen.ChallengeStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.ChallengeGen.ChallengeAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.ChallengeGen.ChallengeAddSession(builder, session)
 
         # Method: Map string to AuthMethod enum
-        # For simplicity, default to ANONYMOUS (0) for now
-        # Full implementation would require reverse lookup table
+        # AuthMethod: NULL=0, TICKET=1, CRA=2, SCRAM=3, CRYPTOSIGN=4
         if self.method:
-            message_fbs.ChallengeGen.ChallengeAddMethod(builder, 0)  # Default to ANONYMOUS
+            STRING_TO_AUTH_METHOD = {
+                "anonymous": 0,     # NULL
+                "ticket": 1,        # TICKET
+                "wampcra": 2,       # CRA (Challenge-Response Authentication)
+                "wamp-scram": 3,    # SCRAM
+                "cryptosign": 4,    # CRYPTOSIGN
+            }
+            method_enum = STRING_TO_AUTH_METHOD.get(self.method, 0)
+            message_fbs.ChallengeGen.ChallengeAddMethod(builder, method_enum)
 
         # TODO: Add proper Map serialization for extra field
         # if self.extra:
@@ -2072,7 +2412,14 @@ class Challenge(Message):
 
         # End and return
         msg = message_fbs.ChallengeGen.ChallengeEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.CHALLENGE)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -2200,7 +2547,9 @@ class Authenticate(Message):
 
         :returns: An instance of this class.
         """
-        return Authenticate(from_fbs=message_fbs.Authenticate.GetRootAsAuthenticate(buf, 0))
+        return Authenticate(
+            from_fbs=message_fbs.Authenticate.GetRootAsAuthenticate(buf, 0)
+        )
 
     def build(self, builder, serializer=None):
         """
@@ -2227,8 +2576,9 @@ class Authenticate(Message):
         message_fbs.AuthenticateGen.AuthenticateStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.AuthenticateGen.AuthenticateAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.AuthenticateGen.AuthenticateAddSession(builder, session)
         if signature:
             message_fbs.AuthenticateGen.AuthenticateAddSignature(builder, signature)
 
@@ -2239,7 +2589,14 @@ class Authenticate(Message):
 
         # End and return
         msg = message_fbs.AuthenticateGen.AuthenticateEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.AUTHENTICATE)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -2309,7 +2666,9 @@ class Goodbye(Message):
         "_resumable",
     )
 
-    def __init__(self, reason=DEFAULT_REASON, message=None, resumable=None, from_fbs=None):
+    def __init__(
+        self, reason=DEFAULT_REASON, message=None, resumable=None, from_fbs=None
+    ):
         """
 
         :param reason: Optional WAMP or application error URI for closing reason.
@@ -2420,8 +2779,9 @@ class Goodbye(Message):
         message_fbs.GoodbyeGen.GoodbyeStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.GoodbyeGen.GoodbyeAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.GoodbyeGen.GoodbyeAddSession(builder, session)
         if reason:
             message_fbs.GoodbyeGen.GoodbyeAddReason(builder, reason)
         if message:
@@ -2431,7 +2791,14 @@ class Goodbye(Message):
 
         # End and return
         msg = message_fbs.GoodbyeGen.GoodbyeEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.GOODBYE)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -2498,7 +2865,7 @@ class Goodbye(Message):
         return [Goodbye.MESSAGE_TYPE, details, self.reason]
 
 
-class Error(Message):
+class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``ERROR`` message.
 
@@ -2515,27 +2882,31 @@ class Error(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "request_type",
-        "request",
-        "error",
-        "args",
-        "kwargs",
-        "payload",
-        "enc_algo",
-        "enc_key",
-        "enc_serializer",
-        "callee",
-        "callee_authid",
-        "callee_authrole",
-        "forward_for",
+        # Error-specific slots (FlatBuffers schema types in comments)
+        "_request_type",  # uint8 (message type)
+        "_request",  # uint64 (key)
+        "_error",  # string (required, uri)
+        "_callee",  # uint64 (session id)
+        "_callee_authid",  # string (principal)
+        "_callee_authrole",  # string (principal)
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
         self,
-        request_type,
-        request,
-        error,
+        request_type=None,
+        request=None,
+        error=None,
         args=None,
         kwargs=None,
         payload=None,
@@ -2546,6 +2917,7 @@ class Error(Message):
         callee_authid=None,
         callee_authrole=None,
         forward_for=None,
+        from_fbs=None,
     ):
         """
 
@@ -2590,11 +2962,11 @@ class Error(Message):
         :param forward_for: When this Error is forwarded for a client/callee (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert type(request_type) == int
-        assert type(request) == int
-        assert type(error) == str
-        assert args is None or type(args) in [list, tuple]
-        assert kwargs is None or type(kwargs) == dict
+        assert request_type is None or type(request_type) == int
+        assert request is None or type(request) == int
+        assert error is None or type(error) == str
+        assert args is None or type(args) in [list, tuple, str, bytes]
+        assert kwargs is None or type(kwargs) in [dict, str, bytes]
         assert payload is None or type(payload) == bytes
         assert payload is None or (
             payload is not None and args is None and kwargs is None
@@ -2621,26 +2993,99 @@ class Error(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
-        Message.__init__(self)
-        self.request_type = request_type
-        self.request = request
-        self.error = error
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
+        # Initialize Message base class
+        Message.__init__(self, from_fbs=from_fbs)
 
-        # payload transparency related knobs
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Error-specific attributes
+        self._request_type = request_type
+        self._request = request
+        self._error = error
 
         # effective callee that responded with the error
-        self.callee = callee
-        self.callee_authid = callee_authid
-        self.callee_authrole = callee_authrole
+        self._callee = callee
+        self._callee_authid = callee_authid
+        self._callee_authrole = callee_authrole
 
-        # message forwarding
-        self.forward_for = forward_for
+    @property
+    def request_type(self):
+        if self._request_type is None and self._from_fbs:
+            self._request_type = self._from_fbs.RequestType()
+        return self._request_type
+
+    @request_type.setter
+    def request_type(self, value):
+        assert value is None or type(value) == int
+        self._request_type = value
+
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    @property
+    def error(self):
+        if self._error is None and self._from_fbs:
+            s = self._from_fbs.Error()
+            if s:
+                self._error = s.decode("utf8")
+        return self._error
+
+    @error.setter
+    def error(self, value):
+        assert value is None or type(value) == str
+        self._error = value
+
+    # NOTE: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
+
+    @property
+    def callee(self):
+        # Note: Error FlatBuffers schema doesn't include callee fields yet
+        return self._callee
+
+    @callee.setter
+    def callee(self, value):
+        assert value is None or type(value) == int
+        self._callee = value
+
+    @property
+    def callee_authid(self):
+        # Note: Error FlatBuffers schema doesn't include callee fields yet
+        return self._callee_authid
+
+    @callee_authid.setter
+    def callee_authid(self, value):
+        assert value is None or type(value) == str
+        self._callee_authid = value
+
+    @property
+    def callee_authrole(self):
+        # Note: Error FlatBuffers schema doesn't include callee fields yet
+        return self._callee_authrole
+
+    @callee_authrole.setter
+    def callee_authrole(self, value):
+        assert value is None or type(value) == str
+        self._callee_authrole = value
+
+    # NOTE: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
+    # NOTE: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
@@ -2671,7 +3116,7 @@ class Error(Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         callee_authid = self.callee_authid
         if callee_authid:
@@ -2724,16 +3169,23 @@ class Error(Message):
         if payload:
             message_fbs.ErrorGen.ErrorAddPayload(builder, payload)
         if self.enc_algo:
-            message_fbs.ErrorGen.ErrorAddEncAlgo(builder, self.enc_algo)
+            message_fbs.ErrorGen.ErrorAddPptScheme(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.ErrorGen.ErrorAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.ErrorGen.ErrorAddPptSerializer(builder, self.enc_serializer)
         if enc_key:
-            message_fbs.ErrorGen.ErrorAddEncKey(builder, enc_key)
+            message_fbs.ErrorGen.ErrorAddPptKeyid(builder, enc_key)
         if forward_for:
             message_fbs.ErrorGen.ErrorAddForwardFor(builder, forward_for)
 
         msg = message_fbs.ErrorGen.ErrorEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.ERROR)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -2961,7 +3413,7 @@ class Error(Message):
                 ]
 
 
-class Publish(Message):
+class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``PUBLISH`` message.
 
@@ -2978,45 +3430,30 @@ class Publish(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # string (required, uri)
-        "_topic",
-        # [uint8]
-        "_args",
-        # [uint8]
-        "_kwargs",
-        # [uint8]
-        "_payload",
-        # Payload => uint8
-        "_enc_algo",
-        # Serializer => uint8
-        "_enc_serializer",
-        # [uint8]
-        "_enc_key",
-        # bool
-        "_acknowledge",
-        # bool
-        "_exclude_me",
-        # [uint64]
-        "_exclude",
-        # [string] (principal)
-        "_exclude_authid",
-        # [string] (principal)
-        "_exclude_authrole",
-        # [uint64]
-        "_eligible",
-        # [string] (principal)
-        "_eligible_authid",
-        # [string] (principal)
-        "_eligible_authrole",
-        # bool
-        "_retain",
-        # string
-        "_transaction_hash",
-        # [Principal]
-        "_forward_for",
+        # Publish-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_topic",  # string (required, uri)
+        "_acknowledge",  # bool
+        "_exclude_me",  # bool
+        "_exclude",  # [uint64]
+        "_exclude_authid",  # [string] (principal)
+        "_exclude_authrole",  # [string] (principal)
+        "_eligible",  # [uint64]
+        "_eligible_authid",  # [string] (principal)
+        "_eligible_authrole",  # [string] (principal)
+        "_retain",  # bool
+        "_transaction_hash",  # string
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
@@ -3170,12 +3607,23 @@ class Publish(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Publish-specific attributes
         self._request = request
         self._topic = topic
-        self._args = args
-        self._kwargs = _validate_kwargs(kwargs)
-        self._payload = payload
         self._acknowledge = acknowledge
 
         # publisher exlusion and black-/whitelisting
@@ -3192,14 +3640,6 @@ class Publish(Message):
 
         # application provided transaction hash for event
         self._transaction_hash = transaction_hash
-
-        # payload transparency related knobs
-        self._enc_algo = enc_algo
-        self._enc_key = enc_key
-        self._enc_serializer = enc_serializer
-
-        # message forwarding
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -3273,41 +3713,7 @@ class Publish(Message):
         assert value is None or type(value) == str
         self._topic = value
 
-    @property
-    def args(self):
-        if self._args is None and self._from_fbs:
-            if self._from_fbs.ArgsLength():
-                self._args = cbor2.loads(bytes(self._from_fbs.ArgsAsBytes()))
-        return self._args
-
-    @args.setter
-    def args(self, value):
-        assert value is None or type(value) in [list, tuple]
-        self._args = value
-
-    @property
-    def kwargs(self):
-        if self._kwargs is None and self._from_fbs:
-            if self._from_fbs.KwargsLength():
-                self._kwargs = cbor2.loads(bytes(self._from_fbs.KwargsAsBytes()))
-        return self._kwargs
-
-    @kwargs.setter
-    def kwargs(self, value):
-        assert value is None or type(value) == dict
-        self._kwargs = value
-
-    @property
-    def payload(self):
-        if self._payload is None and self._from_fbs:
-            if self._from_fbs.PayloadLength():
-                self._payload = self._from_fbs.PayloadAsBytes()
-        return self._payload
-
-    @payload.setter
-    def payload(self, value):
-        assert value is None or type(value) == bytes
-        self._payload = value
+    # NOTE: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
 
     @property
     def acknowledge(self):
@@ -3477,82 +3883,8 @@ class Publish(Message):
         assert value is None or type(value) == str
         self._transaction_hash = value
 
-    @property
-    def enc_algo(self):
-        if self._enc_algo is None and self._from_fbs:
-            enc_algo = self._from_fbs.EncAlgo()
-            if enc_algo:
-                self._enc_algo = enc_algo
-        return self._enc_algo
-
-    @enc_algo.setter
-    def enc_algo(self, value):
-        assert value is None or value in [
-            ENC_ALGO_CRYPTOBOX,
-            ENC_ALGO_MQTT,
-            ENC_ALGO_XBR,
-        ]
-        self._enc_algo = value
-
-    @property
-    def enc_key(self):
-        if self._enc_key is None and self._from_fbs:
-            if self._from_fbs.EncKeyLength():
-                self._enc_key = self._from_fbs.EncKeyAsBytes()
-        return self._enc_key
-
-    @enc_key.setter
-    def enc_key(self, value):
-        assert value is None or type(value) == bytes
-        self._enc_key = value
-
-    @property
-    def enc_serializer(self):
-        if self._enc_serializer is None and self._from_fbs:
-            enc_serializer = self._from_fbs.EncSerializer()
-            if enc_serializer:
-                self._enc_serializer = enc_serializer
-        return self._enc_serializer
-
-    @enc_serializer.setter
-    def enc_serializer(self, value):
-        assert value is None or value in [
-            ENC_SER_JSON,
-            ENC_SER_MSGPACK,
-            ENC_SER_CBOR,
-            ENC_SER_UBJSON,
-        ]
-        self._enc_serializer = value
-
-    @property
-    def forward_for(self):
-        if self._forward_for is None and self._from_fbs:
-            if self._from_fbs.ForwardForLength():
-                forward_for = []
-                for j in range(self._from_fbs.ForwardForLength()):
-                    principal = self._from_fbs.ForwardFor(j)
-                    # Principal struct currently only has session field
-                    # (authid/authrole are commented out in schema due to FlatBuffers struct limitations)
-                    forward_for.append({
-                        'session': principal.Session(),
-                        'authid': None,
-                        'authrole': None,
-                    })
-                self._forward_for = forward_for
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        if value:
-            for ff in value:
-                assert type(ff) == dict
-                assert "session" in ff and type(ff["session"]) == int
-                assert "authid" in ff and (
-                    ff["authid"] is None or type(ff["authid"]) == str
-                )
-                assert "authrole" in ff and type(ff["authrole"]) == str
-        self._forward_for = value
+    # NOTE: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
+    # NOTE: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
@@ -3589,7 +3921,7 @@ class Publish(Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         # exclude: [int]
         exclude = self.exclude
@@ -3663,6 +3995,43 @@ class Publish(Message):
                 builder.PrependUOffsetTRelative(o)
             eligible_authrole = builder.EndVector(len(_eligible_authrole))
 
+        # forward_for: [Principal]
+        forward_for = None
+        if self.forward_for:
+            from autobahn.wamp.gen.wamp.proto.Principal import (
+                PrincipalStart,
+                PrincipalAddSession,
+                PrincipalAddAuthid,
+                PrincipalAddAuthrole,
+                PrincipalEnd,
+            )
+
+            _forward_for = []
+            for ff in self.forward_for:
+                # Build Principal table
+                authid = (
+                    builder.CreateString(ff["authid"]) if ff.get("authid") else None
+                )
+                authrole = (
+                    builder.CreateString(ff["authrole"]) if ff.get("authrole") else None
+                )
+
+                PrincipalStart(builder)
+                PrincipalAddSession(builder, ff["session"])
+                if authid:
+                    PrincipalAddAuthid(builder, authid)
+                if authrole:
+                    PrincipalAddAuthrole(builder, authrole)
+                _forward_for.append(PrincipalEnd(builder))
+
+            # Create vector of Principal tables
+            message_fbs.PublishGen.PublishStartForwardForVector(
+                builder, len(_forward_for)
+            )
+            for o in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(o)
+            forward_for = builder.EndVector(len(_forward_for))
+
         # now start and build a new object ..
         message_fbs.PublishGen.PublishStart(builder)
 
@@ -3680,11 +4049,15 @@ class Publish(Message):
             message_fbs.PublishGen.PublishAddPayload(builder, payload)
 
         if self.enc_algo:
-            message_fbs.PublishGen.PublishAddEncAlgo(builder, self.enc_algo)
+            # Convert string enc_algo to FlatBuffers enum value
+            enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
+            message_fbs.PublishGen.PublishAddPptScheme(builder, enc_algo_int)
         if self.enc_serializer:
-            message_fbs.PublishGen.PublishAddEncSerializer(builder, self.enc_serializer)
+            # Convert string enc_serializer to FlatBuffers enum value
+            enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
+            message_fbs.PublishGen.PublishAddPptSerializer(builder, enc_serializer_int)
         if enc_key:
-            message_fbs.PublishGen.PublishAddEncKey(builder, enc_key)
+            message_fbs.PublishGen.PublishAddPptKeyid(builder, enc_key)
 
         if self.acknowledge is not None:
             message_fbs.PublishGen.PublishAddAcknowledge(builder, self.acknowledge)
@@ -3710,11 +4083,10 @@ class Publish(Message):
         if self.retain is not None:
             message_fbs.PublishGen.PublishAddRetain(builder, self.retain)
         if transaction_hash is not None:
-            message_fbs.PublishGen.PublishAddTransactionHash(
-                builder, self.transaction_hash
-            )
+            message_fbs.PublishGen.PublishAddTransactionHash(builder, transaction_hash)
 
-        # FIXME: add forward_for
+        if forward_for:
+            message_fbs.PublishGen.PublishAddForwardFor(builder, forward_for)
 
         msg = message_fbs.PublishGen.PublishEnd(builder)
 
@@ -4055,12 +4427,18 @@ class Publish(Message):
         options = self.marshal_options()
 
         if self.payload:
+            # Convert memoryview to bytes for non-FlatBuffers serializers
+            payload = (
+                bytes(self.payload)
+                if isinstance(self.payload, memoryview)
+                else self.payload
+            )
             return [
                 Publish.MESSAGE_TYPE,
                 self.request,
                 options,
                 self.topic,
-                self.payload,
+                payload,
             ]
         else:
             if self.kwargs:
@@ -4170,18 +4548,26 @@ class Published(Message):
     def build(self, builder, serializer=None):
         message_fbs.PublishedGen.PublishedStart(builder)
 
-        if self.session:
-            message_fbs.PublishedGen.PublishedAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.PublishedGen.PublishedAddSession(builder, session)
         if self.request:
             message_fbs.PublishedGen.PublishedAddRequest(builder, self.request)
         if self.publication:
             message_fbs.PublishedGen.PublishedAddPublication(builder, self.publication)
 
         msg = message_fbs.PublishedGen.PublishedEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.PUBLISHED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
-class Subscribe(Message):
+class Subscribe(MessageWithForwardFor, Message):
     """
     A WAMP ``SUBSCRIBE`` message.
 
@@ -4197,20 +4583,26 @@ class Subscribe(Message):
     MATCH_PREFIX = "prefix"
     MATCH_WILDCARD = "wildcard"
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # string (required, uri_pattern)
-        "_topic",
-        # Match (enum)
-        "_match",
-        # bool
-        "_get_retained",
-        # [Principal]
-        "_forward_for",
+        # Subscribe-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_topic",  # string (required, uri_pattern)
+        "_match",  # Match (enum)
+        "_get_retained",  # bool
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
-    def __init__(self, request=None, topic=None, match=None, get_retained=None, forward_for=None, from_fbs=None):
+    def __init__(
+        self,
+        request=None,
+        topic=None,
+        match=None,
+        get_retained=None,
+        forward_for=None,
+        from_fbs=None,
+    ):
         """
 
         :param request: The WAMP request ID of this request.
@@ -4248,12 +4640,17 @@ class Subscribe(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Subscribe-specific attributes
         self._request = request
         self._topic = topic
         self._match = match or Subscribe.MATCH_EXACT
         self._get_retained = get_retained
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -4329,15 +4726,7 @@ class Subscribe(Message):
         assert value is None or type(value) == bool
         self._get_retained = value
 
-    @property
-    def forward_for(self):
-        # forward_for is not in FlatBuffers schema yet
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -4471,8 +4860,9 @@ class Subscribe(Message):
         message_fbs.SubscribeGen.SubscribeStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.SubscribeGen.SubscribeAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.SubscribeGen.SubscribeAddSession(builder, session)
         if self.request:
             message_fbs.SubscribeGen.SubscribeAddRequest(builder, self.request)
         if topic:
@@ -4493,7 +4883,14 @@ class Subscribe(Message):
 
         # End and return
         msg = message_fbs.SubscribeGen.SubscribeEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.SUBSCRIBE)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Subscribed(Message):
@@ -4582,18 +4979,28 @@ class Subscribed(Message):
     def build(self, builder, serializer=None):
         message_fbs.SubscribedGen.SubscribedStart(builder)
 
-        if self.session:
-            message_fbs.SubscribedGen.SubscribedAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.SubscribedGen.SubscribedAddSession(builder, session)
         if self.request:
             message_fbs.SubscribedGen.SubscribedAddRequest(builder, self.request)
         if self.subscription:
-            message_fbs.SubscribedGen.SubscribedAddSubscription(builder, self.subscription)
+            message_fbs.SubscribedGen.SubscribedAddSubscription(
+                builder, self.subscription
+            )
 
         msg = message_fbs.SubscribedGen.SubscribedEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.SUBSCRIBED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
-class Unsubscribe(Message):
+class Unsubscribe(MessageWithForwardFor, Message):
     """
     A WAMP ``UNSUBSCRIBE`` message.
 
@@ -4608,16 +5015,18 @@ class Unsubscribe(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # uint64
-        "_subscription",
-        # [Principal]
-        "_forward_for",
+        # Unsubscribe-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_subscription",  # uint64
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
-    def __init__(self, request=None, subscription=None, forward_for=None, from_fbs=None):
+    def __init__(
+        self, request=None, subscription=None, forward_for=None, from_fbs=None
+    ):
         """
 
         :param request: The WAMP request ID of this request.
@@ -4641,10 +5050,15 @@ class Unsubscribe(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Unsubscribe-specific attributes
         self._request = request
         self._subscription = subscription
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -4684,15 +5098,7 @@ class Unsubscribe(Message):
         assert value is None or type(value) == int
         self._subscription = value
 
-    @property
-    def forward_for(self):
-        # forward_for is not in FlatBuffers schema yet
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -4768,8 +5174,9 @@ class Unsubscribe(Message):
     def build(self, builder, serializer=None):
         message_fbs.UnsubscribeGen.UnsubscribeStart(builder)
 
-        if self.session:
-            message_fbs.UnsubscribeGen.UnsubscribeAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.UnsubscribeGen.UnsubscribeAddSession(builder, session)
         if self.request:
             message_fbs.UnsubscribeGen.UnsubscribeAddRequest(builder, self.request)
         if self.subscription:
@@ -4778,7 +5185,14 @@ class Unsubscribe(Message):
             )
 
         msg = message_fbs.UnsubscribeGen.UnsubscribeEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.UNSUBSCRIBE)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Unsubscribed(Message):
@@ -4961,8 +5375,9 @@ class Unsubscribed(Message):
         message_fbs.UnsubscribedGen.UnsubscribedStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.UnsubscribedGen.UnsubscribedAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.UnsubscribedGen.UnsubscribedAddSession(builder, session)
         if self.request:
             message_fbs.UnsubscribedGen.UnsubscribedAddRequest(builder, self.request)
         if self.subscription:
@@ -4974,10 +5389,17 @@ class Unsubscribed(Message):
 
         # End and return
         msg = message_fbs.UnsubscribedGen.UnsubscribedEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.UNSUBSCRIBED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
-class Event(Message):
+class Event(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``EVENT`` message.
 
@@ -4994,39 +5416,27 @@ class Event(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64
-        "_subscription",
-        # uint64
-        "_publication",
-        # [uint8]
-        "_args",
-        # [uint8]
-        "_kwargs",
-        # [uint8]
-        "_payload",
-        # Payload => uint8
-        "_enc_algo",
-        # Serializer => uint8
-        "_enc_serializer",
-        # [uint8]
-        "_enc_key",
-        # uint64
-        "_publisher",
-        # string (principal)
-        "_publisher_authid",
-        # string (principal)
-        "_publisher_authrole",
-        # string (uri)
-        "_topic",
-        # bool
-        "_retained",
-        # string
-        "_transaction_hash",
-        # bool - FIXME: rename to "acknowledge"
-        "_x_acknowledged_delivery",
-        # [Principal]
-        "_forward_for",
+        # Event-specific slots (FlatBuffers schema types in comments)
+        "_subscription",  # uint64
+        "_publication",  # uint64
+        "_publisher",  # uint64
+        "_publisher_authid",  # string (principal)
+        "_publisher_authrole",  # string (principal)
+        "_topic",  # string (uri)
+        "_retained",  # bool
+        "_transaction_hash",  # string
+        "_x_acknowledged_delivery",  # bool - FIXME: rename to "acknowledge"
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
@@ -5135,12 +5545,23 @@ class Event(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Event-specific attributes
         self._subscription = subscription
         self._publication = publication
-        self._args = args
-        self._kwargs = _validate_kwargs(kwargs)
-        self._payload = payload
         self._publisher = publisher
         self._publisher_authid = publisher_authid
         self._publisher_authrole = publisher_authrole
@@ -5148,10 +5569,6 @@ class Event(Message):
         self._retained = retained
         self._transaction_hash = transaction_hash
         self._x_acknowledged_delivery = x_acknowledged_delivery
-        self._enc_algo = enc_algo
-        self._enc_key = enc_key
-        self._enc_serializer = enc_serializer
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -5217,41 +5634,7 @@ class Event(Message):
         assert value is None or type(value) == int
         self._publication = value
 
-    @property
-    def args(self):
-        if self._args is None and self._from_fbs:
-            if self._from_fbs.ArgsLength():
-                self._args = cbor2.loads(bytes(self._from_fbs.ArgsAsBytes()))
-        return self._args
-
-    @args.setter
-    def args(self, value):
-        assert value is None or type(value) in [list, tuple]
-        self._args = value
-
-    @property
-    def kwargs(self):
-        if self._kwargs is None and self._from_fbs:
-            if self._from_fbs.KwargsLength():
-                self._kwargs = cbor2.loads(bytes(self._from_fbs.KwargsAsBytes()))
-        return self._kwargs
-
-    @kwargs.setter
-    def kwargs(self, value):
-        assert value is None or type(value) == dict
-        self._kwargs = value
-
-    @property
-    def payload(self):
-        if self._payload is None and self._from_fbs:
-            if self._from_fbs.PayloadLength():
-                self._payload = self._from_fbs.PayloadAsBytes()
-        return self._payload
-
-    @payload.setter
-    def payload(self, value):
-        assert value is None or type(value) == bytes
-        self._payload = value
+    # Note: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
 
     @property
     def publisher(self):
@@ -5308,7 +5691,10 @@ class Event(Message):
     @property
     def retained(self):
         if self._retained is None and self._from_fbs:
-            self._retained = self._from_fbs.Retained()
+            # Only set if non-default (True). FlatBuffers returns False for unset booleans.
+            val = self._from_fbs.Retained()
+            if val:  # Only set if True (non-default)
+                self._retained = val
         return self._retained
 
     @retained.setter
@@ -5342,62 +5728,7 @@ class Event(Message):
         assert value is None or type(value) == bool
         self._x_acknowledged_delivery = value
 
-    @property
-    def enc_algo(self):
-        if self._enc_algo is None and self._from_fbs:
-            enc_algo = self._from_fbs.EncAlgo()
-            if enc_algo:
-                self._enc_algo = enc_algo
-        return self._enc_algo
-
-    @enc_algo.setter
-    def enc_algo(self, value):
-        assert value is None or value in [
-            ENC_ALGO_CRYPTOBOX,
-            ENC_ALGO_MQTT,
-            ENC_ALGO_XBR,
-        ]
-        self._enc_algo = value
-
-    @property
-    def enc_key(self):
-        if self._enc_key is None and self._from_fbs:
-            if self._from_fbs.EncKeyLength():
-                self._enc_key = self._from_fbs.EncKeyAsBytes()
-        return self._enc_key
-
-    @enc_key.setter
-    def enc_key(self, value):
-        assert value is None or type(value) == bytes
-        self._enc_key = value
-
-    @property
-    def enc_serializer(self):
-        if self._enc_serializer is None and self._from_fbs:
-            enc_serializer = self._from_fbs.EncSerializer()
-            if enc_serializer:
-                self._enc_serializer = enc_serializer
-        return self._enc_serializer
-
-    @enc_serializer.setter
-    def enc_serializer(self, value):
-        assert value is None or value in [
-            ENC_SER_JSON,
-            ENC_SER_MSGPACK,
-            ENC_SER_CBOR,
-            ENC_SER_UBJSON,
-        ]
-        self._enc_serializer = value
-
-    @property
-    def forward_for(self):
-        # FIXME
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        # FIXME
-        self._forward_for = value
+    # Note: enc_algo, enc_key, enc_serializer, forward_for properties are provided by mixins
 
     @staticmethod
     def cast(buf):
@@ -5442,7 +5773,42 @@ class Event(Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
+
+        # forward_for: [Principal]
+        forward_for = None
+        if self.forward_for:
+            from autobahn.wamp.gen.wamp.proto.Principal import (
+                PrincipalStart,
+                PrincipalAddSession,
+                PrincipalAddAuthid,
+                PrincipalAddAuthrole,
+                PrincipalEnd,
+            )
+
+            _forward_for = []
+            for ff in self.forward_for:
+                # Build Principal table
+                authid = (
+                    builder.CreateString(ff["authid"]) if ff.get("authid") else None
+                )
+                authrole = (
+                    builder.CreateString(ff["authrole"]) if ff.get("authrole") else None
+                )
+
+                PrincipalStart(builder)
+                PrincipalAddSession(builder, ff["session"])
+                if authid:
+                    PrincipalAddAuthid(builder, authid)
+                if authrole:
+                    PrincipalAddAuthrole(builder, authrole)
+                _forward_for.append(PrincipalEnd(builder))
+
+            # Create vector of Principal tables
+            message_fbs.EventGen.EventStartForwardForVector(builder, len(_forward_for))
+            for o in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(o)
+            forward_for = builder.EndVector(len(_forward_for))
 
         message_fbs.EventGen.EventStart(builder)
 
@@ -5477,13 +5843,18 @@ class Event(Message):
             )
 
         if self.enc_algo:
-            message_fbs.EventGen.EventAddEncAlgo(builder, self.enc_algo)
+            # Convert string enc_algo to FlatBuffers enum value
+            enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
+            message_fbs.EventGen.EventAddPptScheme(builder, enc_algo_int)
         if enc_key:
-            message_fbs.EventGen.EventAddEncKey(builder, enc_key)
+            message_fbs.EventGen.EventAddPptKeyid(builder, enc_key)
         if self.enc_serializer:
-            message_fbs.EventGen.EventAddEncSerializer(builder, self.enc_serializer)
+            # Convert string enc_serializer to FlatBuffers enum value
+            enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
+            message_fbs.EventGen.EventAddPptSerializer(builder, enc_serializer_int)
 
-        # FIXME: add forward_for
+        if forward_for:
+            message_fbs.EventGen.EventAddForwardFor(builder, forward_for)
 
         msg = message_fbs.EventGen.EventEnd(builder)
 
@@ -5725,12 +6096,18 @@ class Event(Message):
                 details["enc_key"] = self.enc_key
             if self.enc_serializer is not None:
                 details["enc_serializer"] = self.enc_serializer
+            # Convert memoryview to bytes for non-FlatBuffers serializers
+            payload = (
+                bytes(self.payload)
+                if isinstance(self.payload, memoryview)
+                else self.payload
+            )
             return [
                 Event.MESSAGE_TYPE,
                 self.subscription,
                 self.publication,
                 details,
-                self.payload,
+                payload,
             ]
         else:
             if self.kwargs:
@@ -5861,10 +6238,17 @@ class EventReceived(Message):
             )
 
         msg = message_fbs.EventReceivedGen.EventReceivedEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.EVENT_RECEIVED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
-class Call(Message):
+class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``CALL`` message.
 
@@ -5881,28 +6265,32 @@ class Call(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "_request",
-        "_procedure",
-        "_args",
-        "_kwargs",
-        "_payload",
-        "_timeout",
-        "_receive_progress",
-        "_transaction_hash",
-        "_enc_algo",
-        "_enc_key",
-        "_enc_serializer",
-        "_caller",
-        "_caller_authid",
-        "_caller_authrole",
-        "_forward_for",
+        # Call-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_procedure",  # string (required, uri)
+        "_timeout",  # uint32
+        "_receive_progress",  # bool
+        "_transaction_hash",  # string
+        "_caller",  # uint64
+        "_caller_authid",  # string (principal)
+        "_caller_authrole",  # string (principal)
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
         self,
-        request,
-        procedure,
+        request=None,
+        procedure=None,
         args=None,
         kwargs=None,
         payload=None,
@@ -5971,8 +6359,9 @@ class Call(Message):
         :param forward_for: When this Publish is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert type(request) == int
-        assert type(procedure) == str
+        if from_fbs is None:
+            assert type(request) == int
+            assert type(procedure) == str
         assert args is None or type(args) in [list, tuple]
         assert kwargs is None or type(kwargs) == dict
         assert payload is None or type(payload) == bytes
@@ -6005,26 +6394,29 @@ class Call(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Call-specific attributes
         self._request = request
         self._procedure = procedure
-        self._args = args
-        self._kwargs = _validate_kwargs(kwargs)
-        self._payload = payload
         self._timeout = timeout
         self._receive_progress = receive_progress
         self._transaction_hash = transaction_hash
-
-        # payload transparency related knobs
-        self._enc_algo = enc_algo
-        self._enc_key = enc_key
-        self._enc_serializer = enc_serializer
-
-        # message forwarding
         self._caller = caller
         self._caller_authid = caller_authid
         self._caller_authrole = caller_authrole
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -6090,41 +6482,7 @@ class Call(Message):
         assert value is None or type(value) == str
         self._procedure = value
 
-    @property
-    def args(self):
-        if self._args is None and self._from_fbs:
-            if self._from_fbs.ArgsLength():
-                self._args = cbor2.loads(bytes(self._from_fbs.ArgsAsBytes()))
-        return self._args
-
-    @args.setter
-    def args(self, value):
-        assert value is None or type(value) in [list, tuple]
-        self._args = value
-
-    @property
-    def kwargs(self):
-        if self._kwargs is None and self._from_fbs:
-            if self._from_fbs.KwargsLength():
-                self._kwargs = cbor2.loads(bytes(self._from_fbs.KwargsAsBytes()))
-        return self._kwargs
-
-    @kwargs.setter
-    def kwargs(self, value):
-        assert value is None or type(value) == dict
-        self._kwargs = value
-
-    @property
-    def payload(self):
-        if self._payload is None and self._from_fbs:
-            if self._from_fbs.PayloadLength():
-                self._payload = self._from_fbs.PayloadAsBytes()
-        return self._payload
-
-    @payload.setter
-    def payload(self, value):
-        assert value is None or type(value) == bytes
-        self._payload = value
+    # Note: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
 
     @property
     def timeout(self):
@@ -6165,44 +6523,7 @@ class Call(Message):
         assert value is None or type(value) == str
         self._transaction_hash = value
 
-    @property
-    def enc_algo(self):
-        if self._enc_algo is None and self._from_fbs:
-            s = self._from_fbs.EncAlgo()
-            if s:
-                self._enc_algo = s.decode("utf8")
-        return self._enc_algo
-
-    @enc_algo.setter
-    def enc_algo(self, value):
-        assert value is None or is_valid_enc_algo(value)
-        self._enc_algo = value
-
-    @property
-    def enc_key(self):
-        if self._enc_key is None and self._from_fbs:
-            s = self._from_fbs.EncKey()
-            if s:
-                self._enc_key = s.decode("utf8")
-        return self._enc_key
-
-    @enc_key.setter
-    def enc_key(self, value):
-        assert value is None or type(value) == str
-        self._enc_key = value
-
-    @property
-    def enc_serializer(self):
-        if self._enc_serializer is None and self._from_fbs:
-            s = self._from_fbs.EncSerializer()
-            if s:
-                self._enc_serializer = s.decode("utf8")
-        return self._enc_serializer
-
-    @enc_serializer.setter
-    def enc_serializer(self, value):
-        assert value is None or is_valid_enc_serializer(value)
-        self._enc_serializer = value
+    # Note: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
 
     @property
     def caller(self):
@@ -6243,35 +6564,7 @@ class Call(Message):
         assert value is None or type(value) == str
         self._caller_authrole = value
 
-    @property
-    def forward_for(self):
-        if self._forward_for is None and self._from_fbs:
-            if self._from_fbs.ForwardForLength():
-                forward_for = []
-                for j in range(self._from_fbs.ForwardForLength()):
-                    principal = self._from_fbs.ForwardFor(j)
-                    # Principal struct currently only has session field
-                    # (authid/authrole are commented out in schema due to FlatBuffers struct limitations)
-                    forward_for.append({
-                        'session': principal.Session(),
-                        'authid': None,
-                        'authrole': None,
-                    })
-                self._forward_for = forward_for
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        if value:
-            for ff in value:
-                assert type(ff) == dict
-                assert "session" in ff and type(ff["session"]) == int
-                assert "authid" in ff and (
-                    ff["authid"] is None or type(ff["authid"]) == str
-                )
-                assert "authrole" in ff and type(ff["authrole"]) == str
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
@@ -6316,7 +6609,7 @@ class Call(Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         # forward_for: [Principal]
         forward_for = self.forward_for
@@ -6348,8 +6641,6 @@ class Call(Message):
         # build CallGen
         message_fbs.CallGen.CallStart(builder)
 
-        if self.session:
-            message_fbs.CallGen.CallAddSession(builder, self.session)
         if self.request:
             message_fbs.CallGen.CallAddRequest(builder, self.request)
         if procedure:
@@ -6361,11 +6652,11 @@ class Call(Message):
         if payload:
             message_fbs.CallGen.CallAddPayload(builder, payload)
         if self.enc_algo:
-            message_fbs.CallGen.CallAddEncAlgo(builder, self.enc_algo)
+            message_fbs.CallGen.CallAddPptScheme(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.CallGen.CallAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.CallGen.CallAddPptSerializer(builder, self.enc_serializer)
         if enc_key:
-            message_fbs.CallGen.CallAddEncKey(builder, enc_key)
+            message_fbs.CallGen.CallAddPptKeyid(builder, enc_key)
         if self.timeout:
             message_fbs.CallGen.CallAddTimeout(builder, self.timeout)
         if self.receive_progress:
@@ -6382,7 +6673,14 @@ class Call(Message):
             message_fbs.CallGen.CallAddForwardFor(builder, forward_for)
 
         msg = message_fbs.CallGen.CallEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.CALL)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -6643,7 +6941,7 @@ class Call(Message):
                 return [Call.MESSAGE_TYPE, self.request, options, self.procedure]
 
 
-class Cancel(Message):
+class Cancel(MessageWithForwardFor, Message):
     """
     A WAMP ``CANCEL`` message.
 
@@ -6661,13 +6959,13 @@ class Cancel(Message):
     KILL = "kill"
     KILLNOWAIT = "killnowait"
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # CancelMode (enum)
-        "_mode",
-        # [Principal]
-        "_forward_for",
+        # Cancel-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_mode",  # CancelMode (enum)
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
     def __init__(self, request=None, mode=None, forward_for=None, from_fbs=None):
@@ -6696,10 +6994,15 @@ class Cancel(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Cancel-specific attributes
         self._request = request
         self._mode = mode
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -6744,15 +7047,7 @@ class Cancel(Message):
         assert value is None or type(value) == str
         self._mode = value
 
-    @property
-    def forward_for(self):
-        # forward_for in FlatBuffers uses Principal struct, complex to deserialize
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -6862,10 +7157,17 @@ class Cancel(Message):
             message_fbs.CancelGen.CancelAddMode(builder, mode_val)
 
         msg = message_fbs.CancelGen.CancelEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.CANCEL)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
-class Result(Message):
+class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``RESULT`` message.
 
@@ -6882,24 +7184,28 @@ class Result(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "request",
-        "args",
-        "kwargs",
-        "payload",
-        "progress",
-        "enc_algo",
-        "enc_key",
-        "enc_serializer",
-        "callee",
-        "callee_authid",
-        "callee_authrole",
-        "forward_for",
+        # Result-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_progress",  # bool
+        "_callee",  # uint64 (session id)
+        "_callee_authid",  # string (principal)
+        "_callee_authrole",  # string (principal)
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
         self,
-        request,
+        request=None,
         args=None,
         kwargs=None,
         payload=None,
@@ -6911,6 +7217,7 @@ class Result(Message):
         callee_authid=None,
         callee_authrole=None,
         forward_for=None,
+        from_fbs=None,
     ):
         """
 
@@ -6953,9 +7260,9 @@ class Result(Message):
         :param forward_for: When this Result is forwarded for a client/callee (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert type(request) == int
-        assert args is None or type(args) in [list, tuple]
-        assert kwargs is None or type(kwargs) == dict
+        assert request is None or type(request) == int
+        assert args is None or type(args) in [list, tuple, str, bytes]
+        assert kwargs is None or type(kwargs) in [dict, str, bytes]
         assert payload is None or type(payload) == bytes
         assert payload is None or (
             payload is not None and args is None and kwargs is None
@@ -6983,25 +7290,96 @@ class Result(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
-        Message.__init__(self)
-        self.request = request
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
-        self.progress = progress
+        # Initialize Message base class
+        Message.__init__(self, from_fbs=from_fbs)
 
-        # payload transparency related knobs
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Result-specific attributes
+        self._request = request
+        self._progress = progress
 
         # effective callee that responded with the result
-        self.callee = callee
-        self.callee_authid = callee_authid
-        self.callee_authrole = callee_authrole
+        self._callee = callee
+        self._callee_authid = callee_authid
+        self._callee_authrole = callee_authrole
 
-        # message forwarding
-        self.forward_for = forward_for
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    # NOTE: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
+
+    @property
+    def progress(self):
+        if self._progress is None and self._from_fbs:
+            progress = self._from_fbs.Progress()
+            if progress:
+                self._progress = progress
+        return self._progress
+
+    @progress.setter
+    def progress(self, value):
+        assert value is None or type(value) == bool
+        self._progress = value
+
+    @property
+    def callee(self):
+        if self._callee is None and self._from_fbs:
+            callee = self._from_fbs.Callee()
+            if callee:
+                self._callee = callee
+        return self._callee
+
+    @callee.setter
+    def callee(self, value):
+        assert value is None or type(value) == int
+        self._callee = value
+
+    @property
+    def callee_authid(self):
+        if self._callee_authid is None and self._from_fbs:
+            s = self._from_fbs.CalleeAuthid()
+            if s:
+                self._callee_authid = s.decode("utf8")
+        return self._callee_authid
+
+    @callee_authid.setter
+    def callee_authid(self, value):
+        assert value is None or type(value) == str
+        self._callee_authid = value
+
+    @property
+    def callee_authrole(self):
+        if self._callee_authrole is None and self._from_fbs:
+            s = self._from_fbs.CalleeAuthrole()
+            if s:
+                self._callee_authrole = s.decode("utf8")
+        return self._callee_authrole
+
+    @callee_authrole.setter
+    def callee_authrole(self, value):
+        assert value is None or type(value) == str
+        self._callee_authrole = value
+
+    # NOTE: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
+    # NOTE: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
@@ -7028,7 +7406,7 @@ class Result(Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         callee_authid = self.callee_authid
         if callee_authid:
@@ -7060,7 +7438,9 @@ class Result(Message):
                 PrincipalGen.AddAuthrole(builder, _authrole)
                 _forward_for.append(PrincipalGen.End(builder))
 
-            message_fbs.ResultGen.ResultStartForwardForVector(builder, len(_forward_for))
+            message_fbs.ResultGen.ResultStartForwardForVector(
+                builder, len(_forward_for)
+            )
             for principal in reversed(_forward_for):
                 builder.PrependUOffsetTRelative(principal)
             forward_for = builder.EndVector()
@@ -7077,11 +7457,11 @@ class Result(Message):
         if payload:
             message_fbs.ResultGen.ResultAddPayload(builder, payload)
         if self.enc_algo:
-            message_fbs.ResultGen.ResultAddEncAlgo(builder, self.enc_algo)
+            message_fbs.ResultGen.ResultAddPptScheme(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.ResultGen.ResultAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.ResultGen.ResultAddPptSerializer(builder, self.enc_serializer)
         if enc_key:
-            message_fbs.ResultGen.ResultAddEncKey(builder, enc_key)
+            message_fbs.ResultGen.ResultAddPptKeyid(builder, enc_key)
         if self.progress:
             message_fbs.ResultGen.ResultAddProgress(builder, self.progress)
         if self.callee:
@@ -7094,7 +7474,14 @@ class Result(Message):
             message_fbs.ResultGen.ResultAddForwardFor(builder, forward_for)
 
         msg = message_fbs.ResultGen.ResultEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.RESULT)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -7294,7 +7681,7 @@ class Result(Message):
                 return [Result.MESSAGE_TYPE, self.request, details]
 
 
-class Register(Message):
+class Register(MessageWithForwardFor, Message):
     """
     A WAMP ``REGISTER`` message.
 
@@ -7315,23 +7702,18 @@ class Register(Message):
     INVOKE_LAST = "last"
     INVOKE_ROUNDROBIN = "roundrobin"
     INVOKE_RANDOM = "random"
-    INVOKE_ALL = "all"
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # string (required, uri_pattern)
-        "_procedure",
-        # Match (enum)
-        "_match",
-        # InvocationPolicy (enum)
-        "_invoke",
-        # uint16
-        "_concurrency",
-        # bool
-        "_force_reregister",
-        # [Principal]
-        "_forward_for",
+        # Register-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_procedure",  # string (required, uri_pattern)
+        "_match",  # Match (enum)
+        "_invoke",  # InvocationPolicy (enum)
+        "_concurrency",  # uint16
+        "_force_reregister",  # bool
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
     def __init__(
@@ -7394,14 +7776,19 @@ class Register(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Register-specific attributes
         self._request = request
         self._procedure = procedure
         self._match = match or Register.MATCH_EXACT
         self._invoke = invoke or Register.INVOKE_SINGLE
         self._concurrency = concurrency
         self._force_reregister = force_reregister
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -7511,15 +7898,7 @@ class Register(Message):
         assert value is None or type(value) == bool
         self._force_reregister = value
 
-    @property
-    def forward_for(self):
-        # forward_for is not in FlatBuffers schema yet
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -7724,8 +8103,9 @@ class Register(Message):
         message_fbs.RegisterGen.RegisterStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.RegisterGen.RegisterAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.RegisterGen.RegisterAddSession(builder, session)
         if self.request:
             message_fbs.RegisterGen.RegisterAddRequest(builder, self.request)
         if procedure:
@@ -7765,7 +8145,14 @@ class Register(Message):
 
         # End and return
         msg = message_fbs.RegisterGen.RegisterEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.REGISTER)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Registered(Message):
@@ -7880,8 +8267,9 @@ class Registered(Message):
     def build(self, builder, serializer=None):
         message_fbs.RegisteredGen.RegisteredStart(builder)
 
-        if self.session:
-            message_fbs.RegisteredGen.RegisteredAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.RegisteredGen.RegisteredAddSession(builder, session)
         if self.request:
             message_fbs.RegisteredGen.RegisteredAddRequest(builder, self.request)
         if self.registration:
@@ -7890,10 +8278,17 @@ class Registered(Message):
             )
 
         msg = message_fbs.RegisteredGen.RegisteredEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.REGISTERED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
-class Unregister(Message):
+class Unregister(MessageWithForwardFor, Message):
     """
     A WAMP `UNREGISTER` message.
 
@@ -7908,13 +8303,18 @@ class Unregister(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "request",
-        "registration",
-        "forward_for",
+        # Unregister-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_registration",  # uint64
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
-    def __init__(self, request, registration, forward_for=None):
+    def __init__(
+        self, request=None, registration=None, forward_for=None, from_fbs=None
+    ):
         """
 
         :param request: The WAMP request ID of this request.
@@ -7927,13 +8327,42 @@ class Unregister(Message):
             or via an intermediary router.
         :type forward_for: list[dict]
         """
-        assert type(request) == int
-        assert type(registration) == int
+        assert request is None or type(request) == int
+        assert registration is None or type(registration) == int
 
-        Message.__init__(self)
-        self.request = request
-        self.registration = registration
-        self.forward_for = forward_for
+        # Initialize Message base class
+        Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Unregister-specific attributes
+        self._request = request
+        self._registration = registration
+
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    @property
+    def registration(self):
+        if self._registration is None and self._from_fbs:
+            self._registration = self._from_fbs.Registration()
+        return self._registration
+
+    @registration.setter
+    def registration(self, value):
+        assert value is None or type(value) == int
+        self._registration = value
+
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -8180,8 +8609,9 @@ class Unregistered(Message):
         message_fbs.UnregisteredGen.UnregisteredStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.UnregisteredGen.UnregisteredAddSession(builder, self.session)
+        session = getattr(self, 'session', None)
+        if session:
+            message_fbs.UnregisteredGen.UnregisteredAddSession(builder, session)
         if self.request:
             message_fbs.UnregisteredGen.UnregisteredAddRequest(builder, self.request)
         if self.registration:
@@ -8193,10 +8623,17 @@ class Unregistered(Message):
 
         # End and return
         msg = message_fbs.UnregisteredGen.UnregisteredEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.UNREGISTERED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
-class Invocation(Message):
+class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``INVOCATION`` message.
 
@@ -8213,29 +8650,33 @@ class Invocation(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "request",
-        "registration",
-        "args",
-        "kwargs",
-        "payload",
-        "timeout",
-        "receive_progress",
-        "caller",
-        "caller_authid",
-        "caller_authrole",
-        "procedure",
-        "transaction_hash",
-        "enc_algo",
-        "enc_key",
-        "enc_serializer",
-        "forward_for",
+        # Invocation-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_registration",  # uint64 (key)
+        "_timeout",  # uint32
+        "_receive_progress",  # bool
+        "_caller",  # uint64 (session id)
+        "_caller_authid",  # string (principal)
+        "_caller_authrole",  # string (principal)
+        "_procedure",  # string (uri)
+        "_transaction_hash",  # string
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
         self,
-        request,
-        registration,
+        request=None,
+        registration=None,
         args=None,
         kwargs=None,
         payload=None,
@@ -8250,6 +8691,7 @@ class Invocation(Message):
         enc_key=None,
         enc_serializer=None,
         forward_for=None,
+        from_fbs=None,
     ):
         """
 
@@ -8306,10 +8748,10 @@ class Invocation(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert type(request) == int
-        assert type(registration) == int
-        assert args is None or type(args) in [list, tuple]
-        assert kwargs is None or type(kwargs) == dict
+        assert request is None or type(request) == int
+        assert registration is None or type(registration) == int
+        assert args is None or type(args) in [list, tuple, str, bytes]
+        assert kwargs is None or type(kwargs) in [dict, str, bytes]
         assert payload is None or type(payload) == bytes
         assert payload is None or (
             payload is not None and args is None and kwargs is None
@@ -8338,25 +8780,148 @@ class Invocation(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
-        Message.__init__(self)
-        self.request = request
-        self.registration = registration
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
-        self.timeout = timeout
-        self.receive_progress = receive_progress
-        self.caller = caller
-        self.caller_authid = caller_authid
-        self.caller_authrole = caller_authrole
-        self.procedure = procedure
-        self.transaction_hash = transaction_hash
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
+        # Initialize Message base class
+        Message.__init__(self, from_fbs=from_fbs)
 
-        # message forwarding
-        self.forward_for = forward_for
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Invocation-specific attributes
+        self._request = request
+        self._registration = registration
+        self._timeout = timeout
+        self._receive_progress = receive_progress
+        self._caller = caller
+        self._caller_authid = caller_authid
+        self._caller_authrole = caller_authrole
+        self._procedure = procedure
+        self._transaction_hash = transaction_hash
+
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    @property
+    def registration(self):
+        if self._registration is None and self._from_fbs:
+            self._registration = self._from_fbs.Registration()
+        return self._registration
+
+    @registration.setter
+    def registration(self, value):
+        assert value is None or type(value) == int
+        self._registration = value
+
+    # NOTE: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
+
+    @property
+    def timeout(self):
+        if self._timeout is None and self._from_fbs:
+            timeout = self._from_fbs.Timeout()
+            if timeout:
+                self._timeout = timeout
+        return self._timeout
+
+    @timeout.setter
+    def timeout(self, value):
+        assert value is None or type(value) == int
+        self._timeout = value
+
+    @property
+    def receive_progress(self):
+        if self._receive_progress is None and self._from_fbs:
+            receive_progress = self._from_fbs.ReceiveProgress()
+            if receive_progress:
+                self._receive_progress = receive_progress
+        return self._receive_progress
+
+    @receive_progress.setter
+    def receive_progress(self, value):
+        assert value is None or type(value) == bool
+        self._receive_progress = value
+
+    @property
+    def caller(self):
+        if self._caller is None and self._from_fbs:
+            caller = self._from_fbs.Caller()
+            if caller:
+                self._caller = caller
+        return self._caller
+
+    @caller.setter
+    def caller(self, value):
+        assert value is None or type(value) == int
+        self._caller = value
+
+    @property
+    def caller_authid(self):
+        if self._caller_authid is None and self._from_fbs:
+            s = self._from_fbs.CallerAuthid()
+            if s:
+                self._caller_authid = s.decode("utf8")
+        return self._caller_authid
+
+    @caller_authid.setter
+    def caller_authid(self, value):
+        assert value is None or type(value) == str
+        self._caller_authid = value
+
+    @property
+    def caller_authrole(self):
+        if self._caller_authrole is None and self._from_fbs:
+            s = self._from_fbs.CallerAuthrole()
+            if s:
+                self._caller_authrole = s.decode("utf8")
+        return self._caller_authrole
+
+    @caller_authrole.setter
+    def caller_authrole(self, value):
+        assert value is None or type(value) == str
+        self._caller_authrole = value
+
+    @property
+    def procedure(self):
+        if self._procedure is None and self._from_fbs:
+            s = self._from_fbs.Procedure()
+            if s:
+                self._procedure = s.decode("utf8")
+        return self._procedure
+
+    @procedure.setter
+    def procedure(self, value):
+        assert value is None or type(value) == str
+        self._procedure = value
+
+    @property
+    def transaction_hash(self):
+        if self._transaction_hash is None and self._from_fbs:
+            s = self._from_fbs.TransactionHash()
+            if s:
+                self._transaction_hash = s.decode("utf8")
+        return self._transaction_hash
+
+    @transaction_hash.setter
+    def transaction_hash(self, value):
+        assert value is None or type(value) == str
+        self._transaction_hash = value
+
+    # NOTE: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
+    # NOTE: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
@@ -8399,7 +8964,7 @@ class Invocation(Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         # forward_for: [Principal]
         forward_for = self.forward_for
@@ -8423,7 +8988,9 @@ class Invocation(Message):
                 PrincipalGen.AddAuthrole(builder, _authrole)
                 _forward_for.append(PrincipalGen.End(builder))
 
-            message_fbs.InvocationGen.InvocationStartForwardForVector(builder, len(_forward_for))
+            message_fbs.InvocationGen.InvocationStartForwardForVector(
+                builder, len(_forward_for)
+            )
             for principal in reversed(_forward_for):
                 builder.PrependUOffsetTRelative(principal)
             forward_for = builder.EndVector()
@@ -8434,7 +9001,9 @@ class Invocation(Message):
         if self.request:
             message_fbs.InvocationGen.InvocationAddRequest(builder, self.request)
         if self.registration:
-            message_fbs.InvocationGen.InvocationAddRegistration(builder, self.registration)
+            message_fbs.InvocationGen.InvocationAddRegistration(
+                builder, self.registration
+            )
         if args:
             message_fbs.InvocationGen.InvocationAddArgs(builder, args)
         if kwargs:
@@ -8444,28 +9013,43 @@ class Invocation(Message):
         if self.timeout:
             message_fbs.InvocationGen.InvocationAddTimeout(builder, self.timeout)
         if self.receive_progress:
-            message_fbs.InvocationGen.InvocationAddReceiveProgress(builder, self.receive_progress)
+            message_fbs.InvocationGen.InvocationAddReceiveProgress(
+                builder, self.receive_progress
+            )
         if self.caller:
             message_fbs.InvocationGen.InvocationAddCaller(builder, self.caller)
         if caller_authid:
             message_fbs.InvocationGen.InvocationAddCallerAuthid(builder, caller_authid)
         if caller_authrole:
-            message_fbs.InvocationGen.InvocationAddCallerAuthrole(builder, caller_authrole)
+            message_fbs.InvocationGen.InvocationAddCallerAuthrole(
+                builder, caller_authrole
+            )
         if procedure:
             message_fbs.InvocationGen.InvocationAddProcedure(builder, procedure)
         if self.enc_algo:
-            message_fbs.InvocationGen.InvocationAddEncAlgo(builder, self.enc_algo)
+            message_fbs.InvocationGen.InvocationAddPptScheme(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.InvocationGen.InvocationAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.InvocationGen.InvocationAddPptSerializer(
+                builder, self.enc_serializer
+            )
         if enc_key:
-            message_fbs.InvocationGen.InvocationAddEncKey(builder, enc_key)
+            message_fbs.InvocationGen.InvocationAddPptKeyid(builder, enc_key)
         if transaction_hash:
-            message_fbs.InvocationGen.InvocationAddTransactionHash(builder, transaction_hash)
+            message_fbs.InvocationGen.InvocationAddTransactionHash(
+                builder, transaction_hash
+            )
         if forward_for:
             message_fbs.InvocationGen.InvocationAddForwardFor(builder, forward_for)
 
         msg = message_fbs.InvocationGen.InvocationEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.INVOCATION)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -8748,7 +9332,7 @@ class Invocation(Message):
                 ]
 
 
-class Interrupt(Message):
+class Interrupt(MessageWithForwardFor, Message):
     """
     A WAMP ``INTERRUPT`` message.
 
@@ -8765,18 +9349,19 @@ class Interrupt(Message):
     KILL = "kill"
     KILLNOWAIT = "killnowait"
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        # uint64 (key)
-        "_request",
-        # CancelMode (enum)
-        "_mode",
-        # string (uri)
-        "_reason",
-        # [Principal]
-        "_forward_for",
+        # Interrupt-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_mode",  # CancelMode (enum)
+        "_reason",  # string (uri)
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal]
     )
 
-    def __init__(self, request=None, mode=None, reason=None, forward_for=None, from_fbs=None):
+    def __init__(
+        self, request=None, mode=None, reason=None, forward_for=None, from_fbs=None
+    ):
         """
 
         :param request: The WAMP request ID of the original ``INVOCATION`` to interrupt.
@@ -8813,11 +9398,16 @@ class Interrupt(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
+        # Initialize Message base class
         Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Interrupt-specific attributes
         self._request = request
         self._mode = mode
         self._reason = reason
-        self._forward_for = forward_for
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -8876,15 +9466,7 @@ class Interrupt(Message):
         assert value is None or type(value) == str
         self._reason = value
 
-    @property
-    def forward_for(self):
-        # forward_for in FlatBuffers uses Principal struct, complex to deserialize
-        return self._forward_for
-
-    @forward_for.setter
-    def forward_for(self, value):
-        assert value is None or type(value) == list
-        self._forward_for = value
+    # Note: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def parse(wmsg):
@@ -9010,10 +9592,17 @@ class Interrupt(Message):
             message_fbs.InterruptGen.InterruptAddReason(builder, reason)
 
         msg = message_fbs.InterruptGen.InterruptEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.INTERRUPT)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
-class Yield(Message):
+class Yield(MessageWithAppPayload, MessageWithForwardFor, Message):
     """
     A WAMP ``YIELD`` message.
 
@@ -9030,24 +9619,28 @@ class Yield(Message):
     The WAMP message code for this type of message.
     """
 
+    # Note: Slots from Message base class (_from_fbs) are inherited, not redefined here
     __slots__ = (
-        "request",
-        "args",
-        "kwargs",
-        "payload",
-        "progress",
-        "enc_algo",
-        "enc_key",
-        "enc_serializer",
-        "callee",
-        "callee_authid",
-        "callee_authrole",
-        "forward_for",
+        # Yield-specific slots (FlatBuffers schema types in comments)
+        "_request",  # uint64 (key)
+        "_progress",  # bool
+        "_callee",  # uint64 (session id)
+        "_callee_authid",  # string (principal)
+        "_callee_authrole",  # string (principal)
+        # From MessageWithAppPayload mixin
+        "_args",  # [uint8] - serialized args
+        "_kwargs",  # [uint8] - serialized kwargs
+        "_payload",  # [uint8] - opaque payload
+        "_enc_algo",  # Payload (enum) - encryption algorithm
+        "_enc_key",  # [uint8] - encryption key
+        "_enc_serializer",  # Serializer (enum) - payload serializer
+        # From MessageWithForwardFor mixin
+        "_forward_for",  # [Principal] - forwarding chain
     )
 
     def __init__(
         self,
-        request,
+        request=None,
         args=None,
         kwargs=None,
         payload=None,
@@ -9059,6 +9652,7 @@ class Yield(Message):
         callee_authid=None,
         callee_authrole=None,
         forward_for=None,
+        from_fbs=None,
     ):
         """
 
@@ -9101,9 +9695,9 @@ class Yield(Message):
         :param forward_for: When this Call is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert type(request) == int
-        assert args is None or type(args) in [list, tuple]
-        assert kwargs is None or type(kwargs) == dict
+        assert request is None or type(request) == int
+        assert args is None or type(args) in [list, tuple, str, bytes]
+        assert kwargs is None or type(kwargs) in [dict, str, bytes]
         assert payload is None or type(payload) == bytes
         assert payload is None or (
             payload is not None and args is None and kwargs is None
@@ -9130,23 +9724,96 @@ class Yield(Message):
                 )
                 assert "authrole" in ff and type(ff["authrole"]) == str
 
-        Message.__init__(self)
-        self.request = request
-        self.args = args
-        self.kwargs = _validate_kwargs(kwargs)
-        self.payload = payload
-        self.progress = progress
-        self.enc_algo = enc_algo
-        self.enc_key = enc_key
-        self.enc_serializer = enc_serializer
+        # Initialize Message base class
+        Message.__init__(self, from_fbs=from_fbs)
+
+        # Initialize mixin attributes
+        self._init_app_payload(
+            args=args,
+            kwargs=kwargs,
+            payload=payload,
+            enc_algo=enc_algo,
+            enc_key=enc_key,
+            enc_serializer=enc_serializer,
+        )
+        self._init_forward_for(forward_for=forward_for)
+
+        # Initialize Yield-specific attributes
+        self._request = request
+        self._progress = progress
 
         # effective callee that responded with the result
-        self.callee = callee
-        self.callee_authid = callee_authid
-        self.callee_authrole = callee_authrole
+        self._callee = callee
+        self._callee_authid = callee_authid
+        self._callee_authrole = callee_authrole
 
-        # message forwarding
-        self.forward_for = forward_for
+    @property
+    def request(self):
+        if self._request is None and self._from_fbs:
+            self._request = self._from_fbs.Request()
+        return self._request
+
+    @request.setter
+    def request(self, value):
+        assert value is None or type(value) == int
+        self._request = value
+
+    # NOTE: args, kwargs, payload properties are provided by MessageWithAppPayload mixin
+
+    @property
+    def progress(self):
+        if self._progress is None and self._from_fbs:
+            progress = self._from_fbs.Progress()
+            if progress:
+                self._progress = progress
+        return self._progress
+
+    @progress.setter
+    def progress(self, value):
+        assert value is None or type(value) == bool
+        self._progress = value
+
+    @property
+    def callee(self):
+        if self._callee is None and self._from_fbs:
+            callee = self._from_fbs.Callee()
+            if callee:
+                self._callee = callee
+        return self._callee
+
+    @callee.setter
+    def callee(self, value):
+        assert value is None or type(value) == int
+        self._callee = value
+
+    @property
+    def callee_authid(self):
+        if self._callee_authid is None and self._from_fbs:
+            s = self._from_fbs.CalleeAuthid()
+            if s:
+                self._callee_authid = s.decode("utf8")
+        return self._callee_authid
+
+    @callee_authid.setter
+    def callee_authid(self, value):
+        assert value is None or type(value) == str
+        self._callee_authid = value
+
+    @property
+    def callee_authrole(self):
+        if self._callee_authrole is None and self._from_fbs:
+            s = self._from_fbs.CalleeAuthrole()
+            if s:
+                self._callee_authrole = s.decode("utf8")
+        return self._callee_authrole
+
+    @callee_authrole.setter
+    def callee_authrole(self, value):
+        assert value is None or type(value) == str
+        self._callee_authrole = value
+
+    # NOTE: enc_algo, enc_key, enc_serializer properties are provided by MessageWithAppPayload mixin
+    # NOTE: forward_for property is provided by MessageWithForwardFor mixin
 
     @staticmethod
     def cast(buf):
@@ -9173,7 +9840,7 @@ class Yield(Message):
 
         enc_key = self.enc_key
         if enc_key:
-            enc_key = builder.CreateByteVector(enc_key)
+            enc_key = builder.CreateString(enc_key)
 
         callee_authid = self.callee_authid
         if callee_authid:
@@ -9224,11 +9891,11 @@ class Yield(Message):
         if self.progress:
             message_fbs.YieldGen.YieldAddProgress(builder, self.progress)
         if self.enc_algo:
-            message_fbs.YieldGen.YieldAddEncAlgo(builder, self.enc_algo)
+            message_fbs.YieldGen.YieldAddPptScheme(builder, self.enc_algo)
         if self.enc_serializer:
-            message_fbs.YieldGen.YieldAddEncSerializer(builder, self.enc_serializer)
+            message_fbs.YieldGen.YieldAddPptSerializer(builder, self.enc_serializer)
         if enc_key:
-            message_fbs.YieldGen.YieldAddEncKey(builder, enc_key)
+            message_fbs.YieldGen.YieldAddPptKeyid(builder, enc_key)
         if self.callee:
             message_fbs.YieldGen.YieldAddCallee(builder, self.callee)
         if callee_authid:
@@ -9239,7 +9906,14 @@ class Yield(Message):
             message_fbs.YieldGen.YieldAddForwardFor(builder, forward_for)
 
         msg = message_fbs.YieldGen.YieldEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.YIELD)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):

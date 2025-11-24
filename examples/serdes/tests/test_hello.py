@@ -8,6 +8,7 @@ HELLO is sent by a Client to initiate opening of a WAMP session to a Router.
 
 Uses test vectors from: wamp-proto/testsuite/singlemessage/basic/hello.json
 """
+
 import pytest
 from autobahn.wamp.message import Hello
 from autobahn.wamp.serializer import create_transport_serializer
@@ -15,7 +16,7 @@ from autobahn.wamp.role import (
     RoleSubscriberFeatures,
     RolePublisherFeatures,
     RoleCallerFeatures,
-    RoleCalleeFeatures
+    RoleCalleeFeatures,
 )
 
 from .utils import (
@@ -28,6 +29,7 @@ from .utils import (
 # =============================================================================
 # Test Vector Loading
 # =============================================================================
+
 
 @pytest.fixture(scope="module")
 def hello_test_vector():
@@ -44,6 +46,7 @@ def hello_samples(hello_test_vector):
 # =============================================================================
 # Helper Functions
 # =============================================================================
+
 
 def _convert_roles_dict_to_objects(roles_dict):
     """
@@ -71,6 +74,7 @@ def _convert_roles_dict_to_objects(roles_dict):
 # SerDes Tests
 # =============================================================================
 
+
 def test_hello_deserialize_from_bytes(serializer_id, hello_samples, create_serializer):
     """
     Test HELLO deserialization from canonical bytes.
@@ -96,7 +100,7 @@ def test_hello_deserialize_from_bytes(serializer_id, hello_samples, create_seria
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
             elif "bytes" in variant:
-                test_bytes = variant["bytes"].encode('utf-8')
+                test_bytes = variant["bytes"].encode("utf-8")
             else:
                 continue
 
@@ -128,8 +132,7 @@ def test_hello_serialize_to_bytes(serializer_id, hello_samples, create_serialize
         # Construct message
         attrs = sample["expected_attributes"]
         msg = Hello(
-            realm=attrs["realm"],
-            roles=_convert_roles_dict_to_objects(attrs["roles"])
+            realm=attrs["realm"], roles=_convert_roles_dict_to_objects(attrs["roles"])
         )
 
         # Serialize
@@ -166,7 +169,7 @@ def test_hello_roundtrip(serializer_id, hello_samples, create_serializer):
         if "bytes_hex" in variant:
             original_bytes = bytes_from_hex(variant["bytes_hex"])
         elif "bytes" in variant:
-            original_bytes = variant["bytes"].encode('utf-8')
+            original_bytes = variant["bytes"].encode("utf-8")
         else:
             continue
 

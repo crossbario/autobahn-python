@@ -41,7 +41,7 @@ class Hello(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
-            from wamp.proto.ClientRoles import ClientRoles
+            from autobahn.wamp.gen.wamp.proto.ClientRoles import ClientRoles
 
             obj = ClientRoles()
             obj.Init(self._tab.Bytes, x)

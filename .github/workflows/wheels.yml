@@ -179,8 +179,7 @@ jobs:
         with:
           path: ${{ env.UV_CACHE_DIR }}
           key:
-            uv-cache-${{ matrix.platform }}-${{ matrix.arch
-            }}-${{ hashFiles('pyproject.toml') }}
+            uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
             uv-cache-${{ matrix.platform }}-${{ matrix.arch }}-
             uv-cache-${{ matrix.platform }}-

@@ -8,6 +8,7 @@ from flatbuffers.compat import import_numpy
 np = import_numpy()
 
 
+# Void type (table based) for use with services.
 class Void(object):
     __slots__ = ["_tab"]
 

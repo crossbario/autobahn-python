@@ -17,6 +17,7 @@ Contents
    websocket/conformance
    wamp/programming
    wamp/flatbuffers-schema
+   wamp/message-design
    wamp/aio-repl
    wamp/examples
    environments/index

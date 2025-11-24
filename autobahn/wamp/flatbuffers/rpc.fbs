@@ -12,7 +12,7 @@ include "types.fbs";
 namespace wamp.proto;
 
 
-// CALL message (message_type = 48): [CALL, Request|id, Options|dict, Procedure|uri, Payload|binary]
+// [Category 4: Both Payload and Forwarding] CALL message (message_type = 48): Client calls a procedure with application payload.
 table Call
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -33,14 +33,17 @@ table Call
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // If present, cancel the call after this duration in ms.
     timeout: uint32;
@@ -65,7 +68,7 @@ table Call
 }
 
 
-// CANCEL message (message_type = 49): [CANCEL, CALL.Request|id, Options|dict]
+// [Category 3: Forwarding Only] CANCEL message (message_type = 49): Client cancels a pending call.
 table Cancel
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -82,7 +85,7 @@ table Cancel
 }
 
 
-// RESULT message (message_type = 50): [RESULT, CALL.Request|id, Details|dict, Payload|binary]
+// [Category 4: Both Payload and Forwarding] RESULT message (message_type = 50): Callee returns call result with application payload.
 table Result
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -100,14 +103,17 @@ table Result
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // If true, this result is a progressive call result, and subsequent results (or a final error) will follow.
     progress: bool;
@@ -126,7 +132,7 @@ table Result
 }
 
 
-// REGISTER message (message_type = 64): [REGISTER, Request|id, Options|dict, Procedure|uri]
+// [Category 1: Neither Payload nor Forwarding] REGISTER message (message_type = 64): Callee registers a procedure.
 table Register
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -152,7 +158,7 @@ table Register
 }
 
 
-// REGISTERED message (message_type = 65): [REGISTERED, REGISTER.Request|id, Registration|id]
+// [Category 1: Neither Payload nor Forwarding] REGISTERED message (message_type = 65): Router acknowledges registration.
 table Registered
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -166,7 +172,7 @@ table Registered
 }
 
 
-// UNREGISTER message (message_type = 66): [UNREGISTER, Request|id, REGISTERED.Registration|id]
+// [Category 1: Neither Payload nor Forwarding] UNREGISTER message (message_type = 66): Callee unregisters a procedure.
 table Unregister
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -180,7 +186,7 @@ table Unregister
 }
 
 
-// UNREGISTERED message (message_type = 67): [UNREGISTERED, UNREGISTER.Request|id, Details|dict]
+// [Category 1: Neither Payload nor Forwarding] UNREGISTERED message (message_type = 67): Router acknowledges unregistration.
 table Unregistered
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -197,7 +203,7 @@ table Unregistered
 }
 
 
-// INVOCATION message (message_type = 68): [INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Payload|binary]
+// [Category 4: Both Payload and Forwarding] INVOCATION message (message_type = 68): Router invokes registered procedure with application payload.
 table Invocation
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -218,14 +224,17 @@ table Invocation
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // For pattern-based registrations (not for exact matching registrations, the invocation MUST include the actual procedure being called.
     procedure: string (uri);
@@ -253,7 +262,7 @@ table Invocation
 }
 
 
-// INTERRUPT message (message_type = 69): [INTERRUPT, INVOCATION.Request|id, Options|dict]
+// [Category 3: Forwarding Only] INTERRUPT message (message_type = 69): Router interrupts a pending invocation.
 table Interrupt
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -263,7 +272,7 @@ table Interrupt
     request: uint64 (key);
 
     // Specifies how to interrupt the invocation.
-    mode: CancelMode = ABORT;
+    mode: CancelMode = KILL;
 
     // The reason (an URI) for the invocation interrupt.
     reason: string (uri);
@@ -273,7 +282,7 @@ table Interrupt
 }
 
 
-// YIELD message (message_type = 70): [YIELD, INVOCATION.Request|id, Options|dict, Payload|binary]
+// [Category 4: Both Payload and Forwarding] YIELD message (message_type = 70): Callee yields invocation result with application payload.
 table Yield
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -291,14 +300,17 @@ table Yield
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // If true, this result is a progressive invocation result, and subsequent results (or a final error) will follow.
     progress: bool;

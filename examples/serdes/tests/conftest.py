@@ -1,6 +1,7 @@
 """
 Pytest configuration and fixtures for WAMP serdes tests
 """
+
 import pytest
 import txaio
 
@@ -32,8 +33,10 @@ def all_serializer_ids():
 @pytest.fixture
 def create_serializer():
     """Factory fixture to create serializers by ID"""
+
     def _create(serializer_id: str):
         return create_transport_serializer(serializer_id)
+
     return _create
 
 
@@ -53,6 +56,6 @@ def pytest_generate_tests(metafunc):
         serializer_ids = get_serializer_ids()
         pairs = []
         for i, ser1 in enumerate(serializer_ids):
-            for ser2 in serializer_ids[i+1:]:
+            for ser2 in serializer_ids[i + 1 :]:
                 pairs.append((ser1, ser2))
         metafunc.parametrize("serializer_pair", pairs)

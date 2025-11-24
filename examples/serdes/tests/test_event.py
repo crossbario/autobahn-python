@@ -8,6 +8,7 @@ Tests EVENT message serialization and deserialization across all dimensions:
 
 Uses test vectors from: wamp-proto/testsuite/singlemessage/basic/event.json
 """
+
 import pytest
 from autobahn.wamp.message import Event
 from autobahn.wamp.serializer import create_transport_serializer
@@ -25,6 +26,7 @@ from .utils import (
 # =============================================================================
 # Test Vector Loading
 # =============================================================================
+
 
 @pytest.fixture(scope="module")
 def event_test_vector():
@@ -49,6 +51,7 @@ def event_samples(event_test_vector):
 # =============================================================================
 # Dimension 2: Single-Serializer Roundtrip Correctness
 # =============================================================================
+
 
 def test_event_deserialize_from_bytes(serializer_id, event_samples, create_serializer):
     """
@@ -75,7 +78,7 @@ def test_event_deserialize_from_bytes(serializer_id, event_samples, create_seria
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
             elif "bytes" in variant:
-                test_bytes = variant["bytes"].encode('utf-8')
+                test_bytes = variant["bytes"].encode("utf-8")
             else:
                 continue
 
@@ -92,8 +95,10 @@ def test_event_deserialize_from_bytes(serializer_id, event_samples, create_seria
             error = validates_with_any_code(msg, validation_codes)
             if error:
                 # Debug: print sample description
-                sample_desc = sample.get('description', 'unknown')
-                pytest.fail(f"Validation failed for {serializer_id} on sample '{sample_desc}': {error}")
+                sample_desc = sample.get("description", "unknown")
+                pytest.fail(
+                    f"Validation failed for {serializer_id} on sample '{sample_desc}': {error}"
+                )
 
 
 def test_event_serialize_to_bytes(serializer_id, event_samples, create_serializer):
@@ -144,11 +149,6 @@ def test_event_roundtrip(serializer_id, event_samples, create_serializer):
     serializer = create_serializer(serializer_id)
 
     for sample in event_samples:
-        # Skip flatbuffers with transparent payload mode due to autobahn bug
-        # See: https://github.com/crossbario/autobahn-python/issues/1766
-        # flatbuffers serializer incorrectly handles enc_algo (expects uint8, gets string)
-        if serializer_id == 'flatbuffers' and sample.get('expected_attributes', {}).get('payload') is not None:
-            pytest.skip("Flatbuffers with transparent payload not supported (issue #1766)")
         # Skip if no construction code
         construction_code = sample["construction"].get("autobahn-python")
         if not construction_code:
@@ -177,14 +177,16 @@ def test_event_roundtrip(serializer_id, event_samples, create_serializer):
 
         # 5. Check equality (if message class implements __eq__)
         # Note: Skip equality check for flatbuffers due to known __eq__ issues
-        if hasattr(msg_original, '__eq__') and serializer_id != 'flatbuffers':
-            assert msg_original == msg_roundtrip, \
+        if hasattr(msg_original, "__eq__") and serializer_id != "flatbuffers":
+            assert msg_original == msg_roundtrip, (
                 f"Roundtrip message not equal to original for {serializer_id}"
+            )
 
 
 # =============================================================================
 # Dimension 3: Cross-Serializer Preservation
 # =============================================================================
+
 
 def test_event_cross_serializer_preservation(serializer_pair, event_samples):
     """
@@ -205,13 +207,6 @@ def test_event_cross_serializer_preservation(serializer_pair, event_samples):
     ser2 = create_transport_serializer(ser2_id)
 
     for sample in event_samples:
-        # Skip flatbuffers with transparent payload mode due to autobahn bug
-        # See: https://github.com/crossbario/autobahn-python/issues/1766
-        # flatbuffers serializer incorrectly handles enc_algo (expects uint8, gets string)
-        has_payload = sample.get('expected_attributes', {}).get('payload') is not None
-        if has_payload and ('flatbuffers' in [ser1_id, ser2_id]):
-            pytest.skip("Flatbuffers with transparent payload not supported (issue #1766)")
-
         # Skip if ser1 not in test vector
         if ser1_id not in sample["serializers"]:
             pytest.skip(f"Serializer {ser1_id} not in test vector")
@@ -229,10 +224,10 @@ def test_event_cross_serializer_preservation(serializer_pair, event_samples):
 
         # Take the first canonical byte representation from ser1
         variant1 = ser1_variants[0]
-        if 'bytes_hex' in variant1:
-            bytes1 = bytes_from_hex(variant1['bytes_hex'])
-        elif 'bytes' in variant1:
-            bytes1 = variant1['bytes'].encode('utf-8')
+        if "bytes_hex" in variant1:
+            bytes1 = bytes_from_hex(variant1["bytes_hex"])
+        elif "bytes" in variant1:
+            bytes1 = variant1["bytes"].encode("utf-8")
         else:
             pytest.skip(f"No bytes representation in {ser1_id} variant")
 
@@ -259,6 +254,7 @@ def test_event_cross_serializer_preservation(serializer_pair, event_samples):
 # Expected Attributes Validation
 # =============================================================================
 
+
 def test_event_expected_attributes(event_samples):
     """
     Test that deserialized EVENT message has expected attributes.
@@ -281,7 +277,7 @@ def test_event_expected_attributes(event_samples):
         # Deserialize from first JSON variant
         variant = json_variants[0]
         if "bytes" in variant:
-            test_bytes = variant["bytes"].encode('utf-8')
+            test_bytes = variant["bytes"].encode("utf-8")
         elif "bytes_hex" in variant:
             test_bytes = bytes_from_hex(variant["bytes_hex"])
         else:
@@ -300,7 +296,9 @@ def test_event_expected_attributes(event_samples):
 
         # kwargs can be None or {} depending on implementation
         if expected["kwargs"] is None:
-            assert msg.kwargs is None or msg.kwargs == {}, "kwargs should be None or empty"
+            assert msg.kwargs is None or msg.kwargs == {}, (
+                "kwargs should be None or empty"
+            )
         else:
             assert msg.kwargs == expected["kwargs"], "kwargs mismatch"
 
@@ -308,6 +306,7 @@ def test_event_expected_attributes(event_samples):
 # =============================================================================
 # Payload Mode Tests
 # =============================================================================
+
 
 def test_event_normal_mode(event_samples):
     """
@@ -317,15 +316,20 @@ def test_event_normal_mode(event_samples):
     Router deserializes and can inspect args/kwargs.
     """
     # Find the normal mode sample (has args, not payload)
-    normal_samples = [s for s in event_samples if 'args' in s['expected_attributes'] and s['expected_attributes']['args'] is not None]
+    normal_samples = [
+        s
+        for s in event_samples
+        if "args" in s["expected_attributes"]
+        and s["expected_attributes"]["args"] is not None
+    ]
 
     assert len(normal_samples) > 0, "Should have at least one normal mode sample"
 
     for sample in normal_samples:
         # Verify expected attributes show normal mode
-        expected = sample['expected_attributes']
-        assert expected.get('args') is not None or expected.get('kwargs') is not None
-        assert expected.get('payload') is None or expected['payload'] is None
+        expected = sample["expected_attributes"]
+        assert expected.get("args") is not None or expected.get("kwargs") is not None
+        assert expected.get("payload") is None or expected["payload"] is None
 
 
 def test_event_transparent_mode(event_samples, create_serializer):
@@ -336,24 +340,29 @@ def test_event_transparent_mode(event_samples, create_serializer):
     Router does NOT deserialize payload - enables E2E encryption.
     """
     # Find the transparent mode sample (has payload, not args/kwargs)
-    transparent_samples = [s for s in event_samples if 'payload' in s['expected_attributes'] and s['expected_attributes']['payload'] is not None]
+    transparent_samples = [
+        s
+        for s in event_samples
+        if "payload" in s["expected_attributes"]
+        and s["expected_attributes"]["payload"] is not None
+    ]
 
     if not transparent_samples:
         pytest.skip("No transparent payload mode samples in test vector")
 
     for sample in transparent_samples:
         # Verify expected attributes show transparent mode
-        expected = sample['expected_attributes']
-        assert expected.get('payload') is not None
-        assert expected.get('args') is None
-        assert expected.get('kwargs') is None
+        expected = sample["expected_attributes"]
+        assert expected.get("payload") is not None
+        assert expected.get("args") is None
+        assert expected.get("kwargs") is None
 
         # Test roundtrip for each serializer
-        construction_code = sample['construction'].get('autobahn-python')
+        construction_code = sample["construction"].get("autobahn-python")
         if not construction_code:
             continue
 
-        validation_codes = sample['validation'].get('autobahn-python', [])
+        validation_codes = sample["validation"].get("autobahn-python", [])
         if not validation_codes:
             continue
 
@@ -367,7 +376,7 @@ def test_event_transparent_mode(event_samples, create_serializer):
         assert msg_original.kwargs is None
 
         # Test with JSON serializer (most common)
-        serializer = create_serializer('json')
+        serializer = create_serializer("json")
         serialized, is_binary = serializer.serialize(msg_original)
         msgs = serializer.unserialize(serialized)
         assert len(msgs) == 1
@@ -379,8 +388,9 @@ def test_event_transparent_mode(event_samples, create_serializer):
             pytest.fail(f"Transparent mode validation failed: {error}")
 
         # Critical: payload bytes must be preserved exactly (byte-for-byte)
-        assert msg_roundtrip.payload == msg_original.payload, \
+        assert msg_roundtrip.payload == msg_original.payload, (
             "Transparent payload must be preserved byte-for-byte through serialization"
+        )
 
 
 # =============================================================================
@@ -399,6 +409,7 @@ from autobahn.wamp.exception import ProtocolError
 # -----------------------------------------------------------------------------
 # publisher|int - Advanced Profile
 # -----------------------------------------------------------------------------
+
 
 def test_event_details_publisher_valid():
     """Test EVENT.Details.publisher with valid int values"""
@@ -428,6 +439,7 @@ def test_event_details_publisher_invalid_type():
 # publisher_authid|str - Advanced Profile
 # -----------------------------------------------------------------------------
 
+
 def test_event_details_publisher_authid_valid():
     """Test EVENT.Details.publisher_authid with valid str values"""
     valid_values = ["alice", "bob", "user123", ""]
@@ -455,6 +467,7 @@ def test_event_details_publisher_authid_invalid_type():
 # publisher_authrole|str - Advanced Profile
 # -----------------------------------------------------------------------------
 
+
 def test_event_details_publisher_authrole_valid():
     """Test EVENT.Details.publisher_authrole with valid str values"""
     valid_values = ["user", "admin", "manager", ""]
@@ -481,6 +494,7 @@ def test_event_details_publisher_authrole_invalid_type():
 # -----------------------------------------------------------------------------
 # topic|str - Advanced Profile (pattern-based subscriptions)
 # -----------------------------------------------------------------------------
+
 
 def test_event_details_topic_valid():
     """Test EVENT.Details.topic with valid str values"""
@@ -513,6 +527,7 @@ def test_event_details_topic_invalid_type():
 # retained|bool - Advanced Profile (event retention)
 # -----------------------------------------------------------------------------
 
+
 def test_event_details_retained_valid():
     """Test EVENT.Details.retained with valid bool values"""
     for value in [True, False]:
@@ -538,6 +553,7 @@ def test_event_details_retained_invalid_type():
 # -----------------------------------------------------------------------------
 # transaction_hash|str - Implementation-Only
 # -----------------------------------------------------------------------------
+
 
 def test_event_details_transaction_hash_valid():
     """Test EVENT.Details.transaction_hash with valid str values"""
@@ -570,6 +586,7 @@ def test_event_details_transaction_hash_invalid_type():
 # x_acknowledged_delivery|bool - Implementation-Only
 # -----------------------------------------------------------------------------
 
+
 def test_event_details_x_acknowledged_delivery_valid():
     """Test EVENT.Details.x_acknowledged_delivery with valid bool values"""
     for value in [True, False]:
@@ -594,6 +611,7 @@ def test_event_details_x_acknowledged_delivery_invalid_type():
 # -----------------------------------------------------------------------------
 # forward_for|list[dict] - Implementation-Only
 # -----------------------------------------------------------------------------
+
 
 def test_event_details_forward_for_valid():
     """Test EVENT.Details.forward_for with valid list[dict] values"""
@@ -633,8 +651,14 @@ def test_event_details_forward_for_invalid_values():
     """
     invalid_lists = [
         # Multi-item lists where validation fails
-        ([{"session": 123, "authid": "alice", "authrole": "user"}, 123], "second item is int"),
-        ([{"session": 123, "authid": "alice", "authrole": "user"}, {"bad": "dict"}], "second item missing required fields"),
+        (
+            [{"session": 123, "authid": "alice", "authrole": "user"}, 123],
+            "second item is int",
+        ),
+        (
+            [{"session": 123, "authid": "alice", "authrole": "user"}, {"bad": "dict"}],
+            "second item missing required fields",
+        ),
     ]
     for value, description in invalid_lists:
         wmsg = [36, 5512315355, 4429313566, {"forward_for": value}]
@@ -647,6 +671,7 @@ def test_event_details_forward_for_invalid_values():
 # E2EE Options (enc_algo, enc_key, enc_serializer) - Implementation-Only
 # These are only valid with transparent payload mode (variant 4)
 # -----------------------------------------------------------------------------
+
 
 def test_event_details_enc_algo_valid():
     """Test EVENT.Details.enc_algo with valid values (transparent payload mode)"""
@@ -690,7 +715,13 @@ def test_event_details_enc_key_valid():
         "",
     ]
     for value in valid_values:
-        wmsg = [36, 5512315355, 4429313566, {"enc_algo": "cryptobox", "enc_key": value}, payload]
+        wmsg = [
+            36,
+            5512315355,
+            4429313566,
+            {"enc_algo": "cryptobox", "enc_key": value},
+            payload,
+        ]
         msg = Event.parse(wmsg)
         assert msg.enc_key == value
 
@@ -707,7 +738,13 @@ def test_event_details_enc_key_invalid_type():
         ([1, 2], "non-empty list instead of str"),
     ]
     for value, description in invalid_values:
-        wmsg = [36, 5512315355, 4429313566, {"enc_algo": "cryptobox", "enc_key": value}, payload]
+        wmsg = [
+            36,
+            5512315355,
+            4429313566,
+            {"enc_algo": "cryptobox", "enc_key": value},
+            payload,
+        ]
         with pytest.raises((ProtocolError, AssertionError)) as exc_info:
             Event.parse(wmsg)
 
@@ -725,7 +762,13 @@ def test_event_details_enc_serializer_valid():
         "flatbuffers",
     ]
     for value in valid_values:
-        wmsg = [36, 5512315355, 4429313566, {"enc_algo": "cryptobox", "enc_serializer": value}, payload]
+        wmsg = [
+            36,
+            5512315355,
+            4429313566,
+            {"enc_algo": "cryptobox", "enc_serializer": value},
+            payload,
+        ]
         msg = Event.parse(wmsg)
         assert msg.enc_serializer == value
 
@@ -739,7 +782,13 @@ def test_event_details_enc_serializer_invalid_value():
         "yaml",
     ]
     for value in invalid_values:
-        wmsg = [36, 5512315355, 4429313566, {"enc_algo": "cryptobox", "enc_serializer": value}, payload]
+        wmsg = [
+            36,
+            5512315355,
+            4429313566,
+            {"enc_algo": "cryptobox", "enc_serializer": value},
+            payload,
+        ]
         with pytest.raises(ProtocolError) as exc_info:
             Event.parse(wmsg)
         assert "enc_serializer" in str(exc_info.value).lower()
@@ -749,17 +798,24 @@ def test_event_details_enc_serializer_invalid_value():
 # Dimension 5: Details Validation (Language-Agnostic JSON Test Vectors)
 # =============================================================================
 
+
 @pytest.fixture(scope="module")
 def event_validation_samples(event_test_vector):
     """Extract validation samples from EVENT test vector"""
-    return [s for s in event_test_vector["samples"] if s.get("test_category") == "details_validation"]
+    return [
+        s
+        for s in event_test_vector["samples"]
+        if s.get("test_category") == "details_validation"
+    ]
 
 
 def test_event_details_validation_sample_count(event_validation_samples):
     """Verify we have the expected number of validation samples"""
     # We should have validation samples for all EVENT.Details attributes
     assert len(event_validation_samples) > 0, "No validation samples found"
-    print(f"\nLoaded {len(event_validation_samples)} EVENT.Details validation samples from JSON")
+    print(
+        f"\nLoaded {len(event_validation_samples)} EVENT.Details validation samples from JSON"
+    )
 
 
 @pytest.mark.parametrize("sample_index", range(21))  # We have 21 validation samples
@@ -797,12 +853,15 @@ def test_event_details_validation_from_json(event_validation_samples, sample_ind
 
         # Verify the error message contains the expected attribute name
         error_msg = str(exc_info.value).lower()
-        assert expected_error["contains"].lower() in error_msg, \
+        assert expected_error["contains"].lower() in error_msg, (
             f"{description}: Expected error message to contain '{expected_error['contains']}', got: {exc_info.value}"
+        )
     else:
         # This sample should parse successfully
         msg = Event.parse(wmsg)
-        assert isinstance(msg, Event), f"{description}: Failed to parse as Event message"
+        assert isinstance(msg, Event), (
+            f"{description}: Failed to parse as Event message"
+        )
 
         # Verify the message type
         assert msg.MESSAGE_TYPE == 36, f"{description}: Wrong message type"

@@ -2,8 +2,10 @@
 """
 Generate serialized bytes for EVENT_RECEIVED message test vectors.
 """
+
 import binascii
 import txaio
+
 txaio.use_asyncio()
 
 from autobahn.wamp.message import EventReceived

@@ -8,6 +8,7 @@ ABORT is sent by a Peer to abort the opening of a WAMP session.
 
 Uses test vectors from: wamp-proto/testsuite/singlemessage/basic/abort.json
 """
+
 import pytest
 from autobahn.wamp.message import Abort
 from autobahn.wamp.serializer import create_transport_serializer
@@ -22,6 +23,7 @@ from .utils import (
 # =============================================================================
 # Test Vector Loading
 # =============================================================================
+
 
 @pytest.fixture(scope="module")
 def abort_test_vector():
@@ -38,6 +40,7 @@ def abort_samples(abort_test_vector):
 # =============================================================================
 # SerDes Tests
 # =============================================================================
+
 
 def test_abort_deserialize_from_bytes(serializer_id, abort_samples, create_serializer):
     """
@@ -64,7 +67,7 @@ def test_abort_deserialize_from_bytes(serializer_id, abort_samples, create_seria
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
             elif "bytes" in variant:
-                test_bytes = variant["bytes"].encode('utf-8')
+                test_bytes = variant["bytes"].encode("utf-8")
             else:
                 continue
 
@@ -130,7 +133,7 @@ def test_abort_roundtrip(serializer_id, abort_samples, create_serializer):
         if "bytes_hex" in variant:
             original_bytes = bytes_from_hex(variant["bytes_hex"])
         elif "bytes" in variant:
-            original_bytes = variant["bytes"].encode('utf-8')
+            original_bytes = variant["bytes"].encode("utf-8")
         else:
             continue
 

@@ -2,8 +2,10 @@
 """
 Generate serialized bytes for CHALLENGE message test vectors.
 """
+
 import binascii
 import txaio
+
 txaio.use_asyncio()
 
 from autobahn.wamp.message import Challenge

@@ -12,7 +12,7 @@ include "types.fbs";
 namespace wamp.proto;
 
 
-// SUBSCRIBE message (message_type = 32): [SUBSCRIBE, Request|id, Options|dict, Topic|uri]
+// [Category 1: Neither Payload nor Forwarding] SUBSCRIBE message (message_type = 32): Client subscribes to a topic.
 table Subscribe
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -32,7 +32,7 @@ table Subscribe
 }
 
 
-// SUBSCRIBED message (message_type = 33): [SUBSCRIBED, SUBSCRIBE.Request|id, Subscription|id]
+// [Category 1: Neither Payload nor Forwarding] SUBSCRIBED message (message_type = 33): Router acknowledges subscription.
 table Subscribed
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -46,7 +46,7 @@ table Subscribed
 }
 
 
-// UNSUBSCRIBE message (message_type = 34): [UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]
+// [Category 1: Neither Payload nor Forwarding] UNSUBSCRIBE message (message_type = 34): Client unsubscribes from a topic.
 table Unsubscribe
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -60,7 +60,7 @@ table Unsubscribe
 }
 
 
-// UNSUBSCRIBED message (message_type = 35): [UNSUBSCRIBED, UNSUBSCRIBE.Request|id, Details|dict]
+// [Category 1: Neither Payload nor Forwarding] UNSUBSCRIBED message (message_type = 35): Router acknowledges unsubscription.
 table Unsubscribed
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -77,7 +77,7 @@ table Unsubscribed
 }
 
 
-// PUBLISH message (message_type = 16): [PUBLISH, Request|id, Options|dict, Topic|uri, Payload|binary]
+// [Category 4: Both Payload and Forwarding] PUBLISH message (message_type = 16): Client publishes an event with application payload.
 table Publish
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -98,14 +98,17 @@ table Publish
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // If true, acknowledge the publication with a success or error response.
     acknowledge: bool;
@@ -142,7 +145,7 @@ table Publish
 }
 
 
-// PUBLISHED message (message_type = 17): [PUBLISHED, PUBLISH.Request|id, Publication|id]
+// [Category 1: Neither Payload nor Forwarding] PUBLISHED message (message_type = 17): Router acknowledges publication.
 table Published
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -156,7 +159,7 @@ table Published
 }
 
 
-// EVENT message (message_type = 36): [EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Payload|binary]
+// [Category 4: Both Payload and Forwarding] EVENT message (message_type = 36): Router dispatches event to subscriber with application payload.
 table Event
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -177,14 +180,17 @@ table Event
     /// Alternative, transparent payload. If given, ``args`` and ``kwargs`` must be left unset.
     payload: [uint8];
 
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
+    /// The specific scheme in use with Payload Passthru (PPT) mode for the application payload.
+    ppt_scheme: PPTScheme;
 
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
+    /// The specific serializer encoding the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_serializer: PPTSerializer;
 
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    /// The cryptographic algorithm ("cipher") encrypting the application payload with the Payload Passthru (PPT) scheme in use.
+    ppt_cipher: PPTCipher;
+
+    /// The identifier or reference to the encryption key that was used to encrypt the payload with the Payload Passthru (PPT) scheme and cipher in use.
+    ppt_keyid: string (ppt_keyid);
 
     // The WAMP session ID of the pubisher. Only filled when the publisher is disclosed.
     publisher: uint64;
@@ -212,7 +218,7 @@ table Event
 }
 
 
-// EVENT_RECEIVED message (message_type = 37): [EVENT_RECEIVED, EVENT.Publication|id, Details|dict, Payload|binary]
+// [Category 3: Forwarding Only] EVENT_RECEIVED message (message_type = 37): Acknowledgment from subscriber to publisher for QoS level 2 ("exactly once delivery") and survey mode.
 table EventReceived
 {
     // The WAMP session ID on the node this session is (directly) attached to.
@@ -221,15 +227,6 @@ table EventReceived
     // The publication ID of the event that was received, and that is acknowledged.
     publication: uint64;
 
-    // Raw application payload: error arguments. This might be encrypted (with Payload==Payload.CRYPTOBOX), and is serialized according to enc_serializer.
-    payload: [uint8];
-
-    // The encoding algorithm that was used to encode the payload.
-    enc_algo: Payload;
-
-    // The payload object serializer that was used encoding the payload.
-    enc_serializer: Serializer;
-
-    // When using Payload.CRYPTOBOX, the public Cryptobox key of the key pair used for encrypting the payload.
-    enc_key: [uint8];
+    // When this message is forwarded in router-to-router traffic, the route of the acknowledgment message. This is the reversed forward_for from the originating EVENT message, so the acknowledgment travels back through the same router mesh path.
+    forward_for: [Principal];
 }

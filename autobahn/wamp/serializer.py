@@ -294,7 +294,7 @@ class Serializer(object):
         """
         # FlatBuffersSerializer has _payload_serializer (separate from envelope)
         # Traditional serializers use _serializer (same for envelope and payload)
-        payload_ser = getattr(self, '_payload_serializer', self._serializer)
+        payload_ser = getattr(self, "_payload_serializer", self._serializer)
         return payload_ser.serialize(data)
 
     def unserialize(
@@ -1054,8 +1054,38 @@ if _HAS_FLATBUFFERS:
         """
 
         MESSAGE_TYPE_MAP = {
+            # Category 4: Both Payload and Forwarding
+            message_fbs.MessageType.ERROR: (message_fbs.Error, message.Error),
             message_fbs.MessageType.EVENT: (message_fbs.Event, message.Event),
             message_fbs.MessageType.PUBLISH: (message_fbs.Publish, message.Publish),
+            message_fbs.MessageType.CALL: (message_fbs.Call, message.Call),
+            message_fbs.MessageType.RESULT: (message_fbs.Result, message.Result),
+            message_fbs.MessageType.INVOCATION: (message_fbs.Invocation, message.Invocation),
+            message_fbs.MessageType.YIELD: (message_fbs.Yield, message.Yield),
+
+            # Category 1: Session lifecycle messages
+            message_fbs.MessageType.ABORT: (message_fbs.AbortGen.Abort, message.Abort),
+            message_fbs.MessageType.CHALLENGE: (message_fbs.ChallengeGen.Challenge, message.Challenge),
+            message_fbs.MessageType.AUTHENTICATE: (message_fbs.AuthenticateGen.Authenticate, message.Authenticate),
+            message_fbs.MessageType.GOODBYE: (message_fbs.GoodbyeGen.Goodbye, message.Goodbye),
+
+            # Category 1: PubSub messages
+            message_fbs.MessageType.SUBSCRIBE: (message_fbs.SubscribeGen.Subscribe, message.Subscribe),
+            message_fbs.MessageType.SUBSCRIBED: (message_fbs.SubscribedGen.Subscribed, message.Subscribed),
+            message_fbs.MessageType.PUBLISHED: (message_fbs.PublishedGen.Published, message.Published),
+            message_fbs.MessageType.UNSUBSCRIBE: (message_fbs.UnsubscribeGen.Unsubscribe, message.Unsubscribe),
+            message_fbs.MessageType.UNSUBSCRIBED: (message_fbs.UnsubscribedGen.Unsubscribed, message.Unsubscribed),
+
+            # Category 1: RPC messages
+            message_fbs.MessageType.REGISTER: (message_fbs.RegisterGen.Register, message.Register),
+            message_fbs.MessageType.REGISTERED: (message_fbs.RegisteredGen.Registered, message.Registered),
+            message_fbs.MessageType.UNREGISTER: (message_fbs.UnregisterGen.Unregister, message.Unregister),
+            message_fbs.MessageType.UNREGISTERED: (message_fbs.UnregisteredGen.Unregistered, message.Unregistered),
+
+            # Category 3: Forwarding Only messages
+            message_fbs.MessageType.EVENT_RECEIVED: (message_fbs.EventReceivedGen.EventReceived, message.EventReceived),
+            message_fbs.MessageType.CANCEL: (message_fbs.CancelGen.Cancel, message.Cancel),
+            message_fbs.MessageType.INTERRUPT: (message_fbs.InterruptGen.Interrupt, message.Interrupt),
         }
 
         def __init__(self, batched=False):

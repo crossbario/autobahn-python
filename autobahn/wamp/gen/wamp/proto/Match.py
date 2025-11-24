@@ -2,8 +2,11 @@
 
 # namespace: proto
 
-
+# Subscription topic matching method.
 class Match(object):
+    # Match URI exact.
     EXACT = 0
+    # Match URI by prefix.
     PREFIX = 1
+    # Match URI by wildcard.
     WILDCARD = 2

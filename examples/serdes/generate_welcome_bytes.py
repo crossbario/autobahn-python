@@ -2,8 +2,10 @@
 """
 Generate serialized bytes for WELCOME message test vectors.
 """
+
 import binascii
 import txaio
+
 txaio.use_asyncio()
 
 from autobahn.wamp.message import Welcome
@@ -13,10 +15,7 @@ from autobahn.wamp.role import RoleBrokerFeatures, RoleDealerFeatures
 # Create a basic WELCOME message
 msg = Welcome(
     session=9129137332,
-    roles={
-        "broker": RoleBrokerFeatures(),
-        "dealer": RoleDealerFeatures()
-    }
+    roles={"broker": RoleBrokerFeatures(), "dealer": RoleDealerFeatures()},
 )
 
 print(f"Message: {msg}")
