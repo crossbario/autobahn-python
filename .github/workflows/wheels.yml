@@ -175,6 +175,9 @@ jobs:
         shell: pwsh
 
       - name: Setup uv cache
+        # skip broken platform ("Error: The template is not valid. .github/workflows/wheels.yml (Line: 182, Col: 13):
+        # hashFiles('pyproject.toml') failed. Fail to hash files under directory '/Users/runner/work/autobahn-python/autobahn-python'")
+        if: matrix.platform != 'macos'
         uses: actions/cache@v4
         with:
           path: ${{ env.UV_CACHE_DIR }}
