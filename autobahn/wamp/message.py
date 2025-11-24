@@ -1279,9 +1279,6 @@ class Hello(Message):
         message_fbs.HelloGen.HelloStart(builder)
 
         # Add fields
-        session = getattr(self, 'session', None)
-        if session:
-            message_fbs.HelloGen.HelloAddSession(builder, session)
         if realm:
             message_fbs.HelloGen.HelloAddRealm(builder, realm)
         if authid:
@@ -1299,9 +1296,16 @@ class Hello(Message):
         # TODO: Add authmethods array serialization
         # TODO: Add authextra Map serialization
 
-        # End and return
+        # End message
         msg = message_fbs.HelloGen.HelloEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.HELLO)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -1903,9 +1907,16 @@ class Welcome(Message):
         # TODO: Add authmethod enum serialization
         # TODO: Add authextra Map serialization
 
-        # End and return
+        # End message
         msg = message_fbs.WelcomeGen.WelcomeEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.WELCOME)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -6230,8 +6241,6 @@ class EventReceived(Message):
     def build(self, builder, serializer=None):
         message_fbs.EventReceivedGen.EventReceivedStart(builder)
 
-        if self.session:
-            message_fbs.EventReceivedGen.EventReceivedAddSession(builder, self.session)
         if self.publication:
             message_fbs.EventReceivedGen.EventReceivedAddPublication(
                 builder, self.publication
@@ -6241,7 +6250,9 @@ class EventReceived(Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.EVENT_RECEIVED)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.EVENT_RECEIVED
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -7138,10 +7149,36 @@ class Cancel(MessageWithForwardFor, Message):
         return Cancel(from_fbs=message_fbs.Cancel.GetRootAsCancel(buf, 0))
 
     def build(self, builder, serializer=None):
+        # Handle forward_for: [Principal]
+        forward_for = self.forward_for
+        if forward_for:
+            from autobahn.wamp.gen.wamp.proto import Principal as PrincipalGen
+
+            _forward_for = []
+            for principal in forward_for:
+                _session = principal.get("session", 0)
+                _authid = principal.get("authid", None)
+                _authrole = principal.get("authrole", "")
+
+                if _authid:
+                    _authid = builder.CreateString(_authid)
+                _authrole = builder.CreateString(_authrole)
+
+                PrincipalGen.Start(builder)
+                PrincipalGen.AddSession(builder, _session)
+                if _authid:
+                    PrincipalGen.AddAuthid(builder, _authid)
+                PrincipalGen.AddAuthrole(builder, _authrole)
+                _forward_for.append(PrincipalGen.End(builder))
+
+            message_fbs.CancelGen.CancelStartForwardForVector(builder, len(_forward_for))
+            for principal in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(principal)
+            forward_for = builder.EndVector()
+
+        # Start Cancel message
         message_fbs.CancelGen.CancelStart(builder)
 
-        if self.session:
-            message_fbs.CancelGen.CancelAddSession(builder, self.session)
         if self.request:
             message_fbs.CancelGen.CancelAddRequest(builder, self.request)
 
@@ -7155,6 +7192,9 @@ class Cancel(MessageWithForwardFor, Message):
             else:
                 mode_val = message_fbs.CancelMode.SKIP  # default
             message_fbs.CancelGen.CancelAddMode(builder, mode_val)
+
+        if forward_for:
+            message_fbs.CancelGen.CancelAddForwardFor(builder, forward_for)
 
         msg = message_fbs.CancelGen.CancelEnd(builder)
 
@@ -8429,6 +8469,35 @@ class Unregister(MessageWithForwardFor, Message):
         else:
             return [Unregister.MESSAGE_TYPE, self.request, self.registration]
 
+    @staticmethod
+    def cast(buf):
+        return Unregister(from_fbs=message_fbs.Unregister.GetRootAsUnregister(buf, 0))
+
+    def build(self, builder, serializer=None):
+        # Start Unregister message
+        message_fbs.UnregisterGen.UnregisterStart(builder)
+
+        if self.request:
+            message_fbs.UnregisterGen.UnregisterAddRequest(builder, self.request)
+        if self.registration:
+            message_fbs.UnregisterGen.UnregisterAddRegistration(
+                builder, self.registration
+            )
+
+        # Note: forward_for not supported in current FlatBuffers schema
+
+        msg = message_fbs.UnregisterGen.UnregisterEnd(builder)
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.UNREGISTER
+        )
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
+
 
 class Unregistered(Message):
     """
@@ -9570,12 +9639,39 @@ class Interrupt(MessageWithForwardFor, Message):
         if reason:
             reason = builder.CreateString(reason)
 
+        # Handle forward_for: [Principal]
+        forward_for = self.forward_for
+        if forward_for:
+            from autobahn.wamp.gen.wamp.proto import Principal as PrincipalGen
+
+            _forward_for = []
+            for principal in forward_for:
+                _session = principal.get("session", 0)
+                _authid = principal.get("authid", None)
+                _authrole = principal.get("authrole", "")
+
+                if _authid:
+                    _authid = builder.CreateString(_authid)
+                _authrole = builder.CreateString(_authrole)
+
+                PrincipalGen.Start(builder)
+                PrincipalGen.AddSession(builder, _session)
+                if _authid:
+                    PrincipalGen.AddAuthid(builder, _authid)
+                PrincipalGen.AddAuthrole(builder, _authrole)
+                _forward_for.append(PrincipalGen.End(builder))
+
+            message_fbs.InterruptGen.InterruptStartForwardForVector(
+                builder, len(_forward_for)
+            )
+            for principal in reversed(_forward_for):
+                builder.PrependUOffsetTRelative(principal)
+            forward_for = builder.EndVector()
+
         # Start message
         message_fbs.InterruptGen.InterruptStart(builder)
 
         # Add fields
-        if self.session:
-            message_fbs.InterruptGen.InterruptAddSession(builder, self.session)
         if self.request:
             message_fbs.InterruptGen.InterruptAddRequest(builder, self.request)
 
@@ -9590,6 +9686,9 @@ class Interrupt(MessageWithForwardFor, Message):
 
         if reason:
             message_fbs.InterruptGen.InterruptAddReason(builder, reason)
+
+        if forward_for:
+            message_fbs.InterruptGen.InterruptAddForwardFor(builder, forward_for)
 
         msg = message_fbs.InterruptGen.InterruptEnd(builder)
 

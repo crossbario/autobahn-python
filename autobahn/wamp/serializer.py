@@ -1064,6 +1064,8 @@ if _HAS_FLATBUFFERS:
             message_fbs.MessageType.YIELD: (message_fbs.Yield, message.Yield),
 
             # Category 1: Session lifecycle messages
+            message_fbs.MessageType.HELLO: (message_fbs.HelloGen.Hello, message.Hello),
+            message_fbs.MessageType.WELCOME: (message_fbs.WelcomeGen.Welcome, message.Welcome),
             message_fbs.MessageType.ABORT: (message_fbs.AbortGen.Abort, message.Abort),
             message_fbs.MessageType.CHALLENGE: (message_fbs.ChallengeGen.Challenge, message.Challenge),
             message_fbs.MessageType.AUTHENTICATE: (message_fbs.AuthenticateGen.Authenticate, message.Authenticate),

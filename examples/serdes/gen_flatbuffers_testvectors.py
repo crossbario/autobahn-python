@@ -83,6 +83,7 @@ MESSAGE_TYPE_MAP = {
     "INVOCATION": (wamp_messages.Invocation, 68),
     "INTERRUPT": (wamp_messages.Interrupt, 69),
     "YIELD": (wamp_messages.Yield, 70),
+    "EVENT_RECEIVED": (wamp_messages.EventReceived, 71),
 }
 
 
@@ -98,11 +99,31 @@ def create_message_from_attributes(message_type_name, attributes):
 
     # Session establishment messages
     if message_type_name == "HELLO":
-        return message_class(realm=attributes["realm"], roles=attributes["roles"])
+        # Convert dict roles to RoleFeatures instances
+        from autobahn.wamp import role
+
+        roles_dict = {}
+        for role_name, role_features in attributes["roles"].items():
+            if role_name == "subscriber":
+                roles_dict[role_name] = role.RoleSubscriberFeatures()
+            elif role_name == "publisher":
+                roles_dict[role_name] = role.RolePublisherFeatures()
+            elif role_name == "caller":
+                roles_dict[role_name] = role.RoleCallerFeatures()
+            elif role_name == "callee":
+                roles_dict[role_name] = role.RoleCalleeFeatures()
+        return message_class(realm=attributes["realm"], roles=roles_dict)
     elif message_type_name == "WELCOME":
-        return message_class(
-            session=attributes["session_id"], roles=attributes["roles"]
-        )
+        # Convert dict roles to RoleFeatures instances
+        from autobahn.wamp import role
+
+        roles_dict = {}
+        for role_name, role_features in attributes["roles"].items():
+            if role_name == "broker":
+                roles_dict[role_name] = role.RoleBrokerFeatures()
+            elif role_name == "dealer":
+                roles_dict[role_name] = role.RoleDealerFeatures()
+        return message_class(session=attributes["session_id"], roles=roles_dict)
     elif message_type_name == "ABORT":
         return message_class(
             reason=attributes["reason"], message=attributes.get("message")
@@ -282,6 +303,8 @@ def create_message_from_attributes(message_type_name, attributes):
             reason=attributes.get("options", {}).get("reason"),
             forward_for=attributes.get("options", {}).get("forward_for"),
         )
+    elif message_type_name == "EVENT_RECEIVED":
+        return message_class(publication=attributes["publication_id"])
     elif message_type_name == "YIELD":
         return message_class(
             request=attributes["request_id"],
