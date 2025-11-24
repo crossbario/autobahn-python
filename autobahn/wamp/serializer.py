@@ -1076,6 +1076,11 @@ if _HAS_FLATBUFFERS:
             message_fbs.MessageType.REGISTERED: (message_fbs.RegisteredGen.Registered, message.Registered),
             message_fbs.MessageType.UNREGISTER: (message_fbs.UnregisterGen.Unregister, message.Unregister),
             message_fbs.MessageType.UNREGISTERED: (message_fbs.UnregisteredGen.Unregistered, message.Unregistered),
+
+            # Category 3: Forwarding Only messages
+            message_fbs.MessageType.EVENT_RECEIVED: (message_fbs.EventReceivedGen.EventReceived, message.EventReceived),
+            message_fbs.MessageType.CANCEL: (message_fbs.CancelGen.Cancel, message.Cancel),
+            message_fbs.MessageType.INTERRUPT: (message_fbs.InterruptGen.Interrupt, message.Interrupt),
         }
 
         def __init__(self, batched=False):

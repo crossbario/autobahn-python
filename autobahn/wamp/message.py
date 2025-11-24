@@ -6240,7 +6240,14 @@ class EventReceived(Message):
             )
 
         msg = message_fbs.EventReceivedGen.EventReceivedEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.EVENT_RECEIVED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
@@ -7146,7 +7153,14 @@ class Cancel(MessageWithForwardFor, Message):
             message_fbs.CancelGen.CancelAddMode(builder, mode_val)
 
         msg = message_fbs.CancelGen.CancelEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.CANCEL)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
@@ -9560,7 +9574,14 @@ class Interrupt(MessageWithForwardFor, Message):
             message_fbs.InterruptGen.InterruptAddReason(builder, reason)
 
         msg = message_fbs.InterruptGen.InterruptEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.INTERRUPT)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Yield(MessageWithAppPayload, MessageWithForwardFor, Message):

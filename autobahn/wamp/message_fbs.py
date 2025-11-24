@@ -56,6 +56,11 @@ from autobahn.wamp.gen.wamp.proto import Registered as RegisteredGen
 from autobahn.wamp.gen.wamp.proto import Unregister as UnregisterGen
 from autobahn.wamp.gen.wamp.proto import Unregistered as UnregisteredGen
 
+# Category 3: Forwarding only messages
+from autobahn.wamp.gen.wamp.proto import EventReceived as EventReceivedGen
+from autobahn.wamp.gen.wamp.proto import Cancel as CancelGen
+from autobahn.wamp.gen.wamp.proto import Interrupt as InterruptGen
+
 # Category 4: PubSub messages (both payload and forwarding)
 from autobahn.wamp.gen.wamp.proto import Event as EventGen
 from autobahn.wamp.gen.wamp.proto import Publish as PublishGen
@@ -82,6 +87,9 @@ __all__ = (
     "RegisteredGen",
     "UnregisterGen",
     "UnregisteredGen",
+    "EventReceivedGen",
+    "CancelGen",
+    "InterruptGen",
     "PublishGen",
 )
 
