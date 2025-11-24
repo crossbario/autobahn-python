@@ -1055,8 +1055,13 @@ if _HAS_FLATBUFFERS:
 
         MESSAGE_TYPE_MAP = {
             # Category 4: Both Payload and Forwarding
+            message_fbs.MessageType.ERROR: (message_fbs.Error, message.Error),
             message_fbs.MessageType.EVENT: (message_fbs.Event, message.Event),
             message_fbs.MessageType.PUBLISH: (message_fbs.Publish, message.Publish),
+            message_fbs.MessageType.CALL: (message_fbs.Call, message.Call),
+            message_fbs.MessageType.RESULT: (message_fbs.Result, message.Result),
+            message_fbs.MessageType.INVOCATION: (message_fbs.Invocation, message.Invocation),
+            message_fbs.MessageType.YIELD: (message_fbs.Yield, message.Yield),
 
             # Category 1: Session lifecycle messages
             message_fbs.MessageType.ABORT: (message_fbs.AbortGen.Abort, message.Abort),

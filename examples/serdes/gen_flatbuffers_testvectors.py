@@ -259,7 +259,7 @@ def create_message_from_attributes(message_type_name, attributes):
     elif message_type_name == "INVOCATION":
         return message_class(
             request=attributes["request_id"],
-            registration=attributes["registration"],
+            registration=attributes["registration_id"],
             args=attributes.get("args"),
             kwargs=attributes.get("kwargs"),
             payload=bytes.fromhex(attributes["payload"])

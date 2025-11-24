@@ -61,12 +61,23 @@ from autobahn.wamp.gen.wamp.proto import EventReceived as EventReceivedGen
 from autobahn.wamp.gen.wamp.proto import Cancel as CancelGen
 from autobahn.wamp.gen.wamp.proto import Interrupt as InterruptGen
 
-# Category 4: PubSub messages (both payload and forwarding)
+# Category 4: Both Payload and Forwarding messages
+from autobahn.wamp.gen.wamp.proto import Error as ErrorGen
 from autobahn.wamp.gen.wamp.proto import Event as EventGen
 from autobahn.wamp.gen.wamp.proto import Publish as PublishGen
+from autobahn.wamp.gen.wamp.proto import Call as CallGen
+from autobahn.wamp.gen.wamp.proto import Result as ResultGen
+from autobahn.wamp.gen.wamp.proto import Invocation as InvocationGen
+from autobahn.wamp.gen.wamp.proto import Yield as YieldGen
 
 __all__ = (
     "Event",
+    "Publish",
+    "Error",
+    "Call",
+    "Result",
+    "Invocation",
+    "Yield",
     "Message",
     "MessageType",
     "Match",
@@ -90,6 +101,11 @@ __all__ = (
     "EventReceivedGen",
     "CancelGen",
     "InterruptGen",
+    "ErrorGen",
+    "CallGen",
+    "ResultGen",
+    "InvocationGen",
+    "YieldGen",
     "PublishGen",
 )
 
@@ -167,6 +183,226 @@ class Publish(PublishGen.Publish):
 
     def PayloadAsBytes(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def EncKeyAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+
+class Error(ErrorGen.Error):
+    @classmethod
+    def GetRootAsError(cls, buf, offset):
+        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
+        x = Error()
+        x.Init(buf, n + offset)
+        return x
+
+    def Init(self, buf, pos):
+        self._tab = flatbuffers.table.Table(buf, pos)
+
+    def ArgsAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def KwargsAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def PayloadAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def EncKeyAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+
+class Call(CallGen.Call):
+    @classmethod
+    def GetRootAsCall(cls, buf, offset):
+        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
+        x = Call()
+        x.Init(buf, n + offset)
+        return x
+
+    def Init(self, buf, pos):
+        self._tab = flatbuffers.table.Table(buf, pos)
+
+    def ArgsAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def KwargsAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def PayloadAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def EncKeyAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+
+class Result(ResultGen.Result):
+    @classmethod
+    def GetRootAsResult(cls, buf, offset):
+        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
+        x = Result()
+        x.Init(buf, n + offset)
+        return x
+
+    def Init(self, buf, pos):
+        self._tab = flatbuffers.table.Table(buf, pos)
+
+    def ArgsAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def KwargsAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def PayloadAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def EncKeyAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(22))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+
+class Invocation(InvocationGen.Invocation):
+    @classmethod
+    def GetRootAsInvocation(cls, buf, offset):
+        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
+        x = Invocation()
+        x.Init(buf, n + offset)
+        return x
+
+    def Init(self, buf, pos):
+        self._tab = flatbuffers.table.Table(buf, pos)
+
+    def ArgsAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def KwargsAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def PayloadAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def EncKeyAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+
+class Yield(YieldGen.Yield):
+    @classmethod
+    def GetRootAsYield(cls, buf, offset):
+        n = flatbuffers.encode.Get(flatbuffers.packer.uoffset, buf, offset)
+        x = Yield()
+        x.Init(buf, n + offset)
+        return x
+
+    def Init(self, buf, pos):
+        self._tab = flatbuffers.table.Table(buf, pos)
+
+    def ArgsAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def KwargsAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        if o != 0:
+            _off = self._tab.Vector(o)
+            _len = self._tab.VectorLen(o)
+            return memoryview(self._tab.Bytes)[_off : _off + _len]
+        return None
+
+    def PayloadAsBytes(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(12))
         if o != 0:
             _off = self._tab.Vector(o)
             _len = self._tab.VectorLen(o)

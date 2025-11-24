@@ -3056,10 +3056,7 @@ class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
 
     @property
     def callee(self):
-        if self._callee is None and self._from_fbs:
-            callee = self._from_fbs.Callee()
-            if callee:
-                self._callee = callee
+        # Note: Error FlatBuffers schema doesn't include callee fields yet
         return self._callee
 
     @callee.setter
@@ -3069,10 +3066,7 @@ class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
 
     @property
     def callee_authid(self):
-        if self._callee_authid is None and self._from_fbs:
-            s = self._from_fbs.CalleeAuthid()
-            if s:
-                self._callee_authid = s.decode("utf8")
+        # Note: Error FlatBuffers schema doesn't include callee fields yet
         return self._callee_authid
 
     @callee_authid.setter
@@ -3082,10 +3076,7 @@ class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
 
     @property
     def callee_authrole(self):
-        if self._callee_authrole is None and self._from_fbs:
-            s = self._from_fbs.CalleeAuthrole()
-            if s:
-                self._callee_authrole = s.decode("utf8")
+        # Note: Error FlatBuffers schema doesn't include callee fields yet
         return self._callee_authrole
 
     @callee_authrole.setter
@@ -3187,7 +3178,14 @@ class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
             message_fbs.ErrorGen.ErrorAddForwardFor(builder, forward_for)
 
         msg = message_fbs.ErrorGen.ErrorEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.ERROR)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -6291,8 +6289,8 @@ class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
 
     def __init__(
         self,
-        request,
-        procedure,
+        request=None,
+        procedure=None,
         args=None,
         kwargs=None,
         payload=None,
@@ -6361,8 +6359,9 @@ class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
         :param forward_for: When this Publish is forwarded for a client (or from an intermediary router).
         :type forward_for: list[dict]
         """
-        assert type(request) == int
-        assert type(procedure) == str
+        if from_fbs is None:
+            assert type(request) == int
+            assert type(procedure) == str
         assert args is None or type(args) in [list, tuple]
         assert kwargs is None or type(kwargs) == dict
         assert payload is None or type(payload) == bytes
@@ -6642,8 +6641,6 @@ class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
         # build CallGen
         message_fbs.CallGen.CallStart(builder)
 
-        if self.session:
-            message_fbs.CallGen.CallAddSession(builder, self.session)
         if self.request:
             message_fbs.CallGen.CallAddRequest(builder, self.request)
         if procedure:
@@ -6676,7 +6673,14 @@ class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
             message_fbs.CallGen.CallAddForwardFor(builder, forward_for)
 
         msg = message_fbs.CallGen.CallEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.CALL)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -7470,7 +7474,14 @@ class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
             message_fbs.ResultGen.ResultAddForwardFor(builder, forward_for)
 
         msg = message_fbs.ResultGen.ResultEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.RESULT)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -9031,7 +9042,14 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
             message_fbs.InvocationGen.InvocationAddForwardFor(builder, forward_for)
 
         msg = message_fbs.InvocationGen.InvocationEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.INVOCATION)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -9888,7 +9906,14 @@ class Yield(MessageWithAppPayload, MessageWithForwardFor, Message):
             message_fbs.YieldGen.YieldAddForwardFor(builder, forward_for)
 
         msg = message_fbs.YieldGen.YieldEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.YIELD)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
