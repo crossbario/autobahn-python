@@ -930,7 +930,9 @@ class MessageWithForwardFor(object):
         :rtype: list[dict] or None
         """
         if self._forward_for is None and self._from_fbs:
-            if self._from_fbs.ForwardForLength():
+            # Check if this message type has forward_for in FlatBuffers schema
+            # Category 1 messages don't have forward_for
+            if hasattr(self._from_fbs, 'ForwardForLength') and self._from_fbs.ForwardForLength():
                 forward_for = []
                 for j in range(self._from_fbs.ForwardForLength()):
                     principal = self._from_fbs.ForwardFor(j)
@@ -2209,7 +2211,14 @@ class Abort(Message):
 
         # End and return
         msg = message_fbs.AbortGen.AbortEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.ABORT)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -2317,10 +2326,15 @@ class Challenge(Message):
         if self._method is None and self._from_fbs:
             method_val = self._from_fbs.Method()
             # Map AuthMethod enum to string
-            # Note: FlatBuffers uses AuthMethod enum, Python uses string
-            # For now, return a default string representation
-            # Full enum mapping would require auth method lookup table
-            self._method = f"authmethod_{method_val}" if method_val else None
+            # AuthMethod: NULL=0, TICKET=1, CRA=2, SCRAM=3, CRYPTOSIGN=4
+            AUTH_METHOD_MAP = {
+                0: None,           # NULL/anonymous
+                1: "ticket",       # TICKET
+                2: "wampcra",      # CRA (Challenge-Response Authentication)
+                3: "wamp-scram",   # SCRAM
+                4: "cryptosign",   # CRYPTOSIGN
+            }
+            self._method = AUTH_METHOD_MAP.get(method_val)
         return self._method
 
     @method.setter
@@ -2379,12 +2393,17 @@ class Challenge(Message):
             message_fbs.ChallengeGen.ChallengeAddSession(builder, session)
 
         # Method: Map string to AuthMethod enum
-        # For simplicity, default to ANONYMOUS (0) for now
-        # Full implementation would require reverse lookup table
+        # AuthMethod: NULL=0, TICKET=1, CRA=2, SCRAM=3, CRYPTOSIGN=4
         if self.method:
-            message_fbs.ChallengeGen.ChallengeAddMethod(
-                builder, 0
-            )  # Default to ANONYMOUS
+            STRING_TO_AUTH_METHOD = {
+                "anonymous": 0,     # NULL
+                "ticket": 1,        # TICKET
+                "wampcra": 2,       # CRA (Challenge-Response Authentication)
+                "wamp-scram": 3,    # SCRAM
+                "cryptosign": 4,    # CRYPTOSIGN
+            }
+            method_enum = STRING_TO_AUTH_METHOD.get(self.method, 0)
+            message_fbs.ChallengeGen.ChallengeAddMethod(builder, method_enum)
 
         # TODO: Add proper Map serialization for extra field
         # if self.extra:
@@ -2393,7 +2412,14 @@ class Challenge(Message):
 
         # End and return
         msg = message_fbs.ChallengeGen.ChallengeEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.CHALLENGE)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -2563,7 +2589,14 @@ class Authenticate(Message):
 
         # End and return
         msg = message_fbs.AuthenticateGen.AuthenticateEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.AUTHENTICATE)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -2758,7 +2791,14 @@ class Goodbye(Message):
 
         # End and return
         msg = message_fbs.GoodbyeGen.GoodbyeEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.GOODBYE)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
     @staticmethod
     def parse(wmsg):
@@ -4519,7 +4559,14 @@ class Published(Message):
             message_fbs.PublishedGen.PublishedAddPublication(builder, self.publication)
 
         msg = message_fbs.PublishedGen.PublishedEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.PUBLISHED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Subscribe(MessageWithForwardFor, Message):
@@ -4838,7 +4885,14 @@ class Subscribe(MessageWithForwardFor, Message):
 
         # End and return
         msg = message_fbs.SubscribeGen.SubscribeEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.SUBSCRIBE)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Subscribed(Message):
@@ -4938,7 +4992,14 @@ class Subscribed(Message):
             )
 
         msg = message_fbs.SubscribedGen.SubscribedEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.SUBSCRIBED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Unsubscribe(MessageWithForwardFor, Message):
@@ -5126,7 +5187,14 @@ class Unsubscribe(MessageWithForwardFor, Message):
             )
 
         msg = message_fbs.UnsubscribeGen.UnsubscribeEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.UNSUBSCRIBE)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Unsubscribed(Message):
@@ -5323,7 +5391,14 @@ class Unsubscribed(Message):
 
         # End and return
         msg = message_fbs.UnsubscribedGen.UnsubscribedEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.UNSUBSCRIBED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Event(MessageWithAppPayload, MessageWithForwardFor, Message):
@@ -8045,7 +8120,14 @@ class Register(MessageWithForwardFor, Message):
 
         # End and return
         msg = message_fbs.RegisterGen.RegisterEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.REGISTER)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Registered(Message):
@@ -8171,7 +8253,14 @@ class Registered(Message):
             )
 
         msg = message_fbs.RegisteredGen.RegisteredEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.REGISTERED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Unregister(MessageWithForwardFor, Message):
@@ -8509,7 +8598,14 @@ class Unregistered(Message):
 
         # End and return
         msg = message_fbs.UnregisteredGen.UnregisteredEnd(builder)
-        return msg
+
+        # Wrap in Message union with type
+        message_fbs.Message.MessageStart(builder)
+        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.UNREGISTERED)
+        message_fbs.Message.MessageAddMsg(builder, msg)
+        union_msg = message_fbs.Message.MessageEnd(builder)
+
+        return union_msg
 
 
 class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
