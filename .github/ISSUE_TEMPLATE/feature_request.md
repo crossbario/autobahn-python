@@ -1,42 +1,80 @@
 ---
-name: Suggest a feature
-about: Suggest a feature, that is new desirable behavior.
-title: "[ISSUE] "
-labels: ["needs-triage"]
+name: Feature Request
+about: Suggest a new feature or enhancement
+title: '[FEATURE] '
+labels: enhancement
+assignees: ''
 ---
 
-> 📝 **Note for maintainers:** Please triage this issue (review,
-> classify, and assign appropriate labels).
+## Feature Description
 
----
+**Summary**: [Brief one-line description of the feature]
 
-## What is your issue about?
+**Problem Statement**:
+[What problem does this feature solve? Why do you need it?]
 
-<!-- Please provide a clear and concise description. -->
+**Proposed Solution**:
+[Describe your proposed solution in detail]
 
----
+## Use Cases
 
-## Additional context
+**Use Case 1**:
+- **Actor**: [Who uses this feature?]
+- **Goal**: [What do they want to achieve?]
+- **Example**: [Concrete example]
 
-<!-- Add any other context or screenshots here. -->
+**Use Case 2** (if applicable):
+- **Actor**: [...]
+- **Goal**: [...]
+- **Example**: [...]
 
----
+## Example API/Usage
 
-## Triage Notes (for maintainers only)
+```python
+# Show how you envision the feature being used
+```
 
-<!--
-Triage is reviewing, categorization and prioritizing *features* depending on affected system/package/library area, layer and module, advantages and risks, desirability and urgency.
--->
+## Alternatives Considered
 
----
+**Alternative 1**: [Description]
+- Pros: [...]
+- Cons: [...]
 
-## AI Assistance Disclosure
+**Alternative 2**: [Description]
+- Pros: [...]
+- Cons: [...]
 
-- [ ] I did **not** use any AI-assistance tools to help create
-      this issue.
-- [x] I **did** use AI-assistance tools to _help_ create this
-      issue.
-- [x] I have read, understood and followed the projects'
-      [AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md)
-      when creating code, documentation etc. for this pull
-      request.
+**Why the proposed solution is better**: [Explanation]
+
+## Impact Assessment
+
+**Breaking Changes**: [Yes/No - if yes, describe]
+
+**Affected Components**:
+- [ ] Core library
+- [ ] API
+- [ ] Documentation
+- [ ] Tests
+- [ ] CI/CD
+
+**Estimated Complexity**: [Low / Medium / High]
+
+## Additional Context
+
+**Related Issues**:
+- #XXX
+- #YYY
+
+**External References**:
+- [Links to relevant specs, discussions, articles]
+
+**Mockups/Diagrams**:
+[If applicable, add visual representations]
+
+## Checklist
+
+- [ ] I have searched existing issues to avoid duplicates
+- [ ] I have described the problem clearly
+- [ ] I have provided use cases
+- [ ] I have considered alternatives
+- [ ] I have assessed impact and breaking changes
