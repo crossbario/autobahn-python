@@ -1,43 +1,62 @@
 ---
-name: Report a bug
-about:
-  Report a bug, that is unexpected or undesired behavior for an
-  existing feature.
-title: "[ISSUE] "
-labels: ["needs-triage"]
+name: Bug Report
+about: Report a bug or unexpected behavior
+title: '[BUG] '
+labels: bug
+assignees: ''
 ---
 
-> 📝 **Note for maintainers:** Please triage this issue (review,
-> classify, and assign appropriate labels).
+## Bug Description
 
----
+**Summary**: [Brief one-line description of the bug]
 
-## What is your issue about?
+**Expected Behavior**:
+[What you expected to happen]
 
-<!-- Please provide a clear and concise description. -->
+**Actual Behavior**:
+[What actually happened]
 
----
+## Reproduction Steps
 
-## Additional context
+1. [First step]
+2. [Second step]
+3. [...]
 
-<!-- Add any other context or screenshots here. -->
+**Minimal Reproducible Example**:
+```python
+# Code that reproduces the issue
+```
 
----
+## Environment
 
-## Triage Notes (for maintainers only)
+- **Package**: [e.g., autobahn-python, crossbar, txaio]
+- **Version**: [e.g., 25.11.1]
+- **Python Version**: [e.g., CPython 3.12, PyPy 3.11]
+- **Operating System**: [e.g., Ubuntu 24.04, macOS 14, Windows 11]
+- **Framework**: [e.g., Twisted 24.7.0, asyncio]
 
-<!--
-Triage is reviewing, categorization and prioritizing *bugs* depending on affected system/package/library-area, -layer and -module, disadvantages and impacts, annoyance and urgency.-->
+## Additional Context
 
----
+**Error Messages**:
+```
+[Paste full error/traceback here]
+```
 
-## AI Assistance Disclosure
+**Relevant Logs**:
+```
+[Paste relevant log excerpts]
+```
 
-- [ ] I did **not** use any AI-assistance tools to help create
-      this issue.
-- [x] I **did** use AI-assistance tools to _help_ create this
-      issue.
-- [x] I have read, understood and followed the projects'
-      [AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md)
-      when creating code, documentation etc. for this pull
-      request.
+**Screenshots**:
+[If applicable, add screenshots]
+
+**Related Issues**:
+- #XXX
+- #YYY
+
+## Checklist
+
+- [ ] I have searched existing issues to avoid duplicates
+- [ ] I have provided a minimal reproducible example
+- [ ] I have included version information
+- [ ] I have included error messages/logs
