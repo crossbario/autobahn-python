@@ -20,11 +20,34 @@ set script-interpreter := ['uv', 'run', '--script']
 # project base directory = directory of this justfile
 PROJECT_DIR := justfile_directory()
 
-# Default recipe: list all recipes
+# Default recipe: show project header and list all recipes
 default:
-    @echo ""
-    @just --list
-    @echo ""
+    #!/usr/bin/env bash
+    set -e
+    VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+    GIT_REV=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    echo ""
+    echo "==============================================================================="
+    echo "                             Autobahn|Python                                   "
+    echo ""
+    echo "         WebSocket & WAMP for Python on Twisted and asyncio                   "
+    echo ""
+    echo "   Python Package:         autobahn                                           "
+    echo "   Python Package Version: ${VERSION}                                         "
+    echo "   Git Version:            ${GIT_REV}                                         "
+    echo "   Protocol Specification: https://wamp-proto.org/                            "
+    echo "   Documentation:          https://autobahn.readthedocs.io                    "
+    echo "   Package Releases:       https://pypi.org/project/autobahn/                 "
+    echo "   Nightly/Dev Releases:   https://github.com/crossbario/autobahn-python/releases"
+    echo "   Source Code:            https://github.com/crossbario/autobahn-python      "
+    echo "   Copyright:              typedef int GmbH (Germany/EU)                      "
+    echo "   License:                MIT License                                        "
+    echo ""
+    echo "       >>>   Created by The WAMP/Autobahn/Crossbar.io OSS Project   <<<       "
+    echo "==============================================================================="
+    echo ""
+    just --list
+    echo ""
 
 # Tell uv to always copy files instead of trying to hardlink them.
 # set export UV_LINK_MODE := 'copy'
@@ -995,6 +1018,7 @@ docs venv="":
     echo "==> Building documentation..."
     "${VENV_PATH}/bin/sphinx-build" -b html docs/ docs/_build/html
 
+# Build documentation and open in system viewer
 docs-view venv="": (docs venv)
     echo "==> Opening documentation in viewer ..."
     open docs/_build/html/index.html
@@ -1048,6 +1072,41 @@ build-all:
         just build ${venv}
     done
     ls -la dist/
+
+# Clean build artifacts
+clean-build:
+    echo "==> Cleaning build artifacts..."
+    rm -rf build/ dist/ *.egg-info/
+    echo "==> Build artifacts cleaned."
+
+# Verify wheels using twine check and auditwheel (for native extensions)
+verify-wheels venv="": (install-build-tools venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+
+    echo "==> Verifying wheels with twine check..."
+    "${VENV_PATH}/bin/twine" check dist/*
+
+    echo ""
+    echo "==> Verifying wheels with auditwheel (native extension validation)..."
+    # Note: auditwheel is for Linux wheels with native extensions.
+    # Autobahn has optional NVX native extensions via CFFI.
+    for wheel in dist/*.whl; do
+        if [[ "$wheel" == *"none-any"* ]]; then
+            echo "    Skipping pure Python wheel: $wheel"
+        else
+            echo "    Checking: $wheel"
+            "${VENV_PATH}/bin/auditwheel" show "$wheel" || true
+        fi
+    done
+    echo "==> Wheel verification complete."
 
 # Download release artifacts from GitHub and publish to PyPI
 publish-pypi venv="" tag="":
