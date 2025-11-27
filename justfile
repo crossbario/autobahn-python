@@ -427,6 +427,30 @@ install-dev-all:
         just install-dev ${venv}
     done
 
+# Upgrade dependencies in a single environment (usage: `just upgrade cpy314`)
+upgrade venv="": (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Upgrading dependencies in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pip install --upgrade pip
+    ${VENV_PYTHON} -m pip install --upgrade -e .[all,dev]
+    echo "==> Dependencies upgraded in ${VENV_NAME}."
+
+# Meta-recipe to run `upgrade` on all environments
+upgrade-all:
+    #!/usr/bin/env bash
+    set -e
+    for venv in {{ENVS}}; do
+        just upgrade ${venv}
+    done
+
 # -----------------------------------------------------------------------------
 # -- Installation: Tools (Ruff, Sphinx, etc)
 # -----------------------------------------------------------------------------
@@ -538,7 +562,7 @@ install-wstest:
 # -----------------------------------------------------------------------------
 
 # Automatically fix all formatting and code style issues.
-autoformat venv="": (install-tools venv)
+fix-format venv="": (install-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -560,6 +584,9 @@ autoformat venv="": (install-tools venv)
     #    Uses exclude list from pyproject.toml (includes autobahn/wamp/gen/*, tests, etc.)
     "${VENV_PATH}/bin/ruff" check --fix .
     echo "--> Formatting complete."
+
+# Alias for fix-format (backward compatibility)
+autoformat venv="": (fix-format venv)
 
 # Lint code using Ruff in a single environment
 check-format venv="": (install-tools venv)
@@ -884,6 +911,14 @@ check venv="": (check-compressors venv) (check-serializers venv) (check-format v
 
 # Run the test suite for Twisted/trial and asyncio/pytest (usage: `just test cpy314`)
 test venv="" use_nvx="": (test-twisted venv use_nvx) (test-asyncio venv use_nvx)
+
+# Meta-recipe to run `test` on all environments
+test-all:
+    #!/usr/bin/env bash
+    set -e
+    for venv in {{ENVS}}; do
+        just test ${venv}
+    done
 
 # Run the test suite for Twisted using trial (usage: `just test-twisted cpy314`)
 test-twisted venv="" use_nvx="": (install-tools venv) (install venv)
