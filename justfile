@@ -920,6 +920,21 @@ test-all:
         just test ${venv}
     done
 
+# Run basic autobahn library import test (usage: `just test-import cpy314`)
+test-import venv="": (install-tools venv) (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    ${VENV_PYTHON} -c "from autobahn.wamp.message import Unregistered; print(f'\n{Unregistered.MESSAGE_TYPE}! ohh, yeah.\n')"
+
 # Run the test suite for Twisted using trial (usage: `just test-twisted cpy314`)
 test-twisted venv="" use_nvx="": (install-tools venv) (install venv)
     #!/usr/bin/env bash
