@@ -603,7 +603,7 @@ check-format venv="": (install-tools venv)
     "${VENV_PATH}/bin/ruff" check .
 
 # Run static type checking with mypy
-check-typing venv="": (install-tools venv) (install venv)
+check-typing venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -617,7 +617,7 @@ check-typing venv="": (install-tools venv) (install venv)
     "${VENV_PATH}/bin/mypy" src/autobahn/
 
 # Run coverage for Twisted tests only
-check-coverage-twisted venv="" use_nvx="": (install-tools venv) (install venv)
+check-coverage-twisted venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -657,7 +657,7 @@ check-coverage-twisted venv="" use_nvx="": (install-tools venv) (install venv)
         autobahn.nvx.test
 
 # Run coverage for asyncio tests only
-check-coverage-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
+check-coverage-asyncio venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -726,7 +726,7 @@ check-coverage-combined venv="" use_nvx="": (check-coverage-twisted venv use_nvx
     echo "   Text: above summary"
 
 # Legacy coverage recipe (DEPRECATED - use check-coverage-combined instead)
-check-coverage venv="" use_nvx="": (install-tools venv) (install venv)
+check-coverage venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     echo "⚠️  DEPRECATED: Use 'just check-coverage-combined' for comprehensive coverage"
@@ -921,7 +921,7 @@ test-all:
     done
 
 # Run basic autobahn library import test (usage: `just test-import cpy314`)
-test-import venv="": (install-tools venv) (install venv)
+test-import venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -936,7 +936,7 @@ test-import venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} -c "from autobahn.wamp.message import Unregistered; print(f'\n{Unregistered.MESSAGE_TYPE}! ohh, yeah.\n')"
 
 # Run the test suite for Twisted using trial (usage: `just test-twisted cpy314`)
-test-twisted venv="" use_nvx="": (install-tools venv) (install venv)
+test-twisted venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -977,7 +977,7 @@ test-twisted venv="" use_nvx="": (install-tools venv) (install venv)
         autobahn.nvx.test
 
 # Run the test suite for asyncio using pytest (usage: `just test-asyncio cpy314`)
-test-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
+test-asyncio venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1006,7 +1006,7 @@ test-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
         --ignore=./src/autobahn/twisted ./src/autobahn
 
 # Run WAMP message serdes conformance tests (usage: `just test-serdes cpy311`)
-test-serdes venv="": (install-tools venv) (install venv)
+test-serdes venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1703,7 +1703,7 @@ wstest-fuzzingclient config_dir="" output_dir="" mode="quick":
         wstest -m fuzzingclient -s /config/fuzzingclient-${TEST_MODE}.json
 
 # Run Autobahn|Python WebSocket client on Twisted
-wstest-testeeclient-twisted venv="": (install-tools venv) (install venv)
+wstest-testeeclient-twisted venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1719,7 +1719,7 @@ wstest-testeeclient-twisted venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} ./wstest/testee_client_tx.py
 
 # Run Autobahn|Python WebSocket client on asyncio
-wstest-testeeclient-asyncio venv="": (install-tools venv) (install venv)
+wstest-testeeclient-asyncio venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1735,7 +1735,7 @@ wstest-testeeclient-asyncio venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} ./wstest/testee_client_aio.py
 
 # Run Autobahn|Python WebSocket server on Twisted
-wstest-testeeserver-twisted venv="" url="ws://127.0.0.1:9011": (install-tools venv) (install venv)
+wstest-testeeserver-twisted venv="" url="ws://127.0.0.1:9011": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1750,7 +1750,7 @@ wstest-testeeserver-twisted venv="" url="ws://127.0.0.1:9011": (install-tools ve
     ${VENV_PYTHON} ./wstest/testee_server_tx.py --url "{{ url }}"
 
 # Run Autobahn|Python WebSocket server on asyncio
-wstest-testeeserver-asyncio venv="" url="ws://127.0.0.1:9012": (install-tools venv) (install venv)
+wstest-testeeserver-asyncio venv="" url="ws://127.0.0.1:9012": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
