@@ -183,6 +183,7 @@ include-package-data = true
 [tool.setuptools.package-data]
 autobahn = ["py.typed"]
 "autobahn.asyncio" = ["test/*"]
+"autobahn.nvx" = ["*.c"]
 "autobahn.wamp.gen.schema" = ["*.bfbs"]
 "autobahn.wamp.flatbuffers" = ["*.fbs"]
 
