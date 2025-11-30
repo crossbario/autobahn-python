@@ -32,7 +32,7 @@ except ImportError:
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath("./_extensions"))
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../src"))
 sys.path.insert(0, os.path.abspath("."))
 
 # monkey-patch txaio so that we can "use" both twisted *and* asyncio,
@@ -114,7 +114,7 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
 # needs_sphinx = '1.0'
 
 autoapi_type = "python"
-autoapi_dirs = ["../autobahn"]
+autoapi_dirs = ["../src/autobahn"]
 # autoapi_ignore doesn’t interpret filesystem-style paths — it uses
 # glob-style matching relative to autoapi_dirs roots.
 autoapi_ignore = [
@@ -193,7 +193,7 @@ copyright = "2015-{0}, typedef int GmbH (Germany)".format(this_year)
 # built documents.
 #
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-with open(os.path.join(base_dir, "autobahn", "_version.py")) as f:
+with open(os.path.join(base_dir, "src", "autobahn", "_version.py")) as f:
     exec(f.read())  # defines __version__
 
 version = release = __version__

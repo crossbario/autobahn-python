@@ -22,9 +22,24 @@ Contents
    wamp/examples
    environments/index
    OVERVIEW.md
-   AI_POLICY.md
-   AI_GUIDELINES.md
-   AI_AUDIT_PROCESS.md
-   AI_AUDIT_PROCESS_REVIEW.md
+
+AI Policy
+---------
+
+.. toctree::
+   :maxdepth: 2
+
+   ai/AI_POLICY.md
+   ai/AI_GUIDELINES.md
+   ai/AI_AUDIT_FILE.md
+   ai/AI_AUDIT_PROCESS.md
+   ai/AI_AUDIT_PROCESS_REVIEW.md
+
+Releases
+--------
+
+.. toctree::
+   :maxdepth: 2
+
    release-notes
    changelog
