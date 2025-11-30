@@ -614,7 +614,7 @@ check-typing venv="": (install-tools venv) (install venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Running static type checks with ${VENV_NAME}..."
-    "${VENV_PATH}/bin/mypy" autobahn/
+    "${VENV_PATH}/bin/mypy" src/autobahn/
 
 # Run coverage for Twisted tests only
 check-coverage-twisted venv="" use_nvx="": (install-tools venv) (install venv)
@@ -682,10 +682,10 @@ check-coverage-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
 
     # Run asyncio tests with coverage (parallel mode to combine later)
     USE_ASYNCIO=1 "${VENV_PATH}/bin/coverage" run \
-        --source=autobahn \
+        --source=src/autobahn \
         --parallel-mode \
         -m pytest -s -v -rfP \
-        --ignore=./autobahn/twisted ./autobahn
+        --ignore=./src/autobahn/twisted ./src/autobahn
 
 # Combined coverage report from both Twisted and asyncio tests
 check-coverage-combined venv="" use_nvx="": (check-coverage-twisted venv use_nvx) (check-coverage-asyncio venv use_nvx)
@@ -1003,7 +1003,7 @@ test-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
 
     # IMPORTANT: we need to exclude all twisted tests
     USE_ASYNCIO=1 ${VENV_PYTHON} -m pytest -s -v -rfP \
-        --ignore=./autobahn/twisted ./autobahn
+        --ignore=./src/autobahn/twisted ./src/autobahn
 
 # Run WAMP message serdes conformance tests (usage: `just test-serdes cpy311`)
 test-serdes venv="": (install-tools venv) (install venv)
@@ -1356,7 +1356,7 @@ install-flatc:
 # Clean generated FlatBuffers files
 clean-fbs:
     echo "==> Cleaning FlatBuffers generated files..."
-    rm -rf ./autobahn/wamp/gen/
+    rm -rf ./src/autobahn/wamp/gen/
 
 # Build FlatBuffers schema files and Python bindings
 build-fbs venv="": (install-tools venv)
@@ -1370,28 +1370,28 @@ build-fbs venv="": (install-tools venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
 
-    FBSFILES="./autobahn/wamp/flatbuffers/*.fbs"
+    FBSFILES="./src/autobahn/wamp/flatbuffers/*.fbs"
     FLATC="flatc"
     echo "==> Generating FlatBuffers binary schema and Python wrappers using $(${FLATC} --version)..."
 
     # Generate schema binary type library (*.bfbs files)
-    ${FLATC} -o ./autobahn/wamp/gen/schema/ --binary --schema --bfbs-comments --bfbs-builtins ${FBSFILES}
-    echo "--> Generated $(find ./autobahn/wamp/gen/schema/ -name '*.bfbs' | wc -l) .bfbs files"
+    ${FLATC} -o ./src/autobahn/wamp/gen/schema/ --binary --schema --bfbs-comments --bfbs-builtins ${FBSFILES}
+    echo "--> Generated $(find ./src/autobahn/wamp/gen/schema/ -name '*.bfbs' | wc -l) .bfbs files"
 
     # Generate schema Python bindings (*.py files)
-    ${FLATC} -o ./autobahn/wamp/gen/ --python ${FBSFILES}
-    touch ./autobahn/wamp/gen/__init__.py
-    echo "--> Generated $(find ./autobahn/wamp/gen/ -name '*.py' | wc -l) .py files"
+    ${FLATC} -o ./src/autobahn/wamp/gen/ --python ${FBSFILES}
+    touch ./src/autobahn/wamp/gen/__init__.py
+    echo "--> Generated $(find ./src/autobahn/wamp/gen/ -name '*.py' | wc -l) .py files"
 
     # Fix import paths in generated files (flatc generates relative imports)
     # Change: from wamp.proto.X import X
     # To:     from autobahn.wamp.gen.wamp.proto.X import X
-    find ./autobahn/wamp/gen/wamp/proto/ -name "*.py" -exec sed -i 's/from wamp\.proto\./from autobahn.wamp.gen.wamp.proto./g' {} +
+    find ./src/autobahn/wamp/gen/wamp/proto/ -name "*.py" -exec sed -i 's/from wamp\.proto\./from autobahn.wamp.gen.wamp.proto./g' {} +
     echo "--> Fixed import paths in generated files"
 
     echo "Auto-formatting code using ruff after flatc code generation .."
-    "${VENV_PATH}/bin/ruff" format ./autobahn/wamp/gen/
-    "${VENV_PATH}/bin/ruff" check --fix ./autobahn/wamp/gen/
+    "${VENV_PATH}/bin/ruff" format ./src/autobahn/wamp/gen/
+    "${VENV_PATH}/bin/ruff" check --fix ./src/autobahn/wamp/gen/
 
 # -----------------------------------------------------------------------------
 # -- File Management Utilities
