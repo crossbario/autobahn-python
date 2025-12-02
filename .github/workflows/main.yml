@@ -59,10 +59,14 @@ jobs:
           source $HOME/.cargo/env
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+      - name: Install ty (Astral type checker)
+        run: uv tool install ty
+
       - name: Verify toolchain installation
         run: |
           just --version
           uv --version
+          ty --version
 
       - name: Setup uv cache
         uses: actions/cache@v4
@@ -82,12 +86,10 @@ jobs:
       - name: Code formatting / linting (via ruff)
         run: just check-format cpy314
 
-      # FIXME: Found 239 errors in 45 files (checked 163 source files)
-      # - name: Code static typing (via mypy)
-      #   run: just check-typing cpy314
+      - name: Code static typing (via ty)
+        run: just check-typing cpy314
 
       - name: Code test coverage (Combined Twisted + asyncio) - WITH NVX
-        continue-on-error: true
         run: just check-coverage-combined cpy314 1
 
       - name: Upload coverage report (with-nvx)
@@ -99,7 +101,6 @@ jobs:
           retention-days: 14
 
       - name: Code test coverage (Combined Twisted + asyncio) - WITHOUT NVX
-        continue-on-error: true
         run: just check-coverage-combined cpy314 0
 
       - name: Upload coverage report (without-nvx)
@@ -111,19 +112,15 @@ jobs:
           retention-days: 14
 
       - name: Unit test - Twisted / trial - WITH NVX
-        continue-on-error: true
         run: just test-twisted cpy314 1
 
       - name: Unit test - Twisted / trial - WITHOUT NVX
-        continue-on-error: true
         run: just test-twisted cpy314 0
 
       - name: Unit test - asyncio / pytest - WITH NVX
-        continue-on-error: true
         run: just test-asyncio cpy314 1
 
       - name: Unit test - asyncio / pytest - WITHOUT NVX
-        continue-on-error: true
         run: just test-asyncio cpy314 0
 
   test-serdes:

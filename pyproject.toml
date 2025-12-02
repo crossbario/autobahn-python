@@ -131,7 +131,8 @@ dev = [
     "bumpversion>=0.5.3",
     "codecov>=2.0.15",
     "humanize>=4.0.0",
-    "mypy>=0.610; python_version >= '3.4' and platform_python_implementation != 'PyPy'",
+    # Note: ty (Astral type checker) is installed via `uv tool install ty`
+    # It's a standalone Rust binary, not a Python package dependency
     "myst-parser>=4.0.1",
     "passlib",
     "pep8-naming>=0.3.3",
