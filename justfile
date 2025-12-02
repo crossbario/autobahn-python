@@ -20,11 +20,34 @@ set script-interpreter := ['uv', 'run', '--script']
 # project base directory = directory of this justfile
 PROJECT_DIR := justfile_directory()
 
-# Default recipe: list all recipes
+# Default recipe: show project header and list all recipes
 default:
-    @echo ""
-    @just --list
-    @echo ""
+    #!/usr/bin/env bash
+    set -e
+    VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+    GIT_REV=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    echo ""
+    echo "==============================================================================="
+    echo "                             Autobahn|Python                                   "
+    echo ""
+    echo "         WebSocket & WAMP for Python on Twisted and asyncio                   "
+    echo ""
+    echo "   Python Package:         autobahn                                           "
+    echo "   Python Package Version: ${VERSION}                                         "
+    echo "   Git Version:            ${GIT_REV}                                         "
+    echo "   Protocol Specification: https://wamp-proto.org/                            "
+    echo "   Documentation:          https://autobahn.readthedocs.io                    "
+    echo "   Package Releases:       https://pypi.org/project/autobahn/                 "
+    echo "   Nightly/Dev Releases:   https://github.com/crossbario/autobahn-python/releases"
+    echo "   Source Code:            https://github.com/crossbario/autobahn-python      "
+    echo "   Copyright:              typedef int GmbH (Germany/EU)                      "
+    echo "   License:                MIT License                                        "
+    echo ""
+    echo "       >>>   Created by The WAMP/Autobahn/Crossbar.io OSS Project   <<<       "
+    echo "==============================================================================="
+    echo ""
+    just --list
+    echo ""
 
 # Tell uv to always copy files instead of trying to hardlink them.
 # set export UV_LINK_MODE := 'copy'
@@ -404,6 +427,30 @@ install-dev-all:
         just install-dev ${venv}
     done
 
+# Upgrade dependencies in a single environment (usage: `just upgrade cpy314`)
+upgrade venv="": (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Upgrading dependencies in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pip install --upgrade pip
+    ${VENV_PYTHON} -m pip install --upgrade -e .[all,dev]
+    echo "==> Dependencies upgraded in ${VENV_NAME}."
+
+# Meta-recipe to run `upgrade` on all environments
+upgrade-all:
+    #!/usr/bin/env bash
+    set -e
+    for venv in {{ENVS}}; do
+        just upgrade ${venv}
+    done
+
 # -----------------------------------------------------------------------------
 # -- Installation: Tools (Ruff, Sphinx, etc)
 # -----------------------------------------------------------------------------
@@ -515,7 +562,7 @@ install-wstest:
 # -----------------------------------------------------------------------------
 
 # Automatically fix all formatting and code style issues.
-autoformat venv="": (install-tools venv)
+fix-format venv="": (install-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -538,6 +585,9 @@ autoformat venv="": (install-tools venv)
     "${VENV_PATH}/bin/ruff" check --fix .
     echo "--> Formatting complete."
 
+# Alias for fix-format (backward compatibility)
+autoformat venv="": (fix-format venv)
+
 # Lint code using Ruff in a single environment
 check-format venv="": (install-tools venv)
     #!/usr/bin/env bash
@@ -553,7 +603,7 @@ check-format venv="": (install-tools venv)
     "${VENV_PATH}/bin/ruff" check .
 
 # Run static type checking with mypy
-check-typing venv="": (install-tools venv) (install venv)
+check-typing venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -564,10 +614,10 @@ check-typing venv="": (install-tools venv) (install venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     echo "==> Running static type checks with ${VENV_NAME}..."
-    "${VENV_PATH}/bin/mypy" autobahn/
+    "${VENV_PATH}/bin/mypy" src/autobahn/
 
 # Run coverage for Twisted tests only
-check-coverage-twisted venv="" use_nvx="": (install-tools venv) (install venv)
+check-coverage-twisted venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -607,7 +657,7 @@ check-coverage-twisted venv="" use_nvx="": (install-tools venv) (install venv)
         autobahn.nvx.test
 
 # Run coverage for asyncio tests only
-check-coverage-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
+check-coverage-asyncio venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -632,10 +682,10 @@ check-coverage-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
 
     # Run asyncio tests with coverage (parallel mode to combine later)
     USE_ASYNCIO=1 "${VENV_PATH}/bin/coverage" run \
-        --source=autobahn \
+        --source=src/autobahn \
         --parallel-mode \
         -m pytest -s -v -rfP \
-        --ignore=./autobahn/twisted ./autobahn
+        --ignore=./src/autobahn/twisted ./src/autobahn
 
 # Combined coverage report from both Twisted and asyncio tests
 check-coverage-combined venv="" use_nvx="": (check-coverage-twisted venv use_nvx) (check-coverage-asyncio venv use_nvx)
@@ -676,7 +726,7 @@ check-coverage-combined venv="" use_nvx="": (check-coverage-twisted venv use_nvx
     echo "   Text: above summary"
 
 # Legacy coverage recipe (DEPRECATED - use check-coverage-combined instead)
-check-coverage venv="" use_nvx="": (install-tools venv) (install venv)
+check-coverage venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     echo "⚠️  DEPRECATED: Use 'just check-coverage-combined' for comprehensive coverage"
@@ -862,8 +912,31 @@ check venv="": (check-compressors venv) (check-serializers venv) (check-format v
 # Run the test suite for Twisted/trial and asyncio/pytest (usage: `just test cpy314`)
 test venv="" use_nvx="": (test-twisted venv use_nvx) (test-asyncio venv use_nvx)
 
+# Meta-recipe to run `test` on all environments
+test-all:
+    #!/usr/bin/env bash
+    set -e
+    for venv in {{ENVS}}; do
+        just test ${venv}
+    done
+
+# Run basic autobahn library import test (usage: `just test-import cpy314`)
+test-import venv="": (install-tools venv) (install-dev venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    ${VENV_PYTHON} -c "from autobahn.wamp.message import Unregistered; print(f'\n{Unregistered.MESSAGE_TYPE}! ohh, yeah.\n')"
+
 # Run the test suite for Twisted using trial (usage: `just test-twisted cpy314`)
-test-twisted venv="" use_nvx="": (install-tools venv) (install venv)
+test-twisted venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -904,7 +977,7 @@ test-twisted venv="" use_nvx="": (install-tools venv) (install venv)
         autobahn.nvx.test
 
 # Run the test suite for asyncio using pytest (usage: `just test-asyncio cpy314`)
-test-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
+test-asyncio venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -930,10 +1003,10 @@ test-asyncio venv="" use_nvx="": (install-tools venv) (install venv)
 
     # IMPORTANT: we need to exclude all twisted tests
     USE_ASYNCIO=1 ${VENV_PYTHON} -m pytest -s -v -rfP \
-        --ignore=./autobahn/twisted ./autobahn
+        --ignore=./src/autobahn/twisted ./src/autobahn
 
 # Run WAMP message serdes conformance tests (usage: `just test-serdes cpy311`)
-test-serdes venv="": (install-tools venv) (install venv)
+test-serdes venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -995,6 +1068,7 @@ docs venv="":
     echo "==> Building documentation..."
     "${VENV_PATH}/bin/sphinx-build" -b html docs/ docs/_build/html
 
+# Build documentation and open in system viewer
 docs-view venv="": (docs venv)
     echo "==> Opening documentation in viewer ..."
     open docs/_build/html/index.html
@@ -1048,6 +1122,41 @@ build-all:
         just build ${venv}
     done
     ls -la dist/
+
+# Clean build artifacts
+clean-build:
+    echo "==> Cleaning build artifacts..."
+    rm -rf build/ dist/ *.egg-info/
+    echo "==> Build artifacts cleaned."
+
+# Verify wheels using twine check and auditwheel (for native extensions)
+verify-wheels venv="": (install-build-tools venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+
+    echo "==> Verifying wheels with twine check..."
+    "${VENV_PATH}/bin/twine" check dist/*
+
+    echo ""
+    echo "==> Verifying wheels with auditwheel (native extension validation)..."
+    # Note: auditwheel is for Linux wheels with native extensions.
+    # Autobahn has optional NVX native extensions via CFFI.
+    for wheel in dist/*.whl; do
+        if [[ "$wheel" == *"none-any"* ]]; then
+            echo "    Skipping pure Python wheel: $wheel"
+        else
+            echo "    Checking: $wheel"
+            "${VENV_PATH}/bin/auditwheel" show "$wheel" || true
+        fi
+    done
+    echo "==> Wheel verification complete."
 
 # Download release artifacts from GitHub and publish to PyPI
 publish-pypi venv="" tag="":
@@ -1247,7 +1356,7 @@ install-flatc:
 # Clean generated FlatBuffers files
 clean-fbs:
     echo "==> Cleaning FlatBuffers generated files..."
-    rm -rf ./autobahn/wamp/gen/
+    rm -rf ./src/autobahn/wamp/gen/
 
 # Build FlatBuffers schema files and Python bindings
 build-fbs venv="": (install-tools venv)
@@ -1261,28 +1370,28 @@ build-fbs venv="": (install-tools venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
 
-    FBSFILES="./autobahn/wamp/flatbuffers/*.fbs"
+    FBSFILES="./src/autobahn/wamp/flatbuffers/*.fbs"
     FLATC="flatc"
     echo "==> Generating FlatBuffers binary schema and Python wrappers using $(${FLATC} --version)..."
 
     # Generate schema binary type library (*.bfbs files)
-    ${FLATC} -o ./autobahn/wamp/gen/schema/ --binary --schema --bfbs-comments --bfbs-builtins ${FBSFILES}
-    echo "--> Generated $(find ./autobahn/wamp/gen/schema/ -name '*.bfbs' | wc -l) .bfbs files"
+    ${FLATC} -o ./src/autobahn/wamp/gen/schema/ --binary --schema --bfbs-comments --bfbs-builtins ${FBSFILES}
+    echo "--> Generated $(find ./src/autobahn/wamp/gen/schema/ -name '*.bfbs' | wc -l) .bfbs files"
 
     # Generate schema Python bindings (*.py files)
-    ${FLATC} -o ./autobahn/wamp/gen/ --python ${FBSFILES}
-    touch ./autobahn/wamp/gen/__init__.py
-    echo "--> Generated $(find ./autobahn/wamp/gen/ -name '*.py' | wc -l) .py files"
+    ${FLATC} -o ./src/autobahn/wamp/gen/ --python ${FBSFILES}
+    touch ./src/autobahn/wamp/gen/__init__.py
+    echo "--> Generated $(find ./src/autobahn/wamp/gen/ -name '*.py' | wc -l) .py files"
 
     # Fix import paths in generated files (flatc generates relative imports)
     # Change: from wamp.proto.X import X
     # To:     from autobahn.wamp.gen.wamp.proto.X import X
-    find ./autobahn/wamp/gen/wamp/proto/ -name "*.py" -exec sed -i 's/from wamp\.proto\./from autobahn.wamp.gen.wamp.proto./g' {} +
+    find ./src/autobahn/wamp/gen/wamp/proto/ -name "*.py" -exec sed -i 's/from wamp\.proto\./from autobahn.wamp.gen.wamp.proto./g' {} +
     echo "--> Fixed import paths in generated files"
 
     echo "Auto-formatting code using ruff after flatc code generation .."
-    "${VENV_PATH}/bin/ruff" format ./autobahn/wamp/gen/
-    "${VENV_PATH}/bin/ruff" check --fix ./autobahn/wamp/gen/
+    "${VENV_PATH}/bin/ruff" format ./src/autobahn/wamp/gen/
+    "${VENV_PATH}/bin/ruff" check --fix ./src/autobahn/wamp/gen/
 
 # -----------------------------------------------------------------------------
 # -- File Management Utilities
@@ -1594,7 +1703,7 @@ wstest-fuzzingclient config_dir="" output_dir="" mode="quick":
         wstest -m fuzzingclient -s /config/fuzzingclient-${TEST_MODE}.json
 
 # Run Autobahn|Python WebSocket client on Twisted
-wstest-testeeclient-twisted venv="": (install-tools venv) (install venv)
+wstest-testeeclient-twisted venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1610,7 +1719,7 @@ wstest-testeeclient-twisted venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} ./wstest/testee_client_tx.py
 
 # Run Autobahn|Python WebSocket client on asyncio
-wstest-testeeclient-asyncio venv="": (install-tools venv) (install venv)
+wstest-testeeclient-asyncio venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1626,7 +1735,7 @@ wstest-testeeclient-asyncio venv="": (install-tools venv) (install venv)
     ${VENV_PYTHON} ./wstest/testee_client_aio.py
 
 # Run Autobahn|Python WebSocket server on Twisted
-wstest-testeeserver-twisted venv="" url="ws://127.0.0.1:9011": (install-tools venv) (install venv)
+wstest-testeeserver-twisted venv="" url="ws://127.0.0.1:9011": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1641,7 +1750,7 @@ wstest-testeeserver-twisted venv="" url="ws://127.0.0.1:9011": (install-tools ve
     ${VENV_PYTHON} ./wstest/testee_server_tx.py --url "{{ url }}"
 
 # Run Autobahn|Python WebSocket server on asyncio
-wstest-testeeserver-asyncio venv="" url="ws://127.0.0.1:9012": (install-tools venv) (install venv)
+wstest-testeeserver-asyncio venv="" url="ws://127.0.0.1:9012": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"

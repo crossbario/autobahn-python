@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autobahn"
-version = "25.11.1"
+version = "25.12.1"
 description = "WebSocket client & server library, WAMP real-time framework"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -174,13 +174,16 @@ asyncio = []
 wamp = "autobahn.__main__:_main"
 
 [tool.setuptools.packages.find]
-include = ["autobahn*", "twisted.plugins", "flatbuffers*"]
+where = ["src"]
+include = ["autobahn*", "twisted*", "flatbuffers*"]
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.package-data]
-"autobahn.asyncio" = ["./test/*"]
+autobahn = ["py.typed"]
+"autobahn.asyncio" = ["test/*"]
+"autobahn.nvx" = ["*.c"]
 "autobahn.wamp.gen.schema" = ["*.bfbs"]
 "autobahn.wamp.flatbuffers" = ["*.fbs"]
 
@@ -209,9 +212,9 @@ exclude = [
     ".tox",
     ".git",
     "__pycache__",
-    "autobahn/wamp/message_fbs.py",
-    "autobahn/wamp/gen/*",
-    "flatbuffers/*",  # Vendored Flatbuffers Python runtime
+    "src/autobahn/wamp/message_fbs.py",
+    "src/autobahn/wamp/gen/*",
+    "src/flatbuffers/*",  # Vendored Flatbuffers Python runtime
     "deps/*",  # Git submodules (includes deps/flatbuffers)
 ]
 
