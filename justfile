@@ -1120,8 +1120,25 @@ build venv="": (install-build-tools venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Building wheel package..."
-    # Set environment variable for NVX acceleration (only affects wheels)
+
+    # Build the wheel with NVX acceleration
     AUTOBAHN_USE_NVX=1 ${VENV_PYTHON} -m build --wheel
+
+    # Convert linux wheels to manylinux format using auditwheel
+    if [ -x "${VENV_PATH}/bin/auditwheel" ]; then
+        for wheel in dist/*-linux_*.whl; do
+            if [ -f "$wheel" ]; then
+                echo "==> Converting $(basename $wheel) to manylinux format..."
+                "${VENV_PATH}/bin/auditwheel" show "$wheel"
+                "${VENV_PATH}/bin/auditwheel" repair "$wheel" -w dist/
+                # Remove the original linux wheel after successful repair
+                rm "$wheel"
+            fi
+        done
+    else
+        echo "WARNING: auditwheel not available, skipping manylinux conversion"
+    fi
+
     ls -la dist/
 
 # Build source distribution only (no wheels, no NVX flag needed)
