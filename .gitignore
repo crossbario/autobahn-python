@@ -55,3 +55,6 @@ docs/_static/websocket/conformance/
 docs/_static/flatbuffers/
 .coverage.*
 examples/benchmarks/serialization/build/
+
+# Vendored flatbuffers - copied from deps/flatbuffers at build time
+src/autobahn/flatbuffers/

@@ -381,7 +381,7 @@ link-system-packages venv="" vendors="": (create venv)
 # -----------------------------------------------------------------------------
 
 # Install this package and its run-time dependencies in a single environment (usage: `just install cpy314` or `just install`)
-install venv="": (create venv)
+install venv="": vendor-flatbuffers (create venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -397,7 +397,7 @@ install venv="": (create venv)
     ${VENV_PYTHON} -m pip install .[all]
 
 # Install this package in development (editable) mode and its run-time dependencies in a single environment (usage: `just install-dev cpy314` or `just install-dev`)
-install-dev venv="": (create venv)
+install-dev venv="": vendor-flatbuffers (create venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1107,8 +1107,28 @@ docs-clean:
 # -- Building and Publishing
 # -----------------------------------------------------------------------------
 
+# Vendor flatbuffers Python runtime from git submodule into autobahn namespace.
+# This avoids conflicts with the standalone 'flatbuffers' PyPI package.
+# The vendored copy is gitignored and must be regenerated before build.
+vendor-flatbuffers:
+    #!/usr/bin/env bash
+    set -e
+    SRC_DIR="deps/flatbuffers/python/flatbuffers"
+    DST_DIR="src/autobahn/flatbuffers"
+
+    if [ ! -d "${SRC_DIR}" ]; then
+        echo "ERROR: Flatbuffers submodule not found at ${SRC_DIR}"
+        echo "Run: git submodule update --init --recursive"
+        exit 1
+    fi
+
+    echo "==> Vendoring flatbuffers from ${SRC_DIR} to ${DST_DIR}..."
+    rm -rf "${DST_DIR}"
+    cp -r "${SRC_DIR}" "${DST_DIR}"
+    echo "==> Flatbuffers vendored successfully."
+
 # Build wheel only (usage: `just build cpy314`)
-build venv="": (install-build-tools venv)
+build venv="": vendor-flatbuffers (install-build-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1142,7 +1162,7 @@ build venv="": (install-build-tools venv)
     ls -la dist/
 
 # Build source distribution only (no wheels, no NVX flag needed)
-build-sourcedist venv="": (install-build-tools venv)
+build-sourcedist venv="": vendor-flatbuffers (install-build-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1430,6 +1450,13 @@ build-fbs venv="": (install-tools venv)
     # To:     from autobahn.wamp.gen.wamp.proto.X import X
     find ./src/autobahn/wamp/gen/wamp/proto/ -name "*.py" -exec sed -i 's/from wamp\.proto\./from autobahn.wamp.gen.wamp.proto./g' {} +
     echo "--> Fixed import paths in generated files"
+
+    # Fix flatbuffers imports to use vendored version under autobahn namespace
+    # Change: import flatbuffers -> from autobahn import flatbuffers
+    # Change: from flatbuffers.X import Y -> from autobahn.flatbuffers.X import Y
+    find ./src/autobahn/wamp/gen/ -name "*.py" -exec sed -i 's/^import flatbuffers$/from autobahn import flatbuffers/' {} +
+    find ./src/autobahn/wamp/gen/ -name "*.py" -exec sed -i 's/from flatbuffers\./from autobahn.flatbuffers./g' {} +
+    echo "--> Fixed flatbuffers imports to use autobahn.flatbuffers"
 
     echo "Auto-formatting code using ruff after flatc code generation .."
     "${VENV_PATH}/bin/ruff" format ./src/autobahn/wamp/gen/

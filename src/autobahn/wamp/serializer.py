@@ -1033,7 +1033,7 @@ else:
 
 _HAS_FLATBUFFERS = False
 try:
-    import flatbuffers  # noqa
+    from autobahn import flatbuffers  # noqa
     from autobahn.wamp import message_fbs
 except ImportError:
     pass

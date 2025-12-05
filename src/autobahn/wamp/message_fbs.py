@@ -24,7 +24,7 @@
 #
 ###############################################################################
 
-import flatbuffers
+from autobahn import flatbuffers
 
 # Message type and enums
 from autobahn.wamp.gen.wamp.proto import Message
