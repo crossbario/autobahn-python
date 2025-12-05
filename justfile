@@ -1107,8 +1107,28 @@ docs-clean:
 # -- Building and Publishing
 # -----------------------------------------------------------------------------
 
+# Vendor flatbuffers Python runtime from git submodule into autobahn namespace.
+# This avoids conflicts with the standalone 'flatbuffers' PyPI package.
+# The vendored copy is gitignored and must be regenerated before build.
+vendor-flatbuffers:
+    #!/usr/bin/env bash
+    set -e
+    SRC_DIR="deps/flatbuffers/python/flatbuffers"
+    DST_DIR="src/autobahn/flatbuffers"
+
+    if [ ! -d "${SRC_DIR}" ]; then
+        echo "ERROR: Flatbuffers submodule not found at ${SRC_DIR}"
+        echo "Run: git submodule update --init --recursive"
+        exit 1
+    fi
+
+    echo "==> Vendoring flatbuffers from ${SRC_DIR} to ${DST_DIR}..."
+    rm -rf "${DST_DIR}"
+    cp -r "${SRC_DIR}" "${DST_DIR}"
+    echo "==> Flatbuffers vendored successfully."
+
 # Build wheel only (usage: `just build cpy314`)
-build venv="": (install-build-tools venv)
+build venv="": vendor-flatbuffers (install-build-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1142,7 +1162,7 @@ build venv="": (install-build-tools venv)
     ls -la dist/
 
 # Build source distribution only (no wheels, no NVX flag needed)
-build-sourcedist venv="": (install-build-tools venv)
+build-sourcedist venv="": vendor-flatbuffers (install-build-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"

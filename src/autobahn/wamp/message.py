@@ -37,7 +37,7 @@ from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
 try:
     import cbor2
-    import flatbuffers
+    from autobahn import flatbuffers
 
     from autobahn.wamp import message_fbs
 except ImportError:
@@ -749,7 +749,7 @@ class MessageWithAppPayload(object):
         """
         # Special case: FlexBuffers (quasi-dynamic typing)
         if ser_id == "flexbuffers":
-            import flatbuffers.flexbuffers as flexbuffers
+            from autobahn.flatbuffers import flexbuffers
 
             root = flexbuffers.GetRoot(bytes(data_bytes))
             return root

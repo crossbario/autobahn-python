@@ -175,7 +175,7 @@ wamp = "autobahn.__main__:_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["autobahn*", "twisted*", "flatbuffers*"]
+include = ["autobahn*", "twisted*"]
 
 [tool.setuptools]
 include-package-data = true
@@ -214,7 +214,7 @@ exclude = [
     "__pycache__",
     "src/autobahn/wamp/message_fbs.py",
     "src/autobahn/wamp/gen/*",
-    "src/flatbuffers/*",  # Vendored Flatbuffers Python runtime
+    "src/autobahn/flatbuffers/*",  # Vendored Flatbuffers Python runtime (copied from deps/flatbuffers at build time)
     "deps/*",  # Git submodules (includes deps/flatbuffers)
 ]
 

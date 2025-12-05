@@ -2,7 +2,7 @@
 
 # namespace: proto
 
-import flatbuffers
+from autobahn import flatbuffers
 from flatbuffers.compat import import_numpy
 
 np = import_numpy()
