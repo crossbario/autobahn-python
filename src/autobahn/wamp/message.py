@@ -3180,9 +3180,13 @@ class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
         if payload:
             message_fbs.ErrorGen.ErrorAddPayload(builder, payload)
         if self.enc_algo:
-            message_fbs.ErrorGen.ErrorAddPptScheme(builder, self.enc_algo)
+            # Convert string enc_algo to FlatBuffers enum value
+            enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
+            message_fbs.ErrorGen.ErrorAddPptScheme(builder, enc_algo_int)
         if self.enc_serializer:
-            message_fbs.ErrorGen.ErrorAddPptSerializer(builder, self.enc_serializer)
+            # Convert string enc_serializer to FlatBuffers enum value
+            enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
+            message_fbs.ErrorGen.ErrorAddPptSerializer(builder, enc_serializer_int)
         if enc_key:
             message_fbs.ErrorGen.ErrorAddPptKeyid(builder, enc_key)
         if forward_for:
@@ -6663,9 +6667,13 @@ class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
         if payload:
             message_fbs.CallGen.CallAddPayload(builder, payload)
         if self.enc_algo:
-            message_fbs.CallGen.CallAddPptScheme(builder, self.enc_algo)
+            # Convert string enc_algo to FlatBuffers enum value
+            enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
+            message_fbs.CallGen.CallAddPptScheme(builder, enc_algo_int)
         if self.enc_serializer:
-            message_fbs.CallGen.CallAddPptSerializer(builder, self.enc_serializer)
+            # Convert string enc_serializer to FlatBuffers enum value
+            enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
+            message_fbs.CallGen.CallAddPptSerializer(builder, enc_serializer_int)
         if enc_key:
             message_fbs.CallGen.CallAddPptKeyid(builder, enc_key)
         if self.timeout:
@@ -7497,9 +7505,13 @@ class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
         if payload:
             message_fbs.ResultGen.ResultAddPayload(builder, payload)
         if self.enc_algo:
-            message_fbs.ResultGen.ResultAddPptScheme(builder, self.enc_algo)
+            # Convert string enc_algo to FlatBuffers enum value
+            enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
+            message_fbs.ResultGen.ResultAddPptScheme(builder, enc_algo_int)
         if self.enc_serializer:
-            message_fbs.ResultGen.ResultAddPptSerializer(builder, self.enc_serializer)
+            # Convert string enc_serializer to FlatBuffers enum value
+            enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
+            message_fbs.ResultGen.ResultAddPptSerializer(builder, enc_serializer_int)
         if enc_key:
             message_fbs.ResultGen.ResultAddPptKeyid(builder, enc_key)
         if self.progress:
@@ -9096,10 +9108,14 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
         if procedure:
             message_fbs.InvocationGen.InvocationAddProcedure(builder, procedure)
         if self.enc_algo:
-            message_fbs.InvocationGen.InvocationAddPptScheme(builder, self.enc_algo)
+            # Convert string enc_algo to FlatBuffers enum value
+            enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
+            message_fbs.InvocationGen.InvocationAddPptScheme(builder, enc_algo_int)
         if self.enc_serializer:
+            # Convert string enc_serializer to FlatBuffers enum value
+            enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
             message_fbs.InvocationGen.InvocationAddPptSerializer(
-                builder, self.enc_serializer
+                builder, enc_serializer_int
             )
         if enc_key:
             message_fbs.InvocationGen.InvocationAddPptKeyid(builder, enc_key)
@@ -9990,9 +10006,13 @@ class Yield(MessageWithAppPayload, MessageWithForwardFor, Message):
         if self.progress:
             message_fbs.YieldGen.YieldAddProgress(builder, self.progress)
         if self.enc_algo:
-            message_fbs.YieldGen.YieldAddPptScheme(builder, self.enc_algo)
+            # Convert string enc_algo to FlatBuffers enum value
+            enc_algo_int = ENC_ALGOS_FROMSTR.get(self.enc_algo, 0)
+            message_fbs.YieldGen.YieldAddPptScheme(builder, enc_algo_int)
         if self.enc_serializer:
-            message_fbs.YieldGen.YieldAddPptSerializer(builder, self.enc_serializer)
+            # Convert string enc_serializer to FlatBuffers enum value
+            enc_serializer_int = ENC_SERS_FROMSTR.get(self.enc_serializer, 0)
+            message_fbs.YieldGen.YieldAddPptSerializer(builder, enc_serializer_int)
         if enc_key:
             message_fbs.YieldGen.YieldAddPptKeyid(builder, enc_key)
         if self.callee:
