@@ -1,6 +1,0 @@
-include LICENSE
-include requirements-dev.txt
-include autobahn/nvx/_utf8validator.c
-include autobahn/nvx/_xormasker.c
-recursive-include autobahn/wamp/gen/schema *
-recursive-include autobahn/asset *

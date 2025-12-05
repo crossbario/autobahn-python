@@ -50,6 +50,14 @@ echo "auditwheel: $(auditwheel --version || echo 'not available')"
 # nh3 is a Rust package (indirect dep of twine) that segfaults under QEMU
 export AUTOBAHN_USE_NVX=1
 
+# Disable py-ubjson C extension for PyPy on ARM64
+# The C extension build segfaults under QEMU ARM64 emulation (exit code -11)
+# py-ubjson works fine as pure Python under PyPy's JIT
+if python3 -c "import platform; exit(0 if 'pypy' in platform.python_implementation().lower() else 1)" 2>/dev/null; then
+  echo "==> PyPy detected: disabling py-ubjson C extension (QEMU ARM64 incompatible)"
+  export PYUBJSON_NO_EXTENSION=1
+fi
+
 # Build only specified Python versions (or all if not specified)
 if [ -n "$PYTHON_VERSIONS" ]; then
   echo "==> Building wheels for specific Python versions: $PYTHON_VERSIONS"
