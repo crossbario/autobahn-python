@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=80.9.0", "wheel", "cffi>=1.14.5; platform_python_implementation == 'CPython'"]
+requires = ["setuptools>=80.9.0", "wheel", "cffi>=2.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -43,6 +43,7 @@ classifiers = [
 dependencies = [
     "txaio>=25.9.2",
     "cryptography>=3.4.6",
+    "cffi>=2.0.0",  # Required for NVX native extensions; works on both CPython and PyPy
     "hyperlink>=21.0.0",
     "importlib-resources>=5.0.0; python_version < '3.10'",
     # WAMP serializers - batteries included for optimal WAMP protocol support
@@ -94,15 +95,13 @@ encryption = [
 
 # Support for WAMP-SCRAM authentication
 scram = [
-    "cffi>=1.14.5",
     "argon2-cffi>=20.1.0",
     "passlib>=1.7.4",
 ]
 
 # Support native vector (SIMD) acceleration included with Autobahn
-nvx = [
-    "cffi>=1.14.5",
-]
+# Note: cffi is now in base dependencies, this extra is kept for backwards compatibility
+nvx = []
 
 # WAMP serialization benchmarking (Python 3.11+ only, requires binary wheels)
 # vmprof has wheels for CPython 3.11 and PyPy3 on Linux/macOS/Windows
