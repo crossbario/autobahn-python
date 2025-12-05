@@ -41,7 +41,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "txaio>=25.9.2",
+    "txaio>=25.12.2",
     "cryptography>=3.4.6",
     "cffi>=2.0.0",  # Required for NVX native extensions; works on both CPython and PyPy
     "hyperlink>=21.0.0",
@@ -152,7 +152,7 @@ dev = [
     "sphinxcontrib-images>=0.9.1",
     "twine>=3.3.0",
     "twisted>=22.10.0",
-    "txaio>=25.9.2",
+    "txaio>=25.12.2",
     "watchdog>=0.8.3",
     "wheel>=0.36.2",
     "yapf==0.29.0",
