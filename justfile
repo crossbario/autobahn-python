@@ -65,7 +65,8 @@ AUTOBAHN_TESTSUITE_OUTPUT_DIR := justfile_directory() / '.wstest'
 AUTOBAHN_TESTSUITE_CONFIG_DIR := justfile_directory() / 'wstest'
 
 # Use this common single directory for all uv venvs.
-VENV_DIR := './.venvs'
+# Use absolute path (based on PROJECT_DIR) to avoid issues when cd'ing in recipes
+VENV_DIR := PROJECT_DIR / '.venvs'
 
 # Define a justfile-local variable for our environments.
 ENVS := 'cpy314 cpy313 cpy312 cpy311 pypy311'
@@ -412,6 +413,51 @@ install-dev venv="": vendor-flatbuffers (create venv)
     # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[all]
     ${VENV_PYTHON} -m pip install -e .[all]
 
+# Build NVX (Native Vector Extensions) CFFI modules for development/editable installs
+# This is needed because hatchling's build hook only compiles during wheel builds.
+# For editable installs in CI or local development, we need to compile manually.
+#
+# The .so files are placed in src/ (not src/autobahn/nvx/) because:
+# - CFFI names the modules as top-level modules (e.g., "_nvx_utf8validator")
+# - Python imports look for top-level modules in sys.path roots
+# - For editable installs, src/ is on sys.path, so .so files there are importable
+#
+# (usage: `just build-nvx cpy314` or with explicit NVX: `AUTOBAHN_USE_NVX=1 just build-nvx cpy314`)
+build-nvx venv="": (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    echo "==> Building NVX CFFI extension modules in ${VENV_NAME}..."
+
+    # Ensure cffi is available
+    ${VENV_PYTHON} -m pip install "cffi>=2.0.0" --quiet
+
+    # Build modules in src/ directory (for editable install sys.path compatibility)
+    # The CFFI ffi.compile() writes output to current directory
+    # VENV_DIR and PROJECT_DIR are absolute paths, so VENV_PATH is absolute too
+    SRC_DIR="{{ PROJECT_DIR }}/src"
+    NVX_DIR="{{ PROJECT_DIR }}/src/autobahn/nvx"
+
+    echo "    Building _nvx_utf8validator..."
+    (cd "${SRC_DIR}" && ${VENV_PYTHON} "${NVX_DIR}/_utf8validator.py")
+
+    echo "    Building _nvx_xormasker..."
+    (cd "${SRC_DIR}" && ${VENV_PYTHON} "${NVX_DIR}/_xormasker.py")
+
+    # List built artifacts
+    echo "==> Built NVX artifacts:"
+    ls -la "${SRC_DIR}"/_nvx_*.so 2>/dev/null || echo "    (no .so files found - check for errors above)"
+
+    echo "==> NVX build complete for ${VENV_NAME}."
+
 # Meta-recipe to run `install` on all environments
 install-all:
     #!/usr/bin/env bash
@@ -477,6 +523,7 @@ install-build-tools venv="": (create venv)
     ${VENV_PYTHON} -m pip install -e .[build-tools]
 
 # Install the development tools for this Package in a single environment (usage: `just install-tools cpy314`)
+# This also builds NVX CFFI modules so that tests with AUTOBAHN_USE_NVX=1 work.
 install-tools venv="": (create venv)
     #!/usr/bin/env bash
     set -e
@@ -495,6 +542,9 @@ install-tools venv="": (create venv)
 
     # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[dev]
     ${VENV_PYTHON} -m pip install -e .[dev]
+
+    # Build NVX CFFI modules for editable installs (needed for tests with AUTOBAHN_USE_NVX=1)
+    just build-nvx ${VENV_NAME}
 
 # Meta-recipe to run `install-tools` on all environments
 install-tools-all:
