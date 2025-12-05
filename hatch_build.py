@@ -110,21 +110,17 @@ class CFfiBuildHook(BuildHookInterface):
 
                 # Find the compiled artifact matching CURRENT Python and add to build_data
                 # Only include .so files that match the current interpreter's extension suffix
+                #
+                # IMPORTANT: The .so files must be placed at the WHEEL ROOT (not in autobahn/nvx/)
+                # because CFFI creates top-level modules (e.g., "_nvx_utf8validator")
+                # and the Python code does `import _nvx_utf8validator` (top-level import).
                 for artifact in nvx_dir.glob("_nvx_*" + ext_suffix):
                     src_file = str(artifact)
-                    dest_path = f"autobahn/nvx/{artifact.name}"
+                    # Place at wheel root for top-level import
+                    dest_path = artifact.name
                     build_data["force_include"][src_file] = dest_path
-                    print(f"  -> Added artifact: {artifact.name} -> {dest_path}")
+                    print(f"  -> Added artifact: {artifact.name} -> {dest_path} (wheel root)")
                     built_any = True
-
-                # Handle Windows .pyd files
-                if ext_suffix.endswith(".pyd"):
-                    for artifact in nvx_dir.glob("_nvx_*" + ext_suffix):
-                        src_file = str(artifact)
-                        dest_path = f"autobahn/nvx/{artifact.name}"
-                        build_data["force_include"][src_file] = dest_path
-                        print(f"  -> Added artifact: {artifact.name} -> {dest_path}")
-                        built_any = True
 
             except Exception as e:
                 print(f"Warning: Could not build {module_file}: {e}")
