@@ -3,7 +3,7 @@
 # namespace: proto
 
 from autobahn import flatbuffers
-from flatbuffers.compat import import_numpy
+from autobahn.flatbuffers.compat import import_numpy
 
 np = import_numpy()
 
@@ -78,7 +78,7 @@ class HelloNew(object):
     def Authfactor1(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
-            from flatbuffers.table import Table
+            from autobahn.flatbuffers.table import Table
 
             obj = Table(bytearray(), 0)
             self._tab.Union(obj, o)
@@ -96,7 +96,7 @@ class HelloNew(object):
     def Authfactor2(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
-            from flatbuffers.table import Table
+            from autobahn.flatbuffers.table import Table
 
             obj = Table(bytearray(), 0)
             self._tab.Union(obj, o)
@@ -114,7 +114,7 @@ class HelloNew(object):
     def Authfactor3(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
-            from flatbuffers.table import Table
+            from autobahn.flatbuffers.table import Table
 
             obj = Table(bytearray(), 0)
             self._tab.Union(obj, o)

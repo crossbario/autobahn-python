@@ -3,7 +3,7 @@
 # namespace: proto
 
 from autobahn import flatbuffers
-from flatbuffers.compat import import_numpy
+from autobahn.flatbuffers.compat import import_numpy
 
 np = import_numpy()
 
@@ -38,7 +38,7 @@ class Message(object):
     def Msg(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
-            from flatbuffers.table import Table
+            from autobahn.flatbuffers.table import Table
 
             obj = Table(bytearray(), 0)
             self._tab.Union(obj, o)

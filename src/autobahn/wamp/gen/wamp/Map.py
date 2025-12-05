@@ -3,7 +3,7 @@
 # namespace: wamp
 
 from autobahn import flatbuffers
-from flatbuffers.compat import import_numpy
+from autobahn.flatbuffers.compat import import_numpy
 
 np = import_numpy()
 
