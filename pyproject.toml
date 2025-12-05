@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=80.9.0", "wheel", "cffi>=2.0.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "cffi>=2.0.0", "setuptools>=70.0.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "autobahn"
@@ -173,19 +173,34 @@ asyncio = []
 [project.scripts]
 wamp = "autobahn.__main__:_main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["autobahn*", "twisted*"]
+# Hatchling build configuration
+[tool.hatch.build.targets.wheel]
+packages = ["src/autobahn", "src/twisted"]
 
-[tool.setuptools]
-include-package-data = true
+# Include non-Python files in the wheel
+[tool.hatch.build.targets.wheel.force-include]
+# Include py.typed marker
+"src/autobahn/py.typed" = "autobahn/py.typed"
 
-[tool.setuptools.package-data]
-autobahn = ["py.typed"]
-"autobahn.asyncio" = ["test/*"]
-"autobahn.nvx" = ["*.c"]
-"autobahn.wamp.gen.schema" = ["*.bfbs"]
-"autobahn.wamp.flatbuffers" = ["*.fbs"]
+[tool.hatch.build.targets.sdist]
+# By default, hatchling includes all git-tracked files
+# Exclude build artifacts and large submodules from sdist
+exclude = [
+    "/.github",
+    "/docs/_build",
+    "/.venvs",
+    "/.uv-cache",
+    "/.coverage",
+    "/.pytest_cache",
+    "/.mypy_cache",
+    "/.ruff_cache",
+    # Exclude large git submodules - flatbuffers runtime is vendored at build time
+    "/deps/flatbuffers",
+]
+
+# Custom build hook for CFFI extension modules (NVX)
+[tool.hatch.build.hooks.custom]
+# Uses hatch_build.py by default
 
 
 [tool.rstfmt]
