@@ -1169,8 +1169,22 @@ test-serdes venv="": (install-tools venv) (install-dev venv)
 # -- Documentation
 # -----------------------------------------------------------------------------
 
+# Install documentation dependencies
+install-docs venv="": (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Installing documentation tools in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pip install -e .[docs]
+
 # Build optimized SVGs from docs/_graphics/*.svg using scour
-_build-images venv="":
+_build-images venv="": (install-docs venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
