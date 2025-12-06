@@ -58,6 +58,7 @@ wheelhouse/
 .wstest/
 docs/_static/websocket/conformance/
 docs/_static/flatbuffers/
+docs/_static/img/
 .coverage.*
 examples/benchmarks/serialization/build/
 
