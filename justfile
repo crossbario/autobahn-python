@@ -413,6 +413,50 @@ install-dev venv="": vendor-flatbuffers (create venv)
     # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[all]
     ${VENV_PYTHON} -m pip install -e .[all]
 
+# Install with latest unreleased WAMP packages from GitHub (usage: `just install-dev-latest cpy312`)
+install-dev-latest venv="": vendor-flatbuffers (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Installing package in editable mode with [dev,dev-latest] extras in ${VENV_NAME}..."
+    echo "==> This will install WAMP packages from GitHub master (unreleased versions)..."
+    ${VENV_PYTHON} -m pip install -e .[all,dev,dev-latest]
+
+# Install with locally editable WAMP packages for cross-repo development (usage: `just install-dev-local cpy312`)
+install-dev-local venv="": vendor-flatbuffers (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    echo "==> Installing WAMP packages in editable mode from local repos..."
+    echo "==> Looking for sibling repos (../txaio)..."
+
+    # Install local WAMP packages in editable mode
+    # txaio - no extras needed
+    if [ -d "../txaio" ]; then
+        echo "  ✓ Installing txaio from ../txaio"
+        ${VENV_PYTHON} -m pip install -e "../txaio"
+    else
+        echo "  ⚠ Warning: ../txaio not found, skipping"
+    fi
+
+    echo "==> Installing autobahn in editable mode with [all,dev] extras..."
+    ${VENV_PYTHON} -m pip install -e .[all,dev] --upgrade --upgrade-strategy only-if-needed
+
 # Build NVX (Native Vector Extensions) CFFI modules for development/editable installs
 # This is needed because hatchling's build hook only compiles during wheel builds.
 # For editable installs in CI or local development, we need to compile manually.
