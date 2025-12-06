@@ -159,6 +159,37 @@ dev = [
     "yapf==0.29.0",
 ]
 
+# Documentation tools (used by RTD via .readthedocs.yaml)
+docs = [
+    # Core Sphinx + MyST
+    "sphinx>=7.2",
+    "myst-parser>=2.0",
+
+    # Theme
+    "furo>=2024.7.0",
+
+    # API docs (no-import parsing)
+    "sphinx-autoapi>=2.1.0",
+
+    # UX Enhancements
+    "sphinx-copybutton>=0.5",
+    "sphinx-design>=0.5",
+    "sphinxcontrib-images>=0.9",
+
+    # Spell checking
+    "sphinxcontrib-spelling>=8.0",
+    "pyenchant>=3.2",
+
+    # Static asset optimization
+    "scour>=0.38",
+
+    # Social previews
+    "sphinxext-opengraph>=0.9",
+
+    # MyST auto-linking
+    "linkify-it-py>=2.0.0",
+]
+
 # Everything combined
 all = [
     "autobahn[twisted,accelerate,compress,serialization,encryption,scram,nvx]"
