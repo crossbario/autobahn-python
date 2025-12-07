@@ -142,26 +142,31 @@ intersphinx_cache_limit = 5
 html_theme = "furo"
 html_title = f"{project} {release}"
 
-# Furo theme options with Noto fonts
+# Furo theme options with Noto fonts and Autobahn subarea colors
 html_theme_options = {
     # Source repository links
     "source_repository": "https://github.com/crossbario/autobahn-python/",
     "source_branch": "master",
     "source_directory": "docs/",
 
-    # Noto fonts from Google Fonts
+    # Noto fonts and Autobahn Medium Blue (#027eae) accent color
     "light_css_variables": {
         "font-stack": "'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         "font-stack--monospace": "'Noto Sans Mono', SFMono-Regular, Menlo, Consolas, monospace",
+        "color-brand-primary": "#027eae",
+        "color-brand-content": "#027eae",
     },
     "dark_css_variables": {
         "font-stack": "'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         "font-stack--monospace": "'Noto Sans Mono', SFMono-Regular, Menlo, Consolas, monospace",
+        "color-brand-primary": "#027eae",
+        "color-brand-content": "#027eae",
     },
 }
 
-# Logo (optimized SVG generated from docs/_graphics/ by `just _build-images`)
+# Logo and favicon (optimized/generated from docs/_graphics/ by `just optimize-images`)
 html_logo = "_static/img/autobahn_logo_blue.svg"
+html_favicon = "_static/favicon.ico"
 
 # Static files
 html_static_path = ["_static"]
@@ -189,6 +194,7 @@ todo_include_todos = True
 add_module_names = False
 autosectionlabel_prefix_document = True
 pygments_style = "sphinx"
+pygments_dark_style = "monokai"
 autoclass_content = "both"
 
 # RST Substitutions

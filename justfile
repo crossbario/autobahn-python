@@ -1183,8 +1183,8 @@ install-docs venv="": (create venv)
     echo "==> Installing documentation tools in ${VENV_NAME}..."
     ${VENV_PYTHON} -m pip install -e .[docs]
 
-# Build optimized SVGs from docs/_graphics/*.svg using scour
-_build-images venv="": (install-docs venv)
+# Build optimized SVGs from docs/_graphics/*.svg using scour and generate favicon
+optimize-images venv="": (install-docs venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1198,6 +1198,7 @@ _build-images venv="": (install-docs venv)
 
     SOURCEDIR="{{ PROJECT_DIR }}/docs/_graphics"
     TARGETDIR="{{ PROJECT_DIR }}/docs/_static/img"
+    FAVICONDIR="{{ PROJECT_DIR }}/docs/_static"
 
     echo "==> Building optimized SVG images..."
     mkdir -p "${TARGETDIR}"
@@ -1218,8 +1219,24 @@ _build-images venv="": (install-docs venv)
         done
     fi
 
+    # Generate favicon from logo SVG using ImageMagick
+    LOGO_SVG="${TARGETDIR}/autobahn_logo_blue.svg"
+    FAVICON="${FAVICONDIR}/favicon.ico"
+    if [ -f "${LOGO_SVG}" ]; then
+        echo "==> Generating favicon from logo..."
+        if command -v convert &> /dev/null; then
+            convert -background none -density 256 "${LOGO_SVG}" \
+                -resize 48x48 -gravity center -extent 48x48 \
+                -define icon:auto-resize=48,32,16 \
+                "${FAVICON}"
+            echo "  Created: favicon.ico"
+        else
+            echo "  Warning: ImageMagick 'convert' not found, skipping favicon generation"
+        fi
+    fi
+
 # Build the HTML documentation using Sphinx
-docs venv="": (_build-images venv)
+docs venv="": (optimize-images venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
