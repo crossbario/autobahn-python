@@ -47,6 +47,7 @@ src/autobahn/nvx/_nvx_*.c
 .wheels
 get-pip.py
 docs/autoapi/
+.build/
 key.pub
 key.priv
 node_modules/

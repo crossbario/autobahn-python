@@ -106,24 +106,27 @@ myst_heading_anchors = 3
 # -- AutoAPI Configuration ---------------------------------------------------
 autoapi_type = "python"
 autoapi_dirs = ["../src/autobahn"]
-autoapi_ignore = [
-    "**/test/**",
-    "test_*.py",
-    "__main__.py",
-    "*/__main__.py",
-    "autobahn.__main__",
-]
 autoapi_add_toctree_entry = True
-autoapi_root = "reference"
+autoapi_keep_files = False              # Cleaner RTD builds
+autoapi_generate_api_docs = True
 autoapi_options = [
     "members",
     "undoc-members",
-    "private-members",
     "show-inheritance",
-    "special-members",
     "show-module-summary",
+    "imported-members",
+]
+autoapi_ignore = [
+    "*/_version.py",
+    "*/test_*.py",
+    "*/*_test.py",
+    "*/conftest.py",
+    "**/test/**",
+    "__main__.py",
+    "*/__main__.py",
 ]
 autoapi_python_use_implicit_namespaces = True
+autoapi_member_order = "alphabetical"   # Predictable ordering
 
 # Suppress specific warnings
 suppress_warnings = [
