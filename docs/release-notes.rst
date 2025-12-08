@@ -38,9 +38,14 @@ This maintenance release focuses on supply chain security, testing infrastructur
 
 No breaking changes. This is a drop-in replacement for 25.9.1.
 
+**Release Artifacts**
+
+* `GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v25.10.1>`__
+* `PyPI Package <https://pypi.org/project/autobahn/25.10.1/>`__
+* `Documentation <https://autobahn.readthedocs.io/en/v25.10.1/>`__
+
 **Links**
 
-* `GitHub Milestone <https://github.com/crossbario/autobahn-python/milestone/TBD>`_
 * Detailed changes: :ref:`changelog <changelog>` (25.10.1 section)
 
 
@@ -98,9 +103,14 @@ No breaking changes. This is a drop-in replacement for 25.9.1.
 * **Performance:** NVX acceleration is automatically enabled on supported CPUs. Set ``AUTOBAHN_USE_NVX=0`` to disable if needed
 * **Build System:** If you build from source, note the migration to modern tooling (just, uv, pyproject.toml)
 
+**Release Artifacts**
+
+* `GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v25.9.1>`__
+* `PyPI Package <https://pypi.org/project/autobahn/25.9.1/>`__
+* `Documentation <https://autobahn.readthedocs.io/en/v25.9.1/>`__
+
 **Links**
 
-* `GitHub Milestone <https://github.com/crossbario/autobahn-python/milestone/TBD>`_
 * Detailed changes: :ref:`changelog <changelog>` (25.9.1 section)
 
 
@@ -112,6 +122,12 @@ No breaking changes. This is a drop-in replacement for 25.9.1.
 **Fixes**
 
 * Ensure ID generator stays in range [1, 2^53] (#1637)
+
+**Release Artifacts**
+
+* `GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v24.4.2>`__
+* `PyPI Package <https://pypi.org/project/autobahn/24.4.2/>`__
+* `Documentation <https://autobahn.readthedocs.io/en/v24.4.2/>`__
 
 **Links**
 
@@ -134,3 +150,96 @@ See Also
 * :ref:`changelog <changelog>` - Detailed technical changelog
 * Installation instructions - see README.md
 * `GitHub Releases <https://github.com/crossbario/autobahn-python/releases>`_ - Release artifacts and announcements
+
+--------------
+
+.. _release-workflow:
+
+Release Workflow (for Maintainers)
+----------------------------------
+
+This section documents the release process for maintainers.
+
+Prerequisites
+^^^^^^^^^^^^^
+
+Before releasing, ensure you have:
+
+* Push access to the repository
+* PyPI credentials configured (or trusted publishing via GitHub Actions)
+* ``just`` and ``uv`` installed
+
+Step 1: Draft the Release
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Generate changelog and release note templates:
+
+.. code-block:: bash
+
+   # Generate changelog entry from git history (for catching up)
+   just prepare-changelog <version>
+
+   # Generate release draft with templates for both files
+   just draft-release <version>
+
+This will:
+
+* Add a changelog entry template to ``docs/changelog.rst``
+* Add a release entry template to ``docs/release-notes.rst``
+* Update the version in ``pyproject.toml``
+
+Step 2: Edit Changelog
+^^^^^^^^^^^^^^^^^^^^^^
+
+Edit ``docs/changelog.rst`` and fill in the changelog details:
+
+* **New**: New features and capabilities
+* **Fix**: Bug fixes
+* **Other**: Breaking changes, deprecations, other notes
+
+Step 3: Validate the Release
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ensure everything is in place:
+
+.. code-block:: bash
+
+   just prepare-release <version>
+
+This validates:
+
+* Changelog entry exists for this version
+* Release entry exists for this version
+* Version in ``pyproject.toml`` matches
+* All tests pass
+* Documentation builds successfully
+
+Step 4: Commit and Tag
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+   git add docs/changelog.rst docs/release-notes.rst pyproject.toml
+   git commit -m "Release <version>"
+   git tag v<version>
+   git push && git push --tags
+
+Step 5: Automated Release
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+After pushing the tag:
+
+1. GitHub Actions builds and tests the release
+2. Wheels and source distributions are uploaded to GitHub Releases
+3. PyPI publishing is triggered via trusted publishing (OIDC)
+4. Read the Docs builds documentation for the tagged version
+
+Manual PyPI Upload (if needed)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If automated publishing fails:
+
+.. code-block:: bash
+
+   just download-github-release v<version>
+   just publish-pypi "" v<version>

@@ -10,6 +10,9 @@ sys.path.insert(0, os.path.abspath("./_extensions"))
 sys.path.insert(0, os.path.abspath("../src"))
 sys.path.insert(0, os.path.abspath("."))
 
+# Add .cicd/scripts to path for shared Sphinx extensions
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.cicd', 'scripts')))
+
 # monkey-patch txaio so that we can "use" both twisted *and* asyncio,
 # at least at import time -- this is so the autodoc stuff can
 # successfully import autobahn.twisted.* as well as autobahn.asyncio.*
@@ -74,6 +77,9 @@ extensions = [
 
     # Custom extension for Twisted/asyncio documentation
     "txsphinx",
+
+    # Shared WAMP ecosystem extensions (from .cicd submodule)
+    "sphinx_auto_section_anchors",   # Stable slug-based HTML anchors
 ]
 
 # Source file suffixes (both RST and MyST Markdown)
