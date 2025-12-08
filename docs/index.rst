@@ -25,3 +25,8 @@ Contents
    contributing
    OVERVIEW.md
    ai/index
+
+--------------
+
+*Copyright (c) typedef int GmbH. Licensed under the* `MIT License <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`__.
+*WAMP, Autobahn, Crossbar.io and XBR are trademarks of typedef int GmbH (Germany).*
