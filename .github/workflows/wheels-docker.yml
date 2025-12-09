@@ -475,22 +475,23 @@ jobs:
           echo "==> Wheel inventory:"
           find wheelhouse/ -name "*.whl" -exec basename {} \; 2>/dev/null | sort || echo "No wheels found"
 
-      # Debug: Show workspace paths for container job troubleshooting
-      - name: Debug workspace paths
+      # For container jobs, github.workspace contains the HOST path (e.g., /home/runner/work/...)
+      # but the container mounts the workspace at a different path (e.g., /__w/...).
+      # We must capture the actual container path at runtime.
+      - name: Get container workspace path
+        id: container-workspace
         run: |
-          echo "==> Workspace path debugging:"
+          echo "==> Container workspace detection:"
           echo "pwd: $(pwd)"
-          echo "GITHUB_WORKSPACE env: $GITHUB_WORKSPACE"
-          echo "Checking wheelhouse:"
-          ls -la wheelhouse/ | head -5
-          echo "Full wheelhouse path: $(pwd)/wheelhouse"
+          echo "GITHUB_WORKSPACE env: ${GITHUB_WORKSPACE:-not set}"
+          echo "path=$(pwd)" >> $GITHUB_OUTPUT
 
       - name:
           Upload wheels, source dist and build metadata with cryptographic verification
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: artifacts-${{ matrix.target.name }}
-          path: ${{ github.workspace }}/wheelhouse/
+          path: ${{ steps.container-workspace.outputs.path }}/wheelhouse/
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow
