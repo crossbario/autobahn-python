@@ -187,6 +187,9 @@ html_css_files = [
 ]
 
 # -- sphinxcontrib-images Configuration --------------------------------------
+# NOTE: override_image_directive must be False to preserve standard RST image
+# directive :target: option support, which is required for clickable badge
+# substitutions in docs/index.rst (e.g., |PyPI| |Python| |CI| etc.)
 images_config = {
     "override_image_directive": False,
     "default_image_width": "80%",
