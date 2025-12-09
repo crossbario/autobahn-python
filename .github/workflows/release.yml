@@ -465,8 +465,36 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      # Download FlatBuffers schema artifacts (explicit enumeration for each matrix env)
-      - name: Download FlatBuffers schema artifacts (cpy314)
+      # Download FlatBuffers generated code (explicit enumeration for each matrix env)
+      - name: Download FlatBuffers generated code (cpy314)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-gen-cpy314
+          path: flatbuffers-gen/cpy314/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download FlatBuffers generated code (cpy311)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-gen-cpy311
+          path: flatbuffers-gen/cpy311/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download FlatBuffers generated code (pypy311)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-gen-pypy311
+          path: flatbuffers-gen/pypy311/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      # Download FlatBuffers schema files (explicit enumeration for each matrix env)
+      - name: Download FlatBuffers schema files (cpy314)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-cpy314
@@ -475,7 +503,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Download FlatBuffers schema artifacts (cpy311)
+      - name: Download FlatBuffers schema files (cpy311)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-cpy311
@@ -484,7 +512,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Download FlatBuffers schema artifacts (pypy311)
+      - name: Download FlatBuffers schema files (pypy311)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-pypy311
@@ -1266,8 +1294,36 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      # Download FlatBuffers schema artifacts (explicit enumeration for each matrix env)
-      - name: Download FlatBuffers schema artifacts (cpy314)
+      # Download FlatBuffers generated code (explicit enumeration for each matrix env)
+      - name: Download FlatBuffers generated code (cpy314)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-gen-cpy314
+          path: flatbuffers-gen/cpy314/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download FlatBuffers generated code (cpy311)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-gen-cpy311
+          path: flatbuffers-gen/cpy311/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download FlatBuffers generated code (pypy311)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-gen-pypy311
+          path: flatbuffers-gen/pypy311/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      # Download FlatBuffers schema files (explicit enumeration for each matrix env)
+      - name: Download FlatBuffers schema files (cpy314)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-cpy314
@@ -1276,7 +1332,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Download FlatBuffers schema artifacts (cpy311)
+      - name: Download FlatBuffers schema files (cpy311)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-cpy311
@@ -1285,7 +1341,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Download FlatBuffers schema artifacts (pypy311)
+      - name: Download FlatBuffers schema files (pypy311)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-pypy311

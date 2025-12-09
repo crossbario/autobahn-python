@@ -508,13 +508,20 @@ jobs:
             exit 1
           fi
 
-      - name: Upload FlatBuffers artifacts
+      # Upload FlatBuffers artifacts (split into two uploads since verified action
+      # doesn't support multi-line paths like actions/upload-artifact@v4)
+      - name: Upload FlatBuffers generated code
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
+        with:
+          name: flatbuffers-gen-${{ matrix.python-env }}
+          path: src/autobahn/wamp/gen/
+          retention-days: 7
+
+      - name: Upload FlatBuffers schema files
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: flatbuffers-schema-${{ matrix.python-env }}
-          path: |
-            src/autobahn/wamp/gen/
-            src/autobahn/wamp/flatbuffers/
+          path: src/autobahn/wamp/flatbuffers/
           retention-days: 7
 
   build-package:
