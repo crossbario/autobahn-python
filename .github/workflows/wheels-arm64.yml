@@ -424,7 +424,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: artifacts-arm64-${{ matrix.target.name }}
-          path: wheelhouse/
+          path: ${{ github.workspace }}/wheelhouse/
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow

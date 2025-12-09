@@ -97,7 +97,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: coverage-report-combined-with-nvx
-          path: docs/_build/html/coverage-combined-with-nvx/
+          path: ${{ github.workspace }}/docs/_build/html/coverage-combined-with-nvx/
           retention-days: 14
 
       - name: Code test coverage (Combined Twisted + asyncio) - WITHOUT NVX
@@ -108,7 +108,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: coverage-report-combined-without-nvx
-          path: docs/_build/html/coverage-combined-without-nvx/
+          path: ${{ github.workspace }}/docs/_build/html/coverage-combined-without-nvx/
           retention-days: 14
 
       - name: Unit test - Twisted / trial - WITH NVX
@@ -208,7 +208,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: serdes-test-results-${{ matrix.python-env }}
-          path: test-results/serdes-${{ matrix.python-env }}/
+          path: ${{ github.workspace }}/test-results/serdes-${{ matrix.python-env }}/
           retention-days: 7
 
   documentation:
@@ -271,7 +271,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: documentation
-          path: docs/_build/html/
+          path: ${{ github.workspace }}/docs/_build/html/
           retention-days: 14
 
   # FIXME: Sphinx error:
@@ -514,14 +514,14 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: flatbuffers-gen-${{ matrix.python-env }}
-          path: src/autobahn/wamp/gen/
+          path: ${{ github.workspace }}/src/autobahn/wamp/gen/
           retention-days: 7
 
       - name: Upload FlatBuffers schema files
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: flatbuffers-schema-${{ matrix.python-env }}
-          path: src/autobahn/wamp/flatbuffers/
+          path: ${{ github.workspace }}/src/autobahn/wamp/flatbuffers/
           retention-days: 7
 
   build-package:
@@ -595,5 +595,5 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: package-${{ matrix.python-env }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           retention-days: 14

@@ -238,7 +238,7 @@ jobs:
         if: always()
         with:
           name: clients-all-${{ env.TEST_MODE }}-with-nvx
-          path: .wstest/clients-with-nvx/
+          path: ${{ github.workspace }}/.wstest/clients-with-nvx/
           retention-days: 30
 
       - name: Upload client reports (without-nvx)
@@ -247,7 +247,7 @@ jobs:
         if: always()
         with:
           name: clients-all-${{ env.TEST_MODE }}-without-nvx
-          path: .wstest/clients-without-nvx/
+          path: ${{ github.workspace }}/.wstest/clients-without-nvx/
           retention-days: 30
 
   # Server testing: Test all server combinations against testsuite client
@@ -481,7 +481,7 @@ jobs:
         if: always()
         with:
           name: servers-all-${{ env.TEST_MODE }}-with-nvx
-          path: .wstest/servers-with-nvx/
+          path: ${{ github.workspace }}/.wstest/servers-with-nvx/
           retention-days: 30
 
       - name: Upload server reports (without-nvx)
@@ -490,7 +490,7 @@ jobs:
         if: always()
         with:
           name: servers-all-${{ env.TEST_MODE }}-without-nvx
-          path: .wstest/servers-without-nvx/
+          path: ${{ github.workspace }}/.wstest/servers-without-nvx/
           retention-days: 30
 
   # Consolidate all reports using the proven justfile recipe
@@ -663,7 +663,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: websocket-conformance-docs-${{ env.TEST_MODE }}-with-nvx
-          path: docs/_static/websocket/conformance-with-nvx/
+          path: ${{ github.workspace }}/docs/_static/websocket/conformance-with-nvx/
           retention-days: 30
 
       - name: Upload consolidated reports (without-nvx)
@@ -671,7 +671,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: websocket-conformance-docs-${{ env.TEST_MODE }}-without-nvx
-          path: docs/_static/websocket/conformance-without-nvx/
+          path: ${{ github.workspace }}/docs/_static/websocket/conformance-without-nvx/
           retention-days: 30
 
       - name: Upload summary report for PR comment
@@ -680,8 +680,7 @@ jobs:
         with:
           name: conformance-summary-${{ env.TEST_MODE }}
           # upload-artifact-verified requires a directory, not a file
-          # Use relative path to avoid any workspace path resolution issues
-          path: .audit/
+          path: ${{ github.workspace }}/.audit/
           retention-days: 30
 
       - name: Report summary

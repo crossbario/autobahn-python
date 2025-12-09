@@ -604,7 +604,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: wheels-${{ matrix.platform }}-${{ matrix.arch }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           retention-days: 30
 
       - name: Verify wheels built without NVX (Linux x86_64 only)
@@ -787,7 +787,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: source-distribution
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           retention-days: 30
 
       - name: Upload Linux wheels without NVX with cryptographic verification (Linux x86_64 only)
@@ -795,7 +795,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: linux-wheels-no-nvx
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow
