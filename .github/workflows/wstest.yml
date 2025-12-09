@@ -680,7 +680,8 @@ jobs:
         with:
           name: conformance-summary-${{ env.TEST_MODE }}
           # upload-artifact-verified requires a directory, not a file
-          path: ${{ github.workspace }}/.audit/
+          # Use relative path to avoid any workspace path resolution issues
+          path: .audit/
           retention-days: 30
 
       - name: Report summary
