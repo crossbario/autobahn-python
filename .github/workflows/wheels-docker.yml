@@ -475,23 +475,35 @@ jobs:
           echo "==> Wheel inventory:"
           find wheelhouse/ -name "*.whl" -exec basename {} \; 2>/dev/null | sort || echo "No wheels found"
 
-      # For container jobs, github.workspace contains the HOST path (e.g., /home/runner/work/...)
-      # but the container mounts the workspace at a different path (e.g., /__w/...).
-      # We must capture the actual container path at runtime.
-      - name: Get container workspace path
-        id: container-workspace
-        run: |
-          echo "==> Container workspace detection:"
-          echo "pwd: $(pwd)"
-          echo "GITHUB_WORKSPACE env: ${GITHUB_WORKSPACE:-not set}"
-          echo "path=$(pwd)" >> $GITHUB_OUTPUT
-
-      - name:
-          Upload wheels, source dist and build metadata with cryptographic verification
+      # ============================================================================
+      # IMPORTANT: Container Jobs Require RELATIVE Paths for Artifact Upload
+      # ============================================================================
+      #
+      # This job uses `container: <image>` which creates a "Split-Brain" scenario:
+      #
+      # 1. Shell steps (run:) execute INSIDE the container where:
+      #    - Working directory = /__w/repo/repo (container mount point)
+      #    - $GITHUB_WORKSPACE = /__w/repo/repo (correct for container)
+      #
+      # 2. Node.js actions (uses:) like upload-artifact run on the HOST where:
+      #    - Working directory = /home/runner/work/repo/repo
+      #    - ${{ github.workspace }} = /home/runner/work/repo/repo (host path)
+      #
+      # If we pass a container-resolved path (/__w/...) to upload-artifact,
+      # the action will fail because that path doesn't exist on the host.
+      #
+      # The ONLY path that works in BOTH contexts is a RELATIVE PATH.
+      # GitHub guarantees the CWD is the workspace root for both environments,
+      # so "wheelhouse/" resolves correctly in both container and host.
+      #
+      # For non-container jobs, we use absolute paths: ${{ github.workspace }}/...
+      # For container jobs, we MUST use relative paths: wheelhouse/
+      # ============================================================================
+      - name: Upload wheels, source dist and build metadata with cryptographic verification
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: artifacts-${{ matrix.target.name }}
-          path: ${{ steps.container-workspace.outputs.path }}/wheelhouse/
+          path: wheelhouse/
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow

@@ -420,11 +420,20 @@ jobs:
           echo "==> Wheel inventory:"
           find wheelhouse/ -name "*.whl" -exec basename {} \; 2>/dev/null | sort || echo "No wheels found"
 
+      # ============================================================================
+      # Note on paths: This workflow uses Docker containers but NOT the GitHub
+      # Actions `container:` directive. Instead, it runs `docker run` commands
+      # from the host, mounting the workspace. The upload step runs directly on
+      # the host (not inside Docker), so ${{ github.workspace }} works correctly.
+      #
+      # However, for consistency and safety, we use a relative path here as well.
+      # This ensures the workflow remains robust if the architecture changes.
+      # ============================================================================
       - name: Upload wheels and build metadata with cryptographic verification
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: artifacts-arm64-${{ matrix.target.name }}
-          path: ${{ github.workspace }}/wheelhouse/
+          path: wheelhouse/
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow
