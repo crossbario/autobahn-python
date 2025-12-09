@@ -475,14 +475,18 @@ jobs:
           echo "==> Wheel inventory:"
           find wheelhouse/ -name "*.whl" -exec basename {} \; 2>/dev/null | sort || echo "No wheels found"
 
-      # Note: For container jobs, use $GITHUB_WORKSPACE (environment variable set inside
-      # the container) instead of ${{ github.workspace }} (context variable with host path).
+      # For container jobs, we need to determine the workspace path at runtime.
+      # The github.workspace context has the host path, not the container path.
+      - name: Get container workspace path
+        id: workspace
+        run: echo "path=$(pwd)" >> $GITHUB_OUTPUT
+
       - name:
           Upload wheels, source dist and build metadata with cryptographic verification
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: artifacts-${{ matrix.target.name }}
-          path: ${{ env.GITHUB_WORKSPACE }}/wheelhouse/
+          path: ${{ steps.workspace.outputs.path }}/wheelhouse/
           retention-days: 30
 
   # GitHub Releases, PyPI, and RTD publishing are now handled by the centralized 'release' workflow
