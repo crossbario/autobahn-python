@@ -203,13 +203,14 @@ jobs:
           echo "==> Without-NVX client reports:"
           ls -la .wstest/clients-without-nvx/ | head -10 || echo "Not found"
 
-      # Fix permissions on wstest directories (Docker may create files as root)
+      # Fix permissions on wstest directories (Docker creates files as root)
       # The verified upload action needs write access to create CHECKSUMS.sha256
+      # Must use sudo since runner user can't chmod root-owned files
       - name: Fix permissions on client reports
         if: always()
         run: |
-          chmod -R u+w .wstest/clients-with-nvx/ 2>/dev/null || true
-          chmod -R u+w .wstest/clients-without-nvx/ 2>/dev/null || true
+          sudo chown -R $(id -u):$(id -g) .wstest/clients-with-nvx/ 2>/dev/null || true
+          sudo chown -R $(id -u):$(id -g) .wstest/clients-without-nvx/ 2>/dev/null || true
 
       - name: Upload client reports (with-nvx)
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
@@ -423,13 +424,14 @@ jobs:
           echo "✅ All server tests completed for BOTH NVX configurations"
           echo "======================================================================"
 
-      # Fix permissions on wstest directories (Docker may create files as root)
+      # Fix permissions on wstest directories (Docker creates files as root)
       # The verified upload action needs write access to create CHECKSUMS.sha256
+      # Must use sudo since runner user can't chmod root-owned files
       - name: Fix permissions on server reports
         if: always()
         run: |
-          chmod -R u+w .wstest/servers-with-nvx/ 2>/dev/null || true
-          chmod -R u+w .wstest/servers-without-nvx/ 2>/dev/null || true
+          sudo chown -R $(id -u):$(id -g) .wstest/servers-with-nvx/ 2>/dev/null || true
+          sudo chown -R $(id -u):$(id -g) .wstest/servers-without-nvx/ 2>/dev/null || true
 
       - name: Upload server reports (with-nvx)
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
