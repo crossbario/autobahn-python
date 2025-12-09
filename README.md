@@ -2,16 +2,16 @@
 
 WebSocket & WAMP for Python on Twisted and asyncio.
 
-[![Version](https://img.shields.io/pypi/v/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
-[![Test](https://github.com/crossbario/autobahn-python/workflows/main/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Amain)
-[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat)](https://autobahn.readthedocs.io/en/latest/)
-<!--
-[![CI Deploy Status](https://github.com/crossbario/autobahn-python/workflows/deploy/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Adeploy)
-[![CI Docker Status](https://github.com/crossbario/autobahn-python/workflows/docker/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Adocker)
-[![CI EXE Status](https://github.com/crossbario/autobahn-python/workflows/pyinstaller/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Apyinstaller)
-[![Docker
-Images](https://img.shields.io/badge/download-docker-blue.svg?style=flat)](https://hub.docker.com/r/crossbario/autobahn-python/)
--->
+[![PyPI](https://img.shields.io/pypi/v/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
+[![Python](https://img.shields.io/pypi/pyversions/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
+[![CI](https://github.com/crossbario/autobahn-python/workflows/main/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Amain)
+[![CI (wstest)](https://github.com/crossbario/autobahn-python/workflows/wstest/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Awstest)
+[![CD (wheels)](https://github.com/crossbario/autobahn-python/workflows/wheels/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Awheels)
+[![CD (wheels-arm64)](https://github.com/crossbario/autobahn-python/workflows/wheels-arm64/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Awheels-arm64)
+[![CD (wheels-docker)](https://github.com/crossbario/autobahn-python/workflows/wheels-docker/badge.svg)](https://github.com/crossbario/autobahn-python/actions?query=workflow%3Awheels-docker)
+[![Docs](https://readthedocs.org/projects/autobahn/badge/?version=latest)](https://autobahn.readthedocs.io/en/latest/)
+[![License](https://img.shields.io/pypi/l/autobahn.svg)](https://github.com/crossbario/autobahn-python/blob/master/LICENSE)
+[![Downloads](https://img.shields.io/pypi/dm/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
 
 ---
 
