@@ -4,11 +4,13 @@
 
 version: 2
 
+# Include .ai submodule for AI/audit related docs to be included in built docs (via symlinks)
 # Include .cicd submodule for shared Sphinx extensions (sphinx_auto_section_anchors)
 submodules:
-  include: all
-  recursive: true
-  depth: 1
+  include:
+    - .ai
+    - .cicd
+  recursive: false
 
 build:
   os: ubuntu-24.04
