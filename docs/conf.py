@@ -188,7 +188,7 @@ html_css_files = [
 
 # -- sphinxcontrib-images Configuration --------------------------------------
 images_config = {
-    "override_image_directive": True,
+    "override_image_directive": False,
     "default_image_width": "80%",
 }
 
