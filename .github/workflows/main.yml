@@ -94,7 +94,7 @@ jobs:
 
       - name: Upload coverage report (with-nvx)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: coverage-report-combined-with-nvx
           path: docs/_build/html/coverage-combined-with-nvx/
@@ -105,7 +105,7 @@ jobs:
 
       - name: Upload coverage report (without-nvx)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: coverage-report-combined-without-nvx
           path: docs/_build/html/coverage-combined-without-nvx/
@@ -268,7 +268,7 @@ jobs:
         run: just docs cpy314
 
       - name: Upload documentation artifacts
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: documentation
           path: docs/_build/html/
@@ -509,7 +509,7 @@ jobs:
           fi
 
       - name: Upload FlatBuffers artifacts
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: flatbuffers-schema-${{ matrix.python-env }}
           path: |
@@ -585,7 +585,7 @@ jobs:
           ls -la dist/
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: package-${{ matrix.python-env }}
           path: dist/

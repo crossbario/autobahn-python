@@ -287,12 +287,12 @@ jobs:
               core.setOutput('run_id', '');
             }
 
-      - name: Download wstest conformance summary
+      # Download wstest conformance summary (explicit name, no pattern)
+      - name: Download wstest conformance summary (quick)
         if: steps.find-wstest.outputs.run_id != ''
-        uses: actions/download-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          pattern: conformance-summary-*
-          merge-multiple: true
+          name: conformance-summary-quick
           run-id: ${{ steps.find-wstest.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: summary-artifact/
@@ -465,12 +465,12 @@ jobs:
               core.setOutput('run_id', '');
             }
 
-      - name: Download wstest conformance summary
+      # Download wstest conformance summary (explicit name, no pattern)
+      - name: Download wstest conformance summary (quick)
         if: steps.find-wstest.outputs.run_id != ''
-        uses: actions/download-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          pattern: conformance-summary-*
-          merge-multiple: true
+          name: conformance-summary-quick
           run-id: ${{ steps.find-wstest.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: summary-artifact/

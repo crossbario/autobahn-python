@@ -204,7 +204,7 @@ jobs:
           ls -la .wstest/clients-without-nvx/ | head -10 || echo "Not found"
 
       - name: Upload client reports (with-nvx)
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         if: always()
         with:
           name: clients-all-${{ env.TEST_MODE }}-with-nvx
@@ -212,7 +212,7 @@ jobs:
           retention-days: 30
 
       - name: Upload client reports (without-nvx)
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         if: always()
         with:
           name: clients-all-${{ env.TEST_MODE }}-without-nvx
@@ -416,7 +416,7 @@ jobs:
           echo "======================================================================"
 
       - name: Upload server reports (with-nvx)
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         if: always()
         with:
           name: servers-all-${{ env.TEST_MODE }}-with-nvx
@@ -424,7 +424,7 @@ jobs:
           retention-days: 30
 
       - name: Upload server reports (without-nvx)
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         if: always()
         with:
           name: servers-all-${{ env.TEST_MODE }}-without-nvx
@@ -458,10 +458,31 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
           echo "$HOME/bin" >> $GITHUB_PATH
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      # Download all wstest artifacts explicitly (no pattern matching)
+      # These artifact names match TEST_MODE=quick which is set at workflow level
+      - name: Download client reports (with-nvx)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          path: artifacts/
+          name: clients-all-${{ env.TEST_MODE }}-with-nvx
+          path: artifacts/clients-all-${{ env.TEST_MODE }}-with-nvx/
+
+      - name: Download client reports (without-nvx)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: clients-all-${{ env.TEST_MODE }}-without-nvx
+          path: artifacts/clients-all-${{ env.TEST_MODE }}-without-nvx/
+
+      - name: Download server reports (with-nvx)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: servers-all-${{ env.TEST_MODE }}-with-nvx
+          path: artifacts/servers-all-${{ env.TEST_MODE }}-with-nvx/
+
+      - name: Download server reports (without-nvx)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: servers-all-${{ env.TEST_MODE }}-without-nvx
+          path: artifacts/servers-all-${{ env.TEST_MODE }}-without-nvx/
 
       - name: Reconstruct test directory structure
         run: |
@@ -570,21 +591,21 @@ jobs:
           echo "SUMMARY_FILE=$SUMMARY_FILE" >> $GITHUB_ENV
 
       - name: Upload consolidated reports (with-nvx)
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: websocket-conformance-docs-${{ env.TEST_MODE }}-with-nvx
           path: docs/_static/websocket/conformance-with-nvx/
           retention-days: 30
 
       - name: Upload consolidated reports (without-nvx)
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: websocket-conformance-docs-${{ env.TEST_MODE }}-without-nvx
           path: docs/_static/websocket/conformance-without-nvx/
           retention-days: 30
 
       - name: Upload summary report for PR comment
-        uses: actions/upload-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: conformance-summary-${{ env.TEST_MODE }}
           path: ${{ env.SUMMARY_FILE }}
@@ -629,13 +650,13 @@ jobs:
           submodules: recursive
 
       - name: Download consolidated reports (with-nvx)
-        uses: actions/download-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: websocket-conformance-docs-${{ env.TEST_MODE }}-with-nvx
           path: docs/_static/websocket/conformance-with-nvx/
 
       - name: Download consolidated reports (without-nvx)
-        uses: actions/download-artifact@v4
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: websocket-conformance-docs-${{ env.TEST_MODE }}-without-nvx
           path: docs/_static/websocket/conformance-without-nvx/
