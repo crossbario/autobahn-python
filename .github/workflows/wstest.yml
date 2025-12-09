@@ -674,13 +674,25 @@ jobs:
           path: ${{ github.workspace }}/docs/_static/websocket/conformance-without-nvx/
           retention-days: 30
 
+      # ============================================================================
+      # WORKAROUND: actions/upload-artifact@v4.4+ excludes hidden files by default.
+      # The .audit/ directory starts with "." so it's considered hidden and all
+      # files inside are excluded from upload. We copy to a non-hidden temp dir.
+      # TODO: Fix wamp-cicd upload-artifact-verified to include hidden files.
+      # ============================================================================
+      - name: Copy audit files to non-hidden directory for upload
+        run: |
+          mkdir -p ${{ github.workspace }}/audit-upload
+          cp -r ${{ github.workspace }}/.audit/* ${{ github.workspace }}/audit-upload/
+          echo "Copied .audit/ contents to audit-upload/:"
+          ls -la ${{ github.workspace }}/audit-upload/
+
       - name: Upload summary report for PR comment
         id: upload-summary
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: conformance-summary-${{ env.TEST_MODE }}
-          # upload-artifact-verified requires a directory, not a file
-          path: ${{ github.workspace }}/.audit/
+          path: ${{ github.workspace }}/audit-upload/
           retention-days: 30
 
       - name: Report summary
