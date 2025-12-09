@@ -197,95 +197,176 @@ Release Workflow (for Maintainers)
 
 This section documents the release process for maintainers.
 
+Overview
+^^^^^^^^
+
+The release workflow is designed to be **automated where possible** while maintaining
+**human oversight** for security-critical steps (commits, tags, publishing).
+
+**Key principles:**
+
+* **Automated content generation**: Release notes and changelogs are generated from
+  CI artifacts and git history, ensuring accuracy and consistency
+* **Human review gate**: All generated content is reviewed before committing
+* **Cryptographic verification**: Artifacts include SHA256 checksums and chain-of-custody
+  verification files
+* **Self-contained documentation**: Release notes include conformance results, artifact
+  inventory, and verification info - users don't need to hunt through GitHub
+
+**Information flow:**
+
+.. code-block:: text
+
+   GitHub Actions (CI)
+       ↓ builds wheels, runs tests, generates metadata
+   GitHub Release (nightly/stable)
+       ↓ stores artifacts with checksums
+   just download-release-artifacts <release>
+       ↓ downloads to local /tmp/release-artifacts/
+   just prepare-release <version>
+       ↓ reads metadata, generates docs/release-notes.rst entry
+   just prepare-changelog <version>
+       ↓ reads git log + audit files, generates docs/changelog.rst entry
+   Human review + commit + tag
+       ↓ pushes to GitHub
+   GitHub Actions (release workflow)
+       ↓ publishes to PyPI, triggers RTD
+
 Prerequisites
 ^^^^^^^^^^^^^
 
 Before releasing, ensure you have:
 
-* Push access to the repository
-* PyPI credentials configured (or trusted publishing via GitHub Actions)
+* Push access to the repository (with tag permissions)
+* GitHub CLI (``gh``) authenticated for artifact downloads
 * ``just`` and ``uv`` installed
+* Access to a recent nightly release to base the stable release on
 
-Step 1: Draft the Release
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Step 1: Download Release Artifacts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Generate changelog and release note templates:
+First, identify the nightly release to promote to stable. Check recent releases at
+https://github.com/crossbario/autobahn-python/releases
 
 .. code-block:: bash
 
-   # Generate changelog entry from git history (for catching up)
-   just prepare-changelog <version>
+   # Download all artifacts from a nightly release
+   just download-release-artifacts master-202512092131
 
-   # Generate release draft with templates for both files
-   just draft-release <version>
+This downloads to ``/tmp/release-artifacts/<release-name>/`` and includes:
 
-This will:
+* **Wheels**: Platform-specific binary distributions
+* **Source distribution**: ``autobahn-<version>.tar.gz``
+* **Conformance reports**: WebSocket test results (``*-wstest-summary.md``)
+* **Checksums**: ``CHECKSUMS.sha256`` files for each build job
+* **Audit files**: ``oberstet_*.md`` linking PRs to issues
+* **Verification files**: Chain-of-custody metadata
 
-* Add a changelog entry template to ``docs/changelog.rst``
-* Add a release entry template to ``docs/release-notes.rst``
-* Update the version in ``pyproject.toml``
+Step 2: Generate Release Notes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Step 2: Edit Changelog
-^^^^^^^^^^^^^^^^^^^^^^
+Generate the release notes entry from downloaded artifacts:
 
-Edit ``docs/changelog.rst`` and fill in the changelog details:
+.. code-block:: bash
 
-* **New**: New features and capabilities
-* **Fix**: Bug fixes
-* **Other**: Breaking changes, deprecations, other notes
+   just prepare-release 25.12.1
 
-Step 3: Validate the Release
+This reads from the downloaded artifacts and generates:
+
+* **Conformance matrix**: Client/server test results (with-nvx/without-nvx)
+* **Artifact inventory**: Wheels with platforms, Python versions, checksums
+* **Chain of custody**: Verification file references
+* **Links**: GitHub Release, PyPI, RTD documentation
+
+The generated entry is inserted into ``docs/release-notes.rst``.
+
+Step 3: Generate Changelog
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Generate the changelog entry from git history and audit files:
+
+.. code-block:: bash
+
+   just prepare-changelog 25.12.1
+
+This:
+
+1. Finds the previous version in ``docs/changelog.rst``
+2. Gets commits since then: ``git log <prev-tag>..HEAD``
+3. For each PR commit, finds the matching audit file in ``.audit/``
+4. Extracts ``Related issue(s):`` from audit files
+5. Fetches issue titles via GitHub API
+6. Categorizes changes (new/fix/other) and generates RST
+
+The generated entry is inserted into ``docs/changelog.rst``.
+
+Step 4: Review and Edit
+^^^^^^^^^^^^^^^^^^^^^^^
+
+**Important**: Review the generated content before committing!
+
+* Check that conformance results are 100% pass
+* Verify artifact inventory matches expectations
+* Edit changelog entries for clarity if needed
+* Add any manual notes not captured by automation
+
+Step 5: Validate the Release
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Ensure everything is in place:
+Run validation to ensure everything is in place:
 
 .. code-block:: bash
 
-   just prepare-release <version>
+   just prepare-release 25.12.1
 
 This validates:
 
-* Changelog entry exists for this version
-* Release entry exists for this version
 * Version in ``pyproject.toml`` matches
-* All tests pass
+* Changelog entry exists for this version
+* Release notes entry exists for this version
+* Tests pass
 * Documentation builds successfully
 
-Step 4: Disable Git Hooks (if needed)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Step 6: Commit and Push
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
+   git add docs/changelog.rst docs/release-notes.rst
+   git commit -m "Release 25.12.1"
+   git push upstream master
+
+Step 7: Create and Push Tag
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Note**: Tags should only be created on your dev PC (not on AI-assisted workstations)
+per the security architecture.
+
+.. code-block:: bash
+
+   # Disable git hooks if needed (AI hooks may block tagging)
    git config core.hooksPath /dev/null
-   git config core.hooksPath
 
-Step 5: Commit and Tag
-^^^^^^^^^^^^^^^^^^^^^^
+   # Create annotated tag
+   git tag -a v25.12.1 -m "Release 25.12.1"
 
-.. code-block:: bash
+   # Push tag to trigger release workflow
+   git push upstream v25.12.1
 
-   git add docs/changelog.rst docs/release-notes.rst pyproject.toml
-   git commit -m "Release <version>"
-   git tag v<version>
-   git push && git push --tags
-
-Step 6: Enable Git Hooks (if previously disabled)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
+   # Re-enable git hooks
    git config core.hooksPath .ai/.githooks
-   git config core.hooksPath
 
-Step 7: Automated Release
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Step 8: Automated Publishing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After pushing the tag:
+After pushing the tag, GitHub Actions automatically:
 
-1. GitHub Actions builds and tests the release
-2. Wheels and source distributions are uploaded to GitHub Releases
-3. PyPI publishing is triggered via trusted publishing (OIDC)
-4. Read the Docs builds documentation for the tagged version
+1. Builds and tests the tagged version
+2. Creates a GitHub Release with all artifacts
+3. Publishes to PyPI via trusted publishing (OIDC)
+4. Triggers Read the Docs to build versioned documentation
+
+Monitor the workflow at: https://github.com/crossbario/autobahn-python/actions
 
 Manual PyPI Upload (if needed)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -294,5 +375,22 @@ If automated publishing fails:
 
 .. code-block:: bash
 
-   just download-github-release v<version>
-   just publish-pypi "" v<version>
+   just download-github-release v25.12.1
+   just publish-pypi "" v25.12.1
+
+Artifact Verification
+^^^^^^^^^^^^^^^^^^^^^
+
+Users can verify downloaded artifacts using the checksums in each release:
+
+.. code-block:: bash
+
+   # Download checksums
+   curl -LO https://github.com/crossbario/autobahn-python/releases/download/v25.12.1/CHECKSUMS.sha256
+
+   # Verify a wheel
+   openssl sha256 autobahn-25.12.1-cp311-cp311-manylinux_2_28_x86_64.whl
+   grep autobahn-25.12.1-cp311-cp311-manylinux_2_28_x86_64.whl CHECKSUMS.sha256
+
+The release notes include checksums for all artifacts, providing an additional
+verification path independent of GitHub.

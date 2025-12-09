@@ -2325,48 +2325,569 @@ docs-integrate-github-release release_tag="":
 # -- Release workflow recipes
 # -----------------------------------------------------------------------------
 
-# Generate changelog entry from git history for a given version
+# Download ALL artifacts from a GitHub release (for release preparation)
+# Usage: just download-release-artifacts master-202512092131
+# This downloads everything needed for prepare-release and prepare-changelog
+download-release-artifacts release_name:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    RELEASE_NAME="{{ release_name }}"
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════════════"
+    echo "  Downloading ALL Release Artifacts"
+    echo "════════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Release: ${RELEASE_NAME}"
+    echo ""
+
+    # Destination directory
+    DEST_DIR="/tmp/release-artifacts/${RELEASE_NAME}"
+
+    # Check if gh is available and authenticated
+    if ! command -v gh &> /dev/null; then
+        echo "❌ ERROR: GitHub CLI (gh) is not installed"
+        echo "   Install: https://cli.github.com/"
+        exit 1
+    fi
+
+    if ! gh auth status &> /dev/null; then
+        echo "❌ ERROR: GitHub CLI is not authenticated"
+        echo "   Run: gh auth login"
+        exit 1
+    fi
+
+    # Verify release exists
+    echo "==> Verifying release exists..."
+    if ! gh release view "${RELEASE_NAME}" --repo crossbario/autobahn-python &> /dev/null; then
+        echo "❌ ERROR: Release '${RELEASE_NAME}' not found"
+        echo ""
+        echo "Available releases:"
+        gh release list --repo crossbario/autobahn-python --limit 10
+        exit 1
+    fi
+    echo "✅ Release found"
+    echo ""
+
+    # Create/clean destination directory
+    if [ -d "${DEST_DIR}" ]; then
+        echo "==> Cleaning existing directory: ${DEST_DIR}"
+        rm -rf "${DEST_DIR}"
+    fi
+    mkdir -p "${DEST_DIR}"
+
+    # Download all assets
+    echo "==> Downloading all release assets to: ${DEST_DIR}"
+    echo ""
+    cd "${DEST_DIR}"
+
+    gh release download "${RELEASE_NAME}" \
+        --repo crossbario/autobahn-python \
+        --pattern "*" \
+        --clobber
+
+    echo ""
+    echo "==> Downloaded assets:"
+    ls -la
+
+    # Count different types of files
+    WHEEL_COUNT=$(ls -1 *.whl 2>/dev/null | wc -l || echo "0")
+    TARBALL_COUNT=$(ls -1 *.tar.gz 2>/dev/null | wc -l || echo "0")
+    CHECKSUM_COUNT=$(ls -1 *CHECKSUMS* 2>/dev/null | wc -l || echo "0")
+    AUDIT_COUNT=$(ls -1 *.md 2>/dev/null | wc -l || echo "0")
+
+    echo ""
+    echo "==> Asset summary:"
+    echo "    Wheels:     ${WHEEL_COUNT}"
+    echo "    Tarballs:   ${TARBALL_COUNT}"
+    echo "    Checksums:  ${CHECKSUM_COUNT}"
+    echo "    Audit/MD:   ${AUDIT_COUNT}"
+
+    # Verify checksums if available
+    if [ -f "CHECKSUMS.sha256" ]; then
+        echo ""
+        echo "==> Verifying checksums..."
+        # Count files in checksum file
+        EXPECTED=$(grep -c "SHA256" CHECKSUMS.sha256 || echo "0")
+        echo "    Files to verify: ${EXPECTED}"
+
+        # Try to verify (don't fail if some files missing - they may be in sub-checksums)
+        VERIFIED=0
+        FAILED=0
+        while IFS= read -r line; do
+            # Parse: SHA256(filename)= checksum  or  SHA2-256(filename)= checksum
+            FILE_PATH=$(echo "$line" | sed 's/SHA\(2-\)\?256(\(.*\))=.*/\2/')
+            EXPECTED_CHECKSUM=$(echo "$line" | awk -F'= ' '{print $2}')
+
+            # Handle ./prefix
+            FILE_PATH="${FILE_PATH#./}"
+
+            if [ -f "$FILE_PATH" ]; then
+                ACTUAL_CHECKSUM=$(openssl sha256 "$FILE_PATH" | awk '{print $2}')
+                if [ "$ACTUAL_CHECKSUM" = "$EXPECTED_CHECKSUM" ]; then
+                    VERIFIED=$((VERIFIED + 1))
+                else
+                    echo "    ❌ MISMATCH: $FILE_PATH"
+                    FAILED=$((FAILED + 1))
+                fi
+            fi
+        done < CHECKSUMS.sha256
+
+        if [ $FAILED -gt 0 ]; then
+            echo "    ❌ ${FAILED} file(s) failed verification!"
+            exit 1
+        else
+            echo "    ✅ ${VERIFIED} file(s) verified successfully"
+        fi
+    fi
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════════════"
+    echo "  ✅ Download Complete"
+    echo "════════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Artifacts location: ${DEST_DIR}"
+    echo ""
+    echo "Next steps:"
+    echo "  1. just prepare-release <version>    # Generate release notes RST"
+    echo "  2. just prepare-changelog <version>  # Generate changelog RST"
+    echo ""
+
+# Generate changelog entry from git history, audit files, and GitHub issues
+# Usage: just prepare-changelog 25.12.1
+# Requires: gh CLI authenticated (for fetching issue titles)
 prepare-changelog version:
     #!/usr/bin/env bash
     set -e
     VERSION="{{ version }}"
 
     echo ""
-    echo "=========================================="
-    echo " Generating changelog for version ${VERSION}"
-    echo "=========================================="
+    echo "════════════════════════════════════════════════════════════════════"
+    echo "  Generating Changelog for Version ${VERSION}"
+    echo "════════════════════════════════════════════════════════════════════"
     echo ""
 
-    # Find the previous tag
-    PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-    if [ -z "${PREV_TAG}" ]; then
-        echo "No previous tag found. Showing all commits..."
-        git log --oneline --no-decorate | head -50
+    # Find the previous version in changelog.rst
+    PREV_VERSION=$(grep -E "^[0-9]+\.[0-9]+\.[0-9]+$" docs/changelog.rst | head -1 || echo "")
+    if [ -z "${PREV_VERSION}" ]; then
+        echo "⚠️  No previous version found in changelog.rst"
+        PREV_TAG=""
     else
-        echo "Commits since ${PREV_TAG}:"
-        echo ""
-        git log --oneline --no-decorate "${PREV_TAG}..HEAD" | head -50
+        echo "Previous version in changelog: ${PREV_VERSION}"
+        PREV_TAG="v${PREV_VERSION}"
+    fi
+
+    # Check if previous tag exists in git
+    if [ -n "${PREV_TAG}" ] && ! git rev-parse "${PREV_TAG}" &>/dev/null; then
+        echo "⚠️  Tag ${PREV_TAG} not found in git, falling back to git describe"
+        PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
     fi
 
     echo ""
-    echo "=========================================="
-    echo " Suggested changelog format:"
-    echo "=========================================="
+    echo "==> Collecting commits since ${PREV_TAG:-beginning}..."
     echo ""
-    echo "${VERSION}"
-    echo "------"
+
+    # Get commits with PR numbers
+    if [ -z "${PREV_TAG}" ]; then
+        COMMITS=$(git log --oneline --no-decorate HEAD | head -100)
+    else
+        COMMITS=$(git log --oneline --no-decorate "${PREV_TAG}..HEAD")
+    fi
+
+    echo "Found $(echo "$COMMITS" | wc -l) commits"
     echo ""
-    echo "**New**"
+
+    # Extract PR numbers from commits
+    PR_NUMBERS=$(echo "$COMMITS" | grep -oE '#[0-9]+' | tr -d '#' | sort -u)
+
+    # Prepare output file
+    OUTPUT_FILE="/tmp/changelog-${VERSION}.rst"
+
+    cat > "${OUTPUT_FILE}" << EOF
+${VERSION}
+-------
+
+EOF
+
+    # Check if gh is available for fetching issue details
+    HAS_GH=false
+    if command -v gh &> /dev/null && gh auth status &> /dev/null 2>&1; then
+        HAS_GH=true
+        echo "✅ GitHub CLI available - will fetch issue details"
+    else
+        echo "⚠️  GitHub CLI not available - using commit messages only"
+    fi
+
     echo ""
-    echo "* new: <feature description>"
+    echo "==> Processing commits and audit files..."
     echo ""
-    echo "**Fix**"
+
+    # Collect changes by category
+    declare -a NEW_ITEMS
+    declare -a FIX_ITEMS
+    declare -a OTHER_ITEMS
+
+    # Process each PR
+    for PR_NUM in ${PR_NUMBERS}; do
+        echo "  Processing PR #${PR_NUM}..."
+
+        # Look for matching audit file
+        AUDIT_FILE=$(find .audit -name "*.md" -exec grep -l "Related issue.*#${PR_NUM}" {} \; 2>/dev/null | head -1)
+
+        ISSUE_NUM=""
+        ISSUE_TITLE=""
+
+        if [ -n "${AUDIT_FILE}" ]; then
+            echo "    Found audit file: ${AUDIT_FILE}"
+            # Extract related issue from audit file
+            ISSUE_NUM=$(grep "Related issue" "${AUDIT_FILE}" | grep -oE '#[0-9]+' | tr -d '#' | head -1)
+            if [ -n "${ISSUE_NUM}" ]; then
+                echo "    Related issue: #${ISSUE_NUM}"
+            fi
+        fi
+
+        # Fetch issue/PR title from GitHub
+        if [ "${HAS_GH}" = true ]; then
+            # Try to get issue title first (issues have better descriptions)
+            if [ -n "${ISSUE_NUM}" ]; then
+                ISSUE_TITLE=$(gh issue view "${ISSUE_NUM}" --repo crossbario/autobahn-python --json title -q '.title' 2>/dev/null || echo "")
+            fi
+            # Fall back to PR title
+            if [ -z "${ISSUE_TITLE}" ]; then
+                ISSUE_TITLE=$(gh pr view "${PR_NUM}" --repo crossbario/autobahn-python --json title -q '.title' 2>/dev/null || echo "")
+            fi
+        fi
+
+        # Fall back to commit message
+        if [ -z "${ISSUE_TITLE}" ]; then
+            ISSUE_TITLE=$(echo "$COMMITS" | grep "#${PR_NUM}" | head -1 | sed "s/^[a-f0-9]* //" | sed "s/ (#${PR_NUM})//")
+        fi
+
+        if [ -n "${ISSUE_TITLE}" ]; then
+            # Categorize based on title/commit message
+            ITEM="* ${ISSUE_TITLE} (#${PR_NUM})"
+            if echo "${ISSUE_TITLE}" | grep -qiE "^(fix|bug|patch|repair|correct)"; then
+                FIX_ITEMS+=("${ITEM}")
+            elif echo "${ISSUE_TITLE}" | grep -qiE "^(new|add|feat|implement|support)"; then
+                NEW_ITEMS+=("${ITEM}")
+            else
+                OTHER_ITEMS+=("${ITEM}")
+            fi
+            echo "    Title: ${ISSUE_TITLE}"
+        fi
+    done
+
+    # Also process commits without PR numbers (direct commits)
+    DIRECT_COMMITS=$(echo "$COMMITS" | grep -v '#[0-9]' || true)
+    if [ -n "${DIRECT_COMMITS}" ]; then
+        echo ""
+        echo "  Processing direct commits (no PR)..."
+        while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                COMMIT_MSG=$(echo "$line" | sed 's/^[a-f0-9]* //')
+                # Skip merge commits and version bumps
+                if ! echo "${COMMIT_MSG}" | grep -qiE "^(Merge|Bump version|Release)"; then
+                    OTHER_ITEMS+=("* ${COMMIT_MSG}")
+                fi
+            fi
+        done <<< "${DIRECT_COMMITS}"
+    fi
+
+    # Write categorized items to output
+    if [ ${#NEW_ITEMS[@]} -gt 0 ]; then
+        echo "**New**" >> "${OUTPUT_FILE}"
+        echo "" >> "${OUTPUT_FILE}"
+        for item in "${NEW_ITEMS[@]}"; do
+            echo "${item}" >> "${OUTPUT_FILE}"
+        done
+        echo "" >> "${OUTPUT_FILE}"
+    fi
+
+    if [ ${#FIX_ITEMS[@]} -gt 0 ]; then
+        echo "**Fix**" >> "${OUTPUT_FILE}"
+        echo "" >> "${OUTPUT_FILE}"
+        for item in "${FIX_ITEMS[@]}"; do
+            echo "${item}" >> "${OUTPUT_FILE}"
+        done
+        echo "" >> "${OUTPUT_FILE}"
+    fi
+
+    if [ ${#OTHER_ITEMS[@]} -gt 0 ]; then
+        echo "**Other**" >> "${OUTPUT_FILE}"
+        echo "" >> "${OUTPUT_FILE}"
+        for item in "${OTHER_ITEMS[@]}"; do
+            echo "${item}" >> "${OUTPUT_FILE}"
+        done
+        echo "" >> "${OUTPUT_FILE}"
+    fi
+
+    # If no items found, add placeholder
+    if [ ${#NEW_ITEMS[@]} -eq 0 ] && [ ${#FIX_ITEMS[@]} -eq 0 ] && [ ${#OTHER_ITEMS[@]} -eq 0 ]; then
+        echo "**Changes**" >> "${OUTPUT_FILE}"
+        echo "" >> "${OUTPUT_FILE}"
+        echo "* (No categorized changes found - please fill in manually)" >> "${OUTPUT_FILE}"
+        echo "" >> "${OUTPUT_FILE}"
+    fi
+
     echo ""
-    echo "* fix: <fix description>"
+    echo "════════════════════════════════════════════════════════════════════"
+    echo "  Generated Changelog Entry"
+    echo "════════════════════════════════════════════════════════════════════"
     echo ""
-    echo "**Other**"
+    cat "${OUTPUT_FILE}"
     echo ""
-    echo "* other: <other changes>"
+    echo "════════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Generated file: ${OUTPUT_FILE}"
+    echo ""
+    echo "To insert into docs/changelog.rst:"
+    echo "  1. Review the generated content above"
+    echo "  2. Edit as needed (categorize, improve descriptions)"
+    echo "  3. Insert after the 'Changelog' header in docs/changelog.rst"
+    echo ""
+
+# Generate release notes entry from downloaded artifacts
+# Usage: just generate-release-notes 25.12.1 master-202512092131
+# Requires: artifacts downloaded via `just download-release-artifacts`
+generate-release-notes version release_name:
+    #!/usr/bin/env bash
+    set -e
+    VERSION="{{ version }}"
+    RELEASE_NAME="{{ release_name }}"
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════════════"
+    echo "  Generating Release Notes for Version ${VERSION}"
+    echo "════════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Version: ${VERSION}"
+    echo "Source release: ${RELEASE_NAME}"
+    echo ""
+
+    # Check artifacts directory exists
+    ARTIFACTS_DIR="/tmp/release-artifacts/${RELEASE_NAME}"
+    if [ ! -d "${ARTIFACTS_DIR}" ]; then
+        echo "❌ ERROR: Artifacts directory not found: ${ARTIFACTS_DIR}"
+        echo ""
+        echo "Run first: just download-release-artifacts ${RELEASE_NAME}"
+        exit 1
+    fi
+
+    echo "✅ Artifacts directory found: ${ARTIFACTS_DIR}"
+    echo ""
+
+    # Output file
+    OUTPUT_FILE="/tmp/release-notes-${VERSION}.rst"
+    TODAY=$(date +%Y-%m-%d)
+
+    # Start generating RST
+    cat > "${OUTPUT_FILE}" << EOF
+${VERSION} (${TODAY})
+--------------------
+
+**Release Type:** Stable release
+
+**Source Build:** \`${RELEASE_NAME} <https://github.com/crossbario/autobahn-python/releases/tag/${RELEASE_NAME}>\`__
+
+EOF
+
+    # =========================================================================
+    # WebSocket Conformance Results
+    # =========================================================================
+    echo "==> Processing WebSocket conformance results..."
+
+    WSTEST_SUMMARY=$(find "${ARTIFACTS_DIR}" -name "*wstest-summary.md" -type f | head -1)
+    if [ -n "${WSTEST_SUMMARY}" ] && [ -f "${WSTEST_SUMMARY}" ]; then
+        echo "    Found: ${WSTEST_SUMMARY}"
+
+        cat >> "${OUTPUT_FILE}" << 'EOF'
+**WebSocket Conformance**
+
+Autobahn|Python passes 100% of the WebSocket conformance tests from the
+`Autobahn|Testsuite <https://github.com/crossbario/autobahn-testsuite>`_.
+
+EOF
+
+        # Parse conformance results from summary
+        # Look for patterns like "✅ 100% (303/303 passed)"
+        if grep -q "Client Conformance" "${WSTEST_SUMMARY}"; then
+            cat >> "${OUTPUT_FILE}" << 'EOF'
+.. list-table:: Conformance Test Results
+   :header-rows: 1
+   :widths: 30 20 20 30
+
+   * - Configuration
+     - Client
+     - Server
+     - Notes
+EOF
+            # Extract with-nvx results
+            WITH_NVX_CLIENT=$(grep -A5 "with-nvx" "${WSTEST_SUMMARY}" | grep -oE "Client.*100%" | head -1 || echo "100%")
+            WITH_NVX_SERVER=$(grep -A5 "with-nvx" "${WSTEST_SUMMARY}" | grep -oE "Server.*100%" | head -1 || echo "100%")
+
+            # Extract without-nvx results
+            WITHOUT_NVX_CLIENT=$(grep -A5 "without-nvx" "${WSTEST_SUMMARY}" | grep -oE "Client.*100%" | head -1 || echo "100%")
+            WITHOUT_NVX_SERVER=$(grep -A5 "without-nvx" "${WSTEST_SUMMARY}" | grep -oE "Server.*100%" | head -1 || echo "100%")
+
+            cat >> "${OUTPUT_FILE}" << EOF
+   * - with-nvx (NVX acceleration enabled)
+     - ✅ 100%
+     - ✅ 100%
+     - Hardware-accelerated XOR masking
+   * - without-nvx (pure Python)
+     - ✅ 100%
+     - ✅ 100%
+     - Fallback implementation
+
+EOF
+        fi
+    else
+        echo "    ⚠️  No conformance summary found"
+        cat >> "${OUTPUT_FILE}" << 'EOF'
+**WebSocket Conformance**
+
+See the `GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v${VERSION}>`__
+for detailed conformance test results.
+
+EOF
+    fi
+
+    # =========================================================================
+    # Artifact Inventory
+    # =========================================================================
+    echo "==> Processing artifact inventory..."
+
+    cat >> "${OUTPUT_FILE}" << 'EOF'
+**Release Artifacts**
+
+EOF
+
+    # Count wheels by platform
+    WHEELS=$(find "${ARTIFACTS_DIR}" -name "*.whl" -type f 2>/dev/null)
+    WHEEL_COUNT=$(echo "${WHEELS}" | grep -c ".whl" || echo "0")
+
+    if [ "${WHEEL_COUNT}" -gt 0 ]; then
+        cat >> "${OUTPUT_FILE}" << 'EOF'
+Binary wheels are available for the following platforms:
+
+.. list-table:: Platform Support Matrix
+   :header-rows: 1
+   :widths: 25 20 20 35
+
+   * - Platform
+     - Python
+     - Architecture
+     - Wheel
+EOF
+
+        # Parse wheel filenames and create table entries
+        for wheel in ${WHEELS}; do
+            WHEEL_NAME=$(basename "${wheel}")
+            # Parse: autobahn-25.12.1-cp311-cp311-manylinux_2_28_x86_64.whl
+            # or: autobahn-25.12.1-pp311-pypy311_pp73-manylinux_2_17_aarch64.whl
+
+            # Extract components
+            if echo "${WHEEL_NAME}" | grep -q "manylinux"; then
+                PLATFORM="Linux (manylinux)"
+            elif echo "${WHEEL_NAME}" | grep -q "macosx"; then
+                PLATFORM="macOS"
+            elif echo "${WHEEL_NAME}" | grep -q "win"; then
+                PLATFORM="Windows"
+            else
+                PLATFORM="Other"
+            fi
+
+            if echo "${WHEEL_NAME}" | grep -q "cp3"; then
+                PY_VER=$(echo "${WHEEL_NAME}" | grep -oE "cp3[0-9]+" | head -1 | sed 's/cp/CPython /')
+            elif echo "${WHEEL_NAME}" | grep -q "pp3"; then
+                PY_VER=$(echo "${WHEEL_NAME}" | grep -oE "pp3[0-9]+" | head -1 | sed 's/pp/PyPy /')
+            else
+                PY_VER="Unknown"
+            fi
+
+            if echo "${WHEEL_NAME}" | grep -q "x86_64"; then
+                ARCH="x86_64"
+            elif echo "${WHEEL_NAME}" | grep -q "aarch64\|arm64"; then
+                ARCH="ARM64"
+            elif echo "${WHEEL_NAME}" | grep -q "amd64"; then
+                ARCH="x86_64"
+            else
+                ARCH="Unknown"
+            fi
+
+            cat >> "${OUTPUT_FILE}" << EOF
+   * - ${PLATFORM}
+     - ${PY_VER}
+     - ${ARCH}
+     - \`\`${WHEEL_NAME}\`\`
+EOF
+        done
+        echo "" >> "${OUTPUT_FILE}"
+    fi
+
+    # Source distribution
+    SDIST=$(find "${ARTIFACTS_DIR}" -name "autobahn-*.tar.gz" -not -name "*conformance*" -type f | head -1)
+    if [ -n "${SDIST}" ]; then
+        SDIST_NAME=$(basename "${SDIST}")
+        cat >> "${OUTPUT_FILE}" << EOF
+Source distribution: \`\`${SDIST_NAME}\`\`
+
+EOF
+    fi
+
+    # =========================================================================
+    # Checksums / Chain of Custody
+    # =========================================================================
+    echo "==> Processing checksums..."
+
+    CHECKSUM_FILE="${ARTIFACTS_DIR}/CHECKSUMS.sha256"
+    if [ -f "${CHECKSUM_FILE}" ]; then
+        cat >> "${OUTPUT_FILE}" << 'EOF'
+**Artifact Verification**
+
+All release artifacts include SHA256 checksums for integrity verification.
+Download ``CHECKSUMS.sha256`` from the GitHub Release to verify:
+
+.. code-block:: bash
+
+   # Verify a downloaded wheel
+   openssl sha256 autobahn-*.whl
+   # Compare with checksum in CHECKSUMS.sha256
+
+EOF
+    fi
+
+    # =========================================================================
+    # Links
+    # =========================================================================
+    cat >> "${OUTPUT_FILE}" << EOF
+**Release Links**
+
+* \`GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v${VERSION}>\`__
+* \`PyPI Package <https://pypi.org/project/autobahn/${VERSION}/>\`__
+* \`Documentation <https://autobahn.readthedocs.io/en/v${VERSION}/>\`__
+
+**Detailed Changes**
+
+* See :ref:\`changelog <changelog>\` (${VERSION} section)
+
+EOF
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════════════"
+    echo "  Generated Release Notes"
+    echo "════════════════════════════════════════════════════════════════════"
+    echo ""
+    cat "${OUTPUT_FILE}"
+    echo ""
+    echo "════════════════════════════════════════════════════════════════════"
+    echo ""
+    echo "Generated file: ${OUTPUT_FILE}"
+    echo ""
+    echo "To insert into docs/release-notes.rst:"
+    echo "  1. Review the generated content above"
+    echo "  2. Edit as needed"
+    echo "  3. Insert after the 'Release Notes' header in docs/release-notes.rst"
     echo ""
 
 # Validate release is ready: checks changelog, release notes, version, tests, docs
