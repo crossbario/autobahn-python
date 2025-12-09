@@ -4,6 +4,12 @@
 
 version: 2
 
+# Include .cicd submodule for shared Sphinx extensions (sphinx_auto_section_anchors)
+submodules:
+  include: all
+  recursive: true
+  depth: 1
+
 build:
   os: ubuntu-24.04
   tools:
