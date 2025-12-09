@@ -3,6 +3,22 @@
 Changelog
 =========
 
+25.12.1
+-------
+
+**Supply Chain Security**
+
+* new: Migrate to verified artifact actions (wamp-proto/wamp-cicd) for cryptographic integrity verification
+* new: Meta-checksum embedded in artifact names enables self-verification (detects GitHub serving wrong artifact)
+* new: Staging directory isolation prevents retry cleanup from destroying other successful downloads
+* fix: Recursive copy for artifacts containing directory structures
+
+**CI/CD Infrastructure**
+
+* fix: Container job path handling - use relative paths to avoid host/container path conflicts
+* fix: Hidden files now included in artifact uploads (actions/upload-artifact@v4.4+ compatibility)
+* fix: Artifact prefix matching for downloads when names include meta-checksum suffix
+
 25.10.1
 -------
 

@@ -8,6 +8,43 @@ Release Notes
 This page provides a high-level overview of important changes in each release.
 For detailed technical changes, see the :ref:`changelog <changelog>`.
 
+25.12.1 (2025-12-09)
+--------------------
+
+**Release Type:** Maintenance release
+
+**Important Changes**
+
+This release focuses on supply chain security improvements for the CI/CD pipeline.
+
+* **Verified Artifact Actions:** Migrated all GitHub Actions workflows to use cryptographically verified artifact upload/download actions from wamp-proto/wamp-cicd. Every artifact now includes SHA256 checksums and meta-checksums embedded in artifact names for chain-of-custody verification.
+
+* **Self-Verification:** The download action now verifies that the artifact name's embedded checksum matches the actual content checksum. This detected and helped diagnose a GitHub infrastructure issue where the wrong artifact was being served.
+
+* **Isolation Improvements:** Download retries now use staging directories to prevent cleanup from destroying files from other successful downloads when multiple artifacts share a destination directory.
+
+**CI/CD Fixes**
+
+* Fixed container job path handling to use relative paths (avoids host/container path conflicts)
+* Fixed hidden file inclusion in artifact uploads (actions/upload-artifact@v4.4+ compatibility)
+* Added artifact prefix matching for downloads when names include meta-checksum suffix
+* Fixed recursive copy for artifacts containing directory structures
+
+**Upgrade Notes**
+
+No breaking changes. This is a drop-in replacement for 25.10.1.
+
+**Release Artifacts**
+
+* `GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v25.12.1>`__
+* `PyPI Package <https://pypi.org/project/autobahn/25.12.1/>`__
+* `Documentation <https://autobahn.readthedocs.io/en/v25.12.1/>`__
+
+**Links**
+
+* Detailed changes: :ref:`changelog <changelog>` (25.12.1 section)
+
+
 25.10.1 (2025-10-18)
 --------------------
 
