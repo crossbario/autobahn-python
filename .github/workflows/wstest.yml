@@ -209,8 +209,23 @@ jobs:
       - name: Fix permissions on client reports
         if: always()
         run: |
+          echo "==> Current user: $(id)"
+          echo ""
+          echo "==> BEFORE chown - clients-with-nvx:"
+          ls -la .wstest/clients-with-nvx/ 2>/dev/null | head -5 || echo "Directory not found"
+          echo ""
+          echo "==> BEFORE chown - clients-without-nvx:"
+          ls -la .wstest/clients-without-nvx/ 2>/dev/null | head -5 || echo "Directory not found"
+          echo ""
+          echo "==> Running: sudo chown -R $(id -u):$(id -g) .wstest/clients-*/"
           sudo chown -R $(id -u):$(id -g) .wstest/clients-with-nvx/ 2>/dev/null || true
           sudo chown -R $(id -u):$(id -g) .wstest/clients-without-nvx/ 2>/dev/null || true
+          echo ""
+          echo "==> AFTER chown - clients-with-nvx:"
+          ls -la .wstest/clients-with-nvx/ 2>/dev/null | head -5 || echo "Directory not found"
+          echo ""
+          echo "==> AFTER chown - clients-without-nvx:"
+          ls -la .wstest/clients-without-nvx/ 2>/dev/null | head -5 || echo "Directory not found"
 
       - name: Upload client reports (with-nvx)
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
@@ -430,8 +445,23 @@ jobs:
       - name: Fix permissions on server reports
         if: always()
         run: |
+          echo "==> Current user: $(id)"
+          echo ""
+          echo "==> BEFORE chown - servers-with-nvx:"
+          ls -la .wstest/servers-with-nvx/ 2>/dev/null | head -5 || echo "Directory not found"
+          echo ""
+          echo "==> BEFORE chown - servers-without-nvx:"
+          ls -la .wstest/servers-without-nvx/ 2>/dev/null | head -5 || echo "Directory not found"
+          echo ""
+          echo "==> Running: sudo chown -R $(id -u):$(id -g) .wstest/servers-*/"
           sudo chown -R $(id -u):$(id -g) .wstest/servers-with-nvx/ 2>/dev/null || true
           sudo chown -R $(id -u):$(id -g) .wstest/servers-without-nvx/ 2>/dev/null || true
+          echo ""
+          echo "==> AFTER chown - servers-with-nvx:"
+          ls -la .wstest/servers-with-nvx/ 2>/dev/null | head -5 || echo "Directory not found"
+          echo ""
+          echo "==> AFTER chown - servers-without-nvx:"
+          ls -la .wstest/servers-without-nvx/ 2>/dev/null | head -5 || echo "Directory not found"
 
       - name: Upload server reports (with-nvx)
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
