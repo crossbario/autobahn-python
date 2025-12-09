@@ -8,42 +8,134 @@ Release Notes
 This page provides a high-level overview of important changes in each release.
 For detailed technical changes, see the :ref:`changelog <changelog>`.
 
-25.12.1 (2025-12-09)
+25.12.1 (2025-12-10)
 --------------------
 
-**Release Type:** Maintenance release
+**Release Type:** Stable release
 
-**Important Changes**
+**Source Build:** `master-202512092131 <https://github.com/crossbario/autobahn-python/releases/tag/master-202512092131>`__
 
-This release focuses on supply chain security improvements for the CI/CD pipeline.
+**WebSocket Conformance**
 
-* **Verified Artifact Actions:** Migrated all GitHub Actions workflows to use cryptographically verified artifact upload/download actions from wamp-proto/wamp-cicd. Every artifact now includes SHA256 checksums and meta-checksums embedded in artifact names for chain-of-custody verification.
+Autobahn|Python passes 100% of the WebSocket conformance tests from the
+`Autobahn|Testsuite <https://github.com/crossbario/autobahn-testsuite>`_.
 
-* **Self-Verification:** The download action now verifies that the artifact name's embedded checksum matches the actual content checksum. This detected and helped diagnose a GitHub infrastructure issue where the wrong artifact was being served.
+.. list-table:: Conformance Test Results
+   :header-rows: 1
+   :widths: 30 20 20 30
 
-* **Isolation Improvements:** Download retries now use staging directories to prevent cleanup from destroying files from other successful downloads when multiple artifacts share a destination directory.
-
-**CI/CD Fixes**
-
-* Fixed container job path handling to use relative paths (avoids host/container path conflicts)
-* Fixed hidden file inclusion in artifact uploads (actions/upload-artifact@v4.4+ compatibility)
-* Added artifact prefix matching for downloads when names include meta-checksum suffix
-* Fixed recursive copy for artifacts containing directory structures
-
-**Upgrade Notes**
-
-No breaking changes. This is a drop-in replacement for 25.10.1.
+   * - Configuration
+     - Client
+     - Server
+     - Notes
+   * - with-nvx (NVX acceleration enabled)
+     - 100%
+     - 100%
+     - Hardware-accelerated XOR masking
+   * - without-nvx (pure Python)
+     - 100%
+     - 100%
+     - Fallback implementation
 
 **Release Artifacts**
+
+Binary wheels are available for the following platforms:
+
+.. list-table:: Platform Support Matrix
+   :header-rows: 1
+   :widths: 25 20 20 35
+
+   * - Platform
+     - Python
+     - Architecture
+     - Wheel
+   * - Linux (manylinux)
+     - CPython 311
+     - ARM64
+     - ``autobahn-25.12.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl``
+   * - Windows
+     - CPython 313
+     - x86_64
+     - ``autobahn-25.12.1-cp313-cp313-win_amd64.whl``
+   * - Linux (manylinux)
+     - CPython 313
+     - ARM64
+     - ``autobahn-25.12.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl``
+   * - Windows
+     - CPython 312
+     - x86_64
+     - ``autobahn-25.12.1-cp312-cp312-win_amd64.whl``
+   * - macOS
+     - CPython 313
+     - ARM64
+     - ``autobahn-25.12.1-cp313-cp313-macosx_15_0_arm64.whl``
+   * - Linux (manylinux)
+     - CPython 312
+     - x86_64
+     - ``autobahn-25.12.1-cp312-cp312-manylinux1_x86_64.manylinux_2_34_x86_64.manylinux_2_5_x86_64.whl``
+   * - Linux (manylinux)
+     - PyPy 311
+     - ARM64
+     - ``autobahn-25.12.1-pp311-pypy311_pp73-manylinux2014_aarch64.manylinux_2_17_aarch64.whl``
+   * - Linux (manylinux)
+     - CPython 314
+     - x86_64
+     - ``autobahn-25.12.1-cp314-cp314-manylinux1_x86_64.manylinux_2_34_x86_64.manylinux_2_5_x86_64.whl``
+   * - Windows
+     - CPython 311
+     - x86_64
+     - ``autobahn-25.12.1-cp311-cp311-win_amd64.whl``
+   * - macOS
+     - CPython 314
+     - ARM64
+     - ``autobahn-25.12.1-cp314-cp314-macosx_15_0_arm64.whl``
+   * - Linux (manylinux)
+     - PyPy 311
+     - x86_64
+     - ``autobahn-25.12.1-pp311-pypy311_pp73-manylinux1_x86_64.manylinux_2_34_x86_64.manylinux_2_5_x86_64.whl``
+   * - macOS
+     - PyPy 311
+     - ARM64
+     - ``autobahn-25.12.1-pp311-pypy311_pp73-macosx_15_0_arm64.whl``
+   * - Windows
+     - CPython 314
+     - x86_64
+     - ``autobahn-25.12.1-cp314-cp314-win_amd64.whl``
+   * - Linux (manylinux)
+     - CPython 311
+     - x86_64
+     - ``autobahn-25.12.1-cp311-cp311-manylinux1_x86_64.manylinux_2_34_x86_64.manylinux_2_5_x86_64.whl``
+   * - Windows
+     - PyPy 311
+     - x86_64
+     - ``autobahn-25.12.1-pp311-pypy311_pp73-win_amd64.whl``
+   * - Linux (manylinux)
+     - CPython 313
+     - x86_64
+     - ``autobahn-25.12.1-cp313-cp313-manylinux1_x86_64.manylinux_2_34_x86_64.manylinux_2_5_x86_64.whl``
+
+Source distribution: ``autobahn-25.12.1.tar.gz``
+
+**Artifact Verification**
+
+All release artifacts include SHA256 checksums for integrity verification.
+Download ``CHECKSUMS.sha256`` from the GitHub Release to verify:
+
+.. code-block:: bash
+
+   # Verify a downloaded wheel
+   openssl sha256 autobahn-*.whl
+   # Compare with checksum in CHECKSUMS.sha256
+
+**Release Links**
 
 * `GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v25.12.1>`__
 * `PyPI Package <https://pypi.org/project/autobahn/25.12.1/>`__
 * `Documentation <https://autobahn.readthedocs.io/en/v25.12.1/>`__
 
-**Links**
+**Detailed Changes**
 
-* Detailed changes: :ref:`changelog <changelog>` (25.12.1 section)
-
+* See :ref:`changelog <changelog>` (25.12.1 section)
 
 25.10.1 (2025-10-18)
 --------------------
@@ -197,176 +289,95 @@ Release Workflow (for Maintainers)
 
 This section documents the release process for maintainers.
 
-Overview
-^^^^^^^^
-
-The release workflow is designed to be **automated where possible** while maintaining
-**human oversight** for security-critical steps (commits, tags, publishing).
-
-**Key principles:**
-
-* **Automated content generation**: Release notes and changelogs are generated from
-  CI artifacts and git history, ensuring accuracy and consistency
-* **Human review gate**: All generated content is reviewed before committing
-* **Cryptographic verification**: Artifacts include SHA256 checksums and chain-of-custody
-  verification files
-* **Self-contained documentation**: Release notes include conformance results, artifact
-  inventory, and verification info - users don't need to hunt through GitHub
-
-**Information flow:**
-
-.. code-block:: text
-
-   GitHub Actions (CI)
-       ↓ builds wheels, runs tests, generates metadata
-   GitHub Release (nightly/stable)
-       ↓ stores artifacts with checksums
-   just download-release-artifacts <release>
-       ↓ downloads to local /tmp/release-artifacts/
-   just prepare-release <version>
-       ↓ reads metadata, generates docs/release-notes.rst entry
-   just prepare-changelog <version>
-       ↓ reads git log + audit files, generates docs/changelog.rst entry
-   Human review + commit + tag
-       ↓ pushes to GitHub
-   GitHub Actions (release workflow)
-       ↓ publishes to PyPI, triggers RTD
-
 Prerequisites
 ^^^^^^^^^^^^^
 
 Before releasing, ensure you have:
 
-* Push access to the repository (with tag permissions)
-* GitHub CLI (``gh``) authenticated for artifact downloads
+* Push access to the repository
+* PyPI credentials configured (or trusted publishing via GitHub Actions)
 * ``just`` and ``uv`` installed
-* Access to a recent nightly release to base the stable release on
 
-Step 1: Download Release Artifacts
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Step 1: Draft the Release
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-First, identify the nightly release to promote to stable. Check recent releases at
-https://github.com/crossbario/autobahn-python/releases
+Generate changelog and release note templates:
 
 .. code-block:: bash
 
-   # Download all artifacts from a nightly release
-   just download-release-artifacts master-202512092131
+   # Generate changelog entry from git history (for catching up)
+   just prepare-changelog <version>
 
-This downloads to ``/tmp/release-artifacts/<release-name>/`` and includes:
+   # Generate release draft with templates for both files
+   just draft-release <version>
 
-* **Wheels**: Platform-specific binary distributions
-* **Source distribution**: ``autobahn-<version>.tar.gz``
-* **Conformance reports**: WebSocket test results (``*-wstest-summary.md``)
-* **Checksums**: ``CHECKSUMS.sha256`` files for each build job
-* **Audit files**: ``oberstet_*.md`` linking PRs to issues
-* **Verification files**: Chain-of-custody metadata
+This will:
 
-Step 2: Generate Release Notes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* Add a changelog entry template to ``docs/changelog.rst``
+* Add a release entry template to ``docs/release-notes.rst``
+* Update the version in ``pyproject.toml``
 
-Generate the release notes entry from downloaded artifacts:
+Step 2: Edit Changelog
+^^^^^^^^^^^^^^^^^^^^^^
 
-.. code-block:: bash
+Edit ``docs/changelog.rst`` and fill in the changelog details:
 
-   just prepare-release 25.12.1
+* **New**: New features and capabilities
+* **Fix**: Bug fixes
+* **Other**: Breaking changes, deprecations, other notes
 
-This reads from the downloaded artifacts and generates:
-
-* **Conformance matrix**: Client/server test results (with-nvx/without-nvx)
-* **Artifact inventory**: Wheels with platforms, Python versions, checksums
-* **Chain of custody**: Verification file references
-* **Links**: GitHub Release, PyPI, RTD documentation
-
-The generated entry is inserted into ``docs/release-notes.rst``.
-
-Step 3: Generate Changelog
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Generate the changelog entry from git history and audit files:
-
-.. code-block:: bash
-
-   just prepare-changelog 25.12.1
-
-This:
-
-1. Finds the previous version in ``docs/changelog.rst``
-2. Gets commits since then: ``git log <prev-tag>..HEAD``
-3. For each PR commit, finds the matching audit file in ``.audit/``
-4. Extracts ``Related issue(s):`` from audit files
-5. Fetches issue titles via GitHub API
-6. Categorizes changes (new/fix/other) and generates RST
-
-The generated entry is inserted into ``docs/changelog.rst``.
-
-Step 4: Review and Edit
-^^^^^^^^^^^^^^^^^^^^^^^
-
-**Important**: Review the generated content before committing!
-
-* Check that conformance results are 100% pass
-* Verify artifact inventory matches expectations
-* Edit changelog entries for clarity if needed
-* Add any manual notes not captured by automation
-
-Step 5: Validate the Release
+Step 3: Validate the Release
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Run validation to ensure everything is in place:
+Ensure everything is in place:
 
 .. code-block:: bash
 
-   just prepare-release 25.12.1
+   just prepare-release <version>
 
 This validates:
 
-* Version in ``pyproject.toml`` matches
 * Changelog entry exists for this version
-* Release notes entry exists for this version
-* Tests pass
+* Release entry exists for this version
+* Version in ``pyproject.toml`` matches
+* All tests pass
 * Documentation builds successfully
 
-Step 6: Commit and Push
-^^^^^^^^^^^^^^^^^^^^^^^
+Step 4: Disable Git Hooks (if needed)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   git add docs/changelog.rst docs/release-notes.rst
-   git commit -m "Release 25.12.1"
-   git push upstream master
-
-Step 7: Create and Push Tag
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-**Note**: Tags should only be created on your dev PC (not on AI-assisted workstations)
-per the security architecture.
-
-.. code-block:: bash
-
-   # Disable git hooks if needed (AI hooks may block tagging)
    git config core.hooksPath /dev/null
+   git config core.hooksPath
 
-   # Create annotated tag
-   git tag -a v25.12.1 -m "Release 25.12.1"
+Step 5: Commit and Tag
+^^^^^^^^^^^^^^^^^^^^^^
 
-   # Push tag to trigger release workflow
-   git push upstream v25.12.1
+.. code-block:: bash
 
-   # Re-enable git hooks
+   git add docs/changelog.rst docs/release-notes.rst pyproject.toml
+   git commit -m "Release <version>"
+   git tag v<version>
+   git push && git push --tags
+
+Step 6: Enable Git Hooks (if previously disabled)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
    git config core.hooksPath .ai/.githooks
+   git config core.hooksPath
 
-Step 8: Automated Publishing
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Step 7: Automated Release
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After pushing the tag, GitHub Actions automatically:
+After pushing the tag:
 
-1. Builds and tests the tagged version
-2. Creates a GitHub Release with all artifacts
-3. Publishes to PyPI via trusted publishing (OIDC)
-4. Triggers Read the Docs to build versioned documentation
-
-Monitor the workflow at: https://github.com/crossbario/autobahn-python/actions
+1. GitHub Actions builds and tests the release
+2. Wheels and source distributions are uploaded to GitHub Releases
+3. PyPI publishing is triggered via trusted publishing (OIDC)
+4. Read the Docs builds documentation for the tagged version
 
 Manual PyPI Upload (if needed)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -375,22 +386,5 @@ If automated publishing fails:
 
 .. code-block:: bash
 
-   just download-github-release v25.12.1
-   just publish-pypi "" v25.12.1
-
-Artifact Verification
-^^^^^^^^^^^^^^^^^^^^^
-
-Users can verify downloaded artifacts using the checksums in each release:
-
-.. code-block:: bash
-
-   # Download checksums
-   curl -LO https://github.com/crossbario/autobahn-python/releases/download/v25.12.1/CHECKSUMS.sha256
-
-   # Verify a wheel
-   openssl sha256 autobahn-25.12.1-cp311-cp311-manylinux_2_28_x86_64.whl
-   grep autobahn-25.12.1-cp311-cp311-manylinux_2_28_x86_64.whl CHECKSUMS.sha256
-
-The release notes include checksums for all artifacts, providing an additional
-verification path independent of GitHub.
+   just download-github-release v<version>
+   just publish-pypi "" v<version>

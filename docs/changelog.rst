@@ -12,6 +12,9 @@ Changelog
 * new: Meta-checksum embedded in artifact names enables self-verification (detects GitHub serving wrong artifact)
 * new: Staging directory isolation prevents retry cleanup from destroying other successful downloads
 * fix: Recursive copy for artifacts containing directory structures
+* new: Add automated release docs generation recipes
+* new: Refactor release recipes to use external scripts
+
 
 **CI/CD Infrastructure**
 
