@@ -39,9 +39,15 @@ node.key
 *.swo
 *.swn
 *.so
+*.o
+
+# CFFI-generated intermediate C files (NVX extension modules)
+src/autobahn/nvx/_nvx_*.c
+
 .wheels
 get-pip.py
 docs/autoapi/
+.build/
 key.pub
 key.priv
 node_modules/
@@ -53,6 +59,7 @@ wheelhouse/
 .wstest/
 docs/_static/websocket/conformance/
 docs/_static/flatbuffers/
+docs/_static/img/
 .coverage.*
 examples/benchmarks/serialization/build/
 

@@ -65,7 +65,8 @@ AUTOBAHN_TESTSUITE_OUTPUT_DIR := justfile_directory() / '.wstest'
 AUTOBAHN_TESTSUITE_CONFIG_DIR := justfile_directory() / 'wstest'
 
 # Use this common single directory for all uv venvs.
-VENV_DIR := './.venvs'
+# Use absolute path (based on PROJECT_DIR) to avoid issues when cd'ing in recipes
+VENV_DIR := PROJECT_DIR / '.venvs'
 
 # Define a justfile-local variable for our environments.
 ENVS := 'cpy314 cpy313 cpy312 cpy311 pypy311'
@@ -412,6 +413,95 @@ install-dev venv="": vendor-flatbuffers (create venv)
     # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[all]
     ${VENV_PYTHON} -m pip install -e .[all]
 
+# Install with latest unreleased WAMP packages from GitHub (usage: `just install-dev-latest cpy312`)
+install-dev-latest venv="": vendor-flatbuffers (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Installing package in editable mode with [dev,dev-latest] extras in ${VENV_NAME}..."
+    echo "==> This will install WAMP packages from GitHub master (unreleased versions)..."
+    ${VENV_PYTHON} -m pip install -e .[all,dev,dev-latest]
+
+# Install with locally editable WAMP packages for cross-repo development (usage: `just install-dev-local cpy312`)
+install-dev-local venv="": vendor-flatbuffers (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    echo "==> Installing WAMP packages in editable mode from local repos..."
+    echo "==> Looking for sibling repos (../txaio)..."
+
+    # Install local WAMP packages in editable mode
+    # txaio - no extras needed
+    if [ -d "../txaio" ]; then
+        echo "  ✓ Installing txaio from ../txaio"
+        ${VENV_PYTHON} -m pip install -e "../txaio"
+    else
+        echo "  ⚠ Warning: ../txaio not found, skipping"
+    fi
+
+    echo "==> Installing autobahn in editable mode with [all,dev] extras..."
+    ${VENV_PYTHON} -m pip install -e .[all,dev] --upgrade --upgrade-strategy only-if-needed
+
+# Build NVX (Native Vector Extensions) CFFI modules for development/editable installs
+# This is needed because hatchling's build hook only compiles during wheel builds.
+# For editable installs in CI or local development, we need to compile manually.
+#
+# The .so files are placed in src/ (not src/autobahn/nvx/) because:
+# - CFFI names the modules as top-level modules (e.g., "_nvx_utf8validator")
+# - Python imports look for top-level modules in sys.path roots
+# - For editable installs, src/ is on sys.path, so .so files there are importable
+#
+# (usage: `just build-nvx cpy314` or with explicit NVX: `AUTOBAHN_USE_NVX=1 just build-nvx cpy314`)
+build-nvx venv="": (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    echo "==> Building NVX CFFI extension modules in ${VENV_NAME}..."
+
+    # Ensure cffi is available
+    ${VENV_PYTHON} -m pip install "cffi>=2.0.0" --quiet
+
+    # Build modules in src/ directory (for editable install sys.path compatibility)
+    # The CFFI ffi.compile() writes output to current directory
+    # VENV_DIR and PROJECT_DIR are absolute paths, so VENV_PATH is absolute too
+    SRC_DIR="{{ PROJECT_DIR }}/src"
+    NVX_DIR="{{ PROJECT_DIR }}/src/autobahn/nvx"
+
+    echo "    Building _nvx_utf8validator..."
+    (cd "${SRC_DIR}" && ${VENV_PYTHON} "${NVX_DIR}/_utf8validator.py")
+
+    echo "    Building _nvx_xormasker..."
+    (cd "${SRC_DIR}" && ${VENV_PYTHON} "${NVX_DIR}/_xormasker.py")
+
+    # List built artifacts
+    echo "==> Built NVX artifacts:"
+    ls -la "${SRC_DIR}"/_nvx_*.so 2>/dev/null || echo "    (no .so files found - check for errors above)"
+
+    echo "==> NVX build complete for ${VENV_NAME}."
+
 # Meta-recipe to run `install` on all environments
 install-all:
     #!/usr/bin/env bash
@@ -477,6 +567,7 @@ install-build-tools venv="": (create venv)
     ${VENV_PYTHON} -m pip install -e .[build-tools]
 
 # Install the development tools for this Package in a single environment (usage: `just install-tools cpy314`)
+# This also builds NVX CFFI modules so that tests with AUTOBAHN_USE_NVX=1 work.
 install-tools venv="": (create venv)
     #!/usr/bin/env bash
     set -e
@@ -495,6 +586,9 @@ install-tools venv="": (create venv)
 
     # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[dev]
     ${VENV_PYTHON} -m pip install -e .[dev]
+
+    # Build NVX CFFI modules for editable installs (needed for tests with AUTOBAHN_USE_NVX=1)
+    just build-nvx ${VENV_NAME}
 
 # Meta-recipe to run `install-tools` on all environments
 install-tools-all:
@@ -1075,8 +1169,74 @@ test-serdes venv="": (install-tools venv) (install-dev venv)
 # -- Documentation
 # -----------------------------------------------------------------------------
 
+# Install documentation dependencies
+install-docs venv="": (create venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Installing documentation tools in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pip install -e .[docs]
+
+# Build optimized SVGs from docs/_graphics/*.svg using scour and generate favicon
+optimize-images venv="": (install-docs venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    if [ ! -d "${VENV_PATH}" ]; then
+        just install-tools ${VENV_NAME}
+    fi
+
+    SOURCEDIR="{{ PROJECT_DIR }}/docs/_graphics"
+    TARGETDIR="{{ PROJECT_DIR }}/docs/_static/img"
+    FAVICONDIR="{{ PROJECT_DIR }}/docs/_static"
+
+    echo "==> Building optimized SVG images..."
+    mkdir -p "${TARGETDIR}"
+
+    if [ -d "${SOURCEDIR}" ]; then
+        find "${SOURCEDIR}" -name "*.svg" -type f | while read -r source_file; do
+            filename=$(basename "${source_file}")
+            target_file="${TARGETDIR}/${filename}"
+            echo "  Processing: ${filename}"
+            "${VENV_PATH}/bin/scour" \
+                --remove-descriptive-elements \
+                --enable-comment-stripping \
+                --enable-viewboxing \
+                --indent=none \
+                --no-line-breaks \
+                --shorten-ids \
+                "${source_file}" "${target_file}"
+        done
+    fi
+
+    # Generate favicon from logo SVG using ImageMagick
+    LOGO_SVG="${TARGETDIR}/autobahn_logo_blue.svg"
+    FAVICON="${FAVICONDIR}/favicon.ico"
+    if [ -f "${LOGO_SVG}" ]; then
+        echo "==> Generating favicon from logo..."
+        if command -v convert &> /dev/null; then
+            convert -background none -density 256 "${LOGO_SVG}" \
+                -resize 48x48 -gravity center -extent 48x48 \
+                -define icon:auto-resize=48,32,16 \
+                "${FAVICON}"
+            echo "  Created: favicon.ico"
+        else
+            echo "  Warning: ImageMagick 'convert' not found, skipping favicon generation"
+        fi
+    fi
+
 # Build the HTML documentation using Sphinx
-docs venv="":
+docs venv="": (optimize-images venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1102,6 +1262,22 @@ docs-view venv="": (docs venv)
 docs-clean:
     echo "==> Cleaning documentation build artifacts..."
     rm -rf docs/_build
+
+# Run spelling check on documentation
+docs-spelling venv="": (install-docs venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    TMPBUILDDIR="./.build"
+    mkdir -p "${TMPBUILDDIR}"
+    echo "==> Running spell check on documentation..."
+    "${VENV_PATH}/bin/sphinx-build" -b spelling -d "${TMPBUILDDIR}/docs/doctrees" docs "${TMPBUILDDIR}/docs/spelling"
 
 # -----------------------------------------------------------------------------
 # -- Building and Publishing
@@ -2142,4 +2318,144 @@ docs-integrate-github-release release_tag="":
     echo "  1. View documentation: just docs-view"
     echo "  2. Check conformance reports at: http://localhost:8000/websocket/conformance.html"
     echo "  3. Check FlatBuffers schemas at: http://localhost:8000/wamp/serialization.html"
+    echo ""
+
+
+# -----------------------------------------------------------------------------
+# -- Release workflow recipes
+# -----------------------------------------------------------------------------
+
+# Generate changelog entry from git history for a given version
+prepare-changelog version:
+    #!/usr/bin/env bash
+    set -e
+    VERSION="{{ version }}"
+
+    echo ""
+    echo "=========================================="
+    echo " Generating changelog for version ${VERSION}"
+    echo "=========================================="
+    echo ""
+
+    # Find the previous tag
+    PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+    if [ -z "${PREV_TAG}" ]; then
+        echo "No previous tag found. Showing all commits..."
+        git log --oneline --no-decorate | head -50
+    else
+        echo "Commits since ${PREV_TAG}:"
+        echo ""
+        git log --oneline --no-decorate "${PREV_TAG}..HEAD" | head -50
+    fi
+
+    echo ""
+    echo "=========================================="
+    echo " Suggested changelog format:"
+    echo "=========================================="
+    echo ""
+    echo "${VERSION}"
+    echo "------"
+    echo ""
+    echo "**New**"
+    echo ""
+    echo "* new: <feature description>"
+    echo ""
+    echo "**Fix**"
+    echo ""
+    echo "* fix: <fix description>"
+    echo ""
+    echo "**Other**"
+    echo ""
+    echo "* other: <other changes>"
+    echo ""
+
+# Validate release is ready: checks changelog, release notes, version, tests, docs
+draft-release version:
+    #!/usr/bin/env bash
+    set -e
+    VERSION="{{ version }}"
+
+    echo ""
+    echo "=========================================="
+    echo " Validating release ${VERSION}"
+    echo "=========================================="
+    echo ""
+
+    ERRORS=0
+
+    # Check pyproject.toml version
+    PYPROJECT_VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+    if [ "${PYPROJECT_VERSION}" = "${VERSION}" ]; then
+        echo "✅ pyproject.toml version matches: ${VERSION}"
+    else
+        echo "❌ pyproject.toml version mismatch: ${PYPROJECT_VERSION} != ${VERSION}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # Check changelog entry
+    if grep -q "^${VERSION}$" docs/changelog.rst; then
+        echo "✅ Changelog entry exists for ${VERSION}"
+    else
+        echo "❌ Changelog entry missing for ${VERSION}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # Check release notes entry
+    if grep -q "^${VERSION}" docs/release-notes.rst; then
+        echo "✅ Release notes entry exists for ${VERSION}"
+    else
+        echo "❌ Release notes entry missing for ${VERSION}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    echo ""
+    if [ ${ERRORS} -gt 0 ]; then
+        echo "=========================================="
+        echo " ❌ Validation failed with ${ERRORS} error(s)"
+        echo "=========================================="
+        exit 1
+    else
+        echo "=========================================="
+        echo " ✅ All checks passed for ${VERSION}"
+        echo "=========================================="
+    fi
+
+# Full release preparation: validate + test + build docs
+prepare-release version venv="":
+    #!/usr/bin/env bash
+    set -e
+    VERSION="{{ version }}"
+    VENV="{{ venv }}"
+
+    echo ""
+    echo "=========================================="
+    echo " Preparing release ${VERSION}"
+    echo "=========================================="
+    echo ""
+
+    # Run draft-release validation first
+    just draft-release "${VERSION}"
+
+    echo ""
+    echo "==> Running tests..."
+    if [ -n "${VENV}" ]; then
+        just test "${VENV}"
+    else
+        just test
+    fi
+
+    echo ""
+    echo "==> Building documentation..."
+    just docs
+
+    echo ""
+    echo "=========================================="
+    echo " ✅ Release ${VERSION} is ready"
+    echo "=========================================="
+    echo ""
+    echo "Next steps:"
+    echo "  1. git add docs/changelog.rst docs/release-notes.rst pyproject.toml"
+    echo "  2. git commit -m \"Release ${VERSION}\""
+    echo "  3. git tag v${VERSION}"
+    echo "  4. git push && git push --tags"
     echo ""

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=80.9.0", "wheel", "cffi>=2.0.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "cffi>=2.0.0", "setuptools>=70.0.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "autobahn"
@@ -41,7 +41,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "txaio>=25.9.2",
+    "txaio>=25.12.2",
     "cryptography>=3.4.6",
     "cffi>=2.0.0",  # Required for NVX native extensions; works on both CPython and PyPy
     "hyperlink>=21.0.0",
@@ -146,16 +146,48 @@ dev = [
     "pyyaml>=4.2b4",
     "qualname>=0.1.0",
     "ruff>=0.12.1",
+    "scour>=0.38",
     "sphinx-autoapi>=1.7.0",
     "sphinx>=1.7.1,<8",
     "sphinx-rtd-theme>=0.1.9",
     "sphinxcontrib-images>=0.9.1",
     "twine>=3.3.0",
     "twisted>=22.10.0",
-    "txaio>=25.9.2",
+    "txaio>=25.12.2",
     "watchdog>=0.8.3",
     "wheel>=0.36.2",
     "yapf==0.29.0",
+]
+
+# Documentation tools (used by RTD via .readthedocs.yaml)
+docs = [
+    # Core Sphinx + MyST
+    "sphinx>=8.2.3",
+    "myst-parser>=2.0",
+
+    # Theme
+    "furo>=2024.7.0",
+
+    # API docs (no-import parsing)
+    "sphinx-autoapi>=2.1.0",
+
+    # UX Enhancements
+    "sphinx-copybutton>=0.5",
+    "sphinx-design>=0.5",
+    "sphinxcontrib-images>=0.9",
+
+    # Spell checking
+    "sphinxcontrib-spelling>=8.0",
+    "pyenchant>=3.2",
+
+    # Static asset optimization
+    "scour>=0.38",
+
+    # Social previews
+    "sphinxext-opengraph>=0.9",
+
+    # MyST auto-linking
+    "linkify-it-py>=2.0.0",
 ]
 
 # Everything combined
@@ -166,6 +198,13 @@ all = [
 # Backwards compatibility
 asyncio = []
 
+# For testing with unreleased WAMP packages from GitHub master branches
+# Usage: pip install -e .[dev,dev-latest]
+# This installs the latest development versions from GitHub instead of PyPI
+dev-latest = [
+    "txaio @ git+https://github.com/crossbario/txaio.git@master",
+]
+
 [project.urls]
 "Homepage" = "https://autobahn.readthedocs.io/"
 "Source" = "https://github.com/crossbario/autobahn-python"
@@ -173,19 +212,38 @@ asyncio = []
 [project.scripts]
 wamp = "autobahn.__main__:_main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["autobahn*", "twisted*"]
+# Hatchling build configuration
+[tool.hatch.metadata]
+# Allow git+https:// dependencies in dev-latest for cross-repo development
+allow-direct-references = true
 
-[tool.setuptools]
-include-package-data = true
+[tool.hatch.build.targets.wheel]
+packages = ["src/autobahn", "src/twisted"]
 
-[tool.setuptools.package-data]
-autobahn = ["py.typed"]
-"autobahn.asyncio" = ["test/*"]
-"autobahn.nvx" = ["*.c"]
-"autobahn.wamp.gen.schema" = ["*.bfbs"]
-"autobahn.wamp.flatbuffers" = ["*.fbs"]
+# Include non-Python files in the wheel
+[tool.hatch.build.targets.wheel.force-include]
+# Include py.typed marker
+"src/autobahn/py.typed" = "autobahn/py.typed"
+
+[tool.hatch.build.targets.sdist]
+# By default, hatchling includes all git-tracked files
+# Exclude build artifacts and large submodules from sdist
+exclude = [
+    "/.github",
+    "/docs/_build",
+    "/.venvs",
+    "/.uv-cache",
+    "/.coverage",
+    "/.pytest_cache",
+    "/.mypy_cache",
+    "/.ruff_cache",
+    # Exclude large git submodules - flatbuffers runtime is vendored at build time
+    "/deps/flatbuffers",
+]
+
+# Custom build hook for CFFI extension modules (NVX)
+[tool.hatch.build.hooks.custom]
+# Uses hatch_build.py by default
 
 
 [tool.rstfmt]
