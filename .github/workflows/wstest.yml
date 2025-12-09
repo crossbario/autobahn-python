@@ -679,7 +679,8 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
         with:
           name: conformance-summary-${{ env.TEST_MODE }}
-          path: ${{ env.SUMMARY_FILE }}
+          # upload-artifact-verified requires a directory, not a file
+          path: ${{ github.workspace }}/.audit/
           retention-days: 30
 
       - name: Report summary
