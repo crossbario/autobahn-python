@@ -295,7 +295,7 @@ jobs:
           name: conformance-summary-quick
           run-id: ${{ steps.find-wstest.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: summary-artifact/
+          path: ${{ github.workspace }}/summary-artifact/
         continue-on-error: true
 
       - name: Get release notes from GitHub Release
@@ -473,7 +473,7 @@ jobs:
           name: conformance-summary-quick
           run-id: ${{ steps.find-wstest.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: summary-artifact/
+          path: ${{ github.workspace }}/summary-artifact/
         continue-on-error: true
 
       - name: Get release notes from GitHub Release

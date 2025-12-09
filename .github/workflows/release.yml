@@ -187,7 +187,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_macos_wheels }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -198,7 +198,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_windows_wheels }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -209,7 +209,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_source_dist }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -393,7 +393,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_linux_no_nvx }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -404,7 +404,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_manylinux_x86_64 }}
-          path: wheelhouse/
+          path: ${{ github.workspace }}/wheelhouse/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -415,7 +415,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp311 }}
-          path: wheelhouse-arm64/
+          path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -426,7 +426,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313 }}
-          path: wheelhouse-arm64/
+          path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -437,7 +437,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_bookworm }}
-          path: wheelhouse-arm64/
+          path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -448,7 +448,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_trixie }}
-          path: wheelhouse-arm64/
+          path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -460,7 +460,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: conformance-summary-quick
-          path: wstest-results/
+          path: ${{ github.workspace }}/wstest-results/
           run-id: ${{ needs.check-all-workflows.outputs.wstest_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -470,7 +470,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-gen-cpy314
-          path: flatbuffers-gen/cpy314/
+          path: ${{ github.workspace }}/flatbuffers-gen/cpy314/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -479,7 +479,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-gen-cpy311
-          path: flatbuffers-gen/cpy311/
+          path: ${{ github.workspace }}/flatbuffers-gen/cpy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -488,7 +488,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-gen-pypy311
-          path: flatbuffers-gen/pypy311/
+          path: ${{ github.workspace }}/flatbuffers-gen/pypy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -498,7 +498,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-cpy314
-          path: flatbuffers-schema/cpy314/
+          path: ${{ github.workspace }}/flatbuffers-schema/cpy314/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -507,7 +507,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-cpy311
-          path: flatbuffers-schema/cpy311/
+          path: ${{ github.workspace }}/flatbuffers-schema/cpy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -516,7 +516,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-pypy311
-          path: flatbuffers-schema/pypy311/
+          path: ${{ github.workspace }}/flatbuffers-schema/pypy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -526,7 +526,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: serdes-test-results-cpy314
-          path: serdes-test-results/cpy314/
+          path: ${{ github.workspace }}/serdes-test-results/cpy314/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -535,7 +535,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: serdes-test-results-cpy311
-          path: serdes-test-results/cpy311/
+          path: ${{ github.workspace }}/serdes-test-results/cpy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -544,7 +544,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: serdes-test-results-pypy311
-          path: serdes-test-results/pypy311/
+          path: ${{ github.workspace }}/serdes-test-results/pypy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -553,7 +553,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: websocket-conformance-docs-quick-with-nvx
-          path: websocket-conformance/with-nvx/
+          path: ${{ github.workspace }}/websocket-conformance/with-nvx/
           run-id: ${{ needs.check-all-workflows.outputs.wstest_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -562,7 +562,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: websocket-conformance-docs-quick-without-nvx
-          path: websocket-conformance/without-nvx/
+          path: ${{ github.workspace }}/websocket-conformance/without-nvx/
           run-id: ${{ needs.check-all-workflows.outputs.wstest_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1016,7 +1016,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_macos_wheels }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1027,7 +1027,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_windows_wheels }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1038,7 +1038,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_source_dist }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1222,7 +1222,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_linux_no_nvx }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1233,7 +1233,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_manylinux_x86_64 }}
-          path: wheelhouse/
+          path: ${{ github.workspace }}/wheelhouse/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1244,7 +1244,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp311 }}
-          path: wheelhouse-arm64/
+          path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1255,7 +1255,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313 }}
-          path: wheelhouse-arm64/
+          path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1266,7 +1266,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_bookworm }}
-          path: wheelhouse-arm64/
+          path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1277,7 +1277,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_trixie }}
-          path: wheelhouse-arm64/
+          path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1289,7 +1289,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: conformance-summary-quick
-          path: wstest-results/
+          path: ${{ github.workspace }}/wstest-results/
           run-id: ${{ needs.check-all-workflows.outputs.wstest_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1299,7 +1299,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-gen-cpy314
-          path: flatbuffers-gen/cpy314/
+          path: ${{ github.workspace }}/flatbuffers-gen/cpy314/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1308,7 +1308,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-gen-cpy311
-          path: flatbuffers-gen/cpy311/
+          path: ${{ github.workspace }}/flatbuffers-gen/cpy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1317,7 +1317,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-gen-pypy311
-          path: flatbuffers-gen/pypy311/
+          path: ${{ github.workspace }}/flatbuffers-gen/pypy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1327,7 +1327,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-cpy314
-          path: flatbuffers-schema/cpy314/
+          path: ${{ github.workspace }}/flatbuffers-schema/cpy314/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1336,7 +1336,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-cpy311
-          path: flatbuffers-schema/cpy311/
+          path: ${{ github.workspace }}/flatbuffers-schema/cpy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1345,7 +1345,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: flatbuffers-schema-pypy311
-          path: flatbuffers-schema/pypy311/
+          path: ${{ github.workspace }}/flatbuffers-schema/pypy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1355,7 +1355,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: serdes-test-results-cpy314
-          path: serdes-test-results/cpy314/
+          path: ${{ github.workspace }}/serdes-test-results/cpy314/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1364,7 +1364,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: serdes-test-results-cpy311
-          path: serdes-test-results/cpy311/
+          path: ${{ github.workspace }}/serdes-test-results/cpy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1373,7 +1373,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: serdes-test-results-pypy311
-          path: serdes-test-results/pypy311/
+          path: ${{ github.workspace }}/serdes-test-results/pypy311/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1382,7 +1382,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: websocket-conformance-docs-quick-with-nvx
-          path: websocket-conformance/with-nvx/
+          path: ${{ github.workspace }}/websocket-conformance/with-nvx/
           run-id: ${{ needs.check-all-workflows.outputs.wstest_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1391,7 +1391,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: websocket-conformance-docs-quick-without-nvx
-          path: websocket-conformance/without-nvx/
+          path: ${{ github.workspace }}/websocket-conformance/without-nvx/
           run-id: ${{ needs.check-all-workflows.outputs.wstest_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1865,7 +1865,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_macos_wheels }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1876,7 +1876,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_windows_wheels }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -1887,7 +1887,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_source_dist }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -2071,7 +2071,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_linux_no_nvx }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -2082,7 +2082,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_manylinux_x86_64 }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -2093,7 +2093,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp311 }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -2104,7 +2104,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313 }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -2115,7 +2115,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_bookworm }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5
@@ -2126,7 +2126,7 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_trixie }}
-          path: dist/
+          path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           max-attempts: 5

@@ -532,25 +532,25 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.client-conformance.outputs.artifact_clients_with_nvx }}
-          path: artifacts/clients-all-${{ env.TEST_MODE }}-with-nvx/
+          path: ${{ github.workspace }}/artifacts/clients-all-${{ env.TEST_MODE }}-with-nvx/
 
       - name: Download client reports (without-nvx)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.client-conformance.outputs.artifact_clients_without_nvx }}
-          path: artifacts/clients-all-${{ env.TEST_MODE }}-without-nvx/
+          path: ${{ github.workspace }}/artifacts/clients-all-${{ env.TEST_MODE }}-without-nvx/
 
       - name: Download server reports (with-nvx)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.server-conformance.outputs.artifact_servers_with_nvx }}
-          path: artifacts/servers-all-${{ env.TEST_MODE }}-with-nvx/
+          path: ${{ github.workspace }}/artifacts/servers-all-${{ env.TEST_MODE }}-with-nvx/
 
       - name: Download server reports (without-nvx)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.server-conformance.outputs.artifact_servers_without_nvx }}
-          path: artifacts/servers-all-${{ env.TEST_MODE }}-without-nvx/
+          path: ${{ github.workspace }}/artifacts/servers-all-${{ env.TEST_MODE }}-without-nvx/
 
       - name: Reconstruct test directory structure
         run: |
@@ -726,13 +726,13 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.consolidate-reports.outputs.artifact_docs_with_nvx }}
-          path: docs/_static/websocket/conformance-with-nvx/
+          path: ${{ github.workspace }}/docs/_static/websocket/conformance-with-nvx/
 
       - name: Download consolidated reports (without-nvx)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.consolidate-reports.outputs.artifact_docs_without_nvx }}
-          path: docs/_static/websocket/conformance-without-nvx/
+          path: ${{ github.workspace }}/docs/_static/websocket/conformance-without-nvx/
 
       - name: Verify 100% conformance (both NVX configurations)
         run: |
