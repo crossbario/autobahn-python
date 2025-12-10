@@ -413,22 +413,6 @@ install-dev venv="": vendor-flatbuffers (create venv)
     # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" -e .[all]
     ${VENV_PYTHON} -m pip install -e .[all]
 
-# Install with latest unreleased WAMP packages from GitHub (usage: `just install-dev-latest cpy312`)
-install-dev-latest venv="": vendor-flatbuffers (create venv)
-    #!/usr/bin/env bash
-    set -e
-    VENV_NAME="{{ venv }}"
-    if [ -z "${VENV_NAME}" ]; then
-        echo "==> No venv name specified. Auto-detecting from system Python..."
-        VENV_NAME=$(just --quiet _get-system-venv-name)
-        echo "==> Defaulting to venv: '${VENV_NAME}'"
-    fi
-    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
-    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
-    echo "==> Installing package in editable mode with [dev,dev-latest] extras in ${VENV_NAME}..."
-    echo "==> This will install WAMP packages from GitHub master (unreleased versions)..."
-    ${VENV_PYTHON} -m pip install -e .[all,dev,dev-latest]
-
 # Install with locally editable WAMP packages for cross-repo development (usage: `just install-dev-local cpy312`)
 install-dev-local venv="": vendor-flatbuffers (create venv)
     #!/usr/bin/env bash
