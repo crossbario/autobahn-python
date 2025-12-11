@@ -132,10 +132,8 @@ dev = [
     "humanize>=4.0.0",
     # Note: ty (Astral type checker) is installed via `uv tool install ty`
     # It's a standalone Rust binary, not a Python package dependency
-    "myst-parser>=4.0.1",
     "passlib",
     "pep8-naming>=0.3.3",
-    "pyenchant>=1.6.6",
     "pyflakes>=1.0.0",
     "pyinstaller>=4.2",
     "pylint>=1.9.2",
@@ -146,17 +144,25 @@ dev = [
     "pyyaml>=4.2b4",
     "qualname>=0.1.0",
     "ruff>=0.12.1",
-    "scour>=0.38",
-    "sphinx-autoapi>=1.7.0",
-    "sphinx>=1.7.1,<8",
-    "sphinx-rtd-theme>=0.1.9",
-    "sphinxcontrib-images>=0.9.1",
-    "twine>=3.3.0",
     "twisted>=22.10.0",
     "txaio>=25.12.2",
     "watchdog>=0.8.3",
     "wheel>=0.36.2",
     "yapf==0.29.0",
+    # Documentation tools (aligned with docs/conf.py extensions)
+    "sphinx>=8.2.3",
+    "myst-parser>=2.0",
+    "furo>=2024.7.0",
+    "sphinx-autoapi>=2.1.0",
+    "sphinx-copybutton>=0.5",
+    "sphinx-design>=0.5",
+    "sphinxcontrib-images>=0.9",
+    "sphinxcontrib-spelling>=8.0",
+    "pyenchant>=3.2",
+    "scour>=0.38",
+    "sphinxext-opengraph>=0.9",
+    "linkify-it-py>=2.0.0",
+    "twine>=3.3.0",
 ]
 
 # Documentation tools (used by RTD via .readthedocs.yaml)

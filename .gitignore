@@ -43,6 +43,7 @@ node.key
 
 # CFFI-generated intermediate C files (NVX extension modules)
 src/autobahn/nvx/_nvx_*.c
+src/_nvx_*.c
 
 .wheels
 get-pip.py
