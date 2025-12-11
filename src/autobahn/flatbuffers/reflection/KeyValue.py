@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class KeyValue(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,12 +20,9 @@ class KeyValue(object):
     def GetRootAsKeyValue(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     @classmethod
     def KeyValueBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
-        return flatbuffers.util.BufferHasIdentifier(
-            buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed
-        )
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # KeyValue
     def Init(self, buf, pos):
@@ -47,38 +42,26 @@ class KeyValue(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-
 def KeyValueStart(builder):
     builder.StartObject(2)
-
 
 def Start(builder):
     KeyValueStart(builder)
 
-
 def KeyValueAddKey(builder, key):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(key), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(key), 0)
 
 def AddKey(builder, key):
     KeyValueAddKey(builder, key)
 
-
 def KeyValueAddValue(builder, value):
-    builder.PrependUOffsetTRelativeSlot(
-        1, flatbuffers.number_types.UOffsetTFlags.py_type(value), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(value), 0)
 
 def AddValue(builder, value):
     KeyValueAddValue(builder, value)
 
-
 def KeyValueEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return KeyValueEnd(builder)

@@ -2,7 +2,6 @@
 
 # namespace: reflection
 
-
 class BaseType(object):
     None_ = 0
     UType = 1

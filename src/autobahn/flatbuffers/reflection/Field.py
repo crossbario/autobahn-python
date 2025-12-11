@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class Field(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,12 +20,9 @@ class Field(object):
     def GetRootAsField(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     @classmethod
     def FieldBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
-        return flatbuffers.util.BufferHasIdentifier(
-            buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed
-        )
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # Field
     def Init(self, buf, pos):
@@ -46,7 +41,6 @@ class Field(object):
         if o != 0:
             x = self._tab.Indirect(o + self._tab.Pos)
             from reflection.Type import Type
-
             obj = Type()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -56,18 +50,14 @@ class Field(object):
     def Id(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint16Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint16Flags, o + self._tab.Pos)
         return 0
 
     # Field
     def Offset(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint16Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint16Flags, o + self._tab.Pos)
         return 0
 
     # Field
@@ -81,36 +71,28 @@ class Field(object):
     def DefaultReal(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(14))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Float64Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Float64Flags, o + self._tab.Pos)
         return 0.0
 
     # Field
     def Deprecated(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(16))
         if o != 0:
-            return bool(
-                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-            )
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # Field
     def Required(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(18))
         if o != 0:
-            return bool(
-                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-            )
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # Field
     def Key(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(20))
         if o != 0:
-            return bool(
-                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-            )
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # Field
@@ -121,7 +103,6 @@ class Field(object):
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
             from reflection.KeyValue import KeyValue
-
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -144,9 +125,7 @@ class Field(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(24))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.String(
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4)
-            )
+            return self._tab.String(a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
         return ""
 
     # Field
@@ -165,9 +144,7 @@ class Field(object):
     def Optional(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(26))
         if o != 0:
-            return bool(
-                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-            )
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
 
     # Number of padding octets to always add after this field. Structs only.
@@ -175,9 +152,7 @@ class Field(object):
     def Padding(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(28))
         if o != 0:
-            return self._tab.Get(
-                flatbuffers.number_types.Uint16Flags, o + self._tab.Pos
-            )
+            return self._tab.Get(flatbuffers.number_types.Uint16Flags, o + self._tab.Pos)
         return 0
 
     # If the field uses 64-bit offsets.
@@ -185,159 +160,113 @@ class Field(object):
     def Offset64(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(30))
         if o != 0:
-            return bool(
-                self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos)
-            )
+            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
         return False
-
 
 def FieldStart(builder):
     builder.StartObject(14)
 
-
 def Start(builder):
     FieldStart(builder)
 
-
 def FieldAddName(builder, name):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
 
 def AddName(builder, name):
     FieldAddName(builder, name)
 
-
 def FieldAddType(builder, type):
-    builder.PrependUOffsetTRelativeSlot(
-        1, flatbuffers.number_types.UOffsetTFlags.py_type(type), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(type), 0)
 
 def AddType(builder, type):
     FieldAddType(builder, type)
 
-
 def FieldAddId(builder, id):
     builder.PrependUint16Slot(2, id, 0)
-
 
 def AddId(builder, id):
     FieldAddId(builder, id)
 
-
 def FieldAddOffset(builder, offset):
     builder.PrependUint16Slot(3, offset, 0)
-
 
 def AddOffset(builder, offset):
     FieldAddOffset(builder, offset)
 
-
 def FieldAddDefaultInteger(builder, defaultInteger):
     builder.PrependInt64Slot(4, defaultInteger, 0)
-
 
 def AddDefaultInteger(builder, defaultInteger):
     FieldAddDefaultInteger(builder, defaultInteger)
 
-
 def FieldAddDefaultReal(builder, defaultReal):
     builder.PrependFloat64Slot(5, defaultReal, 0.0)
-
 
 def AddDefaultReal(builder, defaultReal):
     FieldAddDefaultReal(builder, defaultReal)
 
-
 def FieldAddDeprecated(builder, deprecated):
     builder.PrependBoolSlot(6, deprecated, 0)
-
 
 def AddDeprecated(builder, deprecated):
     FieldAddDeprecated(builder, deprecated)
 
-
 def FieldAddRequired(builder, required):
     builder.PrependBoolSlot(7, required, 0)
-
 
 def AddRequired(builder, required):
     FieldAddRequired(builder, required)
 
-
 def FieldAddKey(builder, key):
     builder.PrependBoolSlot(8, key, 0)
-
 
 def AddKey(builder, key):
     FieldAddKey(builder, key)
 
-
 def FieldAddAttributes(builder, attributes):
-    builder.PrependUOffsetTRelativeSlot(
-        9, flatbuffers.number_types.UOffsetTFlags.py_type(attributes), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(9, flatbuffers.number_types.UOffsetTFlags.py_type(attributes), 0)
 
 def AddAttributes(builder, attributes):
     FieldAddAttributes(builder, attributes)
 
-
 def FieldStartAttributesVector(builder, numElems):
     return builder.StartVector(4, numElems, 4)
-
 
 def StartAttributesVector(builder, numElems):
     return FieldStartAttributesVector(builder, numElems)
 
-
 def FieldAddDocumentation(builder, documentation):
-    builder.PrependUOffsetTRelativeSlot(
-        10, flatbuffers.number_types.UOffsetTFlags.py_type(documentation), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(10, flatbuffers.number_types.UOffsetTFlags.py_type(documentation), 0)
 
 def AddDocumentation(builder, documentation):
     FieldAddDocumentation(builder, documentation)
 
-
 def FieldStartDocumentationVector(builder, numElems):
     return builder.StartVector(4, numElems, 4)
-
 
 def StartDocumentationVector(builder, numElems):
     return FieldStartDocumentationVector(builder, numElems)
 
-
 def FieldAddOptional(builder, optional):
     builder.PrependBoolSlot(11, optional, 0)
-
 
 def AddOptional(builder, optional):
     FieldAddOptional(builder, optional)
 
-
 def FieldAddPadding(builder, padding):
     builder.PrependUint16Slot(12, padding, 0)
-
 
 def AddPadding(builder, padding):
     FieldAddPadding(builder, padding)
 
-
 def FieldAddOffset64(builder, offset64):
     builder.PrependBoolSlot(13, offset64, 0)
-
 
 def AddOffset64(builder, offset64):
     FieldAddOffset64(builder, offset64)
 
-
 def FieldEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return FieldEnd(builder)

@@ -4,12 +4,10 @@
 
 import flatbuffers
 from flatbuffers.compat import import_numpy
-
 np = import_numpy()
 
-
 class Service(object):
-    __slots__ = ["_tab"]
+    __slots__ = ['_tab']
 
     @classmethod
     def GetRootAs(cls, buf, offset=0):
@@ -22,12 +20,9 @@ class Service(object):
     def GetRootAsService(cls, buf, offset=0):
         """This method is deprecated. Please switch to GetRootAs."""
         return cls.GetRootAs(buf, offset)
-
     @classmethod
     def ServiceBufferHasIdentifier(cls, buf, offset, size_prefixed=False):
-        return flatbuffers.util.BufferHasIdentifier(
-            buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed
-        )
+        return flatbuffers.util.BufferHasIdentifier(buf, offset, b"\x42\x46\x42\x53", size_prefixed=size_prefixed)
 
     # Service
     def Init(self, buf, pos):
@@ -48,7 +43,6 @@ class Service(object):
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
             from reflection.RPCCall import RPCCall
-
             obj = RPCCall()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -74,7 +68,6 @@ class Service(object):
             x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 4
             x = self._tab.Indirect(x)
             from reflection.KeyValue import KeyValue
-
             obj = KeyValue()
             obj.Init(self._tab.Bytes, x)
             return obj
@@ -97,9 +90,7 @@ class Service(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
             a = self._tab.Vector(o)
-            return self._tab.String(
-                a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4)
-            )
+            return self._tab.String(a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
         return ""
 
     # Service
@@ -122,92 +113,62 @@ class Service(object):
             return self._tab.String(o + self._tab.Pos)
         return None
 
-
 def ServiceStart(builder):
     builder.StartObject(5)
-
 
 def Start(builder):
     ServiceStart(builder)
 
-
 def ServiceAddName(builder, name):
-    builder.PrependUOffsetTRelativeSlot(
-        0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(name), 0)
 
 def AddName(builder, name):
     ServiceAddName(builder, name)
 
-
 def ServiceAddCalls(builder, calls):
-    builder.PrependUOffsetTRelativeSlot(
-        1, flatbuffers.number_types.UOffsetTFlags.py_type(calls), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(calls), 0)
 
 def AddCalls(builder, calls):
     ServiceAddCalls(builder, calls)
 
-
 def ServiceStartCallsVector(builder, numElems):
     return builder.StartVector(4, numElems, 4)
-
 
 def StartCallsVector(builder, numElems):
     return ServiceStartCallsVector(builder, numElems)
 
-
 def ServiceAddAttributes(builder, attributes):
-    builder.PrependUOffsetTRelativeSlot(
-        2, flatbuffers.number_types.UOffsetTFlags.py_type(attributes), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(attributes), 0)
 
 def AddAttributes(builder, attributes):
     ServiceAddAttributes(builder, attributes)
 
-
 def ServiceStartAttributesVector(builder, numElems):
     return builder.StartVector(4, numElems, 4)
-
 
 def StartAttributesVector(builder, numElems):
     return ServiceStartAttributesVector(builder, numElems)
 
-
 def ServiceAddDocumentation(builder, documentation):
-    builder.PrependUOffsetTRelativeSlot(
-        3, flatbuffers.number_types.UOffsetTFlags.py_type(documentation), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(documentation), 0)
 
 def AddDocumentation(builder, documentation):
     ServiceAddDocumentation(builder, documentation)
 
-
 def ServiceStartDocumentationVector(builder, numElems):
     return builder.StartVector(4, numElems, 4)
-
 
 def StartDocumentationVector(builder, numElems):
     return ServiceStartDocumentationVector(builder, numElems)
 
-
 def ServiceAddDeclarationFile(builder, declarationFile):
-    builder.PrependUOffsetTRelativeSlot(
-        4, flatbuffers.number_types.UOffsetTFlags.py_type(declarationFile), 0
-    )
-
+    builder.PrependUOffsetTRelativeSlot(4, flatbuffers.number_types.UOffsetTFlags.py_type(declarationFile), 0)
 
 def AddDeclarationFile(builder, declarationFile):
     ServiceAddDeclarationFile(builder, declarationFile)
 
-
 def ServiceEnd(builder):
     return builder.EndObject()
-
 
 def End(builder):
     return ServiceEnd(builder)
