@@ -382,7 +382,7 @@ link-system-packages venv="" vendors="": (create venv)
 # -----------------------------------------------------------------------------
 
 # Install this package and its run-time dependencies in a single environment (usage: `just install cpy314` or `just install`)
-install venv="": vendor-flatbuffers (create venv)
+install venv="": (create venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -398,7 +398,7 @@ install venv="": vendor-flatbuffers (create venv)
     ${VENV_PYTHON} -m pip install .[all]
 
 # Install this package in development (editable) mode and its run-time dependencies in a single environment (usage: `just install-dev cpy314` or `just install-dev`)
-install-dev venv="": vendor-flatbuffers (create venv)
+install-dev venv="": (create venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -414,7 +414,7 @@ install-dev venv="": vendor-flatbuffers (create venv)
     ${VENV_PYTHON} -m pip install -e .[all]
 
 # Install with locally editable WAMP packages for cross-repo development (usage: `just install-dev-local cpy312`)
-install-dev-local venv="": vendor-flatbuffers (create venv)
+install-dev-local venv="": (create venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1267,104 +1267,32 @@ docs-spelling venv="": (install-docs venv)
 # -- Building and Publishing
 # -----------------------------------------------------------------------------
 
-# Vendor flatbuffers Python runtime from git submodule into autobahn namespace.
-# This avoids conflicts with the standalone 'flatbuffers' PyPI package.
-# The vendored copy is gitignored and must be regenerated before build.
-vendor-flatbuffers:
-    #!/usr/bin/env python3
-    import os
-    import shutil
-    import subprocess
-    from pathlib import Path
+# Bump flatbuffers git submodule to latest release tag
+# After running this, run `just update-flatbuffers` to copy and apply tweaks
+bump-flatbuffers:
+    #!/usr/bin/env bash
+    set -e
+    echo "==> Fetching latest tags from upstream..."
+    cd deps/flatbuffers && git fetch --tags
+    LATEST_TAG=$(cd deps/flatbuffers && git describe --tags --abbrev=0 $(git rev-list --tags --max-count=1))
+    echo "==> Latest release tag: ${LATEST_TAG}"
+    cd deps/flatbuffers && git checkout "${LATEST_TAG}"
+    echo "==> Submodule now at: $(cd deps/flatbuffers && git describe --tags --always)"
+    echo ""
+    echo "Next steps:"
+    echo "  1. just update-flatbuffers"
+    echo "  2. git add deps/flatbuffers src/autobahn/flatbuffers"
+    echo "  3. git commit -m 'Bump vendored flatbuffers to ${LATEST_TAG}'"
 
-    src_dir = Path("deps/flatbuffers/python/flatbuffers")
-    dst_dir = Path("src/autobahn/flatbuffers")
-
-    if not src_dir.exists():
-        print("ERROR: Flatbuffers submodule not found at", src_dir)
-        print("Run: git submodule update --init --recursive")
-        raise SystemExit(1)
-
-    print(f"==> Vendoring flatbuffers from {src_dir} to {dst_dir}...")
-    if dst_dir.exists():
-        shutil.rmtree(dst_dir)
-    shutil.copytree(src_dir, dst_dir)
-
-    # Capture git version from submodule
-    try:
-        result = subprocess.run(
-            ["git", "describe", "--tags", "--always"],
-            cwd="deps/flatbuffers",
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-        git_version = result.stdout.strip() if result.returncode == 0 else "unknown"
-    except Exception:
-        git_version = "unknown"
-
-    print(f"==> FlatBuffers git version: {git_version}")
-
-    # Generate _git_version.py
-    git_version_content = f'''\
-# Copyright 2014 Google Inc. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# Git version from deps/flatbuffers submodule.
-# This file is generated at build time by justfile vendor-flatbuffers recipe.
-# The version is captured via `git describe --tags` in the submodule.
-#
-# Format: "v25.9.23" (tagged release) or "v25.9.23-2-g95053e6a" (post-tag)
-
-__git_version__ = "{git_version}"
-'''
-    (dst_dir / "_git_version.py").write_text(git_version_content)
-
-    # Append version() function to __init__.py
-    init_file = dst_dir / "__init__.py"
-    init_content = init_file.read_text()
-
-    version_func = '''
-import re
-
-from ._git_version import __git_version__
-
-
-def version() -> tuple[int, int, int, int | None, str | None]:
-    """
-    Return the exact git version of the vendored FlatBuffers runtime.
-
-    Handles:
-
-    1. "v25.9.23"              -> (25, 9, 23, None, None)       # Release
-    2. "v25.9.23-71"           -> (25, 9, 23, 71, None)         # 71 commits ahead
-    3. "v25.9.23-71-g19b2300f" -> (25, 9, 23, 71, "19b2300f")   # with hash
-    """
-    pattern = r"^v(\\d+)\\.(\\d+)\\.(\\d+)(?:-(\\d+))?(?:-g([0-9a-f]+))?$"
-    match = re.match(pattern, __git_version__)
-    if match:
-        major, minor, patch, commits, commit_hash = match.groups()
-        commits_int = int(commits) if commits else None
-        return (int(major), int(minor), int(patch), commits_int, commit_hash)
-    return (0, 0, 0, None, None)
-'''
-    init_file.write_text(init_content + version_func)
-
-    print("==> Flatbuffers vendored successfully with version() function.")
+# Update vendored flatbuffers Python runtime from git submodule
+update-flatbuffers:
+    echo "==> Updating vendored flatbuffers from submodule..."
+    rm -rf ./src/autobahn/flatbuffers
+    cp -R deps/flatbuffers/python/flatbuffers ./src/autobahn/flatbuffers
+    echo "✓ Flatbuffers vendor updated in src/autobahn/flatbuffers"
 
 # Build wheel only (usage: `just build cpy314`)
-build venv="": vendor-flatbuffers (install-build-tools venv)
+build venv="": (install-build-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -1398,7 +1326,7 @@ build venv="": vendor-flatbuffers (install-build-tools venv)
     ls -la dist/
 
 # Build source distribution only (no wheels, no NVX flag needed)
-build-sourcedist venv="": vendor-flatbuffers (install-build-tools venv)
+build-sourcedist venv="": (install-build-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
