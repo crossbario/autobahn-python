@@ -63,5 +63,6 @@ docs/_static/img/
 .coverage.*
 examples/benchmarks/serialization/build/
 
-# Vendored flatbuffers - copied from deps/flatbuffers at build time
-src/autobahn/flatbuffers/
+# Vendored flatbuffers CFFI artifacts (if any native extensions are added in future)
+src/autobahn/flatbuffers/*.so
+src/autobahn/flatbuffers/*.pyd
