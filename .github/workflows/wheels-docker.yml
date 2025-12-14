@@ -45,22 +45,14 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          # manylinux_2_34 (glibc 2.34+) - PEP 600 compliant for modern Linux
+          # manylinux_2_28 (glibc 2.28+) - PEP 600 compliant, wide compatibility
+          # IMPORTANT: manylinux_2_28 uses baseline x86_64 ISA level (no SSE4.2/POPCNT)
+          # which is required for auditwheel to repair binaries like flatc.
+          # manylinux_2_34 uses x86_64_v2 which causes auditwheel failures.
+          # Matches zlmdb which also uses manylinux_2_28.
           # see: https://github.com/pypa/manylinux
-          - name: "manylinux_2_34_x86_64"
-            base_image: "quay.io/pypa/manylinux_2_34_x86_64"
-
-          # Future manylinux images can be added here:
-          # - name: "manylinux_2_34_aarch64"
-          #   base_image: "quay.io/pypa/manylinux_2_34_aarch64"
-
-          # Deactivated for now - focusing on standard manylinux wheels:
-          # - name: "debian12-amd64"
-          #   base_image: "debian:12"
-          # - name: "rocky9-amd64"
-          #   base_image: "rockylinux:9"
-          # - name: "ubuntu2404-amd64"
-          #   base_image: "ubuntu:24.04"
+          - name: "manylinux_2_28_x86_64"
+            base_image: "quay.io/pypa/manylinux_2_28_x86_64"
 
     steps:
       - name: Checkout code
@@ -197,22 +189,13 @@ jobs:
           command -v auditwheel >/dev/null || { echo "auditwheel missing, aborting"; exit 1; }
           mkdir -p wheelhouse
 
-          # Convert linux_x86_64 wheels to multi-platform tag (incl. manylinux_2_34_x86_64) using auditwheel
+          # Convert linux_x86_64 wheels to manylinux_2_28_x86_64 using auditwheel
           echo ""
-          echo "==> Converting wheels to multi-platform tag (incl. manylinux_2_34_x86_64) format..."
+          echo "==> Converting wheels to manylinux_2_28_x86_64 format..."
           for wheel in dist/*.whl; do
             if [[ "$wheel" == *"linux_x86_64"* ]]; then
               echo "Converting: $(basename $wheel)"
-
-              # show autodetected set of platform tags
               auditwheel show "$wheel"
-
-              # fix/rename wheel based on autodetected platform tags and store in wheelhouse/
-              # -> auditwheel will encode all (!) supported tags into the wheel filename
-              # -> Python packaging ecosystem allows wheels to carry multiple platform tags
-              # -> pip will then pick the most specific tag that works for the current system
-              # -> so we do not need to manually set: --plat manylinux_2_34_x86_64 as in:
-              #     auditwheel repair "$wheel" --plat manylinux_2_34_x86_64 -w wheelhouse/
               auditwheel repair "$wheel" -w wheelhouse/
             else
               echo "Copying non-linux wheel: $(basename $wheel)"
