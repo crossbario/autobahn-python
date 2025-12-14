@@ -137,7 +137,7 @@ jobs:
 
               // Query artifacts from wheels-docker workflow
               const wheelsDockerRunId = latestRuns['wheels-docker']?.id;
-              core.setOutput('artifact_manylinux_x86_64', await findArtifact(wheelsDockerRunId, 'artifacts-manylinux_2_34_x86_64'));
+              core.setOutput('artifact_manylinux_x86_64', await findArtifact(wheelsDockerRunId, 'artifacts-manylinux_2_28_x86_64'));
 
               // Query artifacts from wheels-arm64 workflow
               const wheelsArm64RunId = latestRuns['wheels-arm64']?.id;
@@ -813,20 +813,20 @@ jobs:
           mode: strict
           keep-metadata: true  # Keep CHECKSUMS for user verification
           targets: |
-            cpy311-linux-x86_64-manylinux_2_34
+            cpy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
             cpy311-win-amd64
-            cpy312-linux-x86_64-manylinux_2_34
+            cpy312-linux-x86_64-manylinux_2_28
             cpy312-win-amd64
             cpy313-macos-arm64
-            cpy313-linux-x86_64-manylinux_2_34
+            cpy313-linux-x86_64-manylinux_2_28
             cpy313-linux-aarch64-manylinux_2_28
             cpy313-win-amd64
             cpy314-macos-arm64
-            cpy314-linux-x86_64-manylinux_2_34
+            cpy314-linux-x86_64-manylinux_2_28
             cpy314-win-amd64
             pypy311-macos-arm64
-            pypy311-linux-x86_64-manylinux_2_34
+            pypy311-linux-x86_64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_17
             pypy311-win-amd64
             source
@@ -1642,20 +1642,20 @@ jobs:
           mode: strict
           keep-metadata: true  # Keep CHECKSUMS for user verification
           targets: |
-            cpy311-linux-x86_64-manylinux_2_34
+            cpy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
             cpy311-win-amd64
-            cpy312-linux-x86_64-manylinux_2_34
+            cpy312-linux-x86_64-manylinux_2_28
             cpy312-win-amd64
             cpy313-macos-arm64
-            cpy313-linux-x86_64-manylinux_2_34
+            cpy313-linux-x86_64-manylinux_2_28
             cpy313-linux-aarch64-manylinux_2_28
             cpy313-win-amd64
             cpy314-macos-arm64
-            cpy314-linux-x86_64-manylinux_2_34
+            cpy314-linux-x86_64-manylinux_2_28
             cpy314-win-amd64
             pypy311-macos-arm64
-            pypy311-linux-x86_64-manylinux_2_34
+            pypy311-linux-x86_64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_17
             pypy311-win-amd64
             source
@@ -2262,20 +2262,20 @@ jobs:
           mode: strict
           # keep-metadata: false (default - removes CHECKSUMS for PyPI)
           targets: |
-            cpy311-linux-x86_64-manylinux_2_34
+            cpy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
             cpy311-win-amd64
-            cpy312-linux-x86_64-manylinux_2_34
+            cpy312-linux-x86_64-manylinux_2_28
             cpy312-win-amd64
             cpy313-macos-arm64
-            cpy313-linux-x86_64-manylinux_2_34
+            cpy313-linux-x86_64-manylinux_2_28
             cpy313-linux-aarch64-manylinux_2_28
             cpy313-win-amd64
             cpy314-macos-arm64
-            cpy314-linux-x86_64-manylinux_2_34
+            cpy314-linux-x86_64-manylinux_2_28
             cpy314-win-amd64
             pypy311-macos-arm64
-            pypy311-linux-x86_64-manylinux_2_34
+            pypy311-linux-x86_64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_17
             pypy311-win-amd64
             source
