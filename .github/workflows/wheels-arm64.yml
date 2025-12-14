@@ -130,7 +130,9 @@ jobs:
         if: matrix.target.build_type == 'custom'
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 10
+          # CFFI compilation under QEMU ARM64 emulation is very slow
+          # CPython builds can take 20+ minutes due to emulation overhead
+          timeout_minutes: 30
           max_attempts: 3
           retry_on: error
           warning_on_retry: true
@@ -153,7 +155,9 @@ jobs:
       - name: Build ARM64 wheels with NVX extension (with retry for QEMU flakiness)
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 15
+          # CFFI compilation under QEMU ARM64 emulation is very slow
+          # CPython builds can take 20+ minutes due to emulation overhead
+          timeout_minutes: 30
           max_attempts: 3
           retry_on: error
           warning_on_retry: true
