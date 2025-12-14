@@ -1172,6 +1172,84 @@ test-smoke venv="":
     # Run the smoke test Python script
     ${VENV_PYTHON} "{{ PROJECT_DIR }}/scripts/smoke_test.py"
 
+# Test bundled flatc compiler and Python API
+test-bundled-flatc venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Testing bundled flatc compiler in ${VENV_NAME}..."
+    echo ""
+
+    # Test 1: flatc console script works
+    echo "Test 1: Verifying 'flatc --version' works via console script..."
+    FLATC_VERSION=$("${VENV_PATH}/bin/flatc" --version 2>&1)
+    if [ $? -eq 0 ]; then
+        echo "  PASS: flatc console script works"
+        echo "  Version: ${FLATC_VERSION}"
+    else
+        echo "  FAIL: flatc console script failed"
+        exit 1
+    fi
+    echo ""
+
+    # Test 2: Python API get_flatc_path() works
+    echo "Test 2: Verifying autobahn._flatc.get_flatc_path() works..."
+    FLATC_PATH=$(${VENV_PYTHON} -c "from autobahn._flatc import get_flatc_path; print(get_flatc_path())")
+    if [ -x "${FLATC_PATH}" ]; then
+        echo "  PASS: get_flatc_path() returns executable path"
+        echo "  Path: ${FLATC_PATH}"
+    else
+        echo "  FAIL: get_flatc_path() returned non-executable: ${FLATC_PATH}"
+        exit 1
+    fi
+    echo ""
+
+    # Test 3: Python API run_flatc() works
+    echo "Test 3: Verifying autobahn._flatc.run_flatc() works..."
+    RET=$(${VENV_PYTHON} -c "from autobahn._flatc import run_flatc; exit(run_flatc(['--version']))")
+    if [ $? -eq 0 ]; then
+        echo "  PASS: run_flatc(['--version']) works"
+    else
+        echo "  FAIL: run_flatc() failed"
+        exit 1
+    fi
+    echo ""
+
+    # Test 4: reflection.fbs is accessible
+    echo "Test 4: Verifying reflection.fbs is accessible at runtime..."
+    FBS_PATH=$(${VENV_PYTHON} -c 'import autobahn.flatbuffers; from pathlib import Path; p = Path(autobahn.flatbuffers.__file__).parent / "reflection.fbs"; print(p) if p.exists() else exit(1)')
+    if [ $? -eq 0 ]; then
+        FBS_SIZE=$(stat -c%s "${FBS_PATH}" 2>/dev/null || stat -f%z "${FBS_PATH}")
+        echo "  PASS: reflection.fbs found at ${FBS_PATH}"
+        echo "  Size: ${FBS_SIZE} bytes"
+    else
+        echo "  FAIL: reflection.fbs not found"
+        exit 1
+    fi
+    echo ""
+
+    # Test 5: reflection.bfbs is accessible
+    echo "Test 5: Verifying reflection.bfbs is accessible at runtime..."
+    BFBS_PATH=$(${VENV_PYTHON} -c 'import autobahn.flatbuffers; from pathlib import Path; p = Path(autobahn.flatbuffers.__file__).parent / "reflection.bfbs"; print(p) if p.exists() else exit(1)')
+    if [ $? -eq 0 ]; then
+        BFBS_SIZE=$(stat -c%s "${BFBS_PATH}" 2>/dev/null || stat -f%z "${BFBS_PATH}")
+        echo "  PASS: reflection.bfbs found at ${BFBS_PATH}"
+        echo "  Size: ${BFBS_SIZE} bytes"
+    else
+        echo "  FAIL: reflection.bfbs not found"
+        exit 1
+    fi
+    echo ""
+
+    echo "========================================================================"
+    echo "ALL BUNDLED FLATC TESTS PASSED"
+    echo "========================================================================"
+
 # Test installing and verifying a built wheel (used in CI for artifact verification)
 # Usage: just test-wheel-install /path/to/autobahn-*.whl
 test-wheel-install wheel_path:
@@ -1460,10 +1538,7 @@ bump-flatbuffers:
 
 # Update vendored flatbuffers Python runtime from git submodule
 update-flatbuffers:
-    echo "==> Updating vendored flatbuffers from submodule..."
-    rm -rf ./src/autobahn/flatbuffers
-    cp -R deps/flatbuffers/python/flatbuffers ./src/autobahn/flatbuffers
-    echo "✓ Flatbuffers vendor updated in src/autobahn/flatbuffers"
+    ./scripts/update_flatbuffers.sh
 
 # Build wheel only (usage: `just build cpy314`)
 build venv="": (install-build-tools venv)
