@@ -55,6 +55,8 @@ class CFfiBuildHook(BuildHookInterface):
         # Generate reflection.bfbs using the built flatc
         if built_flatc:
             self._generate_reflection_bfbs(build_data)
+            # Generate WAMP schema .bfbs files
+            self._generate_wamp_bfbs(build_data)
 
         # If we built any extensions, mark this as a platform-specific wheel
         if built_nvx or built_flatc:
@@ -354,6 +356,66 @@ class CFfiBuildHook(BuildHookInterface):
             return True
         else:
             print("WARNING: reflection.bfbs not generated")
+            return False
+
+    def _generate_wamp_bfbs(self, build_data):
+        """Generate .bfbs files for WAMP FlatBuffers schemas.
+
+        This creates binary FlatBuffers schemas for the WAMP protocol schemas
+        located in src/autobahn/wamp/flatbuffers/.
+        """
+        print("\n" + "=" * 70)
+        print("Generating WAMP schema .bfbs files")
+        print("=" * 70)
+
+        if not hasattr(self, "_flatc_path") or not self._flatc_path.exists():
+            print("WARNING: flatc not available, skipping WAMP .bfbs generation")
+            return False
+
+        wamp_fbs_dir = Path(self.root) / "src" / "autobahn" / "wamp" / "flatbuffers"
+
+        if not wamp_fbs_dir.exists():
+            print(f"WARNING: {wamp_fbs_dir} not found")
+            return False
+
+        # The main schema file that includes all others
+        wamp_fbs = wamp_fbs_dir / "wamp.fbs"
+        if not wamp_fbs.exists():
+            print(f"WARNING: {wamp_fbs} not found")
+            return False
+
+        # Generate wamp.bfbs (which includes all dependent schemas)
+        result = subprocess.run(
+            [
+                str(self._flatc_path),
+                "--binary",
+                "--schema",
+                "--bfbs-comments",
+                "--bfbs-builtins",
+                "-o",
+                str(wamp_fbs_dir),
+                str(wamp_fbs),
+            ],
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            print(f"ERROR: flatc failed:\n{result.stderr}")
+            return False
+
+        wamp_bfbs = wamp_fbs_dir / "wamp.bfbs"
+        if wamp_bfbs.exists():
+            print(f"  -> Generated: {wamp_bfbs}")
+
+            # Add to wheel
+            src_file = str(wamp_bfbs)
+            dest_path = "autobahn/wamp/flatbuffers/wamp.bfbs"
+            build_data["force_include"][src_file] = dest_path
+            print(f"  -> Added to wheel: {dest_path}")
+            return True
+        else:
+            print("WARNING: wamp.bfbs not generated")
             return False
 
     def _update_flatbuffers_git_version(self):

@@ -32,6 +32,44 @@ import os
 
 import txaio
 
+from autobahn import flatbuffers
+
+
+def check_zlmdb_flatbuffers_version_in_sync() -> tuple[int, int, int, int | None, str | None]:
+    """
+    Check that autobahn and zlmdb have the same vendored flatbuffers version.
+
+    This is important for applications like Crossbar.io that use both autobahn
+    (for data-in-transit) and zlmdb (for data-at-rest) with FlatBuffers
+    serialization. When sending a FlatBuffers database record as a WAMP
+    application payload, both libraries must use compatible FlatBuffers
+    runtimes to avoid subtle serialization issues.
+
+    :returns: The flatbuffers version tuple (e.g. (25, 9, 23, 2, "95053e6a"))
+              if both are in sync.
+    :raises RuntimeError: If the versions differ.
+    :raises ImportError: If zlmdb is not installed.
+
+    Example::
+
+        import autobahn
+        version = autobahn.check_zlmdb_flatbuffers_version_in_sync()
+        print(f"FlatBuffers version: {version}")
+    """
+    import zlmdb.flatbuffers
+
+    autobahn_version = flatbuffers.version()
+    zlmdb_version = zlmdb.flatbuffers.version()
+
+    if autobahn_version != zlmdb_version:
+        raise RuntimeError(
+            f"FlatBuffers version mismatch: autobahn has {autobahn_version!r}, "
+            f"zlmdb has {zlmdb_version!r}. Both should be the same for "
+            f"reliable data-in-transit/data-at-rest interoperability."
+        )
+
+    return autobahn_version
+
 # this is used in the unit tests (trial/pytest), and when already done here, there
 # is no risk and headaches with finding out if/where an import implies a framework
 if os.environ.get("USE_TWISTED", False) and os.environ.get("USE_ASYNCIO", False):
