@@ -113,12 +113,38 @@ def test_flatc_binary(package_name: str) -> bool:
         version_output = result.stdout.strip() or result.stderr.strip()
         print(f"  flatc version: {version_output}")
 
-        if "flatc" in version_output.lower():
-            print("  PASS")
-            return True
-        else:
+        if "flatc" not in version_output.lower():
             print("  FAIL: flatc --version returned unexpected output")
             return False
+
+        # Verify flatc version matches vendored FlatBuffers runtime version
+        flatbuffers = importlib.import_module(f"{package_name}.flatbuffers")
+        if hasattr(flatbuffers, "version"):
+            runtime_version = flatbuffers.version()
+            print(f"  runtime version: {runtime_version}")
+
+            # Extract version from flatc output (e.g., "flatc version 25.9.23")
+            import re
+            match = re.search(r"(\d+)\.(\d+)\.(\d+)", version_output)
+            if match:
+                flatc_major, flatc_minor, flatc_patch = map(int, match.groups())
+                runtime_major, runtime_minor, runtime_patch = runtime_version[:3]
+
+                if (flatc_major, flatc_minor, flatc_patch) == (runtime_major, runtime_minor, runtime_patch):
+                    print(f"  version match: flatc {flatc_major}.{flatc_minor}.{flatc_patch} == runtime {runtime_major}.{runtime_minor}.{runtime_patch}")
+                    print("  PASS")
+                    return True
+                else:
+                    print(f"  WARNING: version mismatch - flatc {flatc_major}.{flatc_minor}.{flatc_patch} != runtime {runtime_major}.{runtime_minor}.{runtime_patch}")
+                    print("  PASS (with warning)")
+                    return True  # Still pass but warn - versions should match ideally
+            else:
+                print("  WARNING: could not parse flatc version for comparison")
+                print("  PASS")
+                return True
+        else:
+            print("  PASS (version check skipped - no version() function)")
+            return True
     except ImportError as e:
         print(f"  FAIL: {package_name}._flatc module not available: {e}")
         return False

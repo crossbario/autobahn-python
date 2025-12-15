@@ -1798,14 +1798,49 @@ publish venv="" tag="": (publish-pypi venv tag) (publish-rtd tag)
 # -- FlatBuffers Schema Generation
 # -----------------------------------------------------------------------------
 
-# Install latest FlatBuffers compiler (flatc) to /usr/local/bin
-install-flatc:
+# Install FlatBuffers compiler (flatc) to /usr/local/bin (SYSTEM-WIDE)
+#
+# WARNING: You probably DON'T need this!
+#
+# autobahn-python bundles flatc in binary wheels and source distributions.
+# After installing autobahn, you can use the bundled flatc via:
+#
+#   flatc --version              # If installed via pip/wheel
+#   python -m autobahn._flatc    # Alternative invocation
+#
+# This recipe installs a SEPARATE system-wide flatc binary to /usr/local/bin.
+# Only use this if you specifically need a system flatc that is independent
+# of your Python environment.
+#
+install-flatc-system:
     #!/usr/bin/env bash
     set -e
+
+    echo "======================================================================"
+    echo "WARNING: Installing SYSTEM-WIDE flatc to /usr/local/bin"
+    echo "======================================================================"
+    echo ""
+    echo "You probably DON'T need this!"
+    echo ""
+    echo "autobahn-python bundles flatc in binary wheels. After 'pip install autobahn':"
+    echo "  - Run 'flatc --version' to use the bundled compiler"
+    echo "  - The bundled flatc version matches the vendored FlatBuffers runtime"
+    echo ""
+    echo "This recipe installs a SEPARATE system flatc that may have a different"
+    echo "version than the bundled one, potentially causing compatibility issues."
+    echo ""
+    read -p "DO YOU REALLY WANT TO INSTALL SYSTEM-WIDE FLATC? [y/N] " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Aborted."
+        exit 0
+    fi
+
     FLATC_VERSION="25.9.23"
     FLATC_URL="https://github.com/google/flatbuffers/releases/download/v${FLATC_VERSION}/Linux.flatc.binary.g++-13.zip"
     TEMP_DIR=$(mktemp -d)
 
+    echo ""
     echo "==> Installing FlatBuffers compiler v${FLATC_VERSION}..."
     echo "    URL: ${FLATC_URL}"
     echo "    Temp dir: ${TEMP_DIR}"
@@ -1825,8 +1860,12 @@ install-flatc:
 
     # Verify installation
     echo "==> Verification:"
-    flatc --version
-    echo "✅ FlatBuffers compiler v${FLATC_VERSION} installed successfully!"
+    /usr/local/bin/flatc --version
+    echo ""
+    echo "✅ System-wide FlatBuffers compiler v${FLATC_VERSION} installed to /usr/local/bin/flatc"
+    echo ""
+    echo "NOTE: The bundled flatc in autobahn wheels may have a different path priority."
+    echo "      Use '/usr/local/bin/flatc' explicitly if you need the system version."
 
 # Clean generated FlatBuffers files
 clean-fbs:
