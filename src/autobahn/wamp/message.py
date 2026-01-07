@@ -28,7 +28,7 @@ import binascii
 import re
 import textwrap
 from pprint import pformat
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional, overload
 
 import autobahn
 from autobahn.util import hlval
@@ -272,6 +272,30 @@ def identify_realm_name_category(value: Any) -> Optional[str]:
         return None
 
 
+@overload
+def check_or_raise_uri(
+    value: Any,
+    message: str,
+    strict: bool,
+    allow_empty_components: bool,
+    allow_last_empty: bool,
+    allow_none: Literal[True],
+) -> str | None:
+    pass
+
+
+@overload
+def check_or_raise_uri(
+    value: Any,
+    message: str = "WAMP message invalid",
+    strict: bool = False,
+    allow_empty_components: bool = False,
+    allow_last_empty: bool = False,
+    allow_none: Literal[False] = False,
+) -> str:
+    pass
+
+
 def check_or_raise_uri(
     value: Any,
     message: str = "WAMP message invalid",
@@ -279,7 +303,7 @@ def check_or_raise_uri(
     allow_empty_components: bool = False,
     allow_last_empty: bool = False,
     allow_none: bool = False,
-) -> str:
+) -> str | None:
     """
     Check a value for being a valid WAMP URI.
 

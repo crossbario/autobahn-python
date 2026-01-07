@@ -25,7 +25,7 @@
 ###############################################################################
 
 from base64 import b64decode, b64encode
-from typing import Optional
+from typing import Any, Optional
 
 import txaio
 from zope.interface import implementer
@@ -79,14 +79,14 @@ __all__ = (
 )
 
 
-def create_client_agent(reactor):
+def create_client_agent(reactor) -> "_TwistedWebSocketClientAgent":
     """
     :returns: an instance implementing IWebSocketClientAgent
     """
     return _TwistedWebSocketClientAgent(reactor)
 
 
-def check_transport_config(transport_config):
+def check_transport_config(transport_config: str) -> None:
     """
     raises a ValueError if `transport_config` is invalid
     """
@@ -107,7 +107,7 @@ def check_transport_config(transport_config):
     return None
 
 
-def check_client_options(options):
+def check_client_options(options: dict[str, Any]) -> None:
     """
     raises a ValueError if `options` is invalid
     """
@@ -264,7 +264,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     peer: Optional[str] = None
     is_server: Optional[bool] = None
 
-    def connectionMade(self):
+    def connectionMade(self) -> None:
         # Twisted networking framework entry point, called by Twisted
         # when the connection is established (either a client or a server)
 
@@ -296,7 +296,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             peer=hlval(self.peer),
         )
 
-    def connectionLost(self, reason: Failure = connectionDone):
+    def connectionLost(self, reason: Failure = connectionDone) -> None:
         # Twisted networking framework entry point, called by Twisted
         # when the connection is lost (either a client or a server)
 
@@ -352,7 +352,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
                 reason=reason,
             )
 
-    def dataReceived(self, data: bytes):
+    def dataReceived(self, data: bytes) -> None:
         self.log.debug(
             '{func} received {data_len} bytes for peer="{peer}"',
             func=hltype(self.dataReceived),
@@ -363,14 +363,14 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         # bytes received from Twisted, forward to the networking framework independent code for websocket
         self._dataReceived(data)
 
-    def _closeConnection(self, abort=False):
+    def _closeConnection(self, abort: bool=False) -> None:
         if abort and hasattr(self.transport, "abortConnection"):
             self.transport.abortConnection()
         else:
             # e.g. ProcessProtocol lacks abortConnection()
             self.transport.loseConnection()
 
-    def _onOpen(self):
+    def _onOpen(self) -> None:
         if self._transport_details.is_secure:
             # now that the TLS opening handshake is complete, the actual TLS channel ID
             # will be available. make sure to set it!
@@ -383,37 +383,37 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
         self.onOpen()
 
-    def _onMessageBegin(self, isBinary):
+    def _onMessageBegin(self, isBinary: bool) -> None:
         self.onMessageBegin(isBinary)
 
-    def _onMessageFrameBegin(self, length):
+    def _onMessageFrameBegin(self, length: int) -> None:
         self.onMessageFrameBegin(length)
 
-    def _onMessageFrameData(self, payload):
+    def _onMessageFrameData(self, payload) -> None:
         self.onMessageFrameData(payload)
 
-    def _onMessageFrameEnd(self):
+    def _onMessageFrameEnd(self) -> None:
         self.onMessageFrameEnd()
 
-    def _onMessageFrame(self, payload):
+    def _onMessageFrame(self, payload) -> None:
         self.onMessageFrame(payload)
 
-    def _onMessageEnd(self):
+    def _onMessageEnd(self) -> None:
         self.onMessageEnd()
 
-    def _onMessage(self, payload, isBinary):
+    def _onMessage(self, payload, isBinary: bool) -> None:
         self.onMessage(payload, isBinary)
 
-    def _onPing(self, payload):
+    def _onPing(self, payload) -> None:
         self.onPing(payload)
 
-    def _onPong(self, payload):
+    def _onPong(self, payload) -> None:
         self.onPong(payload)
 
-    def _onClose(self, wasClean, code, reason):
+    def _onClose(self, wasClean: bool, code, reason) -> None:
         self.onClose(wasClean, code, reason)
 
-    def registerProducer(self, producer, streaming):
+    def registerProducer(self, producer, streaming) -> None:
         """
         Register a Twisted producer with this protocol.
 
@@ -424,7 +424,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         """
         self.transport.registerProducer(producer, streaming)
 
-    def unregisterProducer(self):
+    def unregisterProducer(self) -> None:
         """
         Unregister Twisted producer with this protocol.
         """

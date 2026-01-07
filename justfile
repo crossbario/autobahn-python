@@ -702,17 +702,15 @@ check-typing venv="": (install venv)
         --ignore unresolved-attribute \
         --ignore unresolved-reference \
         --ignore possibly-missing-attribute \
-        --ignore possibly-missing-import \
         --ignore call-non-callable \
         --ignore invalid-assignment \
         --ignore invalid-argument-type \
-        --ignore invalid-return-type \
         --ignore invalid-method-override \
         --ignore invalid-type-form \
         --ignore unsupported-operator \
         --ignore too-many-positional-arguments \
         --ignore unknown-argument \
-        --ignore non-subscriptable \
+        --ignore not-subscriptable \
         --ignore not-iterable \
         --ignore no-matching-overload \
         --ignore conflicting-declarations \

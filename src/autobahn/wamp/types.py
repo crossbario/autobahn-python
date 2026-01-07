@@ -2113,7 +2113,7 @@ class TransportDetails(object):
         self._is_secure = value
 
     @property
-    def channel_id(self) -> Dict[str, bytes]:
+    def channel_id(self) -> Dict[str, bytes] | None:
         """
         If this transport runs over a secure underlying connection, e.g. TLS,
         return a map of channel binding by binding type.
@@ -2161,7 +2161,7 @@ class TransportDetails(object):
         self._channel_id = value
 
     @property
-    def peer_cert(self) -> Dict[str, Any]:
+    def peer_cert(self) -> Dict[str, Any] | None:
         """
         If this transport is using TLS and the TLS peer has provided a valid certificate,
         this attribute returns the peer certificate.
@@ -2200,7 +2200,7 @@ class TransportDetails(object):
         self._websocket_extensions_in_use = value
 
     @property
-    def http_headers_received(self) -> Dict[str, Any]:
+    def http_headers_received(self) -> Dict[str, Any] | None:
         """
         If the underlying connection uses a regular HTTP based WebSocket opening handshake,
         the HTTP request headers as received from the client on this connection.
@@ -2212,7 +2212,7 @@ class TransportDetails(object):
         self._http_headers_received = value
 
     @property
-    def http_headers_sent(self) -> Dict[str, Any]:
+    def http_headers_sent(self) -> Dict[str, Any] | None:
         """
         If the underlying connection uses a regular HTTP based WebSocket opening handshake,
         the HTTP response headers as sent from the server on this connection.

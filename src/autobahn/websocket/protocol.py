@@ -36,7 +36,7 @@ import struct
 import time
 from collections import deque
 from pprint import pformat
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Literal, Iterable, Optional, Tuple, Union, overload
 from urllib import parse
 
 import hyperlink
@@ -249,20 +249,15 @@ class FrameHeader(object):
     FOR INTERNAL USE ONLY!
     """
 
-    def __init__(self, opcode, fin, rsv, length, mask):
+    def __init__(self, opcode: int, fin: bool, rsv: int, length: int, mask: str):
         """
         Constructor.
 
         :param opcode: Frame opcode (0-15).
-        :type opcode: int
         :param fin: Frame FIN flag.
-        :type fin: bool
         :param rsv: Frame reserved flags (0-7).
-        :type rsv: int
         :param length: Frame payload length.
-        :type length: int
         :param mask: Frame mask (binary string) or None.
-        :type mask: str
         """
         self.opcode = opcode
         self.fin = fin
@@ -271,7 +266,7 @@ class FrameHeader(object):
         self.mask = mask
 
 
-def parseHttpHeader(data):
+def parseHttpHeader(data: bytes) -> tuple[str, dict[str, str], dict[str, int]]:
     """
     Parses the beginning of a HTTP request header (the data up to the \n\n line) into a pair
     of status line and HTTP headers dictionary.
@@ -280,7 +275,6 @@ def parseHttpHeader(data):
     FOR INTERNAL USE ONLY!
 
     :param data: The HTTP header data up to the \n\n line.
-    :type data: bytes
 
     :returns: Tuple of HTTP status line, headers and headers count.
     """
@@ -294,8 +288,8 @@ def parseHttpHeader(data):
     #
     raw = data.decode("iso-8859-1").splitlines()
     http_status_line = raw[0].strip()
-    http_headers = {}
-    http_headers_cnt = {}
+    http_headers: dict[str, str] = {}
+    http_headers_cnt: dict[str, int] = {}
     for h in raw[1:]:
         i = h.find(":")
         if i > 0:
@@ -324,27 +318,31 @@ class Timings(object):
 
     def __init__(self):
         self._stopwatch = Stopwatch()
-        self._timings = {}
+        self._timings: dict[str, float] = {}
 
-    def track(self, key):
+    def track(self, key: str) -> None:
         """
         Track elapsed for key.
 
         :param key: Key under which to track the timing.
-        :type key: str
         """
         self._timings[key] = self._stopwatch.elapsed()
 
-    def diff(self, startKey, endKey, formatted=True):
+    @overload
+    def diff(self, startKey: str, endKey: str, formatted: Literal[True]) -> str | None:
+        ...
+
+    @overload
+    def diff(self, startKey: str, endKey: str, formatted: Literal[False]) -> float | None:
+        ...
+
+    def diff(self, startKey: str, endKey: str, formatted: bool=True) -> str | float | None:
         """
         Get elapsed difference between two previously tracked keys.
 
         :param startKey: First key for interval (older timestamp).
-        :type startKey: str
         :param endKey: Second key for interval (younger timestamp).
-        :type endKey: str
         :param formatted: If ``True``, format computed time period and return string.
-        :type formatted: bool
 
         :returns: Computed time period in seconds (or formatted string).
         """
@@ -368,13 +366,13 @@ class Timings(object):
             else:
                 return None
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> float | None:
         return self._timings.get(key, None)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[str]:
         return self._timings.__iter__()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return pformat(self._timings)
 
 
@@ -586,7 +584,7 @@ class WebSocketProtocol(ObservableMixin):
     Configuration attributes specific to clients.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         #: a Future/Deferred that fires when we hit STATE_CLOSED
         self.is_closed = txaio.create_future()
         self.is_open = txaio.create_future()
@@ -610,21 +608,21 @@ class WebSocketProtocol(ObservableMixin):
         """
         return self._transport_details
 
-    def onOpen(self):
+    def onOpen(self) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
         """
         self.log.debug("WebSocketProtocol.onOpen")
 
-    def onMessageBegin(self, isBinary):
+    def onMessageBegin(self, isBinary: bool) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageBegin`
         """
         self.message_is_binary = isBinary
-        self.message_data = []
+        self.message_data: list[bytes] = []
         self.message_data_total_length = 0
 
-    def onMessageFrameBegin(self, length):
+    def onMessageFrameBegin(self, length: int) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameBegin`
         """
@@ -651,7 +649,7 @@ class WebSocketProtocol(ObservableMixin):
                     ),
                 )
 
-    def onMessageFrameData(self, payload):
+    def onMessageFrameData(self, payload: bytes) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameData`
         """
@@ -671,7 +669,7 @@ class WebSocketProtocol(ObservableMixin):
             else:
                 self.frame_data.append(payload)
 
-    def onMessageFrameEnd(self):
+    def onMessageFrameEnd(self) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameEnd`
         """
@@ -680,14 +678,14 @@ class WebSocketProtocol(ObservableMixin):
 
         self.frame_data = None
 
-    def onMessageFrame(self, payload):
+    def onMessageFrame(self, payload) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrame`
         """
         if not self.failedByMe:
             self.message_data.extend(payload)
 
-    def onMessageEnd(self):
+    def onMessageEnd(self) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageEnd`
         """
@@ -712,7 +710,7 @@ class WebSocketProtocol(ObservableMixin):
 
         self.message_data = None
 
-    def onMessage(self, payload, isBinary):
+    def onMessage(self, payload: bytes, isBinary: bool) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
         """
@@ -722,7 +720,7 @@ class WebSocketProtocol(ObservableMixin):
             isBinary=isBinary,
         )
 
-    def onPing(self, payload):
+    def onPing(self, payload: bytes) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onPing`
         """
@@ -733,7 +731,7 @@ class WebSocketProtocol(ObservableMixin):
         if self.state == WebSocketProtocol.STATE_OPEN:
             self.sendPong(payload)
 
-    def onPong(self, payload):
+    def onPong(self, payload: bytes) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onPong`
         """
@@ -742,7 +740,7 @@ class WebSocketProtocol(ObservableMixin):
             payload_len=(len(payload) if payload else 0),
         )
 
-    def onClose(self, wasClean, code, reason):
+    def onClose(self, wasClean: bool, code, reason) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
         """
@@ -753,7 +751,7 @@ class WebSocketProtocol(ObservableMixin):
             reason=reason,
         )
 
-    def onCloseFrame(self, code, reasonRaw):
+    def onCloseFrame(self, code: int, reasonRaw: bytes) -> bool | None:
         """
         Callback when a Close frame was received. The default implementation answers by
         sending a Close when no Close was sent before. Otherwise it drops
@@ -761,9 +759,7 @@ class WebSocketProtocol(ObservableMixin):
         (when we are a client and expect the server to drop the TCP).
 
         :param code: Close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
-        :type code: int
         :param reasonRaw: Close reason (when present, a status code MUST have been also be present).
-        :type reasonRaw: bytes
         """
         self.remoteCloseCode = None
         self.remoteCloseReason = None
@@ -867,7 +863,7 @@ class WebSocketProtocol(ObservableMixin):
             # STATE_PROXY_CONNECTING, STATE_CONNECTING
             raise Exception("logic error")
 
-    def onServerConnectionDropTimeout(self):
+    def onServerConnectionDropTimeout(self) -> None:
         """
         We (a client) expected the peer (a server) to drop the connection,
         but it didn't (in time self.serverConnectionDropTimeout).
@@ -885,7 +881,7 @@ class WebSocketProtocol(ObservableMixin):
                 "skipping closing handshake timeout: server did indeed drop the connection in time"
             )
 
-    def onOpenHandshakeTimeout(self):
+    def onOpenHandshakeTimeout(self) -> None:
         """
         We expected the peer to complete the opening handshake with to us.
         It didn't do so (in time self.openHandshakeTimeout).
@@ -917,7 +913,7 @@ class WebSocketProtocol(ObservableMixin):
             # should not arrive here
             raise Exception("logic error")
 
-    def onCloseHandshakeTimeout(self):
+    def onCloseHandshakeTimeout(self) -> None:
         """
         We expected the peer to respond to us initiating a close handshake. It didn't
         respond (in time self.closeHandshakeTimeout) with a close response frame though.
@@ -935,7 +931,7 @@ class WebSocketProtocol(ObservableMixin):
                 "skipping closing handshake timeout: WebSocket connection is already closed"
             )
 
-    def onAutoPong(self, ping_sent, ping_seq, pong_received, pong_rtt, payload):
+    def onAutoPong(self, ping_sent, ping_seq, pong_received, pong_rtt, payload) -> None:
         """
         When doing automatic ping/pongs, this is called upon a successful pong.
 
@@ -955,7 +951,7 @@ class WebSocketProtocol(ObservableMixin):
             rtt=pong_rtt,
         )
 
-    def onAutoPingTimeout(self):
+    def onAutoPingTimeout(self) -> None:
         """
         When doing automatic ping/pongs to detect broken connection, the peer
         did not reply in time to our ping. We drop the connection.
@@ -967,7 +963,7 @@ class WebSocketProtocol(ObservableMixin):
         self.autoPingTimeoutCall = None
         self.dropConnection(abort=True)
 
-    def dropConnection(self, abort=False):
+    def dropConnection(self, abort: bool=False) -> None:
         """
         Drop the underlying TCP connection.
         """
@@ -1002,7 +998,7 @@ class WebSocketProtocol(ObservableMixin):
                 peer=self.peer,
             )
 
-    def _max_message_size_exceeded(self, msg_size, max_msg_size, reason):
+    def _max_message_size_exceeded(self, msg_size, max_msg_size, reason) -> None:
         # hook that is fired when a message is (to be) received that is larger than what is configured to be handled
         if True:
             self._fail_connection(
@@ -1011,7 +1007,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             raise PayloadExceededError(reason)
 
-    def _fail_connection(self, code=CLOSE_STATUS_CODE_GOING_AWAY, reason="going away"):
+    def _fail_connection(self, code: int=CLOSE_STATUS_CODE_GOING_AWAY, reason: str="going away") -> None:
         """
         Fails the WebSocket connection.
         """
@@ -1041,7 +1037,7 @@ class WebSocketProtocol(ObservableMixin):
                         isReply=False,
                     )
                 else:
-                    # already performing closing handshake .. we now drop the TCP
+                    # already performing closing handshake .. we now drop theprotocol TCP
                     # (this can happen e.g. if we encounter a 2nd protocol violation during closing HS)
                     self.dropConnection(abort=False)
 
@@ -1050,12 +1046,11 @@ class WebSocketProtocol(ObservableMixin):
                 "skip failing of connection since connection is already closed"
             )
 
-    def _protocol_violation(self, reason):
+    def _protocol_violation(self, reason: str) -> bool:
         """
         Fired when a WebSocket protocol violation/error occurs.
 
         :param reason: Protocol violation that was encountered (human readable).
-        :type reason: str
 
         :returns: True, when any further processing should be discontinued.
         """
@@ -1072,14 +1067,13 @@ class WebSocketProtocol(ObservableMixin):
             # to continue to later receive the closing handshake reply
             return False
 
-    def _invalid_payload(self, reason):
+    def _invalid_payload(self, reason: str) -> bool:
         """
         Fired when invalid payload is encountered. Currently, this only happens
         for text message when payload is invalid UTF-8 or close frames with
         close reason that is invalid UTF-8.
 
         :param reason: What was invalid for the payload (human readable).
-        :type reason: str
 
         :returns: True, when any further processing should be discontinued.
         """
@@ -1096,12 +1090,11 @@ class WebSocketProtocol(ObservableMixin):
             # to continue to later receive the closing handshake reply
             return False
 
-    def setTrackTimings(self, enable):
+    def setTrackTimings(self, enable: bool) -> None:
         """
         Enable/disable tracking of detailed timings.
 
         :param enable: Turn time tracking on/off.
-        :type enable: bool
         """
         if not hasattr(self, "trackTimings") or self.trackTimings != enable:
             self.trackTimings = enable
@@ -1110,7 +1103,7 @@ class WebSocketProtocol(ObservableMixin):
             else:
                 self.trackedTimings = None
 
-    def _connectionMade(self):
+    def _connectionMade(self) -> None:
         """
         This is called by network framework when a new TCP connection has been established
         and handed over to a Protocol instance (an instance of this class).
@@ -1230,7 +1223,7 @@ class WebSocketProtocol(ObservableMixin):
                 self.onOpenHandshakeTimeout,
             )
 
-    def _connectionLost(self, reason):
+    def _connectionLost(self, reason: str) -> None:
         """
         This is called by network framework when a transport connection was
         lost.
@@ -1300,7 +1293,7 @@ class WebSocketProtocol(ObservableMixin):
                 )
             # XXX could self.fire("close", ...) here if we want?
 
-    def logRxOctets(self, data):
+    def logRxOctets(self, data: bytes) -> None:
         """
         Hook fired right after raw octets have been received, but only when
         self.logOctets == True.
@@ -1311,7 +1304,7 @@ class WebSocketProtocol(ObservableMixin):
             octets=_LazyHexFormatter(data),
         )
 
-    def logTxOctets(self, data, sync):
+    def logTxOctets(self, data: bytes, sync: bool) -> None:
         """
         Hook fired right after raw octets have been sent, but only when
         self.logOctets == True.
@@ -1323,7 +1316,7 @@ class WebSocketProtocol(ObservableMixin):
             octets=_LazyHexFormatter(data),
         )
 
-    def logRxFrame(self, frameHeader, payload):
+    def logRxFrame(self, frameHeader: FrameHeader, payload: bytes) -> None:
         """
         Hook fired right after WebSocket frame has been received and decoded,
         but only when self.logFrames == True.
@@ -1341,7 +1334,7 @@ class WebSocketProtocol(ObservableMixin):
             payload=repr(data) if frameHeader.opcode == 1 else _LazyHexFormatter(data),
         )
 
-    def logTxFrame(self, frameHeader, payload, repeatLength, chopsize, sync):
+    def logTxFrame(self, frameHeader: FrameHeader, payload: bytes, repeatLength: int, chopsize: int, sync: bool) -> None:
         """
         Hook fired right after WebSocket frame has been encoded and sent, but
         only when self.logFrames == True.
@@ -1364,7 +1357,7 @@ class WebSocketProtocol(ObservableMixin):
             ),
         )
 
-    def _dataReceived(self, data):
+    def _dataReceived(self, data: bytes) -> None:
         """
         This is called by network framework upon receiving data on transport
         connection.
@@ -1382,7 +1375,7 @@ class WebSocketProtocol(ObservableMixin):
         self.data += data
         self.consumeData()
 
-    def consumeData(self):
+    def consumeData(self) -> None:
         """
         Consume buffered (incoming) data.
         """
@@ -1423,7 +1416,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             raise Exception("invalid state")
 
-    def processProxyConnect(self):
+    def processProxyConnect(self) -> None:
         """
         Process proxy connect.
         """
@@ -1431,13 +1424,13 @@ class WebSocketProtocol(ObservableMixin):
             "must implement proxy connect (client or server) in derived class"
         )
 
-    def processHandshake(self):
+    def processHandshake(self) -> None:
         """
         Process WebSocket handshake.
         """
         raise Exception("must implement handshake (client or server) in derived class")
 
-    def _trigger(self):
+    def _trigger(self) -> None:
         """
         Trigger sending stuff from send queue (which is only used for
         chopped/synched writes).
@@ -1446,7 +1439,7 @@ class WebSocketProtocol(ObservableMixin):
             self.triggered = True
             self._send()
 
-    def _send(self):
+    def _send(self) -> None:
         """
         Send out stuff from send queue. For details how this works, see
         test/trickling in the repo.
@@ -1479,7 +1472,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             self.triggered = False
 
-    def sendData(self, data, sync=False, chopsize=None):
+    def sendData(self, data: bytes, sync: bool=False, chopsize: int | None=None) -> None:
         """
         Wrapper for self.transport.write which allows to give a chopsize.
         When asked to chop up writing to TCP stream, we write only chopsize
@@ -1525,7 +1518,7 @@ class WebSocketProtocol(ObservableMixin):
                 if self.logOctets:
                     self.logTxOctets(data, False)
 
-    def sendPreparedMessage(self, preparedMsg):
+    def sendPreparedMessage(self, preparedMsg: PreparedMessage) -> None:
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPreparedMessage`
         """
@@ -1534,7 +1527,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             self.sendMessage(preparedMsg.payload, preparedMsg.binary)
 
-    def processData(self):
+    def processData(self) -> bool:
         """
         After WebSocket handshake has been completed, this procedure will do
         all subsequent processing of incoming bytes.
@@ -1813,7 +1806,7 @@ class WebSocketProtocol(ObservableMixin):
             #
             return len(self.data) > 0
 
-    def onFrameBegin(self):
+    def onFrameBegin(self) -> None:
         """
         Begin of receive new frame.
         """
@@ -1858,7 +1851,7 @@ class WebSocketProtocol(ObservableMixin):
 
             self._onMessageFrameBegin(self.current_frame.length)
 
-    def onFrameData(self, payload):
+    def onFrameData(self, payload: bytes) -> bool | None:
         """
         New data received within frame.
         """
@@ -1901,7 +1894,7 @@ class WebSocketProtocol(ObservableMixin):
 
             self._onMessageFrameData(payload)
 
-    def onFrameEnd(self):
+    def onFrameEnd(self) -> bool | None:
         """
         End of frame received.
         """
@@ -1948,7 +1941,7 @@ class WebSocketProtocol(ObservableMixin):
 
         self.current_frame = None
 
-    def processControlFrame(self):
+    def processControlFrame(self) -> bool:
         """
         Process a completely received control frame.
         """
@@ -2027,15 +2020,15 @@ class WebSocketProtocol(ObservableMixin):
 
     def sendFrame(
         self,
-        opcode,
-        payload=b"",
-        fin=True,
-        rsv=0,
-        mask=None,
-        payload_len=None,
-        chopsize=None,
-        sync=False,
-    ):
+        opcode: int,
+        payload: bytes=b"",
+        fin: bool=True,
+        rsv: int=0,
+        mask: bytes | None=None,
+        payload_len: int | None=None,
+        chopsize: int | None=None,
+        sync: bool=False,
+    ) -> None:
         """
         Send out frame. Normally only used internally via sendMessage(),
         sendPing(), sendPong() and sendClose().
@@ -2133,7 +2126,7 @@ class WebSocketProtocol(ObservableMixin):
         #
         self.sendData(raw, sync, chopsize)
 
-    def sendPing(self, payload=None):
+    def sendPing(self, payload: bytes | None=None) -> None:
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPing`
         """
@@ -2151,7 +2144,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             self.sendFrame(opcode=9)
 
-    def _sendAutoPing(self):
+    def _sendAutoPing(self) -> None:
         # Sends an automatic ping and sets up a timeout.
         self.log.debug("Auto ping/pong: sending ping auto-ping/pong")
 
@@ -2221,7 +2214,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             self.sendFrame(opcode=10)
 
-    def sendCloseFrame(self, code=None, reasonUtf8=None, isReply=False):
+    def sendCloseFrame(self, code: int | None=None, reasonUtf8: bytes | None=None, isReply: bool=False) -> None:
         """
         Send a close frame and update protocol state. Note, that this is
         an internal method which deliberately allows not send close
@@ -2266,7 +2259,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             raise Exception("logic error")
 
-    def sendClose(self, code=None, reason=None):
+    def sendClose(self, code: int | None=None, reason: str | None=None) -> None:
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
         """
@@ -2305,7 +2298,7 @@ class WebSocketProtocol(ObservableMixin):
 
         self.sendCloseFrame(code=code, reasonUtf8=reasonUtf8, isReply=False)
 
-    def beginMessage(self, isBinary=False, doNotCompress=False):
+    def beginMessage(self, isBinary: bool=False, doNotCompress: bool=False) -> None:
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.beginMessage`
         """
@@ -2336,7 +2329,7 @@ class WebSocketProtocol(ObservableMixin):
 
         self.trafficStats.outgoingWebSocketMessages += 1
 
-    def beginMessageFrame(self, length):
+    def beginMessageFrame(self, length: int) -> None:
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.beginMessageFrame`
         """
@@ -2431,7 +2424,7 @@ class WebSocketProtocol(ObservableMixin):
         #
         self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME
 
-    def sendMessageFrameData(self, payload, sync=False):
+    def sendMessageFrameData(self, payload: bytes, sync: bool=False) -> None:
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessageFrameData`
         """
@@ -2486,7 +2479,7 @@ class WebSocketProtocol(ObservableMixin):
         #
         return rest
 
-    def endMessage(self):
+    def endMessage(self) -> None:
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.endMessage`
         """
@@ -2508,7 +2501,7 @@ class WebSocketProtocol(ObservableMixin):
 
         self.send_state = WebSocketProtocol.SEND_STATE_GROUND
 
-    def sendMessageFrame(self, payload, sync=False):
+    def sendMessageFrame(self, payload: bytes, sync: bool=False) -> None:
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessageFrame`
         """
@@ -2691,21 +2684,17 @@ class PreparedMessage(object):
     This can be used for optimizing Broadcast/PubSub.
     """
 
-    def __init__(self, payload, isBinary, applyMask, doNotCompress):
+    def __init__(self, payload: bytes, isBinary: bool, applyMask: bool, doNotCompress: bool):
         """
         Ctor for a prepared message.
 
         :param payload: The message payload.
-        :type payload: str
         :param isBinary: Provide `True` for binary payload.
-        :type isBinary: bool
         :param applyMask: Provide `True` if WebSocket message is to be masked (required for client to server WebSocket messages).
-        :type applyMask: bool
         :param doNotCompress: Iff `True`, never compress this message. This
             only applies when WebSocket compression has been negotiated on the
             WebSocket connection. Use when you know the payload incompressible
             (e.g. encrypted or already compressed).
-        :type doNotCompress: bool
         """
         if not doNotCompress:
             # we need to store original payload for compressed WS
@@ -2764,7 +2753,7 @@ class WebSocketFactory(object):
     :class:`autobahn.websocket.protocol.WebSocketServerFactory`.
     """
 
-    def prepareMessage(self, payload, isBinary=False, doNotCompress=False):
+    def prepareMessage(self, payload: bytes, isBinary: bool=False, doNotCompress: bool=False):
         """
         Prepare a WebSocket message. This can be later sent on multiple
         instances of :class:`autobahn.websocket.WebSocketProtocol` using
@@ -2775,15 +2764,12 @@ class WebSocketFactory(object):
         same payload is to be sent out on multiple connections.
 
         :param payload: The message payload.
-        :type payload: bytes
         :param isBinary: `True` iff payload is binary, else the payload must be
             UTF-8 encoded text.
-        :type isBinary: bool
         :param doNotCompress: Iff `True`, never compress this message. This
             only applies when WebSocket compression has been negotiated on the
             WebSocket connection. Use when you know the payload incompressible
             (e.g. encrypted or already compressed).
-        :type doNotCompress: bool
 
         :returns: An instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
         """
@@ -2865,7 +2851,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         )
         return None
 
-    def _connectionMade(self):
+    def _connectionMade(self) -> None:
         """
         Called by network framework when new transport connection from client was
         accepted. Default implementation will prepare for initial WebSocket opening
@@ -2880,7 +2866,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         WebSocketProtocol._connectionMade(self)
         self.factory.countConnections += 1
 
-    def _connectionLost(self, reason):
+    def _connectionLost(self, reason: str) -> None:
         """
         Called by network framework when established transport connection from client
         was lost. Default implementation will tear down all state properly.
@@ -2896,10 +2882,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
         WebSocketProtocol._connectionLost(self, reason)
         self.factory.countConnections -= 1
 
-    def processProxyConnect(self):
+    def processProxyConnect(self) -> None:
         raise Exception("Autobahn isn't a proxy server")
 
-    def processHandshake(self):
+    def processHandshake(self) -> None:
         """
         Process WebSocket opening handshake request from client.
         """
@@ -3372,7 +3358,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                         "WebSocketServerFactory.flashSocketPolicy"
                     )
 
-    def succeedHandshake(self, res):
+    def succeedHandshake(self, res) -> None:
         """
         Callback after onConnect() returns successfully. Generates the response for the handshake.
         """
@@ -3555,7 +3541,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         if len(self.data) > 0:
             self.consumeData()
 
-    def failHandshake(self, reason, code=400, responseHeaders=None):
+    def failHandshake(self, reason: str, code: int=400, responseHeaders=None):
         """
         During opening handshake the client request was invalid, we send a HTTP
         error response and then drop the connection.
@@ -3576,7 +3562,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         response += "\x0d\x0a"
         self.sendData(response.encode("utf8"))
 
-    def sendHtml(self, html):
+    def sendHtml(self, html: str) -> None:
         """
         Send HTML page HTTP response.
         """
@@ -3590,7 +3576,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         self.sendData(response.encode("utf8"))
         self.sendData(responseBody)
 
-    def sendRedirect(self, url):
+    def sendRedirect(self, url: str) -> None:
         """
         Send HTTP Redirect (303) response.
         """
@@ -3601,7 +3587,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         response += "\x0d\x0a"
         self.sendData(response.encode("utf8"))
 
-    def sendServerStatus(self, redirectUrl=None, redirectAfter=0):
+    def sendServerStatus(self, redirectUrl: str | None=None, redirectAfter: int=0) -> None:
         """
         Used to send out server status/version upon receiving a HTTP/GET without
         upgrade to WebSocket header (and option serverStatus is True).
