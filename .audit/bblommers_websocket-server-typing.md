@@ -4,5 +4,5 @@
 
 Submitted by: @bblommers
 Date: 2026-01-07
-Related issue(s): 
+Related issue(s): #1839
 Branch: bblommers:websocket-server-typing

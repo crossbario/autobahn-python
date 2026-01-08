@@ -24,11 +24,13 @@
 #
 ###############################################################################
 
+from __future__ import annotations
+
 import binascii
 import re
 import textwrap
 from pprint import pformat
-from typing import Any, Dict, Literal, Optional, overload
+from typing import Any, Literal, overload
 
 import autobahn
 from autobahn.util import hlval
@@ -243,7 +245,7 @@ def b2a(data, max_len=40):
         return s
 
 
-def identify_realm_name_category(value: Any) -> Optional[str]:
+def identify_realm_name_category(value: Any) -> str | None:
     """
     Identify the real name category of the given value:
 
@@ -432,7 +434,7 @@ def check_or_raise_id(value: Any, message: str = "WAMP message invalid") -> int:
 
 def check_or_raise_extra(
     value: Any, message: str = "WAMP message invalid"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Check a value for being a valid WAMP extra dictionary.
 

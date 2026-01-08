@@ -24,6 +24,8 @@
 #
 ###############################################################################
 
+from __future__ import annotations
+
 import base64
 import binascii
 import copy
@@ -36,7 +38,7 @@ import struct
 import time
 from collections import deque
 from pprint import pformat
-from typing import Dict, Literal, Iterable, Optional, Tuple, Union, overload
+from typing import Literal, Iterator, overload
 from urllib import parse
 
 import hyperlink
@@ -369,8 +371,8 @@ class Timings(object):
     def __getitem__(self, key: str) -> float | None:
         return self._timings.get(key, None)
 
-    def __iter__(self) -> Iterable[str]:
-        return self._timings.__iter__()
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._timings)
 
     def __str__(self) -> str:
         return pformat(self._timings)
@@ -599,10 +601,10 @@ class WebSocketProtocol(ObservableMixin):
         # set in
         #   * autobahn.twisted.websocket.WebSocketAdapterProtocol.connectionMade
         #   * autobahn.asyncio.websocket.WebSocketAdapterProtocol.
-        self._transport_details: Optional[TransportDetails] = TransportDetails()
+        self._transport_details: TransportDetails | None = TransportDetails()
 
     @property
-    def transport_details(self) -> Optional[TransportDetails]:
+    def transport_details(self) -> TransportDetails | None:
         """
         Implements :class:`autobahn.wamp.interfaces.ITransport.transport_details`.
         """
@@ -678,7 +680,7 @@ class WebSocketProtocol(ObservableMixin):
 
         self.frame_data = None
 
-    def onMessageFrame(self, payload) -> None:
+    def onMessageFrame(self, payload: bytes) -> None:
         """
         Implements :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrame`
         """
@@ -931,7 +933,7 @@ class WebSocketProtocol(ObservableMixin):
                 "skipping closing handshake timeout: WebSocket connection is already closed"
             )
 
-    def onAutoPong(self, ping_sent, ping_seq, pong_received, pong_rtt, payload) -> None:
+    def onAutoPong(self, ping_sent, ping_seq, pong_received, pong_rtt, payload: bytes) -> None:
         """
         When doing automatic ping/pongs, this is called upon a successful pong.
 
@@ -1518,7 +1520,7 @@ class WebSocketProtocol(ObservableMixin):
                 if self.logOctets:
                     self.logTxOctets(data, False)
 
-    def sendPreparedMessage(self, preparedMsg: PreparedMessage) -> None:
+    def sendPreparedMessage(self, preparedMsg: "PreparedMessage") -> None:
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPreparedMessage`
         """
@@ -2824,7 +2826,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
     def onConnect(
         self, request: ConnectionRequest
-    ) -> Union[Optional[str], Tuple[Optional[str], Dict[str, str]]]:
+    ) -> str | tuple[str | None, dict[str, str]] | None:
         """
         Callback fired during WebSocket opening handshake when new WebSocket client
         connection is about to be established.
@@ -3907,7 +3909,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
     def onConnecting(
         self, transport_details: TransportDetails
-    ) -> Optional[ConnectingRequest]:
+    ) -> ConnectingRequest | None:
         """
         Callback fired after the connection is established, but before the
         handshake has started. This may return a

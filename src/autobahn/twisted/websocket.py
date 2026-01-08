@@ -24,8 +24,10 @@
 #
 ###############################################################################
 
+from __future__ import annotations
+
 from base64 import b64decode, b64encode
-from typing import Any, Optional
+from typing import Any
 
 import txaio
 from zope.interface import implementer
@@ -261,8 +263,8 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
     log = txaio.make_logger()
 
-    peer: Optional[str] = None
-    is_server: Optional[bool] = None
+    peer: str | None = None
+    is_server: bool | None = None
 
     def connectionMade(self) -> None:
         # Twisted networking framework entry point, called by Twisted
@@ -608,10 +610,10 @@ class WrappingWebSocketAdapter(object):
             # should not arrive here
             raise Exception("logic error")
 
-    def onOpen(self):
+    def onOpen(self) -> None:
         self._proto.connectionMade()
 
-    def onMessage(self, payload, isBinary):
+    def onMessage(self, payload: bytes, isBinary: bool) -> None:
         if isBinary != self._binaryMode:
             self._fail_connection(
                 protocol.WebSocketProtocol.CLOSE_STATUS_CODE_UNSUPPORTED_DATA,
@@ -632,7 +634,7 @@ class WrappingWebSocketAdapter(object):
     def onClose(self, wasClean, code, reason):
         self._proto.connectionLost(None)
 
-    def write(self, data):
+    def write(self, data: bytes) -> None:
         # part of ITransport
         assert type(data) == bytes
         if self._binaryMode:
@@ -641,12 +643,12 @@ class WrappingWebSocketAdapter(object):
             data = b64encode(data)
             self.sendMessage(data, isBinary=False)
 
-    def writeSequence(self, data):
+    def writeSequence(self, data: bytes) -> None:
         # part of ITransport
         for d in data:
             self.write(d)
 
-    def loseConnection(self):
+    def loseConnection(self) -> None:
         # part of ITransport
         self.sendClose()
 
