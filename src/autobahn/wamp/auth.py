@@ -32,7 +32,6 @@ import os
 import random
 import struct
 import time
-from typing import Dict, Optional
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -93,14 +92,14 @@ def create_authenticator(name, **kwargs):
             AuthTicket.name: AuthTicket,
         }[name]
     except KeyError:
-        raise ValueError("Unknown authenticator '{}'".format(name))
+        raise ValueError(f"Unknown authenticator '{name}'")
     # this may raise further ValueErrors if the kwargs are wrong
     authenticator = klass(**kwargs)
     return authenticator
 
 
 # experimental authentication API
-class AuthAnonymous(object):
+class AuthAnonymous:
     name = "anonymous"
 
     def __init__(self, **kw):
@@ -127,7 +126,7 @@ class AuthAnonymousProxy(AuthAnonymous):
 IAuthenticator.register(AuthAnonymousProxy)
 
 
-class AuthTicket(object):
+class AuthTicket:
     name = "ticket"
 
     def __init__(self, **kw):
@@ -152,7 +151,7 @@ class AuthTicket(object):
 IAuthenticator.register(AuthTicket)
 
 
-class AuthCryptoSign(object):
+class AuthCryptoSign:
     name = "cryptosign"
 
     def __init__(self, **kw):
@@ -160,11 +159,11 @@ class AuthCryptoSign(object):
         for key in kw.keys():
             if key not in ["authextra", "authid", "authrole", "privkey"]:
                 raise ValueError(
-                    "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
+                    f"Unexpected key '{key}' for {self.__class__.__name__}"
                 )
         for key in ["privkey"]:
             if key not in kw:
-                raise ValueError("Must provide '{}' for cryptosign".format(key))
+                raise ValueError(f"Must provide '{key}' for cryptosign")
 
         from autobahn.wamp.cryptosign import CryptosignKey
 
@@ -236,7 +235,7 @@ def _hash_pbkdf2_secret(password, salt, iterations):
     return pbkdf2(password, salt, iterations, keylen=32)
 
 
-class AuthScram(object):
+class AuthScram:
     """
     Implements "wamp-scram" authentication for components.
 
@@ -272,13 +271,13 @@ class AuthScram(object):
         for k in required_args:
             if k not in challenge.extra:
                 raise RuntimeError(
-                    "WAMP-SCRAM challenge option '{}' is "
-                    " required but not specified".format(k)
+                    f"WAMP-SCRAM challenge option '{k}' is "
+                    " required but not specified"
                 )
         for k in challenge.extra:
             if k not in optional_args + required_args:
                 raise RuntimeError(
-                    "WAMP-SCRAM challenge has unknown attribute '{}'".format(k)
+                    f"WAMP-SCRAM challenge has unknown attribute '{k}'"
                 )
 
         channel_binding = challenge.extra.get("channel_binding", "")
@@ -293,9 +292,9 @@ class AuthScram(object):
 
         self._auth_message = (
             "{client_first_bare},{server_first},{client_final_no_proof}".format(
-                client_first_bare="n={},r={}".format(authid, client_nonce),
-                server_first="r={},s={},i={}".format(server_nonce, salt, iterations),
-                client_final_no_proof="c={},r={}".format(channel_binding, server_nonce),
+                client_first_bare=f"n={authid},r={client_nonce}",
+                server_first=f"r={server_nonce},s={salt},i={iterations}",
+                client_final_no_proof=f"c={channel_binding},r={server_nonce}",
             )
         ).encode("ascii")
 
@@ -311,7 +310,7 @@ class AuthScram(object):
             self._salted_password = _hash_pbkdf2_secret(password, salt, iterations)
         else:
             raise RuntimeError(
-                "WAMP-SCRAM specified unknown KDF '{}'".format(algorithm)
+                f"WAMP-SCRAM specified unknown KDF '{algorithm}'"
             )
 
         client_key = hmac.new(
@@ -351,7 +350,7 @@ class AuthScram(object):
 IAuthenticator.register(AuthScram)
 
 
-class AuthWampCra(object):
+class AuthWampCra:
     name = "wampcra"
 
     def __init__(self, **kw):
@@ -359,11 +358,11 @@ class AuthWampCra(object):
         for key in kw.keys():
             if key not in ["authextra", "authid", "authrole", "secret"]:
                 raise ValueError(
-                    "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
+                    f"Unexpected key '{key}' for {self.__class__.__name__}"
                 )
         for key in ["secret", "authid"]:
             if key not in kw:
-                raise ValueError("Must provide '{}' for wampcra".format(key))
+                raise ValueError(f"Must provide '{key}' for wampcra")
 
         self._args = kw
         self._secret = kw.pop("secret")
@@ -437,7 +436,7 @@ def compute_totp(secret, offset=0):
     digest = hmac.new(key, msg, hashlib.sha1).digest()
     o = 15 & (digest[19])
     token = (struct.unpack(">I", digest[o : o + 4])[0] & 0x7FFFFFFF) % 1000000
-    return "{0:06d}".format(token)
+    return f"{token:06d}"
 
 
 @public
@@ -469,10 +468,10 @@ def check_totp(secret, ticket):
 @public
 def qrcode_from_totp(secret, label, issuer):
     if type(secret) != str:
-        raise Exception("secret must be of type unicode, not {}".format(type(secret)))
+        raise Exception(f"secret must be of type unicode, not {type(secret)}")
 
     if type(label) != str:
-        raise Exception("label must be of type unicode, not {}".format(type(label)))
+        raise Exception(f"label must be of type unicode, not {type(label)}")
 
     try:
         import qrcode
@@ -481,7 +480,7 @@ def qrcode_from_totp(secret, label, issuer):
         raise Exception("qrcode not installed")
 
     return qrcode.make(
-        "otpauth://totp/{}?secret={}&issuer={}".format(label, secret, issuer),
+        f"otpauth://totp/{label}?secret={secret}&issuer={issuer}",
         box_size=3,
         image_factory=qrcode.image.svg.SvgImage,
     ).to_string()
@@ -630,8 +629,8 @@ def compute_wcs(key, challenge):
 
 
 def derive_scram_credential(
-    email: str, password: str, salt: Optional[bytes] = None
-) -> Dict:
+    email: str, password: str, salt: bytes | None = None
+) -> dict:
     """
     Derive WAMP-SCRAM credentials from user email and password. The SCRAM parameters used
     are the following (these are also contained in the returned credentials):

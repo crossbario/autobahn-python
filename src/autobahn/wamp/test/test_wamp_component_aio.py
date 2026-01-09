@@ -88,7 +88,7 @@ if os.environ.get("USE_ASYNCIO", False):
         orig_loop = txaio.config.loop
         txaio.config.loop = asyncio.get_event_loop()
 
-        class FakeTransport(object):
+        class FakeTransport:
             def close(self):
                 pass
 

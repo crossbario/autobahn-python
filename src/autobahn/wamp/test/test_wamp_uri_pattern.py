@@ -463,7 +463,7 @@ class KwException(Exception):
 # 4. we can silently drop unconsumed args/kwargs
 
 
-class MockSession(object):
+class MockSession:
     def __init__(self):
         self._ecls_to_uri_pat = {}
         self._uri_to_ecls = {}
@@ -517,7 +517,7 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         def test():
             # noinspection PyUnusedLocal
             @wamp.error("com.test.error")
-            class Foo(object):
+            class Foo:
                 pass
 
         self.assertRaises(Exception, test)

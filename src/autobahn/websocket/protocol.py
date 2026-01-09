@@ -38,7 +38,8 @@ import struct
 import time
 from collections import deque
 from pprint import pformat
-from typing import Literal, Iterator, overload
+from typing import Literal, overload
+from collections.abc import Iterator
 from urllib import parse
 
 import hyperlink
@@ -113,7 +114,7 @@ def _url_to_origin(url):
             port = None
 
     if not host:
-        raise ValueError("No host part in Origin '{}'".format(url))
+        raise ValueError(f"No host part in Origin '{url}'")
     return scheme, host, port
 
 
@@ -165,7 +166,7 @@ def _is_same_origin(websocket_origin, host_scheme, host_port, host_policy):
     return False
 
 
-class TrafficStats(object):
+class TrafficStats:
     def __init__(self):
         self.reset()
 
@@ -244,7 +245,7 @@ class TrafficStats(object):
         return json.dumps(self.__json__())
 
 
-class FrameHeader(object):
+class FrameHeader:
     """
     Thin-wrapper for storing WebSocket frame metadata.
 
@@ -301,7 +302,7 @@ def parseHttpHeader(data: bytes) -> tuple[str, dict[str, str], dict[str, int]]:
 
             # handle HTTP headers split across multiple lines
             if key in http_headers:
-                http_headers[key] += ", {}".format(value)
+                http_headers[key] += f", {value}"
                 http_headers_cnt[key] += 1
             else:
                 http_headers[key] = value
@@ -312,7 +313,7 @@ def parseHttpHeader(data: bytes) -> tuple[str, dict[str, str], dict[str, int]]:
     return http_status_line, http_headers, http_headers_cnt
 
 
-class Timings(object):
+class Timings:
     """
     Helper class to track timings by key. This class also supports item access,
     iteration and conversion to string.
@@ -352,13 +353,13 @@ class Timings(object):
             d = self._timings[endKey] - self._timings[startKey]
             if formatted:
                 if d < 0.00001:  # 10us
-                    s = "{} ns".format(round(d * 1000000000.0))
+                    s = f"{round(d * 1000000000.0)} ns"
                 elif d < 0.01:  # 10ms
-                    s = "{} us".format(round(d * 1000000.0))
+                    s = f"{round(d * 1000000.0)} us"
                 elif d < 10:  # 10s
-                    s = "{} ms".format(round(d * 1000.0))
+                    s = f"{round(d * 1000.0)} ms"
                 else:
-                    s = "{} s".format(round(d))
+                    s = f"{round(d)} s"
                 return s.rjust(8)
             else:
                 return d
@@ -637,18 +638,14 @@ class WebSocketProtocol(ObservableMixin):
                 self._max_message_size_exceeded(
                     self.message_data_total_length,
                     self.maxMessagePayloadSize,
-                    "received WebSocket message size {} exceeds payload limit of {} octets".format(
-                        self.message_data_total_length, self.maxMessagePayloadSize
-                    ),
+                    f"received WebSocket message size {self.message_data_total_length} exceeds payload limit of {self.maxMessagePayloadSize} octets",
                 )
             elif 0 < self.maxFramePayloadSize < length:
                 self.wasMaxFramePayloadSizeExceeded = True
                 self._max_message_size_exceeded(
                     length,
                     self.maxFramePayloadSize,
-                    "received WebSocket frame size {} exceeds payload limit of {} octets".format(
-                        length, self.maxFramePayloadSize
-                    ),
+                    f"received WebSocket frame size {length} exceeds payload limit of {self.maxFramePayloadSize} octets",
                 )
 
     def onMessageFrameData(self, payload: bytes) -> None:
@@ -663,9 +660,7 @@ class WebSocketProtocol(ObservableMixin):
                     self._max_message_size_exceeded(
                         self.message_data_total_length,
                         self.maxMessagePayloadSize,
-                        "received (partial) WebSocket message size {} (already) exceeds payload limit of {} octets".format(
-                            self.message_data_total_length, self.maxMessagePayloadSize
-                        ),
+                        f"received (partial) WebSocket message size {self.message_data_total_length} (already) exceeds payload limit of {self.maxMessagePayloadSize} octets",
                     )
                 self.message_data.append(payload)
             else:
@@ -776,7 +771,7 @@ class WebSocketProtocol(ObservableMixin):
             )
             or code >= 5000
         ):
-            if self._protocol_violation("invalid close code {}".format(code)):
+            if self._protocol_violation(f"invalid close code {code}"):
                 return True
             else:
                 self.remoteCloseCode = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL
@@ -1026,7 +1021,7 @@ class WebSocketProtocol(ObservableMixin):
                 # brutally drop the TCP connection
                 self.wasClean = False
                 self.wasNotCleanReason = (
-                    "I dropped the WebSocket TCP connection: {0}".format(reason)
+                    f"I dropped the WebSocket TCP connection: {reason}"
                 )
                 self.dropConnection(abort=True)
 
@@ -1285,9 +1280,7 @@ class WebSocketProtocol(ObservableMixin):
                 self._onClose(
                     self.wasClean,
                     WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE,
-                    'connection was closed uncleanly ("{}")'.format(
-                        self.wasNotCleanReason
-                    ),
+                    f'connection was closed uncleanly ("{self.wasNotCleanReason}")',
                 )
             else:
                 self._onClose(
@@ -1520,7 +1513,7 @@ class WebSocketProtocol(ObservableMixin):
                 if self.logOctets:
                     self.logTxOctets(data, False)
 
-    def sendPreparedMessage(self, preparedMsg: "PreparedMessage") -> None:
+    def sendPreparedMessage(self, preparedMsg: PreparedMessage) -> None:
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPreparedMessage`
         """
@@ -1563,7 +1556,7 @@ class WebSocketProtocol(ObservableMixin):
                         pass
                     else:
                         if self._protocol_violation(
-                            "RSV = {} and no extension negotiated".format(frame_rsv)
+                            f"RSV = {frame_rsv} and no extension negotiated"
                         ):
                             return False
 
@@ -1608,9 +1601,7 @@ class WebSocketProtocol(ObservableMixin):
                     #
                     if frame_opcode not in [8, 9, 10]:
                         if self._protocol_violation(
-                            "control frame using reserved opcode {}".format(
-                                frame_opcode
-                            )
+                            f"control frame using reserved opcode {frame_opcode}"
                         ):
                             return False
 
@@ -1627,9 +1618,7 @@ class WebSocketProtocol(ObservableMixin):
                     #
                     if self._perMessageCompress is not None and frame_rsv == 4:
                         if self._protocol_violation(
-                            "received compressed control frame [{}]".format(
-                                self._perMessageCompress.EXTENSION_NAME
-                            )
+                            f"received compressed control frame [{self._perMessageCompress.EXTENSION_NAME}]"
                         ):
                             return False
 
@@ -1638,7 +1627,7 @@ class WebSocketProtocol(ObservableMixin):
                     #
                     if frame_opcode not in [0, 1, 2]:
                         if self._protocol_violation(
-                            "data frame using reserved opcode {}".format(frame_opcode)
+                            f"data frame using reserved opcode {frame_opcode}"
                         ):
                             return False
 
@@ -1666,9 +1655,7 @@ class WebSocketProtocol(ObservableMixin):
                         and self.inside_message
                     ):
                         if self._protocol_violation(
-                            "received continuation data frame with compress bit set [{}]".format(
-                                self._perMessageCompress.EXTENSION_NAME
-                            )
+                            f"received continuation data frame with compress bit set [{self._perMessageCompress.EXTENSION_NAME}]"
                         ):
                             return False
 
@@ -1888,9 +1875,7 @@ class WebSocketProtocol(ObservableMixin):
                 self.utf8validateLast = self.utf8validator.validate(payload)
                 if not self.utf8validateLast[0]:
                     if self._invalid_payload(
-                        "encountered invalid UTF-8 while processing text message at payload octet index {}".format(
-                            self.utf8validateLast[3]
-                        )
+                        f"encountered invalid UTF-8 while processing text message at payload octet index {self.utf8validateLast[3]}"
                     ):
                         return False
 
@@ -1929,9 +1914,7 @@ class WebSocketProtocol(ObservableMixin):
                 if self.utf8validateIncomingCurrentMessage:
                     if not self.utf8validateLast[1]:
                         if self._invalid_payload(
-                            "UTF-8 text message payload ended within Unicode code point at payload octet index {}".format(
-                                self.utf8validateLast[3]
-                            )
+                            f"UTF-8 text message payload ended within Unicode code point at payload octet index {self.utf8validateLast[3]}"
                         ):
                             return False
 
@@ -2050,9 +2033,7 @@ class WebSocketProtocol(ObservableMixin):
         if payload_len is not None:
             if len(payload) < 1:
                 raise Exception(
-                    "cannot construct repeated payload with length {} from payload of length {}".format(
-                        payload_len, len(payload)
-                    )
+                    f"cannot construct repeated payload with length {payload_len} from payload of length {len(payload)}"
                 )
             l = payload_len
             pl = (
@@ -2138,9 +2119,7 @@ class WebSocketProtocol(ObservableMixin):
             l = len(payload)
             if l > 125:
                 raise Exception(
-                    "invalid payload for PING (payload length must be <= 125, was {})".format(
-                        l
-                    )
+                    f"invalid payload for PING (payload length must be <= 125, was {l})"
                 )
             self.sendFrame(opcode=9, payload=payload)
         else:
@@ -2208,9 +2187,7 @@ class WebSocketProtocol(ObservableMixin):
             l = len(payload)
             if l > 125:
                 raise Exception(
-                    "invalid payload for PONG (payload length must be <= 125, was {})".format(
-                        l
-                    )
+                    f"invalid payload for PONG (payload length must be <= 125, was {l})"
                 )
             self.sendFrame(opcode=10, payload=payload)
         else:
@@ -2268,9 +2245,7 @@ class WebSocketProtocol(ObservableMixin):
         if code is not None:
             if type(code) != int:
                 raise Exception(
-                    "invalid type '{}' for close code (must be an integer)".format(
-                        type(code)
-                    )
+                    f"invalid type '{type(code)}' for close code (must be an integer)"
                 )
 
             # 1000 Normal Closure
@@ -2280,9 +2255,7 @@ class WebSocketProtocol(ObservableMixin):
             #
             if code != 1000 and not (3000 <= code <= 4999):
                 raise Exception(
-                    "invalid close code {} (must be 1000 or from [3000, 4999])".format(
-                        code
-                    )
+                    f"invalid close code {code} (must be 1000 or from [3000, 4999])"
                 )
 
         if reason is not None:
@@ -2291,7 +2264,7 @@ class WebSocketProtocol(ObservableMixin):
 
             if type(reason) != str:
                 raise Exception(
-                    "reason must be of type unicode (was '{}')".format(type(reason))
+                    f"reason must be of type unicode (was '{type(reason)}')"
                 )
 
             reasonUtf8 = encode_truncate(reason, 123)
@@ -2345,9 +2318,7 @@ class WebSocketProtocol(ObservableMixin):
             WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE,
         ]:
             raise Exception(
-                "WebSocketProtocol.beginMessageFrame invalid in current sending state [{}]".format(
-                    self.send_state
-                )
+                f"WebSocketProtocol.beginMessageFrame invalid in current sending state [{self.send_state}]"
             )
 
         if type(length) != int or length < 0 or length > 0x7FFFFFFFFFFFFFFF:  # 2**63
@@ -2529,21 +2500,17 @@ class WebSocketProtocol(ObservableMixin):
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage`
         """
         assert type(payload) == bytes, (
-            '"payload" must have type bytes, but was "{}"'.format(type(payload))
+            f'"payload" must have type bytes, but was "{type(payload)}"'
         )
         assert type(isBinary) == bool, (
-            '"isBinary" must have type bool, but was "{}"'.format(type(isBinary))
+            f'"isBinary" must have type bool, but was "{type(isBinary)}"'
         )
         assert fragmentSize is None or type(fragmentSize) == int, (
-            '"fragmentSize" must have type int, but was "{}"'.format(type(fragmentSize))
+            f'"fragmentSize" must have type int, but was "{type(fragmentSize)}"'
         )
-        assert type(sync) == bool, '"sync" must have type bool, but was "{}"'.format(
-            type(sync)
-        )
+        assert type(sync) == bool, f'"sync" must have type bool, but was "{type(sync)}"'
         assert type(doNotCompress) == bool, (
-            '"doNotCompress" must have type bool, but was "{}"'.format(
-                type(doNotCompress)
-            )
+            f'"doNotCompress" must have type bool, but was "{type(doNotCompress)}"'
         )
 
         if self.state != WebSocketProtocol.STATE_OPEN:
@@ -2586,9 +2553,7 @@ class WebSocketProtocol(ObservableMixin):
 
         if 0 < self.maxMessagePayloadSize < payload_len:
             self.wasMaxMessagePayloadSizeExceeded = True
-            emsg = "tried to send WebSocket message with size {} exceeding payload limit of {} octets".format(
-                payload_len, self.maxMessagePayloadSize
-            )
+            emsg = f"tried to send WebSocket message with size {payload_len} exceeding payload limit of {self.maxMessagePayloadSize} octets"
             self.log.warn(emsg)
             raise PayloadExceededError(emsg)
 
@@ -2617,7 +2582,7 @@ class WebSocketProtocol(ObservableMixin):
         else:
             if pfs < 1:
                 raise Exception(
-                    "payload fragment size must be at least 1 (was {})".format(pfs)
+                    f"payload fragment size must be at least 1 (was {pfs})"
                 )
             n = len(payload)
             i = 0
@@ -2679,7 +2644,7 @@ IWebSocketChannelFrameApi.register(WebSocketProtocol)
 IWebSocketChannelStreamingApi.register(WebSocketProtocol)
 
 
-class PreparedMessage(object):
+class PreparedMessage:
     """
     Encapsulates a prepared message to be sent later once or multiple
     times on one or more WebSocket connections.
@@ -2748,7 +2713,7 @@ class PreparedMessage(object):
         )
 
 
-class WebSocketFactory(object):
+class WebSocketFactory:
     """
     Mixin for
     :class:`autobahn.websocket.protocol.WebSocketClientFactory` and
@@ -2915,9 +2880,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 )
             except Exception as e:
                 return self.failHandshake(
-                    "Error during parsing of HTTP status line / request headers : {0}".format(
-                        e
-                    )
+                    f"Error during parsing of HTTP status line / request headers : {e}"
                 )
 
             # replace self.peer if the x-forwarded-for header is present and trusted
@@ -2945,16 +2908,16 @@ class WebSocketServerProtocol(WebSocketProtocol):
             rl = self.http_status_line.split()
             if len(rl) != 3:
                 return self.failHandshake(
-                    'Bad HTTP request status line "{}"'.format(self.http_status_line)
+                    f'Bad HTTP request status line "{self.http_status_line}"'
                 )
             if rl[0].strip() != "GET":
                 return self.failHandshake(
-                    'HTTP method "{}" not allowed'.format(rl[0]), 405
+                    f'HTTP method "{rl[0]}" not allowed', 405
                 )
             vs = rl[2].strip().split("/")
             if len(vs) != 2 or vs[0] != "HTTP" or vs[1] not in ["1.1"]:
                 return self.failHandshake(
-                    'Unsupported HTTP version "{}"'.format(rl[2]), 505
+                    f'Unsupported HTTP version "{rl[2]}"', 505
                 )
 
             # HTTP Request line : REQUEST-URI
@@ -2974,9 +2937,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 # URIs, and MUST NOT be used on these URIs.
                 if fragment != "":
                     return self.failHandshake(
-                        'HTTP requested resource contains a fragment identifier "{}"'.format(
-                            fragment
-                        )
+                        f'HTTP requested resource contains a fragment identifier "{fragment}"'
                     )
 
                 # resource path and query parameters .. this will get forwarded
@@ -2985,9 +2946,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 self.http_request_params = parse.parse_qs(query)
             except:
                 return self.failHandshake(
-                    'Bad HTTP request resource - could not parse "{}"'.format(
-                        rl[1].strip()
-                    )
+                    f'Bad HTTP request resource - could not parse "{rl[1].strip()}"'
                 )
 
             # Host
@@ -3012,20 +2971,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     port = int(str(p.strip()))
                 except ValueError:
                     return self.failHandshake(
-                        'invalid port "{}" in HTTP Host header "{}"'.format(
-                            str(p.strip()), str(self.http_request_host)
-                        )
+                        f'invalid port "{str(p.strip())}" in HTTP Host header "{str(self.http_request_host)}"'
                     )
 
                 # do port checking only if externalPort was set
                 if self.factory.externalPort:
                     if port != self.factory.externalPort:
                         return self.failHandshake(
-                            'port {} in HTTP Host header "{}" does not match server listening port {}'.format(
-                                port,
-                                str(self.http_request_host),
-                                self.factory.externalPort,
-                            )
+                            f'port {port} in HTTP Host header "{str(self.http_request_host)}" does not match server listening port {self.factory.externalPort}'
                         )
                 else:
                     self.log.debug(
@@ -3149,9 +3102,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 sv.reverse()
                 svs = ",".join([str(x) for x in sv])
                 return self.failHandshake(
-                    "WebSocket version {} not supported (supported versions: {})".format(
-                        version, svs
-                    ),
+                    f"WebSocket version {version} not supported (supported versions: {svs})",
                     400,  # Bad Request
                     [("Sec-WebSocket-Version", svs)],
                 )
@@ -3171,9 +3122,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 for p in protocols:
                     if p in pp:
                         return self.failHandshake(
-                            'duplicate protocol "{}" specified in HTTP Sec-WebSocket-Protocol header'.format(
-                                p
-                            )
+                            f'duplicate protocol "{p}" specified in HTTP Sec-WebSocket-Protocol header'
                         )
                     else:
                         pp[p] = 1
@@ -3205,7 +3154,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     origin_tuple = _url_to_origin(self.websocket_origin)
                 except ValueError as e:
                     return self.failHandshake(
-                        "HTTP Origin header invalid: {}".format(e)
+                        f"HTTP Origin header invalid: {e}"
                     )
                 have_origin = True
             else:
@@ -3224,9 +3173,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     )
                 if not origin_is_allowed:
                     return self.failHandshake(
-                        "WebSocket connection denied: origin '{0}' not allowed".format(
-                            self.websocket_origin
-                        )
+                        f"WebSocket connection denied: origin '{self.websocket_origin}' not allowed"
                     )
 
             # Sec-WebSocket-Key
@@ -3240,13 +3187,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
             key = self.http_headers["sec-websocket-key"].strip()
             if len(key) != 24:  # 16 bytes => (ceil(128/24)*24)/6 == 24
                 return self.failHandshake(
-                    'bad Sec-WebSocket-Key (length must be 24 ASCII chars) "{}"'.format(
-                        key
-                    )
+                    f'bad Sec-WebSocket-Key (length must be 24 ASCII chars) "{key}"'
                 )
             if key[-2:] != "==":  # 24 - ceil(128/6) == 2
                 return self.failHandshake(
-                    'bad Sec-WebSocket-Key (invalid base64 encoding) "{}"'.format(key)
+                    f'bad Sec-WebSocket-Key (invalid base64 encoding) "{key}"'
                 )
             for c in key[:-2]:
                 if (
@@ -3254,9 +3199,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/"
                 ):
                     return self.failHandshake(
-                        'bad character "{}" in Sec-WebSocket-Key (invalid base64 encoding) "{}"'.format(
-                            c, key
-                        )
+                        f'bad character "{c}" in Sec-WebSocket-Key (invalid base64 encoding) "{key}"'
                     )
 
             # Sec-WebSocket-Extensions
@@ -3329,7 +3272,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                         )
                         self.log.warn("{tb}", tb=txaio.failure_format_traceback(err))
                         return self.failHandshake(
-                            "Internal server error: {}".format(err.value),
+                            f"Internal server error: {err.value}",
                             ConnectionDeny.INTERNAL_SERVER_ERROR,
                         )
 
@@ -3442,7 +3385,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         response = "HTTP/1.1 101 Switching Protocols\x0d\x0a"
 
         if self.factory.server:
-            response += "Server: {}\x0d\x0a".format(self.factory.server)
+            response += f"Server: {self.factory.server}\x0d\x0a"
 
         response += "Upgrade: WebSocket\x0d\x0a"
         response += "Connection: Upgrade\x0d\x0a"
@@ -3452,7 +3395,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # headers from factory, headers from onConnect
         for headers_source in (self.factory.headers.items(), headers.items()):
             for uh in headers_source:
-                if isinstance(uh[1], (str,)):
+                if isinstance(uh[1], str):
                     header_values = [uh[1]]
                 else:
                     try:
@@ -3461,12 +3404,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
                         header_values = [uh[1]]
 
                 for header_value in header_values:
-                    response += "{}: {}\x0d\x0a".format(uh[0], header_value)
+                    response += f"{uh[0]}: {header_value}\x0d\x0a"
 
         if self.websocket_protocol_in_use is not None:
-            response += "Sec-WebSocket-Protocol: {}\x0d\x0a".format(
-                self.websocket_protocol_in_use
-            )
+            response += f"Sec-WebSocket-Protocol: {self.websocket_protocol_in_use}\x0d\x0a"
 
         # compute Sec-WebSocket-Accept
         #
@@ -3475,9 +3416,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         sha1.update(key.encode("utf8") + WebSocketProtocol._WS_MAGIC)
         sec_websocket_accept = base64.b64encode(sha1.digest())
 
-        response += "Sec-WebSocket-Accept: {}\x0d\x0a".format(
-            sec_websocket_accept.decode()
-        )
+        response += f"Sec-WebSocket-Accept: {sec_websocket_accept.decode()}\x0d\x0a"
 
         # agreed extensions
         #
@@ -3557,10 +3496,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
         """
         Send out HTTP error response.
         """
-        response = "HTTP/1.1 {0} {1}\x0d\x0a".format(code, reason)
+        response = f"HTTP/1.1 {code} {reason}\x0d\x0a"
         if responseHeaders:
             for h in responseHeaders:
-                response += "{0}: {1}\x0d\x0a".format(h[0], h[1])
+                response += f"{h[0]}: {h[1]}\x0d\x0a"
         response += "\x0d\x0a"
         self.sendData(response.encode("utf8"))
 
@@ -3571,9 +3510,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
         responseBody = html.encode("utf8")
         response = "HTTP/1.1 200 OK\x0d\x0a"
         if self.factory.server is not None and self.factory.server != "":
-            response += "Server: {}\x0d\x0a".format(self.factory.server)
+            response += f"Server: {self.factory.server}\x0d\x0a"
         response += "Content-Type: text/html; charset=UTF-8\x0d\x0a"
-        response += "Content-Length: {}\x0d\x0a".format(len(responseBody))
+        response += f"Content-Length: {len(responseBody)}\x0d\x0a"
         response += "\x0d\x0a"
         self.sendData(response.encode("utf8"))
         self.sendData(responseBody)
@@ -3584,8 +3523,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
         """
         response = "HTTP/1.1 303\x0d\x0a"
         if self.factory.server is not None and self.factory.server != "":
-            response += "Server: {}\x0d\x0a".format(self.factory.server)
-        response += "Location: {}\x0d\x0a".format(url)
+            response += f"Server: {self.factory.server}\x0d\x0a"
+        response += f"Location: {url}\x0d\x0a"
         response += "\x0d\x0a"
         self.sendData(response.encode("utf8"))
 
@@ -3595,9 +3534,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         upgrade to WebSocket header (and option serverStatus is True).
         """
         if redirectUrl:
-            redirect = """<meta http-equiv="refresh" content="{};URL='{}'">""".format(
-                redirectAfter, redirectUrl
-            )
+            redirect = f"""<meta http-equiv="refresh" content="{redirectAfter};URL='{redirectUrl}'">"""
         else:
             redirect = ""
         self.sendHtml(_SERVER_STATUS_TEMPLATE.format(redirect, __version__))
@@ -3624,7 +3561,7 @@ class WebSocketServerFactory(WebSocketFactory):
         self,
         url=None,
         protocols=None,
-        server="AutobahnPython/{}".format(__version__),
+        server=f"AutobahnPython/{__version__}",
         headers=None,
         externalPort=None,
     ):
@@ -3765,9 +3702,7 @@ class WebSocketServerFactory(WebSocketFactory):
             for v in versions:
                 if v not in WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS:
                     raise Exception(
-                        "invalid WebSocket protocol version {} (allowed values: {})".format(
-                            v, WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS
-                        )
+                        f"invalid WebSocket protocol version {v} (allowed values: {WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS})"
                     )
             if set(versions) != set(self.versions):
                 self.versions = versions
@@ -3975,10 +3910,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
         """
         # construct proxy connect HTTP request
         #
-        request = "CONNECT {}:{} HTTP/1.1\x0d\x0a".format(
-            self.factory.host, self.factory.port
-        )
-        request += "Host: {}:{}\x0d\x0a".format(self.factory.host, self.factory.port)
+        request = f"CONNECT {self.factory.host}:{self.factory.port} HTTP/1.1\x0d\x0a"
+        request += f"Host: {self.factory.host}:{self.factory.port}\x0d\x0a"
         request += "\x0d\x0a"
 
         self.log.debug("{request}", request=request)
@@ -4021,7 +3954,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             sl = http_status_line.split()
             if len(sl) < 2:
                 return self.failProxyConnect(
-                    'Bad HTTP response status line "{}"'.format(http_status_line)
+                    f'Bad HTTP response status line "{http_status_line}"'
                 )
 
             # HTTP version
@@ -4029,7 +3962,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             http_version = sl[0].strip()
             if http_version not in ("HTTP/1.1", "HTTP/1.0"):
                 return self.failProxyConnect(
-                    'Unsupported HTTP version "{}"'.format(http_version)
+                    f'Unsupported HTTP version "{http_version}"'
                 )
 
             # HTTP status code
@@ -4038,7 +3971,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 status_code = int(sl[1].strip())
             except ValueError:
                 return self.failProxyConnect(
-                    'Bad HTTP status code "{}"'.format(sl[1].strip())
+                    f'Bad HTTP status code "{sl[1].strip()}"'
                 )
 
             if not (200 <= status_code < 300):
@@ -4050,7 +3983,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 else:
                     reason = ""
                 return self.failProxyConnect(
-                    'HTTP proxy connect failed ({}): "{}"'.format(status_code, reason)
+                    f'HTTP proxy connect failed ({status_code}): "{reason}"'
                 )
 
             # Ok, got complete response for HTTP/CONNECT, remember rest (if any)
@@ -4138,14 +4071,12 @@ class WebSocketClientProtocol(WebSocketProtocol):
         """
         # construct WS opening handshake HTTP header
         #
-        request = "GET {} HTTP/1.1\x0d\x0a".format(request_options.resource)
+        request = f"GET {request_options.resource} HTTP/1.1\x0d\x0a"
 
         if request_options.useragent is not None and request_options.useragent != "":
-            request += "User-Agent: {}\x0d\x0a".format(request_options.useragent)
+            request += f"User-Agent: {request_options.useragent}\x0d\x0a"
 
-        request += "Host: {}:{}\x0d\x0a".format(
-            request_options.host, request_options.port
-        )
+        request += f"Host: {request_options.host}:{request_options.port}\x0d\x0a"
         request += "Upgrade: WebSocket\x0d\x0a"
         request += "Connection: Upgrade\x0d\x0a"
 
@@ -4161,22 +4092,20 @@ class WebSocketClientProtocol(WebSocketProtocol):
         # optional, user supplied additional HTTP headers
         #
         for uh in request_options.headers.items():
-            request += "{}: {}\x0d\x0a".format(uh[0], uh[1])
+            request += f"{uh[0]}: {uh[1]}\x0d\x0a"
 
         # handshake random key
         #
         self.websocket_key = base64.b64encode(os.urandom(16))
-        request += "Sec-WebSocket-Key: {}\x0d\x0a".format(self.websocket_key.decode())
+        request += f"Sec-WebSocket-Key: {self.websocket_key.decode()}\x0d\x0a"
 
         # optional origin announced
         #
         if request_options.origin:
             if self.version > 10:
-                request += "Origin: {}\x0d\x0a".format(request_options.origin)
+                request += f"Origin: {request_options.origin}\x0d\x0a"
             else:
-                request += "Sec-WebSocket-Origin: {}\x0d\x0a".format(
-                    request_options.origin
-                )
+                request += f"Sec-WebSocket-Origin: {request_options.origin}\x0d\x0a"
 
         # optional list of WS subprotocols announced
         #
@@ -4201,9 +4130,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         # set WS protocol version
         #
-        request += "Sec-WebSocket-Version: {}\x0d\x0a".format(
-            WebSocketProtocol.SPEC_TO_PROTOCOL_VERSION[self.version]
-        )
+        request += f"Sec-WebSocket-Version: {WebSocketProtocol.SPEC_TO_PROTOCOL_VERSION[self.version]}\x0d\x0a"
 
         request += "\x0d\x0a"
 
@@ -4253,7 +4180,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             sl = self.http_status_line.split()
             if len(sl) < 2:
                 return self.failHandshake(
-                    'Bad HTTP response status line "{}"'.format(self.http_status_line)
+                    f'Bad HTTP response status line "{self.http_status_line}"'
                 )
 
             # HTTP version
@@ -4261,7 +4188,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             http_version = sl[0].strip()
             if http_version != "HTTP/1.1":
                 return self.failHandshake(
-                    'Unsupported HTTP version "{}"'.format(http_version)
+                    f'Unsupported HTTP version "{http_version}"'
                 )
 
             # HTTP status code
@@ -4270,7 +4197,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 status_code = int(sl[1].strip())
             except ValueError:
                 return self.failHandshake(
-                    'Bad HTTP status code "{}"'.format(sl[1].strip())
+                    f'Bad HTTP status code "{sl[1].strip()}"'
                 )
             if status_code != 101:  # Switching Protocols
                 # FIXME: handle redirects
@@ -4281,9 +4208,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 else:
                     reason = ""
                 return self.failHandshake(
-                    "WebSocket connection upgrade failed [{}]: {}".format(
-                        status_code, reason
-                    )
+                    f"WebSocket connection upgrade failed [{status_code}]: {reason}"
                 )
 
             # Upgrade
@@ -4334,9 +4259,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
                 if sec_websocket_accept_got != sec_websocket_accept:
                     return self.failHandshake(
-                        "HTTP Sec-WebSocket-Accept bogus value : expected {} / got {}".format(
-                            sec_websocket_accept, sec_websocket_accept_got
-                        )
+                        f"HTTP Sec-WebSocket-Accept bogus value : expected {sec_websocket_accept} / got {sec_websocket_accept_got}"
                     )
 
             # Sec-WebSocket-Extensions
@@ -4401,9 +4324,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
                     else:
                         return self.failHandshake(
-                            'server wants to use extension "{}" we did not request, have not implemented or did not enable'.format(
-                                extension
-                            )
+                            f'server wants to use extension "{extension}" we did not request, have not implemented or did not enable'
                         )
 
             # handle "subprotocol in use" - if any
@@ -4418,9 +4339,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 if sp != "":
                     if sp not in self.factory.protocols:
                         return self.failHandshake(
-                            'subprotocol selected by server "{}" not in subprotocol list requested by client "{}"'.format(
-                                sp, self.factory.protocols
-                            )
+                            f'subprotocol selected by server "{sp}" not in subprotocol list requested by client "{self.factory.protocols}"'
                         )
                     else:
                         # ok, subprotocol in use
@@ -4486,7 +4405,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                     "onConnect failed with {fail}",
                     fail=fail,
                 )
-                self._fail_connection(1000, "{}".format(fail))
+                self._fail_connection(1000, f"{fail}")
 
             txaio.add_callbacks(d, on_connect_success, on_connect_failed)
             return d
@@ -4526,7 +4445,7 @@ class WebSocketClientFactory(WebSocketFactory):
         url=None,
         origin=None,
         protocols=None,
-        useragent="AutobahnPython/{}".format(__version__),
+        useragent=f"AutobahnPython/{__version__}",
         headers=None,
         proxy=None,
     ):
@@ -4647,9 +4566,7 @@ class WebSocketClientFactory(WebSocketFactory):
         if version is not None:
             if version not in WebSocketProtocol.SUPPORTED_SPEC_VERSIONS:
                 raise Exception(
-                    "invalid WebSocket draft version {} (allowed values: {})".format(
-                        version, WebSocketProtocol.SUPPORTED_SPEC_VERSIONS
-                    )
+                    f"invalid WebSocket draft version {version} (allowed values: {WebSocketProtocol.SUPPORTED_SPEC_VERSIONS})"
                 )
             if version != self.version:
                 self.version = version
@@ -4729,9 +4646,7 @@ class WebSocketClientFactory(WebSocketFactory):
                 )
             else:
                 raise Exception(
-                    "invalid type {} for perMessageCompressionOffers - expected list".format(
-                        type(perMessageCompressionOffers)
-                    )
+                    f"invalid type {type(perMessageCompressionOffers)} for perMessageCompressionOffers - expected list"
                 )
 
         if (

@@ -44,7 +44,7 @@ __all__ = (
 )
 
 
-class PerMessageSnappyMixin(object):
+class PerMessageSnappyMixin:
     """
     Mixin class for this extension.
     """
@@ -80,8 +80,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
         for p in params:
             if len(params[p]) > 1:
                 raise Exception(
-                    "multiple occurrence of extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"multiple occurrence of extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
             val = params[p][0]
@@ -90,8 +89,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     accept_no_context_takeover = True
@@ -100,16 +98,14 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     request_no_context_takeover = True
 
             else:
                 raise Exception(
-                    "illegal extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"illegal extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
         offer = cls(accept_no_context_takeover, request_no_context_takeover)
@@ -127,16 +123,14 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
         """
         if type(accept_no_context_takeover) != bool:
             raise Exception(
-                "invalid type %s for accept_no_context_takeover"
-                % type(accept_no_context_takeover)
+                f"invalid type {type(accept_no_context_takeover)} for accept_no_context_takeover"
             )
 
         self.accept_no_context_takeover = accept_no_context_takeover
 
         if type(request_no_context_takeover) != bool:
             raise Exception(
-                "invalid type %s for request_no_context_takeover"
-                % type(request_no_context_takeover)
+                f"invalid type {type(request_no_context_takeover)} for request_no_context_takeover"
             )
 
         self.request_no_context_takeover = request_no_context_takeover
@@ -176,8 +170,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
         :rtype: str
         """
         return (
-            "PerMessageSnappyOffer(accept_no_context_takeover = %s, request_no_context_takeover = %s)"
-            % (self.accept_no_context_takeover, self.request_no_context_takeover)
+            f"PerMessageSnappyOffer(accept_no_context_takeover = {self.accept_no_context_takeover}, request_no_context_takeover = {self.request_no_context_takeover})"
         )
 
 
@@ -200,20 +193,18 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
         :type no_context_takeover: bool
         """
         if not isinstance(offer, PerMessageSnappyOffer):
-            raise Exception("invalid type %s for offer" % type(offer))
+            raise Exception(f"invalid type {type(offer)} for offer")
 
         self.offer = offer
 
         if type(request_no_context_takeover) != bool:
             raise Exception(
-                "invalid type %s for request_no_context_takeover"
-                % type(request_no_context_takeover)
+                f"invalid type {type(request_no_context_takeover)} for request_no_context_takeover"
             )
 
         if request_no_context_takeover and not offer.accept_no_context_takeover:
             raise Exception(
-                "invalid value %s for request_no_context_takeover - feature unsupported by client"
-                % request_no_context_takeover
+                f"invalid value {request_no_context_takeover} for request_no_context_takeover - feature unsupported by client"
             )
 
         self.request_no_context_takeover = request_no_context_takeover
@@ -221,14 +212,12 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
         if no_context_takeover is not None:
             if type(no_context_takeover) != bool:
                 raise Exception(
-                    "invalid type %s for no_context_takeover"
-                    % type(no_context_takeover)
+                    f"invalid type {type(no_context_takeover)} for no_context_takeover"
                 )
 
             if offer.request_no_context_takeover and not no_context_takeover:
                 raise Exception(
-                    "invalid value %s for no_context_takeover - client requested feature"
-                    % no_context_takeover
+                    f"invalid value {no_context_takeover} for no_context_takeover - client requested feature"
                 )
 
         self.no_context_takeover = no_context_takeover
@@ -269,12 +258,7 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
         :rtype: str
         """
         return (
-            "PerMessageSnappyAccept(offer = %s, request_no_context_takeover = %s, no_context_takeover = %s)"
-            % (
-                self.offer.__repr__(),
-                self.request_no_context_takeover,
-                self.no_context_takeover,
-            )
+            f"PerMessageSnappyAccept(offer = {self.offer.__repr__()}, request_no_context_takeover = {self.request_no_context_takeover}, no_context_takeover = {self.no_context_takeover})"
         )
 
 
@@ -300,8 +284,7 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
         for p in params:
             if len(params[p]) > 1:
                 raise Exception(
-                    "multiple occurrence of extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"multiple occurrence of extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
             val = params[p][0]
@@ -310,8 +293,7 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     client_no_context_takeover = True
@@ -320,16 +302,14 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     server_no_context_takeover = True
 
             else:
                 raise Exception(
-                    "illegal extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"illegal extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
         response = cls(client_no_context_takeover, server_no_context_takeover)
@@ -360,8 +340,7 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
         :rtype: str
         """
         return (
-            "PerMessageSnappyResponse(client_no_context_takeover = %s, server_no_context_takeover = %s)"
-            % (self.client_no_context_takeover, self.server_no_context_takeover)
+            f"PerMessageSnappyResponse(client_no_context_takeover = {self.client_no_context_takeover}, server_no_context_takeover = {self.server_no_context_takeover})"
         )
 
 
@@ -382,21 +361,19 @@ class PerMessageSnappyResponseAccept(
         :type no_context_takeover: bool
         """
         if not isinstance(response, PerMessageSnappyResponse):
-            raise Exception("invalid type %s for response" % type(response))
+            raise Exception(f"invalid type {type(response)} for response")
 
         self.response = response
 
         if no_context_takeover is not None:
             if type(no_context_takeover) != bool:
                 raise Exception(
-                    "invalid type %s for no_context_takeover"
-                    % type(no_context_takeover)
+                    f"invalid type {type(no_context_takeover)} for no_context_takeover"
                 )
 
             if response.client_no_context_takeover and not no_context_takeover:
                 raise Exception(
-                    "invalid value %s for no_context_takeover - server requested feature"
-                    % no_context_takeover
+                    f"invalid value {no_context_takeover} for no_context_takeover - server requested feature"
                 )
 
         self.no_context_takeover = no_context_takeover
@@ -422,8 +399,7 @@ class PerMessageSnappyResponseAccept(
         :rtype: str
         """
         return (
-            "PerMessageSnappyResponseAccept(response = %s, no_context_takeover = %s)"
-            % (self.response.__repr__(), self.no_context_takeover)
+            f"PerMessageSnappyResponseAccept(response = {self.response.__repr__()}, no_context_takeover = {self.no_context_takeover})"
         )
 
 
@@ -477,12 +453,7 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
 
     def __repr__(self):
         return (
-            "PerMessageSnappy(is_server = %s, server_no_context_takeover = %s, client_no_context_takeover = %s)"
-            % (
-                self._is_server,
-                self.server_no_context_takeover,
-                self.client_no_context_takeover,
-            )
+            f"PerMessageSnappy(is_server = {self._is_server}, server_no_context_takeover = {self.server_no_context_takeover}, client_no_context_takeover = {self.client_no_context_takeover})"
         )
 
     def start_compress_message(self):

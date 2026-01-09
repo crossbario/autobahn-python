@@ -27,7 +27,7 @@
 import hashlib
 import os
 import threading
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from autobahn.wamp.types import TransportDetails
 from twisted.internet.address import IPv4Address, UNIXAddress
@@ -87,7 +87,7 @@ def sleep(delay, reactor=None):
     return d
 
 
-def peer2str(transport: Union[ITransport, IProcessTransport]) -> str:
+def peer2str(transport: ITransport | IProcessTransport) -> str:
     """
     Return a *peer descriptor* given a Twisted transport, for example:
 
@@ -101,24 +101,24 @@ def peer2str(transport: Union[ITransport, IProcessTransport]) -> str:
     # IMPORTANT: we need to _first_ test for IProcessTransport
     if IProcessTransport.providedBy(transport):
         # note the PID of the forked process in the peer descriptor
-        res = "process:{}".format(transport.pid)
+        res = f"process:{transport.pid}"
     elif ITransport.providedBy(transport):
-        addr: Union[IPv4Address, IPv6Address, UNIXAddress, PipeAddress] = (
+        addr: IPv4Address | IPv6Address | UNIXAddress | PipeAddress = (
             transport.getPeer()
         )
         if isinstance(addr, IPv4Address):
-            res = "tcp4:{0}:{1}".format(addr.host, addr.port)
+            res = f"tcp4:{addr.host}:{addr.port}"
         elif _HAS_IPV6 and isinstance(addr, IPv6Address):
-            res = "tcp6:{0}:{1}".format(addr.host, addr.port)
+            res = f"tcp6:{addr.host}:{addr.port}"
         elif isinstance(addr, UNIXAddress):
             if addr.name:
-                res = "unix:{0}".format(addr.name)
+                res = f"unix:{addr.name}"
             else:
                 res = "unix"
         elif isinstance(addr, PipeAddress):
             # sadly, we don't have a way to get at the PID of the other side of the pipe
             # res = "pipe"
-            res = "process:{0}".format(os.getppid())
+            res = f"process:{os.getppid()}"
         else:
             # gracefully fallback if we can't map the peer's address
             res = "unknown"
@@ -131,22 +131,20 @@ def peer2str(transport: Union[ITransport, IProcessTransport]) -> str:
 if not _HAS_TLS:
 
     def transport_channel_id(
-        transport: object, is_server: bool, channel_id_type: Optional[str] = None
-    ) -> Optional[bytes]:
+        transport: object, is_server: bool, channel_id_type: str | None = None
+    ) -> bytes | None:
         if channel_id_type is None:
             return b"\x00" * 32
         else:
             raise RuntimeError(
-                'cannot determine TLS channel ID of type "{}" when TLS is not available on this system'.format(
-                    channel_id_type
-                )
+                f'cannot determine TLS channel ID of type "{channel_id_type}" when TLS is not available on this system'
             )
 
 else:
 
     def transport_channel_id(
-        transport: object, is_server: bool, channel_id_type: Optional[str] = None
-    ) -> Optional[bytes]:
+        transport: object, is_server: bool, channel_id_type: str | None = None
+    ) -> bytes | None:
         """
         Return TLS channel ID of WAMP transport of the given TLS channel ID type.
 
@@ -170,14 +168,12 @@ else:
 
         if channel_id_type not in ["tls-unique"]:
             raise RuntimeError(
-                'invalid TLS channel ID type "{}" requested'.format(channel_id_type)
+                f'invalid TLS channel ID type "{channel_id_type}" requested'
             )
 
         if not isinstance(transport, TLSMemoryBIOProtocol):
             raise RuntimeError(
-                'cannot determine TLS channel ID of type "{}" when TLS is not available on this transport {}'.format(
-                    channel_id_type, type(transport)
-                )
+                f'cannot determine TLS channel ID of type "{channel_id_type}" when TLS is not available on this transport {type(transport)}'
             )
 
         # get access to the OpenSSL connection underlying the Twisted protocol
@@ -213,15 +209,13 @@ else:
                 return m.digest()
         else:
             raise NotImplementedError(
-                'should not arrive here (unhandled channel_id_type "{}")'.format(
-                    channel_id_type
-                )
+                f'should not arrive here (unhandled channel_id_type "{channel_id_type}")'
             )
 
 
 if not _HAS_TLS:
 
-    def extract_peer_certificate(transport: object) -> Optional[Dict[str, Any]]:
+    def extract_peer_certificate(transport: object) -> dict[str, Any] | None:
         """
         Dummy when no TLS is available.
 
@@ -234,7 +228,7 @@ else:
 
     def extract_peer_certificate(
         transport: TLSMemoryBIOProtocol,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Extract TLS x509 client certificate information from a Twisted stream transport, and
         return a dict with x509 TLS client certificate information (if the client provided a
@@ -276,8 +270,8 @@ else:
             for i in range(cert.get_extension_count()):
                 ext = cert.get_extension(i)
                 ext_info = {
-                    "name": "{}".format(maybe_bytes(ext.get_short_name())),
-                    "value": "{}".format(maybe_bytes(ext)),
+                    "name": f"{maybe_bytes(ext.get_short_name())}",
+                    "value": f"{maybe_bytes(ext)}",
                     "critical": ext.get_critical() != 0,
                 }
                 result["extensions"].append(ext_info)
@@ -290,13 +284,13 @@ else:
                 for key, value in name.get_components():
                     key = maybe_bytes(key)
                     value = maybe_bytes(value)
-                    result[entity]["{}".format(key).lower()] = "{}".format(value)
+                    result[entity][f"{key}".lower()] = f"{value}"
 
             return result
 
 
 def create_transport_details(
-    transport: Union[ITransport, IProcessTransport], is_server: bool
+    transport: ITransport | IProcessTransport, is_server: bool
 ) -> TransportDetails:
     """
     Create transport details from Twisted transport.

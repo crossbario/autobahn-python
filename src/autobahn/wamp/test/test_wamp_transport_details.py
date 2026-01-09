@@ -135,9 +135,5 @@ class TestTransportDetails(unittest.TestCase):
                         channel_framing=channel_framing,
                         channel_serializer=channel_serializer,
                     )
-                    channel_typeid = "{}-{}-{}".format(
-                        TransportDetails.CHANNEL_TYPE_TO_STR[channel_type],
-                        TransportDetails.CHANNEL_FRAMING_TO_STR[channel_framing],
-                        TransportDetails.CHANNEL_SERIALIZER_TO_STR[channel_serializer],
-                    )
+                    channel_typeid = f"{TransportDetails.CHANNEL_TYPE_TO_STR[channel_type]}-{TransportDetails.CHANNEL_FRAMING_TO_STR[channel_framing]}-{TransportDetails.CHANNEL_SERIALIZER_TO_STR[channel_serializer]}"
                     self.assertEqual(td.channel_typeid, channel_typeid)

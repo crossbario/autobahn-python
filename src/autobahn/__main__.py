@@ -231,7 +231,7 @@ def do_call(reactor, session, options):
         call_kwargs = {k: v for k, v in options.keyword}
 
     results = yield session.call(options.uri, *call_args, **call_kwargs)
-    print("result: {}".format(results))
+    print(f"result: {results}")
 
 
 @inlineCallbacks
@@ -260,11 +260,11 @@ def do_register(reactor, session, options):
 
     @inlineCallbacks
     def called(*args, **kw):
-        print("called: args={}, kwargs={}".format(args, kw), file=sys.stderr)
+        print(f"called: args={args}, kwargs={kw}", file=sys.stderr)
         env = copy(os.environ)
         env["WAMP_ARGS"] = " ".join(args)
         env["WAMP_ARGS_JSON"] = json.dumps(args)
-        env["WAMP_KWARGS"] = " ".join("{}={}".format(k, v) for k, v in kw.items())
+        env["WAMP_KWARGS"] = " ".join(f"{k}={v}" for k, v in kw.items())
         env["WAMP_KWARGS_JSON"] = json.dumps(kw)
 
         exe = os.path.abspath(options.command[0])
@@ -286,7 +286,7 @@ def do_register(reactor, session, options):
         code = yield done
 
         if code != 0:
-            print("Failed with exit-code {}".format(code))
+            print(f"Failed with exit-code {code}")
         if countdown[0]:
             countdown[0] -= 1
             if countdown[0] <= 0:
@@ -350,12 +350,12 @@ def _real_main(reactor):
         exe = options.command[0]
         if not os.path.isabs(exe):
             print(
-                "Full path to the executable required. Found: {}".format(exe),
+                f"Full path to the executable required. Found: {exe}",
                 file=sys.stderr,
             )
             sys.exit(1)
         if not os.path.exists(exe):
-            print("Executable not found: {}".format(exe), file=sys.stderr)
+            print(f"Executable not found: {exe}", file=sys.stderr)
             sys.exit(1)
 
     subcommands = {
@@ -372,9 +372,7 @@ def _real_main(reactor):
     @inlineCallbacks
     def _(session, details):
         print(
-            "connected: authrole={} authmethod={}".format(
-                details.authrole, details.authmethod
-            ),
+            f"connected: authrole={details.authrole} authmethod={details.authmethod}",
             file=sys.stderr,
         )
         try:
@@ -388,10 +386,10 @@ def _real_main(reactor):
 
     @component.on_connectfailure
     def _(comp, fail):
-        print("connect failure: {}".format(fail))
+        print(f"connect failure: {fail}")
         failures.append(fail)
         if options.max_failures > 0 and len(failures) > options.max_failures:
-            print("Too many failures ({}). Exiting".format(len(failures)))
+            print(f"Too many failures ({len(failures)}). Exiting")
             reactor.stop()
 
     yield component.start(reactor)

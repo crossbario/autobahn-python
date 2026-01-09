@@ -39,7 +39,6 @@ from array import array
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from pprint import pformat
-from typing import Optional
 
 import txaio
 
@@ -159,14 +158,12 @@ def xor(d1: bytes, d2: bytes) -> bytes:
     :returns: XOR of the binary strings (``XOR(d1, d2)``)
     """
     if type(d1) != bytes:
-        raise Exception("invalid type {} for d1 - must be binary".format(type(d1)))
+        raise Exception(f"invalid type {type(d1)} for d1 - must be binary")
     if type(d2) != bytes:
-        raise Exception("invalid type {} for d2 - must be binary".format(type(d2)))
+        raise Exception(f"invalid type {type(d2)} for d2 - must be binary")
     if len(d1) != len(d2):
         raise Exception(
-            "cannot XOR binary string of differing length ({} != {})".format(
-                len(d1), len(d2)
-            )
+            f"cannot XOR binary string of differing length ({len(d1)} != {len(d2)})"
         )
 
     d1 = array("B", d1)
@@ -200,7 +197,7 @@ def utcstr(ts=None):
     assert ts is None or isinstance(ts, datetime)
     if ts is None:
         ts = datetime.utcnow()
-    return "{0}Z".format(ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3])
+    return "{}Z".format(ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3])
 
 
 @public
@@ -214,7 +211,7 @@ def utcnow():
     return utcstr()
 
 
-class IdGenerator(object):
+class IdGenerator:
     """
     ID generator for WAMP request IDs.
 
@@ -375,9 +372,9 @@ Delta" and telephone operators' "Is that 'd' as in 'dog'?".
 def generate_token(
     char_groups: int,
     chars_per_group: int,
-    chars: Optional[str] = None,
-    sep: Optional[str] = None,
-    lower_case: Optional[bool] = False,
+    chars: str | None = None,
+    sep: str | None = None,
+    lower_case: bool | None = False,
 ) -> str:
     """
     Generate cryptographically strong tokens, which are strings like `M6X5-YO5W-T5IK`.
@@ -418,9 +415,7 @@ def generate_token(
     """
     assert type(char_groups) == int
     assert type(chars_per_group) == int
-    assert chars is None or type(chars) == str, "chars must be str, was {}".format(
-        type(chars)
-    )
+    assert chars is None or type(chars) == str, f"chars must be str, was {type(chars)}"
     chars = chars or DEFAULT_TOKEN_CHARS
     if lower_case:
         chars = chars.lower()
@@ -524,10 +519,7 @@ if sys.platform.startswith("win"):
     # first call to this function, as a floating point number, based on the
     # Win32 function QueryPerformanceCounter(). The resolution is typically
     # better than one microsecond
-    if sys.version_info >= (3, 8):
-        _rtime = time.perf_counter
-    else:
-        _rtime = time.clock
+    _rtime = time.perf_counter
     _ = _rtime()  # this starts wallclock
 else:
     # On Unix-like platforms, this used the first available from this list:
@@ -549,7 +541,7 @@ def rtime():
     return _rtime()
 
 
-class Stopwatch(object):
+class Stopwatch:
     """
     Stopwatch based on walltime.
 
@@ -632,7 +624,7 @@ class Stopwatch(object):
         return elapsed
 
 
-class Tracker(object):
+class Tracker:
     """
     A key-based statistics tracker.
     """
@@ -672,13 +664,13 @@ class Tracker(object):
             d = self._timings[end_key] - self._timings[start_key]
             if formatted:
                 if d < 0.00001:  # 10us
-                    s = "%d ns" % round(d * 1000000000.0)
+                    s = f"{round(d * 1000000000.0)} ns"
                 elif d < 0.01:  # 10ms
-                    s = "%d us" % round(d * 1000000.0)
+                    s = f"{round(d * 1000000.0)} us"
                 elif d < 10:  # 10s
-                    s = "%d ms" % round(d * 1000.0)
+                    s = f"{round(d * 1000.0)} ms"
                 else:
-                    s = "%d s" % round(d)
+                    s = f"{round(d)} s"
                 return s.rjust(8)
             else:
                 return d
@@ -700,7 +692,7 @@ class Tracker(object):
         """
         elapsed = self[key]
         if elapsed is None:
-            raise KeyError('No such key "%s".' % elapsed)
+            raise KeyError(f'No such key "{elapsed}".')
         return self._dt_offset + timedelta(seconds=elapsed)
 
     def __getitem__(self, key):
@@ -716,7 +708,7 @@ class Tracker(object):
         return pformat(self._timings)
 
 
-class EqualityMixin(object):
+class EqualityMixin:
     """
     Mixing to add equality comparison operators to a class.
 
@@ -781,7 +773,7 @@ def wildcards2patterns(wildcards):
     ]
 
 
-class ObservableMixin(object):
+class ObservableMixin:
     """
     Internal utility for enabling event-listeners on particular objects
     """
@@ -897,7 +889,7 @@ class ObservableMixin(object):
         return d_res
 
 
-class _LazyHexFormatter(object):
+class _LazyHexFormatter:
     """
     This is used to avoid calling binascii.hexlify() on data given to
     log.debug() calls unless debug is active (for example). Like::
@@ -934,10 +926,7 @@ def _maybe_tls_reason(instance):
     """
     if _is_tls_error(instance):
         ssl_error = instance.args[0][0]
-        return "SSL error: {msg} (in {func})".format(
-            func=ssl_error[1],
-            msg=ssl_error[2],
-        )
+        return f"SSL error: {ssl_error[2]} (in {ssl_error[1]})"
     return ""
 
 
@@ -952,7 +941,7 @@ def machine_id() -> str:
     if platform.isLinux():
         try:
             # why this? see: http://0pointer.de/blog/projects/ids.html
-            with open("/var/lib/dbus/machine-id", "r") as f:
+            with open("/var/lib/dbus/machine-id") as f:
                 return f.read().strip()
         except:
             # Non-dbus using Linux, get a hostname
@@ -978,7 +967,7 @@ except ImportError:
 
 def hl(text, bold=False, color="yellow"):
     if not isinstance(text, str):
-        text = "{}".format(text)
+        text = f"{text}"
     if _HAS_CLICK:
         return click.style(text, fg=color, bold=bold)
     else:
@@ -987,7 +976,7 @@ def hl(text, bold=False, color="yellow"):
 
 def _qn(obj):
     if inspect.isclass(obj) or inspect.isfunction(obj) or inspect.ismethod(obj):
-        qn = "{}.{}".format(obj.__module__, obj.__qualname__)
+        qn = f"{obj.__module__}.{obj.__qualname__}"
     else:
         qn = "unknown"
     return qn
@@ -1002,28 +991,28 @@ def hltype(obj):
 
 
 def hlid(oid):
-    return hl("{}".format(oid), color="blue", bold=True)
+    return hl(f"{oid}", color="blue", bold=True)
 
 
 def hluserid(oid):
     if not isinstance(oid, str):
-        oid = "{}".format(oid)
-    return hl('"{}"'.format(oid), color="yellow", bold=True)
+        oid = f"{oid}"
+    return hl(f'"{oid}"', color="yellow", bold=True)
 
 
 def hlval(val, color="white", bold=True):
-    return hl("{}".format(val), color=color, bold=bold)
+    return hl(f"{val}", color=color, bold=bold)
 
 
 def hlcontract(oid):
     if not isinstance(oid, str):
-        oid = "{}".format(oid)
-    return hl("<{}>".format(oid), color="magenta", bold=True)
+        oid = f"{oid}"
+    return hl(f"<{oid}>", color="magenta", bold=True)
 
 
 def with_0x(address):
     if address and not address.startswith("0x"):
-        return "0x{address}".format(address=address)
+        return f"0x{address}"
     return address
 
 
@@ -1041,7 +1030,7 @@ def write_keyfile(filepath, tags, msg):
         f.write(msg)
         for tag, value in tags.items():
             if value:
-                f.write("{}: {}\n".format(tag, value))
+                f.write(f"{tag}: {value}\n")
 
 
 def parse_keyfile(key_path: str, private: bool = True) -> OrderedDict:
@@ -1050,7 +1039,7 @@ def parse_keyfile(key_path: str, private: bool = True) -> OrderedDict:
     returns a dict mapping tags -> values.
     """
     if os.path.exists(key_path) and not os.path.isfile(key_path):
-        raise Exception("Key file '{}' exists, but isn't a file".format(key_path))
+        raise Exception(f"Key file '{key_path}' exists, but isn't a file")
 
     allowed_tags = [
         # common tags
@@ -1071,7 +1060,7 @@ def parse_keyfile(key_path: str, private: bool = True) -> OrderedDict:
         allowed_tags.extend(["private-key-ed25519", "private-key-eth"])
 
     tags = OrderedDict()  # type: ignore
-    with open(key_path, "r") as key_file:
+    with open(key_path) as key_file:
         got_blankline = False
         for line in key_file.readlines():
             if line.strip() == "":
@@ -1082,11 +1071,11 @@ def parse_keyfile(key_path: str, private: bool = True) -> OrderedDict:
                 value = value.strip()
                 if tag not in allowed_tags:
                     raise Exception(
-                        "Invalid tag '{}' in key file {}".format(tag, key_path)
+                        f"Invalid tag '{tag}' in key file {key_path}"
                     )
                 if tag in tags:
                     raise Exception(
-                        "Duplicate tag '{}' in key file {}".format(tag, key_path)
+                        f"Duplicate tag '{tag}' in key file {key_path}"
                     )
                 tags[tag] = value
     return tags

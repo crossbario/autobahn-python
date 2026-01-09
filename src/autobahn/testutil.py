@@ -25,7 +25,7 @@
 ###############################################################################
 
 
-class FakeTransport(object):
+class FakeTransport:
     _written = b""
     _open = True
 
@@ -53,14 +53,14 @@ class FakeTransport(object):
 
     def getPeer(self):
         # for Twisted, this would be an IAddress
-        class _FakePeer(object):
+        class _FakePeer:
             pass
 
         return _FakePeer()
 
     def getHost(self):
         # for Twisted, this would be an IAddress
-        class _FakeHost(object):
+        class _FakeHost:
             pass
 
         return _FakeHost()

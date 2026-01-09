@@ -57,7 +57,7 @@ class RoleFeatures(util.EqualityMixin):
         for k, v in self.__dict__.items():
             if v is not None:
                 configured_options[k] = v
-        return "{0}({1})".format(
+        return "{}({})".format(
             self.ROLE,
             ", ".join([k + "=" + str(v) for k, v in configured_options.items()]),
         )
@@ -68,9 +68,7 @@ class RoleFeatures(util.EqualityMixin):
             if not k.startswith("_") and k != "ROLE":
                 if getattr(self, k) is not None and type(getattr(self, k)) != bool:
                     raise ProtocolError(
-                        "invalid type {0} for feature '{1}' for role '{2}'".format(
-                            getattr(self, k), k, self.ROLE
-                        )
+                        f"invalid type {getattr(self, k)} for feature '{k}' for role '{self.ROLE}'"
                     )
 
 

@@ -33,7 +33,7 @@ from twisted.internet.interfaces import IReactorTime
 
 
 @implementer(IReactorTime)
-class FakeReactor(object):
+class FakeReactor:
     """
     This just fakes out enough reactor methods so .run() can work.
     """

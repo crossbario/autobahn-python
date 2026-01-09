@@ -41,7 +41,7 @@ __all = (
 
 
 def transport_channel_id(
-    transport, is_server: bool, channel_id_type: Optional[str] = None
+    transport, is_server: bool, channel_id_type: str | None = None
 ) -> bytes:
     """
     Application-layer user authentication protocols are vulnerable to generic
@@ -63,7 +63,7 @@ def transport_channel_id(
 
     # ssl.CHANNEL_BINDING_TYPES
     if channel_id_type not in ["tls-unique"]:
-        raise Exception("invalid channel ID type {}".format(channel_id_type))
+        raise Exception(f"invalid channel ID type {channel_id_type}")
 
     ssl_obj = transport.get_extra_info("ssl_object")
     if ssl_obj is None:
@@ -96,24 +96,24 @@ def peer2str(transport: asyncio.transports.BaseTransport) -> str:
         peer = transport.get_extra_info("peername")
         if isinstance(peer, tuple):
             ip_ver = 4 if len(peer) == 2 else 6
-            return "tcp{2}:{0}:{1}".format(peer[0], peer[1], ip_ver)
+            return f"tcp{ip_ver}:{peer[0]}:{peer[1]}"
         elif isinstance(peer, str):
-            return "unix:{0}".format(peer)
+            return f"unix:{peer}"
         else:
-            return "?:{0}".format(peer)
+            return f"?:{peer}"
     except:
         pass
 
     try:
         proc: Popen = transport.get_extra_info("subprocess")
         # return 'process:{}'.format(transport.pid)
-        return "process:{}".format(proc.pid)
+        return f"process:{proc.pid}"
     except:
         pass
 
     try:
         pipe = transport.get_extra_info("pipe")
-        return "pipe:{}".format(pipe)
+        return f"pipe:{pipe}"
     except:
         pass
 

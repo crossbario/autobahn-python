@@ -25,7 +25,6 @@
 ###############################################################################
 
 import abc
-from typing import Dict, Optional, Tuple, Union
 
 from autobahn.util import public
 from autobahn.wamp.types import TransportDetails
@@ -481,7 +480,7 @@ class IWebSocketChannel(abc.ABC):
     @abc.abstractmethod
     def onConnecting(
         self, transport_details: TransportDetails
-    ) -> Optional[ConnectingRequest]:
+    ) -> ConnectingRequest | None:
         """
         This method is called when the WebSocket peer is connected at the byte stream level (e.g. TCP,
         TLS or Serial), but before the WebSocket opening handshake (e.g. at the HTTP request level).
@@ -497,8 +496,8 @@ class IWebSocketChannel(abc.ABC):
     @public
     @abc.abstractmethod
     def onConnect(
-        self, request_or_response: Union[ConnectionRequest, ConnectionResponse]
-    ) -> Union[Optional[str], Tuple[Optional[str], Dict[str, str]]]:
+        self, request_or_response: ConnectionRequest | ConnectionResponse
+    ) -> str | None | tuple[str | None, dict[str, str]]:
         """
         Callback fired during WebSocket opening handshake when a client connects to a server with
         request with a :class:`ConnectionRequest` from the client or when a server connection was established
@@ -555,7 +554,7 @@ class IWebSocketChannel(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def sendClose(self, code: Optional[int] = None, reason: Optional[str] = None):
+    def sendClose(self, code: int | None = None, reason: str | None = None):
         """
         Starts a WebSocket closing handshake tearing down the WebSocket connection.
 
@@ -580,7 +579,7 @@ class IWebSocketChannel(abc.ABC):
         """
 
     @abc.abstractmethod
-    def sendPing(self, payload: Optional[bytes] = None):
+    def sendPing(self, payload: bytes | None = None):
         """
         Send a WebSocket ping to the peer.
 
@@ -600,7 +599,7 @@ class IWebSocketChannel(abc.ABC):
         """
 
     @abc.abstractmethod
-    def sendPong(self, payload: Optional[bytes] = None):
+    def sendPong(self, payload: bytes | None = None):
         """
         Send a WebSocket pong to the peer.
 

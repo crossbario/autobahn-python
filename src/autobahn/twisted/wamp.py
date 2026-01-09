@@ -27,7 +27,7 @@
 import binascii
 import inspect
 import random
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import txaio
 
@@ -108,7 +108,7 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
 
 
 @public
-class ApplicationRunner(object):
+class ApplicationRunner:
     """
     This class is a convenience tool mainly for development and quick hosting
     of WAMP application components.
@@ -122,18 +122,18 @@ class ApplicationRunner(object):
     def __init__(
         self,
         url: str,
-        realm: Optional[str] = None,
-        extra: Optional[Dict[str, Any]] = None,
-        serializers: Optional[List[ISerializer]] = None,
-        ssl: Optional[CertificateOptions] = None,
-        proxy: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, Any]] = None,
-        websocket_options: Optional[Dict[str, Any]] = None,
-        max_retries: Optional[int] = None,
-        initial_retry_delay: Optional[float] = None,
-        max_retry_delay: Optional[float] = None,
-        retry_delay_growth: Optional[float] = None,
-        retry_delay_jitter: Optional[float] = None,
+        realm: str | None = None,
+        extra: dict[str, Any] | None = None,
+        serializers: list[ISerializer] | None = None,
+        ssl: CertificateOptions | None = None,
+        proxy: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+        websocket_options: dict[str, Any] | None = None,
+        max_retries: int | None = None,
+        initial_retry_delay: float | None = None,
+        max_retry_delay: float | None = None,
+        retry_delay_growth: float | None = None,
+        retry_delay_jitter: float | None = None,
     ):
         """
 
@@ -204,9 +204,9 @@ class ApplicationRunner(object):
         start_reactor: bool = True,
         auto_reconnect: bool = False,
         log_level: str = "info",
-        endpoint: Optional[IStreamClientEndpoint] = None,
-        reactor: Optional[IReactorCore] = None,
-    ) -> Union[type(None), Deferred]:
+        endpoint: IStreamClientEndpoint | None = None,
+        reactor: IReactorCore | None = None,
+    ) -> type(None) | Deferred:
         """
         Run the application component.
 
@@ -341,9 +341,8 @@ class ApplicationRunner(object):
             if self.ssl is not None:
                 if not isSecure:
                     raise RuntimeError(
-                        'ssl= argument value passed to %s conflicts with the "ws:" '
+                        f'ssl= argument value passed to {self.__class__.__name__} conflicts with the "ws:" '
                         'prefix of the url argument. Did you mean to use "wss:"?'
-                        % self.__class__.__name__
                     )
                 context_factory = self.ssl
             elif isSecure:
@@ -472,7 +471,7 @@ class ApplicationRunner(object):
             # exception so that after the event-loop exits we can re-raise
             # it to the caller.
 
-            class ErrorCollector(object):
+            class ErrorCollector:
                 exception = None
 
                 def __call__(self, failure):
@@ -555,7 +554,7 @@ class _ApplicationSession(ApplicationSession):
         yield self.app._fire_signal("ondisconnect")
 
 
-class Application(object):
+class Application:
     """
     A WAMP application. The application object provides a simple way of
     creating, debugging and running WAMP application components.
@@ -654,7 +653,7 @@ class Application(object):
                 _uri = uri
             else:
                 assert self._prefix is not None
-                _uri = "{0}.{1}".format(self._prefix, func.__name__)
+                _uri = f"{self._prefix}.{func.__name__}"
 
             if inspect.isgeneratorfunction(func):
                 func = inlineCallbacks(func)
@@ -692,7 +691,7 @@ class Application(object):
                 _uri = uri
             else:
                 assert self._prefix is not None
-                _uri = "{0}.{1}".format(self._prefix, func.__name__)
+                _uri = f"{self._prefix}.{func.__name__}"
 
             if inspect.isgeneratorfunction(func):
                 func = inlineCallbacks(func)
@@ -861,20 +860,20 @@ class Session(protocol._SessionShim):
 
 
 # experimental authentication API
-class AuthCryptoSign(object):
+class AuthCryptoSign:
     def __init__(self, **kw):
         # should put in checkconfig or similar
         for key in kw.keys():
             if key not in ["authextra", "authid", "authrole", "privkey"]:
                 raise ValueError(
-                    "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
+                    f"Unexpected key '{key}' for {self.__class__.__name__}"
                 )
         for key in ["privkey"]:
             if key not in kw:
-                raise ValueError("Must provide '{}' for cryptosign".format(key))
+                raise ValueError(f"Must provide '{key}' for cryptosign")
         for key in kw.get("authextra", dict()):
             if key not in ["pubkey", "channel_binding", "trustroot", "challenge"]:
-                raise ValueError("Unexpected key '{}' in 'authextra'".format(key))
+                raise ValueError(f"Unexpected key '{key}' in 'authextra'")
 
         from autobahn.wamp.cryptosign import CryptosignKey
 
@@ -904,17 +903,17 @@ class AuthCryptoSign(object):
 IAuthenticator.register(AuthCryptoSign)
 
 
-class AuthWampCra(object):
+class AuthWampCra:
     def __init__(self, **kw):
         # should put in checkconfig or similar
         for key in kw.keys():
             if key not in ["authextra", "authid", "authrole", "secret"]:
                 raise ValueError(
-                    "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
+                    f"Unexpected key '{key}' for {self.__class__.__name__}"
                 )
         for key in ["secret", "authid"]:
             if key not in kw:
-                raise ValueError("Must provide '{}' for wampcra".format(key))
+                raise ValueError(f"Must provide '{key}' for wampcra")
 
         self._args = kw
         self._secret = kw.pop("secret")

@@ -49,7 +49,7 @@ __all__ = (
 )
 
 
-class PerMessageBrotliMixin(object):
+class PerMessageBrotliMixin:
     """
     Mixin class for this extension.
     """
@@ -85,8 +85,7 @@ class PerMessageBrotliOffer(PerMessageCompressOffer, PerMessageBrotliMixin):
         for p in params:
             if len(params[p]) > 1:
                 raise Exception(
-                    "multiple occurrence of extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"multiple occurrence of extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
             val = params[p][0]
@@ -95,8 +94,7 @@ class PerMessageBrotliOffer(PerMessageCompressOffer, PerMessageBrotliMixin):
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     accept_no_context_takeover = True
@@ -105,16 +103,14 @@ class PerMessageBrotliOffer(PerMessageCompressOffer, PerMessageBrotliMixin):
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     request_no_context_takeover = True
 
             else:
                 raise Exception(
-                    "illegal extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"illegal extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
         offer = cls(accept_no_context_takeover, request_no_context_takeover)
@@ -132,16 +128,14 @@ class PerMessageBrotliOffer(PerMessageCompressOffer, PerMessageBrotliMixin):
         """
         if type(accept_no_context_takeover) != bool:
             raise Exception(
-                "invalid type %s for accept_no_context_takeover"
-                % type(accept_no_context_takeover)
+                f"invalid type {type(accept_no_context_takeover)} for accept_no_context_takeover"
             )
 
         self.accept_no_context_takeover = accept_no_context_takeover
 
         if type(request_no_context_takeover) != bool:
             raise Exception(
-                "invalid type %s for request_no_context_takeover"
-                % type(request_no_context_takeover)
+                f"invalid type {type(request_no_context_takeover)} for request_no_context_takeover"
             )
 
         self.request_no_context_takeover = request_no_context_takeover
@@ -181,8 +175,7 @@ class PerMessageBrotliOffer(PerMessageCompressOffer, PerMessageBrotliMixin):
         :rtype: str
         """
         return (
-            "PerMessageBrotliOffer(accept_no_context_takeover = %s, request_no_context_takeover = %s)"
-            % (self.accept_no_context_takeover, self.request_no_context_takeover)
+            f"PerMessageBrotliOffer(accept_no_context_takeover = {self.accept_no_context_takeover}, request_no_context_takeover = {self.request_no_context_takeover})"
         )
 
 
@@ -205,20 +198,18 @@ class PerMessageBrotliOfferAccept(PerMessageCompressOfferAccept, PerMessageBrotl
         :type no_context_takeover: bool
         """
         if not isinstance(offer, PerMessageBrotliOffer):
-            raise Exception("invalid type %s for offer" % type(offer))
+            raise Exception(f"invalid type {type(offer)} for offer")
 
         self.offer = offer
 
         if type(request_no_context_takeover) != bool:
             raise Exception(
-                "invalid type %s for request_no_context_takeover"
-                % type(request_no_context_takeover)
+                f"invalid type {type(request_no_context_takeover)} for request_no_context_takeover"
             )
 
         if request_no_context_takeover and not offer.accept_no_context_takeover:
             raise Exception(
-                "invalid value %s for request_no_context_takeover - feature unsupported by client"
-                % request_no_context_takeover
+                f"invalid value {request_no_context_takeover} for request_no_context_takeover - feature unsupported by client"
             )
 
         self.request_no_context_takeover = request_no_context_takeover
@@ -226,14 +217,12 @@ class PerMessageBrotliOfferAccept(PerMessageCompressOfferAccept, PerMessageBrotl
         if no_context_takeover is not None:
             if type(no_context_takeover) != bool:
                 raise Exception(
-                    "invalid type %s for no_context_takeover"
-                    % type(no_context_takeover)
+                    f"invalid type {type(no_context_takeover)} for no_context_takeover"
                 )
 
             if offer.request_no_context_takeover and not no_context_takeover:
                 raise Exception(
-                    "invalid value %s for no_context_takeover - client requested feature"
-                    % no_context_takeover
+                    f"invalid value {no_context_takeover} for no_context_takeover - client requested feature"
                 )
 
         self.no_context_takeover = no_context_takeover
@@ -274,12 +263,7 @@ class PerMessageBrotliOfferAccept(PerMessageCompressOfferAccept, PerMessageBrotl
         :rtype: str
         """
         return (
-            "PerMessageBrotliAccept(offer = %s, request_no_context_takeover = %s, no_context_takeover = %s)"
-            % (
-                self.offer.__repr__(),
-                self.request_no_context_takeover,
-                self.no_context_takeover,
-            )
+            f"PerMessageBrotliAccept(offer = {self.offer.__repr__()}, request_no_context_takeover = {self.request_no_context_takeover}, no_context_takeover = {self.no_context_takeover})"
         )
 
 
@@ -305,8 +289,7 @@ class PerMessageBrotliResponse(PerMessageCompressResponse, PerMessageBrotliMixin
         for p in params:
             if len(params[p]) > 1:
                 raise Exception(
-                    "multiple occurrence of extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"multiple occurrence of extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
             val = params[p][0]
@@ -315,8 +298,7 @@ class PerMessageBrotliResponse(PerMessageCompressResponse, PerMessageBrotliMixin
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     client_no_context_takeover = True
@@ -325,16 +307,14 @@ class PerMessageBrotliResponse(PerMessageCompressResponse, PerMessageBrotliMixin
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     server_no_context_takeover = True
 
             else:
                 raise Exception(
-                    "illegal extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"illegal extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
         response = cls(client_no_context_takeover, server_no_context_takeover)
@@ -365,8 +345,7 @@ class PerMessageBrotliResponse(PerMessageCompressResponse, PerMessageBrotliMixin
         :rtype: str
         """
         return (
-            "PerMessageBrotliResponse(client_no_context_takeover = %s, server_no_context_takeover = %s)"
-            % (self.client_no_context_takeover, self.server_no_context_takeover)
+            f"PerMessageBrotliResponse(client_no_context_takeover = {self.client_no_context_takeover}, server_no_context_takeover = {self.server_no_context_takeover})"
         )
 
 
@@ -387,21 +366,19 @@ class PerMessageBrotliResponseAccept(
         :type no_context_takeover: bool
         """
         if not isinstance(response, PerMessageBrotliResponse):
-            raise Exception("invalid type %s for response" % type(response))
+            raise Exception(f"invalid type {type(response)} for response")
 
         self.response = response
 
         if no_context_takeover is not None:
             if type(no_context_takeover) != bool:
                 raise Exception(
-                    "invalid type %s for no_context_takeover"
-                    % type(no_context_takeover)
+                    f"invalid type {type(no_context_takeover)} for no_context_takeover"
                 )
 
             if response.client_no_context_takeover and not no_context_takeover:
                 raise Exception(
-                    "invalid value %s for no_context_takeover - server requested feature"
-                    % no_context_takeover
+                    f"invalid value {no_context_takeover} for no_context_takeover - server requested feature"
                 )
 
         self.no_context_takeover = no_context_takeover
@@ -427,8 +404,7 @@ class PerMessageBrotliResponseAccept(
         :rtype: str
         """
         return (
-            "PerMessageBrotliResponseAccept(response = %s, no_context_takeover = %s)"
-            % (self.response.__repr__(), self.no_context_takeover)
+            f"PerMessageBrotliResponseAccept(response = {self.response.__repr__()}, no_context_takeover = {self.no_context_takeover})"
         )
 
 
@@ -482,12 +458,7 @@ class PerMessageBrotli(PerMessageCompress, PerMessageBrotliMixin):
 
     def __repr__(self):
         return (
-            "PerMessageBrotli(is_server = %s, server_no_context_takeover = %s, client_no_context_takeover = %s)"
-            % (
-                self._is_server,
-                self.server_no_context_takeover,
-                self.client_no_context_takeover,
-            )
+            f"PerMessageBrotli(is_server = {self._is_server}, server_no_context_takeover = {self.server_no_context_takeover}, client_no_context_takeover = {self.client_no_context_takeover})"
         )
 
     def start_compress_message(self):

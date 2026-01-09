@@ -89,7 +89,7 @@ def _create_transport_factory(loop, transport, session_factory):
                 factory.setProtocolOptions(**{_camel_case_from_snake_case(k): v})
             except (TypeError, KeyError):
                 raise ValueError(
-                    "Unknown {} transport option: {}={}".format(transport.type, k, v)
+                    f"Unknown {transport.type} transport option: {k}={v}"
                 )
     return factory
 
@@ -120,7 +120,7 @@ class Component(component.Component):
         if isinstance(endpoint, dict):
             if "tls" in endpoint:
                 tls = endpoint["tls"]
-                if isinstance(tls, (dict, bool)):
+                if isinstance(tls, dict | bool):
                     pass
                 elif isinstance(tls, ssl.SSLContext):
                     pass
@@ -149,9 +149,7 @@ class Component(component.Component):
             timeout = transport.endpoint.get("timeout", 10)  # in seconds
             if type(timeout) != int:
                 raise ValueError(
-                    "invalid type {} for timeout in client endpoint configuration".format(
-                        type(timeout)
-                    )
+                    f"invalid type {type(timeout)} for timeout in client endpoint configuration"
                 )
             # do we support HTTPS proxies?
 
@@ -167,33 +165,25 @@ class Component(component.Component):
             version = transport.endpoint.get("version", 4)
             if version not in [4, 6]:
                 raise ValueError(
-                    "invalid IP version {} in client endpoint configuration".format(
-                        version
-                    )
+                    f"invalid IP version {version} in client endpoint configuration"
                 )
 
             host = transport.endpoint["host"]
             if type(host) != str:
                 raise ValueError(
-                    "invalid type {} for host in client endpoint configuration".format(
-                        type(host)
-                    )
+                    f"invalid type {type(host)} for host in client endpoint configuration"
                 )
 
             port = transport.endpoint["port"]
             if type(port) != int:
                 raise ValueError(
-                    "invalid type {} for port in client endpoint configuration".format(
-                        type(port)
-                    )
+                    f"invalid type {type(port)} for port in client endpoint configuration"
                 )
 
             timeout = transport.endpoint.get("timeout", 10)  # in seconds
             if type(timeout) != int:
                 raise ValueError(
-                    "invalid type {} for timeout in client endpoint configuration".format(
-                        type(timeout)
-                    )
+                    f"invalid type {type(timeout)} for timeout in client endpoint configuration"
                 )
 
             tls = transport.endpoint.get("tls", None)
@@ -205,14 +195,12 @@ class Component(component.Component):
                     for k in tls.keys():
                         if k not in ["hostname", "trust_root"]:
                             raise ValueError(
-                                "Invalid key '{}' in 'tls' config".format(k)
+                                f"Invalid key '{k}' in 'tls' config"
                             )
                     hostname = tls.get("hostname", host)
                     if type(hostname) != str:
                         raise ValueError(
-                            "invalid type {} for hostname in TLS client endpoint configuration".format(
-                                hostname
-                            )
+                            f"invalid type {hostname} for hostname in TLS client endpoint configuration"
                         )
                     cert_fname = tls.get("trust_root", None)
 
@@ -234,9 +222,7 @@ class Component(component.Component):
 
                 else:
                     raise RuntimeError(
-                        'unknown type {} for "tls" configuration in transport'.format(
-                            type(tls)
-                        )
+                        f'unknown type {type(tls)} for "tls" configuration in transport'
                     )
 
             f = loop.create_connection(

@@ -87,7 +87,7 @@ class WSGIRootResource(Resource):
 
 
 @implementer(IResource)
-class WebSocketResource(object):
+class WebSocketResource:
     """
     A Twisted Web resource for WebSocket.
     """

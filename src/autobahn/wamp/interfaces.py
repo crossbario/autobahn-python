@@ -24,11 +24,12 @@
 #
 ###############################################################################
 
-import abc
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from __future__ import annotations
 
-# FIXME: see ISecurityModule.__iter__
-# from collections.abc import Iterator
+import abc
+from typing import Any
+from collections.abc import Callable
+
 from autobahn.util import public
 from autobahn.wamp.message import Message, Welcome
 from autobahn.wamp.types import (
@@ -99,7 +100,7 @@ class IObjectSerializer(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def unserialize(self, payload: bytes) -> List[Any]:
+    def unserialize(self, payload: bytes) -> list[Any]:
         """
         Deserialize objects from a byte string.
 
@@ -118,7 +119,7 @@ class ISerializer(abc.ABC):
     @public
     @property
     @abc.abstractmethod
-    def MESSAGE_TYPE_MAP(self) -> Dict[int, "IMessage"]:
+    def MESSAGE_TYPE_MAP(self) -> dict[int, IMessage]:
         """
         Mapping of WAMP message type codes to WAMP message classes.
         """
@@ -166,7 +167,7 @@ class ISerializer(abc.ABC):
 
     @public
     @abc.abstractmethod
-    def serialize(self, message: "IMessage") -> Tuple[bytes, bool]:
+    def serialize(self, message: IMessage) -> tuple[bytes, bool]:
         """
         Serializes a WAMP message to bytes for sending over a WAMP transport.
 
@@ -178,8 +179,8 @@ class ISerializer(abc.ABC):
     @public
     @abc.abstractmethod
     def unserialize(
-        self, payload: bytes, is_binary: Optional[bool] = None
-    ) -> List["IMessage"]:
+        self, payload: bytes, is_binary: bool | None = None
+    ) -> list[IMessage]:
         """
         Deserialize bytes from a transport and parse into WAMP messages.
 
@@ -212,7 +213,7 @@ class IMessage(abc.ABC):
     @public
     @staticmethod
     @abc.abstractmethod
-    def parse(wmsg) -> "IMessage":
+    def parse(wmsg) -> IMessage:
         """
         Factory method that parses a unserialized raw message (as returned byte
         :func:`autobahn.interfaces.ISerializer.unserialize`) into an instance
@@ -277,7 +278,7 @@ class ITransport(abc.ABC):
     @public
     @property
     @abc.abstractmethod
-    def transport_details(self) -> Optional[TransportDetails]:
+    def transport_details(self) -> TransportDetails | None:
         """
         Return details about the transport (when the transport is open).
         """
@@ -358,7 +359,7 @@ class ISession(_ABC):
     @public
     @property
     @abc.abstractmethod
-    def transport(self) -> Optional[ITransport]:
+    def transport(self) -> ITransport | None:
         """
         When the transport this session is attached to is currently open, this property
         can be read from. The property should be considered read-only. When the transport
@@ -368,7 +369,7 @@ class ISession(_ABC):
     @public
     @property
     @abc.abstractmethod
-    def session_details(self) -> Optional[SessionDetails]:
+    def session_details(self) -> SessionDetails | None:
         """
         Return details about the session, the same as initially provided to the
         :meth:`ISession.onJoin` callback on an implementation.
@@ -407,13 +408,13 @@ class ISession(_ABC):
     def join(
         self,
         realm: str,
-        authmethods: Optional[List[str]] = None,
-        authid: Optional[str] = None,
-        authrole: Optional[str] = None,
-        authextra: Optional[Dict[str, Any]] = None,
-        resumable: Optional[bool] = None,
-        resume_session: Optional[int] = None,
-        resume_token: Optional[str] = None,
+        authmethods: list[str] | None = None,
+        authid: str | None = None,
+        authrole: str | None = None,
+        authextra: dict[str, Any] | None = None,
+        resumable: bool | None = None,
+        resume_session: int | None = None,
+        resume_token: str | None = None,
     ):
         """
         Attach the session to the given realm. A session is open as soon as it is attached to a realm.
@@ -432,7 +433,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def onWelcome(self, welcome: Welcome) -> Optional[str]:
+    def onWelcome(self, welcome: Welcome) -> str | None:
         """
         Callback fired after the peer has successfully authenticated. If
         this returns anything other than None/False, the session is
@@ -465,7 +466,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def leave(self, reason: Optional[str] = None, message: Optional[str] = None):
+    def leave(self, reason: str | None = None, message: str | None = None):
         """
         Actively close this WAMP session.
 
@@ -517,7 +518,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def set_payload_codec(self, payload_codec: Optional["IPayloadCodec"]):
+    def set_payload_codec(self, payload_codec: IPayloadCodec | None):
         """
         Set a payload codec on the session. To remove a previously set payload codec,
         set the codec to ``None``.
@@ -530,7 +531,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def get_payload_codec(self) -> Optional["IPayloadCodec"]:
+    def get_payload_codec(self) -> IPayloadCodec | None:
         """
         Get the current payload codec (if any) for the session.
 
@@ -541,7 +542,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def define(self, exception: Exception, error: Optional[str] = None):
+    def define(self, exception: Exception, error: str | None = None):
         """
         Defines an exception for a WAMP error in the context of this WAMP session.
 
@@ -553,7 +554,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def call(self, procedure: str, *args, **kwargs) -> Union[Any, CallResult]:
+    def call(self, procedure: str, *args, **kwargs) -> Any | CallResult:
         """
         Call a remote procedure.
 
@@ -588,12 +589,12 @@ class ISession(_ABC):
     @abc.abstractmethod
     def register(
         self,
-        endpoint: Union[Callable, Any],
-        procedure: Optional[str] = None,
-        options: Optional[RegisterOptions] = None,
-        prefix: Optional[str] = None,
-        check_types: Optional[bool] = None,
-    ) -> Union[Registration, List[Registration]]:
+        endpoint: Callable | Any,
+        procedure: str | None = None,
+        options: RegisterOptions | None = None,
+        prefix: str | None = None,
+        check_types: bool | None = None,
+    ) -> Registration | list[Registration]:
         """
         Register a procedure for remote calling.
 
@@ -639,7 +640,7 @@ class ISession(_ABC):
 
     @public
     @abc.abstractmethod
-    def publish(self, topic: str, *args, **kwargs) -> Optional[Publication]:
+    def publish(self, topic: str, *args, **kwargs) -> Publication | None:
         """
         Publish an event to a topic.
 
@@ -674,11 +675,11 @@ class ISession(_ABC):
     @abc.abstractmethod
     def subscribe(
         self,
-        handler: Union[Callable, Any],
-        topic: Optional[str] = None,
-        options: Optional[SubscribeOptions] = None,
-        check_types: Optional[bool] = None,
-    ) -> Union[Subscription, List[Subscription]]:
+        handler: Callable | Any,
+        topic: str | None = None,
+        options: SubscribeOptions | None = None,
+        check_types: bool | None = None,
+    ) -> Subscription | list[Subscription]:
         """
         Subscribe to a topic for receiving events.
 
@@ -729,7 +730,7 @@ class IAuthenticator(abc.ABC):
         """
 
     @abc.abstractmethod
-    def on_welcome(self, authextra: Optional[Dict[str, Any]]) -> Optional[str]:
+    def on_welcome(self, authextra: dict[str, Any] | None) -> str | None:
         """
         This hook is called when the onWelcome/on_welcome hook is invoked
         in the protocol, with the 'authextra' dict extracted from the
@@ -752,7 +753,7 @@ class IKey(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def security_module(self) -> Optional["ISecurityModule"]:
+    def security_module(self) -> ISecurityModule | None:
         """
         When this key is hosted by a security module, return a reference.
         If the key is freestanding (exists of its own outside any security
@@ -763,7 +764,7 @@ class IKey(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def key_no(self) -> Optional[int]:
+    def key_no(self) -> int | None:
         """
         When this key is hosted by a security module, return an identifier
         to refer to this key within the security module.
@@ -789,7 +790,7 @@ class IKey(abc.ABC):
         """
 
     @abc.abstractmethod
-    def public_key(self, binary: bool = False) -> Union[str, bytes]:
+    def public_key(self, binary: bool = False) -> str | bytes:
         """
         Returns the public key part of a signing key or the (public) verification key.
 
@@ -837,8 +838,8 @@ class ICryptosignKey(IKey):
     def sign_challenge(
         self,
         challenge: Challenge,
-        channel_id: Optional[bytes] = None,
-        channel_id_type: Optional[str] = None,
+        channel_id: bytes | None = None,
+        channel_id_type: str | None = None,
     ) -> bytes:
         """
         Sign the data from the given WAMP challenge message, and the optional TLS channel ID
@@ -862,8 +863,8 @@ class ICryptosignKey(IKey):
         self,
         challenge: Challenge,
         signature: bytes,
-        channel_id: Optional[bytes] = None,
-        channel_id_type: Optional[str] = None,
+        channel_id: bytes | None = None,
+        channel_id_type: str | None = None,
     ) -> bool:
         """
         Verify the data from the given WAMP challenge message, and the optional TLS channel ID
@@ -890,7 +891,7 @@ class IEthereumKey(IKey):
     """
 
     @abc.abstractmethod
-    def address(self, binary: bool = False) -> Union[str, bytes]:
+    def address(self, binary: bool = False) -> str | bytes:
         """
         Returns the Ethereum (public) address of the key (which is derived from
         the public key).
@@ -901,7 +902,7 @@ class IEthereumKey(IKey):
         """
 
     @abc.abstractmethod
-    def sign_typed_data(self, data: Dict[str, Any]) -> bytes:
+    def sign_typed_data(self, data: dict[str, Any]) -> bytes:
         """
         Sign the given typed data according to `EIP712 <https://eips.ethereum.org/EIPS/eip-712>`_
         and create an Ethereum signature.
@@ -913,7 +914,7 @@ class IEthereumKey(IKey):
 
     @abc.abstractmethod
     def verify_typed_data(
-        self, data: Dict[str, Any], signature: bytes, signer_address: Union[str, bytes]
+        self, data: dict[str, Any], signature: bytes, signer_address: str | bytes
     ) -> bool:
         """
         Verify the given typed data according to `EIP712 <https://eips.ethereum.org/EIPS/eip-712>`_
@@ -983,7 +984,7 @@ class ISecurityModule(abc.ABC):
     #     """
 
     @abc.abstractmethod
-    def __getitem__(self, key_no: int) -> Union[ICryptosignKey, IEthereumKey]:
+    def __getitem__(self, key_no: int) -> ICryptosignKey | IEthereumKey:
         """
         Get a key from the security module given the key number.
 
@@ -994,7 +995,7 @@ class ISecurityModule(abc.ABC):
 
     @abc.abstractmethod
     def __setitem__(
-        self, key_no: int, key: Union[ICryptosignKey, IEthereumKey]
+        self, key_no: int, key: ICryptosignKey | IEthereumKey
     ) -> None:
         """
 

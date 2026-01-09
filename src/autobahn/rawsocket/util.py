@@ -72,24 +72,24 @@ def create_url(hostname, port=None, isSecure=False):
     assert type(isSecure) == bool
 
     if hostname == "unix":
-        netloc = "unix:%s" % port
+        netloc = f"unix:{port}"
     else:
         assert port is None or (type(port) == int and port in range(0, 65535))
 
         if port is not None:
-            netloc = "%s:%d" % (hostname, port)
+            netloc = f"{hostname}:{port}"
         else:
             if isSecure:
-                netloc = "{}:443".format(hostname)
+                netloc = f"{hostname}:443"
             else:
-                netloc = "{}:80".format(hostname)
+                netloc = f"{hostname}:80"
 
     if isSecure:
         scheme = "rss"
     else:
         scheme = "rs"
 
-    return "{}://{}".format(scheme, netloc)
+    return f"{scheme}://{netloc}"
 
 
 @public
@@ -120,9 +120,7 @@ def parse_url(url):
 
     if parsed.scheme not in ["rs", "rss"]:
         raise Exception(
-            "invalid RawSocket URL: protocol scheme '{}' is not for RawSocket".format(
-                parsed.scheme
-            )
+            f"invalid RawSocket URL: protocol scheme '{parsed.scheme}' is not for RawSocket"
         )
 
     if not parsed.hostname or parsed.hostname == "":
@@ -130,12 +128,12 @@ def parse_url(url):
 
     if parsed.query is not None and parsed.query != "":
         raise Exception(
-            "invalid RawSocket URL: non-empty query '{}'".format(parsed.query)
+            f"invalid RawSocket URL: non-empty query '{parsed.query}'"
         )
 
     if parsed.fragment is not None and parsed.fragment != "":
         raise Exception(
-            "invalid RawSocket URL: non-empty fragment '{}'".format(parsed.fragment)
+            f"invalid RawSocket URL: non-empty fragment '{parsed.fragment}'"
         )
 
     if parsed.hostname == "unix":
@@ -155,7 +153,7 @@ def parse_url(url):
 
         if parsed.path is not None and parsed.path != "":
             raise Exception(
-                "invalid RawSocket URL: non-empty path '{}'".format(parsed.path)
+                f"invalid RawSocket URL: non-empty path '{parsed.path}'"
             )
 
         if parsed.port is None or parsed.port == "":
@@ -167,6 +165,6 @@ def parse_url(url):
             tcp_port = int(parsed.port)
 
         if tcp_port < 1 or tcp_port > 65535:
-            raise Exception("invalid port {}".format(tcp_port))
+            raise Exception(f"invalid port {tcp_port}")
 
         return parsed.scheme == "rss", parsed.hostname, tcp_port

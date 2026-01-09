@@ -26,7 +26,6 @@
 
 import copy
 import traceback
-from typing import Dict, Optional, Tuple
 
 from autobahn.util import hlval
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
@@ -47,15 +46,15 @@ __all__ = (
 )
 
 
-class WampWebSocketProtocol(object):
+class WampWebSocketProtocol:
     """
     Base class for WAMP-over-WebSocket transport mixins.
     """
 
-    _session: Optional[ISession] = None  # default; self.session is set in onOpen
-    _transport_details: Optional[TransportDetails] = None
+    _session: ISession | None = None  # default; self.session is set in onOpen
+    _transport_details: TransportDetails | None = None
 
-    def _bailout(self, code: int, reason: Optional[str] = None):
+    def _bailout(self, code: int, reason: str | None = None):
         self.log.debug(
             'Failing WAMP-over-WebSocket transport: code={code}, reason="{reason}"',
             code=code,
@@ -76,13 +75,13 @@ class WampWebSocketProtocol(object):
             self._session.onOpen(self)
         except Exception as e:
             self.log.critical("{tb}", tb=traceback.format_exc())
-            reason = "WAMP Internal Error ({0})".format(e)
+            reason = f"WAMP Internal Error ({e})"
             self._bailout(
                 protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR,
                 reason=reason,
             )
 
-    def onClose(self, wasClean: bool, code: int, reason: Optional[str]):
+    def onClose(self, wasClean: bool, code: int, reason: str | None):
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
         """
@@ -131,7 +130,7 @@ class WampWebSocketProtocol(object):
 
         except ProtocolError as e:
             self.log.critical("{tb}", tb=traceback.format_exc())
-            reason = "WAMP Protocol Error ({0})".format(e)
+            reason = f"WAMP Protocol Error ({e})"
             self._bailout(
                 protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
                 reason=reason,
@@ -139,7 +138,7 @@ class WampWebSocketProtocol(object):
 
         except Exception as e:
             self.log.critical("{tb}", tb=traceback.format_exc())
-            reason = "WAMP Internal Error ({0})".format(e)
+            reason = f"WAMP Internal Error ({e})"
             self._bailout(
                 protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR,
                 reason=reason,
@@ -170,10 +169,10 @@ class WampWebSocketProtocol(object):
                 )
                 payload, isBinary = self._serializer.serialize(msg)
             except Exception as e:
-                self.log.error("WAMP message serialization error: {}".format(e))
+                self.log.error(f"WAMP message serialization error: {e}")
                 # all exceptions raised from above should be serialization errors ..
                 raise SerializationError(
-                    "WAMP message serialization error: {0}".format(e)
+                    f"WAMP message serialization error: {e}"
                 )
             else:
                 self.sendMessage(payload, isBinary)
@@ -187,7 +186,7 @@ class WampWebSocketProtocol(object):
         return self._session is not None
 
     @property
-    def transport_details(self) -> Optional[TransportDetails]:
+    def transport_details(self) -> TransportDetails | None:
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.transport_details`
         """
@@ -215,14 +214,12 @@ class WampWebSocketProtocol(object):
 ITransport.register(WampWebSocketProtocol)
 
 
-def parseSubprotocolIdentifier(subprotocol: str) -> Tuple[Optional[int], Optional[str]]:
+def parseSubprotocolIdentifier(subprotocol: str) -> tuple[int | None, str | None]:
     try:
         s = subprotocol.split(".")
         if s[0] != "wamp":
             raise Exception(
-                'WAMP WebSocket subprotocol identifier must start with "wamp", not "{}"'.format(
-                    s[0]
-                )
+                f'WAMP WebSocket subprotocol identifier must start with "wamp", not "{s[0]}"'
             )
         version = int(s[1])
         serializer_id = ".".join(s[2:])
@@ -240,7 +237,7 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
 
     def onConnect(
         self, request: ConnectionRequest
-    ) -> Tuple[Optional[str], Dict[str, str]]:
+    ) -> tuple[str | None, dict[str, str]]:
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect`
         """
@@ -294,7 +291,7 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
         self._serializer = copy.copy(self.factory._serializers[serializer_id])
 
 
-class WampWebSocketFactory(object):
+class WampWebSocketFactory:
     """
     Base class for WAMP-over-WebSocket transport factory mixins.
     """
@@ -362,7 +359,7 @@ class WampWebSocketFactory(object):
         for ser in serializers:
             self._serializers[ser.SERIALIZER_ID] = ser
 
-        self._protocols = ["wamp.2.{}".format(ser.SERIALIZER_ID) for ser in serializers]
+        self._protocols = [f"wamp.2.{ser.SERIALIZER_ID}" for ser in serializers]
 
 
 class WampWebSocketServerFactory(WampWebSocketFactory):

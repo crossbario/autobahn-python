@@ -66,8 +66,8 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
 
     log = txaio.make_logger()
 
-    peer: Optional[str] = None
-    is_server: Optional[bool] = None
+    peer: str | None = None
+    is_server: bool | None = None
 
     def connection_made(self, transport):
         # asyncio networking framework entry point, called by asyncio
@@ -240,7 +240,7 @@ class WebSocketClientProtocol(
         raise Exception("WSS over explicit proxies not implemented")
 
 
-class WebSocketAdapterFactory(object):
+class WebSocketAdapterFactory:
     """
     Adapter class for asyncio-based WebSocket client and server factories.
     """

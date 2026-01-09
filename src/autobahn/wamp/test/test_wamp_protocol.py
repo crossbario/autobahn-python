@@ -51,7 +51,7 @@ if os.environ.get("USE_TWISTED", False):
     )
     from twisted.trial import unittest
 
-    class MockTransport(object):
+    class MockTransport:
         def __init__(self, handler):
             self._log = False
             self._handler = handler
@@ -85,7 +85,7 @@ if os.environ.get("USE_TWISTED", False):
         def send(self, msg):
             if self._log:
                 payload, isbinary = self._serializer.serialize(msg)
-                print("Send: {0}".format(payload))
+                print(f"Send: {payload}")
 
             reply = None
 
@@ -183,7 +183,7 @@ if os.environ.get("USE_TWISTED", False):
             if reply:
                 if self._log:
                     payload, isbinary = self._serializer.serialize(reply)
-                    print("Receive: {0}".format(payload))
+                    print(f"Receive: {payload}")
                 self._handler.onMessage(reply)
 
         def isOpen(self):

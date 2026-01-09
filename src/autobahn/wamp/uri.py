@@ -82,7 +82,7 @@ def convert_starred_uri(uri: str):
 
 
 @public
-class Pattern(object):
+class Pattern:
     """
     A WAMP URI Pattern.
 
@@ -128,8 +128,8 @@ class Pattern(object):
         self,
         uri: str,
         target: int,
-        options: Optional[Union[SubscribeOptions, RegisterOptions]] = None,
-        check_types: Optional[bool] = None,
+        options: SubscribeOptions | RegisterOptions | None = None,
+        check_types: bool | None = None,
     ):
         """
 
@@ -199,7 +199,7 @@ class Pattern(object):
                     # should not arrive here
                     raise TypeError("logic error")
 
-                pl.append("(?P<{}>{})".format(name, _URI_COMP_CHARS))
+                pl.append(f"(?P<{name}>{_URI_COMP_CHARS})")
                 group_count += 1
                 continue
 
@@ -210,7 +210,7 @@ class Pattern(object):
                     raise TypeError("invalid URI")
 
                 nc[name] = str
-                pl.append("(?P<{}>{})".format(name, _URI_COMP_CHARS))
+                pl.append(f"(?P<{name}>{_URI_COMP_CHARS})")
                 group_count += 1
                 continue
 
@@ -221,7 +221,7 @@ class Pattern(object):
 
             if component == "":
                 group_count += 1
-                pl.append(r"({})".format(_URI_COMP_CHARS))
+                pl.append(rf"({_URI_COMP_CHARS})")
                 nc[group_count] = str
                 continue
 
@@ -334,9 +334,9 @@ class Pattern(object):
 
 @public
 def register(
-    uri: Optional[str],
-    options: Optional[RegisterOptions] = None,
-    check_types: Optional[bool] = None,
+    uri: str | None,
+    options: RegisterOptions | None = None,
+    check_types: bool | None = None,
 ):
     """
     Decorator for WAMP procedure endpoints.
@@ -360,7 +360,7 @@ def register(
     def decorate(f):
         assert callable(f)
         if uri is None:
-            real_uri = "{}".format(f.__name__)
+            real_uri = f"{f.__name__}"
         else:
             real_uri = uri
         if not hasattr(f, "_wampuris"):
@@ -375,9 +375,9 @@ def register(
 
 @public
 def subscribe(
-    uri: Optional[str],
-    options: Optional[SubscribeOptions] = None,
-    check_types: Optional[bool] = None,
+    uri: str | None,
+    options: SubscribeOptions | None = None,
+    check_types: bool | None = None,
 ):
     """
     Decorator for WAMP event handlers.

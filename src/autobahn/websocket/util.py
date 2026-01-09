@@ -80,17 +80,17 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     assert type(isSecure) == bool
 
     if hostname == "unix":
-        netloc = "unix:%s" % port
+        netloc = f"unix:{port}"
     else:
         assert port is None or (type(port) == int and port in range(0, 65535))
 
         if port is not None:
-            netloc = "%s:%d" % (hostname, port)
+            netloc = f"{hostname}:{port}"
         else:
             if isSecure:
-                netloc = "%s:443" % hostname
+                netloc = f"{hostname}:443"
             else:
-                netloc = "%s:80" % hostname
+                netloc = f"{hostname}:80"
 
     if isSecure:
         scheme = "wss"
@@ -139,9 +139,7 @@ def parse_url(url):
 
     if parsed.scheme not in ["ws", "wss"]:
         raise ValueError(
-            "invalid WebSocket URL: protocol scheme '{}' is not for WebSocket".format(
-                parsed.scheme
-            )
+            f"invalid WebSocket URL: protocol scheme '{parsed.scheme}' is not for WebSocket"
         )
 
     if not parsed.hostname or parsed.hostname == "":
@@ -149,7 +147,7 @@ def parse_url(url):
 
     if parsed.fragment is not None and parsed.fragment != "":
         raise ValueError(
-            "invalid WebSocket URL: non-empty fragment '%s" % parsed.fragment
+            f"invalid WebSocket URL: non-empty fragment '{parsed.fragment}'"
         )
 
     if parsed.path is not None and parsed.path != "":
@@ -189,6 +187,6 @@ def parse_url(url):
             tcp_port = int(parsed.port)
 
         if tcp_port < 1 or tcp_port > 65535:
-            raise ValueError("invalid port {}".format(tcp_port))
+            raise ValueError(f"invalid port {tcp_port}")
 
         return parsed.scheme == "wss", parsed.hostname, tcp_port, resource, path, params

@@ -280,7 +280,7 @@ class ApplicationError(Error):
         :returns: The error message.
         :rtype: str
         """
-        return "{0}: {1}".format(
+        return "{}: {}".format(
             self.error,
             " ".join([str(a) for a in self.args]),
         )
@@ -291,17 +291,7 @@ class ApplicationError(Error):
             self.kwargs["traceback"] = "..."
         else:
             tb = ""
-        return "ApplicationError(error=<{0}>, args={1}, kwargs={2}, enc_algo={3}, callee={4}, callee_authid={5}, callee_authrole={6}, forward_for={7}){8}".format(
-            self.error,
-            list(self.args),
-            self.kwargs,
-            self.enc_algo,
-            self.callee,
-            self.callee_authid,
-            self.callee_authrole,
-            self.forward_for,
-            tb,
-        )
+        return f"ApplicationError(error=<{self.error}>, args={list(self.args)}, kwargs={self.kwargs}, enc_algo={self.enc_algo}, callee={self.callee}, callee_authid={self.callee_authid}, callee_authrole={self.callee_authrole}, forward_for={self.forward_for}){tb}"
 
     def __str__(self):
         return self.__unicode__()
