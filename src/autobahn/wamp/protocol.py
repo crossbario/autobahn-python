@@ -25,7 +25,8 @@
 ###############################################################################
 import inspect
 from functools import reduce
-from typing import Any, Callable, ClassVar, Dict, List, Optional, Union
+from typing import Any, ClassVar, Union
+from collections.abc import Callable
 
 import txaio
 
@@ -103,40 +104,40 @@ class BaseSession(ObservableMixin):
         self.traceback_app = False
 
         # mapping of exception classes to list of WAMP error URI patterns
-        self._ecls_to_uri_pat: Dict[ClassVar, List[uri.Pattern]] = {}
+        self._ecls_to_uri_pat: dict[ClassVar, list[uri.Pattern]] = {}
 
         # mapping of WAMP error URIs to exception classes
-        self._uri_to_ecls: Dict[str, ClassVar] = {
+        self._uri_to_ecls: dict[str, ClassVar] = {
             ApplicationError.INVALID_PAYLOAD: SerializationError,
             ApplicationError.PAYLOAD_SIZE_EXCEEDED: PayloadExceededError,
         }
 
         # WAMP ITransport (_not_ a Twisted protocol, which is self.transport - when using Twisted)
-        self._transport: Optional[ITransport] = None
+        self._transport: ITransport | None = None
 
         # session authentication information
-        self._realm: Optional[str] = None
-        self._session_id: Optional[int] = None
-        self._authid: Optional[str] = None
-        self._authrole: Optional[str] = None
-        self._authmethod: Optional[str] = None
-        self._authprovider: Optional[str] = None
-        self._authextra: Optional[Dict[str, Any]] = None
+        self._realm: str | None = None
+        self._session_id: int | None = None
+        self._authid: str | None = None
+        self._authrole: str | None = None
+        self._authmethod: str | None = None
+        self._authprovider: str | None = None
+        self._authextra: dict[str, Any] | None = None
 
         # set client role features supported and announced
-        self._session_roles: Dict[str, role.RoleFeatures] = role.DEFAULT_CLIENT_ROLES
+        self._session_roles: dict[str, role.RoleFeatures] = role.DEFAULT_CLIENT_ROLES
 
         # complete session details
-        self._session_details: Optional[SessionDetails] = None
+        self._session_details: SessionDetails | None = None
 
         # payload transparency codec
-        self._payload_codec: Optional[IPayloadCodec] = None
+        self._payload_codec: IPayloadCodec | None = None
 
         # generator for WAMP request IDs
         self._request_id_gen = IdGenerator()
 
     @property
-    def transport(self) -> Optional[ITransport]:
+    def transport(self) -> ITransport | None:
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.transport`
         """
@@ -159,41 +160,41 @@ class BaseSession(ObservableMixin):
         return self._session_id is not None and self.is_connected()
 
     @property
-    def session_details(self) -> Optional[SessionDetails]:
+    def session_details(self) -> SessionDetails | None:
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.session_details`
         """
         return self._session_details
 
     @property
-    def realm(self) -> Optional[str]:
+    def realm(self) -> str | None:
         return self._realm
 
     @property
-    def session_id(self) -> Optional[int]:
+    def session_id(self) -> int | None:
         return self._session_id
 
     @property
-    def authid(self) -> Optional[str]:
+    def authid(self) -> str | None:
         return self._authid
 
     @property
-    def authrole(self) -> Optional[str]:
+    def authrole(self) -> str | None:
         return self._authrole
 
     @property
-    def authmethod(self) -> Optional[str]:
+    def authmethod(self) -> str | None:
         return self._authmethod
 
     @property
-    def authprovider(self) -> Optional[str]:
+    def authprovider(self) -> str | None:
         return self._authprovider
 
     @property
-    def authextra(self) -> Optional[Dict[str, Any]]:
+    def authextra(self) -> dict[str, Any] | None:
         return self._authextra
 
-    def define(self, exception: Exception, error: Optional[str] = None):
+    def define(self, exception: Exception, error: str | None = None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.define`
         """
@@ -313,7 +314,7 @@ class BaseSession(ObservableMixin):
                     )
                     enc_err = ApplicationError(
                         ApplicationError.ENC_DECRYPT_ERROR,
-                        "failed to decrypt application payload 1: {}".format(e),
+                        f"failed to decrypt application payload 1: {e}",
                         enc_algo=msg.enc_algo,
                     )
                 else:
@@ -325,9 +326,7 @@ class BaseSession(ObservableMixin):
                         )
                         enc_err = ApplicationError(
                             ApplicationError.ENC_TRUSTED_URI_MISMATCH,
-                            "URI within encrypted payload ('{}') does not match the envelope ('{}')".format(
-                                decrypted_error, msg.error
-                            ),
+                            f"URI within encrypted payload ('{decrypted_error}') does not match the envelope ('{msg.error}')",
                             enc_algo=msg.enc_algo,
                         )
 
@@ -398,7 +397,7 @@ class ApplicationSession(BaseSession):
         * :class:`autobahn.wamp.interfaces.ISession`
     """
 
-    def __init__(self, config: Optional[types.ComponentConfig] = None):
+    def __init__(self, config: types.ComponentConfig | None = None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession`
         """
@@ -412,7 +411,7 @@ class ApplicationSession(BaseSession):
         self._transport_is_closing: bool = False
 
         # WAMP application payload codec (e.g. for WAMP-cryptobox E2E)
-        self._payload_codec: Optional[IPayloadCodec] = None
+        self._payload_codec: IPayloadCodec | None = None
 
         # outstanding requests
         self._publish_reqs = {}
@@ -436,14 +435,14 @@ class ApplicationSession(BaseSession):
         return self._config
 
     @public
-    def set_payload_codec(self, payload_codec: Optional[IPayloadCodec]):
+    def set_payload_codec(self, payload_codec: IPayloadCodec | None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.set_payload_codec`
         """
         self._payload_codec = payload_codec
 
     @public
-    def get_payload_codec(self) -> Optional[IPayloadCodec]:
+    def get_payload_codec(self) -> IPayloadCodec | None:
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.get_payload_codec`
         """
@@ -484,13 +483,13 @@ class ApplicationSession(BaseSession):
     def join(
         self,
         realm: str,
-        authmethods: Optional[List[str]] = None,
-        authid: Optional[str] = None,
-        authrole: Optional[str] = None,
-        authextra: Optional[Dict[str, Any]] = None,
-        resumable: Optional[bool] = None,
-        resume_session: Optional[int] = None,
-        resume_token: Optional[str] = None,
+        authmethods: list[str] | None = None,
+        authid: str | None = None,
+        authrole: str | None = None,
+        authextra: dict[str, Any] | None = None,
+        resumable: bool | None = None,
+        resume_session: int | None = None,
+        resume_token: str | None = None,
     ):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.join`
@@ -590,15 +589,11 @@ class ApplicationSession(BaseSession):
                         expected_types = [arg.__name__ for arg in kind.__args__]
                         if not isinstance(arguments[name], kind.__args__):
                             response.append(
-                                "'{}' expected types={} got={}".format(
-                                    name, expected_types, type(arguments[name]).__name__
-                                )
+                                f"'{name}' expected types={expected_types} got={type(arguments[name]).__name__}"
                             )
                     elif not isinstance(arguments[name], kind):
                         response.append(
-                            "'{}' expected type={} got={}".format(
-                                name, kind.__name__, type(arguments[name]).__name__
-                            )
+                            f"'{name}' expected type={kind.__name__} got={type(arguments[name]).__name__}"
                         )
             if response:
                 raise TypeCheckError(", ".join(response))
@@ -626,7 +621,7 @@ class ApplicationSession(BaseSession):
                     if res is not None:
                         self.log.debug("Session denied by onWelcome: {res}", res=res)
                         reply = message.Abort(
-                            "wamp.error.cannot_authenticate", "{0}".format(res)
+                            "wamp.error.cannot_authenticate", f"{res}"
                         )
                         self._transport.send(reply)
                         return
@@ -735,7 +730,7 @@ class ApplicationSession(BaseSession):
                         signature = signature.decode("utf8")
                     if type(signature) != str:
                         raise Exception(
-                            "signature must be unicode (was {})".format(type(signature))
+                            f"signature must be unicode (was {type(signature)})"
                         )
                     reply = message.Authenticate(signature)
                     self._transport.send(reply)
@@ -743,7 +738,7 @@ class ApplicationSession(BaseSession):
                 def error(err):
                     self.onUserError(err, "Authentication failed")
                     reply = message.Abort(
-                        "wamp.error.cannot_authenticate", "{0}".format(err.value)
+                        "wamp.error.cannot_authenticate", f"{err.value}"
                     )
                     self._transport.send(reply)
                     # fire callback and close the transport
@@ -767,9 +762,7 @@ class ApplicationSession(BaseSession):
 
             else:
                 raise ProtocolError(
-                    "Received {0} message, and session is not yet established".format(
-                        msg.__class__
-                    )
+                    f"Received {msg.__class__} message, and session is not yet established"
                 )
 
         else:
@@ -792,9 +785,7 @@ class ApplicationSession(BaseSession):
                     return arg
 
                 def _error(e):
-                    errmsg = 'While firing onLeave for reason "{0}" and message "{1}"'.format(
-                        msg.reason, msg.message
-                    )
+                    errmsg = f'While firing onLeave for reason "{msg.reason}" and message "{msg.message}"'
                     return self._swallow_error(e, errmsg)
 
                 txaio.add_callbacks(d, success, _error)
@@ -879,9 +870,7 @@ class ApplicationSession(BaseSession):
                                     )
 
                         def _error(e):
-                            errmsg = "While firing {0} subscribed under {1}.".format(
-                                handler.fn, msg.subscription
-                            )
+                            errmsg = f"While firing {handler.fn} subscribed under {msg.subscription}."
                             return self._swallow_error(e, errmsg)
 
                         future = txaio.as_future(
@@ -891,9 +880,7 @@ class ApplicationSession(BaseSession):
 
                 else:
                     raise ProtocolError(
-                        "EVENT received for non-subscribed subscription ID {0}".format(
-                            msg.subscription
-                        )
+                        f"EVENT received for non-subscribed subscription ID {msg.subscription}"
                     )
 
             elif isinstance(msg, message.Published):
@@ -915,9 +902,7 @@ class ApplicationSession(BaseSession):
                     txaio.resolve(publish_request.on_reply, publication)
                 else:
                     raise ProtocolError(
-                        "PUBLISHED received for non-pending request ID {0}".format(
-                            msg.request
-                        )
+                        f"PUBLISHED received for non-pending request ID {msg.request}"
                     )
 
             elif isinstance(msg, message.Subscribed):
@@ -945,9 +930,7 @@ class ApplicationSession(BaseSession):
                     txaio.resolve(request.on_reply, subscription)
                 else:
                     raise ProtocolError(
-                        "SUBSCRIBED received for non-pending request ID {0}".format(
-                            msg.request
-                        )
+                        f"SUBSCRIBED received for non-pending request ID {msg.request}"
                     )
 
             elif isinstance(msg, message.Unsubscribed):
@@ -972,9 +955,7 @@ class ApplicationSession(BaseSession):
                     txaio.resolve(request.on_reply, 0)
                 else:
                     raise ProtocolError(
-                        "UNSUBSCRIBED received for non-pending request ID {0}".format(
-                            msg.request
-                        )
+                        f"UNSUBSCRIBED received for non-pending request ID {msg.request}"
                     )
 
             elif isinstance(msg, message.Result):
@@ -1012,9 +993,7 @@ class ApplicationSession(BaseSession):
                                 )
                                 enc_err = ApplicationError(
                                     ApplicationError.ENC_DECRYPT_ERROR,
-                                    "failed to decrypt application payload 1: {}".format(
-                                        e
-                                    ),
+                                    f"failed to decrypt application payload 1: {e}",
                                 )
                             else:
                                 if proc != decrypted_proc:
@@ -1025,9 +1004,7 @@ class ApplicationSession(BaseSession):
                                     )
                                     enc_err = ApplicationError(
                                         ApplicationError.ENC_TRUSTED_URI_MISMATCH,
-                                        "URI within encrypted payload ('{}') does not match the envelope ('{}')".format(
-                                            decrypted_proc, proc
-                                        ),
+                                        f"URI within encrypted payload ('{decrypted_proc}') does not match the envelope ('{proc}')",
                                     )
 
                     if msg.progress:
@@ -1117,25 +1094,19 @@ class ApplicationSession(BaseSession):
                                     txaio.resolve(on_reply, None)
                 else:
                     raise ProtocolError(
-                        "RESULT received for non-pending request ID {0}".format(
-                            msg.request
-                        )
+                        f"RESULT received for non-pending request ID {msg.request}"
                     )
 
             elif isinstance(msg, message.Invocation):
                 if msg.request in self._invocations:
                     raise ProtocolError(
-                        "INVOCATION received for request ID {0} already invoked".format(
-                            msg.request
-                        )
+                        f"INVOCATION received for request ID {msg.request} already invoked"
                     )
 
                 else:
                     if msg.registration not in self._registrations:
                         raise ProtocolError(
-                            "INVOCATION received for non-registered registration ID {0}".format(
-                                msg.registration
-                            )
+                            f"INVOCATION received for non-registered registration ID {msg.registration}"
                         )
 
                     else:
@@ -1171,9 +1142,7 @@ class ApplicationSession(BaseSession):
                                     )
                                     enc_err = ApplicationError(
                                         ApplicationError.ENC_DECRYPT_ERROR,
-                                        "failed to decrypt INVOCATION payload: {}".format(
-                                            e
-                                        ),
+                                        f"failed to decrypt INVOCATION payload: {e}",
                                     )
                                 else:
                                     if proc != decrypted_proc:
@@ -1185,9 +1154,7 @@ class ApplicationSession(BaseSession):
                                         )
                                         enc_err = ApplicationError(
                                             ApplicationError.ENC_TRUSTED_URI_MISMATCH,
-                                            "URI within encrypted INVOCATION payload ('{}') does not match the envelope ('{}')".format(
-                                                decrypted_proc, proc
-                                            ),
+                                            f"URI within encrypted INVOCATION payload ('{decrypted_proc}') does not match the envelope ('{proc}')",
                                         )
 
                         if enc_err:
@@ -1336,9 +1303,7 @@ class ApplicationSession(BaseSession):
 
                                 if self._transport is None:
                                     self.log.debug(
-                                        'Skipping result of "{}", request {} because transport disconnected.'.format(
-                                            registration.procedure, msg.request
-                                        )
+                                        f'Skipping result of "{registration.procedure}", request {msg.request} because transport disconnected.'
                                     )
                                     return
 
@@ -1351,12 +1316,7 @@ class ApplicationSession(BaseSession):
                                         msg.request,
                                         ApplicationError.INVALID_PAYLOAD,
                                         args=[
-                                            'success return value (args={}, kwargs={}) from invoked procedure "{}" could not be serialized: {}'.format(
-                                                reply.args,
-                                                reply.kwargs,
-                                                registration.procedure,
-                                                e,
-                                            )
+                                            f'success return value (args={reply.args}, kwargs={reply.kwargs}) from invoked procedure "{registration.procedure}" could not be serialized: {e}'
                                         ],
                                     )
                                     self._transport.send(error_reply)
@@ -1368,12 +1328,7 @@ class ApplicationSession(BaseSession):
                                         msg.request,
                                         ApplicationError.PAYLOAD_SIZE_EXCEEDED,
                                         args=[
-                                            'success return value (args={}, kwargs={}) from invoked procedure "{}" exceeds transport size limit: {}'.format(
-                                                reply.args,
-                                                reply.kwargs,
-                                                registration.procedure,
-                                                e,
-                                            )
+                                            f'success return value (args={reply.args}, kwargs={reply.kwargs}) from invoked procedure "{registration.procedure}" exceeds transport size limit: {e}'
                                         ],
                                     )
                                     self._transport.send(error_reply)
@@ -1409,9 +1364,7 @@ class ApplicationSession(BaseSession):
                                         msg.request,
                                         ApplicationError.INVALID_PAYLOAD,
                                         args=[
-                                            'error return value from invoked procedure "{0}" could not be serialized: {1}'.format(
-                                                registration.procedure, e
-                                            )
+                                            f'error return value from invoked procedure "{registration.procedure}" could not be serialized: {e}'
                                         ],
                                     )
                                     self._transport.send(reply)
@@ -1423,9 +1376,7 @@ class ApplicationSession(BaseSession):
                                         msg.request,
                                         ApplicationError.PAYLOAD_SIZE_EXCEEDED,
                                         args=[
-                                            'success return value from invoked procedure "{0}" exceeds transport size limit: {1}'.format(
-                                                registration.procedure, e
-                                            )
+                                            f'success return value from invoked procedure "{registration.procedure}" exceeds transport size limit: {e}'
                                         ],
                                     )
                                     self._transport.send(reply)
@@ -1471,17 +1422,13 @@ class ApplicationSession(BaseSession):
                         self._registrations[msg.registration] = registration
                     else:
                         raise ProtocolError(
-                            "REGISTERED received for already existing registration ID {0}".format(
-                                msg.registration
-                            )
+                            f"REGISTERED received for already existing registration ID {msg.registration}"
                         )
 
                     txaio.resolve(request.on_reply, registration)
                 else:
                     raise ProtocolError(
-                        "REGISTERED received for non-pending request ID {0}".format(
-                            msg.request
-                        )
+                        f"REGISTERED received for non-pending request ID {msg.request}"
                     )
 
             elif isinstance(msg, message.Unregistered):
@@ -1494,7 +1441,7 @@ class ApplicationSession(BaseSession):
                     except KeyError:
                         raise ProtocolError(
                             "UNREGISTERED received for non-existant registration"
-                            " ID {0}".format(msg.registration)
+                            f" ID {msg.registration}"
                         )
                     self.log.debug(
                         "Router unregistered procedure '{proc}' with ID {id}",
@@ -1519,9 +1466,7 @@ class ApplicationSession(BaseSession):
                     txaio.resolve(request.on_reply)
                 else:
                     raise ProtocolError(
-                        "UNREGISTERED received for non-pending request ID {0}".format(
-                            msg.request
-                        )
+                        f"UNREGISTERED received for non-pending request ID {msg.request}"
                     )
 
             elif isinstance(msg, message.Error):
@@ -1575,13 +1520,11 @@ class ApplicationSession(BaseSession):
                         txaio.reject(on_reply, self._exception_from_message(msg))
                 else:
                     raise ProtocolError(
-                        "WampAppSession.onMessage(): ERROR received for non-pending request_type {0} and request ID {1}".format(
-                            msg.request_type, msg.request
-                        )
+                        f"WampAppSession.onMessage(): ERROR received for non-pending request_type {msg.request_type} and request ID {msg.request}"
                     )
 
             else:
-                raise ProtocolError("Unexpected message {0}".format(msg.__class__))
+                raise ProtocolError(f"Unexpected message {msg.__class__}")
 
     @public
     def onClose(self, wasClean):
@@ -1594,9 +1537,7 @@ class ApplicationSession(BaseSession):
             # fire callback and close the transport
             details = types.CloseDetails(
                 reason=types.CloseDetails.REASON_TRANSPORT_LOST,
-                message="WAMP transport was lost without closing the session {} before".format(
-                    self._session_id
-                ),
+                message=f"WAMP transport was lost without closing the session {self._session_id} before",
             )
             d = txaio.as_future(self.onLeave, details)
 
@@ -1643,7 +1584,7 @@ class ApplicationSession(BaseSession):
         """
 
     @public
-    def onWelcome(self, welcome: message.Welcome) -> Optional[str]:
+    def onWelcome(self, welcome: message.Welcome) -> str | None:
         """
         Implements :meth:`autobahn.wamp.interfaces.ISession.onWelcome`
         """
@@ -1712,7 +1653,7 @@ class ApplicationSession(BaseSession):
         return d
 
     @public
-    def leave(self, reason: Optional[str] = None, message: Optional[str] = None):
+    def leave(self, reason: str | None = None, message: str | None = None):
         """
         Implements :meth:`autobahn.wamp.interfaces.ISession.leave`
         """
@@ -1750,7 +1691,7 @@ class ApplicationSession(BaseSession):
     # def publish(self, topic: str, *args: Optional[List[Any]], **kwargs: Optional[Dict[str, Any]]) -> Optional[Publication]:
 
     @public
-    def publish(self, topic: str, *args, **kwargs) -> Optional[Publication]:
+    def publish(self, topic: str, *args, **kwargs) -> Publication | None:
         """
         Implements :meth:`autobahn.wamp.interfaces.IPublisher.publish`
         """
@@ -1760,7 +1701,7 @@ class ApplicationSession(BaseSession):
 
         message.check_or_raise_uri(
             topic,
-            message="{}.publish()".format(self.__class__.__name__),
+            message=f"{self.__class__.__name__}.publish()",
             strict=False,
             allow_empty_components=False,
             allow_none=False,
@@ -1850,11 +1791,11 @@ class ApplicationSession(BaseSession):
     @public
     def subscribe(
         self,
-        handler: Union[Callable, Any],
-        topic: Optional[str] = None,
-        options: Optional[SubscribeOptions] = None,
-        check_types: Optional[bool] = None,
-    ) -> Union[Subscription, List[Subscription]]:
+        handler: Callable | Any,
+        topic: str | None = None,
+        options: SubscribeOptions | None = None,
+        check_types: bool | None = None,
+    ) -> Subscription | list[Subscription]:
         """
         Implements :meth:`autobahn.wamp.interfaces.ISubscriber.subscribe`
         """
@@ -1870,7 +1811,7 @@ class ApplicationSession(BaseSession):
         def _subscribe(obj, fn, topic, options, check_types):
             message.check_or_raise_uri(
                 topic,
-                message="{}.subscribe()".format(self.__class__.__name__),
+                message=f"{self.__class__.__name__}.subscribe()",
                 strict=False,
                 allow_empty_components=True,
                 allow_none=False,
@@ -1967,7 +1908,7 @@ class ApplicationSession(BaseSession):
             return txaio.create_future_success(scount)
 
     @public
-    def call(self, procedure: str, *args, **kwargs) -> Union[Any, CallResult]:
+    def call(self, procedure: str, *args, **kwargs) -> Any | CallResult:
         """
         Implements :meth:`autobahn.wamp.interfaces.ICaller.call`
 
@@ -1984,7 +1925,7 @@ class ApplicationSession(BaseSession):
 
         message.check_or_raise_uri(
             procedure,
-            message="{}.call()".format(self.__class__.__name__),
+            message=f"{self.__class__.__name__}.call()",
             strict=False,
             allow_empty_components=False,
             allow_none=False,
@@ -2083,12 +2024,12 @@ class ApplicationSession(BaseSession):
     @public
     def register(
         self,
-        endpoint: Union[Callable, Any],
-        procedure: Optional[str] = None,
-        options: Optional[RegisterOptions] = None,
-        prefix: Optional[str] = None,
-        check_types: Optional[bool] = None,
-    ) -> Union[Registration, List[Registration]]:
+        endpoint: Callable | Any,
+        procedure: str | None = None,
+        options: RegisterOptions | None = None,
+        prefix: str | None = None,
+        check_types: bool | None = None,
+    ) -> Registration | list[Registration]:
         """
         Implements :meth:`autobahn.wamp.interfaces.ICallee.register`
         """
@@ -2102,7 +2043,7 @@ class ApplicationSession(BaseSession):
         def _register(obj, fn, procedure, options, check_types):
             message.check_or_raise_uri(
                 procedure,
-                message="{}.register()".format(self.__class__.__name__),
+                message=f"{self.__class__.__name__}.register()",
                 strict=False,
                 allow_empty_components=True,
                 allow_none=False,
@@ -2114,7 +2055,7 @@ class ApplicationSession(BaseSession):
                 fn = self.type_check(fn)
             endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
             if prefix is not None:
-                procedure = "{}{}".format(prefix, procedure)
+                procedure = f"{prefix}{procedure}"
             self._register_reqs[request_id] = RegisterRequest(
                 request_id, on_reply, procedure, endpoint_obj
             )
@@ -2231,9 +2172,7 @@ class _SessionShim(ApplicationSession):
             authenticator = self._authenticators[challenge.method]
         except KeyError:
             raise RuntimeError(
-                "Received challenge for unknown authmethod '{}' [authenticators={}]".format(
-                    challenge.method, str(sorted(self._authenticators.keys()))
-                )
+                f"Received challenge for unknown authmethod '{challenge.method}' [authenticators={str(sorted(self._authenticators.keys()))}]"
             )
         return authenticator.on_challenge(self, challenge)
 
@@ -2245,9 +2184,7 @@ class _SessionShim(ApplicationSession):
             authenticator = self._authenticators[msg.authmethod]
         except KeyError:
             raise RuntimeError(
-                "Received onWelcome for unknown authmethod '{}' [authenticators={}]".format(
-                    msg.authmethod, str(sorted(self._authenticators.keys()))
-                )
+                f"Received onWelcome for unknown authmethod '{msg.authmethod}' [authenticators={str(sorted(self._authenticators.keys()))}]"
             )
         return authenticator.on_welcome(self, msg.authextra)
 
@@ -2298,11 +2235,7 @@ class _SessionShim(ApplicationSession):
         for k, v in merged.items():
             if k in authextra and authextra[k] != v:
                 raise ValueError(
-                    "Inconsistent authextra values for '{}': '{}' vs '{}'".format(
-                        k,
-                        v,
-                        authextra[k],
-                    )
+                    f"Inconsistent authextra values for '{k}': '{v}' vs '{authextra[k]}'"
                 )
 
         # validation complete, add it
@@ -2336,7 +2269,7 @@ class _SessionShim(ApplicationSession):
                 if k in authextra:
                     return authextra[k]
             # "can't" happen
-            raise ValueError("No values for '{}'".format(k))
+            raise ValueError(f"No values for '{k}'")
 
         return {k: first_value_for(k) for k in unique_keys}
 
@@ -2360,7 +2293,7 @@ class _SessionShim(ApplicationSession):
 ISession.abc_register(ApplicationSession)
 
 
-class ApplicationSessionFactory(object):
+class ApplicationSessionFactory:
     """
     WAMP endpoint session factory.
     """

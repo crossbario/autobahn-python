@@ -81,7 +81,7 @@ __all__ = (
 )
 
 
-def create_client_agent(reactor) -> "_TwistedWebSocketClientAgent":
+def create_client_agent(reactor) -> _TwistedWebSocketClientAgent:
     """
     :returns: an instance implementing IWebSocketClientAgent
     """
@@ -95,9 +95,7 @@ def check_transport_config(transport_config: str) -> None:
     # XXX move me to "autobahn.websocket.util"
     if not isinstance(transport_config, str):
         raise ValueError(
-            "'transport_config' must be a string, found {}".format(
-                type(transport_config)
-            )
+            f"'transport_config' must be a string, found {type(transport_config)}"
         )
     # XXX also accept everything Crossbar has in client transport configs? e.g like:
     # { "type": "websocket", "endpoint": {"type": "tcp", "host": "example.com", ...}}
@@ -127,7 +125,7 @@ def check_client_options(options: dict[str, Any]) -> None:
     ]
     for actual_k in options.keys():
         if actual_k not in valid_keys:
-            raise ValueError("'options' may not contain '{}'".format(actual_k))
+            raise ValueError(f"'options' may not contain '{actual_k}'")
 
 
 def _endpoint_from_config(reactor, factory, transport_config, options):
@@ -476,7 +474,7 @@ class WebSocketClientProtocol(
         self.transport.startTLS(self.factory.contextFactory)
 
 
-class WebSocketAdapterFactory(object):
+class WebSocketAdapterFactory:
     """
     Adapter class for Twisted-based WebSocket client and server factories.
     """
@@ -562,7 +560,7 @@ class WebSocketClientFactory(
 
 
 @implementer(ITransport)
-class WrappingWebSocketAdapter(object):
+class WrappingWebSocketAdapter:
     """
     An adapter for stream-based transport over WebSocket.
 
@@ -592,18 +590,14 @@ class WrappingWebSocketAdapter(object):
                     return p
             raise ConnectionDeny(
                 ConnectionDeny.NOT_ACCEPTABLE,
-                "this server only speaks {0} WebSocket subprotocols".format(
-                    self.factory._subprotocols
-                ),
+                f"this server only speaks {self.factory._subprotocols} WebSocket subprotocols",
             )
         elif isinstance(requestOrResponse, ConnectionResponse):
             response = requestOrResponse
             if response.protocol not in self.factory._subprotocols:
                 self._fail_connection(
                     protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
-                    "this client only speaks {0} WebSocket subprotocols".format(
-                        self.factory._subprotocols
-                    ),
+                    f"this client only speaks {self.factory._subprotocols} WebSocket subprotocols",
                 )
             self._binaryMode = response.protocol != "base64"
         else:
@@ -626,7 +620,7 @@ class WrappingWebSocketAdapter(object):
                 except Exception as e:
                     self._fail_connection(
                         protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD,
-                        "message payload base64 decoding error: {0}".format(e),
+                        f"message payload base64 decoding error: {e}",
                     )
             self._proto.dataReceived(payload)
 

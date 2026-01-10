@@ -42,7 +42,7 @@ __all__ = (
 
 
 @public
-class ConnectionRequest(object):
+class ConnectionRequest:
     """
     Thin-wrapper for WebSocket connection request information provided in
     :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect` when
@@ -131,7 +131,7 @@ class ConnectionRequest(object):
 
 
 @public
-class ConnectingRequest(object):
+class ConnectingRequest:
     """
     Thin-wrapper for WebSocket connection request information provided in
     :meth:`autobahn.websocket.protocol.WebSocketClientProtocol.onConnecting`
@@ -204,7 +204,7 @@ class ConnectingRequest(object):
 
 
 @public
-class ConnectionResponse(object):
+class ConnectionResponse:
     """
     Thin-wrapper for WebSocket connection response information provided in
     :meth:`autobahn.websocket.protocol.WebSocketClientProtocol.onConnect` when
@@ -252,7 +252,7 @@ class ConnectionResponse(object):
 
 
 @public
-class ConnectionAccept(object):
+class ConnectionAccept:
     """
     Used by WebSocket servers to accept an incoming WebSocket connection.
     If the client announced one or multiple subprotocols, the server MUST
@@ -355,7 +355,7 @@ class ConnectionDeny(Exception):
         self.reason = reason
 
 
-class Message(object):
+class Message:
     """
     Abstract base class for WebSocket messages.
     """
@@ -421,7 +421,7 @@ class OutgoingMessage(Message):
         self.skip_compress = skip_compress
 
 
-class Ping(object):
+class Ping:
     """
     A WebSocket ping message.
     """
@@ -435,15 +435,11 @@ class Ping(object):
         :type payload: bytes or None
         """
         assert payload is None or type(payload) == bytes, (
-            "invalid type {} for WebSocket ping payload - must be None or bytes".format(
-                type(payload)
-            )
+            f"invalid type {type(payload)} for WebSocket ping payload - must be None or bytes"
         )
         if payload is not None:
             assert len(payload) < 126, (
-                "WebSocket ping payload too long ({} bytes) - must be <= 125 bytes".format(
-                    len(payload)
-                )
+                f"WebSocket ping payload too long ({len(payload)} bytes) - must be <= 125 bytes"
             )
 
         self.payload = payload

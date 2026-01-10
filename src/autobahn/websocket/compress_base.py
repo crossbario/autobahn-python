@@ -33,31 +33,31 @@ __all__ = (
 )
 
 
-class PerMessageCompressOffer(object):
+class PerMessageCompressOffer:
     """
     Base class for WebSocket compression parameter client offers.
     """
 
 
-class PerMessageCompressOfferAccept(object):
+class PerMessageCompressOfferAccept:
     """
     Base class for WebSocket compression parameter client offer accepts by the server.
     """
 
 
-class PerMessageCompressResponse(object):
+class PerMessageCompressResponse:
     """
     Base class for WebSocket compression parameter server responses.
     """
 
 
-class PerMessageCompressResponseAccept(object):
+class PerMessageCompressResponseAccept:
     """
     Base class for WebSocket compression parameter server response accepts by client.
     """
 
 
-class PerMessageCompress(object):
+class PerMessageCompress:
     """
     Base class for WebSocket compression negotiated parameters.
     """

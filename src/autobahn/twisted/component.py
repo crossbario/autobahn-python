@@ -26,7 +26,6 @@
 
 
 from functools import wraps
-from typing import List
 
 from twisted.internet.endpoints import TCP4ClientEndpoint, UNIXClientEndpoint
 from twisted.internet.error import ReactorNotRunning
@@ -108,7 +107,7 @@ def _create_transport_factory(reactor, transport, session_factory):
                 factory.setProtocolOptions(**{_camel_case_from_snake_case(k): v})
             except (TypeError, KeyError):
                 raise ValueError(
-                    "Unknown {} transport option: {}={}".format(transport.type, k, v)
+                    f"Unknown {transport.type} transport option: {k}={v}"
                 )
     return factory
 
@@ -125,33 +124,25 @@ def _create_transport_endpoint(reactor, endpoint_config):
             version = endpoint_config.get("version", 4)
             if version not in [4, 6]:
                 raise ValueError(
-                    "invalid IP version {} in client endpoint configuration".format(
-                        version
-                    )
+                    f"invalid IP version {version} in client endpoint configuration"
                 )
 
             host = endpoint_config["host"]
             if type(host) != str:
                 raise ValueError(
-                    "invalid type {} for host in client endpoint configuration".format(
-                        type(host)
-                    )
+                    f"invalid type {type(host)} for host in client endpoint configuration"
                 )
 
             port = endpoint_config["port"]
             if type(port) != int:
                 raise ValueError(
-                    "invalid type {} for port in client endpoint configuration".format(
-                        type(port)
-                    )
+                    f"invalid type {type(port)} for port in client endpoint configuration"
                 )
 
             timeout = endpoint_config.get("timeout", 10)  # in seconds
             if type(timeout) != int:
                 raise ValueError(
-                    "invalid type {} for timeout in client endpoint configuration".format(
-                        type(timeout)
-                    )
+                    f"invalid type {type(timeout)} for timeout in client endpoint configuration"
                 )
 
             tls = endpoint_config.get("tls", None)
@@ -172,19 +163,17 @@ def _create_transport_endpoint(reactor, endpoint_config):
                     for k in tls.keys():
                         if k not in ["hostname", "trust_root"]:
                             raise ValueError(
-                                "Invalid key '{}' in 'tls' config".format(k)
+                                f"Invalid key '{k}' in 'tls' config"
                             )
                     hostname = tls.get("hostname", host)
                     if type(hostname) != str:
                         raise ValueError(
-                            "invalid type {} for hostname in TLS client endpoint configuration".format(
-                                hostname
-                            )
+                            f"invalid type {hostname} for hostname in TLS client endpoint configuration"
                         )
                     trust_root = None
                     cert_fname = tls.get("trust_root", None)
                     if cert_fname is not None:
-                        trust_root = Certificate.loadPEM(open(cert_fname, "r").read())
+                        trust_root = Certificate.loadPEM(open(cert_fname).read())
                     context = optionsForClientTLS(hostname, trustRoot=trust_root)
 
                 elif isinstance(tls, CertificateOptions):
@@ -195,9 +184,7 @@ def _create_transport_endpoint(reactor, endpoint_config):
 
                 else:
                     raise RuntimeError(
-                        'unknown type {} for "tls" configuration in transport'.format(
-                            type(tls)
-                        )
+                        f'unknown type {type(tls)} for "tls" configuration in transport'
                     )
 
                 if version == 4:
@@ -221,9 +208,7 @@ def _create_transport_endpoint(reactor, endpoint_config):
                         endpoint = txtorcon.TorClientEndpoint(host, port)
                     except ImportError:
                         raise RuntimeError(
-                            "{} appears to be a Tor Onion service, but txtorcon is not installed".format(
-                                host,
-                            )
+                            f"{host} appears to be a Tor Onion service, but txtorcon is not installed"
                         )
                 elif version == 4:
                     endpoint = TCP4ClientEndpoint(reactor, host, port, timeout=timeout)
@@ -284,7 +269,7 @@ class Component(component.Component):
         elif isinstance(endpoint, dict):
             if "tls" in endpoint:
                 tls = endpoint["tls"]
-                if isinstance(tls, (dict, bool)):
+                if isinstance(tls, dict | bool):
                     pass
                 elif IOpenSSLClientConnectionCreator.providedBy(tls):
                     pass
@@ -373,7 +358,7 @@ class Component(component.Component):
 
 
 def run(
-    components: List[Component], log_level: str = "info", stop_at_close: bool = True
+    components: list[Component], log_level: str = "info", stop_at_close: bool = True
 ):
     """
     High-level API to run a series of components.

@@ -61,7 +61,7 @@ __all__ = (
 
 
 @implementer(IHostnameResolver)
-class _StaticTestResolver(object):
+class _StaticTestResolver:
     def resolveHostName(self, receiver, hostName, portNumber=0):
         """
         Implement IHostnameResolver which always returns 127.0.0.1:31337
@@ -173,7 +173,7 @@ class _TwistedWebMemoryAgent(IWebSocketClientAgent):
         return real_client_protocol
 
 
-class _Kalamazoo(object):
+class _Kalamazoo:
     """
     Feeling whimsical about class names, see https://en.wikipedia.org/wiki/Handcar
 

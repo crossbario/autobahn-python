@@ -30,7 +30,7 @@ from autobahn.wamp import message, role
 from autobahn.wamp.exception import InvalidUriError, ProtocolError
 
 
-class Foo(object):
+class Foo:
     pass
 
 

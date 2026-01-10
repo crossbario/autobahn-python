@@ -49,7 +49,7 @@ else:
 if HAS_CRYPTOBOX:
 
     @public
-    class Key(object):
+    class Key:
         """
         Holds originator and responder keys for an URI.
 
@@ -115,7 +115,7 @@ if HAS_CRYPTOBOX:
                 )
 
     @public
-    class SymKey(object):
+    class SymKey:
         """
         Holds a symmetric key for an URI.
         """
@@ -124,7 +124,7 @@ if HAS_CRYPTOBOX:
             pass
 
     @public
-    class KeyRing(object):
+    class KeyRing:
         """
         A keyring holds (cryptobox) public-private key pairs for use with WAMP-cryptobox payload
         encryption. The keyring can be set on a WAMP session and then transparently will get used
@@ -266,9 +266,7 @@ if HAS_CRYPTOBOX:
 
             if encoded_payload.enc_serializer != "json":
                 raise Exception(
-                    "received encrypted payload, but don't know how to process serializer '{}'".format(
-                        encoded_payload.enc_serializer
-                    )
+                    f"received encrypted payload, but don't know how to process serializer '{encoded_payload.enc_serializer}'"
                 )
 
             payload = _json_loads(payload_ser.decode("utf8"))

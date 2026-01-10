@@ -27,7 +27,7 @@
 
 # XorMaskerNull: pass-through implementation (no masking applied)
 # Shared by all implementations (NVX, pure Python)
-class XorMaskerNull(object):
+class XorMaskerNull:
     __slots__ = ("_ptr",)
 
     # noinspection PyUnusedLocal
@@ -65,7 +65,7 @@ else:
 
     from array import array
 
-    class XorMaskerSimple(object):
+    class XorMaskerSimple:
         __slots__ = ("_ptr", "_msk")
 
         def __init__(self, mask):
@@ -87,7 +87,7 @@ else:
                 self._ptr += 1
             return payload.tobytes()
 
-    class XorMaskerShifted1(object):
+    class XorMaskerShifted1:
         __slots__ = ("_ptr", "_mskarray")
 
         def __init__(self, mask):

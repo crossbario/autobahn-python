@@ -55,9 +55,7 @@ if os.environ.get("USE_TWISTED", False):
             else:
                 sargs = "-"
 
-            msg = "= : {0:>3} : {1:<20} : {2}".format(
-                self._logline, self.__class__.__name__, sargs
-            )
+            msg = f"= : {self._logline:>3} : {self.__class__.__name__:<20} : {sargs}"
             self._logline += 1
             print(msg)
 
@@ -74,7 +72,7 @@ if os.environ.get("USE_TWISTED", False):
             self.log("joined")
 
             def add2(x, y):
-                self.log("add2 invoked: {0}, {1}".format(x, y))
+                self.log(f"add2 invoked: {x}, {y}")
                 return x + y
 
             yield self.register(add2, "com.mathservice.add2")
@@ -90,9 +88,9 @@ if os.environ.get("USE_TWISTED", False):
             try:
                 res = yield self.call("com.mathservice.add2", 2, 3)
             except Exception as e:
-                self.log("call error: {0}".format(e))
+                self.log(f"call error: {e}")
             else:
-                self.log("call result: {0}".format(res))
+                self.log(f"call result: {res}")
 
             self.finish()
 
@@ -111,11 +109,11 @@ if os.environ.get("USE_TWISTED", False):
 
             def stars(nick="somebody", stars=0):
                 self.log("stars() is invoked", nick, stars)
-                return "{0} starred {1}x".format(nick, stars)
+                return f"{nick} starred {stars}x"
 
             def orders(product, limit=5):
                 self.log("orders() is invoked", product, limit)
-                return ["Product {0}".format(i) for i in range(50)][:limit]
+                return [f"Product {i}" for i in range(50)][:limit]
 
             def arglen(*args, **kwargs):
                 self.log("arglen() is invoked", args, kwargs)
@@ -140,37 +138,37 @@ if os.environ.get("USE_TWISTED", False):
             self.log("Pinged!")
 
             res = yield self.call("com.arguments.add2", 2, 3)
-            self.log("Add2: {0}".format(res))
+            self.log(f"Add2: {res}")
 
             starred = yield self.call("com.arguments.stars")
-            self.log("Starred 1: {0}".format(starred))
+            self.log(f"Starred 1: {starred}")
 
             starred = yield self.call("com.arguments.stars", nick="Homer")
-            self.log("Starred 2: {0}".format(starred))
+            self.log(f"Starred 2: {starred}")
 
             starred = yield self.call("com.arguments.stars", stars=5)
-            self.log("Starred 3: {0}".format(starred))
+            self.log(f"Starred 3: {starred}")
 
             starred = yield self.call("com.arguments.stars", nick="Homer", stars=5)
-            self.log("Starred 4: {0}".format(starred))
+            self.log(f"Starred 4: {starred}")
 
             orders = yield self.call("com.arguments.orders", "coffee")
-            self.log("Orders 1: {0}".format(orders))
+            self.log(f"Orders 1: {orders}")
 
             orders = yield self.call("com.arguments.orders", "coffee", limit=10)
-            self.log("Orders 2: {0}".format(orders))
+            self.log(f"Orders 2: {orders}")
 
             arglengths = yield self.call("com.arguments.arglen")
-            self.log("Arglen 1: {0}".format(arglengths))
+            self.log(f"Arglen 1: {arglengths}")
 
             arglengths = yield self.call("com.arguments.arglen", 1, 2, 3)
-            self.log("Arglen 1: {0}".format(arglengths))
+            self.log(f"Arglen 1: {arglengths}")
 
             arglengths = yield self.call("com.arguments.arglen", a=1, b=2, c=3)
-            self.log("Arglen 2: {0}".format(arglengths))
+            self.log(f"Arglen 2: {arglengths}")
 
             arglengths = yield self.call("com.arguments.arglen", 1, 2, 3, a=1, b=2, c=3)
-            self.log("Arglen 3: {0}".format(arglengths))
+            self.log(f"Arglen 3: {arglengths}")
 
             self.log("finishing")
 

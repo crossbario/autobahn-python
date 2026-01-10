@@ -83,7 +83,7 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
 
 
 @public
-class ApplicationRunner(object):
+class ApplicationRunner:
     """
     This class is a convenience tool mainly for development and quick hosting
     of WAMP application components.
@@ -179,7 +179,7 @@ class ApplicationRunner(object):
                     session = make(cfg)
                 except Exception as e:
                     self.log.error(
-                        "ApplicationSession could not be instantiated: {}".format(e)
+                        f"ApplicationSession could not be instantiated: {e}"
                     )
                     loop = asyncio.get_event_loop()
                     if loop.is_running():
@@ -249,9 +249,8 @@ class ApplicationRunner(object):
         else:
             if self.ssl and not isSecure:
                 raise RuntimeError(
-                    'ssl argument value passed to %s conflicts with the "ws:" '
+                    f'ssl argument value passed to {self.__class__.__name__} conflicts with the "ws:" '
                     'prefix of the url argument. Did you mean to use "wss:"?'
-                    % self.__class__.__name__
                 )
             ssl = self.ssl
 

@@ -53,7 +53,6 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Optional
 
 
 def get_flatc_path() -> Path:
@@ -79,7 +78,7 @@ def get_flatc_path() -> Path:
     return flatc_path
 
 
-def run_flatc(args: List[str], cwd: Optional[str] = None) -> int:
+def run_flatc(args: list[str], cwd: str | None = None) -> int:
     """
     Run the bundled flatc with the given arguments.
 

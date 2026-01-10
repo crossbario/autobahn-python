@@ -44,7 +44,7 @@ __all__ = (
 )
 
 
-class PerMessageBzip2Mixin(object):
+class PerMessageBzip2Mixin:
     """
     Mixin class for this extension.
     """
@@ -84,8 +84,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
         for p in params:
             if len(params[p]) > 1:
                 raise Exception(
-                    "multiple occurrence of extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"multiple occurrence of extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
             val = params[p][0]
@@ -94,8 +93,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     accept_max_compress_level = True
@@ -105,21 +103,18 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
                     val = int(val)
                 except:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 if val not in PerMessageBzip2Mixin.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     request_max_compress_level = val
 
             else:
                 raise Exception(
-                    "illegal extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"illegal extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
         offer = cls(accept_max_compress_level, request_max_compress_level)
@@ -136,8 +131,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
         """
         if type(accept_max_compress_level) != bool:
             raise Exception(
-                "invalid type %s for accept_max_compress_level"
-                % type(accept_max_compress_level)
+                f"invalid type {type(accept_max_compress_level)} for accept_max_compress_level"
             )
 
         self.accept_max_compress_level = accept_max_compress_level
@@ -147,8 +141,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
             and request_max_compress_level not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES
         ):
             raise Exception(
-                "invalid value %s for request_max_compress_level - permissible values %s"
-                % (request_max_compress_level, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES)
+                f"invalid value {request_max_compress_level} for request_max_compress_level - permissible values {self.COMPRESS_LEVEL_PERMISSIBLE_VALUES}"
             )
 
         self.request_max_compress_level = request_max_compress_level
@@ -165,7 +158,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
             pmce_string += "; client_max_compress_level"
         if self.request_max_compress_level != 0:
             pmce_string += (
-                "; server_max_compress_level=%d" % self.request_max_compress_level
+                f"; server_max_compress_level={self.request_max_compress_level}"
             )
         return pmce_string
 
@@ -190,8 +183,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
         :rtype: str
         """
         return (
-            "PerMessageBzip2Offer(accept_max_compress_level = %s, request_max_compress_level = %s)"
-            % (self.accept_max_compress_level, self.request_max_compress_level)
+            f"PerMessageBzip2Offer(accept_max_compress_level = {self.accept_max_compress_level}, request_max_compress_level = {self.request_max_compress_level})"
         )
 
 
@@ -213,7 +205,7 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
         :type compress_level: int
         """
         if not isinstance(offer, PerMessageBzip2Offer):
-            raise Exception("invalid type %s for offer" % type(offer))
+            raise Exception(f"invalid type {type(offer)} for offer")
 
         self.offer = offer
 
@@ -222,14 +214,12 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
             and request_max_compress_level not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES
         ):
             raise Exception(
-                "invalid value %s for request_max_compress_level - permissible values %s"
-                % (request_max_compress_level, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES)
+                f"invalid value {request_max_compress_level} for request_max_compress_level - permissible values {self.COMPRESS_LEVEL_PERMISSIBLE_VALUES}"
             )
 
         if request_max_compress_level != 0 and not offer.accept_max_compress_level:
             raise Exception(
-                "invalid value %s for request_max_compress_level - feature unsupported by client"
-                % request_max_compress_level
+                f"invalid value {request_max_compress_level} for request_max_compress_level - feature unsupported by client"
             )
 
         self.request_max_compress_level = request_max_compress_level
@@ -237,8 +227,7 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
         if compress_level is not None:
             if compress_level not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
                 raise Exception(
-                    "invalid value %s for compress_level - permissible values %s"
-                    % (compress_level, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES)
+                    f"invalid value {compress_level} for compress_level - permissible values {self.COMPRESS_LEVEL_PERMISSIBLE_VALUES}"
                 )
 
             if (
@@ -246,8 +235,7 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
                 and compress_level > offer.request_max_compress_level
             ):
                 raise Exception(
-                    "invalid value %s for compress_level - client requested lower maximum value"
-                    % compress_level
+                    f"invalid value {compress_level} for compress_level - client requested lower maximum value"
                 )
 
         self.compress_level = compress_level
@@ -262,11 +250,11 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
         pmce_string = self.EXTENSION_NAME
         if self.offer.request_max_compress_level != 0:
             pmce_string += (
-                "; server_max_compress_level=%d" % self.offer.request_max_compress_level
+                f"; server_max_compress_level={self.offer.request_max_compress_level}"
             )
         if self.request_max_compress_level != 0:
             pmce_string += (
-                "; client_max_compress_level=%d" % self.request_max_compress_level
+                f"; client_max_compress_level={self.request_max_compress_level}"
             )
         return pmce_string
 
@@ -292,12 +280,7 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
         :rtype: str
         """
         return (
-            "PerMessageBzip2Accept(offer = %s, request_max_compress_level = %s, compress_level = %s)"
-            % (
-                self.offer.__repr__(),
-                self.request_max_compress_level,
-                self.compress_level,
-            )
+            f"PerMessageBzip2Accept(offer = {self.offer.__repr__()}, request_max_compress_level = {self.request_max_compress_level}, compress_level = {self.compress_level})"
         )
 
 
@@ -323,8 +306,7 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
         for p in params:
             if len(params[p]) > 1:
                 raise Exception(
-                    "multiple occurrence of extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"multiple occurrence of extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
             val = params[p][0]
@@ -334,13 +316,11 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
                     val = int(val)
                 except:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 if val not in PerMessageBzip2Mixin.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     client_max_compress_level = val
@@ -350,21 +330,18 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
                     val = int(val)
                 except:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 if val not in PerMessageBzip2Mixin.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
                     raise Exception(
-                        "illegal extension parameter value '%s' for parameter '%s' of extension '%s'"
-                        % (val, p, cls.EXTENSION_NAME)
+                        f"illegal extension parameter value '{val}' for parameter '{p}' of extension '{cls.EXTENSION_NAME}'"
                     )
                 else:
                     server_max_compress_level = val
 
             else:
                 raise Exception(
-                    "illegal extension parameter '%s' for extension '%s'"
-                    % (p, cls.EXTENSION_NAME)
+                    f"illegal extension parameter '{p}' for extension '{cls.EXTENSION_NAME}'"
                 )
 
         response = cls(client_max_compress_level, server_max_compress_level)
@@ -395,8 +372,7 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
         :rtype: str
         """
         return (
-            "PerMessageBzip2Response(client_max_compress_level = %s, server_max_compress_level = %s)"
-            % (self.client_max_compress_level, self.server_max_compress_level)
+            f"PerMessageBzip2Response(client_max_compress_level = {self.client_max_compress_level}, server_max_compress_level = {self.server_max_compress_level})"
         )
 
 
@@ -417,15 +393,14 @@ class PerMessageBzip2ResponseAccept(
         :type compress_level: int
         """
         if not isinstance(response, PerMessageBzip2Response):
-            raise Exception("invalid type %s for response" % type(response))
+            raise Exception(f"invalid type {type(response)} for response")
 
         self.response = response
 
         if compress_level is not None:
             if compress_level not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
                 raise Exception(
-                    "invalid value %s for compress_level - permissible values %s"
-                    % (compress_level, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES)
+                    f"invalid value {compress_level} for compress_level - permissible values {self.COMPRESS_LEVEL_PERMISSIBLE_VALUES}"
                 )
 
             if (
@@ -433,8 +408,7 @@ class PerMessageBzip2ResponseAccept(
                 and compress_level > response.client_max_compress_level
             ):
                 raise Exception(
-                    "invalid value %s for compress_level - server requested lower maximum value"
-                    % compress_level
+                    f"invalid value {compress_level} for compress_level - server requested lower maximum value"
                 )
 
         self.compress_level = compress_level
@@ -459,10 +433,7 @@ class PerMessageBzip2ResponseAccept(
         :returns: Python string representation.
         :rtype: str
         """
-        return "PerMessageBzip2ResponseAccept(response = %s, compress_level = %s)" % (
-            self.response.__repr__(),
-            self.compress_level,
-        )
+        return f"PerMessageBzip2ResponseAccept(response = {self.response.__repr__()}, compress_level = {self.compress_level})"
 
 
 class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
@@ -524,12 +495,7 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
 
     def __repr__(self):
         return (
-            "PerMessageBzip2(isServer = %s, server_max_compress_level = %s, client_max_compress_level = %s)"
-            % (
-                self._isServer,
-                self.server_max_compress_level,
-                self.client_max_compress_level,
-            )
+            f"PerMessageBzip2(isServer = {self._isServer}, server_max_compress_level = {self.server_max_compress_level}, client_max_compress_level = {self.client_max_compress_level})"
         )
 
     def start_compress_message(self):

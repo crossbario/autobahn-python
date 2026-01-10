@@ -168,7 +168,7 @@ class TestAuth(unittest.TestCase):
 
         # all tests here fake the use of channel_id_type='tls-unique' with the following channel_id
         m = hashlib.sha256()
-        m.update("some TLS message".encode())
+        m.update(b"some TLS message")
 
         # 62e935ae755f3d48f80d4d59f6121358c435722a67e859cc0caa8b539027f2ff
         channel_id = m.digest()

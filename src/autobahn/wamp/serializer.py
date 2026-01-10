@@ -31,7 +31,6 @@ import platform
 import re
 import struct
 from binascii import a2b_hex, b2a_hex
-from typing import List, Optional, Tuple
 
 from txaio import time_ns
 
@@ -48,7 +47,7 @@ SERID_TO_OBJSER = {}
 SERID_TO_SER = {}
 
 
-class Serializer(object):
+class Serializer:
     """
     Base class for WAMP serializers. A WAMP serializer is the core glue between
     parsed WAMP message objects and the bytes on wire (the transport).
@@ -251,7 +250,7 @@ class Serializer(object):
             self._stats_reset = time_ns()
         return data
 
-    def serialize(self, msg: IMessage) -> Tuple[bytes, bool]:
+    def serialize(self, msg: IMessage) -> tuple[bytes, bool]:
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.serialize`
         """
@@ -298,25 +297,21 @@ class Serializer(object):
         return payload_ser.serialize(data)
 
     def unserialize(
-        self, payload: bytes, isBinary: Optional[bool] = None
-    ) -> List[IMessage]:
+        self, payload: bytes, isBinary: bool | None = None
+    ) -> list[IMessage]:
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
         """
         if isBinary is not None:
             if isBinary != self._serializer.BINARY:
                 raise ProtocolError(
-                    "invalid serialization of WAMP message (binary {0}, but expected {1})".format(
-                        isBinary, self._serializer.BINARY
-                    )
+                    f"invalid serialization of WAMP message (binary {isBinary}, but expected {self._serializer.BINARY})"
                 )
         try:
             raw_msgs = self._serializer.unserialize(payload)
         except Exception as e:
             raise ProtocolError(
-                "invalid serialization of WAMP message: {0} {1}".format(
-                    type(e).__name__, e
-                )
+                f"invalid serialization of WAMP message: {type(e).__name__} {e}"
             )
 
         if self._serializer.NAME == "flatbuffers":
@@ -326,7 +321,7 @@ class Serializer(object):
             for raw_msg in raw_msgs:
                 if type(raw_msg) != list:
                     raise ProtocolError(
-                        "invalid type {0} for WAMP message".format(type(raw_msg))
+                        f"invalid type {type(raw_msg)} for WAMP message"
                     )
 
                 if len(raw_msg) == 0:
@@ -336,16 +331,14 @@ class Serializer(object):
 
                 if type(message_type) != int:
                     raise ProtocolError(
-                        "invalid type {0} for WAMP message type".format(
-                            type(message_type)
-                        )
+                        f"invalid type {type(message_type)} for WAMP message type"
                     )
 
                 Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
                 if Klass is None:
                     raise ProtocolError(
-                        "invalid WAMP message type {0}".format(message_type)
+                        f"invalid WAMP message type {message_type}"
                     )
 
                 # this might again raise `ProtocolError` ..
@@ -511,7 +504,7 @@ else:
     _json = json
 
 
-class JsonObjectSerializer(object):
+class JsonObjectSerializer:
     JSON_MODULE = _json
     """
     The JSON module used (now only stdlib).
@@ -670,7 +663,7 @@ else:
 
 if _HAS_MSGPACK:
 
-    class MsgPackObjectSerializer(object):
+    class MsgPackObjectSerializer:
         NAME = "msgpack"
 
         MSGPACK_MODULE = _msgpack
@@ -795,7 +788,7 @@ else:
 
 if _HAS_CBOR:
 
-    class CBORObjectSerializer(object):
+    class CBORObjectSerializer:
         """
         CBOR serializer based on `cbor2 <https://github.com/agronholm/cbor2>`_.
 
@@ -922,7 +915,7 @@ except ImportError:
 else:
     # print('Notice: Autobahn is using ubjson module for UBJSON serialization')
 
-    class UBJSONObjectSerializer(object):
+    class UBJSONObjectSerializer:
         NAME = "ubjson"
 
         UBJSON_MODULE = ubjson
@@ -1043,7 +1036,7 @@ else:
 
 if _HAS_FLATBUFFERS:
 
-    class FlatBuffersObjectSerializer(object):
+    class FlatBuffersObjectSerializer:
         NAME = "flatbuffers"
 
         FLATBUFFERS_MODULE = flatbuffers
@@ -1123,9 +1116,7 @@ if _HAS_FLATBUFFERS:
                 return [msg]
             else:
                 raise NotImplementedError(
-                    "message type {} not yet implemented for WAMP-FlatBuffers".format(
-                        msg_type
-                    )
+                    f"message type {msg_type} not yet implemented for WAMP-FlatBuffers"
                 )
 
     IObjectSerializer.register(FlatBuffersObjectSerializer)
@@ -1203,9 +1194,7 @@ def create_transport_serializer(serializer_id):
         return SERID_TO_SER[serializer_id](batched=batched)
     else:
         raise RuntimeError(
-            'could not create serializer for "{}" (available: {})'.format(
-                serializer_id, sorted(SERID_TO_SER.keys())
-            )
+            f'could not create serializer for "{serializer_id}" (available: {sorted(SERID_TO_SER.keys())})'
         )
 
 

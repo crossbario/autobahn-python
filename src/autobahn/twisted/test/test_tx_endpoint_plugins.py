@@ -43,7 +43,7 @@ class PluginTests(TestCase):
         from twisted.internet import reactor
         from twisted.internet.endpoints import clientFromString, quoteStringArgument
 
-        ep_string = "autobahn:{0}:url={1}".format(
+        ep_string = "autobahn:{}:url={}".format(
             quoteStringArgument("tcp:localhost:9000"),
             quoteStringArgument("ws://localhost:9000"),
         )

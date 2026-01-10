@@ -41,7 +41,7 @@ __all__ = (
 )
 
 
-class Publication(object):
+class Publication:
     """
     Object representing a publication (feedback from publishing an event when doing
     an acknowledged publish).
@@ -62,12 +62,10 @@ class Publication(object):
         self.was_encrypted = was_encrypted
 
     def __str__(self):
-        return "Publication(id={0}, was_encrypted={1})".format(
-            self.id, self.was_encrypted
-        )
+        return f"Publication(id={self.id}, was_encrypted={self.was_encrypted})"
 
 
-class Subscription(object):
+class Subscription:
     """
     Object representing a handler subscription.
     """
@@ -105,10 +103,10 @@ class Subscription(object):
             raise Exception("subscription no longer active")
 
     def __str__(self):
-        return "Subscription(id={0}, is_active={1})".format(self.id, self.active)
+        return f"Subscription(id={self.id}, is_active={self.active})"
 
 
-class Handler(object):
+class Handler:
     """
     Object representing an event handler attached to a subscription.
     """
@@ -132,7 +130,7 @@ class Handler(object):
         self.details_arg = details_arg
 
 
-class Registration(object):
+class Registration:
     """
     Object representing a registration.
     """
@@ -168,12 +166,10 @@ class Registration(object):
             raise Exception("registration no longer active")
 
     def __str__(self):
-        return 'Registration(id={0}, is_active={1}, procedure="{2}")'.format(
-            self.id, self.active, self.procedure
-        )
+        return f'Registration(id={self.id}, is_active={self.active}, procedure="{self.procedure}")'
 
 
-class Endpoint(object):
+class Endpoint:
     """
     Object representing an procedure endpoint attached to a registration.
     """
@@ -197,7 +193,7 @@ class Endpoint(object):
         self.details_arg = details_arg
 
 
-class Request(object):
+class Request:
     """
     Object representing an outstanding request, such as for subscribe/unsubscribe,
     register/unregister or call/publish.

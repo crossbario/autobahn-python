@@ -79,7 +79,7 @@ class TestEntropy(unittest.TestCase):
                 d = rng.read(1000)  # noqa
 
                 # check available entropy
-                with open("/proc/sys/kernel/random/entropy_avail", "r") as ent:
+                with open("/proc/sys/kernel/random/entropy_avail") as ent:
                     ea = int(ent.read()) // 100
                     if ea not in res:
                         res[ea] = 0
@@ -89,7 +89,7 @@ class TestEntropy(unittest.TestCase):
 
         print("\nsystem entropy depletion stats:")
         for k in skeys:
-            print("{}: {}".format(k, res[k]))
+            print(f"{k}: {res[k]}")
 
         self.assertTrue(skeys[0] > 0)
 
@@ -102,7 +102,7 @@ class TestEntropy(unittest.TestCase):
                 d = rng.read(1000)  # noqa
 
                 # check available entropy
-                with open("/proc/sys/kernel/random/entropy_avail", "r") as ent:
+                with open("/proc/sys/kernel/random/entropy_avail") as ent:
                     ea = int(ent.read()) // 100
                     if ea not in res:
                         res[ea] = 0
@@ -112,6 +112,6 @@ class TestEntropy(unittest.TestCase):
 
         print("\nsystem entropy depletion stats:")
         for k in skeys:
-            print("{}: {}".format(k, res[k]))
+            print(f"{k}: {res[k]}")
 
         self.assertTrue(skeys[0] == 0)

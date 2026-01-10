@@ -456,7 +456,7 @@ else:
     # convert DFA table to bytes (performance)
     UTF8VALIDATOR_DFA_S = bytes(UTF8VALIDATOR_DFA)
 
-    class Utf8Validator(object):
+    class Utf8Validator:
         """
         Incremental UTF-8 validator with constant memory consumption (minimal state).
 

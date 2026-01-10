@@ -61,11 +61,11 @@ class PrefixProtocol(asyncio.Protocol):
     max_length = 16 * 1024 * 1024
     max_length_send = max_length
     log = txaio.make_logger()  # @UndefinedVariable
-    peer: Optional[str] = None
-    is_server: Optional[bool] = None
+    peer: str | None = None
+    is_server: bool | None = None
 
     @property
-    def transport_details(self) -> Optional[TransportDetails]:
+    def transport_details(self) -> TransportDetails | None:
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.transport_details`
         """
@@ -221,7 +221,7 @@ class RawSocketProtocol(PrefixProtocol):
                 try:
                     self.process_handshake()
                 except HandshakeError as e:
-                    self.protocol_error("Handshake error : {err}".format(err=e))
+                    self.protocol_error(f"Handshake error : {e}")
                     return
                 self._handshake_done = True
                 self._on_handshake_complete()
@@ -244,7 +244,7 @@ ERRMAP = {
 
 class HandshakeError(Exception):
     def __init__(self, msg, code=0):
-        Exception.__init__(self, msg if not code else msg + " : %s" % ERRMAP.get(code))
+        Exception.__init__(self, msg if not code else msg + f" : {ERRMAP.get(code)}")
 
 
 class RawSocketClientProtocol(RawSocketProtocol):
@@ -259,9 +259,7 @@ class RawSocketClientProtocol(RawSocketProtocol):
             raise HandshakeError("Server returned handshake error", err)
         if self.serializer_id != ser_id:
             raise HandshakeError(
-                "Server returned different serializer {0} then requested {1}".format(
-                    ser_id, self.serializer_id
-                )
+                f"Server returned different serializer {ser_id} then requested {self.serializer_id}"
             )
 
     @property
@@ -293,13 +291,13 @@ class RawSocketServerProtocol(RawSocketProtocol):
         if not self.supports_serializer(ser_id):
             send_response(ERR_SERIALIZER_UNSUPPORTED, 0)
             raise HandshakeError(
-                "Serializer unsupported : {ser_id}".format(ser_id=ser_id)
+                f"Serializer unsupported : {ser_id}"
             )
         send_response(self._length_exp, ser_id)
 
 
 # this is transport independent part of WAMP protocol
-class WampRawSocketMixinGeneral(object):
+class WampRawSocketMixinGeneral:
     def _on_handshake_complete(self):
         self.log.debug("WampRawSocketProtocol: Handshake complete")
         # RawSocket connection established. Now let the user WAMP session factory
@@ -364,9 +362,7 @@ class WampRawSocketMixinGeneral(object):
             except Exception as e:
                 # all exceptions raised from above should be serialization errors ..
                 raise SerializationError(
-                    "WampRawSocketProtocol: unable to serialize WAMP application payload ({0})".format(
-                        e
-                    )
+                    f"WampRawSocketProtocol: unable to serialize WAMP application payload ({e})"
                 )
             else:
                 self.sendString(payload)
@@ -385,7 +381,7 @@ class WampRawSocketMixinGeneral(object):
 
 
 # this is asyncio dependent part of WAMP protocol
-class WampRawSocketMixinAsyncio(object):
+class WampRawSocketMixinAsyncio:
     """
     Base class for asyncio-based WAMP-over-RawSocket protocols.
     """
@@ -474,7 +470,7 @@ class WampRawSocketClientProtocol(
         return self._serializer.RAWSOCKET_SERIALIZER_ID
 
 
-class WampRawSocketFactory(object):
+class WampRawSocketFactory:
     """
     Adapter class for asyncio-based WebSocket client and server factories.def dataReceived(self, data):
     """

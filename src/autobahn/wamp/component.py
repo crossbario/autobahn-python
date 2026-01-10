@@ -67,27 +67,27 @@ def _validate_endpoint(endpoint, check_native_endpoint=None):
 
         for k in endpoint.keys():
             if k not in ["type", "host", "port", "path", "tls", "timeout", "version"]:
-                raise ValueError("Invalid key '{}' in endpoint configuration".format(k))
+                raise ValueError(f"Invalid key '{k}' in endpoint configuration")
 
         if endpoint["type"] == "tcp":
             for k in ["host", "port"]:
                 if k not in endpoint:
-                    raise ValueError("'{}' required in 'tcp' endpoint config".format(k))
+                    raise ValueError(f"'{k}' required in 'tcp' endpoint config")
             for k in ["path"]:
                 if k in endpoint:
                     raise ValueError(
-                        "'{}' not valid in 'tcp' endpoint config".format(k)
+                        f"'{k}' not valid in 'tcp' endpoint config"
                     )
         elif endpoint["type"] == "unix":
             for k in ["path"]:
                 if k not in endpoint:
                     raise ValueError(
-                        "'{}' required for 'unix' endpoint config".format(k)
+                        f"'{k}' required for 'unix' endpoint config"
                     )
             for k in ["host", "port", "tls"]:
                 if k in endpoint:
                     raise ValueError(
-                        "'{}' not valid in 'unix' endpoint config".format(k)
+                        f"'{k}' not valid in 'unix' endpoint config"
                     )
         else:
             assert False, "should not arrive here"
@@ -106,9 +106,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
     """
     if type(transport) != dict:
         raise ValueError(
-            "invalid type {} for transport configuration - must be a dict".format(
-                type(transport)
-            )
+            f"invalid type {type(transport)} for transport configuration - must be a dict"
         )
 
     valid_transport_keys = [
@@ -128,7 +126,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
     ]
     for k in transport.keys():
         if k not in valid_transport_keys:
-            raise ValueError("'{}' is not a valid configuration item".format(k))
+            raise ValueError(f"'{k}' is not a valid configuration item")
 
     kind = "websocket"
     if "type" in transport:
@@ -144,7 +142,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
     if proxy is not None:
         for k in proxy.keys():
             if k not in ["host", "port"]:
-                raise ValueError("Unknown key '{}' in proxy config".format(k))
+                raise ValueError(f"Unknown key '{k}' in proxy config")
         for k in ["host", "port"]:
             if k not in proxy:
                 raise ValueError("Proxy config requires '{}'".formaT(k))
@@ -153,14 +151,14 @@ def _create_transport(index, transport, check_native_endpoint=None):
     if "options" in transport:
         options = transport["options"]
         if not isinstance(options, dict):
-            raise ValueError("options must be a dict, not {}".format(type(options)))
+            raise ValueError(f"options must be a dict, not {type(options)}")
 
     headers = transport.get("headers")
 
     if kind == "websocket":
         for key in ["url"]:
             if key not in transport:
-                raise ValueError("Transport requires '{}' key".format(key))
+                raise ValueError(f"Transport requires '{key}' key")
         # endpoint not required; we will deduce from URL if it's not provided
         # XXX not in the branch I rebased; can this go away? (is it redundant??)
         if "endpoint" not in transport:
@@ -182,9 +180,9 @@ def _create_transport(index, transport, check_native_endpoint=None):
         if "serializer" in transport:
             raise ValueError("'serializer' is only for rawsocket; use 'serializers'")
         if "serializers" in transport:
-            if not isinstance(transport["serializers"], (list, tuple)):
+            if not isinstance(transport["serializers"], list | tuple):
                 raise ValueError("'serializers' must be a list of strings")
-            if not all([isinstance(s, (str, str)) for s in transport["serializers"]]):
+            if not all([isinstance(s, str | str) for s in transport["serializers"]]):
                 raise ValueError("'serializers' must be a list of strings")
             valid_serializers = SERID_TO_SER.keys()
             for serial in transport["serializers"]:
@@ -229,7 +227,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
             raise ValueError("'headers' not supported for rawsocket transport")
         # always a list; len == 1 for rawsocket
         if "serializer" in transport:
-            if not isinstance(transport["serializer"], (str, str)):
+            if not isinstance(transport["serializer"], str | str):
                 raise ValueError("'serializer' must be a string")
             serializer_config = [transport["serializer"]]
         else:
@@ -262,7 +260,7 @@ def _create_transport(index, transport, check_native_endpoint=None):
     )
 
 
-class _Transport(object):
+class _Transport:
     """
     Thin-wrapper for WAMP transports used by a Connection.
     """
@@ -518,7 +516,7 @@ class Component(ObservableMixin):
             transports = "ws://127.0.0.1:8080/ws"
 
         # allows to provide a URL instead of a list of transports
-        if isinstance(transports, (str, str)):
+        if isinstance(transports, str | str):
             url = transports
             # 'endpoint' will get filled in by parsing the 'url'
             transport = {
@@ -966,16 +964,14 @@ def _run(reactor, components, done_callback=None):
 
     if type(components) != list:
         raise ValueError(
-            '"components" must be a list of Component objects - encountered {0}'.format(
-                type(components)
-            )
+            f'"components" must be a list of Component objects - encountered {type(components)}'
         )
 
     for c in components:
         if not isinstance(c, Component):
             raise ValueError(
                 '"components" must be a list of Component objects - encountered'
-                "item of type {0}".format(type(c))
+                f"item of type {type(c)}"
             )
 
     # validation complete; proceed with startup

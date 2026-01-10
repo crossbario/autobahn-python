@@ -67,20 +67,9 @@ __all__ = (
 if USES_NVX:
     import cffi
 
-    __ident__ = "Autobahn/{}-NVXCFFI/{}-Twisted/{}-{}/{}".format(
-        autobahn.__version__,
-        cffi.__version__,
-        twisted.__version__,
-        platform.python_implementation(),
-        platform.python_version(),
-    )
+    __ident__ = f"Autobahn/{autobahn.__version__}-NVXCFFI/{cffi.__version__}-Twisted/{twisted.__version__}-{platform.python_implementation()}/{platform.python_version()}"
 else:
-    __ident__ = "Autobahn/{}-Twisted/{}-{}/{}".format(
-        autobahn.__version__,
-        twisted.__version__,
-        platform.python_implementation(),
-        platform.python_version(),
-    )
+    __ident__ = f"Autobahn/{autobahn.__version__}-Twisted/{twisted.__version__}-{platform.python_implementation()}/{platform.python_version()}"
 
 """
 Identification string for the Autobahn|Python Twisted backend.
