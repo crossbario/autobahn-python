@@ -717,6 +717,22 @@ check-typing venv="": (install venv)
         --ignore deprecated \
         src/autobahn/
 
+# pyright --project pyproject-static-typing.toml src/autobahn/wamp/request.py
+# mypy --config-file pyproject-static-typing.toml src/autobahn/wamp/request.py
+# check-static-typing-subset venv="": (install-tools venv)
+check-static-typing-subset venv="":
+    #!/usr/bin/env bash
+
+    echo "=================================================================="
+    echo "       Checking for statically typed Python with pyright:"
+    echo "------------------------------------------------------------------"
+    pyright --project pyproject-static-typing.toml src/autobahn/wamp/message.py
+    echo "=================================================================="
+    echo "       Checking for statically typed Python with mypy:"
+    echo "------------------------------------------------------------------"
+    mypy --config-file pyproject-static-typing.toml src/autobahn/wamp/message.py
+    echo "=================================================================="
+
 # Run coverage for Twisted tests only
 check-coverage-twisted venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash

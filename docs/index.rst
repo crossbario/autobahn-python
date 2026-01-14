@@ -45,6 +45,7 @@ Contents
    installation
    getting-started
    programming-guide/index
+   architecture/statically-typed-region-lifecycle-python.md
    release-notes
    changelog
    contributing

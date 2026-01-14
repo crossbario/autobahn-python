@@ -39,8 +39,8 @@ from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
 try:
     import cbor2
-    from autobahn import flatbuffers
 
+    from autobahn import flatbuffers
     from autobahn.wamp import message_fbs
 except ImportError:
     _HAS_WAMP_FLATBUFFERS = False
@@ -176,7 +176,7 @@ ENC_SERS = {
 ENC_SERS_FROMSTR = {key: value for value, key in ENC_SERS.items()}
 
 
-def is_valid_enc_algo(enc_algo):
+def is_valid_enc_algo(enc_algo: str):
     """
     For WAMP payload transparency mode, check if the provided ``enc_algo``
     identifier in the WAMP message is a valid one.
@@ -202,7 +202,7 @@ def is_valid_enc_algo(enc_algo):
     )
 
 
-def is_valid_enc_serializer(enc_serializer):
+def is_valid_enc_serializer(enc_serializer: str):
     """
     For WAMP payload transparency mode, check if the provided ``enc_serializer``
     identifier in the WAMP message is a valid one.
@@ -331,9 +331,7 @@ def check_or_raise_uri(
 
     if type(value) != str:
         if not (value is None and allow_none):
-            raise InvalidUriError(
-                f"{message}: invalid type {type(value)} for URI"
-            )
+            raise InvalidUriError(f"{message}: invalid type {type(value)} for URI")
 
     if strict:
         if allow_last_empty:
@@ -376,9 +374,7 @@ def check_or_raise_realm_name(value, message="WAMP message invalid", allow_eth=T
         raise InvalidUriError(f"{message}: realm name cannot be null")
 
     if type(value) != str:
-        raise InvalidUriError(
-            f"{message}: invalid type {type(value)} for realm name"
-        )
+        raise InvalidUriError(f"{message}: invalid type {type(value)} for realm name")
 
     if allow_eth:
         if _URI_PAT_REALM_NAME.match(value) or _URI_PAT_REALM_NAME_ETH.match(value):
@@ -434,9 +430,7 @@ def check_or_raise_extra(
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
     if type(value) != dict:
-        raise ProtocolError(
-            f"{message}: invalid type {type(value)} for WAMP extra"
-        )
+        raise ProtocolError(f"{message}: invalid type {type(value)} for WAMP extra")
     for k in value.keys():
         if not isinstance(k, str):
             raise ProtocolError(
@@ -941,7 +935,10 @@ class MessageWithForwardFor:
         if self._forward_for is None and self._from_fbs:
             # Check if this message type has forward_for in FlatBuffers schema
             # Category 1 messages don't have forward_for
-            if hasattr(self._from_fbs, 'ForwardForLength') and self._from_fbs.ForwardForLength():
+            if (
+                hasattr(self._from_fbs, "ForwardForLength")
+                and self._from_fbs.ForwardForLength()
+            ):
                 forward_for = []
                 for j in range(self._from_fbs.ForwardForLength()):
                     principal = self._from_fbs.ForwardFor(j)
@@ -1330,9 +1327,7 @@ class Hello(Message):
         assert len(wmsg) > 0 and wmsg[0] == Hello.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for HELLO"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for HELLO")
 
         realm = check_or_raise_uri(wmsg[1], "'realm' in HELLO", allow_none=True)
         details = check_or_raise_extra(wmsg[2], "'details' in HELLO")
@@ -1923,9 +1918,7 @@ class Welcome(Message):
         assert len(wmsg) > 0 and wmsg[0] == Welcome.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for WELCOME"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for WELCOME")
 
         session = check_or_raise_id(wmsg[1], "'session' in WELCOME")
         details = check_or_raise_extra(wmsg[2], "'details' in WELCOME")
@@ -2195,7 +2188,7 @@ class Abort(Message):
         message_fbs.AbortGen.AbortStart(builder)
 
         # Add fields
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.AbortGen.AbortAddSession(builder, session)
         if reason:
@@ -2228,9 +2221,7 @@ class Abort(Message):
         assert len(wmsg) > 0 and wmsg[0] == Abort.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for ABORT"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for ABORT")
 
         details = check_or_raise_extra(wmsg[1], "'details' in ABORT")
         reason = check_or_raise_uri(wmsg[2], "'reason' in ABORT")
@@ -2320,11 +2311,11 @@ class Challenge(Message):
             # Map AuthMethod enum to string
             # AuthMethod: NULL=0, TICKET=1, CRA=2, SCRAM=3, CRYPTOSIGN=4
             AUTH_METHOD_MAP = {
-                0: None,           # NULL/anonymous
-                1: "ticket",       # TICKET
-                2: "wampcra",      # CRA (Challenge-Response Authentication)
-                3: "wamp-scram",   # SCRAM
-                4: "cryptosign",   # CRYPTOSIGN
+                0: None,  # NULL/anonymous
+                1: "ticket",  # TICKET
+                2: "wampcra",  # CRA (Challenge-Response Authentication)
+                3: "wamp-scram",  # SCRAM
+                4: "cryptosign",  # CRYPTOSIGN
             }
             self._method = AUTH_METHOD_MAP.get(method_val)
         return self._method
@@ -2380,7 +2371,7 @@ class Challenge(Message):
         message_fbs.ChallengeGen.ChallengeStart(builder)
 
         # Add fields
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.ChallengeGen.ChallengeAddSession(builder, session)
 
@@ -2388,11 +2379,11 @@ class Challenge(Message):
         # AuthMethod: NULL=0, TICKET=1, CRA=2, SCRAM=3, CRYPTOSIGN=4
         if self.method:
             STRING_TO_AUTH_METHOD = {
-                "anonymous": 0,     # NULL
-                "ticket": 1,        # TICKET
-                "wampcra": 2,       # CRA (Challenge-Response Authentication)
-                "wamp-scram": 3,    # SCRAM
-                "cryptosign": 4,    # CRYPTOSIGN
+                "anonymous": 0,  # NULL
+                "ticket": 1,  # TICKET
+                "wampcra": 2,  # CRA (Challenge-Response Authentication)
+                "wamp-scram": 3,  # SCRAM
+                "cryptosign": 4,  # CRYPTOSIGN
             }
             method_enum = STRING_TO_AUTH_METHOD.get(self.method, 0)
             message_fbs.ChallengeGen.ChallengeAddMethod(builder, method_enum)
@@ -2407,7 +2398,9 @@ class Challenge(Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.CHALLENGE)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.CHALLENGE
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -2427,9 +2420,7 @@ class Challenge(Message):
         assert len(wmsg) > 0 and wmsg[0] == Challenge.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for CHALLENGE"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for CHALLENGE")
 
         method = wmsg[1]
         if type(method) != str:
@@ -2568,7 +2559,7 @@ class Authenticate(Message):
         message_fbs.AuthenticateGen.AuthenticateStart(builder)
 
         # Add fields
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.AuthenticateGen.AuthenticateAddSession(builder, session)
         if signature:
@@ -2584,7 +2575,9 @@ class Authenticate(Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.AUTHENTICATE)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.AUTHENTICATE
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -2604,9 +2597,7 @@ class Authenticate(Message):
         assert len(wmsg) > 0 and wmsg[0] == Authenticate.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for AUTHENTICATE"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for AUTHENTICATE")
 
         signature = wmsg[1]
         if type(signature) != str:
@@ -2769,7 +2760,7 @@ class Goodbye(Message):
         message_fbs.GoodbyeGen.GoodbyeStart(builder)
 
         # Add fields
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.GoodbyeGen.GoodbyeAddSession(builder, session)
         if reason:
@@ -2804,9 +2795,7 @@ class Goodbye(Message):
         assert len(wmsg) > 0 and wmsg[0] == Goodbye.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for GOODBYE"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for GOODBYE")
 
         details = check_or_raise_extra(wmsg[1], "'details' in GOODBYE")
         reason = check_or_raise_uri(wmsg[2], "'reason' in GOODBYE")
@@ -3191,9 +3180,7 @@ class Error(MessageWithAppPayload, MessageWithForwardFor, Message):
         assert len(wmsg) > 0 and wmsg[0] == Error.MESSAGE_TYPE
 
         if len(wmsg) not in (5, 6, 7):
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for ERROR"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for ERROR")
 
         request_type = wmsg[1]
         if type(request_type) != int:
@@ -3979,11 +3966,11 @@ class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
         forward_for = None
         if self.forward_for:
             from autobahn.wamp.gen.wamp.proto.Principal import (
-                PrincipalStart,
-                PrincipalAddSession,
                 PrincipalAddAuthid,
                 PrincipalAddAuthrole,
+                PrincipalAddSession,
                 PrincipalEnd,
+                PrincipalStart,
             )
 
             _forward_for = []
@@ -4091,9 +4078,7 @@ class Publish(MessageWithAppPayload, MessageWithForwardFor, Message):
         assert len(wmsg) > 0 and wmsg[0] == Publish.MESSAGE_TYPE
 
         if len(wmsg) not in (4, 5, 6):
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for PUBLISH"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for PUBLISH")
 
         request = check_or_raise_id(wmsg[1], "'request' in PUBLISH")
         options = check_or_raise_extra(wmsg[2], "'options' in PUBLISH")
@@ -4463,9 +4448,7 @@ class Published(Message):
         assert len(wmsg) > 0 and wmsg[0] == Published.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for PUBLISHED"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for PUBLISHED")
 
         request = check_or_raise_id(wmsg[1], "'request' in PUBLISHED")
         publication = check_or_raise_id(wmsg[2], "'publication' in PUBLISHED")
@@ -4490,7 +4473,7 @@ class Published(Message):
     def build(self, builder, serializer=None):
         message_fbs.PublishedGen.PublishedStart(builder)
 
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.PublishedGen.PublishedAddSession(builder, session)
         if self.request:
@@ -4502,7 +4485,9 @@ class Published(Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.PUBLISHED)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.PUBLISHED
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -4684,9 +4669,7 @@ class Subscribe(MessageWithForwardFor, Message):
         assert len(wmsg) > 0 and wmsg[0] == Subscribe.MESSAGE_TYPE
 
         if len(wmsg) != 4:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for SUBSCRIBE"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for SUBSCRIBE")
 
         request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBE")
         options = check_or_raise_extra(wmsg[2], "'options' in SUBSCRIBE")
@@ -4796,7 +4779,7 @@ class Subscribe(MessageWithForwardFor, Message):
         message_fbs.SubscribeGen.SubscribeStart(builder)
 
         # Add fields
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.SubscribeGen.SubscribeAddSession(builder, session)
         if self.request:
@@ -4822,7 +4805,9 @@ class Subscribe(MessageWithForwardFor, Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.SUBSCRIBE)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.SUBSCRIBE
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -4888,9 +4873,7 @@ class Subscribed(Message):
         assert len(wmsg) > 0 and wmsg[0] == Subscribed.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for SUBSCRIBED"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for SUBSCRIBED")
 
         request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBED")
         subscription = check_or_raise_id(wmsg[2], "'subscription' in SUBSCRIBED")
@@ -4915,7 +4898,7 @@ class Subscribed(Message):
     def build(self, builder, serializer=None):
         message_fbs.SubscribedGen.SubscribedStart(builder)
 
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.SubscribedGen.SubscribedAddSession(builder, session)
         if self.request:
@@ -4929,7 +4912,9 @@ class Subscribed(Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.SUBSCRIBED)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.SUBSCRIBED
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -5110,7 +5095,7 @@ class Unsubscribe(MessageWithForwardFor, Message):
     def build(self, builder, serializer=None):
         message_fbs.UnsubscribeGen.UnsubscribeStart(builder)
 
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.UnsubscribeGen.UnsubscribeAddSession(builder, session)
         if self.request:
@@ -5124,7 +5109,9 @@ class Unsubscribe(MessageWithForwardFor, Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.UNSUBSCRIBE)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.UNSUBSCRIBE
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -5247,9 +5234,7 @@ class Unsubscribed(Message):
         assert len(wmsg) > 0 and wmsg[0] == Unsubscribed.MESSAGE_TYPE
 
         if len(wmsg) not in [2, 3]:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for UNSUBSCRIBED"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for UNSUBSCRIBED")
 
         request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBED")
 
@@ -5309,7 +5294,7 @@ class Unsubscribed(Message):
         message_fbs.UnsubscribedGen.UnsubscribedStart(builder)
 
         # Add fields
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.UnsubscribedGen.UnsubscribedAddSession(builder, session)
         if self.request:
@@ -5326,7 +5311,9 @@ class Unsubscribed(Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.UNSUBSCRIBED)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.UNSUBSCRIBED
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -5713,11 +5700,11 @@ class Event(MessageWithAppPayload, MessageWithForwardFor, Message):
         forward_for = None
         if self.forward_for:
             from autobahn.wamp.gen.wamp.proto.Principal import (
-                PrincipalStart,
-                PrincipalAddSession,
                 PrincipalAddAuthid,
                 PrincipalAddAuthrole,
+                PrincipalAddSession,
                 PrincipalEnd,
+                PrincipalStart,
             )
 
             _forward_for = []
@@ -5813,9 +5800,7 @@ class Event(MessageWithAppPayload, MessageWithForwardFor, Message):
         assert len(wmsg) > 0 and wmsg[0] == Event.MESSAGE_TYPE
 
         if len(wmsg) not in (4, 5, 6):
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for EVENT"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for EVENT")
 
         subscription = check_or_raise_id(wmsg[1], "'subscription' in EVENT")
         publication = check_or_raise_id(wmsg[2], "'publication' in EVENT")
@@ -6654,9 +6639,7 @@ class Call(MessageWithAppPayload, MessageWithForwardFor, Message):
             if len(wmsg) > 4:
                 args = wmsg[4]
                 if args is not None and type(args) != list:
-                    raise ProtocolError(
-                        f"invalid type {type(args)} for 'args' in CALL"
-                    )
+                    raise ProtocolError(f"invalid type {type(args)} for 'args' in CALL")
 
             if len(wmsg) > 5:
                 kwargs = wmsg[5]
@@ -6965,9 +6948,7 @@ class Cancel(MessageWithForwardFor, Message):
         assert len(wmsg) > 0 and wmsg[0] == Cancel.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for CANCEL"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for CANCEL")
 
         request = check_or_raise_id(wmsg[1], "'request' in CANCEL")
         options = check_or_raise_extra(wmsg[2], "'options' in CANCEL")
@@ -7058,7 +7039,9 @@ class Cancel(MessageWithForwardFor, Message):
                 PrincipalGen.AddAuthrole(builder, _authrole)
                 _forward_for.append(PrincipalGen.End(builder))
 
-            message_fbs.CancelGen.CancelStartForwardForVector(builder, len(_forward_for))
+            message_fbs.CancelGen.CancelStartForwardForVector(
+                builder, len(_forward_for)
+            )
             for principal in reversed(_forward_for):
                 builder.PrependUOffsetTRelative(principal)
             forward_for = builder.EndVector()
@@ -7428,9 +7411,7 @@ class Result(MessageWithAppPayload, MessageWithForwardFor, Message):
         assert len(wmsg) > 0 and wmsg[0] == Result.MESSAGE_TYPE
 
         if len(wmsg) not in (3, 4, 5):
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for RESULT"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for RESULT")
 
         request = check_or_raise_id(wmsg[1], "'request' in RESULT")
         details = check_or_raise_extra(wmsg[2], "'details' in RESULT")
@@ -7833,9 +7814,7 @@ class Register(MessageWithForwardFor, Message):
         assert len(wmsg) > 0 and wmsg[0] == Register.MESSAGE_TYPE
 
         if len(wmsg) != 4:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for REGISTER"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for REGISTER")
 
         request = check_or_raise_id(wmsg[1], "'request' in REGISTER")
         options = check_or_raise_extra(wmsg[2], "'options' in REGISTER")
@@ -8008,7 +7987,7 @@ class Register(MessageWithForwardFor, Message):
         message_fbs.RegisterGen.RegisterStart(builder)
 
         # Add fields
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.RegisterGen.RegisterAddSession(builder, session)
         if self.request:
@@ -8145,9 +8124,7 @@ class Registered(Message):
         assert len(wmsg) > 0 and wmsg[0] == Registered.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for REGISTERED"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for REGISTERED")
 
         request = check_or_raise_id(wmsg[1], "'request' in REGISTERED")
         registration = check_or_raise_id(wmsg[2], "'registration' in REGISTERED")
@@ -8172,7 +8149,7 @@ class Registered(Message):
     def build(self, builder, serializer=None):
         message_fbs.RegisteredGen.RegisteredStart(builder)
 
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.RegisteredGen.RegisteredAddSession(builder, session)
         if self.request:
@@ -8186,7 +8163,9 @@ class Registered(Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.REGISTERED)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.REGISTERED
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -8479,9 +8458,7 @@ class Unregistered(Message):
         assert len(wmsg) > 0 and wmsg[0] == Unregistered.MESSAGE_TYPE
 
         if len(wmsg) not in [2, 3]:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for UNREGISTERED"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for UNREGISTERED")
 
         request = check_or_raise_id(wmsg[1], "'request' in UNREGISTERED")
 
@@ -8541,7 +8518,7 @@ class Unregistered(Message):
         message_fbs.UnregisteredGen.UnregisteredStart(builder)
 
         # Add fields
-        session = getattr(self, 'session', None)
+        session = getattr(self, "session", None)
         if session:
             message_fbs.UnregisteredGen.UnregisteredAddSession(builder, session)
         if self.request:
@@ -8558,7 +8535,9 @@ class Unregistered(Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.UNREGISTERED)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.UNREGISTERED
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -8981,7 +8960,9 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.INVOCATION)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.INVOCATION
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -9001,9 +8982,7 @@ class Invocation(MessageWithAppPayload, MessageWithForwardFor, Message):
         assert len(wmsg) > 0 and wmsg[0] == Invocation.MESSAGE_TYPE
 
         if len(wmsg) not in (4, 5, 6):
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for INVOCATION"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for INVOCATION")
 
         request = check_or_raise_id(wmsg[1], "'request' in INVOCATION")
         registration = check_or_raise_id(wmsg[2], "'registration' in INVOCATION")
@@ -9394,9 +9373,7 @@ class Interrupt(MessageWithForwardFor, Message):
         assert len(wmsg) > 0 and wmsg[0] == Interrupt.MESSAGE_TYPE
 
         if len(wmsg) != 3:
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for INTERRUPT"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for INTERRUPT")
 
         request = check_or_raise_id(wmsg[1], "'request' in INTERRUPT")
         options = check_or_raise_extra(wmsg[2], "'options' in INTERRUPT")
@@ -9533,7 +9510,9 @@ class Interrupt(MessageWithForwardFor, Message):
 
         # Wrap in Message union with type
         message_fbs.Message.MessageStart(builder)
-        message_fbs.Message.MessageAddMsgType(builder, message_fbs.MessageType.INTERRUPT)
+        message_fbs.Message.MessageAddMsgType(
+            builder, message_fbs.MessageType.INTERRUPT
+        )
         message_fbs.Message.MessageAddMsg(builder, msg)
         union_msg = message_fbs.Message.MessageEnd(builder)
 
@@ -9871,9 +9850,7 @@ class Yield(MessageWithAppPayload, MessageWithForwardFor, Message):
         assert len(wmsg) > 0 and wmsg[0] == Yield.MESSAGE_TYPE
 
         if len(wmsg) not in (3, 4, 5):
-            raise ProtocolError(
-                f"invalid message length {len(wmsg)} for YIELD"
-            )
+            raise ProtocolError(f"invalid message length {len(wmsg)} for YIELD")
 
         request = check_or_raise_id(wmsg[1], "'request' in YIELD")
         options = check_or_raise_extra(wmsg[2], "'options' in YIELD")
