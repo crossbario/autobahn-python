@@ -6,7 +6,7 @@ This guide will help you get started with **Autobahn|Python** quickly.
 Prerequisites
 -------------
 
-* Python 3.9 or later
+* Python 3.11 or later
 * pip (Python package installer)
 
 Quick Installation
