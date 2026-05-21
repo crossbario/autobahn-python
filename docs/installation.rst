@@ -11,12 +11,15 @@ Requirements
 * `Twisted`_
 * `asyncio`_
 
-You will need at least one of those.
+|ab| requires Python 3.11 or later. You will need at least one of the
+networking frameworks above.
 
 .. note::
    Most of Autobahn's WebSocket and WAMP features are available on both Twisted and asyncio, so you are free to choose the underlying networking framework based on your own criteria.
 
-For Twisted installation, please see `here <http://twistedmatrix.com/>`__. Asyncio comes bundled with Python 3.5+.
+For Twisted installation, please see `here <http://twistedmatrix.com/>`__.
+Asyncio is included in the Python standard library for all supported
+Python versions.
 
 
 Supported Configurations
@@ -24,23 +27,32 @@ Supported Configurations
 
 Here are the configurations supported by |ab|:
 
-+---------------+-----------+---------+---------------------------------+
-| Python        | Twisted   | asyncio | Notes                           |
-+---------------+-----------+---------+---------------------------------+
-+---------------+-----------+---------+---------------------------------+
-| CPython 3.5+  | yes       | yes     | asyncio in the standard library |
-+---------------+-----------+---------+---------------------------------+
-| PyPy 3        | yes       | yes     | asyncio in the standard library |
-+---------------+-----------+---------+---------------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Python
+     - Twisted
+     - asyncio
+     - Notes
+   * - CPython 3.11, 3.12, 3.13, and 3.14
+     - yes
+     - yes
+     - Pre-built wheels are published for supported platforms.
+   * - PyPy 3.11
+     - yes
+     - yes
+     - Pre-built wheels are published for supported platforms.
 
 
 Performance Note
 ................
 
-|ab| is portable, well tuned code. You can further accelerate performance by
-
-* Running under `PyPy <http://pypy.org/>`_ (recommended!) or
-* on CPython, install the native accelerators `wsaccel <https://pypi.python.org/pypi/wsaccel/>`_ and `ujson <https://pypi.python.org/pypi/ujson/>`_ (you can use the install variant ``acceleration`` for that - see below)
+|ab| is portable, well tuned code. For best performance, use the
+pre-built wheels published on PyPI when one is available for your Python
+version and platform. Platform-specific wheels may include native CFFI
+and NVX acceleration; the source distribution remains available for
+unsupported wheel combinations. See :doc:`wheels-inventory` for the full
+wheel matrix.
 
 To give you an idea of the performance you can expect, here is a `blog post <http://crossbario.com/blog/post/autobahn-pi-benchmark/>`_ benchmarking |ab| running on the `RaspberryPi <http://www.raspberrypi.org/>`_ (a tiny embedded computer) under `PyPy <http://pypy.org/>`_.
 
@@ -67,23 +79,28 @@ There are the flavors which are based on the official CPython and PyPy images, p
 Install from PyPI
 .................
 
-To install |ab| from the `Python Package Index <http://pypi.python.org/pypi/autobahn>`_ using `Pip <http://www.pip-installer.org/en/latest/installing.html>`_
+To install |ab| from the `Python Package Index <http://pypi.python.org/pypi/autobahn>`_
+using `Pip <http://www.pip-installer.org/en/latest/installing.html>`_:
 
 .. code-block:: sh
 
-   pip install autobahn
+   python -m pip install --upgrade pip
+   python -m pip install autobahn
+
+This is the recommended installation method. Pip will select a
+pre-built wheel when one matches your Python implementation, Python
+version, operating system, and CPU architecture. Current releases publish
+wheels for CPython 3.11 through 3.14 and PyPy 3.11 across the supported
+Linux, macOS, and Windows targets documented in :doc:`wheels-inventory`.
 
 You can also specify *install variants* (see below). E.g. to install Twisted automatically as a dependency
 
 .. code-block:: sh
 
-   pip install autobahn[twisted]
+   python -m pip install "autobahn[twisted]"
 
-And to install asyncio backports automatically when required
-
-.. code-block:: sh
-
-   pip install autobahn[asyncio]
+No extra is needed for asyncio because it is included in the Python
+standard library.
 
 
 Install from Sources
@@ -99,24 +116,17 @@ checkout a tagged release:
 
 .. code-block:: sh
 
-   cd AutobahnPython
-   git checkout v0.9.1
+   cd autobahn-python
+   git checkout v25.12.2
 
 .. warning::
    You should only use *tagged* releases, not *master*. The latest code from *master* might be broken, unfinished and untested. So you have been warned ;)
 
-Then do:
+Then install the checkout:
 
 .. code-block:: sh
 
-   cd autobahn
-   python setup.py install
-
-You can also use ``pip`` for the last step, which allows to specify install variants (see below)
-
-.. code-block:: sh
-
-   pip install -e .[twisted]
+   python -m pip install -e ".[twisted]"
 
 
 Install Variants
@@ -124,25 +134,35 @@ Install Variants
 
 |Ab| has the following install variants:
 
-+-------------------+--------------------------------------------------------------------------------------------------------+
-| **Variant**       | **Description**                                                                                        |
-+-------------------+--------------------------------------------------------------------------------------------------------+
-| ``twisted``       | Install Twisted as a dependency                                                                        |
-+-------------------+--------------------------------------------------------------------------------------------------------+
-| ``asyncio``       | Install asyncio as a dependency (or use stdlib)                                                        |
-+-------------------+--------------------------------------------------------------------------------------------------------+
-| ``accelerate``    | Install native acceleration packages on CPython                                                        |
-+-------------------+--------------------------------------------------------------------------------------------------------+
-| ``compress``      | Install packages for non-standard WebSocket compression methods                                        |
-+-------------------+--------------------------------------------------------------------------------------------------------+
-| ``serialization`` | Install packages for additional WAMP serialization formats (currently `MsgPack <http://msgpack.org>`_) |
-+-------------------+--------------------------------------------------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Variant
+     - Description
+   * - ``twisted``
+     - Install Twisted as a dependency.
+   * - ``asyncio``
+     - Backwards-compatible no-op; asyncio is in the Python standard library.
+   * - ``accelerate``
+     - Backwards-compatible no-op; native acceleration is provided by Autobahn wheels where supported.
+   * - ``compress``
+     - Install packages for non-standard WebSocket compression methods.
+   * - ``encryption``
+     - Install TLS and WAMP encryption/authentication packages.
+   * - ``scram``
+     - Install WAMP-SCRAM authentication packages.
+   * - ``serialization``
+     - Backwards-compatible no-op; WAMP serializers are included by default.
+   * - ``nvx``
+     - Backwards-compatible no-op; NVX acceleration is included in binary wheels where supported.
+   * - ``all``
+     - Install all optional feature dependencies.
 
 Install variants can be combined, e.g. to install |ab| with all optional packages for use with Twisted on CPython:
 
 .. code-block:: sh
 
-   pip install autobahn[twisted,accelerate,compress,serialization]
+   python -m pip install "autobahn[twisted,compress,encryption,scram]"
 
 
 Windows Installation
@@ -150,10 +170,10 @@ Windows Installation
 
 For convenience, here are minimal instructions to install both Python and Autobahn/Twisted on Windows:
 
-1. Go to the `Python web site <https://www.python.org/downloads/>`_ and install Python 3.7 32-Bit
-2. Add ``C:\Python37;C:\Python37\Scripts;`` to your ``PATH``
+1. Go to the `Python web site <https://www.python.org/downloads/>`_ and install a supported 64-bit Python 3.11 or later release.
+2. Ensure Python and ``Scripts`` are available on your ``PATH``.
 3. Download the `Pip install script <https://bootstrap.pypa.io/get-pip.py>`_ and double click it (or run ``python get-pip.py`` from a command shell)
-4. Open a command shell and run ``pip install autobahn[twisted]``
+4. Open a command shell and run ``python -m pip install "autobahn[twisted]"``.
 
 
 Check the Installation
@@ -165,7 +185,7 @@ To check the installation, fire up the Python and run
 
    >>> from autobahn import __version__
    >>> print(__version__)
-   0.9.1
+   25.12.2
 
 
 Depending on Autobahn
@@ -175,13 +195,13 @@ To require |Ab| as a dependency of your package, include the following in your `
 
 .. code-block:: python
 
-   install_requires = ["autobahn>=0.9.1"]
+   install_requires = ["autobahn>=25.12.2"]
 
 You can also depend on an *install variant* which automatically installs dependent packages
 
 .. code-block:: python
 
-   install_requires = ["autobahn[twisted]>=0.9.1"]
+   install_requires = ["autobahn[twisted]>=25.12.2"]
 
 The latter will automatically install Twisted as a dependency.
 

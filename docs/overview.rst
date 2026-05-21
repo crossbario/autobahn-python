@@ -7,7 +7,7 @@ and provides open-source implementations of:
 * `The WebSocket Protocol <https://tools.ietf.org/html/rfc6455>`__ (RFC 6455)
 * `The Web Application Messaging Protocol (WAMP) <https://wamp-proto.org/>`__
 
-for Python 3.9+, running on `Twisted <https://twisted.org/>`__ and
+for Python 3.11+, running on `Twisted <https://twisted.org/>`__ and
 `asyncio <https://docs.python.org/3/library/asyncio.html>`__.
 
 What is WebSocket?

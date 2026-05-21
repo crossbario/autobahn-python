@@ -42,7 +42,7 @@ implementations of
 - [The WebSocket Protocol](https://tools.ietf.org/html/rfc6455)
 - [The Web Application Messaging Protocol (WAMP)](https://wamp-proto.org/)
 
-for Python 3.7+ and running on
+for Python 3.11+ and running on
 [Twisted](https://twistedmatrix.com/) and
 [asyncio](https://docs.python.org/3/library/asyncio.html).
 
@@ -65,9 +65,10 @@ as well.
 
 Note
 
-**Autobahn|Python** up to version v19.11.2 supported Python 2 and
-3.4+, and up to version v20.7.1 supported Python 3.5+, and up to
-version v21.2.1 supported Python 3.6+.
+**Autobahn|Python** currently requires Python 3.11 or later. Earlier
+release lines supported older Python versions: up to version v19.11.2
+supported Python 2 and 3.4+, up to version v20.7.1 supported Python
+3.5+, and up to version v21.2.1 supported Python 3.6+.
 
 ## Features
 
@@ -223,45 +224,23 @@ The Autobahn|Python OSS project:
 
 ## Package Releases
 
-Autobahn|Python provides comprehensive binary wheel coverage for all major platforms and Python implementations.
+Autobahn|Python publishes source distributions and pre-built wheels on
+[PyPI](https://pypi.org/project/autobahn/) and
+[GitHub Releases](https://github.com/crossbario/autobahn-python/releases).
+The current release line requires Python 3.11 or later and publishes
+wheels for CPython 3.11 through 3.14 and PyPy 3.11 across supported
+Linux, macOS, and Windows targets.
 
-### Generic
+The recommended installation method is:
 
-- **Source distribution**: `autobahn-25.9.1.tar.gz`
-- **Pure Python 3 wheel**: `autobahn-25.9.1-py3-none-any.whl`
+```console
+python -m pip install autobahn
+```
 
-> **Note**: The pure Python wheel cannot include NVX (Native Vector Extensions) optimizations and will fall back to pure Python implementations. This provides maximum compatibility but slower performance compared to platform-specific wheels with native CFFI extensions.
-
-### Linux
-
-Available for x86_64 architecture with native CFFI extensions:
-
-- `autobahn-25.9.1-cp311-cp311-linux_x86_64.whl`
-- `autobahn-25.9.1-cp312-cp312-linux_x86_64.whl`
-- `autobahn-25.9.1-cp313-cp313-linux_x86_64.whl`
-- `autobahn-25.9.1-cp314-cp314-linux_x86_64.whl`
-- `autobahn-25.9.1-pp311-pypy311_pp73-linux_x86_64.whl`
-
-### macOS
-
-Available for Apple Silicon (ARM64) architecture:
-
-- `autobahn-25.9.1-cp312-cp312-macosx_15_0_arm64.whl`
-- `autobahn-25.9.1-cp313-cp313-macosx_15_0_arm64.whl`
-- `autobahn-25.9.1-cp314-cp314-macosx_11_0_arm64.whl`
-- `autobahn-25.9.1-pp311-pypy311_pp73-macosx_11_0_arm64.whl`
-
-### Windows
-
-Available for x86_64 (AMD64) architecture:
-
-- `autobahn-25.9.1-cp311-cp311-win_amd64.whl`
-- `autobahn-25.9.1-cp312-cp312-win_amd64.whl`
-- `autobahn-25.9.1-cp313-cp313-win_amd64.whl`
-- `autobahn-25.9.1-cp314-cp314-win_amd64.whl`
-- `autobahn-25.9.1-pp311-pypy311_pp73-win_amd64.whl`
-
-All wheels include native CFFI extensions for optimal performance and are available from [PyPI](https://pypi.org/project/autobahn/) and [GitHub Releases](https://github.com/crossbario/autobahn-python/releases).
+Pip will choose the best matching wheel for your Python implementation,
+operating system, and CPU architecture. See the
+[wheels inventory](https://autobahn.readthedocs.io/en/latest/wheels-inventory.html)
+for the supported wheel matrix and NVX acceleration notes.
 
 ## Extensions
 
@@ -270,9 +249,8 @@ All wheels include native CFFI extensions for optimal performance and are availa
 Autobahn runs on both Twisted and asyncio. To select the
 respective netoworking framework, install flavor:
 
-- `asyncio`: Install asyncio (when on Python 2, otherwise it's
-  included in the standard library already) and asyncio support
-  in Autobahn
+- `asyncio`: Backwards-compatible no-op. Asyncio is included in the
+  Python standard library for all supported Python versions.
 - `twisted`: Install Twisted and Twisted support in Autobahn
 
 ---
