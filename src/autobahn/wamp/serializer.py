@@ -776,13 +776,14 @@ _HAS_CBOR = False
 
 
 try:
+    from email.mime.text import MIMEText as _MIMEText
     from fractions import Fraction as _Fraction
 
     import cbor2
 except ImportError:
     pass
 else:
-    _CBOR_FRACTION_TYPE = _Fraction
+    _CBOR_STDLIB_TYPES = (_Fraction, _MIMEText)
     _HAS_CBOR = True
     _cbor_loads = cbor2.loads
     _cbor_dumps = cbor2.dumps
