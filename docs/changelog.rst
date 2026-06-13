@@ -10,9 +10,10 @@ Changelog
 
 **WAMP Serialization**
 
-* The WAMP ``ubjson`` serializer is now backed by ``bjdata`` (Binary JData) instead of the unmaintained, wheel-less ``py-ubjson``. ``py-ubjson`` is removed as a dependency, which fixes installation via wheels only (``pip install --only-binary :all:``) (#1849)
+* ``py-ubjson`` (unmaintained, sdist-only) is no longer an unconditional dependency. A base ``pip install autobahn`` — and the wheels-only / cross-arch case from #1849 (``pip download --only-binary :all: --platform ...``) — now resolves entirely from binary wheels (#1849)
+* The WAMP ``ubjson`` serializer is now backed by the maintained ``bjdata`` (Binary JData) package, provided as the OPTIONAL ``autobahn[serialization]`` extra (it also pulls in numpy), keeping both out of a minimal install (#1849)
+* ``bjdata`` is itself published sdist-only (no PyPI wheels) and builds an optional C extension at install time. On CPython that gives a native speedup; on PyPy set ``PYBJDATA_NO_EXTENSION=1`` for the JIT-friendly pure-Python path (this also installs without a C compiler / numpy headers). For wheels-only, cross-arch or no-compiler deployments, prefer the always-available ``cbor`` or ``msgpack`` binary serializers (#1849)
 * ⚠️ **Wire-level change to watch out for:** bjdata's octet-level encoding is NOT identical to the previous py-ubjson/UBJSON bytes (different integer markers, little-endian). The WAMP serializer id remains ``ubjson`` for transport negotiation. The ``wamp-proto`` UBJSON test vectors will be regenerated in a follow-up PR after this release; until then the ``ubjson`` serializer is excluded from the byte-vector conformance suite (round-trip and cross-serializer coverage retained) (#1849)
-* ``bjdata`` is an OPTIONAL dependency (it pulls in numpy): the ``ubjson`` serializer now requires the ``autobahn[serialization]`` extra, keeping numpy out of a minimal install. On PyPy, set ``PYBJDATA_NO_EXTENSION=1`` to use the JIT-friendly pure-Python path (#1849)
 
 **FlatBuffers**
 

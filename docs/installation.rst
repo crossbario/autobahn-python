@@ -152,7 +152,7 @@ Install Variants
    * - ``scram``
      - Install WAMP-SCRAM authentication packages.
    * - ``serialization``
-     - Backwards-compatible no-op; WAMP serializers are included by default.
+     - Install ``bjdata`` to enable the optional UBJSON WAMP serializer (pulls in numpy; published sdist-only, builds a C extension - set ``PYBJDATA_NO_EXTENSION=1`` to skip it / on PyPy). JSON, MessagePack, CBOR and FlatBuffers are always available without this extra.
    * - ``nvx``
      - Backwards-compatible no-op; NVX acceleration is included in binary wheels where supported.
    * - ``all``

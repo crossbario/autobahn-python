@@ -910,17 +910,20 @@ if _HAS_CBOR:
 
 
 # The WAMP "ubjson" serializer is backed by the `bjdata` package (Binary JData),
-# a maintained, wheel-shipping successor of the (unmaintained, wheel-less)
-# `py-ubjson` package.
+# a maintained successor of the (unmaintained) `py-ubjson` package.
 # https://pypi.org/project/bjdata/  https://github.com/NeuroJSON/pybj
+#
+# `bjdata` is an OPTIONAL dependency: install it via the `autobahn[serialization]`
+# extra. Like py-ubjson, bjdata is published as an sdist only (no binary wheels on
+# PyPI) and builds an optional C extension at install time (and pulls in numpy).
+# On CPython the C extension gives a native speedup; on PyPy the JIT-compiled
+# pure-Python path is faster, so set PYBJDATA_NO_EXTENSION=1 there (this also lets
+# the package install without a C compiler / numpy headers). For wheels-only or
+# cross-arch deployments, prefer the always-available `cbor`/`msgpack` serializers.
 #
 # NOTE: bjdata's on-the-wire (octet-level) encoding is NOT identical to the older
 # py-ubjson/UBJSON bytes (e.g. unsigned-integer markers, little-endian). The WAMP
 # serializer id remains "ubjson" for transport negotiation. See the changelog.
-#
-# `bjdata` is an OPTIONAL dependency (it pulls in numpy): install it via the
-# `autobahn[serialization]` extra. On PyPy, set PYBJDATA_NO_EXTENSION=1 to use the
-# JIT-friendly pure-Python path instead of the C extension.
 try:
     import bjdata as ubjson
 except ImportError:
