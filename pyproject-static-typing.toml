@@ -1,0 +1,55 @@
+###############################################################################
+# Fully statically typed Python => CI job mypy-strict-check
+#
+# - this is checked via both pyright and mypy
+# - ty is sadly not quite yet there (https://docs.astral.sh/ty/reference/typing-faq/#does-ty-have-a-strict-mode)
+#
+[tool.pyright]
+strict = [
+#    "src/autobahn/wamp/request.py",
+#    "src/autobahn/wamp/exception.py",
+#    "src/autobahn/wamp/uri.py",
+    "src/autobahn/wamp/message.py",
+]
+
+[tool.mypy]
+mypy_path = "src"
+
+# "strict" is global-only and can't be used in per-module overrides
+# https://github.com/python/mypy/issues/11401
+strict = false
+
+# some flags are global-only and can't be used in per-module overrides
+warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+
+# this is the "whitelist" of sources/modules which _are_ statically typed:
+module = [
+#    "autobahn.wamp.request",
+#    "autobahn.wamp.exception",
+#    "autobahn.wamp.uri",
+    "autobahn.wamp.message",
+]
+
+strict_equality = true
+warn_unused_ignores = true        # clean up technical debt
+warn_return_any = true            # don't let functions return Any
+warn_unreachable = true           # catch dead code from type narrowing
+check_untyped_defs = true         # type check inside untyped functions
+no_implicit_reexport = true
+no_implicit_optional = true       # no "x: str = None"
+disallow_untyped_defs = true      # all functions must be typed
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+disallow_any_generics = true      # no bare list, dict, etc.: List[Any] -> List[str]
+disallow_subclassing_any = true   # can't subclass untyped imports
+disallow_any_unimported = true    # Any from missing stubs → error
+disallow_any_explicit = true      # forbid explicit Any annotations
+disallow_any_decorated = true     # Any in decorated function signatures
+
+# The Killer Flag for WASM:
+disallow_any_expr = true          # ANY use of Any-typed expression is an error
+
+#
+###############################################################################
