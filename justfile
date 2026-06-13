@@ -1019,6 +1019,34 @@ check-serializers venv="" expect="cbor,flatbuffers,json,msgpack,ubjson": (instal
         echo "✅ Serializers check completed"
     fi
 
+# Check the vendored FlatBuffers version is in sync with zlmdb (data-in-transit
+# vs data-at-rest; both are used together by Crossbar.io). No-op if zlmdb is not
+# installed. Usage: `just check-flatbuffers-sync cpy314`
+check-flatbuffers-sync venv="": (install venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Checking autobahn<->zlmdb FlatBuffers version sync in ${VENV_NAME}..."
+    TMP_SCRIPT="/tmp/check_fb_sync_$$.py"
+    {
+        echo "import autobahn"
+        echo "from autobahn import flatbuffers"
+        echo "try:"
+        echo "    import zlmdb.flatbuffers  # noqa: F401"
+        echo "except ImportError:"
+        echo "    print('  autobahn FlatBuffers version:', flatbuffers.version())"
+        echo "    print('  zlmdb not installed -> skipping cross-project sync check')"
+        echo "    raise SystemExit(0)"
+        echo "version = autobahn.check_zlmdb_flatbuffers_version_in_sync()"
+        echo "print('  in sync: autobahn == zlmdb FlatBuffers version', version)"
+    } > "${TMP_SCRIPT}"
+    "${VENV_PYTHON}" "${TMP_SCRIPT}"
+    rm -f "${TMP_SCRIPT}"
+
 # Run all checks in single environment (usage: `just check cpy314`)
 check venv="": (check-compressors venv) (check-serializers venv) (check-format venv) (check-typing venv) (check-coverage-combined venv)
 
@@ -1927,6 +1955,41 @@ build-fbs venv="": (install-tools venv)
     echo "Auto-formatting code using ruff after flatc code generation .."
     "${VENV_PATH}/bin/ruff" format ./src/autobahn/wamp/gen/
     "${VENV_PATH}/bin/ruff" check --fix ./src/autobahn/wamp/gen/
+
+# Regenerate committed binary schemas (reflection.bfbs, wamp.bfbs) with a
+# version-matched flatc built from deps/flatbuffers. These artifacts are
+# committed and shipped as-is, so the package build never runs flatc (this is
+# what makes cross-compilation work). Run this after bumping deps/flatbuffers.
+generate-reflection:
+    #!/usr/bin/env bash
+    set -e
+    FB_DIR="deps/flatbuffers"
+    FLATC="${FB_DIR}/build/flatc"
+
+    # Build a version-matched flatc from the submodule if not already present
+    if [ ! -x "${FLATC}" ]; then
+        echo "==> Building version-matched flatc from ${FB_DIR} ..."
+        rm -rf "${FB_DIR}/build"
+        mkdir -p "${FB_DIR}/build"
+        (cd "${FB_DIR}/build" && cmake .. -DCMAKE_BUILD_TYPE=Release \
+            -DFLATBUFFERS_BUILD_TESTS=OFF -DFLATBUFFERS_BUILD_FLATLIB=OFF \
+            -DFLATBUFFERS_BUILD_FLATHASH=OFF -DFLATBUFFERS_BUILD_GRPCTEST=OFF \
+            -DFLATBUFFERS_BUILD_SHAREDLIB=OFF >/dev/null)
+        cmake --build "${FB_DIR}/build" --config Release --target flatc -j"$(nproc)" >/dev/null
+    fi
+    echo "==> Using $(${FLATC} --version)"
+
+    # reflection.bfbs (binary schema for runtime introspection)
+    "${FLATC}" --binary --schema --bfbs-comments --bfbs-builtins \
+        -o ./src/autobahn/flatbuffers/ \
+        "${FB_DIR}/reflection/reflection.fbs"
+    echo "--> Generated src/autobahn/flatbuffers/reflection.bfbs"
+
+    # wamp.bfbs (WAMP protocol binary schema)
+    "${FLATC}" --binary --schema --bfbs-comments --bfbs-builtins \
+        -o ./src/autobahn/wamp/flatbuffers/ \
+        ./src/autobahn/wamp/flatbuffers/wamp.fbs
+    echo "--> Generated src/autobahn/wamp/flatbuffers/wamp.bfbs"
 
 # -----------------------------------------------------------------------------
 # -- File Management Utilities

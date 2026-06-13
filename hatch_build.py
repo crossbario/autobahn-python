@@ -4,7 +4,14 @@ Hatchling custom build hook for CFFI extension modules and flatc compiler.
 This builds:
 1. The NVX (Native Vector Extensions) for WebSocket frame masking and UTF-8 validation
 2. The FlatBuffers compiler (flatc) from deps/flatbuffers
-3. The reflection.bfbs binary schema for runtime introspection
+
+Note: the FlatBuffers binary schemas (``reflection.bfbs`` and the WAMP
+``wamp.bfbs``) are NOT generated here. They are committed to the source tree
+and shipped as-is, so that building the package never requires *running*
+flatc. This is what makes cross-compilation (e.g. Buildroot/Yocto/aarch64
+from the PyPI sdist) work: a flatc built for the target architecture cannot
+execute on the build host to emit the schemas. Regenerate the committed
+artifacts offline with ``just build-fbs`` / ``just generate-reflection``.
 
 See: https://hatch.pypa.io/latest/plugins/build-hook/custom/
 """
@@ -49,14 +56,12 @@ class CFfiBuildHook(BuildHookInterface):
         else:
             print("AUTOBAHN_USE_NVX is disabled, skipping CFFI build")
 
-        # Build flatc compiler
+        # Build and bundle the flatc compiler (developer convenience). The
+        # binary FlatBuffers schemas (reflection.bfbs, wamp.bfbs) are NOT
+        # generated here: they are committed to the source tree and shipped
+        # as-is, so a package build never needs to *run* flatc (required for
+        # cross-compilation - see module docstring).
         built_flatc = self._build_flatc(build_data)
-
-        # Generate reflection.bfbs using the built flatc
-        if built_flatc:
-            self._generate_reflection_bfbs(build_data)
-            # Generate WAMP schema .bfbs files
-            self._generate_wamp_bfbs(build_data)
 
         # If we built any extensions, mark this as a platform-specific wheel
         if built_nvx or built_flatc:
@@ -97,8 +102,7 @@ class CFfiBuildHook(BuildHookInterface):
                 # Load the module directly from file (like CFFI's setuptools integration)
                 # This avoids triggering package-level imports
                 spec = importlib.util.spec_from_file_location(
-                    f"_cffi_build_{module_file}",
-                    module_path
+                    f"_cffi_build_{module_file}", module_path
                 )
                 module = importlib.util.module_from_spec(spec)
 
@@ -135,12 +139,15 @@ class CFfiBuildHook(BuildHookInterface):
                     # Place at wheel root for top-level import
                     dest_path = artifact.name
                     build_data["force_include"][src_file] = dest_path
-                    print(f"  -> Added artifact: {artifact.name} -> {dest_path} (wheel root)")
+                    print(
+                        f"  -> Added artifact: {artifact.name} -> {dest_path} (wheel root)"
+                    )
                     built_any = True
 
             except Exception as e:
                 print(f"Warning: Could not build {module_file}: {e}")
                 import traceback
+
                 traceback.print_exc()
 
         return built_any
@@ -298,125 +305,7 @@ class CFfiBuildHook(BuildHookInterface):
         build_data["force_include"][src_file] = dest_path
         print(f"  -> Added to wheel: {dest_path}")
 
-        # Store flatc path for later use (reflection.bfbs generation)
-        self._flatc_path = flatc_dest
         return True
-
-    def _generate_reflection_bfbs(self, build_data):
-        """Generate reflection.bfbs using the built flatc.
-
-        This creates the binary FlatBuffers schema that allows runtime
-        schema introspection.
-        """
-        print("\n" + "=" * 70)
-        print("Generating reflection.bfbs")
-        print("=" * 70)
-
-        if not hasattr(self, "_flatc_path") or not self._flatc_path.exists():
-            print("WARNING: flatc not available, skipping reflection.bfbs generation")
-            return False
-
-        flatbuffers_dir = Path(self.root) / "deps" / "flatbuffers"
-        reflection_fbs = flatbuffers_dir / "reflection" / "reflection.fbs"
-        output_dir = Path(self.root) / "src" / "autobahn" / "flatbuffers"
-
-        if not reflection_fbs.exists():
-            print(f"WARNING: {reflection_fbs} not found")
-            return False
-
-        # Generate reflection.bfbs
-        result = subprocess.run(
-            [
-                str(self._flatc_path),
-                "--binary",
-                "--schema",
-                "--bfbs-comments",
-                "--bfbs-builtins",
-                "-o",
-                str(output_dir),
-                str(reflection_fbs),
-            ],
-            capture_output=True,
-            text=True,
-        )
-
-        if result.returncode != 0:
-            print(f"ERROR: flatc failed:\n{result.stderr}")
-            return False
-
-        reflection_bfbs = output_dir / "reflection.bfbs"
-        if reflection_bfbs.exists():
-            print(f"  -> Generated: {reflection_bfbs}")
-
-            # Add to wheel
-            src_file = str(reflection_bfbs)
-            dest_path = "autobahn/flatbuffers/reflection.bfbs"
-            build_data["force_include"][src_file] = dest_path
-            print(f"  -> Added to wheel: {dest_path}")
-            return True
-        else:
-            print("WARNING: reflection.bfbs not generated")
-            return False
-
-    def _generate_wamp_bfbs(self, build_data):
-        """Generate .bfbs files for WAMP FlatBuffers schemas.
-
-        This creates binary FlatBuffers schemas for the WAMP protocol schemas
-        located in src/autobahn/wamp/flatbuffers/.
-        """
-        print("\n" + "=" * 70)
-        print("Generating WAMP schema .bfbs files")
-        print("=" * 70)
-
-        if not hasattr(self, "_flatc_path") or not self._flatc_path.exists():
-            print("WARNING: flatc not available, skipping WAMP .bfbs generation")
-            return False
-
-        wamp_fbs_dir = Path(self.root) / "src" / "autobahn" / "wamp" / "flatbuffers"
-
-        if not wamp_fbs_dir.exists():
-            print(f"WARNING: {wamp_fbs_dir} not found")
-            return False
-
-        # The main schema file that includes all others
-        wamp_fbs = wamp_fbs_dir / "wamp.fbs"
-        if not wamp_fbs.exists():
-            print(f"WARNING: {wamp_fbs} not found")
-            return False
-
-        # Generate wamp.bfbs (which includes all dependent schemas)
-        result = subprocess.run(
-            [
-                str(self._flatc_path),
-                "--binary",
-                "--schema",
-                "--bfbs-comments",
-                "--bfbs-builtins",
-                "-o",
-                str(wamp_fbs_dir),
-                str(wamp_fbs),
-            ],
-            capture_output=True,
-            text=True,
-        )
-
-        if result.returncode != 0:
-            print(f"ERROR: flatc failed:\n{result.stderr}")
-            return False
-
-        wamp_bfbs = wamp_fbs_dir / "wamp.bfbs"
-        if wamp_bfbs.exists():
-            print(f"  -> Generated: {wamp_bfbs}")
-
-            # Add to wheel
-            src_file = str(wamp_bfbs)
-            dest_path = "autobahn/wamp/flatbuffers/wamp.bfbs"
-            build_data["force_include"][src_file] = dest_path
-            print(f"  -> Added to wheel: {dest_path}")
-            return True
-        else:
-            print("WARNING: wamp.bfbs not generated")
-            return False
 
     def _update_flatbuffers_git_version(self):
         """

@@ -107,7 +107,9 @@ def version() -> tuple[int, int, int, int | None, str | None]:
 EOF
 
 # 6. Capture current git version from submodule
-if [ -d deps/flatbuffers/.git ]; then
+# Note: in a git submodule, ".git" is a FILE (gitlink), not a directory,
+# so test with -e (exists) rather than -d (directory).
+if [ -e deps/flatbuffers/.git ]; then
     GIT_VERSION=$(cd deps/flatbuffers && git describe --tags --always 2>/dev/null || echo "unknown")
     sed -i "s/__git_version__ = \"unknown\"/__git_version__ = \"${GIT_VERSION}\"/" ./src/autobahn/flatbuffers/_git_version.py
     echo "  Git version captured: ${GIT_VERSION}"

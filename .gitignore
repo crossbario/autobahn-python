@@ -48,11 +48,11 @@ src/_nvx_*.c
 # Build artifact: flatc binary (compiled from deps/flatbuffers during wheel build)
 src/autobahn/_flatc/bin/
 
-# Build artifact: reflection.bfbs (generated from reflection.fbs during wheel build)
-src/autobahn/flatbuffers/reflection.bfbs
-
-# Build artifact: wamp.bfbs (generated from wamp.fbs during wheel build)
-src/autobahn/wamp/flatbuffers/wamp.bfbs
+# NOTE: the binary FlatBuffers schemas reflection.bfbs and wamp.bfbs are NOT
+# ignored: they are committed to the source tree and shipped as-is, so that
+# building the package never requires running flatc (required for cross-builds,
+# e.g. Buildroot/Yocto/aarch64). Regenerate them with `just build-fbs` /
+# `just generate-reflection`.
 
 .wheels
 get-pip.py
