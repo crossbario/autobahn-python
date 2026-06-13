@@ -363,7 +363,7 @@ The serializer dependencies are optimized for both **CPython** and **PyPy**:
 | **msgpack** | Binary wheel (C extension) | u-msgpack-python (pure Python) | Native + Universal | PyPy JIT makes pure Python faster than C |
 | **ujson** | Binary wheel | Binary wheel | Native | Available for both implementations |
 | **cbor2** | Binary wheel | Pure Python fallback | Native + Universal | Binary wheels + py3-none-any |
-| **ubjson** *(optional)* | C ext (from sdist) | Pure Python | Source only — no wheels | Optional `autobahn[serialization]` extra (bjdata, pulls numpy); set `PYBJDATA_NO_EXTENSION=1` to skip the C build (recommended on PyPy) |
+| **ubjson** *(optional)* | C ext (from sdist) | ❌ n/a (CPython only) | Source only — no wheels | Optional `autobahn[serialization]` extra (bjdata, pulls numpy). CPython-only: bjdata can't install on PyPy ([NeuroJSON/pybj#6](https://github.com/NeuroJSON/pybj/issues/6)); on PyPy use cbor/msgpack. On CPython without a compiler set `PYBJDATA_NO_EXTENSION=1` |
 | **flatbuffers** | Vendored | Vendored | Included | Always available, no external dependency |
 
 **Key Design Principles:**
@@ -437,7 +437,7 @@ All serializers **except UBJSON** are included by default in the base installati
 | **msgpack** | MessagePack serialization | msgpack (binary wheel) | u-msgpack-python (pure Python) | ✅ Excellent | 50+ wheels for CPython; PyPy JIT optimized |
 | **ujson** | Fast JSON (optional) | Binary wheel | Binary wheel | ✅ Excellent | 30+ wheels; both implementations |
 | **cbor2** | CBOR serialization (RFC 8949) | Binary wheel | Pure Python fallback | ✅ Excellent | 30+ binary wheels + universal fallback |
-| **bjdata** | UBJSON serialization *(optional)* | C ext (from sdist) | Pure Python | ⚠️ sdist only — no wheels | `autobahn[serialization]` extra; pulls numpy; set `PYBJDATA_NO_EXTENSION=1` to skip the C build (recommended on PyPy). For wheels-only/cross-arch installs prefer cbor/msgpack |
+| **bjdata** | UBJSON serialization *(optional)* | C ext (from sdist) | ❌ n/a (CPython only) | ⚠️ sdist only — no wheels | `autobahn[serialization]` extra; pulls numpy. CPython-only: can't install on PyPy ([NeuroJSON/pybj#6](https://github.com/NeuroJSON/pybj/issues/6)). On CPython without a compiler set `PYBJDATA_NO_EXTENSION=1`. For wheels-only/cross-arch/PyPy installs prefer cbor/msgpack |
 | **flatbuffers** | Google Flatbuffers | **Vendored** | **Vendored** | ✅ Perfect | Included in our wheel, zero external dependency |
 
 ### Optional: Twisted Framework

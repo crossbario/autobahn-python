@@ -746,10 +746,6 @@ check-coverage-twisted venv="" use_nvx="": (install-tools venv) (install-dev ven
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
 
-    # On PyPy, use bjdata's pure-Python path (JIT-friendly; avoids the
-    # numpy-ABI-fragile C extension). See autobahn #1849.
-    if [[ "${VENV_NAME}" == pypy* ]]; then export PYBJDATA_NO_EXTENSION=1; fi
-
     # Handle NVX configuration
     USE_NVX="{{ use_nvx }}"
     if [ "${USE_NVX}" = "1" ]; then
@@ -1097,10 +1093,6 @@ test-twisted venv="" use_nvx="": (install-tools venv) (install-dev venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
 
-    # On PyPy, use bjdata's pure-Python path (JIT-friendly; avoids the
-    # numpy-ABI-fragile C extension). See autobahn #1849.
-    if [[ "${VENV_NAME}" == pypy* ]]; then export PYBJDATA_NO_EXTENSION=1; fi
-
     # Handle NVX configuration
     USE_NVX="{{ use_nvx }}"
     if [ "${USE_NVX}" = "1" ]; then
@@ -1142,10 +1134,6 @@ test-asyncio venv="" use_nvx="": (install-tools venv) (install-dev venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
 
-    # On PyPy, use bjdata's pure-Python path (JIT-friendly; avoids the
-    # numpy-ABI-fragile C extension). See autobahn #1849.
-    if [[ "${VENV_NAME}" == pypy* ]]; then export PYBJDATA_NO_EXTENSION=1; fi
-
     # Handle NVX configuration
     USE_NVX="{{ use_nvx }}"
     if [ "${USE_NVX}" = "1" ]; then
@@ -1173,10 +1161,6 @@ test-serdes venv="": (install-tools venv) (install-dev venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
-
-    # On PyPy, use bjdata's pure-Python path (JIT-friendly; avoids the
-    # numpy-ABI-fragile C extension). See autobahn #1849.
-    if [[ "${VENV_NAME}" == pypy* ]]; then export PYBJDATA_NO_EXTENSION=1; fi
 
     echo "==> Running WAMP message serdes conformance tests in ${VENV_NAME}..."
     echo "==> Test vectors loaded from: wamp-proto/testsuite/"

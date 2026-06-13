@@ -913,13 +913,14 @@ if _HAS_CBOR:
 # a maintained successor of the (unmaintained) `py-ubjson` package.
 # https://pypi.org/project/bjdata/  https://github.com/NeuroJSON/pybj
 #
-# `bjdata` is an OPTIONAL dependency: install it via the `autobahn[serialization]`
-# extra. Like py-ubjson, bjdata is published as an sdist only (no binary wheels on
-# PyPI) and builds an optional C extension at install time (and pulls in numpy).
-# On CPython the C extension gives a native speedup; on PyPy the JIT-compiled
-# pure-Python path is faster, so set PYBJDATA_NO_EXTENSION=1 there (this also lets
-# the package install without a C compiler / numpy headers). For wheels-only or
-# cross-arch deployments, prefer the always-available `cbor`/`msgpack` serializers.
+# `bjdata` is an OPTIONAL, CPython-only dependency: install it via the
+# `autobahn[serialization]` extra. It is published as an sdist only (no PyPI
+# wheels) and builds a C extension at install time (and pulls in numpy); on
+# CPython without a compiler, set PYBJDATA_NO_EXTENSION=1 for a pure-Python build.
+# bjdata cannot currently be installed on PyPy (its sdist build pulls an
+# unbuildable numpy - see NeuroJSON/pybj#6), so the UBJSON serializer is
+# unavailable on PyPy; use the always-available `cbor`/`msgpack` serializers there
+# (and generally for wheels-only / cross-arch deployments).
 #
 # NOTE: bjdata's on-the-wire (octet-level) encoding is NOT identical to the older
 # py-ubjson/UBJSON bytes (e.g. unsigned-integer markers, little-endian). The WAMP

@@ -87,7 +87,10 @@ compress = [
 # in numpy, which we keep out of a minimal autobahn install.
 # On PyPy, set PYBJDATA_NO_EXTENSION=1 to use the JIT-friendly pure-Python path.
 serialization = [
-    "bjdata>=0.6.0",
+    # CPython-only: on PyPy, bjdata's sdist build pulls an unbuildable numpy and
+    # cannot be pip-installed (upstream NeuroJSON/pybj#6). On PyPy the UBJSON
+    # serializer is therefore unavailable - use cbor/msgpack instead.
+    "bjdata>=0.6.0; platform_python_implementation == 'CPython'",
 ]
 
 # TLS transport encryption, WAMP-cryptosign end-to-end encryption and authentication

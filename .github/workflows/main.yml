@@ -190,10 +190,6 @@ jobs:
           # Create output directory for test results
           mkdir -p test-results/serdes-${{ matrix.python-env }}
 
-          # On PyPy, use bjdata's pure-Python path (JIT-friendly; avoids the
-          # numpy-ABI-fragile C extension). See autobahn #1849.
-          if [[ "${{ matrix.python-env }}" == pypy* ]]; then export PYBJDATA_NO_EXTENSION=1; fi
-
           # Run tests and generate reports
           VENV_PYTHON=$(just --quiet _get-venv-python ${{ matrix.python-env }})
           ${VENV_PYTHON} -m pytest -v \
