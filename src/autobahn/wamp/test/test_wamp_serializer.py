@@ -229,9 +229,11 @@ def create_serializers(decimal_support=False):
         _serializers.append(serializer.MsgPackSerializer())
         _serializers.append(serializer.MsgPackSerializer(batched=True))
 
-        # roundtrip error
-        _serializers.append(serializer.UBJSONSerializer())
-        _serializers.append(serializer.UBJSONSerializer(batched=True))
+        # UBJSON (bjdata-backed) is optional: only present when the
+        # `autobahn[serialization]` extra (bjdata) is installed.
+        if hasattr(serializer, "UBJSONSerializer"):
+            _serializers.append(serializer.UBJSONSerializer())
+            _serializers.append(serializer.UBJSONSerializer(batched=True))
 
     # FIXME: implement full FlatBuffers serializer for WAMP
     # WAMP-FlatBuffers currently only supports Python 3

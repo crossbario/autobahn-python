@@ -8,6 +8,12 @@ Changelog
 26.6.1
 ------
 
+**WAMP Serialization**
+
+* The WAMP ``ubjson`` serializer is now backed by ``bjdata`` (Binary JData) instead of the unmaintained, wheel-less ``py-ubjson``. ``py-ubjson`` is removed as a dependency, which fixes installation via wheels only (``pip install --only-binary :all:``) (#1849)
+* ⚠️ **Wire-level change to watch out for:** bjdata's octet-level encoding is NOT identical to the previous py-ubjson/UBJSON bytes (different integer markers, little-endian). The WAMP serializer id remains ``ubjson`` for transport negotiation. The ``wamp-proto`` UBJSON test vectors will be regenerated in a follow-up PR after this release; until then the ``ubjson`` serializer is excluded from the byte-vector conformance suite (round-trip and cross-serializer coverage retained) (#1849)
+* ``bjdata`` is an OPTIONAL dependency (it pulls in numpy): the ``ubjson`` serializer now requires the ``autobahn[serialization]`` extra, keeping numpy out of a minimal install. On PyPy, set ``PYBJDATA_NO_EXTENSION=1`` to use the JIT-friendly pure-Python path (#1849)
+
 **FlatBuffers**
 
 * Bump vendored FlatBuffers from v25.9.23 to v25.12.19, restoring the version-sync with zlmdb 26.6.1 (#1853)
