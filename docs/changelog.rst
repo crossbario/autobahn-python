@@ -5,6 +5,21 @@
 Changelog
 =========
 
+26.6.1
+------
+
+**FlatBuffers**
+
+* Bump vendored FlatBuffers from v25.9.23 to v25.12.19, restoring the version-sync with zlmdb 26.6.1 (#1853)
+* Commit the binary schemas (``reflection.bfbs``, ``wamp.bfbs``) to the source tree and ship them as-is; the package build no longer runs ``flatc``, which fixes cross-compilation from the PyPI sdist (e.g. Buildroot/Yocto/aarch64) (#1853)
+* Add ``just generate-reflection`` to regenerate the committed binary schemas with a version-matched ``flatc`` built from ``deps/flatbuffers`` (#1853)
+* Add ``just check-flatbuffers-sync`` and a unit test exercising ``check_zlmdb_flatbuffers_version_in_sync()`` (#1853)
+
+**Build & CI/CD**
+
+* Bump shared ``.ai`` (wamp-ai) and ``.cicd`` (wamp-cicd) submodules to match zlmdb exactly (#1853)
+* Fix ``scripts/update_flatbuffers.sh`` git-version capture for submodule checkouts (``.git`` is a file, not a directory) (#1853)
+
 25.12.2
 -------
 
