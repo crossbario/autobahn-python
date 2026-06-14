@@ -12,6 +12,20 @@ from autobahn.wamp.serializer import create_transport_serializer, SERID_TO_OBJSE
 from .utils import load_test_vector, get_serializer_ids
 
 
+# The WAMP "ubjson" serializer is backed by bjdata (autobahn #1849). The
+# wamp-proto canonical vectors (via the .proto submodule) now carry BOTH the
+# legacy py-ubjson bytes and the new bjdata/BJData bytes for "ubjson" (each
+# tagged with a "note"), matched with "at least one must match" semantics. The
+# deserialize-direction tests use utils.require_decodable() to skip byte
+# variants this backend cannot decode (the two encodings are not mutually
+# decodable), so no serializer needs to be excluded from the byte-vector suite.
+_VECTOR_EXCLUDED_SERIALIZERS = ()
+
+
+def _conformance_serializer_ids():
+    return [s for s in get_serializer_ids() if s not in _VECTOR_EXCLUDED_SERIALIZERS]
+
+
 @pytest.fixture(scope="session")
 def wamp_test_vector_publish():
     """Load PUBLISH test vector"""
@@ -48,12 +62,12 @@ def pytest_generate_tests(metafunc):
     This generates test parameters for serializer_id based on available serializers.
     """
     if "serializer_id" in metafunc.fixturenames:
-        serializer_ids = get_serializer_ids()
+        serializer_ids = _conformance_serializer_ids()
         metafunc.parametrize("serializer_id", serializer_ids)
 
     if "serializer_pair" in metafunc.fixturenames:
         # Generate all unique pairs of serializers for cross-serializer tests
-        serializer_ids = get_serializer_ids()
+        serializer_ids = _conformance_serializer_ids()
         pairs = []
         for i, ser1 in enumerate(serializer_ids):
             for ser2 in serializer_ids[i + 1 :]:

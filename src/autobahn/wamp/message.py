@@ -774,9 +774,9 @@ class MessageWithAppPayload:
             # msgpack supports memoryview (zero-copy)
             return msgpack.unpackb(data_bytes)
         elif ser_id == "ubjson":
-            import ubjson
+            # The WAMP "ubjson" serializer is backed by bjdata (see serializer.py)
+            import bjdata as ubjson
 
-            # ubjson supports memoryview (zero-copy)
             return ubjson.loadb(data_bytes)
         else:
             # Fallback to CBOR for unknown serializers

@@ -343,14 +343,14 @@ masking) and UTF-8 validation.
 
 ### WAMP Serializers
 
-**As of v25.11.1, all WAMP serializers are included by default** - batteries included!
+**The JSON, MessagePack, CBOR and FlatBuffers serializers are included by default** - batteries included! UBJSON is available via the optional `autobahn[serialization]` extra.
 
-Autobahn|Python now ships with full support for all WAMP serializers out-of-the-box:
+Autobahn|Python ships with the following WAMP serializers:
 
 - **JSON** (standard library) - always available
 - **MessagePack** - high-performance binary serialization
 - **CBOR** - IETF standard binary serialization (RFC 8949)
-- **UBJSON** - Universal Binary JSON
+- **UBJSON** - Universal Binary JSON *(optional: `pip install autobahn[serialization]`)*
 - **Flatbuffers** - Google's zero-copy serialization (vendored)
 
 #### Architecture & Performance
@@ -363,12 +363,12 @@ The serializer dependencies are optimized for both **CPython** and **PyPy**:
 | **msgpack** | Binary wheel (C extension) | u-msgpack-python (pure Python) | Native + Universal | PyPy JIT makes pure Python faster than C |
 | **ujson** | Binary wheel | Binary wheel | Native | Available for both implementations |
 | **cbor2** | Binary wheel | Pure Python fallback | Native + Universal | Binary wheels + py3-none-any |
-| **ubjson** | Pure Python | Pure Python | Source | Set `PYUBJSON_NO_EXTENSION=1` to skip C build |
+| **ubjson** *(optional)* | C ext (from sdist) | ❌ n/a (CPython only) | Source only — no wheels | Optional `autobahn[serialization]` extra (bjdata, pulls numpy). CPython-only: bjdata can't install on PyPy ([NeuroJSON/pybj#6](https://github.com/NeuroJSON/pybj/issues/6)); on PyPy use cbor/msgpack. On CPython without a compiler set `PYBJDATA_NO_EXTENSION=1` |
 | **flatbuffers** | Vendored | Vendored | Included | Always available, no external dependency |
 
 **Key Design Principles:**
 
-1. **Batteries Included**: All serializers available without extra install steps
+1. **Batteries Included**: Core serializers (JSON, MessagePack, CBOR, FlatBuffers) available without extra install steps; UBJSON via the optional `autobahn[serialization]` extra
 2. **PyPy Optimization**: Pure Python implementations leverage PyPy's JIT for superior performance
 3. **Binary Wheels**: Native wheels for all major platforms (Linux x86_64/ARM64, macOS x86_64/ARM64, Windows x86_64)
 4. **Zero System Pollution**: All dependencies install cleanly via wheels or pure Python
@@ -429,7 +429,7 @@ All dependencies follow these design principles:
 
 ### WAMP Serializers (Batteries Included)
 
-All serializers are now **included by default** in the base installation:
+All serializers **except UBJSON** are included by default in the base installation; UBJSON is an optional extra (`pip install autobahn[serialization]`):
 
 | Serializer | Purpose | CPython | PyPy | Wheel Coverage | Notes |
 |------------|---------|---------|------|----------------|-------|
@@ -437,7 +437,7 @@ All serializers are now **included by default** in the base installation:
 | **msgpack** | MessagePack serialization | msgpack (binary wheel) | u-msgpack-python (pure Python) | ✅ Excellent | 50+ wheels for CPython; PyPy JIT optimized |
 | **ujson** | Fast JSON (optional) | Binary wheel | Binary wheel | ✅ Excellent | 30+ wheels; both implementations |
 | **cbor2** | CBOR serialization (RFC 8949) | Binary wheel | Pure Python fallback | ✅ Excellent | 30+ binary wheels + universal fallback |
-| **py-ubjson** | UBJSON serialization | Pure Python | Pure Python | ✅ Good | Optional C extension (can skip with `PYUBJSON_NO_EXTENSION=1`) |
+| **bjdata** | UBJSON serialization *(optional)* | C ext (from sdist) | ❌ n/a (CPython only) | ⚠️ sdist only — no wheels | `autobahn[serialization]` extra; pulls numpy. CPython-only: can't install on PyPy ([NeuroJSON/pybj#6](https://github.com/NeuroJSON/pybj/issues/6)). On CPython without a compiler set `PYBJDATA_NO_EXTENSION=1`. For wheels-only/cross-arch/PyPy installs prefer cbor/msgpack |
 | **flatbuffers** | Google Flatbuffers | **Vendored** | **Vendored** | ✅ Perfect | Included in our wheel, zero external dependency |
 
 ### Optional: Twisted Framework

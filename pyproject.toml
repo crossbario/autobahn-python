@@ -52,7 +52,10 @@ dependencies = [
     "u-msgpack-python>=2.1; platform_python_implementation != 'CPython'",
     "ujson>=4.0.2",  # Binary wheels for both CPython and PyPy
     "cbor2>=5.2.0",  # Binary wheels + pure Python fallback
-    "py-ubjson>=0.16.1",  # Pure Python implementation (set PYUBJSON_NO_EXTENSION=1 to skip C extension build)
+    # NOTE: the WAMP "ubjson" serializer (bjdata) is an OPTIONAL extra, NOT a base
+    # dependency: bjdata pulls in numpy, which we don't want in a minimal install.
+    # See the [serialization] extra below. This also fixes #1849 (the old, wheel-less
+    # py-ubjson made `pip install --only-binary :all:` fail).
     # flatbuffers is vendored - no external dependency needed
 ]
 
@@ -78,9 +81,17 @@ compress = [
     # Users who need snappy: pip install python-snappy
 ]
 
-# Backwards compatibility - serialization now included by default in base install
-# All WAMP serializers (JSON, MessagePack, CBOR, UBJSON, Flatbuffers) are always available
-serialization = []
+# Optional binary-JSON ("ubjson") WAMP serializer, backed by bjdata.
+# JSON, MessagePack, CBOR and (vendored) FlatBuffers are always available in the
+# base install; the "ubjson" serializer requires this extra because bjdata pulls
+# in numpy, which we keep out of a minimal autobahn install.
+# On PyPy, set PYBJDATA_NO_EXTENSION=1 to use the JIT-friendly pure-Python path.
+serialization = [
+    # CPython-only: on PyPy, bjdata's sdist build pulls an unbuildable numpy and
+    # cannot be pip-installed (upstream NeuroJSON/pybj#6). On PyPy the UBJSON
+    # serializer is therefore unavailable - use cbor/msgpack instead.
+    "bjdata>=0.6.0; platform_python_implementation == 'CPython'",
+]
 
 # TLS transport encryption, WAMP-cryptosign end-to-end encryption and authentication
 encryption = [
