@@ -188,6 +188,63 @@ def matches_any_byte_representation(
     return False
 
 
+def require_decodable(serializer: Any, variants: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    """
+    Return the subset of byte variants that ``serializer`` can actually decode.
+
+    This implements the "at least one" semantics for the deserialize direction.
+    A serializer's variant list may include encodings produced by other WAMP
+    implementations or library versions (for example, the legacy py-ubjson bytes
+    vs. the new bjdata/BJData bytes for the "ubjson" serializer, which are not
+    mutually decodable). Feeding a foreign encoding to this serializer either
+    raises, or - worse - decodes to a *valid but wrong* message. Both cases are
+    skipped rather than treated as failures.
+
+    A variant is considered "this serializer's own" iff it decodes AND
+    re-serializing the decoded message reproduces one of the canonical variants
+    in the list. This keeps purely cosmetic variants (e.g. spaced vs. compact
+    JSON, which all decode to the same message) while dropping foreign encodings.
+
+    At least one variant MUST qualify, otherwise this is a genuine conformance
+    failure and an AssertionError is raised.
+
+    Args:
+        serializer: A transport serializer (with ``serialize``/``unserialize``)
+        variants: List of byte representations (each with 'bytes' or 'bytes_hex')
+
+    Returns:
+        The variants (in original order) that ``serializer`` decodes consistently
+    """
+    # Tier 1: variants whose decode re-serializes to one of the canonical
+    # variants (cosmetic variants + this backend's own encoding). Tier 2 (fallback):
+    # variants that merely decode without raising - used for serializers whose
+    # re-serialization is not byte-canonical (e.g. flatbuffers), where Tier 1
+    # would be empty even though the bytes are this backend's own.
+    consistent = []
+    decodes = []
+    for variant in variants:
+        if "bytes_hex" in variant:
+            data = bytes_from_hex(variant["bytes_hex"])
+        elif "bytes" in variant:
+            data = variant["bytes"].encode("utf-8")
+        else:
+            continue
+        try:
+            msg = serializer.unserialize(data)[0]
+        except Exception:
+            continue
+        decodes.append(variant)
+        try:
+            reserialized, _ = serializer.serialize(msg)
+        except Exception:
+            continue
+        if matches_any_byte_representation(reserialized, variants):
+            consistent.append(variant)
+    result = consistent or decodes
+    assert result, "no byte variant could be deserialized by this serializer"
+    return result
+
+
 def validates_with_any_code(msg: Any, validation_codes: List[str]) -> Optional[str]:
     """
     Try to validate message with any of the validation code blocks.

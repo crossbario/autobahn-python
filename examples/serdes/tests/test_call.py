@@ -14,6 +14,7 @@ from autobahn.wamp.message import Call
 from autobahn.wamp.serializer import create_transport_serializer
 
 from .utils import (
+    require_decodable,
     load_test_vector,
     bytes_from_hex,
     matches_any_byte_representation,
@@ -62,7 +63,7 @@ def test_call_deserialize_from_bytes(serializer_id, call_samples, create_seriali
         byte_variants = sample["serializers"][serializer_id]
 
         # Try deserializing each byte variant
-        for variant in byte_variants:
+        for variant in require_decodable(serializer, byte_variants):
             # Get bytes
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
@@ -149,7 +150,7 @@ def test_call_roundtrip(serializer_id, call_samples, create_serializer):
         if not byte_variants:
             continue
 
-        variant = byte_variants[0]
+        variant = require_decodable(serializer, byte_variants)[0]
         if "bytes_hex" in variant:
             original_bytes = bytes_from_hex(variant["bytes_hex"])
         elif "bytes" in variant:

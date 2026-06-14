@@ -12,15 +12,14 @@ from autobahn.wamp.serializer import create_transport_serializer, SERID_TO_OBJSE
 from .utils import load_test_vector, get_serializer_ids
 
 
-# The WAMP "ubjson" serializer is now backed by bjdata (autobahn #1849). Every
-# test in this conformance suite is built on the wamp-proto canonical byte vectors
-# (serialize-to / deserialize-from / cross-serializer all reference the stored
-# ``bytes_hex``). bjdata's octet-level encoding intentionally differs from the
-# legacy UBJSON bytes in those vectors, so "ubjson" is excluded from the byte-vector
-# conformance suite until the wamp-proto UBJSON vectors are regenerated (a follow-up
-# wamp-proto PR after the next autobahn-python release). bjdata round-trip
-# correctness is covered by src/autobahn/wamp/test/test_wamp_serializer.py.
-_VECTOR_EXCLUDED_SERIALIZERS = ("ubjson",)
+# The WAMP "ubjson" serializer is backed by bjdata (autobahn #1849). The
+# wamp-proto canonical vectors (via the .proto submodule) now carry BOTH the
+# legacy py-ubjson bytes and the new bjdata/BJData bytes for "ubjson" (each
+# tagged with a "note"), matched with "at least one must match" semantics. The
+# deserialize-direction tests use utils.require_decodable() to skip byte
+# variants this backend cannot decode (the two encodings are not mutually
+# decodable), so no serializer needs to be excluded from the byte-vector suite.
+_VECTOR_EXCLUDED_SERIALIZERS = ()
 
 
 def _conformance_serializer_ids():

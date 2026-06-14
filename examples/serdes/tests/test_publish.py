@@ -14,6 +14,7 @@ from autobahn.wamp.message import Publish
 from autobahn.wamp.serializer import create_transport_serializer
 
 from .utils import (
+    require_decodable,
     load_test_vector,
     bytes_from_hex,
     validate_message_with_code,
@@ -75,7 +76,7 @@ def test_publish_deserialize_from_bytes(
         byte_variants = sample["serializers"][serializer_id]
 
         # Try deserializing each byte variant
-        for variant in byte_variants:
+        for variant in require_decodable(serializer, byte_variants):
             # Get bytes
             if "bytes_hex" in variant:
                 test_bytes = bytes_from_hex(variant["bytes_hex"])
@@ -224,7 +225,7 @@ def test_publish_cross_serializer_preservation(serializer_pair, publish_samples)
             pytest.skip(f"No byte variants for {ser1_id} or {ser2_id}")
 
         # Take the first canonical byte representation from ser1
-        variant1 = ser1_variants[0]
+        variant1 = require_decodable(ser1, ser1_variants)[0]
         if "bytes_hex" in variant1:
             bytes1 = bytes_from_hex(variant1["bytes_hex"])
         elif "bytes" in variant1:
