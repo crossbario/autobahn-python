@@ -51,7 +51,12 @@ dependencies = [
     "msgpack>=1.0.2; platform_python_implementation == 'CPython'",
     "u-msgpack-python>=2.1; platform_python_implementation != 'CPython'",
     "ujson>=4.0.2",  # Binary wheels for both CPython and PyPy
-    "cbor2>=5.2.0",  # Binary wheels + pure Python fallback
+    # cbor2 6.x is Rust/pyo3-only: no PyPy/Windows wheel and no pure-Python
+    # fallback, so it cannot be installed on PyPy/Windows. Cap < 6 there (the 5.x
+    # line ships a pure-Python wheel and runs at near-native speed on PyPy),
+    # while using cbor2 6.x everywhere else. See #1859.
+    "cbor2>=5.2.0; platform_python_implementation != 'PyPy' or sys_platform != 'win32'",
+    "cbor2>=5.2.0,<6; platform_python_implementation == 'PyPy' and sys_platform == 'win32'",
     # NOTE: the WAMP "ubjson" serializer (bjdata) is an OPTIONAL extra, NOT a base
     # dependency: bjdata pulls in numpy, which we don't want in a minimal install.
     # See the [serialization] extra below. This also fixes #1849 (the old, wheel-less

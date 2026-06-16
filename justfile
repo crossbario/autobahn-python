@@ -1635,10 +1635,24 @@ build-sourcedist venv="": (install-build-tools venv)
 # Meta-recipe to run `build` on all environments
 build-all:
     #!/usr/bin/env bash
+    # Build a wheel for every interpreter in ENVS. Attempt ALL interpreters (do
+    # not stop at the first failure, so the report is complete), but FAIL the
+    # recipe with a non-zero exit if any single build failed, naming them. A
+    # silently swallowed per-interpreter failure here previously produced a green
+    # job with a missing wheel, only caught downstream by release fileset
+    # validation (#1859).
+    set -uo pipefail
+    failed=()
     for venv in {{ENVS}}; do
-        just build ${venv}
+        if ! just build "${venv}"; then
+            failed+=("${venv}")
+        fi
     done
     ls -la dist/
+    if [ "${#failed[@]}" -ne 0 ]; then
+        echo "ERROR: wheel build failed for interpreter(s): ${failed[*]}" >&2
+        exit 1
+    fi
 
 # Clean build artifacts
 clean-build:
