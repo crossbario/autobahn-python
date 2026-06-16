@@ -26,6 +26,8 @@ Changelog
 
 * Bump shared ``.ai`` (wamp-ai) and ``.cicd`` (wamp-cicd) submodules to match zlmdb exactly (#1853)
 * Fix ``scripts/update_flatbuffers.sh`` git-version capture for submodule checkouts (``.git`` is a file, not a directory) (#1853)
+* Bump the ``.cicd`` (wamp-cicd) submodule to pick up the script/shell-injection fix in the shared ``identifiers.yml`` reusable workflow (untrusted GitHub event fields are now passed via ``env:`` as quoted data with a fail-closed branch-name allowlist) (#1856)
+* Fail wheel builds hard when NVX was requested (``AUTOBAHN_USE_NVX``) but the CFFI extension did not compile, instead of silently degrading to a pure-Python (``py3-none-any``) wheel. A transient native-compile crash (e.g. a ``gcc`` SIGSEGV under QEMU ARM64 emulation) now aborts the build with a non-zero exit so CI can retry it, rather than uploading a structurally valid but unintended artifact. Building with ``AUTOBAHN_USE_NVX=0`` still produces a pure-Python wheel as before (#1856)
 
 25.12.2
 -------
