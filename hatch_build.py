@@ -49,21 +49,44 @@ class CFfiBuildHook(BuildHookInterface):
         built_nvx = False
         built_flatc = False
 
-        # Check if NVX build is disabled
-        if os.environ.get("AUTOBAHN_USE_NVX", "1") not in ("0", "false"):
+        # NVX (Native Vector Extensions) is an OPTIONAL accelerator: autobahn
+        # ships pure-Python fallbacks for both the XOR masker and the UTF-8
+        # validator (see autobahn.websocket.xormasker), and AUTOBAHN_USE_NVX=0
+        # is an explicitly supported configuration that yields a legitimate
+        # pure-Python (py3-none-any) wheel.
+        nvx_requested = os.environ.get("AUTOBAHN_USE_NVX", "1") not in ("0", "false")
+
+        if nvx_requested:
             # Build CFFI modules (NVX)
             built_nvx = self._build_cffi_modules(build_data)
         else:
             print("AUTOBAHN_USE_NVX is disabled, skipping CFFI build")
 
+        # When NVX was requested but no extension was produced, the CFFI compile
+        # failed silently (_build_cffi_modules swallows compile errors and just
+        # returns False). Refuse to degrade a platform wheel into a structurally
+        # valid but unintended pure-Python (py3-none-any) wheel: fail the build
+        # hard so that a transient native-compile crash (e.g. a gcc SIGSEGV
+        # under QEMU ARM64 emulation) aborts with a non-zero exit and is retried
+        # by CI, instead of being uploaded as a degraded artifact. See #1856.
+        if nvx_requested and not built_nvx:
+            raise RuntimeError(
+                "NVX CFFI extension was requested (AUTOBAHN_USE_NVX) but was not "
+                "built - refusing to emit a pure-Python (py3-none-any) autobahn "
+                "wheel. See the build log above for the underlying compile "
+                "failure. Set AUTOBAHN_USE_NVX=0 to intentionally build a "
+                "pure-Python wheel."
+            )
+
         # Build and bundle the flatc compiler (developer convenience). The
         # binary FlatBuffers schemas (reflection.bfbs, wamp.bfbs) are NOT
         # generated here: they are committed to the source tree and shipped
         # as-is, so a package build never needs to *run* flatc (required for
-        # cross-compilation - see module docstring).
+        # cross-compilation - see module docstring). flatc is best-effort and
+        # does NOT gate the wheel tag.
         built_flatc = self._build_flatc(build_data)
 
-        # If we built any extensions, mark this as a platform-specific wheel
+        # If we built any extensions, mark this as a platform-specific wheel.
         if built_nvx or built_flatc:
             build_data["infer_tag"] = True
             build_data["pure_python"] = False
