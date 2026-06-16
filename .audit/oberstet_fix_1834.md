@@ -4,5 +4,5 @@
 
 Submitted by: @oberstet
 Date: 2026-06-16
-Related issue(s): #1835
-Branch: oberstet:fix_1835
+Related issue(s): #1834
+Branch: oberstet:fix_1834
