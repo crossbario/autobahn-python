@@ -28,6 +28,7 @@ Changelog
 * Fix ``scripts/update_flatbuffers.sh`` git-version capture for submodule checkouts (``.git`` is a file, not a directory) (#1853)
 * Bump the ``.cicd`` (wamp-cicd) submodule to pick up the script/shell-injection fix in the shared ``identifiers.yml`` reusable workflow (untrusted GitHub event fields are now passed via ``env:`` as quoted data with a fail-closed branch-name allowlist) (#1856)
 * Fail wheel builds hard when NVX was requested (``AUTOBAHN_USE_NVX``) but the CFFI extension did not compile, instead of silently degrading to a pure-Python (``py3-none-any``) wheel. A transient native-compile crash (e.g. a ``gcc`` SIGSEGV under QEMU ARM64 emulation) now aborts the build with a non-zero exit so CI can retry it, rather than uploading a structurally valid but unintended artifact. Building with ``AUTOBAHN_USE_NVX=0`` still produces a pure-Python wheel as before (#1856)
+* Fix NVX native-extension builds breaking under cross-compilation (e.g. Buildroot/Yocto for aarch64), where the cross toolchain rejected the host-only ``-march=native`` flag (``unknown value 'native' for '-march'``). The default architecture target is now the portable baseline for *all* build contexts (wheels, local source installs, and cross-compilation), with ``-march=native`` available opt-in via ``AUTOBAHN_ARCH_TARGET=native``. The target architecture is detected via ``sysconfig.get_platform()`` so the correct baseline is chosen when cross-compiling. Thanks to @jameshilliard for the original report and approach (#1834, #1835)
 
 25.12.2
 -------
