@@ -34,13 +34,15 @@ performance based on the build context.
 Strategy
 --------
 
-For **WHEEL BUILDS** (distribution via PyPI):
-    Use safe, portable baseline architectures to ensure wheels work on a wide
-    range of CPUs without causing SIGILL (Illegal Instruction) crashes.
+**By default** - for *every* build context (PyPI wheels, local source installs,
+and cross-compilation) - a safe, portable baseline architecture is used. This
+keeps the resulting binaries runnable on a wide range of CPUs without SIGILL
+(Illegal Instruction) crashes, and never hands a cross-compilation toolchain the
+host-only ``-march=native`` flag (which it rejects).
 
-For **SOURCE BUILDS** (local installation):
-    Use -march=native to generate optimal code for the specific CPU where
-    the build is happening, maximizing performance.
+Maximum-performance ``-march=native`` code generation is **opt-in** via
+``AUTOBAHN_ARCH_TARGET=native``; use it only when the build host is also the run
+host (e.g. Gentoo/Arch packages, dedicated single-machine deployments).
 
 Architecture Baselines
 ----------------------
@@ -61,9 +63,10 @@ Environment Variables
 
 AUTOBAHN_ARCH_TARGET : str, optional
     User/distro override for architecture target:
-    - "native" : Force -march=native (maximum performance, may break portability)
-    - "safe"   : Force portable baseline (ensures compatibility)
-    - Not set  : Auto-detect based on build context (recommended)
+    - "native" : Force -march=native (maximum performance, build host only;
+                 unsafe for distributed wheels and cross-compilation)
+    - "safe"   : Force portable baseline (explicit; same as the default)
+    - Not set  : Portable baseline (the safe default; works for cross-compilation)
 
 AUTOBAHN_WHEEL_BUILD : str, optional
     Explicit marker for wheel builds ("true" or "1")
@@ -81,13 +84,19 @@ AUDITWHEEL_PLAT : str, optional
 Examples
 --------
 
-**GitHub Actions building wheels:**
-    >>> # Automatically detects CI=true, uses -march=x86-64-v2
+**GitHub Actions building wheels (default):**
+    >>> # Default is the portable baseline
     >>> get_compile_args()
     ['-std=c99', '-Wall', '-Wno-strict-prototypes', '-O3', '-march=x86-64-v2']
 
-**User installing from source:**
-    >>> # Detects local build, uses -march=native
+**User installing from source (default):**
+    >>> # Default is the portable baseline (safe for cross-compilation too)
+    >>> get_compile_args()
+    ['-std=c99', '-Wall', '-Wno-strict-prototypes', '-O3', '-march=x86-64-v2']
+
+**Opting in to -march=native (build host == run host):**
+    >>> import os
+    >>> os.environ['AUTOBAHN_ARCH_TARGET'] = 'native'
     >>> get_compile_args()
     ['-std=c99', '-Wall', '-Wno-strict-prototypes', '-O3', '-march=native']
 
@@ -115,6 +124,8 @@ This module is used by all NVX components:
 Related Issues
 --------------
 - #1717: SIGILL crashes from -march=native in distributed wheels
+- #1834: -march=native breaks cross-compilation; the default is now the portable
+  baseline for all build contexts, with -march=native available opt-in.
 
 See Also
 --------
@@ -124,12 +135,20 @@ See Also
 
 import os
 import sys
+import sysconfig
 import platform
 
 
 def is_building_wheel():
     """
     Detect if we're building a wheel for distribution vs. a local source install.
+
+    .. note::
+
+        As of #1834 the default architecture target is the portable baseline for
+        *every* build context (wheels, local source installs, cross-compilation),
+        so this helper no longer influences :func:`get_compile_args`. It is
+        retained for backward compatibility and for external callers/tooling.
 
     Returns
     -------
@@ -194,7 +213,7 @@ def get_compile_args():
         return ["/O2", "/W3"]
 
     # GCC/Clang on POSIX (Linux, macOS, *BSD)
-    machine = platform.machine().lower()
+    machine = _get_target_machine()
 
     # Base flags for all POSIX platforms
     base_args = [
@@ -208,34 +227,53 @@ def get_compile_args():
     arch_override = os.environ.get("AUTOBAHN_ARCH_TARGET", "").lower()
 
     if arch_override == "native":
-        # User explicitly wants -march=native (maximum performance)
-        # Use case: Gentoo, Arch Linux, performance-critical deployments
+        # Explicit opt-in only: -march=native generates code for the exact CPU of
+        # the *build* host (maximum performance). Use this when the build host is
+        # also the run host (e.g. Gentoo, Arch Linux, performance-critical
+        # deployments). It is NOT safe for distributed wheels or cross-compilation.
         return base_args + ["-march=native"]
 
-    elif arch_override == "safe":
-        # User explicitly wants portable baseline
-        # Use case: Debian, Ubuntu, RHEL package builds
-        arch_flag = _get_safe_march_flag(machine)
-        if arch_flag:
-            return base_args + [arch_flag]
-        else:
-            # Unknown arch: use compiler defaults
-            return base_args
+    # Default for everyone (AUTOBAHN_ARCH_TARGET unset or "safe"): a portable
+    # baseline architecture. Defaulting to "safe" rather than -march=native is
+    # what makes cross-compilation work out of the box - a cross toolchain
+    # rejects -march=native ("unknown value 'native' for '-march'", #1834) - and
+    # also prevents SIGILL crashes from over-optimized distributed wheels (#1717).
+    arch_flag = _get_safe_march_flag(machine)
+    if arch_flag:
+        return base_args + [arch_flag]
 
-    elif is_building_wheel():
-        # Building wheel for distribution: use portable baseline
-        # These wheels may run on CPUs different from build machine
-        arch_flag = _get_safe_march_flag(machine)
-        if arch_flag:
-            return base_args + [arch_flag]
-        else:
-            # Unknown arch: use compiler defaults
-            return base_args
+    # Unknown / cross target architecture: emit no -march flag and let the
+    # toolchain defaults (or distro-supplied CFLAGS, e.g. Buildroot/Yocto)
+    # govern code generation.
+    return base_args
 
-    else:
-        # Building from source locally: use -march=native for maximum performance
-        # Build machine = runtime machine, so native optimizations are safe and optimal
-        return base_args + ["-march=native"]
+
+def _get_target_machine():
+    """
+    Return the *target* machine architecture for the build.
+
+    Uses ``sysconfig.get_platform()`` rather than ``platform.machine()`` so that
+    the correct architecture is detected when cross-compiling (e.g.
+    Buildroot/Yocto building aarch64 on an x86-64 host): ``platform.machine()``
+    reports the build host (``uname``), whereas ``sysconfig`` reflects the
+    interpreter's configured target platform. Falls back to
+    ``platform.machine()`` when no architecture token can be derived.
+
+    (Target-detection approach contributed in PR #1835 by @jameshilliard.)
+
+    Returns
+    -------
+    str
+        Lower-cased target architecture token, e.g. "x86_64", "aarch64",
+        "arm64".
+    """
+    plat = sysconfig.get_platform().lower()
+    # Examples: 'linux-x86_64', 'linux-aarch64', 'macosx-11.0-arm64',
+    #           'win-amd64', 'win32'.
+    if plat == "win32":
+        return "x86"
+    machine = plat.rsplit("-", 1)[-1]
+    return machine or platform.machine().lower()
 
 
 def _get_safe_march_flag(machine):
