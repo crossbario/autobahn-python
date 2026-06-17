@@ -1941,7 +1941,15 @@ build-fbs venv="": (install-tools venv)
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
 
     FBSFILES="./src/autobahn/wamp/flatbuffers/*.fbs"
-    FLATC="flatc"
+    # Use the vendored, version-matched flatc bundled in the venv (built from
+    # deps/flatbuffers during install), NOT a system flatc which may be a
+    # different version and silently produce different generated code (#1830).
+    FLATC="${VENV_PATH}/bin/flatc"
+    if [ ! -x "${FLATC}" ]; then
+        echo "ERROR: bundled flatc not found at ${FLATC}" >&2
+        echo "       Run 'just install-tools ${VENV_NAME}' first (it builds the vendored flatc)." >&2
+        exit 1
+    fi
     echo "==> Generating FlatBuffers binary schema and Python wrappers using $(${FLATC} --version)..."
 
     # Generate schema binary type library (*.bfbs files)
