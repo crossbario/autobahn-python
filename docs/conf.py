@@ -95,7 +95,7 @@ master_doc = "index"
 language = "en"
 
 # Exclude patterns
-exclude_patterns = ["_build", "work", "README.md", "DOCKER_BUILDS.md"]
+exclude_patterns = ["_build", "work", "README.md"]
 
 # -- MyST Configuration ------------------------------------------------------
 myst_enable_extensions = [
