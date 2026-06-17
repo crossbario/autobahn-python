@@ -151,7 +151,6 @@ dev = [
     "passlib",
     "pep8-naming>=0.3.3",
     "pyflakes>=1.0.0",
-    "pyinstaller>=4.2",
     "pylint>=1.9.2",
     "pytest-aiohttp",
     "pytest-asyncio>=0.14.0",
@@ -160,6 +159,12 @@ dev = [
     "pyyaml>=4.2b4",
     "qualname>=0.1.0",
     "ruff>=0.12.1",
+    # Required by cffi's ffi.compile() to build the NVX extensions in an editable
+    # install on Python >= 3.12 (stdlib distutils was removed in 3.12, and cffi
+    # then needs setuptools). `just install-tools` runs `build-nvx` in the venv,
+    # so setuptools must be present here. Previously satisfied transitively via
+    # pyinstaller, which was removed in #1831.
+    "setuptools>=70.0.0",
     "twisted>=22.10.0",
     "txaio>=25.12.2",
     "watchdog>=0.8.3",
@@ -261,6 +266,11 @@ exclude = [
 [tool.rstfmt]
 # rstfmt configuration: ReST (Sphinx) doc files
 width = 65
+
+[tool.coverage.run]
+# Exclude in-package test modules from coverage measurement.
+# Migrated from the (now removed) standalone .coveragerc (#1831).
+omit = ["*/test/*.py"]
 
 [tool.ruff]
 # Same as Black.
