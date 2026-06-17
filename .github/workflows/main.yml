@@ -466,11 +466,11 @@ jobs:
           just create ${{ matrix.python-env }}
           just install-tools ${{ matrix.python-env }}
 
-      - name: Store original generated files checksum
-        run: |
-          echo "==> Computing checksums of committed FlatBuffers files..."
-          find src/autobahn/wamp/gen/ -name "*.py" -o -name "*.bfbs" | sort | xargs sha256sum > /tmp/original-checksums.txt
-          echo "Found $(wc -l < /tmp/original-checksums.txt) committed generated files"
+      - name: Clean generated FlatBuffers files (so orphans become detectable)
+        # Without this, `build-fbs` regenerates on top of the committed tree and
+        # any orphaned/stale file (no longer produced by the schema) survives in
+        # both the before and after states, hiding the drift (#1830).
+        run: just clean-fbs
 
       - name: Build FlatBuffers binary schema & Python wrappers
         run: just build-fbs
@@ -489,24 +489,37 @@ jobs:
 
       - name: Verify regenerated files match committed files
         run: |
-          echo "==> Computing checksums of regenerated files..."
-          find src/autobahn/wamp/gen/ -name "*.py" -o -name "*.bfbs" | sort | xargs sha256sum > /tmp/regenerated-checksums.txt
-
-          echo "==> Comparing checksums..."
-          if diff -u /tmp/original-checksums.txt /tmp/regenerated-checksums.txt; then
-            echo "✅ SUCCESS: All regenerated FlatBuffers files match committed versions exactly!"
-            echo "This confirms the build process is reproducible and up-to-date."
-          else
-            echo "❌ FAILURE: Regenerated files differ from committed versions!"
-            echo ""
-            echo "This indicates either:"
-            echo "1. The committed files were generated with a different flatc version"
-            echo "2. The committed files were manually modified"
-            echo "3. The build process has changed since files were last committed"
-            echo ""
-            echo "Please run 'just clean-fbs && just build-fbs' locally and commit the results."
-            exit 1
+          # Compare a clean regeneration (clean-fbs + build-fbs, above) against the
+          # committed generated tree using git's own classification, and fail with
+          # an actionable, categorized table (#1830):
+          #   M  -> content differs   (e.g. newer vendored flatc) -> regenerate & commit
+          #   D  -> committed but NOT produced by flatc -> orphan/attic leftover, delete (#1828)
+          #   ?? -> newly generated, not yet committed -> commit
+          status=$(git status --porcelain -- src/autobahn/wamp/gen/)
+          if [ -z "${status}" ]; then
+            echo "✅ SUCCESS: committed FlatBuffers generated code matches a clean regenerate."
+            exit 0
           fi
+          echo "❌ FAILURE: committed FlatBuffers generated code drifted from a clean regenerate."
+          echo ""
+          printf '%-36s %-21s %s\n' "CATEGORY" "ACTION" "FILE"
+          printf '%-36s %-21s %s\n' "------------------------------------" "---------------------" "----"
+          while IFS= read -r line; do
+            code="${line:0:2}"
+            file="${line:3}"
+            case "${code}" in
+              " M"|"M "|"MM") category="content differs"               ; action="regenerate & commit" ;;
+              " D"|"D ")      category="orphan / not generated [#1828]" ; action="delete" ;;
+              "??")           category="new, not committed"            ; action="commit" ;;
+              *)              category="changed (${code})"             ; action="review" ;;
+            esac
+            printf '%-36s %-21s %s\n' "${category}" "${action}" "${file}"
+          done <<< "${status}"
+          echo ""
+          count=$(printf '%s\n' "${status}" | grep -c .)
+          echo "FAIL: ${count} generated file(s) drifted."
+          echo "Run 'just clean-fbs && just build-fbs' locally and commit the result."
+          exit 1
 
       # Upload FlatBuffers artifacts (split into two uploads since verified action
       # doesn't support multi-line paths like actions/upload-artifact@v4)
