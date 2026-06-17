@@ -25,6 +25,7 @@ Changelog
 * Commit the binary schemas (``reflection.bfbs``, ``wamp.bfbs``) to the source tree and ship them as-is; the package build no longer runs ``flatc``, which fixes cross-compilation from the PyPI sdist (e.g. Buildroot/Yocto/aarch64) (#1853)
 * Add ``just generate-reflection`` to regenerate the committed binary schemas with a version-matched ``flatc`` built from ``deps/flatbuffers`` (#1853)
 * Add ``just check-flatbuffers-sync`` and a unit test exercising ``check_zlmdb_flatbuffers_version_in_sync()`` (#1853)
+* Delete two orphaned generated files, ``Kdf.py`` and ``ChannelBinding.py``, left in ``src/autobahn/wamp/gen/wamp/proto/`` after the schema renamed those tables to ``KDF`` and ``TLSChannelBinding``. Their case-insensitive collisions with the current ``KDF.py`` / ``TLSChannelBinding.py`` broke ``git clone`` and directory copies on case-insensitive filesystems (APFS/macOS, some Docker setups). They are no longer produced by ``flatc``, and the verification from #1830 now keeps such orphans from recurring. Thanks to @dcki for the report (#1828)
 
 **Build & CI/CD**
 
