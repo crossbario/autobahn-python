@@ -27,7 +27,9 @@ jobs:
       artifact_linux_no_nvx: ${{ steps.check.outputs.artifact_linux_no_nvx }}
       artifact_manylinux_x86_64: ${{ steps.check.outputs.artifact_manylinux_x86_64 }}
       artifact_arm64_cp311: ${{ steps.check.outputs.artifact_arm64_cp311 }}
+      artifact_arm64_cp312: ${{ steps.check.outputs.artifact_arm64_cp312 }}
       artifact_arm64_cp313: ${{ steps.check.outputs.artifact_arm64_cp313 }}
+      artifact_arm64_cp314: ${{ steps.check.outputs.artifact_arm64_cp314 }}
       artifact_arm64_pypy_bookworm: ${{ steps.check.outputs.artifact_arm64_pypy_bookworm }}
       artifact_arm64_pypy_trixie: ${{ steps.check.outputs.artifact_arm64_pypy_trixie }}
 
@@ -142,7 +144,9 @@ jobs:
               // Query artifacts from wheels-arm64 workflow
               const wheelsArm64RunId = latestRuns['wheels-arm64']?.id;
               core.setOutput('artifact_arm64_cp311', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64'));
+              core.setOutput('artifact_arm64_cp312', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.12-manylinux_2_28_aarch64'));
               core.setOutput('artifact_arm64_cp313', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64'));
+              core.setOutput('artifact_arm64_cp314', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.14-manylinux_2_28_aarch64'));
               core.setOutput('artifact_arm64_pypy_bookworm', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64'));
               core.setOutput('artifact_arm64_pypy_trixie', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64'));
 
@@ -422,10 +426,32 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify ARM64 CPython 3.12 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp312 }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 CPython 3.13 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313 }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.14 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp314 }}
           path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -813,10 +839,13 @@ jobs:
           mode: strict
           keep-metadata: true  # Keep CHECKSUMS for user verification
           targets: |
+            cpy311-macos-arm64
             cpy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
             cpy311-win-amd64
+            cpy312-macos-arm64
             cpy312-linux-x86_64-manylinux_2_28
+            cpy312-linux-aarch64-manylinux_2_28
             cpy312-win-amd64
             cpy313-macos-arm64
             cpy313-linux-x86_64-manylinux_2_28
@@ -824,6 +853,7 @@ jobs:
             cpy313-win-amd64
             cpy314-macos-arm64
             cpy314-linux-x86_64-manylinux_2_28
+            cpy314-linux-aarch64-manylinux_2_28
             cpy314-win-amd64
             pypy311-macos-arm64
             pypy311-linux-x86_64-manylinux_2_28
@@ -1251,10 +1281,32 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify ARM64 CPython 3.12 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp312 }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 CPython 3.13 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313 }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.14 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp314 }}
           path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1642,10 +1694,13 @@ jobs:
           mode: strict
           keep-metadata: true  # Keep CHECKSUMS for user verification
           targets: |
+            cpy311-macos-arm64
             cpy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
             cpy311-win-amd64
+            cpy312-macos-arm64
             cpy312-linux-x86_64-manylinux_2_28
+            cpy312-linux-aarch64-manylinux_2_28
             cpy312-win-amd64
             cpy313-macos-arm64
             cpy313-linux-x86_64-manylinux_2_28
@@ -1653,6 +1708,7 @@ jobs:
             cpy313-win-amd64
             cpy314-macos-arm64
             cpy314-linux-x86_64-manylinux_2_28
+            cpy314-linux-aarch64-manylinux_2_28
             cpy314-win-amd64
             pypy311-macos-arm64
             pypy311-linux-x86_64-manylinux_2_28
@@ -2100,10 +2156,32 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify ARM64 CPython 3.12 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp312 }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 CPython 3.13 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313 }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.14 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp314 }}
           path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -2262,10 +2340,13 @@ jobs:
           mode: strict
           # keep-metadata: false (default - removes CHECKSUMS for PyPI)
           targets: |
+            cpy311-macos-arm64
             cpy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
             cpy311-win-amd64
+            cpy312-macos-arm64
             cpy312-linux-x86_64-manylinux_2_28
+            cpy312-linux-aarch64-manylinux_2_28
             cpy312-win-amd64
             cpy313-macos-arm64
             cpy313-linux-x86_64-manylinux_2_28
@@ -2273,6 +2354,7 @@ jobs:
             cpy313-win-amd64
             cpy314-macos-arm64
             cpy314-linux-x86_64-manylinux_2_28
+            cpy314-linux-aarch64-manylinux_2_28
             cpy314-win-amd64
             pypy311-macos-arm64
             pypy311-linux-x86_64-manylinux_2_28
