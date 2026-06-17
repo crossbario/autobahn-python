@@ -8,6 +8,10 @@ Changelog
 26.6.1
 ------
 
+**WAMP RawSocket**
+
+* Fix the Twisted ``WampRawSocketProtocol`` raising ``TransportLost`` out of ``dataReceived`` when the opening handshake fails before a WAMP session is attached (e.g. an invalid magic byte from a port scanner). ``abort()`` now tears down the transport whenever a transport is present - rather than only when a session is open - so a failed handshake closes the connection cleanly with a single warning instead of an "Unhandled Error" stack trace, and handshake processing stops instead of continuing past the abort. The asyncio backend already behaved correctly; cross-backend regression tests were added for both. Thanks to @karel-un for the report (#1850)
+
 **WAMP Serialization**
 
 * ``py-ubjson`` (unmaintained, sdist-only) is no longer an unconditional dependency. A base ``pip install autobahn`` — and the wheels-only / cross-arch case from #1849 (``pip download --only-binary :all: --platform ...``) — now resolves entirely from binary wheels (#1849)

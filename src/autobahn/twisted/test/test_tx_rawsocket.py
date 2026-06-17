@@ -69,3 +69,47 @@ class RawSocketHandshakeTests(unittest.TestCase):
         # onOpen is called on the session
         session_mock.onOpen.assert_called_once_with(p)
         server_session_mock.onOpen.assert_called_once_with(sp)
+
+    def test_server_bad_magic_byte_aborts_cleanly(self):
+        """
+        A server receiving an invalid magic byte in the opening handshake
+        aborts the transport cleanly instead of raising ``TransportLost`` out
+        of ``dataReceived`` (regression test for #1850).
+        """
+        server_session_mock = Mock()
+        st = FakeTransport()
+        sf = WampRawSocketServerFactory(lambda: server_session_mock)
+        sp = WampRawSocketServerProtocol()
+        sp.transport = st
+        sp.factory = sf
+
+        sp.connectionMade()
+
+        # any non-0x7f first octet is an invalid magic byte; this must not raise
+        sp.dataReceived(b"GET ")
+
+        # the transport was aborted and no WAMP session was started
+        self.assertTrue(st.abort_called())
+        server_session_mock.onOpen.assert_not_called()
+
+    def test_client_bad_magic_byte_aborts_cleanly(self):
+        """
+        A client receiving an invalid magic byte in the opening handshake
+        aborts the transport cleanly instead of raising ``TransportLost`` out
+        of ``dataReceived`` (regression test for #1850).
+        """
+        session_mock = Mock()
+        t = FakeTransport()
+        f = WampRawSocketClientFactory(lambda: session_mock)
+        p = WampRawSocketClientProtocol()
+        p.transport = t
+        p.factory = f
+
+        p.connectionMade()
+
+        # any non-0x7f first octet is an invalid magic byte; this must not raise
+        p.dataReceived(b"GET ")
+
+        # the transport was aborted and no WAMP session was started
+        self.assertTrue(t.abort_called())
+        session_mock.onOpen.assert_not_called()

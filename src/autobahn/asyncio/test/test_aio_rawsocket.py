@@ -265,3 +265,47 @@ def test_wamp_client():
         proto.data_received(d)
     assert client.onMessage.called
     assert isinstance(client.onMessage.call_args[0][0], message.Abort)
+
+
+@pytest.mark.skipif(
+    not os.environ.get("USE_ASYNCIO", False), reason="test runs on asyncio only"
+)
+def test_wamp_server_bad_magic_byte_aborts_cleanly():
+    """
+    A WAMP server receiving an invalid magic byte in the opening handshake
+    closes the transport cleanly and starts no session (cross-backend parity
+    with the Twisted fix for #1850).
+    """
+    transport = Mock(spec_set=("abort", "close", "write", "get_extra_info"))
+    server = Mock(spec=["onOpen", "onMessage"])
+
+    proto = WampRawSocketServerFactory(lambda: server)()
+    proto.connection_made(transport)
+
+    # any non-0x7f first octet is an invalid magic byte; this must not raise
+    proto.data_received(b"GET ")
+
+    transport.close.assert_called_once_with()
+    server.onOpen.assert_not_called()
+
+
+@pytest.mark.skipif(
+    not os.environ.get("USE_ASYNCIO", False), reason="test runs on asyncio only"
+)
+def test_wamp_client_bad_magic_byte_aborts_cleanly():
+    """
+    A WAMP client receiving an invalid magic byte in the opening handshake
+    closes the transport cleanly and starts no session (cross-backend parity
+    with the Twisted fix for #1850).
+    """
+    transport = Mock(spec_set=("abort", "close", "write", "get_extra_info"))
+    client = Mock(spec=["onOpen", "onMessage"])
+
+    proto = WampRawSocketClientFactory(lambda: client)()
+    proto.connection_made(transport)
+
+    # any non-0x7f first octet is an invalid magic byte; this must not raise
+    proto.data_received(b"GET ")
+
+    transport.close.assert_called_once_with()
+    client.onOpen.assert_not_called()
