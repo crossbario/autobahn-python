@@ -66,4 +66,3 @@ if __name__ == "__main__":
     )
     runner = ApplicationRunner(url, realm, extra)
     runner.run(Component)
-    runner.run(Component)
