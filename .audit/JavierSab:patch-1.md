@@ -1,0 +1,10 @@
+## AI Assistance Disclosure
+
+- [x] I did **not** use any AI-assistance tools to help create this pull request.
+- [ ] I **did** use AI-assistance tools to *help* create this pull request.
+- [x] I have read, understood and followed the projects' [AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md) when creating code, documentation etc. for this pull request.
+
+Submitted by: @JavierSab
+Date: 2026-06-19
+Related issue(s):
+Branch: JavierSab:patch-1.md
