@@ -1150,6 +1150,22 @@ test-asyncio venv="" use_nvx="": (install-tools venv) (install-dev venv)
     USE_ASYNCIO=1 ${VENV_PYTHON} -m pytest -s -v -rfP \
         --ignore=./src/autobahn/twisted ./src/autobahn
 
+# Run the import smoke test - imports core autobahn modules with crypto extras
+# present, guarding against import-time annotation regressions (e.g. #1878) that
+# only surface on CPython < 3.14. (usage: `just test-imports cpy311`)
+test-imports venv="": (install-tools venv) (install-dev venv)
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    echo "==> Running import smoke test in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pytest -v src/autobahn/test/test_import_all.py
+
 # Run WAMP message serdes conformance tests (usage: `just test-serdes cpy311`)
 test-serdes venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash

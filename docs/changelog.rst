@@ -5,6 +5,17 @@
 Changelog
 =========
 
+26.6.2
+------
+
+**WAMP Cryptosign**
+
+* Fix ``import autobahn.wamp.cryptosign`` raising ``TypeError: unsupported operand type(s) for |: 'str' and 'NoneType'`` on CPython 3.11/3.12/3.13 when crypto support (``nacl``) is installed. A ``ruff`` ``UP007`` autofix in 26.6.1 (#1843) had rewritten ``Optional["ISecurityModule"]`` to ``"ISecurityModule" | None`` in a module that lacks ``from __future__ import annotations``, so the string forward-reference union was evaluated eagerly at class-definition time (CPython 3.14 was unaffected because PEP 649 defers annotation evaluation). The regression broke WAMP-cryptosign and any importer with crypto dependencies present (e.g. ``xbr``, Crossbar.io) on CPython < 3.14. Added ``from __future__ import annotations`` to ``cryptosign.py`` to defer annotation evaluation (#1878)
+
+**Build & CI/CD**
+
+* Add an import smoke test that imports every public ``autobahn`` submodule with the crypto extras installed, so eager-evaluation annotation regressions like #1878 are caught in CI on all supported Python versions (#1878)
+
 26.6.1
 ------
 
