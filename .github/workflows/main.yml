@@ -211,6 +211,71 @@ jobs:
           path: ${{ github.workspace }}/test-results/serdes-${{ matrix.python-env }}/
           retention-days: 7
 
+  import-smoke:
+    name: Import Smoke Test
+    needs: identifiers
+    runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
+    # Runs on ALL supported Python versions (unlike the main test suite, which
+    # runs on cpy314 only) so import-time annotation regressions that only fire
+    # on CPython < 3.14 - e.g. #1878 - are caught. Crypto extras are installed
+    # (via install-dev -> autobahn[all]) so the cryptosign code paths run.
+    strategy:
+      matrix:
+        python-env: [cpy314, cpy313, cpy312, cpy311, pypy311]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install uv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Verify toolchain installation
+        run: |
+          just --version
+          uv --version
+
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key:
+            uv-cache-ubuntu-imports-${{ matrix.python-env }}-${{
+            hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-ubuntu-imports-${{ matrix.python-env }}-
+            uv-cache-ubuntu-imports-
+
+      - name: Create Python environment
+        run: |
+          just create ${{ matrix.python-env }}
+          just install-tools ${{ matrix.python-env }}
+
+      - name: Run import smoke test
+        run: just test-imports ${{ matrix.python-env }}
+
   documentation:
     name: Documentation Build
     needs: identifiers
