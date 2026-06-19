@@ -24,6 +24,13 @@
 #
 ###############################################################################
 
+# PEP 563/649: defer annotation evaluation so string forward-references combined
+# with ``| None`` (e.g. ``"ISecurityModule" | None``) are never evaluated at
+# class-definition time. Without this, such an annotation raises
+# ``TypeError: unsupported operand type(s) for |: 'str' and 'NoneType'`` on
+# CPython < 3.14 (where annotations are evaluated eagerly). See #1878.
+from __future__ import annotations
+
 import binascii
 import os
 import struct
