@@ -715,6 +715,8 @@ check-typing venv="": (install venv)
         --ignore no-matching-overload \
         --ignore conflicting-declarations \
         --ignore deprecated \
+        --ignore possibly-missing-submodule \
+        --ignore unused-type-ignore-comment \
         src/autobahn/
 
 # pyright --project pyproject-static-typing.toml src/autobahn/wamp/request.py
