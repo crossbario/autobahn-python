@@ -6,5 +6,5 @@
 
 Submitted by: @JavierSab
 Date: 2026-06-19
-Related issue(s):
+Related issue(s): #1888
 Branch: JavierSab:patch-1.md
