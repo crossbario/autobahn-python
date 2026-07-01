@@ -31,8 +31,10 @@ When reporting issues, please include:
 2. **Create a feature branch** from `master`
 3. **Make your changes** following the code style
 4. **Add tests** for new functionality
-5. **Run the test suite** to ensure nothing is broken
-6. **Submit a pull request** referencing any related issues
+5. **Add a changelog entry** to `docs/changelog.rst` for any user-visible
+   change (kept in the PR so the branch is self-contained)
+6. **Run the test suite** to ensure nothing is broken
+7. **Submit a pull request** referencing any related issues
 
 ## Development Setup
 
