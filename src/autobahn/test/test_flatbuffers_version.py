@@ -53,6 +53,40 @@ class TestFlatBuffersVersion(unittest.TestCase):
         self.assertTrue(commits is None or isinstance(commits, int))
         self.assertTrue(commit_hash is None or isinstance(commit_hash, str))
 
+    def test_version_falls_back_to_dunder_version_on_bare_hash(self):
+        "version() falls back to __version__ when __git_version__ is a non-matching bare hash"
+        # On built wheels / shallow clones `git describe --tags --always` yields a bare
+        # commit hash that does NOT match the vX.Y.Z pattern; version() must fall back to
+        # the reliable static __version__, NOT return (0, 0, 0, None, None).
+        orig = flatbuffers.__git_version__
+        try:
+            flatbuffers.__git_version__ = "19b2300f"
+            v = flatbuffers.version()
+            self.assertNotEqual(v, (0, 0, 0, None, None))
+            expected = tuple(int(x) for x in flatbuffers.__version__.split(".")[:3])
+            self.assertEqual(v, (*expected, None, None))
+        finally:
+            flatbuffers.__git_version__ = orig
+
+    def test_version_falls_back_to_dunder_version_on_unknown(self):
+        "version() falls back to __version__ when __git_version__ is 'unknown'"
+        orig = flatbuffers.__git_version__
+        try:
+            flatbuffers.__git_version__ = "unknown"  # hatch_build default on describe failure
+            expected = tuple(int(x) for x in flatbuffers.__version__.split(".")[:3])
+            self.assertEqual(flatbuffers.version(), (*expected, None, None))
+        finally:
+            flatbuffers.__git_version__ = orig
+
+    def test_version_preserves_git_describe_detail(self):
+        "version() still returns rich git-describe detail when __git_version__ matches"
+        orig = flatbuffers.__git_version__
+        try:
+            flatbuffers.__git_version__ = "v25.9.23-71-g19b2300f"
+            self.assertEqual(flatbuffers.version(), (25, 9, 23, 71, "19b2300f"))
+        finally:
+            flatbuffers.__git_version__ = orig
+
     @unittest.skipUnless(HAS_ZLMDB, "zlmdb not installed")
     def test_zlmdb_flatbuffers_in_sync(self):
         "autobahn and zlmdb vendor the same FlatBuffers version (data-in-transit vs data-at-rest)"
