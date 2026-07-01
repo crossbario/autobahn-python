@@ -16,6 +16,7 @@ Changelog
 **Build & CI/CD**
 
 * Add CalVer / PEP 440 version-management ``just`` recipes (``file-version``, ``bump-dev``, ``bump-next``, ``prep-release``) mirroring Crossbar.io, and document the versioning policy in ``CONTRIBUTING.md`` (#1894)
+* Add ``ruff check --select ANN,UP,TCH`` (annotation presence, ``pyupgrade`` modern syntax, ``TYPE_CHECKING`` imports) to the ``just check-typing`` recipe so annotation/style regressions are caught in the ``quality-checks`` CI job. The existing gaps in ``src/autobahn/`` are ratcheted via an explicit ``--ignore`` allowlist to be removed module-by-module (#1839); all other ``UP``/``TC`` rules are enforced immediately, and generated code is excluded. The annotation rules are scoped to this recipe via the command line rather than the global ``[tool.ruff.lint]`` select, so the repo-wide ``check-format`` gate is unaffected (#1840)
 
 26.6.2
 ------

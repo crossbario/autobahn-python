@@ -381,3 +381,10 @@ docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"  # Accepts: "google", "numpy", or "pep257".
+
+# Shapes the flake8-annotations (ANN) rules that `just check-typing` selects on the
+# command line (see #1839). Inert for `check-format`, which does not select ANN.
+[tool.ruff.lint.flake8-annotations]
+mypy-init-return = true          # allow __init__ without an explicit -> None
+suppress-none-returning = false  # still require -> None on functions returning only None
+allow-star-arg-any = false       # *args/**kwargs must be typed, not implicitly Any
