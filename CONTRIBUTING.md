@@ -85,6 +85,23 @@ For WebSocket changes, run the Autobahn|Testsuite:
 # See docs/websocket/conformance.rst for details
 ```
 
+## Versioning
+
+This project uses [CalVer](https://calver.org/) with PEP 440 development
+releases: `YY.M.PATCH[.devN]` — for example, `26.7.1` for a stable release and
+`26.7.1.dev1` while in development. Between releases the working tree always
+carries a `.devN` suffix.
+
+The version is stored in two files kept in sync — `pyproject.toml` and
+`src/autobahn/_version.py` — and managed with `just`:
+
+- `just file-version` — show the current version (from both files)
+- `just bump-dev` — bump to the next dev version for the current month (`YY.M.1.dev1`)
+- `just bump-next 26.7.2.dev1` — set a specific next dev version
+- `just prep-release` — strip the `.devN` suffix to cut a stable release
+
+Git tags and releases are created by maintainers only.
+
 ## License
 
 By contributing to Autobahn|Python, you agree that your contributions will
