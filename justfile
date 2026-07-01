@@ -81,12 +81,36 @@ _get-spec short_name:
     set -e
     case {{short_name}} in
         cpy314)  echo "cpython-3.14";;  # cpython-3.14.0b3-linux-x86_64-gnu
+        cpy314t) echo "cpython-3.14t";; # CPython 3.14 free-threaded (no-GIL); reserved for #1875 Part 2
         cpy313)  echo "cpython-3.13";;  # cpython-3.13.5-linux-x86_64-gnu
         cpy312)  echo "cpython-3.12";;  # cpython-3.12.11-linux-x86_64-gnu
         cpy311)  echo "cpython-3.11";;  # cpython-3.11.13-linux-x86_64-gnu
         pypy311) echo "pypy-3.11";;     # pypy-3.11.11-linux-x86_64-gnu
         *)       echo "Unknown environment: {{short_name}}" >&2; exit 1;;
     esac
+
+# Assert the venv interpreter's ABI (GIL vs free-threaded) matches the env name, so a wheel
+# is never published with the wrong ABI tag -- e.g. a free-threaded cp314t wheel in the GIL
+# cp314 slot, which shipped on aarch64 in 26.6.1 when an older uv resolved `cpython-3.14` to
+# the free-threaded interpreter (autobahn #1875 / zlmdb #124). The wheel ABI tag is fixed by
+# the building interpreter, so checking the interpreter catches the mismatch at build time.
+_check-venv-abi venv:
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+    case "${VENV_NAME}" in
+        pypy*)  echo "==> ABI check skipped for '${VENV_NAME}' (PyPy)"; exit 0 ;;
+        *t)     EXPECT_FT=1 ;;   # e.g. cpy314t -> free-threaded (no-GIL)
+        *)      EXPECT_FT=0 ;;   # e.g. cpy314  -> GIL
+    esac
+    ACTUAL_FT=$(${VENV_PYTHON} -c "import sysconfig; print(1 if sysconfig.get_config_var('Py_GIL_DISABLED') else 0)")
+    if [ "${ACTUAL_FT}" != "${EXPECT_FT}" ]; then
+        echo "ERROR: interpreter ABI mismatch for '${VENV_NAME}': Py_GIL_DISABLED=${ACTUAL_FT}, expected free-threaded=${EXPECT_FT}." >&2
+        echo "       Building would emit a wrong-ABI wheel (e.g. cp314t in the cp314 slot). Aborting." >&2
+        exit 1
+    fi
+    echo "==> ABI check OK: '${VENV_NAME}' interpreter free-threaded=${ACTUAL_FT} (expected ${EXPECT_FT})"
 
 # uv python install pypy-3.11-linux-aarch64-gnu --preview --verbose
 # file /home/oberstet/.local/share/uv/python/pypy-3.11.11-linux-aarch64-gnu/bin/pypy3.11
@@ -256,9 +280,18 @@ create venv="":
         # Get the Python spec just-in-time
         PYTHON_SPEC=$(just --quiet _get-spec "${VENV_NAME}")
 
+        # For a GIL env, drop free-threaded CPython dirs (…t/bin, e.g. cp314t) that
+        # manylinux images pre-install on PATH ahead of the GIL build, so uv does not
+        # resolve e.g. cpy314 to a free-threaded cp314t interpreter (#1875). The dedicated
+        # cpy314t env is used to build free-threaded wheels. No-op off manylinux.
+        CREATE_PATH="${PATH}"
+        if [[ "${VENV_NAME}" != *t ]]; then
+            CREATE_PATH="$(printf '%s' "${PATH}" | tr ':' '\n' | grep -vE '/opt/python/[^/]*t/bin$' | paste -sd: -)"
+        fi
+
         echo "==> Creating Python virtual environment '${VENV_NAME}' using ${PYTHON_SPEC} in ${VENV_PATH}..."
         mkdir -p "{{ VENV_DIR }}"
-        uv venv --seed --python "${PYTHON_SPEC}" "${VENV_PATH}"
+        PATH="${CREATE_PATH}" uv venv --seed --python "${PYTHON_SPEC}" "${VENV_PATH}"
         echo "==> Successfully created venv '${VENV_NAME}'."
     else
         echo "==> Python virtual environment '${VENV_NAME}' already exists in ${VENV_PATH}."
@@ -1673,6 +1706,11 @@ build venv="": (install-build-tools venv)
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
+
+    # Fail fast if the interpreter ABI doesn't match the env (autobahn #1875 / zlmdb #124):
+    # prevents publishing e.g. a free-threaded cp314t wheel in the GIL cp314 slot.
+    just _check-venv-abi "${VENV_NAME}"
+
     echo "==> Building wheel package..."
 
     # Build the wheel with NVX acceleration
