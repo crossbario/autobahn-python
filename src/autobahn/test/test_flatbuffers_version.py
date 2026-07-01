@@ -57,7 +57,21 @@ class TestFlatBuffersVersion(unittest.TestCase):
     def test_zlmdb_flatbuffers_in_sync(self):
         "autobahn and zlmdb vendor the same FlatBuffers version (data-in-transit vs data-at-rest)"
         version = autobahn.check_zlmdb_flatbuffers_version_in_sync()
-        self.assertEqual(version, flatbuffers.version())
+        self.assertEqual(version, flatbuffers.__version__)
         import zlmdb.flatbuffers
 
-        self.assertEqual(version, zlmdb.flatbuffers.version())
+        self.assertEqual(version, zlmdb.flatbuffers.__version__)
+
+    @unittest.skipUnless(HAS_ZLMDB, "zlmdb not installed")
+    def test_zlmdb_flatbuffers_mismatch_raises(self):
+        "check_zlmdb_flatbuffers_version_in_sync() raises when the two vendored __version__ differ"
+        # guard against regressions to comparing version() (which is (0,0,0,...) on
+        # built wheels and would never detect a mismatch): force the two vendored
+        # __version__ strings apart and assert the check actually raises.
+        orig = flatbuffers.__version__
+        try:
+            flatbuffers.__version__ = orig + "-mismatch"
+            with self.assertRaises(RuntimeError):
+                autobahn.check_zlmdb_flatbuffers_version_in_sync()
+        finally:
+            flatbuffers.__version__ = orig

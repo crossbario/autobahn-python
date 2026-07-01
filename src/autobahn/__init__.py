@@ -35,7 +35,7 @@ import txaio
 from autobahn import flatbuffers
 
 
-def check_zlmdb_flatbuffers_version_in_sync() -> tuple[int, int, int, int | None, str | None]:
+def check_zlmdb_flatbuffers_version_in_sync() -> str:
     """
     Check that autobahn and zlmdb have the same vendored flatbuffers version.
 
@@ -45,7 +45,7 @@ def check_zlmdb_flatbuffers_version_in_sync() -> tuple[int, int, int, int | None
     application payload, both libraries must use compatible FlatBuffers
     runtimes to avoid subtle serialization issues.
 
-    :returns: The flatbuffers version tuple (e.g. (25, 9, 23, 2, "95053e6a"))
+    :returns: The vendored flatbuffers version string (e.g. "25.12.19")
               if both are in sync.
     :raises RuntimeError: If the versions differ.
     :raises ImportError: If zlmdb is not installed.
@@ -58,8 +58,8 @@ def check_zlmdb_flatbuffers_version_in_sync() -> tuple[int, int, int, int | None
     """
     import zlmdb.flatbuffers
 
-    autobahn_version = flatbuffers.version()
-    zlmdb_version = zlmdb.flatbuffers.version()
+    autobahn_version = flatbuffers.__version__
+    zlmdb_version = zlmdb.flatbuffers.__version__
 
     if autobahn_version != zlmdb_version:
         raise RuntimeError(
