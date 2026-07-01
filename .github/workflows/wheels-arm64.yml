@@ -90,6 +90,47 @@ jobs:
             python_versions: "cpy314"
 
           # ============================================================
+          # CPython ARM64 musllinux wheels (Alpine / musl libc) — #1877
+          # Official PyPA musllinux_1_2 image; auditwheel auto-tags musllinux.
+          # ============================================================
+
+          # CPython 3.11 - musllinux_1_2_aarch64 (musl libc)
+          - name: "cpython-3.11-musllinux_1_2_aarch64"
+            base_image: "quay.io/pypa/musllinux_1_2_aarch64"
+            manylinux_tag: "musllinux_1_2_aarch64"
+            glibc_version: "musl"
+            python_impl: "cpython"
+            build_type: "official"
+            python_versions: "cpy311"
+
+          # CPython 3.12 - musllinux_1_2_aarch64
+          - name: "cpython-3.12-musllinux_1_2_aarch64"
+            base_image: "quay.io/pypa/musllinux_1_2_aarch64"
+            manylinux_tag: "musllinux_1_2_aarch64"
+            glibc_version: "musl"
+            python_impl: "cpython"
+            build_type: "official"
+            python_versions: "cpy312"
+
+          # CPython 3.13 - musllinux_1_2_aarch64
+          - name: "cpython-3.13-musllinux_1_2_aarch64"
+            base_image: "quay.io/pypa/musllinux_1_2_aarch64"
+            manylinux_tag: "musllinux_1_2_aarch64"
+            glibc_version: "musl"
+            python_impl: "cpython"
+            build_type: "official"
+            python_versions: "cpy313"
+
+          # CPython 3.14 - musllinux_1_2_aarch64
+          - name: "cpython-3.14-musllinux_1_2_aarch64"
+            base_image: "quay.io/pypa/musllinux_1_2_aarch64"
+            manylinux_tag: "musllinux_1_2_aarch64"
+            glibc_version: "musl"
+            python_impl: "cpython"
+            build_type: "official"
+            python_versions: "cpy314"
+
+          # ============================================================
           # PyPy ARM64 wheels (using our custom manylinux images)
           # ============================================================
 

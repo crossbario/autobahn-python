@@ -53,6 +53,14 @@ jobs:
           # see: https://github.com/pypa/manylinux
           - name: "manylinux_2_28_x86_64"
             base_image: "quay.io/pypa/manylinux_2_28_x86_64"
+            build_envs: ""  # empty = build all ENVS (CPython + PyPy)
+
+          # musllinux_1_2 (Alpine / musl libc) wheels — CPython only.
+          # The pypa musllinux image ships no PyPy under /opt/python, so we build
+          # cpy311-314 explicitly (not `build-all`, which includes pypy311). #1877
+          - name: "musllinux_1_2_x86_64"
+            base_image: "quay.io/pypa/musllinux_1_2_x86_64"
+            build_envs: "cpy311 cpy312 cpy313 cpy314"
 
     steps:
       - name: Checkout code
@@ -183,8 +191,14 @@ jobs:
           echo "rustc: $(rustc --version)"
           echo "auditwheel: $(auditwheel --version || echo 'not available')"
 
-          # Build binary wheels WITH NVX acceleration for manylinux
-          just build-all
+          # Build binary wheels WITH NVX acceleration.
+          # build_envs restricts which envs to build (musllinux = CPython only);
+          # empty means build all ENVS (manylinux: CPython + PyPy).
+          if [ -n "${{ matrix.target.build_envs }}" ]; then
+            for v in ${{ matrix.target.build_envs }}; do just build "$v"; done
+          else
+            just build-all
+          fi
 
           command -v auditwheel >/dev/null || { echo "auditwheel missing, aborting"; exit 1; }
           mkdir -p wheelhouse
