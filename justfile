@@ -280,9 +280,18 @@ create venv="":
         # Get the Python spec just-in-time
         PYTHON_SPEC=$(just --quiet _get-spec "${VENV_NAME}")
 
+        # For a GIL env, drop free-threaded CPython dirs (…t/bin, e.g. cp314t) that
+        # manylinux images pre-install on PATH ahead of the GIL build, so uv does not
+        # resolve e.g. cpy314 to a free-threaded cp314t interpreter (#1875). The dedicated
+        # cpy314t env is used to build free-threaded wheels. No-op off manylinux.
+        CREATE_PATH="${PATH}"
+        if [[ "${VENV_NAME}" != *t ]]; then
+            CREATE_PATH="$(printf '%s' "${PATH}" | tr ':' '\n' | grep -vE '/opt/python/[^/]*t/bin$' | paste -sd: -)"
+        fi
+
         echo "==> Creating Python virtual environment '${VENV_NAME}' using ${PYTHON_SPEC} in ${VENV_PATH}..."
         mkdir -p "{{ VENV_DIR }}"
-        uv venv --seed --python "${PYTHON_SPEC}" "${VENV_PATH}"
+        PATH="${CREATE_PATH}" uv venv --seed --python "${PYTHON_SPEC}" "${VENV_PATH}"
         echo "==> Successfully created venv '${VENV_NAME}'."
     else
         echo "==> Python virtual environment '${VENV_NAME}' already exists in ${VENV_PATH}."
