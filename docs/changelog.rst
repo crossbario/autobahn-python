@@ -5,6 +5,18 @@
 Changelog
 =========
 
+26.7.1
+------
+
+**FlatBuffers**
+
+* Fix ``check_zlmdb_flatbuffers_version_in_sync()`` comparing the build-time ``version()`` (which is ``(0, 0, 0, None, None)`` on installed wheels, where the vendored FlatBuffers ``__git_version__`` is unstamped) — it now compares the reliably-stamped ``__version__`` and returns a version string. Added regression tests (#1891)
+* Make ``autobahn.flatbuffers.version()`` reliable on installed wheels: when the build-time ``__git_version__`` is a bare commit hash or ``"unknown"`` (shallow clone / submodule absent from the sdist), ``version()`` now falls back to parsing the static vendored ``__version__`` and returns ``(major, minor, patch, None, None)`` instead of ``(0, 0, 0, None, None)``; rich ``git describe`` detail is still returned on genuine dev/git builds. Also hardened ``hatch_build.py`` so it never stamps a non-parseable ``__git_version__``. Return shape is unchanged (5-tuple); no API break (#1891)
+
+**Build & CI/CD**
+
+* Add CalVer / PEP 440 version-management ``just`` recipes (``file-version``, ``bump-dev``, ``bump-next``, ``prep-release``) mirroring Crossbar.io, and document the versioning policy in ``CONTRIBUTING.md`` (#1894)
+
 26.6.2
 ------
 

@@ -378,6 +378,21 @@ class CFfiBuildHook(BuildHookInterface):
             print(f"  -> Using existing version in {git_version_file.name}")
             return
 
+        # Defense-in-depth: never ship a __git_version__ that version() cannot parse.
+        # On shallow clones `git describe --tags --always` returns a bare commit hash
+        # (no tags), and a failed describe leaves "unknown" -- either would force the
+        # runtime version() to fall back. Prefer a parseable string derived from the
+        # reliable vendored __version__ in the sibling _version.py.
+        import re as _re
+
+        if not _re.match(r"^v\d+\.\d+\.\d+", git_version):
+            version_file = git_version_file.parent / "_version.py"
+            for line in version_file.read_text().splitlines():
+                if line.startswith("__version__"):
+                    git_version = "v" + line.split("=", 1)[1].strip().strip('"').strip("'")
+                    print(f"  -> git describe unusable; stamping {git_version} from _version.py")
+                    break
+
         # Write the version file
         content = """\
 # Copyright 2014 Google Inc. All rights reserved.

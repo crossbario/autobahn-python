@@ -71,6 +71,10 @@ VENV_DIR := PROJECT_DIR / '.venvs'
 # Define a justfile-local variable for our environments.
 ENVS := 'cpy314 cpy313 cpy312 cpy311 pypy311'
 
+# Package version files, kept in sync (CalVer YY.M.PATCH[.devN], PEP 440).
+PY_VERSION_FILE := 'src/autobahn/_version.py'
+TOML_VERSION_FILE := 'pyproject.toml'
+
 # Internal helper to map Python version short name to full uv version
 _get-spec short_name:
     #!/usr/bin/env bash
@@ -300,6 +304,49 @@ version-all:
     for venv in {{ENVS}}; do
         just version ${venv}
     done
+
+# -----------------------------------------------------------------------------
+# -- Package version management (CalVer YY.M.PATCH[.devN], PEP 440)
+# -----------------------------------------------------------------------------
+# Replicated from crossbar's version-management recipes to align the WAMP
+# projects. Deviation: this repo does not track uv.lock, so (unlike crossbar)
+# bump-next does not refresh or commit a lockfile.
+
+# Display the current package version from both version files
+file-version:
+    @echo "Python file: $(grep '__version__' {{PY_VERSION_FILE}} | cut -d ' ' -f 3)"
+    @echo "TOML file:   $(grep '^version =' {{TOML_VERSION_FILE}} | cut -d ' ' -f 3)"
+
+# Prepare for a stable release: strip the .devN suffix from the version files
+prep-release:
+    @echo "Cleaning version for stable release..."
+    sed -i 's/\.dev[0-9]*//' {{PY_VERSION_FILE}}
+    sed -i 's/\.dev[0-9]*//' {{TOML_VERSION_FILE}}
+    @just file-version
+    @echo ''
+    @echo 'Now (maintainer, on the dev PC only -- tags are never created by AI):'
+    @echo '   1. Commit:    git add . && git commit -m "version bump for stable release"'
+    @echo '   2. Tag:       git tag -a v<VERSION> -m "tagged stable release"'
+    @echo '   3. Push tag:  git push upstream v<VERSION>'
+    @echo '   4. Next dev:  just bump-next <NEXT-VERSION>.dev1'
+    @echo ''
+
+# Auto-bump to the next dev version for the current month (CalVer: YY.M.1.dev1)
+bump-dev:
+    #!/usr/bin/env bash
+    set -e
+    NEXT="$(date +%-y).$(date +%-m).1.dev1"
+    echo "Auto-computed next dev version: ${NEXT}"
+    just bump-next "${NEXT}"
+
+# Set a specific next version (e.g. `just bump-next 26.7.2.dev1`)
+bump-next next_version:
+    @echo "Bumping version to {{next_version}}..."
+    sed -i 's/__version__ = .*/__version__ = "{{next_version}}"/' {{PY_VERSION_FILE}}
+    sed -i 's/^version = .*/version = "{{next_version}}"/' {{TOML_VERSION_FILE}}
+    git add {{PY_VERSION_FILE}} {{TOML_VERSION_FILE}}
+    git commit -m "chore: bump version to {{next_version}}"
+    @echo "Branch is now at {{next_version}} and ready for development."
 
 # Make Python packages installed by the OS package manager available in a managed venv. Usage: `just link-system-packages "" "/usr/lib/kicad-nightly/lib/python3/dist-packages"`
 link-system-packages venv="" vendors="": (create venv)
