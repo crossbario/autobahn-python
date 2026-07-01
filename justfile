@@ -730,7 +730,7 @@ check-format venv="": (install-tools venv)
 # Run static type checking with ty (Astral's Rust-based type checker)
 # FIXME: Many type errors need to be fixed. For now, we ignore most rules
 # to get CI passing. Create follow-up issue to address type errors.
-check-typing venv="": (install venv)
+check-typing venv="": (install venv) (install-tools venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
@@ -740,6 +740,20 @@ check-typing venv="": (install venv)
         echo "==> Defaulting to venv: '${VENV_NAME}'"
     fi
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
+    echo "==> Checking type annotation presence and modern syntax (via ruff)..."
+    # Annotation presence (ANN), modern syntax (UP/pyupgrade) and TYPE_CHECKING
+    # imports (TC). The ANN/TC ignores below track the EXISTING gaps in src/autobahn/
+    # and should be removed module-by-module as typing improves (see #1839); every
+    # other UP and TC rule is enforced now, so new code cannot regress modern syntax.
+    # Generated code is skipped via the [tool.ruff] exclude list; --force-exclude makes
+    # that apply to the explicit src/autobahn/ path too.
+    "${VENV_PATH}/bin/ruff" check --select ANN,UP,TCH --force-exclude \
+        --ignore ANN001 --ignore ANN002 --ignore ANN003 \
+        --ignore ANN201 --ignore ANN202 --ignore ANN204 --ignore ANN205 --ignore ANN206 \
+        --ignore ANN401 \
+        --ignore UP037 \
+        --ignore TC001 --ignore TC002 --ignore TC003 \
+        src/autobahn/
     echo "==> Running static type checks with ty (using ${VENV_NAME} for type stubs)..."
     # Note: Only check src/autobahn/, not src/flatbuffers/ (generated code)
     # FIXME: Many ignores needed until type annotations are fixed
