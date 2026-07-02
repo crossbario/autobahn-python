@@ -26,10 +26,15 @@ jobs:
       artifact_source_dist: ${{ steps.check.outputs.artifact_source_dist }}
       artifact_linux_no_nvx: ${{ steps.check.outputs.artifact_linux_no_nvx }}
       artifact_manylinux_x86_64: ${{ steps.check.outputs.artifact_manylinux_x86_64 }}
+      artifact_musllinux_x86_64: ${{ steps.check.outputs.artifact_musllinux_x86_64 }}
       artifact_arm64_cp311: ${{ steps.check.outputs.artifact_arm64_cp311 }}
       artifact_arm64_cp312: ${{ steps.check.outputs.artifact_arm64_cp312 }}
       artifact_arm64_cp313: ${{ steps.check.outputs.artifact_arm64_cp313 }}
       artifact_arm64_cp314: ${{ steps.check.outputs.artifact_arm64_cp314 }}
+      artifact_arm64_cp311_musl: ${{ steps.check.outputs.artifact_arm64_cp311_musl }}
+      artifact_arm64_cp312_musl: ${{ steps.check.outputs.artifact_arm64_cp312_musl }}
+      artifact_arm64_cp313_musl: ${{ steps.check.outputs.artifact_arm64_cp313_musl }}
+      artifact_arm64_cp314_musl: ${{ steps.check.outputs.artifact_arm64_cp314_musl }}
       artifact_arm64_pypy_bookworm: ${{ steps.check.outputs.artifact_arm64_pypy_bookworm }}
       artifact_arm64_pypy_trixie: ${{ steps.check.outputs.artifact_arm64_pypy_trixie }}
 
@@ -140,6 +145,7 @@ jobs:
               // Query artifacts from wheels-docker workflow
               const wheelsDockerRunId = latestRuns['wheels-docker']?.id;
               core.setOutput('artifact_manylinux_x86_64', await findArtifact(wheelsDockerRunId, 'artifacts-manylinux_2_28_x86_64'));
+              core.setOutput('artifact_musllinux_x86_64', await findArtifact(wheelsDockerRunId, 'artifacts-musllinux_1_2_x86_64'));
 
               // Query artifacts from wheels-arm64 workflow
               const wheelsArm64RunId = latestRuns['wheels-arm64']?.id;
@@ -147,6 +153,10 @@ jobs:
               core.setOutput('artifact_arm64_cp312', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.12-manylinux_2_28_aarch64'));
               core.setOutput('artifact_arm64_cp313', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64'));
               core.setOutput('artifact_arm64_cp314', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.14-manylinux_2_28_aarch64'));
+              core.setOutput('artifact_arm64_cp311_musl', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.11-musllinux_1_2_aarch64'));
+              core.setOutput('artifact_arm64_cp312_musl', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.12-musllinux_1_2_aarch64'));
+              core.setOutput('artifact_arm64_cp313_musl', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.13-musllinux_1_2_aarch64'));
+              core.setOutput('artifact_arm64_cp314_musl', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.14-musllinux_1_2_aarch64'));
               core.setOutput('artifact_arm64_pypy_bookworm', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64'));
               core.setOutput('artifact_arm64_pypy_trixie', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64'));
 
@@ -415,6 +425,17 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify musllinux x86_64 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_musllinux_x86_64 }}
+          path: ${{ github.workspace }}/wheelhouse/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 CPython 3.11 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -452,6 +473,50 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp314 }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.11 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp311_musl }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.12 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp312_musl }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.13 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313_musl }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.14 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp314_musl }}
           path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -842,18 +907,26 @@ jobs:
             cpy311-macos-arm64
             cpy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
+            cpy311-linux-x86_64-musllinux_1_2
+            cpy311-linux-aarch64-musllinux_1_2
             cpy311-win-amd64
             cpy312-macos-arm64
             cpy312-linux-x86_64-manylinux_2_28
             cpy312-linux-aarch64-manylinux_2_28
+            cpy312-linux-x86_64-musllinux_1_2
+            cpy312-linux-aarch64-musllinux_1_2
             cpy312-win-amd64
             cpy313-macos-arm64
             cpy313-linux-x86_64-manylinux_2_28
             cpy313-linux-aarch64-manylinux_2_28
+            cpy313-linux-x86_64-musllinux_1_2
+            cpy313-linux-aarch64-musllinux_1_2
             cpy313-win-amd64
             cpy314-macos-arm64
             cpy314-linux-x86_64-manylinux_2_28
             cpy314-linux-aarch64-manylinux_2_28
+            cpy314-linux-x86_64-musllinux_1_2
+            cpy314-linux-aarch64-musllinux_1_2
             cpy314-win-amd64
             pypy311-macos-arm64
             pypy311-linux-x86_64-manylinux_2_28
@@ -1270,6 +1343,17 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify musllinux x86_64 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_musllinux_x86_64 }}
+          path: ${{ github.workspace }}/wheelhouse/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 CPython 3.11 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -1307,6 +1391,50 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp314 }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.11 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp311_musl }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.12 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp312_musl }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.13 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313_musl }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.14 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp314_musl }}
           path: ${{ github.workspace }}/wheelhouse-arm64/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -1697,18 +1825,26 @@ jobs:
             cpy311-macos-arm64
             cpy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
+            cpy311-linux-x86_64-musllinux_1_2
+            cpy311-linux-aarch64-musllinux_1_2
             cpy311-win-amd64
             cpy312-macos-arm64
             cpy312-linux-x86_64-manylinux_2_28
             cpy312-linux-aarch64-manylinux_2_28
+            cpy312-linux-x86_64-musllinux_1_2
+            cpy312-linux-aarch64-musllinux_1_2
             cpy312-win-amd64
             cpy313-macos-arm64
             cpy313-linux-x86_64-manylinux_2_28
             cpy313-linux-aarch64-manylinux_2_28
+            cpy313-linux-x86_64-musllinux_1_2
+            cpy313-linux-aarch64-musllinux_1_2
             cpy313-win-amd64
             cpy314-macos-arm64
             cpy314-linux-x86_64-manylinux_2_28
             cpy314-linux-aarch64-manylinux_2_28
+            cpy314-linux-x86_64-musllinux_1_2
+            cpy314-linux-aarch64-musllinux_1_2
             cpy314-win-amd64
             pypy311-macos-arm64
             pypy311-linux-x86_64-manylinux_2_28
@@ -2145,6 +2281,17 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify musllinux x86_64 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_musllinux_x86_64 }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_docker_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 CPython 3.11 artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -2182,6 +2329,50 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp314 }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.11 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp311_musl }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.12 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp312_musl }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.13 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp313_musl }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 CPython 3.14 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp314_musl }}
           path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -2343,18 +2534,26 @@ jobs:
             cpy311-macos-arm64
             cpy311-linux-x86_64-manylinux_2_28
             cpy311-linux-aarch64-manylinux_2_28
+            cpy311-linux-x86_64-musllinux_1_2
+            cpy311-linux-aarch64-musllinux_1_2
             cpy311-win-amd64
             cpy312-macos-arm64
             cpy312-linux-x86_64-manylinux_2_28
             cpy312-linux-aarch64-manylinux_2_28
+            cpy312-linux-x86_64-musllinux_1_2
+            cpy312-linux-aarch64-musllinux_1_2
             cpy312-win-amd64
             cpy313-macos-arm64
             cpy313-linux-x86_64-manylinux_2_28
             cpy313-linux-aarch64-manylinux_2_28
+            cpy313-linux-x86_64-musllinux_1_2
+            cpy313-linux-aarch64-musllinux_1_2
             cpy313-win-amd64
             cpy314-macos-arm64
             cpy314-linux-x86_64-manylinux_2_28
             cpy314-linux-aarch64-manylinux_2_28
+            cpy314-linux-x86_64-musllinux_1_2
+            cpy314-linux-aarch64-musllinux_1_2
             cpy314-win-amd64
             pypy311-macos-arm64
             pypy311-linux-x86_64-manylinux_2_28

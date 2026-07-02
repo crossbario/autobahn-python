@@ -64,6 +64,36 @@ Linux x86_64
 
 **Note:** Linux x86_64 wheels are built WITHOUT NVX to ensure maximum compatibility across different Linux distributions. Users on modern x86_64 systems can still benefit from NVX by installing from source or using platform-specific builds.
 
+Linux x86_64 (musllinux / Alpine)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Binary wheels with NVX acceleration** (musllinux_1_2, musl libc — e.g. Alpine Linux):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 30 40
+
+   * - Python Version
+     - Wheel Tag Pattern
+     - NVX Acceleration
+   * - CPython 3.11
+     - ``autobahn-{version}-cp311-cp311-musllinux_1_2_x86_64.whl``
+     - ✅ Yes (binary)
+   * - CPython 3.12
+     - ``autobahn-{version}-cp312-cp312-musllinux_1_2_x86_64.whl``
+     - ✅ Yes (binary)
+   * - CPython 3.13
+     - ``autobahn-{version}-cp313-cp313-musllinux_1_2_x86_64.whl``
+     - ✅ Yes (binary)
+   * - CPython 3.14
+     - ``autobahn-{version}-cp314-cp314-musllinux_1_2_x86_64.whl``
+     - ✅ Yes (binary)
+
+**Note:** musllinux wheels cover CPython only. PyPy is not published for musllinux because the
+official PyPA musllinux images ship no PyPy interpreter (tracked as a follow-up). Without these
+wheels, ``pip install autobahn`` on Alpine falls back to a source build that fails, so publishing
+them makes Alpine "just work".
+
 macOS ARM64 (Apple Silicon)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -143,6 +173,34 @@ Linux ARM64 (CPython)
      - ✅ Yes (binary)
 
 **Compatibility:** Requires glibc 2.28 or later (Debian 10+, Ubuntu 18.04+, RHEL 8+)
+
+Linux ARM64 (CPython, musllinux / Alpine)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Binary wheels with NVX acceleration** (musllinux_1_2, musl libc — e.g. Alpine Linux):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 35 35
+
+   * - Python Version
+     - Wheel Tag Pattern
+     - NVX Acceleration
+   * - CPython 3.11
+     - ``autobahn-{version}-cp311-cp311-musllinux_1_2_aarch64.whl``
+     - ✅ Yes (binary)
+   * - CPython 3.12
+     - ``autobahn-{version}-cp312-cp312-musllinux_1_2_aarch64.whl``
+     - ✅ Yes (binary)
+   * - CPython 3.13
+     - ``autobahn-{version}-cp313-cp313-musllinux_1_2_aarch64.whl``
+     - ✅ Yes (binary)
+   * - CPython 3.14
+     - ``autobahn-{version}-cp314-cp314-musllinux_1_2_aarch64.whl``
+     - ✅ Yes (binary)
+
+**Compatibility:** musl libc 1.2 or later (Alpine 3.12+). CPython only; PyPy musllinux is a
+tracked follow-up (no official PyPA musllinux PyPy image).
 
 Linux ARM64 (PyPy) - Debian 12
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -327,6 +385,8 @@ Common Tags
 * ``manylinux_2_28_aarch64`` - Linux on ARM64 with glibc 2.28+
 * ``manylinux_2_36_aarch64`` - Linux on ARM64 with glibc 2.36+
 * ``manylinux_2_38_aarch64`` - Linux on ARM64 with glibc 2.38+
+* ``musllinux_1_2_x86_64`` - Linux on x86_64 with musl libc 1.2+ (Alpine)
+* ``musllinux_1_2_aarch64`` - Linux on ARM64 with musl libc 1.2+ (Alpine)
 * ``macosx_15_0_arm64`` - macOS 15+ on Apple Silicon
 * ``win_amd64`` - Windows on x86_64
 

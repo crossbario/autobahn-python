@@ -53,6 +53,14 @@ jobs:
           # see: https://github.com/pypa/manylinux
           - name: "manylinux_2_28_x86_64"
             base_image: "quay.io/pypa/manylinux_2_28_x86_64"
+            build_envs: ""  # empty = build all ENVS (CPython + PyPy)
+
+          # musllinux_1_2 (Alpine / musl libc) wheels — CPython only.
+          # The pypa musllinux image ships no PyPy under /opt/python, so we build
+          # cpy311-314 explicitly (not `build-all`, which includes pypy311). #1877
+          - name: "musllinux_1_2_x86_64"
+            base_image: "quay.io/pypa/musllinux_1_2_x86_64"
+            build_envs: "cpy311 cpy312 cpy313 cpy314"
 
     steps:
       - name: Checkout code
@@ -183,8 +191,14 @@ jobs:
           echo "rustc: $(rustc --version)"
           echo "auditwheel: $(auditwheel --version || echo 'not available')"
 
-          # Build binary wheels WITH NVX acceleration for manylinux
-          just build-all
+          # Build binary wheels WITH NVX acceleration.
+          # build_envs restricts which envs to build (musllinux = CPython only);
+          # empty means build all ENVS (manylinux: CPython + PyPy).
+          if [ -n "${{ matrix.target.build_envs }}" ]; then
+            for v in ${{ matrix.target.build_envs }}; do just build "$v"; done
+          else
+            just build-all
+          fi
 
           command -v auditwheel >/dev/null || { echo "auditwheel missing, aborting"; exit 1; }
           mkdir -p wheelhouse
@@ -239,6 +253,21 @@ jobs:
           echo "Installing twine for validation..."
           # Ensure pip is available for the Python being used
           python3 -m ensurepip --upgrade 2>/dev/null || true
+          # Between steps, GitHub reconstructs PATH from $GITHUB_PATH and drops the
+          # /opt/python entries added in "Setup Python environment", so `python3` falls
+          # back to the container's system interpreter. On manylinux (AlmaLinux) that
+          # interpreter bundles pip; on musllinux (Alpine) it does NOT ("No module named
+          # pip"). If pip is missing, re-expose a pypa /opt/python CPython (all of which
+          # bundle pip). No-op on manylinux, where system python3 already has pip. #1877
+          if ! python3 -m pip --version >/dev/null 2>&1; then
+            for d in /opt/python/cp313-cp313/bin /opt/python/cp312-cp312/bin /opt/python/cp311-cp311/bin; do
+              if [ -x "$d/python3" ] && "$d/python3" -m pip --version >/dev/null 2>&1; then
+                export PATH="$d:$PATH"
+                echo "==> Using $d/python3 for validation ($("$d/python3" --version))"
+                break
+              fi
+            done
+          fi
           # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
           # Note: No --break-system-packages needed in containers (isolated environment)
           python3 -m pip install git+https://github.com/pypa/packaging.git
@@ -302,8 +331,15 @@ jobs:
 
             # Test 3: twine check (validates wheel metadata and structure)
             echo "  [3/3] Twine validation..."
-            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
-            TWINE_EXIT=${PIPESTATUS[0]}
+            # POSIX-safe exit capture: musllinux (Alpine) containers ship no bash, so
+            # this step runs under busybox sh (ash), where ${PIPESTATUS[0]} is a "bad
+            # substitution". Redirect to a file (not tee|PIPESTATUS) and read $?. #1877
+            if twine check "$wheel" > /tmp/twine_output.txt 2>&1; then
+              TWINE_EXIT=0
+            else
+              TWINE_EXIT=$?
+            fi
+            cat /tmp/twine_output.txt
 
             # Fail on nonzero exit or any error-like output
             if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_output.txt; then
@@ -405,14 +441,14 @@ jobs:
         run: |
           BUILD_INFO=wheelhouse/build-info.txt
 
-          echo "manylinux Build Information for ${{ matrix.target.name }}" > $BUILD_INFO
+          echo "Linux Build Information for ${{ matrix.target.name }}" > $BUILD_INFO
           echo "========================================================" >> $BUILD_INFO
           echo "" >> $BUILD_INFO
 
           echo "Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $BUILD_INFO
           echo "Container: ${{ matrix.target.base_image }}" >> $BUILD_INFO
           echo "Platform: $(uname -m)" >> $BUILD_INFO
-          echo "Build Method: GitHub Actions + manylinux Docker Container" >> $BUILD_INFO
+          echo "Build Method: GitHub Actions + PyPA Docker Container" >> $BUILD_INFO
           echo "NVX Acceleration: ENABLED (binary wheels with native extensions)" >> $BUILD_INFO
           echo "" >> $BUILD_INFO
 
