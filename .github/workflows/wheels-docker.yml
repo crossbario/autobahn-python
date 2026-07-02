@@ -441,14 +441,14 @@ jobs:
         run: |
           BUILD_INFO=wheelhouse/build-info.txt
 
-          echo "manylinux Build Information for ${{ matrix.target.name }}" > $BUILD_INFO
+          echo "Linux Build Information for ${{ matrix.target.name }}" > $BUILD_INFO
           echo "========================================================" >> $BUILD_INFO
           echo "" >> $BUILD_INFO
 
           echo "Build Date: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $BUILD_INFO
           echo "Container: ${{ matrix.target.base_image }}" >> $BUILD_INFO
           echo "Platform: $(uname -m)" >> $BUILD_INFO
-          echo "Build Method: GitHub Actions + manylinux Docker Container" >> $BUILD_INFO
+          echo "Build Method: GitHub Actions + PyPA Docker Container" >> $BUILD_INFO
           echo "NVX Acceleration: ENABLED (binary wheels with native extensions)" >> $BUILD_INFO
           echo "" >> $BUILD_INFO
 

@@ -443,7 +443,7 @@ jobs:
         run: |
           BUILD_INFO=wheelhouse/build-info.txt
 
-          echo "ARM64 manylinux Build Information for ${{ matrix.target.name }}" > $BUILD_INFO
+          echo "ARM64 Linux Build Information for ${{ matrix.target.name }}" > $BUILD_INFO
           echo "================================================================" >> $BUILD_INFO
           echo "" >> $BUILD_INFO
 
@@ -451,7 +451,7 @@ jobs:
           echo "Base Image: ${{ matrix.target.base_image || 'custom' }}" >> $BUILD_INFO
           echo "Dockerfile: ${{ matrix.target.dockerfile || 'N/A (official image)' }}" >> $BUILD_INFO
           echo "Platform: linux/arm64 (aarch64)" >> $BUILD_INFO
-          echo "Manylinux Tag: ${{ matrix.target.manylinux_tag }}" >> $BUILD_INFO
+          echo "Platform Tag: ${{ matrix.target.manylinux_tag }}" >> $BUILD_INFO
           echo "glibc Version: ${{ matrix.target.glibc_version }}" >> $BUILD_INFO
           echo "Python Implementation: ${{ matrix.target.python_impl }}" >> $BUILD_INFO
           echo "Build Method: GitHub Actions + QEMU + Docker (ARM64 emulation)" >> $BUILD_INFO
