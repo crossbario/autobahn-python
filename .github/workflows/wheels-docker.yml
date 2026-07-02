@@ -331,8 +331,15 @@ jobs:
 
             # Test 3: twine check (validates wheel metadata and structure)
             echo "  [3/3] Twine validation..."
-            twine check "$wheel" 2>&1 | tee /tmp/twine_output.txt
-            TWINE_EXIT=${PIPESTATUS[0]}
+            # POSIX-safe exit capture: musllinux (Alpine) containers ship no bash, so
+            # this step runs under busybox sh (ash), where ${PIPESTATUS[0]} is a "bad
+            # substitution". Redirect to a file (not tee|PIPESTATUS) and read $?. #1877
+            if twine check "$wheel" > /tmp/twine_output.txt 2>&1; then
+              TWINE_EXIT=0
+            else
+              TWINE_EXIT=$?
+            fi
+            cat /tmp/twine_output.txt
 
             # Fail on nonzero exit or any error-like output
             if [ "$TWINE_EXIT" -eq 0 ] && ! grep -Eqi "ERROR|FAILED|InvalidDistribution" /tmp/twine_output.txt; then
