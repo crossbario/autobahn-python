@@ -253,6 +253,21 @@ jobs:
           echo "Installing twine for validation..."
           # Ensure pip is available for the Python being used
           python3 -m ensurepip --upgrade 2>/dev/null || true
+          # Between steps, GitHub reconstructs PATH from $GITHUB_PATH and drops the
+          # /opt/python entries added in "Setup Python environment", so `python3` falls
+          # back to the container's system interpreter. On manylinux (AlmaLinux) that
+          # interpreter bundles pip; on musllinux (Alpine) it does NOT ("No module named
+          # pip"). If pip is missing, re-expose a pypa /opt/python CPython (all of which
+          # bundle pip). No-op on manylinux, where system python3 already has pip. #1877
+          if ! python3 -m pip --version >/dev/null 2>&1; then
+            for d in /opt/python/cp313-cp313/bin /opt/python/cp312-cp312/bin /opt/python/cp311-cp311/bin; do
+              if [ -x "$d/python3" ] && "$d/python3" -m pip --version >/dev/null 2>&1; then
+                export PATH="$d:$PATH"
+                echo "==> Using $d/python3 for validation ($("$d/python3" --version))"
+                break
+              fi
+            done
+          fi
           # Install both packaging and twine from master for PEP 639 (Core Metadata 2.4) support
           # Note: No --break-system-packages needed in containers (isolated environment)
           python3 -m pip install git+https://github.com/pypa/packaging.git
