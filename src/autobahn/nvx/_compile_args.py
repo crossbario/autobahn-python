@@ -81,6 +81,10 @@ CIBUILDWHEEL : str, optional
 AUDITWHEEL_PLAT : str, optional
     Set by auditwheel/manylinux builds. Indicates wheel build.
 
+CC, CROSS_COMPILE : str, optional
+    If either names a triplet-prefixed compiler (e.g. "aarch64-poky-linux-gcc"),
+    an external cross toolchain is assumed and no -march flag is added.
+
 Examples
 --------
 
@@ -212,9 +216,6 @@ def get_compile_args():
         # But default codegen is already optimized for current arch
         return ["/O2", "/W3"]
 
-    # GCC/Clang on POSIX (Linux, macOS, *BSD)
-    machine = _get_target_machine()
-
     # Base flags for all POSIX platforms
     base_args = [
         "-std=c99",
@@ -233,6 +234,14 @@ def get_compile_args():
         # deployments). It is NOT safe for distributed wheels or cross-compilation.
         return base_args + ["-march=native"]
 
+    if _is_external_toolchain():
+        # Cross toolchain (Yocto/OpenEmbedded, Buildroot, ...) already sets its
+        # own -march/-mtune; don't second-guess it (#1930).
+        return base_args
+
+    # GCC/Clang on POSIX (Linux, macOS, *BSD)
+    machine = _get_target_machine()
+
     # Default for everyone (AUTOBAHN_ARCH_TARGET unset or "safe"): a portable
     # baseline architecture. Defaulting to "safe" rather than -march=native is
     # what makes cross-compilation work out of the box - a cross toolchain
@@ -246,6 +255,27 @@ def get_compile_args():
     # toolchain defaults (or distro-supplied CFLAGS, e.g. Buildroot/Yocto)
     # govern code generation.
     return base_args
+
+
+def _is_external_toolchain():
+    """
+    True if ``CC`` or ``CROSS_COMPILE`` names a triplet-prefixed compiler (e.g.
+    ``aarch64-poky-linux-gcc``), the convention used by externally managed
+    toolchains such as Yocto/OpenEmbedded and Buildroot.
+
+    Returns
+    -------
+    bool
+        True if an externally managed cross toolchain is detected.
+    """
+    for var in ("CC", "CROSS_COMPILE"):
+        value = os.environ.get(var, "")
+        if not value:
+            continue
+        exe = os.path.basename(value.split()[0])
+        if "-" in exe:
+            return True
+    return False
 
 
 def _get_target_machine():
