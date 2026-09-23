@@ -348,8 +348,11 @@ def run(components, start_loop=True, log_level="info"):
     # txaio.start_logging() what happens if we call it again?)
     if log_level is not None:
         txaio.start_logging(level=log_level)
-    loop = asyncio.get_event_loop()
-    if loop.is_closed():
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = None
+    if loop is None or loop.is_closed():
         asyncio.set_event_loop(asyncio.new_event_loop())
         loop = asyncio.get_event_loop()
         txaio.config.loop = loop
