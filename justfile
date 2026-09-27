@@ -80,7 +80,7 @@ VENV_DIR := PROJECT_DIR / '.venvs'
 
 # Define a justfile-local variable for our environments.
 # PyPy publishes no Windows ARM64 interpreter, so win_arm64 is CPython-only.
-ENVS := if os() + "-" + arch() == "windows-aarch64" { 'cpy314 cpy313 cpy312 cpy311' } else { 'cpy314 cpy313 cpy312 cpy311 pypy311' }
+ENVS := if os() + "-" + arch() == "windows-aarch64" { 'cpy315 cpy314 cpy313 cpy312 cpy311' } else { 'cpy315 cpy314 cpy313 cpy312 cpy311 pypy311' }
 
 # Package version files, kept in sync (CalVer YY.M.PATCH[.devN], PEP 440).
 PY_VERSION_FILE := 'src/autobahn/_version.py'
@@ -96,6 +96,7 @@ _get-spec short_name:
     #!/usr/bin/env bash
     set -e
     case {{short_name}} in
+        cpy315)  echo "cpython-3.15{{PY_PLATFORM_SUFFIX}}";;
         cpy314)  echo "cpython-3.14{{PY_PLATFORM_SUFFIX}}";;  # cpython-3.14.0b3-linux-x86_64-gnu
         cpy314t) echo "cpython-3.14t{{PY_PLATFORM_SUFFIX}}";; # CPython 3.14 free-threaded (no-GIL); reserved for #1875 Part 2
         cpy313)  echo "cpython-3.13{{PY_PLATFORM_SUFFIX}}";;  # cpython-3.13.5-linux-x86_64-gnu
@@ -315,7 +316,7 @@ list-all:
     echo
     echo "Create a Python venv using: just create <shortname>"
 
-# Create a single Python virtual environment (usage: `just create cpy314` or `just create`)
+# Create a single Python virtual environment (usage: `just create cpy315` or `just create`)
 create venv="":
     #!/usr/bin/env bash
     set -e
@@ -380,7 +381,7 @@ create-all:
         just create ${venv}
     done
 
-# Get the version of a single virtual environment's Python (usage: `just version cpy314`)
+# Get the version of a single virtual environment's Python (usage: `just version cpy315`)
 version venv="":
     #!/usr/bin/env bash
     set -e
@@ -532,7 +533,7 @@ link-system-packages venv="" vendors="": (create venv)
 # -- Installation and Test
 # -----------------------------------------------------------------------------
 
-# Install this package and its run-time dependencies in a single environment (usage: `just install cpy314` or `just install`)
+# Install this package and its run-time dependencies in a single environment (usage: `just install cpy315` or `just install`)
 install venv="": (create venv)
     #!/usr/bin/env bash
     set -e
@@ -548,7 +549,7 @@ install venv="": (create venv)
     # uv pip install --python "{{VENV_DIR}}/${VENV_NAME}/bin/python" .[all]
     ${VENV_PYTHON} -m pip install .[all]
 
-# Install this package in development (editable) mode and its run-time dependencies in a single environment (usage: `just install-dev cpy314` or `just install-dev`)
+# Install this package in development (editable) mode and its run-time dependencies in a single environment (usage: `just install-dev cpy315` or `just install-dev`)
 install-dev venv="": (create venv)
     #!/usr/bin/env bash
     set -e
@@ -601,7 +602,7 @@ install-dev-local venv="": (create venv)
 # - Python imports look for top-level modules in sys.path roots
 # - For editable installs, src/ is on sys.path, so .so files there are importable
 #
-# (usage: `just build-nvx cpy314` or with explicit NVX: `AUTOBAHN_USE_NVX=1 just build-nvx cpy314`)
+# (usage: `just build-nvx cpy315` or with explicit NVX: `AUTOBAHN_USE_NVX=1 just build-nvx cpy315`)
 build-nvx venv="": (create venv)
     #!/usr/bin/env bash
     set -e
@@ -652,7 +653,7 @@ install-dev-all:
         just install-dev ${venv}
     done
 
-# Upgrade dependencies in a single environment (usage: `just upgrade cpy314`)
+# Upgrade dependencies in a single environment (usage: `just upgrade cpy315`)
 upgrade venv="": (create venv)
     #!/usr/bin/env bash
     set -e
@@ -680,7 +681,7 @@ upgrade-all:
 # -- Installation: Tools (Ruff, Sphinx, etc)
 # -----------------------------------------------------------------------------
 
-# Install minimal build tools for building wheels (usage: `just install-build-tools cpy314`)
+# Install minimal build tools for building wheels (usage: `just install-build-tools cpy315`)
 # This is lighter than install-tools as it excludes dependencies like twine
 # (which depends on nh3, a Rust package that segfaults under QEMU ARM64 emulation)
 install-build-tools venv="": (create venv)
@@ -707,7 +708,7 @@ install-build-tools venv="": (create venv)
 
     ${VENV_PYTHON} -m pip install -e .[build-tools]
 
-# Install the development tools for this Package in a single environment (usage: `just install-tools cpy314`)
+# Install the development tools for this Package in a single environment (usage: `just install-tools cpy315`)
 # This also builds NVX CFFI modules so that tests with AUTOBAHN_USE_NVX=1 work.
 install-tools venv="": (create venv)
     #!/usr/bin/env bash
@@ -766,6 +767,7 @@ install-benchmark venv="": (create venv) (install venv)
         echo "  - cpy312 (CPython 3.12)"
         echo "  - cpy313 (CPython 3.13)"
         echo "  - cpy314 (CPython 3.14)"
+        echo "  - cpy315 (CPython 3.15)"
         echo "  - pypy311 (PyPy 3.11)"
         exit 1
     fi
@@ -1052,7 +1054,7 @@ check-coverage venv="" use_nvx="": (install-tools venv) (install-dev venv)
 
     echo "--> Coverage report generated in docs/_build/html/coverage${NVX_SUFFIX}/index.html"
 
-# Verify all WebSocket compression methods are available (usage: `just check-compressors cpy314 "permessage-deflate, permessage-brotli"`)
+# Verify all WebSocket compression methods are available (usage: `just check-compressors cpy315 "permessage-deflate, permessage-brotli"`)
 check-compressors venv="" expect="permessage-brotli,permessage-bzip2,permessage-deflate,permessage-snappy": (install venv)
     #!/usr/bin/env bash
     set -e
@@ -1124,7 +1126,7 @@ check-compressors venv="" expect="permessage-brotli,permessage-bzip2,permessage-
         echo "✅ Compression methods check completed"
     fi
 
-# Verify all WAMP serializers are available (usage: `just check-serializers cpy314 "json, msgpack, cbor, ubjson, flatbuffers"`)
+# Verify all WAMP serializers are available (usage: `just check-serializers cpy315 "json, msgpack, cbor, ubjson, flatbuffers"`)
 check-serializers venv="" expect="cbor,flatbuffers,json,msgpack,ubjson": (install venv)
     #!/usr/bin/env bash
     set -e
@@ -1194,7 +1196,7 @@ check-serializers venv="" expect="cbor,flatbuffers,json,msgpack,ubjson": (instal
 
 # Check the vendored FlatBuffers version is in sync with zlmdb (data-in-transit
 # vs data-at-rest; both are used together by Crossbar.io). No-op if zlmdb is not
-# installed. Usage: `just check-flatbuffers-sync cpy314`
+# installed. Usage: `just check-flatbuffers-sync cpy315`
 check-flatbuffers-sync venv="": (install venv)
     #!/usr/bin/env bash
     set -e
@@ -1220,14 +1222,14 @@ check-flatbuffers-sync venv="": (install venv)
     "${VENV_PYTHON}" "${TMP_SCRIPT}"
     rm -f "${TMP_SCRIPT}"
 
-# Run all checks in single environment (usage: `just check cpy314`)
+# Run all checks in single environment (usage: `just check cpy315`)
 check venv="": (check-compressors venv) (check-serializers venv) (check-format venv) (check-typing venv) (check-coverage-combined venv)
 
 # -----------------------------------------------------------------------------
 # -- Unit tests
 # -----------------------------------------------------------------------------
 
-# Run the test suite for Twisted/trial and asyncio/pytest (usage: `just test cpy314`)
+# Run the test suite for Twisted/trial and asyncio/pytest (usage: `just test cpy315`)
 test venv="" use_nvx="": (test-twisted venv use_nvx) (test-asyncio venv use_nvx)
 
 # Meta-recipe to run `test` on all environments
@@ -1238,7 +1240,7 @@ test-all:
         just test ${venv}
     done
 
-# Run basic autobahn library import test (usage: `just test-import cpy314`)
+# Run basic autobahn library import test (usage: `just test-import cpy315`)
 test-import venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
@@ -1253,7 +1255,7 @@ test-import venv="": (install-tools venv) (install-dev venv)
 
     ${VENV_PYTHON} -c "from autobahn.wamp.message import Unregistered; print(f'\n{Unregistered.MESSAGE_TYPE}! ohh, yeah.\n')"
 
-# Run the test suite for Twisted using trial (usage: `just test-twisted cpy314`)
+# Run the test suite for Twisted using trial (usage: `just test-twisted cpy315`)
 test-twisted venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
@@ -1294,7 +1296,7 @@ test-twisted venv="" use_nvx="": (install-tools venv) (install-dev venv)
         autobahn.wamp.test \
         autobahn.nvx.test
 
-# Run the test suite for asyncio using pytest (usage: `just test-asyncio cpy314`)
+# Run the test suite for asyncio using pytest (usage: `just test-asyncio cpy315`)
 test-asyncio venv="" use_nvx="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
@@ -1813,7 +1815,7 @@ bump-flatbuffers:
 update-flatbuffers:
     ./scripts/update_flatbuffers.sh
 
-# Build wheel only (usage: `just build cpy314`)
+# Build wheel only (usage: `just build cpy315`)
 build venv="": (install-build-tools venv)
     #!/usr/bin/env bash
     set -e

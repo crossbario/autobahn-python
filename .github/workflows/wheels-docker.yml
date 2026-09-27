@@ -57,10 +57,10 @@ jobs:
 
           # musllinux_1_2 (Alpine / musl libc) wheels — CPython only.
           # The pypa musllinux image ships no PyPy under /opt/python, so we build
-          # cpy311-314 explicitly (not `build-all`, which includes pypy311). #1877
+          # cpy311-315 explicitly (not `build-all`, which includes pypy311). #1877
           - name: "musllinux_1_2_x86_64"
             base_image: "quay.io/pypa/musllinux_1_2_x86_64"
-            build_envs: "cpy311 cpy312 cpy313 cpy314"
+            build_envs: "cpy311 cpy312 cpy313 cpy314 cpy315"
 
     steps:
       - name: Checkout code

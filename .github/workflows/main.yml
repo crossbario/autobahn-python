@@ -85,17 +85,17 @@ jobs:
 
       - name: Create Python environment and install tools
         run: |
-          just create cpy314
-          just install-tools cpy314
+          just create cpy315
+          just install-tools cpy315
 
       - name: Code formatting / linting (via ruff)
-        run: just check-format cpy314
+        run: just check-format cpy315
 
       - name: Code static typing (via ty)
-        run: just check-typing cpy314
+        run: just check-typing cpy315
 
       - name: Code test coverage (Combined Twisted + asyncio) - WITH NVX
-        run: just check-coverage-combined cpy314 1
+        run: just check-coverage-combined cpy315 1
 
       - name: Upload coverage report (with-nvx)
         if: always()
@@ -106,7 +106,7 @@ jobs:
           retention-days: 14
 
       - name: Code test coverage (Combined Twisted + asyncio) - WITHOUT NVX
-        run: just check-coverage-combined cpy314 0
+        run: just check-coverage-combined cpy315 0
 
       - name: Upload coverage report (without-nvx)
         if: always()
@@ -117,16 +117,16 @@ jobs:
           retention-days: 14
 
       - name: Unit test - Twisted / trial - WITH NVX
-        run: just test-twisted cpy314 1
+        run: just test-twisted cpy315 1
 
       - name: Unit test - Twisted / trial - WITHOUT NVX
-        run: just test-twisted cpy314 0
+        run: just test-twisted cpy315 0
 
       - name: Unit test - asyncio / pytest - WITH NVX
-        run: just test-asyncio cpy314 1
+        run: just test-asyncio cpy315 1
 
       - name: Unit test - asyncio / pytest - WITHOUT NVX
-        run: just test-asyncio cpy314 0
+        run: just test-asyncio cpy315 0
 
   test-serdes:
     name: SerDes Conformance Tests
@@ -142,7 +142,7 @@ jobs:
 
     strategy:
       matrix:
-        python-env: [cpy314, cpy311, pypy311]
+        python-env: [cpy315, cpy311, pypy311]
 
     steps:
       - name: Checkout code
@@ -230,12 +230,12 @@ jobs:
       PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
 
     # Runs on ALL supported Python versions (unlike the main test suite, which
-    # runs on cpy314 only) so import-time annotation regressions that only fire
+    # runs on cpy315 only) so import-time annotation regressions that only fire
     # on CPython < 3.14 - e.g. #1878 - are caught. Crypto extras are installed
     # (via install-dev -> autobahn[all]) so the cryptosign code paths run.
     strategy:
       matrix:
-        python-env: [cpy314, cpy313, cpy312, cpy311, pypy311]
+        python-env: [cpy315, cpy314, cpy313, cpy312, cpy311, pypy311]
 
     steps:
       - name: Checkout code
@@ -393,11 +393,11 @@ jobs:
 
       - name: Create Python environment and install tools
         run: |
-          just create cpy314
-          just install-tools cpy314
+          just create cpy315
+          just install-tools cpy315
 
       - name: Build documentation
-        run: just docs cpy314
+        run: just docs cpy315
 
       - name: Upload documentation artifacts
         uses: wamp-proto/wamp-cicd/actions/upload-artifact-verified@main
@@ -452,13 +452,13 @@ jobs:
 
   #     - name: Create Python environment and install tools
   #       run: |
-  #         just create cpy314
-  #         just install-tools cpy314
+  #         just create cpy315
+  #         just install-tools cpy315
 
   #     - name: Run spellcheck
   #       run: |
   #         # Navigate to docs directory and run sphinx spellcheck
-  #         cd docs && ../.venvs/cpy314/bin/sphinx-build -b spelling . _spelling
+  #         cd docs && ../.venvs/cpy315/bin/sphinx-build -b spelling . _spelling
 
   # FIXME: 1 warning, 52 errors in 0.82s
   #
@@ -500,12 +500,12 @@ jobs:
 
   #     - name: Create Python environment and install package
   #       run: |
-  #         just create cpy314
-  #         just install-tools cpy314
-  #         just install-dev cpy314
+  #         just create cpy315
+  #         just install-tools cpy315
+  #         just install-dev cpy315
 
   #     - name: Run test suite
-  #       run: just test cpy314
+  #       run: just test cpy315
 
   build-schema:
     name: FlatBuffers Schema Build
@@ -521,7 +521,7 @@ jobs:
 
     strategy:
       matrix:
-        python-env: [cpy314, cpy311, pypy311]
+        python-env: [cpy315, cpy311, pypy311]
 
     steps:
       - name: Checkout code
@@ -684,7 +684,7 @@ jobs:
 
     strategy:
       matrix:
-        python-env: [cpy314, cpy311, pypy311]
+        python-env: [cpy315, cpy311, pypy311]
 
     steps:
       - name: Checkout code

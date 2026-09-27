@@ -179,14 +179,18 @@ functionality to wheel installs including the flatc binary.
 |----------|--------------|----------|----------|
 | **main.yml** | `documentation` | `docs/_build/html/` | N/A |
 | **wstest.yml** | `wstest-results` | WebSocket conformance reports | N/A |
-| **wheels.yml** | `wheels-macos-arm64` | macOS ARM64 wheels (cpy311-314, pypy311) | macOS arm64 |
-| **wheels.yml** | `wheels-windows-x86_64` | Windows x64 wheels (cpy311-314, pypy311) | Windows x86_64 |
-| **wheels.yml** | `wheels-windows-arm64` | Windows ARM64 wheels (cpy311-314, no PyPy) | Windows arm64 |
+| **wheels.yml** | `wheels-macos-arm64` | macOS ARM64 wheels (cpy311-315, pypy311) | macOS arm64 |
+| **wheels.yml** | `wheels-windows-x86_64` | Windows x64 wheels (cpy311-315, pypy311) | Windows x86_64 |
+| **wheels.yml** | `wheels-windows-arm64` | Windows ARM64 wheels (cpy311-315, no PyPy) | Windows arm64 |
 | **wheels.yml** | `linux-wheels-no-nvx` | Pure Python wheels (no NVX) | Linux x86_64 |
 | **wheels.yml** | `source-distribution` | `*.tar.gz` sdist | Linux (build host) |
 | **wheels-docker.yml** | `artifacts-manylinux_2_28_x86_64` | Linux x64 wheels (see below) | Linux x86_64 |
 | **wheels-arm64.yml** | `artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64` | CPython 3.11 wheel | Linux aarch64 |
+| **wheels-arm64.yml** | `artifacts-arm64-cpython-3.12-manylinux_2_28_aarch64` | CPython 3.12 wheel | Linux aarch64 |
 | **wheels-arm64.yml** | `artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64` | CPython 3.13 wheel | Linux aarch64 |
+| **wheels-arm64.yml** | `artifacts-arm64-cpython-3.14-manylinux_2_28_aarch64` | CPython 3.14 wheel | Linux aarch64 |
+| **wheels-arm64.yml** | `artifacts-arm64-cpython-3.15-manylinux_2_28_aarch64` | CPython 3.15 wheel | Linux aarch64 |
+| **wheels-arm64.yml** | `artifacts-arm64-cpython-3.15-musllinux_1_2_aarch64` | CPython 3.15 musllinux wheel | Linux aarch64 |
 | **wheels-arm64.yml** | `artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64` | PyPy 3.11 wheel (Debian 12) | Linux aarch64 |
 | **wheels-arm64.yml** | `artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64` | PyPy 3.11 wheel (Debian 13) | Linux aarch64 |
 
@@ -195,6 +199,7 @@ functionality to wheel installs including the flatc binary.
 - `cpy312-linux-x86_64-manylinux_2_28`
 - `cpy313-linux-x86_64-manylinux_2_28`
 - `cpy314-linux-x86_64-manylinux_2_28`
+- `cpy315-linux-x86_64-manylinux_2_28`
 - `pypy311-linux-x86_64-manylinux_2_28`
 
 ### 2. Artifact Consumer (release.yml)
@@ -211,7 +216,11 @@ download action. It maps artifact names via the `check-workflows` job outputs:
 | `artifact_linux_no_nvx` | wheels.yml | `linux-wheels-no-nvx` |
 | `artifact_manylinux_x86_64` | wheels-docker.yml | `artifacts-manylinux_2_28_x86_64` |
 | `artifact_arm64_cp311` | wheels-arm64.yml | `artifacts-arm64-cpython-3.11-manylinux_2_28_aarch64` |
+| `artifact_arm64_cp312` | wheels-arm64.yml | `artifacts-arm64-cpython-3.12-manylinux_2_28_aarch64` |
 | `artifact_arm64_cp313` | wheels-arm64.yml | `artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64` |
+| `artifact_arm64_cp314` | wheels-arm64.yml | `artifacts-arm64-cpython-3.14-manylinux_2_28_aarch64` |
+| `artifact_arm64_cp315` | wheels-arm64.yml | `artifacts-arm64-cpython-3.15-manylinux_2_28_aarch64` |
+| `artifact_arm64_cp315_musl` | wheels-arm64.yml | `artifacts-arm64-cpython-3.15-musllinux_1_2_aarch64` |
 | `artifact_arm64_pypy_bookworm` | wheels-arm64.yml | `artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64` |
 | `artifact_arm64_pypy_trixie` | wheels-arm64.yml | `artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64` |
 
@@ -221,12 +230,12 @@ download action. It maps artifact names via the `check-workflows` job outputs:
 
 | Platform | Architecture | Python Versions | Manylinux Tag | Workflow |
 |----------|--------------|-----------------|---------------|----------|
-| Linux | x86_64 | 3.11, 3.12, 3.13, 3.14, PyPy 3.11 | manylinux_2_28 | wheels-docker.yml |
-| Linux | aarch64 | 3.11, 3.13 | manylinux_2_28 | wheels-arm64.yml |
+| Linux | x86_64 | 3.11, 3.12, 3.13, 3.14, 3.15, PyPy 3.11 | manylinux_2_28 | wheels-docker.yml |
+| Linux | aarch64 | 3.11, 3.12, 3.13, 3.14, 3.15 | manylinux_2_28 | wheels-arm64.yml |
 | Linux | aarch64 | PyPy 3.11 | manylinux_2_36/2_38 | wheels-arm64.yml |
-| macOS | arm64 | 3.11, 3.12, 3.13, 3.14, PyPy 3.11 | N/A | wheels.yml |
-| Windows | x86_64 | 3.11, 3.12, 3.13, 3.14, PyPy 3.11 | N/A | wheels.yml |
-| Windows | arm64 | 3.11, 3.12, 3.13, 3.14 (no PyPy) | N/A | wheels.yml |
+| macOS | arm64 | 3.11, 3.12, 3.13, 3.14, 3.15, PyPy 3.11 | N/A | wheels.yml |
+| Windows | x86_64 | 3.11, 3.12, 3.13, 3.14, 3.15, PyPy 3.11 | N/A | wheels.yml |
+| Windows | arm64 | 3.11, 3.12, 3.13, 3.14, 3.15 (no PyPy) | N/A | wheels.yml |
 
 ### Why Manylinux Containers?
 
