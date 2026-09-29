@@ -282,6 +282,67 @@ jobs:
       - name: Run import smoke test
         run: just test-imports ${{ matrix.python-env }}
 
+  import-smoke-lowest:
+    name: Import Smoke Test (lowest-direct deps)
+    needs: identifiers
+    runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
+    # Same import smoke test, but with every direct dependency resolved to the
+    # lowest version pyproject.toml allows (uv --resolution lowest-direct), on the
+    # oldest supported CPython, and on PyPy (whose lowest resolution can differ,
+    # e.g. cffi-based dependencies). Catches stale version floors - e.g. #1955, where
+    # zope.interface>=5.2.0 was allowed but the code needed 6.2 on CPython < 3.14.
+    strategy:
+      matrix:
+        python-env: [cpy311, pypy311]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install uv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Verify toolchain installation
+        run: |
+          just --version
+          uv --version
+
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key:
+            uv-cache-ubuntu-imports-lowest-${{ matrix.python-env }}-${{
+            hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-ubuntu-imports-lowest-${{ matrix.python-env }}-
+            uv-cache-ubuntu-imports-lowest-
+
+      - name: Run import smoke test (lowest-direct deps)
+        run: just test-imports-lowest ${{ matrix.python-env }}
+
   documentation:
     name: Documentation Build
     needs: identifiers

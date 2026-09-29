@@ -84,7 +84,12 @@ dependencies = [
 [project.optional-dependencies]
 # Twisted dependencies
 twisted = [
-    "zope.interface>=5.2.0",
+    # zope.interface>=6.2 is autobahn's OWN requirement: autobahn imports zope.interface
+    # directly and annotates with interface unions (e.g. ITransport | IProcessTransport),
+    # which InterfaceClass supports only from 6.2 on; Twisted's own floor is lower.
+    # See #1955 and the review on #1959 - including why the other floors here were
+    # deliberately NOT raised along with it.
+    "zope.interface>=6.2",
     "twisted>=22.10.0",
     "attrs>=20.3.0",
 ]

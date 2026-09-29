@@ -333,6 +333,15 @@ create venv="":
     VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}"
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
 
+    # A venv whose interpreter is gone is stale: e.g. built in a throwaway container
+    # against a uv-managed Python under ~/.local/share/uv, leaving bin/python3 a
+    # dangling symlink in the bind-mounted checkout once the container exits, so every
+    # CI retry then failed with exit code 127. Recreate it instead of reusing it.
+    if [ -d "${VENV_PATH}" ] && [ ! -x "${VENV_PYTHON}" ]; then
+        echo "==> Python virtual environment '${VENV_NAME}' in ${VENV_PATH} has no working interpreter, recreating it..."
+        rm -rf "${VENV_PATH}"
+    fi
+
     # Only create the venv if it doesn't already exist
     if [ ! -d "${VENV_PATH}" ]; then
         # Get the Python spec just-in-time
@@ -1328,6 +1337,42 @@ test-imports venv="": (install-tools venv) (install-dev venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running import smoke test in ${VENV_NAME}..."
+    ${VENV_PYTHON} -m pytest -v src/autobahn/test/test_import_all.py
+
+# Run the import smoke test against the LOWEST versions our direct dependencies
+# allow (uv --resolution lowest-direct), in a separate '<venv>-lowest' venv. This
+# catches stale version floors in pyproject.toml - e.g. #1955, where
+# zope.interface>=5.2.0 was allowed but the code needed 6.2. Transitive
+# dependencies still resolve to their latest versions. (usage: `just test-imports-lowest cpy311`)
+test-imports-lowest venv="":
+    #!/usr/bin/env bash
+    set -e
+    VENV_NAME="{{ venv }}"
+    if [ -z "${VENV_NAME}" ]; then
+        echo "==> No venv name specified. Auto-detecting from system Python..."
+        VENV_NAME=$(just --quiet _get-system-venv-name)
+        echo "==> Defaulting to venv: '${VENV_NAME}'"
+    fi
+    PYTHON_SPEC=$(just --quiet _get-spec "${VENV_NAME}")
+    VENV_PATH="{{ VENV_DIR }}/${VENV_NAME}-lowest"
+    VENV_PYTHON="${VENV_PATH}/bin/python3"
+
+    # Always start from scratch: an existing venv would keep newer versions installed.
+    echo "==> Creating fresh venv '${VENV_NAME}-lowest' using ${PYTHON_SPEC} in ${VENV_PATH}..."
+    rm -rf "${VENV_PATH}"
+    uv venv --python "${PYTHON_SPEC}" "${VENV_PATH}"
+
+    # pytest gets an explicit floor, since lowest-direct would otherwise pick an ancient one.
+    # pyopenssl and attrs are lifted too, since their floors break for reasons outside
+    # autobahn: pyOpenSSL < 22.1.0 does not cap cryptography and fails at import time
+    # against current cryptography ('GEN_EMAIL'), and twisted 22.10.0 does `import attrs`
+    # (attrs >= 21.3.0) while only declaring attrs>=19.2.0.
+    echo "==> Installing autobahn[all] with lowest-direct resolution in ${VENV_NAME}-lowest..."
+    uv pip install --python "${VENV_PYTHON}" --resolution lowest-direct -e .[all] \
+        "pytest>=8" "pyopenssl>=22.1.0" "attrs>=21.3.0"
+    uv pip list --python "${VENV_PYTHON}"
+
+    echo "==> Running import smoke test in ${VENV_NAME}-lowest..."
     ${VENV_PYTHON} -m pytest -v src/autobahn/test/test_import_all.py
 
 # Run WAMP message serdes conformance tests (usage: `just test-serdes cpy311`)

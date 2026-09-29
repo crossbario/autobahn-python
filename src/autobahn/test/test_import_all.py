@@ -46,6 +46,9 @@
 from __future__ import annotations
 
 import importlib
+import os
+import subprocess
+import sys
 
 import pytest
 
@@ -73,6 +76,62 @@ def test_import(modname):
     Importing each core autobahn module must not raise.
     """
     importlib.import_module(modname)
+
+
+# Framework bindings. Each module is imported in a fresh interpreter, since
+# Twisted and asyncio bindings cannot share one process: txaio's use_twisted()
+# and use_asyncio() are mutually exclusive per interpreter. The Twisted modules
+# annotate with zope.interface ``InterfaceClass`` unions, which only support
+# ``|`` from zope.interface 6.2 on - see issue #1955.
+TWISTED_MODULES = [
+    "autobahn.twisted",
+    "autobahn.twisted.util",  # regressed with zope.interface < 6.2 -> see #1955
+    "autobahn.twisted.wamp",  # regressed with zope.interface < 6.2 -> see #1955
+    "autobahn.twisted.websocket",
+    "autobahn.twisted.rawsocket",
+    "autobahn.twisted.component",
+    "autobahn.twisted.cryptosign",
+    "autobahn.twisted.resource",
+    "autobahn.twisted.forwarder",
+    "autobahn.twisted.choosereactor",
+    "autobahn.twisted.testing",
+]
+
+ASYNCIO_MODULES = [
+    "autobahn.asyncio",
+    "autobahn.asyncio.util",
+    "autobahn.asyncio.wamp",
+    "autobahn.asyncio.websocket",
+    "autobahn.asyncio.rawsocket",
+    "autobahn.asyncio.component",
+]
+
+
+@pytest.mark.parametrize(
+    "modname,framework",
+    [(m, "twisted") for m in TWISTED_MODULES]
+    + [(m, "asyncio") for m in ASYNCIO_MODULES],
+)
+def test_import_framework(modname, framework):
+    """
+    Each binding module imports in a fresh interpreter and selects its txaio backend.
+    """
+    # autobahn/__init__.py selects the txaio backend from USE_TWISTED / USE_ASYNCIO
+    # at import, and the test runs set one of them (the asyncio run sets
+    # USE_ASYNCIO=1), which a child process would inherit. The child gets neither:
+    # the module must select its backend itself, as it does for a user who sets no
+    # such variable.
+    env = {
+        k: v for k, v in os.environ.items() if k not in ("USE_TWISTED", "USE_ASYNCIO")
+    }
+    code = (
+        f"import txaio, {modname}; "
+        f"assert txaio.using_{framework}, 'txaio backend is not {framework}'"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, env=env
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_crypto_extras_present():
