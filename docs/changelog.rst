@@ -8,6 +8,10 @@ Changelog
 26.9.1
 ------
 
+**Build & CI/CD**
+
+* Adopt the contribution workflow shared by all WAMP projects: ``CONTRIBUTING.md``, the pull request template and ``.audit/README.md`` are now deployed byte-identically from wamp-cicd (GitHub issue first, red → green tests, AI-assistance disclosure) and kept in sync by a CI drift check; everything specific to Autobahn|Python moved to a new ``DEVELOPMENT.md`` (also included in the docs). ``.cicd`` is pinned to wamp-cicd ``38ded6a``, the same commit across the WAMP fleet (#1956)
+
 **Dependencies**
 
 * Split the ``cbor2`` dependency by Python runtime: CPython uses the current ``>=6.1.0`` line (Rust/pyo3, binary wheels), while PyPy is pinned to ``cbor2==5.9.0`` — the final pure-Python release — deliberately keeping PyPy out of the native-extension matrix. This removes the ``cbor2`` Rust source-compile that was timing out the PyPy-aarch64 wheel build under QEMU emulation. The two implementations are verified wire-equivalent by a new cross-version CBOR conformance test (``examples/serdes/tests/test_cbor_cross_version.py``) that runs on both CPython and PyPy in CI and asserts each encodes/decodes the wamp-proto canonical CBOR vectors byte-for-byte identically. ``cbor2==5.9.0`` also carries the ``max_depth`` decoder hardening for CVE-2026-26209 (#1947)

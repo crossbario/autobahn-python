@@ -50,6 +50,7 @@ Contents
    release-notes
    changelog
    contributing
+   development
    OVERVIEW.md
    ai/index
 
