@@ -1,43 +1,31 @@
-Audit evidence (disclosure) files (per PR) need to be put here by
-human contributor (PR submitter), named `<branch-name>.md`.
+# AI-assistance disclosure files
 
-The disclosure file must **follow the exact format and content**
-as described below.
+Every pull request adds one file here, named `<github-username>_<branch>.md` (for example
+`jane_fix_1234.md`), declaring whether AI-assistance tools were used to help create it. The pull
+request is not accepted without it. The full rules are in
+[CONTRIBUTING.md](../CONTRIBUTING.md#ai-assistance-disclosure).
 
-**Example 1** file contents of a disclosure file
-`.audit/<branch-name>.md`:
+The file must contain exactly this, with the box that applies ticked:
 
-```
-## AI Assistance Disclosure
-
+```markdown
 - [ ] I did **not** use any AI-assistance tools to help create this pull request.
 - [x] I **did** use AI-assistance tools to *help* create this pull request.
-- [x] I have read, understood and followed the projects' [AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md) when creating code, documentation etc. for this pull request.
+- [x] I have read, understood and followed the project's AI_POLICY.md when creating code, documentation etc. for this pull request.
 
-Submitted by: @your-github-username
-Date: YYYY-MM-DD
-Related issue(s): #issue-number
-Branch: branch-name
+Submitted by: @<github-username>
+Date: <YYYY-MM-DD>
+Related issue(s): #<issue-number>
+Branch: <github-username>:<branch>
 ```
 
-**OR**
+- Exactly one of the first two boxes, and always the third.
+- `Related issue(s):` references the issue the pull request addresses. Every change starts with an issue.
+- **Filename:** an underscore between user name and branch, and only `A-Z a-z 0-9 . _ -`. A `:` or `/`
+  in a filename breaks `git checkout` on Windows. The `:` belongs only inside the file, on the
+  `Branch:` line.
 
-**Example 2** file contents of a disclosure file
-`.audit/<branch-name>.md`:
+With the project tooling, `just --justfile .ai/justfile generate-audit-file` creates this file for
+the current branch.
 
-```
-## AI Assistance Disclosure
-
-- [x] I did **not** use any AI-assistance tools to help create this pull request.
-- [ ] I **did** use AI-assistance tools to *help* create this pull request.
-- [x] I have read, understood and followed the projects' [AI Policy](https://github.com/crossbario/autobahn-python/blob/main/AI_POLICY.md) when creating code, documentation etc. for this pull request.
-
-Submitted by: @your-github-username
-Date: YYYY-MM-DD
-Related issue(s): #issue-number
-Branch: branch-name
-```
-
-**Example 1 OR Example 2** show the only valid two variants. The
-disclosure file cannot have both or none of the first two marks
-checked, and you must always have the last tick checked.
+This README is deployed from wamp-proto/wamp-cicd (`templates/audit-README.md`) and kept
+byte-identical by a drift check. Change it there, not here.

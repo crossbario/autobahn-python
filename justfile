@@ -101,7 +101,7 @@ _get-spec short_name:
         cpy313)  echo "cpython-3.13{{PY_PLATFORM_SUFFIX}}";;  # cpython-3.13.5-linux-x86_64-gnu
         cpy312)  echo "cpython-3.12{{PY_PLATFORM_SUFFIX}}";;  # cpython-3.12.11-linux-x86_64-gnu
         cpy311)  echo "cpython-3.11{{PY_PLATFORM_SUFFIX}}";;  # cpython-3.11.13-linux-x86_64-gnu
-        pypy311) echo "pypy-3.11";;     # pypy-3.11.11-linux-x86_64-gnu
+        pypy311) echo "pypy-3.11.15";;  # PyPy 7.3.23 = last pp73 ABI; pinned on purpose (PyPy 8.0 = new pp80 ABI)
         *)       echo "Unknown environment: {{short_name}}" >&2; exit 1;;
     esac
 
