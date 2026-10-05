@@ -487,16 +487,21 @@ jobs:
         run: sync
         shell: bash
 
-      - name: Build OpenSSL for cryptography (Windows ARM64 only)
-        # cryptography publishes no win_arm64 wheel, so pip builds it from
-        # source here and its openssl-sys build needs a native OpenSSL to link.
-        # WoA support has been added in https://github.com/pyca/cryptography/pull/15350
-        # This step can be removed when they publish a release.
-        if: matrix.os == 'windows-11-arm'
+      - name: Build OpenSSL for cryptography (Windows)
+        # pip builds cryptography from source on Windows whenever no matching
+        # wheel exists, and its openssl-sys build needs a native OpenSSL to link:
+        # - ARM64: cryptography publishes no win_arm64 wheel. WoA support has been
+        #   added in https://github.com/pyca/cryptography/pull/15350
+        # - x86_64: since 50.0.2, cryptography's Windows PyPy wheel is tagged
+        #   pypy311_pp80 (PyPy 8) only, while our pypy311 env is pinned to
+        #   PyPy 7.3 (pp73 ABI), so the pypy311 build falls back to the sdist.
+        # This step can be removed once both have wheels again (or we move to pp80).
+        if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          vcpkg install --triplet arm64-windows-static-md --clean-after-build openssl
-          "OPENSSL_DIR=$env:VCPKG_INSTALLATION_ROOT\installed\arm64-windows-static-md" |
+          $triplet = if ("${{ matrix.os }}" -eq "windows-11-arm") { "arm64-windows-static-md" } else { "x64-windows-static-md" }
+          vcpkg install --triplet $triplet --clean-after-build openssl
+          "OPENSSL_DIR=$env:VCPKG_INSTALLATION_ROOT\installed\$triplet" |
             Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Build binary wheels with NVX (Windows)
