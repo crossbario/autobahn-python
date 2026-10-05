@@ -1,3 +1,9 @@
+###############################################################################
+#
+#  Copyright (C) typedef int GmbH
+#  SPDX-License-Identifier: MIT
+#
+###############################################################################
 import os
 from unittest.mock import Mock, call
 

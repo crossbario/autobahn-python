@@ -1,3 +1,9 @@
+###############################################################################
+#
+#  Copyright (C) typedef int GmbH
+#  SPDX-License-Identifier: MIT
+#
+###############################################################################
 from twisted.trial import unittest
 
 try:
