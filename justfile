@@ -696,59 +696,7 @@ install-build-tools venv="": (create venv)
     # manylinux_2_34) instead of source-compiling under QEMU emulation. See #1947.
     ${VENV_PYTHON} -m pip install -U pip packaging
 
-    # --prefer-binary: install the newest version that has a WHEEL for this
-    # interpreter, rather than the newest version outright (#1960).
-    #
-    # WHY. `cryptography>=50` is a BASE dependency of autobahn (#1947), so this
-    # build venv installs it. pip's default picks the newest version that has ANY
-    # compatible distribution - and a source distribution always "fits". When the
-    # newest cryptography release has no wheel for one of our interpreters, pip
-    # silently source-builds it: Rust + a native OpenSSL to link against. That is
-    # slow everywhere, and fails where the runner has no OpenSSL (Windows x86_64).
-    #
-    # It happened with cryptography 50.0.2 (2026-09-30), which moved its PyPy
-    # wheels on Windows and macOS to the new PyPy 8.0 ABI (pp80), while Linux
-    # stayed on the old one (pp73). Native wheels for PyPy 3.11 (verified against
-    # PyPI's file lists of both releases):
-    #
-    #   platform              cryptography 50.0.1      cryptography 50.0.2
-    #   --------------------  -----------------------  -----------------------
-    #   Windows x86_64        pp311-pypy311_pp73       pp311-pypy311_pp80
-    #   macOS arm64           pp311-pypy311_pp73       pp311-pypy311_pp80
-    #   manylinux x86_64      pp311-pypy311_pp73       pp311-pypy311_pp73
-    #   manylinux aarch64     pp311-pypy311_pp73       pp311-pypy311_pp73
-    #   Windows ARM64         (none, no CPython either: source build, see below)
-    #
-    # Our PyPy is pinned to PyPy 7.3.23 (= pypy-3.11.15, the LAST pp73 release; see
-    # `_get-spec`), deliberately: PyPy 8.0 is a new ABI, and Linux - our primary
-    # platform - has no pp80 cryptography wheel yet. So for our pp73 PyPy on Windows
-    # x86_64 and macOS arm64, the newest cryptography with a matching wheel is
-    # 50.0.1, while pip by default took the 50.0.2 SOURCE release and tried to
-    # compile it. Result: the `windows-2022 (x86_64)` wheel job failed from
-    # 2026-09-30 on, on PRs that did not touch any code (e.g. #1961), after ~15 min
-    # of building; macOS happened to manage the source build. With --prefer-binary,
-    # pip installs 50.0.1 from its pp73 wheel there - which satisfies `>=50`.
-    #
-    # PRIORITIES this follows: PyPy is a first-class, must-support runtime for
-    # autobahn; Windows (and Windows on ARM64 even more so) is best-effort. So the
-    # fix must not move PyPy's ABI or constrain cryptography for everyone; it only
-    # stops pip from compiling a newer release when a usable wheel exists. A
-    # constraint like `cryptography<50.0.2` would be wrong: it is not autobahn's
-    # requirement, only this build venv's.
-    #
-    # WHAT IT DOES NOT FIX:
-    # - Windows ARM64: cryptography publishes no win_arm64 wheel at all, so the
-    #   source build stays (the wheels workflow builds OpenSSL via vcpkg for it).
-    #   That job does not build PyPy wheels.
-    # - Users: `pip install autobahn` on PyPy 7.3 under Windows / macOS now gets
-    #   cryptography 50.0.2 as a source build too - unless they pass
-    #   --prefer-binary themselves. That is upstream's packaging choice.
-    # - When we move to PyPy 8 (pp80), Linux needs pp80 cryptography wheels first;
-    #   check PyPI's file list before bumping the pin in `_get-spec`.
-    #
-    # It applies to every package installed here, which is what we want for a
-    # build venv: a wheel that fits is always preferable to compiling here.
-    ${VENV_PYTHON} -m pip install --prefer-binary -e .[build-tools]
+    ${VENV_PYTHON} -m pip install -e .[build-tools]
 
 # Install the development tools for this Package in a single environment (usage: `just install-tools cpy314`)
 # This also builds NVX CFFI modules so that tests with AUTOBAHN_USE_NVX=1 work.
