@@ -26,14 +26,47 @@
 
 import asyncio
 import hashlib
+import warnings
 from asyncio import sleep  # noqa
 from subprocess import Popen
 from typing import Optional
 
 from autobahn.wamp.types import TransportDetails
 
+
+def get_or_create_event_loop() -> asyncio.AbstractEventLoop:
+    """
+    The event loop to use from code that may run before any loop exists (#1952).
+
+    In order: the running loop; else the loop set for this thread with
+    ``asyncio.set_event_loop()``; else a new loop, which is then set for this thread.
+
+    ``asyncio.get_event_loop()`` used to create that last loop implicitly. Python 3.12
+    and 3.13 deprecate this (``DeprecationWarning: There is no current event loop``),
+    and Python 3.14 removes it: there it raises ``RuntimeError`` instead. txaio's
+    asyncio backend handles it the same way.
+    """
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        pass
+    try:
+        with warnings.catch_warnings():
+            # 3.12 / 3.13: the implicit creation below warns; we replace it anyway
+            warnings.simplefilter("ignore", DeprecationWarning)
+            loop = asyncio.get_event_loop()
+    except RuntimeError:
+        # 3.14+: no loop set for this thread
+        loop = None
+    if loop is None or loop.is_closed():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop
+
+
 __all = (
     "sleep",
+    "get_or_create_event_loop",
     "peer2str",
     "transport_channel_id",
     "create_transport_details",

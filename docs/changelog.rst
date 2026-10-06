@@ -13,6 +13,10 @@ Changelog
 * Adopt the contribution workflow shared by all WAMP projects: ``CONTRIBUTING.md``, the pull request template and ``.audit/README.md`` are now deployed byte-identically from wamp-cicd (GitHub issue first, red → green tests, AI-assistance disclosure) and kept in sync by a CI drift check; everything specific to Autobahn|Python moved to a new ``DEVELOPMENT.md`` (also included in the docs). ``.cicd`` is pinned to wamp-cicd ``38ded6a``, the same commit across the WAMP fleet (#1956)
 * Add an ``import-smoke-lowest`` CI job (``just test-imports-lowest``) that runs the import smoke test on CPython 3.11 with every direct dependency resolved to the lowest version ``pyproject.toml`` allows (``uv --resolution lowest-direct``), so stale version floors are caught. The import smoke test now also covers the Twisted and asyncio bindings, each module imported in a fresh interpreter (#1955)
 
+**asyncio**
+
+* Fix ``autobahn.asyncio.component.run()``, ``ApplicationRunner.run()``, ``Component.start()`` and the asyncio WebSocket factories failing on CPython 3.14 with ``RuntimeError: There is no current event loop`` when started from plain synchronous code (and the ``DeprecationWarning`` on 3.12 / 3.13): CPython no longer creates the loop implicitly in ``asyncio.get_event_loop()``. A new helper ``autobahn.asyncio.util.get_or_create_event_loop()`` returns the running loop, else the loop set for the thread, else a new one; ``run()`` was first fixed by Lukas Komischke (#1952, #1953), the remaining call sites follow, with a regression test that runs each case in a fresh interpreter (#1965)
+
 **Dependencies**
 
 * Fix ``import autobahn.twisted`` failing on CPython 3.11–3.13 with ``TypeError: unsupported operand type(s) for |: 'InterfaceClass' and 'InterfaceClass'`` when ``zope.interface`` < 6.2 is installed: ``autobahn.twisted.util`` and ``autobahn.twisted.wamp`` now use ``from __future__ import annotations``, and the ``twisted`` extra's ``zope.interface`` floor is raised from ``>=5.2.0`` to ``>=6.2``, the first release whose interfaces support ``|`` (#1955)

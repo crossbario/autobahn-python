@@ -32,6 +32,7 @@ from functools import wraps
 import txaio
 
 from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
+from autobahn.asyncio.util import get_or_create_event_loop
 from autobahn.asyncio.wamp import Session
 from autobahn.asyncio.websocket import WampWebSocketClientFactory
 from autobahn.wamp import component
@@ -313,7 +314,7 @@ class Component(component.Component):
 
         if loop is None:
             self.log.warn("Using default loop")
-            loop = asyncio.get_event_loop()
+            loop = get_or_create_event_loop()
 
         return self._start(loop=loop)
 
@@ -348,14 +349,10 @@ def run(components, start_loop=True, log_level="info"):
     # txaio.start_logging() what happens if we call it again?)
     if log_level is not None:
         txaio.start_logging(level=log_level)
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = None
-    if loop is None or loop.is_closed():
-        asyncio.set_event_loop(asyncio.new_event_loop())
-        loop = asyncio.get_event_loop()
-        txaio.config.loop = loop
+    # No event loop may exist yet: CPython 3.14 no longer creates one implicitly (#1952,
+    # first fixed here inline by #1953; the same handling everywhere since #1965).
+    loop = get_or_create_event_loop()
+    txaio.config.loop = loop
     log = txaio.make_logger()
 
     # see https://github.com/python/asyncio/issues/341 asyncio has
