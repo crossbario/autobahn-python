@@ -33,7 +33,11 @@ import txaio
 
 txaio.use_asyncio()  # noqa
 
-from autobahn.asyncio.util import create_transport_details, transport_channel_id
+from autobahn.asyncio.util import (
+    create_transport_details,
+    get_or_create_event_loop,
+    transport_channel_id,
+)
 from autobahn.util import hltype, public
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
@@ -276,7 +280,7 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
             asyncio event loop to be used.
         """
         loop = kwargs.pop("loop", None)
-        self.loop = loop or asyncio.get_event_loop()
+        self.loop = loop or get_or_create_event_loop()
 
         protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
@@ -303,7 +307,7 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
             asyncio event loop to be used.
         """
         loop = kwargs.pop("loop", None)
-        self.loop = loop or asyncio.get_event_loop()
+        self.loop = loop or get_or_create_event_loop()
 
         protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
 

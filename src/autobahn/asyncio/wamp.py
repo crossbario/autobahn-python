@@ -32,6 +32,7 @@ import txaio
 txaio.use_asyncio()  # noqa
 
 from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
+from autobahn.asyncio.util import get_or_create_event_loop
 from autobahn.asyncio.websocket import WampWebSocketClientFactory
 from autobahn.rawsocket.util import parse_url as parse_rs_url
 from autobahn.util import public
@@ -255,12 +256,9 @@ class ApplicationRunner:
             ssl = self.ssl
 
         # start the client connection
-        loop = asyncio.get_event_loop()
-        if loop.is_closed() and start_loop:
-            asyncio.set_event_loop(asyncio.new_event_loop())
-            loop = asyncio.get_event_loop()
-            if hasattr(transport_factory, "loop"):
-                transport_factory.loop = loop
+        loop = get_or_create_event_loop()
+        if hasattr(transport_factory, "loop"):
+            transport_factory.loop = loop
 
         # assure we are using asyncio
         # txaio.use_asyncio()

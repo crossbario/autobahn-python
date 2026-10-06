@@ -54,7 +54,9 @@ class TestApplicationRunner(unittest.TestCase):
         ApplicationRunner.
         """
         with replace_loop(Mock()) as loop:
-            with patch.object(asyncio, "get_event_loop", return_value=loop):
+            with patch(
+                "autobahn.asyncio.wamp.get_or_create_event_loop", return_value=loop
+            ):
                 loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
                 ssl = {}
                 runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm", ssl=ssl)
@@ -68,7 +70,9 @@ class TestApplicationRunner(unittest.TestCase):
         ApplicationRunner and the websocket URL starts with "ws:".
         """
         with replace_loop(Mock()) as loop:
-            with patch.object(asyncio, "get_event_loop", return_value=loop):
+            with patch(
+                "autobahn.asyncio.wamp.get_or_create_event_loop", return_value=loop
+            ):
                 loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
                 runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm")
                 runner.run("_unused_")
@@ -81,7 +85,9 @@ class TestApplicationRunner(unittest.TestCase):
         ApplicationRunner and the websocket URL starts with "wss:".
         """
         with replace_loop(Mock()) as loop:
-            with patch.object(asyncio, "get_event_loop", return_value=loop):
+            with patch(
+                "autobahn.asyncio.wamp.get_or_create_event_loop", return_value=loop
+            ):
                 loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
                 runner = ApplicationRunner("wss://127.0.0.1:8080/wss", "realm")
                 runner.run(self.fail)
