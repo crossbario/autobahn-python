@@ -1,3 +1,7 @@
 # Materialized aspect membership for this repository.
 # Rendered from the apex inventory (all.yml); NOT a source of truth.
 aspects = ["way-a", "pypi-release", "python-package"]
+
+[provider.python-package]
+repo = "crossbario/autobahn-crossbar-ai"
+path = ".autobahn-crossbar-ai"
