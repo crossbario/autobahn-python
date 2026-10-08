@@ -295,6 +295,7 @@ width = 65
 omit = ["*/test/*.py"]
 
 [tool.ruff]
+extend-exclude = [".ai", ".autobahn-crossbar-ai", ".cicd", ".proto", "deps/flatbuffers"]
 # Same as Black.
 line-length = 88
 indent-width = 4
