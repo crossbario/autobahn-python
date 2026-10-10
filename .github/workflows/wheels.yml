@@ -376,6 +376,13 @@ jobs:
           echo ""
         shell: bash
 
+      - name: Configure OpenSSL for cryptography source builds (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          brew install openssl@3
+          echo "OPENSSL_DIR=$(brew --prefix openssl@3)" >> "$GITHUB_ENV"
+        shell: bash
+
       - name: Build binary wheels with NVX (macOS)
         if: matrix.platform == 'macos'
         run: |
@@ -495,11 +502,12 @@ jobs:
         # - x86_64: since 50.0.2, cryptography's Windows PyPy wheel is tagged
         #   pypy311_pp80 (PyPy 8) only, while our pypy311 env is pinned to
         #   PyPy 7.3 (pp73 ABI), so the pypy311 build falls back to the sdist.
-        # This step can be removed once both have wheels again (or we move to pp80).
+        # - PyPy 3.12: cryptography publishes no pypy312/pp80 wheel yet.
+        # This step can be removed once all three targets have wheels again.
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          $triplet = if ("${{ matrix.os }}" -eq "windows-11-arm") { "arm64-windows-static-md" } else { "x64-windows-static-md" }
+          $triplet = if ("${{ matrix.arch }}" -eq "arm64") { "arm64-windows-static-md" } else { "x64-windows-static-md" }
           vcpkg install --triplet $triplet --clean-after-build openssl
           "OPENSSL_DIR=$env:VCPKG_INSTALLATION_ROOT\installed\$triplet" |
             Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append

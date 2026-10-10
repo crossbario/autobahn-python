@@ -77,7 +77,8 @@ jobs:
           Setup Python environments and install Autobahn|Python
         run: |
           just install cpy311
-          just install cpy314
+          just install cpy315
+          just install pypy312
           just install pypy311
 
       - name: Run all client test combinations (with-nvx and without-nvx)
@@ -117,7 +118,7 @@ jobs:
               sleep 1
             done
 
-            echo "==> Running client tests for all 6 combinations ($nvx_config)..."
+            echo "==> Running client tests for all 8 combinations ($nvx_config)..."
 
             # Client 1: Twisted + CPython 3.11
             echo "==> Testing Twisted + cpy311 client ($nvx_config)..."
@@ -127,13 +128,13 @@ jobs:
             echo "==> Testing asyncio + cpy311 client ($nvx_config)..."
             just wstest-testeeclient-asyncio cpy311
 
-            # Client 3: Twisted + CPython 3.14
-            echo "==> Testing Twisted + cpy314 client ($nvx_config)..."
-            just wstest-testeeclient-twisted cpy314
+            # Client 3: Twisted + CPython 3.15
+            echo "==> Testing Twisted + cpy315 client ($nvx_config)..."
+            just wstest-testeeclient-twisted cpy315
 
-            # Client 4: asyncio + CPython 3.14
-            echo "==> Testing asyncio + cpy314 client ($nvx_config)..."
-            just wstest-testeeclient-asyncio cpy314
+            # Client 4: asyncio + CPython 3.15
+            echo "==> Testing asyncio + cpy315 client ($nvx_config)..."
+            just wstest-testeeclient-asyncio cpy315
 
             # Client 5: Twisted + PyPy 3.11
             echo "==> Testing Twisted + pypy311 client ($nvx_config)..."
@@ -143,7 +144,15 @@ jobs:
             echo "==> Testing asyncio + pypy311 client ($nvx_config)..."
             just wstest-testeeclient-asyncio pypy311
 
-            echo "✅ All 6 client test combinations completed ($nvx_config)"
+            # Client 7: Twisted + PyPy 3.12
+            echo "==> Testing Twisted + pypy312 client ($nvx_config)..."
+            just wstest-testeeclient-twisted pypy312
+
+            # Client 8: asyncio + PyPy 3.12
+            echo "==> Testing asyncio + pypy312 client ($nvx_config)..."
+            just wstest-testeeclient-asyncio pypy312
+
+            echo "✅ All 8 client test combinations completed ($nvx_config)"
 
             # Give fuzzingserver time to write all reports to disk
             echo "==> Waiting for fuzzingserver to finish writing reports..."
@@ -294,7 +303,8 @@ jobs:
           Setup Python environments and install Autobahn|Python
         run: |
           just install cpy311
-          just install cpy314
+          just install cpy315
+          just install pypy312
           just install pypy311
 
       - name: Run server tests (with-nvx and without-nvx)
@@ -314,7 +324,7 @@ jobs:
               echo "======================================================================"
             fi
 
-            echo "==> Starting 6 WebSocket server combinations for $nvx_config..."
+            echo "==> Starting 8 WebSocket server combinations for $nvx_config..."
 
             # Server 1: Twisted + CPython 3.11 on port 9011
             echo "==> Starting Twisted + cpy311 server on port 9011 ($nvx_config)..."
@@ -350,35 +360,35 @@ jobs:
               sleep 1
             done
 
-            # Server 3: Twisted + CPython 3.14 on port 9013
-            echo "==> Starting Twisted + cpy314 server on port 9013 ($nvx_config)..."
-            nohup .venvs/cpy314/bin/python ./wstest/testee_server_tx.py --url ws://127.0.0.1:9013 > twisted-cpy314-$nvx_config.log 2>&1 &
-            echo $! > twisted-cpy314.pid
+            # Server 3: Twisted + CPython 3.15 on port 9013
+            echo "==> Starting Twisted + cpy315 server on port 9013 ($nvx_config)..."
+            nohup .venvs/cpy315/bin/python ./wstest/testee_server_tx.py --url ws://127.0.0.1:9013 > twisted-cpy315-$nvx_config.log 2>&1 &
+            echo $! > twisted-cpy315.pid
             for i in {1..30}; do
               if netstat -tuln | grep :9013 >/dev/null 2>&1; then
-                echo "✅ Twisted + cpy314 server running on port 9013"
+                echo "✅ Twisted + cpy315 server running on port 9013"
                 break
               fi
               if [ $i -eq 30 ]; then
-                echo "❌ Twisted + cpy314 server failed to start on port 9013"
-                cat twisted-cpy314-$nvx_config.log
+                echo "❌ Twisted + cpy315 server failed to start on port 9013"
+                cat twisted-cpy315-$nvx_config.log
                 exit 1
               fi
               sleep 1
             done
 
-            # Server 4: asyncio + CPython 3.14 on port 9014
-            echo "==> Starting asyncio + cpy314 server on port 9014 ($nvx_config)..."
-            nohup .venvs/cpy314/bin/python ./wstest/testee_server_aio.py --url ws://127.0.0.1:9014 > asyncio-cpy314-$nvx_config.log 2>&1 &
-            echo $! > asyncio-cpy314.pid
+            # Server 4: asyncio + CPython 3.15 on port 9014
+            echo "==> Starting asyncio + cpy315 server on port 9014 ($nvx_config)..."
+            nohup .venvs/cpy315/bin/python ./wstest/testee_server_aio.py --url ws://127.0.0.1:9014 > asyncio-cpy315-$nvx_config.log 2>&1 &
+            echo $! > asyncio-cpy315.pid
             for i in {1..30}; do
               if netstat -tuln | grep :9014 >/dev/null 2>&1; then
-                echo "✅ asyncio + cpy314 server running on port 9014"
+                echo "✅ asyncio + cpy315 server running on port 9014"
                 break
               fi
               if [ $i -eq 30 ]; then
-                echo "❌ asyncio + cpy314 server failed to start on port 9014"
-                cat asyncio-cpy314-$nvx_config.log
+                echo "❌ asyncio + cpy315 server failed to start on port 9014"
+                cat asyncio-cpy315-$nvx_config.log
                 exit 1
               fi
               sleep 1
@@ -418,16 +428,50 @@ jobs:
               sleep 1
             done
 
-            echo "✅ All 6 WebSocket servers running successfully for $nvx_config"
+            # Server 7: Twisted + PyPy 3.12 on port 9017
+            echo "==> Starting Twisted + pypy312 server on port 9017 ($nvx_config)..."
+            nohup .venvs/pypy312/bin/python ./wstest/testee_server_tx.py --url ws://127.0.0.1:9017 > twisted-pypy312-$nvx_config.log 2>&1 &
+            echo $! > twisted-pypy312.pid
+            for i in {1..30}; do
+              if netstat -tuln | grep :9017 >/dev/null 2>&1; then
+                echo "✅ Twisted + pypy312 server running on port 9017"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "❌ Twisted + pypy312 server failed to start on port 9017"
+                cat twisted-pypy312-$nvx_config.log
+                exit 1
+              fi
+              sleep 1
+            done
 
-            echo "==> Running fuzzingclient tests against all 6 servers ($nvx_config)..."
+            # Server 8: asyncio + PyPy 3.12 on port 9018
+            echo "==> Starting asyncio + pypy312 server on port 9018 ($nvx_config)..."
+            nohup .venvs/pypy312/bin/python ./wstest/testee_server_aio.py --url ws://127.0.0.1:9018 > asyncio-pypy312-$nvx_config.log 2>&1 &
+            echo $! > asyncio-pypy312.pid
+            for i in {1..30}; do
+              if netstat -tuln | grep :9018 >/dev/null 2>&1; then
+                echo "✅ asyncio + pypy312 server running on port 9018"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "❌ asyncio + pypy312 server failed to start on port 9018"
+                cat asyncio-pypy312-$nvx_config.log
+                exit 1
+              fi
+              sleep 1
+            done
+
+            echo "✅ All 8 WebSocket servers running successfully for $nvx_config"
+
+            echo "==> Running fuzzingclient tests against all 8 servers ($nvx_config)..."
             just wstest-fuzzingclient "" "" ${{ env.TEST_MODE }}
 
             echo "✅ Server tests completed ($nvx_config)"
 
             # Stop all servers for this configuration
             echo "==> Stopping all WebSocket servers for $nvx_config..."
-            for pid_file in twisted-cpy311.pid asyncio-cpy311.pid twisted-cpy314.pid asyncio-cpy314.pid twisted-pypy311.pid asyncio-pypy311.pid; do
+            for pid_file in twisted-cpy311.pid asyncio-cpy311.pid twisted-cpy315.pid asyncio-cpy315.pid twisted-pypy311.pid asyncio-pypy311.pid twisted-pypy312.pid asyncio-pypy312.pid; do
               if [ -f "$pid_file" ]; then
                 kill $(cat "$pid_file") 2>/dev/null || true
                 rm -f "$pid_file"
@@ -686,7 +730,7 @@ jobs:
         run: |
           echo "==> WebSocket Conformance Testing Complete ✅"
           echo "Test Mode: ${{ env.TEST_MODE }}"
-          echo "Matrix tested: (client|server) × (twisted|asyncio) × (cpy311|cpy314|pypy311) × (with-nvx|without-nvx)"
+          echo "Matrix tested: (client|server) × (twisted|asyncio) × (cpy311|cpy315|pypy311|pypy312) × (with-nvx|without-nvx)"
           echo ""
           echo "Reports generated for both NVX configurations:"
           for nvx_config in "with-nvx" "without-nvx"; do

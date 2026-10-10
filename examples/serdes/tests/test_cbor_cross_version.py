@@ -11,7 +11,7 @@ on the Python runtime (see the cbor2 dependency markers in ``pyproject.toml``):
 For the WAMP wire protocol this is only safe if both implementations encode and
 decode CBOR *byte-for-byte identically*. These tests turn that requirement into
 an assertion that runs on BOTH runtimes in CI (the ``test-serdes`` matrix covers
-``cpy311``/``cpy314`` and ``pypy311``):
+``cpy311``/``cpy315`` and ``pypy311``/``pypy312``):
 
 1. ``test_cbor2_version_matches_runtime`` -- a provenance guard: fail loudly if the
    installed cbor2 is not the version the dependency markers intend for this

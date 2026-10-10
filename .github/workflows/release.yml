@@ -32,12 +32,16 @@ jobs:
       artifact_arm64_cp312: ${{ steps.check.outputs.artifact_arm64_cp312 }}
       artifact_arm64_cp313: ${{ steps.check.outputs.artifact_arm64_cp313 }}
       artifact_arm64_cp314: ${{ steps.check.outputs.artifact_arm64_cp314 }}
+      artifact_arm64_cp315: ${{ steps.check.outputs.artifact_arm64_cp315 }}
       artifact_arm64_cp311_musl: ${{ steps.check.outputs.artifact_arm64_cp311_musl }}
       artifact_arm64_cp312_musl: ${{ steps.check.outputs.artifact_arm64_cp312_musl }}
       artifact_arm64_cp313_musl: ${{ steps.check.outputs.artifact_arm64_cp313_musl }}
       artifact_arm64_cp314_musl: ${{ steps.check.outputs.artifact_arm64_cp314_musl }}
+      artifact_arm64_cp315_musl: ${{ steps.check.outputs.artifact_arm64_cp315_musl }}
       artifact_arm64_pypy_bookworm: ${{ steps.check.outputs.artifact_arm64_pypy_bookworm }}
       artifact_arm64_pypy_trixie: ${{ steps.check.outputs.artifact_arm64_pypy_trixie }}
+      artifact_arm64_pypy312_bookworm: ${{ steps.check.outputs.artifact_arm64_pypy312_bookworm }}
+      artifact_arm64_pypy312_trixie: ${{ steps.check.outputs.artifact_arm64_pypy312_trixie }}
 
     steps:
       - name: Check all required workflows completed
@@ -155,12 +159,16 @@ jobs:
               core.setOutput('artifact_arm64_cp312', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.12-manylinux_2_28_aarch64'));
               core.setOutput('artifact_arm64_cp313', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.13-manylinux_2_28_aarch64'));
               core.setOutput('artifact_arm64_cp314', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.14-manylinux_2_28_aarch64'));
+              core.setOutput('artifact_arm64_cp315', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.15-manylinux_2_28_aarch64'));
               core.setOutput('artifact_arm64_cp311_musl', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.11-musllinux_1_2_aarch64'));
               core.setOutput('artifact_arm64_cp312_musl', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.12-musllinux_1_2_aarch64'));
               core.setOutput('artifact_arm64_cp313_musl', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.13-musllinux_1_2_aarch64'));
               core.setOutput('artifact_arm64_cp314_musl', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.14-musllinux_1_2_aarch64'));
+              core.setOutput('artifact_arm64_cp315_musl', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.15-musllinux_1_2_aarch64'));
               core.setOutput('artifact_arm64_pypy_bookworm', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64'));
               core.setOutput('artifact_arm64_pypy_trixie', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64'));
+              core.setOutput('artifact_arm64_pypy312_bookworm', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.12-bookworm-manylinux_2_36_aarch64'));
+              core.setOutput('artifact_arm64_pypy312_trixie', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.12-trixie-manylinux_2_38_aarch64'));
 
               console.log('─────────────────────────────────────────────────');
             }
@@ -493,6 +501,17 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify ARM64 CPython 3.15 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp315 }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 CPython 3.11 musllinux artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -537,6 +556,17 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify ARM64 CPython 3.15 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp315_musl }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 PyPy 3.11 Bookworm artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -560,6 +590,28 @@ jobs:
         continue-on-error: true
 
       # Download wstest conformance summary (explicit enumeration, no pattern)
+      - name: Download and verify ARM64 PyPy 3.12 Bookworm artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_bookworm }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.12 Trixie artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_trixie }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download wstest conformance summary (quick)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -570,11 +622,11 @@ jobs:
         continue-on-error: true
 
       # Download FlatBuffers generated code (explicit enumeration for each matrix env)
-      - name: Download FlatBuffers generated code (cpy314)
+      - name: Download FlatBuffers generated code (cpy315)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: flatbuffers-gen-cpy314
-          path: ${{ github.workspace }}/flatbuffers-gen/cpy314/
+          name: flatbuffers-gen-cpy315
+          path: ${{ github.workspace }}/flatbuffers-gen/cpy315/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -597,12 +649,21 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      # Download FlatBuffers schema files (explicit enumeration for each matrix env)
-      - name: Download FlatBuffers schema files (cpy314)
+      - name: Download FlatBuffers generated code (pypy312)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: flatbuffers-schema-cpy314
-          path: ${{ github.workspace }}/flatbuffers-schema/cpy314/
+          name: flatbuffers-gen-pypy312
+          path: ${{ github.workspace }}/flatbuffers-gen/pypy312/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      # Download FlatBuffers schema files (explicit enumeration for each matrix env)
+      - name: Download FlatBuffers schema files (cpy315)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-schema-cpy315
+          path: ${{ github.workspace }}/flatbuffers-schema/cpy315/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -625,12 +686,21 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      # Download SerDes conformance test results (explicit enumeration for each matrix env)
-      - name: Download SerDes test results (cpy314)
+      - name: Download FlatBuffers schema files (pypy312)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: serdes-test-results-cpy314
-          path: ${{ github.workspace }}/serdes-test-results/cpy314/
+          name: flatbuffers-schema-pypy312
+          path: ${{ github.workspace }}/flatbuffers-schema/pypy312/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      # Download SerDes conformance test results (explicit enumeration for each matrix env)
+      - name: Download SerDes test results (cpy315)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: serdes-test-results-cpy315
+          path: ${{ github.workspace }}/serdes-test-results/cpy315/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -649,6 +719,15 @@ jobs:
         with:
           name: serdes-test-results-pypy311
           path: ${{ github.workspace }}/serdes-test-results/pypy311/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download SerDes test results (pypy312)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: serdes-test-results-pypy312
+          path: ${{ github.workspace }}/serdes-test-results/pypy312/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -945,10 +1024,21 @@ jobs:
             cpy314-linux-aarch64-musllinux_1_2
             cpy314-win-amd64
             cpy314-win-arm64
+            cpy315-macos-arm64
+            cpy315-linux-x86_64-manylinux_2_28
+            cpy315-linux-aarch64-manylinux_2_28
+            cpy315-linux-x86_64-musllinux_1_2
+            cpy315-linux-aarch64-musllinux_1_2
+            cpy315-win-amd64
+            cpy315-win-arm64
             pypy311-macos-arm64
             pypy311-linux-x86_64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_17
             pypy311-win-amd64
+            pypy312-macos-arm64
+            pypy312-linux-x86_64-manylinux_2_28
+            pypy312-linux-aarch64-manylinux_2_17
+            pypy312-win-amd64
             source
 
       - name: Validate all wheels before release (Final Gate)
@@ -1426,6 +1516,17 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify ARM64 CPython 3.15 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp315 }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 CPython 3.11 musllinux artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -1470,6 +1571,17 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify ARM64 CPython 3.15 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp315_musl }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 PyPy 3.11 Bookworm artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -1493,6 +1605,28 @@ jobs:
         continue-on-error: true
 
       # Download wstest conformance summary (explicit enumeration, no pattern)
+      - name: Download and verify ARM64 PyPy 3.12 Bookworm artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_bookworm }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.12 Trixie artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_trixie }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download wstest conformance summary (quick)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -1503,11 +1637,11 @@ jobs:
         continue-on-error: true
 
       # Download FlatBuffers generated code (explicit enumeration for each matrix env)
-      - name: Download FlatBuffers generated code (cpy314)
+      - name: Download FlatBuffers generated code (cpy315)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: flatbuffers-gen-cpy314
-          path: ${{ github.workspace }}/flatbuffers-gen/cpy314/
+          name: flatbuffers-gen-cpy315
+          path: ${{ github.workspace }}/flatbuffers-gen/cpy315/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1530,12 +1664,21 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      # Download FlatBuffers schema files (explicit enumeration for each matrix env)
-      - name: Download FlatBuffers schema files (cpy314)
+      - name: Download FlatBuffers generated code (pypy312)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: flatbuffers-schema-cpy314
-          path: ${{ github.workspace }}/flatbuffers-schema/cpy314/
+          name: flatbuffers-gen-pypy312
+          path: ${{ github.workspace }}/flatbuffers-gen/pypy312/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      # Download FlatBuffers schema files (explicit enumeration for each matrix env)
+      - name: Download FlatBuffers schema files (cpy315)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-schema-cpy315
+          path: ${{ github.workspace }}/flatbuffers-schema/cpy315/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1558,12 +1701,21 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      # Download SerDes conformance test results (explicit enumeration for each matrix env)
-      - name: Download SerDes test results (cpy314)
+      - name: Download FlatBuffers schema files (pypy312)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
-          name: serdes-test-results-cpy314
-          path: ${{ github.workspace }}/serdes-test-results/cpy314/
+          name: flatbuffers-schema-pypy312
+          path: ${{ github.workspace }}/flatbuffers-schema/pypy312/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      # Download SerDes conformance test results (explicit enumeration for each matrix env)
+      - name: Download SerDes test results (cpy315)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: serdes-test-results-cpy315
+          path: ${{ github.workspace }}/serdes-test-results/cpy315/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1582,6 +1734,15 @@ jobs:
         with:
           name: serdes-test-results-pypy311
           path: ${{ github.workspace }}/serdes-test-results/pypy311/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download SerDes test results (pypy312)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: serdes-test-results-pypy312
+          path: ${{ github.workspace }}/serdes-test-results/pypy312/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1878,10 +2039,21 @@ jobs:
             cpy314-linux-aarch64-musllinux_1_2
             cpy314-win-amd64
             cpy314-win-arm64
+            cpy315-macos-arm64
+            cpy315-linux-x86_64-manylinux_2_28
+            cpy315-linux-aarch64-manylinux_2_28
+            cpy315-linux-x86_64-musllinux_1_2
+            cpy315-linux-aarch64-musllinux_1_2
+            cpy315-win-amd64
+            cpy315-win-arm64
             pypy311-macos-arm64
             pypy311-linux-x86_64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_17
             pypy311-win-amd64
+            pypy312-macos-arm64
+            pypy312-linux-x86_64-manylinux_2_28
+            pypy312-linux-aarch64-manylinux_2_17
+            pypy312-win-amd64
             source
 
       - name: Validate all wheels before release (Final Gate)
@@ -2379,6 +2551,17 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify ARM64 CPython 3.15 artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp315 }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 CPython 3.11 musllinux artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -2423,6 +2606,17 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify ARM64 CPython 3.15 musllinux artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_cp315_musl }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download and verify ARM64 PyPy 3.11 Bookworm artifacts with retry logic
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -2438,6 +2632,28 @@ jobs:
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
           name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy_trixie }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.12 Bookworm artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_bookworm }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.12 Trixie artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_trixie }}
           path: ${{ github.workspace }}/dist/
           run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -2602,10 +2818,21 @@ jobs:
             cpy314-linux-aarch64-musllinux_1_2
             cpy314-win-amd64
             cpy314-win-arm64
+            cpy315-macos-arm64
+            cpy315-linux-x86_64-manylinux_2_28
+            cpy315-linux-aarch64-manylinux_2_28
+            cpy315-linux-x86_64-musllinux_1_2
+            cpy315-linux-aarch64-musllinux_1_2
+            cpy315-win-amd64
+            cpy315-win-arm64
             pypy311-macos-arm64
             pypy311-linux-x86_64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_17
             pypy311-win-amd64
+            pypy312-macos-arm64
+            pypy312-linux-x86_64-manylinux_2_28
+            pypy312-linux-aarch64-manylinux_2_17
+            pypy312-win-amd64
             source
 
       - name: Check if version already exists on PyPI

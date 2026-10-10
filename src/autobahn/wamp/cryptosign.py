@@ -281,7 +281,7 @@ def _read_signify_ed25519_signature(signature_file):
 
     http://man.openbsd.org/OpenBSD-current/man1/signify.1
     """
-    with open(signature_file) as f:
+    with open(signature_file, encoding="utf8") as f:
         # signature file format: 2nd line is base64 of 'Ed' || 8 random octets || 64 octets Ed25519 signature
         sig = binascii.a2b_base64(f.read().splitlines()[1])[10:]
         if len(sig) != 64:
@@ -297,7 +297,7 @@ def _read_signify_ed25519_pubkey(pubkey_file):
 
     http://man.openbsd.org/OpenBSD-current/man1/signify.1
     """
-    with open(pubkey_file) as f:
+    with open(pubkey_file, encoding="utf8") as f:
         # signature file format: 2nd line is base64 of 'Ed' || 8 random octets || 32 octets Ed25519 public key
         pubkey = binascii.a2b_base64(f.read().splitlines()[1])[10:]
         if len(pubkey) != 32:
@@ -328,7 +328,7 @@ def _qrcode_from_signify_ed25519_pubkey(pubkey_file, mode="text"):
 
     import qrcode
 
-    with open(pubkey_file) as f:
+    with open(pubkey_file, encoding="utf8") as f:
         pubkey = f.read().splitlines()[1]
 
         qr = qrcode.QRCode(box_size=3, error_correction=qrcode.ERROR_CORRECT_L)

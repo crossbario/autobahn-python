@@ -94,7 +94,9 @@ class CFfiBuildHook(BuildHookInterface):
     def _get_ext_suffix(self):
         """Get the extension suffix for the current Python interpreter.
 
-        E.g., '.cpython-311-x86_64-linux-gnu.so' or '.pypy311-pp73-x86_64-linux-gnu.so'
+        E.g., '.cpython-311-x86_64-linux-gnu.so',
+        '.pypy311-pp73-x86_64-linux-gnu.so', or
+        '.pypy312-pp80-x86_64-linux-gnu.so'.
         """
         return sysconfig.get_config_var("EXT_SUFFIX") or ".so"
 
