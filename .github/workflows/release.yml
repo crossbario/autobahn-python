@@ -40,6 +40,8 @@ jobs:
       artifact_arm64_cp315_musl: ${{ steps.check.outputs.artifact_arm64_cp315_musl }}
       artifact_arm64_pypy_bookworm: ${{ steps.check.outputs.artifact_arm64_pypy_bookworm }}
       artifact_arm64_pypy_trixie: ${{ steps.check.outputs.artifact_arm64_pypy_trixie }}
+      artifact_arm64_pypy312_bookworm: ${{ steps.check.outputs.artifact_arm64_pypy312_bookworm }}
+      artifact_arm64_pypy312_trixie: ${{ steps.check.outputs.artifact_arm64_pypy312_trixie }}
 
     steps:
       - name: Check all required workflows completed
@@ -165,6 +167,8 @@ jobs:
               core.setOutput('artifact_arm64_cp315_musl', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-cpython-3.15-musllinux_1_2_aarch64'));
               core.setOutput('artifact_arm64_pypy_bookworm', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64'));
               core.setOutput('artifact_arm64_pypy_trixie', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64'));
+              core.setOutput('artifact_arm64_pypy312_bookworm', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.12-bookworm-manylinux_2_36_aarch64'));
+              core.setOutput('artifact_arm64_pypy312_trixie', await findArtifact(wheelsArm64RunId, 'artifacts-arm64-pypy-3.12-trixie-manylinux_2_38_aarch64'));
 
               console.log('─────────────────────────────────────────────────');
             }
@@ -586,6 +590,28 @@ jobs:
         continue-on-error: true
 
       # Download wstest conformance summary (explicit enumeration, no pattern)
+      - name: Download and verify ARM64 PyPy 3.12 Bookworm artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_bookworm }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.12 Trixie artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_trixie }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download wstest conformance summary (quick)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -623,6 +649,15 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Download FlatBuffers generated code (pypy312)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-gen-pypy312
+          path: ${{ github.workspace }}/flatbuffers-gen/pypy312/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
       # Download FlatBuffers schema files (explicit enumeration for each matrix env)
       - name: Download FlatBuffers schema files (cpy315)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
@@ -651,6 +686,15 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Download FlatBuffers schema files (pypy312)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-schema-pypy312
+          path: ${{ github.workspace }}/flatbuffers-schema/pypy312/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
       # Download SerDes conformance test results (explicit enumeration for each matrix env)
       - name: Download SerDes test results (cpy315)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
@@ -675,6 +719,15 @@ jobs:
         with:
           name: serdes-test-results-pypy311
           path: ${{ github.workspace }}/serdes-test-results/pypy311/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download SerDes test results (pypy312)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: serdes-test-results-pypy312
+          path: ${{ github.workspace }}/serdes-test-results/pypy312/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -982,6 +1035,10 @@ jobs:
             pypy311-linux-x86_64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_17
             pypy311-win-amd64
+            pypy312-macos-arm64
+            pypy312-linux-x86_64-manylinux_2_28
+            pypy312-linux-aarch64-manylinux_2_17
+            pypy312-win-amd64
             source
 
       - name: Validate all wheels before release (Final Gate)
@@ -1548,6 +1605,28 @@ jobs:
         continue-on-error: true
 
       # Download wstest conformance summary (explicit enumeration, no pattern)
+      - name: Download and verify ARM64 PyPy 3.12 Bookworm artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_bookworm }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.12 Trixie artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_trixie }}
+          path: ${{ github.workspace }}/wheelhouse-arm64/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Download wstest conformance summary (quick)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
         with:
@@ -1585,6 +1664,15 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Download FlatBuffers generated code (pypy312)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-gen-pypy312
+          path: ${{ github.workspace }}/flatbuffers-gen/pypy312/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
       # Download FlatBuffers schema files (explicit enumeration for each matrix env)
       - name: Download FlatBuffers schema files (cpy315)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
@@ -1613,6 +1701,15 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
+      - name: Download FlatBuffers schema files (pypy312)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: flatbuffers-schema-pypy312
+          path: ${{ github.workspace }}/flatbuffers-schema/pypy312/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
       # Download SerDes conformance test results (explicit enumeration for each matrix env)
       - name: Download SerDes test results (cpy315)
         uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
@@ -1637,6 +1734,15 @@ jobs:
         with:
           name: serdes-test-results-pypy311
           path: ${{ github.workspace }}/serdes-test-results/pypy311/
+          run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Download SerDes test results (pypy312)
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: serdes-test-results-pypy312
+          path: ${{ github.workspace }}/serdes-test-results/pypy312/
           run-id: ${{ needs.check-all-workflows.outputs.main_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
@@ -1944,6 +2050,10 @@ jobs:
             pypy311-linux-x86_64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_17
             pypy311-win-amd64
+            pypy312-macos-arm64
+            pypy312-linux-x86_64-manylinux_2_28
+            pypy312-linux-aarch64-manylinux_2_17
+            pypy312-win-amd64
             source
 
       - name: Validate all wheels before release (Final Gate)
@@ -2529,6 +2639,28 @@ jobs:
           retry-delay: 30
         continue-on-error: true
 
+      - name: Download and verify ARM64 PyPy 3.12 Bookworm artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_bookworm }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
+      - name: Download and verify ARM64 PyPy 3.12 Trixie artifacts with retry logic
+        uses: wamp-proto/wamp-cicd/actions/download-artifact-verified@main
+        with:
+          name: ${{ needs.check-all-workflows.outputs.artifact_arm64_pypy312_trixie }}
+          path: ${{ github.workspace }}/dist/
+          run-id: ${{ needs.check-all-workflows.outputs.wheels_arm64_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          max-attempts: 5
+          retry-delay: 30
+        continue-on-error: true
+
       - name: Force file system sync (post-download, pre-verification)
         run: |
           echo "======================================================================"
@@ -2697,6 +2829,10 @@ jobs:
             pypy311-linux-x86_64-manylinux_2_28
             pypy311-linux-aarch64-manylinux_2_17
             pypy311-win-amd64
+            pypy312-macos-arm64
+            pypy312-linux-x86_64-manylinux_2_28
+            pypy312-linux-aarch64-manylinux_2_17
+            pypy312-win-amd64
             source
 
       - name: Check if version already exists on PyPI

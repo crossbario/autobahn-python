@@ -62,28 +62,32 @@ Client Testing
    just wstest-testeeclient-twisted cpy311
    just wstest-testeeclient-twisted cpy315
    just wstest-testeeclient-twisted pypy311
+   just wstest-testeeclient-twisted pypy312
    just wstest-testeeclient-asyncio cpy311
    just wstest-testeeclient-asyncio cpy315
    just wstest-testeeclient-asyncio pypy311
+   just wstest-testeeclient-asyncio pypy312
 
 Test results will be generated in the ``.wstest/`` directory:
 
 * ``.wstest/clients/`` - Client test results
 
-Server Testing (6 combinations)
+Server Testing (8 combinations)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   # Terminal 1-6: Start all server combinations
+   # Terminal 1-8: Start all server combinations
    just wstest-testeeserver-twisted cpy311 "ws://127.0.0.1:9011"
    just wstest-testeeserver-asyncio cpy311 "ws://127.0.0.1:9012"
    just wstest-testeeserver-twisted cpy315 "ws://127.0.0.1:9013"
    just wstest-testeeserver-asyncio cpy315 "ws://127.0.0.1:9014"
    just wstest-testeeserver-twisted pypy311 "ws://127.0.0.1:9015"
    just wstest-testeeserver-asyncio pypy311 "ws://127.0.0.1:9016"
+   just wstest-testeeserver-twisted pypy312 "ws://127.0.0.1:9017"
+   just wstest-testeeserver-asyncio pypy312 "ws://127.0.0.1:9018"
 
-   # Terminal 7: Run testsuite client against all 6 servers
+   # Terminal 9: Run testsuite client against all 8 servers
    just wstest-fuzzingclient
    # Or for full mode: just wstest-fuzzingclient "" "" full
 

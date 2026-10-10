@@ -941,7 +941,7 @@ def machine_id() -> str:
     if platform.isLinux():
         try:
             # why this? see: http://0pointer.de/blog/projects/ids.html
-            with open("/var/lib/dbus/machine-id") as f:
+            with open("/var/lib/dbus/machine-id", encoding="utf8") as f:
                 return f.read().strip()
         except:
             # Non-dbus using Linux, get a hostname
@@ -1026,7 +1026,7 @@ def write_keyfile(filepath, tags, msg):
     """
     Internal helper, write the given tags to the given file-
     """
-    with open(filepath, "w") as f:
+    with open(filepath, "w", encoding="utf8") as f:
         f.write(msg)
         for tag, value in tags.items():
             if value:
@@ -1060,7 +1060,7 @@ def parse_keyfile(key_path: str, private: bool = True) -> OrderedDict:
         allowed_tags.extend(["private-key-ed25519", "private-key-eth"])
 
     tags = OrderedDict()  # type: ignore
-    with open(key_path) as key_file:
+    with open(key_path, encoding="utf8") as key_file:
         got_blankline = False
         for line in key_file.readlines():
             if line.strip() == "":

@@ -171,6 +171,24 @@ jobs:
             build_type: "custom"
             python_versions: "pypy311"
 
+          # PyPy 3.12 / PyPy 8.0 on Debian 12 (Bookworm), pp80 ABI
+          - name: "pypy-3.12-bookworm-manylinux_2_36_aarch64"
+            dockerfile: "docker/Dockerfile.pypy312-bookworm-manylinux-arm64"
+            manylinux_tag: "manylinux_2_36_aarch64"
+            glibc_version: "2.36"
+            python_impl: "pypy"
+            build_type: "custom"
+            python_versions: "pypy312"
+
+          # PyPy 3.12 / PyPy 8.0 on Debian 13 (Trixie), pp80 ABI
+          - name: "pypy-3.12-trixie-manylinux_2_38_aarch64"
+            dockerfile: "docker/Dockerfile.pypy312-trixie-manylinux-arm64"
+            manylinux_tag: "manylinux_2_38_aarch64"
+            glibc_version: "2.38"
+            python_impl: "pypy"
+            build_type: "custom"
+            python_versions: "pypy312"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

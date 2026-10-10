@@ -1,0 +1,27 @@
+# PyPy 3.12 / PyPy 8.0 on Debian 13 (Trixie) - manylinux_2_38_aarch64
+FROM pypy:3.12-trixie
+
+LABEL maintainer="The Crossbar.io Project <support@crossbario.com>"
+LABEL manylinux.tag="manylinux_2_38_aarch64"
+LABEL glibc.version="2.38"
+
+ENV PYPY_DISABLE_JIT=1
+ENV PYPY_GC_NTHREADS=1
+ENV PYPY_FORCE_CPU_COUNT=1
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# PyPy 3.12/pp80 has no cryptography wheel yet, so Rust and OpenSSL are an
+# intentional part of this builder rather than an accidental pip fallback.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    curl \
+    libffi-dev \
+    libssl-dev \
+    libsnappy-dev \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal \
+    && pip install --upgrade pip \
+    && pip install auditwheel patchelf \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /io

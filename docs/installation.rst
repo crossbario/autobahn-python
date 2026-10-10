@@ -38,7 +38,7 @@ Here are the configurations supported by |ab|:
      - yes
      - yes
      - Pre-built wheels are published for supported platforms.
-   * - PyPy 3.11
+   * - PyPy 3.11 and 3.12
      - yes
      - yes
      - Pre-built wheels are published for supported platforms.
@@ -90,7 +90,7 @@ using `Pip <http://www.pip-installer.org/en/latest/installing.html>`_:
 This is the recommended installation method. Pip will select a
 pre-built wheel when one matches your Python implementation, Python
 version, operating system, and CPU architecture. Current releases publish
-wheels for CPython 3.11 through 3.15 and PyPy 3.11 across the supported
+wheels for CPython 3.11 through 3.15 and PyPy 3.11 and 3.12 across the supported
 Linux, macOS, and Windows targets documented in :doc:`wheels-inventory`.
 
 You can also specify *install variants* (see below). E.g. to install Twisted automatically as a dependency

@@ -179,8 +179,8 @@ functionality to wheel installs including the flatc binary.
 |----------|--------------|----------|----------|
 | **main.yml** | `documentation` | `docs/_build/html/` | N/A |
 | **wstest.yml** | `wstest-results` | WebSocket conformance reports | N/A |
-| **wheels.yml** | `wheels-macos-arm64` | macOS ARM64 wheels (cpy311-315, pypy311) | macOS arm64 |
-| **wheels.yml** | `wheels-windows-x86_64` | Windows x64 wheels (cpy311-315, pypy311) | Windows x86_64 |
+| **wheels.yml** | `wheels-macos-arm64` | macOS ARM64 wheels (cpy311-315, pypy311-312) | macOS arm64 |
+| **wheels.yml** | `wheels-windows-x86_64` | Windows x64 wheels (cpy311-315, pypy311-312) | Windows x86_64 |
 | **wheels.yml** | `wheels-windows-arm64` | Windows ARM64 wheels (cpy311-315, no PyPy) | Windows arm64 |
 | **wheels.yml** | `linux-wheels-no-nvx` | Pure Python wheels (no NVX) | Linux x86_64 |
 | **wheels.yml** | `source-distribution` | `*.tar.gz` sdist | Linux (build host) |
@@ -193,6 +193,8 @@ functionality to wheel installs including the flatc binary.
 | **wheels-arm64.yml** | `artifacts-arm64-cpython-3.15-musllinux_1_2_aarch64` | CPython 3.15 musllinux wheel | Linux aarch64 |
 | **wheels-arm64.yml** | `artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64` | PyPy 3.11 wheel (Debian 12) | Linux aarch64 |
 | **wheels-arm64.yml** | `artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64` | PyPy 3.11 wheel (Debian 13) | Linux aarch64 |
+| **wheels-arm64.yml** | `artifacts-arm64-pypy-3.12-bookworm-manylinux_2_36_aarch64` | PyPy 3.12 / pp80 wheel (Debian 12) | Linux aarch64 |
+| **wheels-arm64.yml** | `artifacts-arm64-pypy-3.12-trixie-manylinux_2_38_aarch64` | PyPy 3.12 / pp80 wheel (Debian 13) | Linux aarch64 |
 
 **wheels-docker.yml artifact contents** (`artifacts-manylinux_2_28_x86_64`):
 - `cpy311-linux-x86_64-manylinux_2_28`
@@ -201,6 +203,7 @@ functionality to wheel installs including the flatc binary.
 - `cpy314-linux-x86_64-manylinux_2_28`
 - `cpy315-linux-x86_64-manylinux_2_28`
 - `pypy311-linux-x86_64-manylinux_2_28`
+- `pypy312-linux-x86_64-manylinux_2_28`
 
 ### 2. Artifact Consumer (release.yml)
 
@@ -223,6 +226,8 @@ download action. It maps artifact names via the `check-workflows` job outputs:
 | `artifact_arm64_cp315_musl` | wheels-arm64.yml | `artifacts-arm64-cpython-3.15-musllinux_1_2_aarch64` |
 | `artifact_arm64_pypy_bookworm` | wheels-arm64.yml | `artifacts-arm64-pypy-3.11-bookworm-manylinux_2_36_aarch64` |
 | `artifact_arm64_pypy_trixie` | wheels-arm64.yml | `artifacts-arm64-pypy-3.11-trixie-manylinux_2_38_aarch64` |
+| `artifact_arm64_pypy312_bookworm` | wheels-arm64.yml | `artifacts-arm64-pypy-3.12-bookworm-manylinux_2_36_aarch64` |
+| `artifact_arm64_pypy312_trixie` | wheels-arm64.yml | `artifacts-arm64-pypy-3.12-trixie-manylinux_2_38_aarch64` |
 
 ## Platform Coverage
 
@@ -230,11 +235,11 @@ download action. It maps artifact names via the `check-workflows` job outputs:
 
 | Platform | Architecture | Python Versions | Manylinux Tag | Workflow |
 |----------|--------------|-----------------|---------------|----------|
-| Linux | x86_64 | 3.11, 3.12, 3.13, 3.14, 3.15, PyPy 3.11 | manylinux_2_28 | wheels-docker.yml |
+| Linux | x86_64 | 3.11, 3.12, 3.13, 3.14, 3.15, PyPy 3.11/3.12 | manylinux_2_28 | wheels-docker.yml |
 | Linux | aarch64 | 3.11, 3.12, 3.13, 3.14, 3.15 | manylinux_2_28 | wheels-arm64.yml |
-| Linux | aarch64 | PyPy 3.11 | manylinux_2_36/2_38 | wheels-arm64.yml |
-| macOS | arm64 | 3.11, 3.12, 3.13, 3.14, 3.15, PyPy 3.11 | N/A | wheels.yml |
-| Windows | x86_64 | 3.11, 3.12, 3.13, 3.14, 3.15, PyPy 3.11 | N/A | wheels.yml |
+| Linux | aarch64 | PyPy 3.11/3.12 | manylinux_2_36/2_38 | wheels-arm64.yml |
+| macOS | arm64 | 3.11, 3.12, 3.13, 3.14, 3.15, PyPy 3.11/3.12 | N/A | wheels.yml |
+| Windows | x86_64 | 3.11, 3.12, 3.13, 3.14, 3.15, PyPy 3.11/3.12 | N/A | wheels.yml |
 | Windows | arm64 | 3.11, 3.12, 3.13, 3.14, 3.15 (no PyPy) | N/A | wheels.yml |
 
 ### Why Manylinux Containers?

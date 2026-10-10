@@ -142,7 +142,7 @@ jobs:
 
     strategy:
       matrix:
-        python-env: [cpy315, cpy311, pypy311]
+        python-env: [cpy315, cpy311, pypy312, pypy311]
 
     steps:
       - name: Checkout code
@@ -235,7 +235,7 @@ jobs:
     # (via install-dev -> autobahn[all]) so the cryptosign code paths run.
     strategy:
       matrix:
-        python-env: [cpy315, cpy314, cpy313, cpy312, cpy311, pypy311]
+        python-env: [cpy315, cpy314, cpy313, cpy312, cpy311, pypy312, pypy311]
 
     steps:
       - name: Checkout code
@@ -521,7 +521,7 @@ jobs:
 
     strategy:
       matrix:
-        python-env: [cpy315, cpy311, pypy311]
+        python-env: [cpy315, cpy311, pypy312, pypy311]
 
     steps:
       - name: Checkout code
@@ -684,7 +684,7 @@ jobs:
 
     strategy:
       matrix:
-        python-env: [cpy315, cpy311, pypy311]
+        python-env: [cpy315, cpy311, pypy312, pypy311]
 
     steps:
       - name: Checkout code

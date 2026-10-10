@@ -78,7 +78,9 @@ else:
 # and build context detection (wheel distribution vs. local source install)
 extra_compile_args = get_compile_args()
 
-with open(os.path.join(os.path.dirname(__file__), "_utf8validator.c")) as fd:
+with open(
+    os.path.join(os.path.dirname(__file__), "_utf8validator.c"), encoding="utf8"
+) as fd:
     c_source = fd.read()
     ffi.set_source(
         "_nvx_utf8validator",

@@ -228,7 +228,7 @@ Autobahn|Python publishes source distributions and pre-built wheels on
 [PyPI](https://pypi.org/project/autobahn/) and
 [GitHub Releases](https://github.com/crossbario/autobahn-python/releases).
 The current release line requires Python 3.11 or later and publishes
-wheels for CPython 3.11 through 3.15 and PyPy 3.11 across supported
+wheels for CPython 3.11 through 3.15 and PyPy 3.11 and 3.12 across supported
 Linux, macOS, and Windows targets.
 
 The recommended installation method is:
@@ -383,7 +383,7 @@ All serializer dependencies provide binary wheels for:
 - **macOS**: x86_64 (Intel), ARM64 (Apple Silicon)
 - **Windows**: x86_64 (AMD64), ARM64
 - **Python**: 3.11, 3.12, 3.13, 3.14, 3.15 (including 3.14t free-threaded)
-- **Implementations**: CPython, PyPy 3.11+
+- **Implementations**: CPython, PyPy 3.11 and 3.12
 
 #### Backwards Compatibility
 
@@ -504,7 +504,7 @@ Available via `pip install autobahn[nvx]`:
 - **Operating Systems**: Linux (glibc/musl), macOS, Windows
 - **Architectures**: x86_64 (Intel/AMD), ARM64 (Apple Silicon, AWS Graviton)
 - **Python Versions**: 3.11, 3.12, 3.13, 3.14, 3.15 (including free-threaded 3.14t)
-- **Implementations**: CPython, PyPy 3.11+
+- **Implementations**: CPython, PyPy 3.11 and 3.12
 
 **All optional dependencies install cleanly without:**
 - System libraries (except optional python-snappy)

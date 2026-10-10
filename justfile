@@ -80,7 +80,7 @@ VENV_DIR := PROJECT_DIR / '.venvs'
 
 # Define a justfile-local variable for our environments.
 # PyPy publishes no Windows ARM64 interpreter, so win_arm64 is CPython-only.
-ENVS := if os() + "-" + arch() == "windows-aarch64" { 'cpy315 cpy314 cpy313 cpy312 cpy311' } else { 'cpy315 cpy314 cpy313 cpy312 cpy311 pypy311' }
+ENVS := if os() + "-" + arch() == "windows-aarch64" { 'cpy315 cpy314 cpy313 cpy312 cpy311' } else { 'cpy315 cpy314 cpy313 cpy312 cpy311 pypy312 pypy311' }
 
 # Package version files, kept in sync (CalVer YY.M.PATCH[.devN], PEP 440).
 PY_VERSION_FILE := 'src/autobahn/_version.py'
@@ -102,6 +102,7 @@ _get-spec short_name:
         cpy313)  echo "cpython-3.13{{PY_PLATFORM_SUFFIX}}";;  # cpython-3.13.5-linux-x86_64-gnu
         cpy312)  echo "cpython-3.12{{PY_PLATFORM_SUFFIX}}";;  # cpython-3.12.11-linux-x86_64-gnu
         cpy311)  echo "cpython-3.11{{PY_PLATFORM_SUFFIX}}";;  # cpython-3.11.13-linux-x86_64-gnu
+        pypy312) echo "pypy-3.12.14";;  # PyPy 8.0 / pp80 ABI
         pypy311) echo "pypy-3.11.15";;  # PyPy 7.3.23 = last pp73 ABI; pinned on purpose (PyPy 8.0 = new pp80 ABI)
         *)       echo "Unknown environment: {{short_name}}" >&2; exit 1;;
     esac
@@ -768,6 +769,7 @@ install-benchmark venv="": (create venv) (install venv)
         echo "  - cpy313 (CPython 3.13)"
         echo "  - cpy314 (CPython 3.14)"
         echo "  - cpy315 (CPython 3.15)"
+        echo "  - pypy312 (PyPy 3.12 / PyPy 8.0)"
         echo "  - pypy311 (PyPy 3.11)"
         exit 1
     fi

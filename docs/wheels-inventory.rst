@@ -64,6 +64,9 @@ Linux x86_64
    * - PyPy 3.11
      - ``autobahn-{version}-pp311-pypy311_pp73-linux_x86_64.whl``
      - ❌ No (pure Python)
+   * - PyPy 3.12 (PyPy 8.0)
+     - ``autobahn-{version}-pp312-pypy312_pp80-linux_x86_64.whl``
+     - ❌ No (pure Python)
 
 **Note:** Linux x86_64 wheels are built WITHOUT NVX to ensure maximum compatibility across different Linux distributions. Users on modern x86_64 systems can still benefit from NVX by installing from source or using platform-specific builds.
 
@@ -130,6 +133,9 @@ macOS ARM64 (Apple Silicon)
    * - PyPy 3.11
      - ``autobahn-{version}-pp311-pypy311_pp73-macosx_15_0_arm64.whl``
      - ✅ Yes (binary)
+   * - PyPy 3.12 (PyPy 8.0)
+     - ``autobahn-{version}-pp312-pypy312_pp80-macosx_15_0_arm64.whl``
+     - ✅ Yes (binary)
 
 Windows x86_64
 ^^^^^^^^^^^^^^
@@ -160,6 +166,9 @@ Windows x86_64
      - ✅ Yes (binary)
    * - PyPy 3.11
      - ``autobahn-{version}-pp311-pypy311_pp73-win_amd64.whl``
+     - ✅ Yes (binary)
+   * - PyPy 3.12 (PyPy 8.0)
+     - ``autobahn-{version}-pp312-pypy312_pp80-win_amd64.whl``
      - ✅ Yes (binary)
 
 Windows ARM64
@@ -272,6 +281,9 @@ Linux ARM64 (PyPy) - Debian 12
    * - PyPy 3.11
      - ``autobahn-{version}-pp311-pypy311_pp73-manylinux_2_36_aarch64.whl``
      - ✅ Yes (binary)
+   * - PyPy 3.12 (PyPy 8.0)
+     - ``autobahn-{version}-pp312-pypy312_pp80-manylinux_2_36_aarch64.whl``
+     - ✅ Yes (binary)
 
 **Compatibility:** Requires glibc 2.36 or later (Debian 12+, Ubuntu 22.04+)
 
@@ -289,6 +301,9 @@ Linux ARM64 (PyPy) - Debian 13
      - NVX Acceleration
    * - PyPy 3.11
      - ``autobahn-{version}-pp311-pypy311_pp73-manylinux_2_38_aarch64.whl``
+     - ✅ Yes (binary)
+   * - PyPy 3.12 (PyPy 8.0)
+     - ``autobahn-{version}-pp312-pypy312_pp80-manylinux_2_38_aarch64.whl``
      - ✅ Yes (binary)
 
 **Compatibility:** Requires glibc 2.38 or later (Debian 13+, Ubuntu 24.04+)
@@ -439,7 +454,8 @@ Common Tags
 **Python tags:**
 
 * ``cp311``, ``cp312``, ``cp313``, ``cp314``, ``cp315`` - CPython 3.11, 3.12, 3.13, 3.14, 3.15
-* ``pp311`` - PyPy 3.11
+* ``pp311`` - PyPy 3.11 using the pp73 ABI
+* ``pp312`` - PyPy 3.12 / PyPy 8.0 using the pp80 ABI
 
 **Platform tags:**
 
