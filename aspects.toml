@@ -1,6 +1,10 @@
 # Materialized aspect membership for this repository.
 # Rendered from the apex inventory (all.yml); NOT a source of truth.
-aspects = ["way-a", "pypi-release", "python-package"]
+aspects = ["way-a", "pypi-release", "python-package", "sphinx-docs", "rtd-release"]
+
+[provider.way-a]
+repo = "wamp-proto/wamp-ai"
+path = ".ai"
 
 [provider.python-package]
 repo = "crossbario/autobahn-crossbar-ai"
