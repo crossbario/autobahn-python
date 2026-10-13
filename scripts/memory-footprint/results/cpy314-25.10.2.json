@@ -1,0 +1,249 @@
+{
+  "variant": "25.10.2",
+  "python": {
+    "implementation": "CPython",
+    "version": "3.14.7",
+    "build": "3.14.7 (main, Sep 1 2026, 14:18:09) [Clang 22.1.3 ]"
+  },
+  "platform": {
+    "system": "Linux",
+    "release": "6.12.95+deb12-amd64",
+    "machine": "x86_64"
+  },
+  "runs": 5,
+  "packages": {
+    "autobahn": "25.10.2",
+    "txaio": "26.6.1",
+    "twisted": "26.4.0",
+    "cryptography": "50.0.2",
+    "numpy": "2.5.4",
+    "daphne": "4.2.3"
+  },
+  "results": [
+    {
+      "group": "interpreter",
+      "label": "bare interpreter",
+      "code": "pass",
+      "available": true,
+      "maxrss_kib": 12260,
+      "samples_kib": [
+        12228,
+        12284,
+        12196,
+        12268,
+        12260
+      ],
+      "numpy": false
+    },
+    {
+      "group": "cryptography",
+      "label": "import cryptography",
+      "code": "import cryptography",
+      "available": true,
+      "maxrss_kib": 12232,
+      "samples_kib": [
+        12304,
+        12212,
+        12232,
+        12228,
+        12292
+      ],
+      "numpy": false
+    },
+    {
+      "group": "cryptography",
+      "label": "from cryptography.hazmat.primitives import hashes",
+      "code": "from cryptography.hazmat.primitives import hashes",
+      "available": true,
+      "maxrss_kib": 20312,
+      "samples_kib": [
+        20384,
+        20300,
+        20348,
+        20308,
+        20312
+      ],
+      "numpy": false
+    },
+    {
+      "group": "numpy",
+      "label": "import numpy",
+      "code": "import numpy",
+      "available": true,
+      "maxrss_kib": 29124,
+      "samples_kib": [
+        29120,
+        29144,
+        29124,
+        29180,
+        29092
+      ],
+      "numpy": true
+    },
+    {
+      "group": "asyncio",
+      "label": "import asyncio",
+      "code": "import asyncio",
+      "available": true,
+      "maxrss_kib": 18568,
+      "samples_kib": [
+        18568,
+        18632,
+        18544,
+        18548,
+        18628
+      ],
+      "numpy": false
+    },
+    {
+      "group": "twisted",
+      "label": "from twisted.internet import reactor",
+      "code": "from twisted.internet import reactor",
+      "available": true,
+      "maxrss_kib": 44376,
+      "samples_kib": [
+        44324,
+        44376,
+        44368,
+        44428,
+        44412
+      ],
+      "numpy": false
+    },
+    {
+      "group": "txaio",
+      "label": "import txaio",
+      "code": "import txaio",
+      "available": true,
+      "maxrss_kib": 12304,
+      "samples_kib": [
+        12272,
+        12296,
+        12388,
+        12304,
+        12380
+      ],
+      "numpy": false
+    },
+    {
+      "group": "txaio",
+      "label": "import txaio; txaio.use_asyncio()",
+      "code": "import txaio; txaio.use_asyncio()",
+      "available": true,
+      "maxrss_kib": 18684,
+      "samples_kib": [
+        18684,
+        18684,
+        18676,
+        18776,
+        18740
+      ],
+      "numpy": false
+    },
+    {
+      "group": "txaio",
+      "label": "import txaio; txaio.use_twisted()",
+      "code": "import txaio; txaio.use_twisted()",
+      "available": true,
+      "maxrss_kib": 27096,
+      "samples_kib": [
+        27096,
+        27100,
+        27092,
+        27088,
+        27132
+      ],
+      "numpy": false
+    },
+    {
+      "group": "autobahn",
+      "label": "import autobahn",
+      "code": "import autobahn",
+      "available": true,
+      "maxrss_kib": 12300,
+      "samples_kib": [
+        12300,
+        12292,
+        12392,
+        12296,
+        12348
+      ],
+      "numpy": false
+    },
+    {
+      "group": "autobahn",
+      "label": "txaio.use_asyncio(); import autobahn.wamp",
+      "code": "import txaio; txaio.use_asyncio(); import autobahn.wamp",
+      "available": true,
+      "maxrss_kib": 32680,
+      "samples_kib": [
+        32676,
+        32712,
+        32656,
+        32716,
+        32680
+      ],
+      "numpy": false
+    },
+    {
+      "group": "autobahn",
+      "label": "txaio.use_twisted(); import autobahn.wamp",
+      "code": "import txaio; txaio.use_twisted(); import autobahn.wamp",
+      "available": true,
+      "maxrss_kib": 39364,
+      "samples_kib": [
+        39368,
+        39440,
+        39332,
+        39364,
+        39316
+      ],
+      "numpy": false
+    },
+    {
+      "group": "autobahn",
+      "label": "import autobahn.asyncio.websocket",
+      "code": "import autobahn.asyncio.websocket",
+      "available": true,
+      "maxrss_kib": 37120,
+      "samples_kib": [
+        37112,
+        37192,
+        37120,
+        37052,
+        37148
+      ],
+      "numpy": false
+    },
+    {
+      "group": "autobahn",
+      "label": "import autobahn.twisted.websocket",
+      "code": "import autobahn.twisted.websocket",
+      "available": true,
+      "maxrss_kib": 50040,
+      "samples_kib": [
+        50040,
+        50104,
+        50056,
+        50024,
+        50028
+      ],
+      "numpy": false
+    },
+    {
+      "group": "daphne",
+      "label": "from daphne.server import Server",
+      "code": "from daphne.server import Server",
+      "available": true,
+      "maxrss_kib": 51452,
+      "samples_kib": [
+        51432,
+        51468,
+        51452,
+        51472,
+        51416
+      ],
+      "numpy": false
+    }
+  ]
+}

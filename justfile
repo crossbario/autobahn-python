@@ -1815,6 +1815,11 @@ bump-flatbuffers:
 update-flatbuffers:
     ./scripts/update_flatbuffers.sh
 
+# Measure import memory footprint in throwaway venvs, regenerate docs/memory-footprint.rst tables (usage: `just memory-footprint cpy314`)
+memory-footprint env="cpy314" label="":
+    ./scripts/memory-footprint/run.sh {{ env }} {{ label }}
+    python3 ./scripts/memory-footprint/render.py {{ env }}
+
 # Build wheel only (usage: `just build cpy314`)
 build venv="": (install-build-tools venv)
     #!/usr/bin/env bash

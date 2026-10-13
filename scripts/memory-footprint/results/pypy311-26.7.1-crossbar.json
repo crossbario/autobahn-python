@@ -1,0 +1,41 @@
+{
+  "variant": "26.7.1",
+  "python": {
+    "implementation": "PyPy",
+    "version": "3.11.15",
+    "build": "3.11.15 (194f9f44b505, May 25 2026, 19:34:11) [PyPy 7.3.23 with GCC 10.2.1 20210130 (Red Hat 10.2.1-11)]"
+  },
+  "platform": {
+    "system": "Linux",
+    "release": "6.12.95+deb12-amd64",
+    "machine": "x86_64"
+  },
+  "runs": 5,
+  "packages": {
+    "autobahn": "26.7.1",
+    "txaio": "26.6.1",
+    "twisted": "26.4.0",
+    "cryptography": "50.0.2",
+    "numpy": "2.4.6",
+    "cbor2": "6.1.5",
+    "crossbar": "26.7.1",
+    "zlmdb": "26.7.1"
+  },
+  "results": [
+    {
+      "group": "crossbar",
+      "label": "from crossbar.edge.worker.router import ExtRouterController",
+      "code": "from crossbar.edge.worker.router import ExtRouterController",
+      "available": true,
+      "maxrss_kib": 245820,
+      "samples_kib": [
+        245364,
+        248688,
+        245820,
+        245484,
+        246268
+      ],
+      "numpy": true
+    }
+  ]
+}
