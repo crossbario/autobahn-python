@@ -1325,7 +1325,8 @@ test-asyncio venv="" use_nvx="": (install-tools venv) (install-dev venv)
 
 # Run the import smoke test - imports core autobahn modules with crypto extras
 # present, guarding against import-time annotation regressions (e.g. #1878) that
-# only surface on CPython < 3.14. (usage: `just test-imports cpy311`)
+# only surface on CPython < 3.14, and checks that WebSocket-only imports load
+# neither FlatBuffers nor numpy (#1983). (usage: `just test-imports cpy311`)
 test-imports venv="": (install-tools venv) (install-dev venv)
     #!/usr/bin/env bash
     set -e
@@ -1337,7 +1338,8 @@ test-imports venv="": (install-tools venv) (install-dev venv)
     fi
     VENV_PYTHON=$(just --quiet _get-venv-python "${VENV_NAME}")
     echo "==> Running import smoke test in ${VENV_NAME}..."
-    ${VENV_PYTHON} -m pytest -v src/autobahn/test/test_import_all.py
+    ${VENV_PYTHON} -m pytest -v src/autobahn/test/test_import_all.py \
+        src/autobahn/test/test_import_websocket_only.py
 
 # Run the import smoke test against the LOWEST versions our direct dependencies
 # allow (uv --resolution lowest-direct), in a separate '<venv>-lowest' venv. This
