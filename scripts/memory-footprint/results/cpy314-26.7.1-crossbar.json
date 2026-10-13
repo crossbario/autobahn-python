@@ -27,13 +27,13 @@
       "label": "from crossbar.edge.worker.router import ExtRouterController",
       "code": "from crossbar.edge.worker.router import ExtRouterController",
       "available": true,
-      "maxrss_kib": 148164,
+      "maxrss_kib": 148136,
       "samples_kib": [
-        148076,
-        148092,
-        148164,
-        148176,
-        148204
+        148280,
+        148136,
+        148136,
+        148132,
+        148016
       ],
       "numpy": true
     }

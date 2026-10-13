@@ -12,7 +12,7 @@
   },
   "runs": 5,
   "packages": {
-    "autobahn": "26.9.1.dev2",
+    "autobahn": "26.10.1.dev1",
     "txaio": "26.6.1",
     "twisted": "26.4.0",
     "cryptography": "50.0.2",
@@ -27,13 +27,13 @@
       "label": "from crossbar.edge.worker.router import ExtRouterController",
       "code": "from crossbar.edge.worker.router import ExtRouterController",
       "available": true,
-      "maxrss_kib": 229404,
+      "maxrss_kib": 229484,
       "samples_kib": [
-        229404,
-        218564,
-        229540,
-        218676,
-        229640
+        229500,
+        229840,
+        218460,
+        219932,
+        229484
       ],
       "numpy": true
     }

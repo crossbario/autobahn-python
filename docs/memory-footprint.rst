@@ -84,10 +84,10 @@ Findings
 
 * **This change:** every row that imports autobahn drops by about 13-17 MB on
   CPython, and by about 18-24 MB on PyPy, and none of them loads numpy any more. For
-  example, ``from daphne.server import Server`` drops from 64.6 MB to 51.7 MB on CPython
+  example, ``from daphne.server import Server`` drops from 64.6 MB to 51.6 MB on CPython
   3.14, and ``import autobahn`` alone is back to the size of the bare interpreter.
 * **Compared with 25.10.2:** the WebSocket and WAMP rows remain about 1.3-1.6 MB above
-  25.10.2 on CPython (about 0.5-0.8 MB on PyPy). In 25.10.2 without the ``serialization``
+  25.10.2 on CPython (about 0.4-0.8 MB on PyPy). In 25.10.2 without the ``serialization``
   extra, cbor2 was not installed and the WAMP message module skipped that import. Since
   26.x, cbor2 is a regular dependency.
 * **WebSocket only:** with Twisted, most of what remains is Twisted itself; with
