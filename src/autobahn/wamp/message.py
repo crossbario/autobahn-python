@@ -27,7 +27,9 @@
 from __future__ import annotations
 
 import binascii
+import importlib.util
 import re
+import sys
 import textwrap
 from pprint import pformat
 from typing import Any, Literal, overload
@@ -37,11 +39,31 @@ from autobahn.util import hlval
 from autobahn.wamp.exception import InvalidUriError, ProtocolError
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
+
+def _lazy_import(name):
+    """
+    Import a module lazily: it is registered in ``sys.modules`` right away, but only
+    executed on first attribute access. This is the recipe from the ``importlib``
+    documentation ("Implementing lazy imports"), plus reuse of an already loaded module.
+    """
+    if name in sys.modules:
+        return sys.modules[name]
+    spec = importlib.util.find_spec(name)
+    spec.loader = importlib.util.LazyLoader(spec.loader)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+# The FlatBuffers runtime (and the code generated for WAMP) is only loaded when a
+# FlatBuffers message is first built or parsed: importing autobahn for WebSocket only
+# must not load it, nor numpy, which the runtime imports whenever installed, see #1983.
 try:
     import cbor2
 
-    from autobahn import flatbuffers
-    from autobahn.wamp import message_fbs
+    flatbuffers = _lazy_import("autobahn.flatbuffers")
+    message_fbs = _lazy_import("autobahn.wamp.message_fbs")
 except ImportError:
     _HAS_WAMP_FLATBUFFERS = False
 else:

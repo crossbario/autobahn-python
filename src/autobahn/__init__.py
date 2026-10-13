@@ -32,8 +32,6 @@ import os
 
 import txaio
 
-from autobahn import flatbuffers
-
 
 def check_zlmdb_flatbuffers_version_in_sync() -> str:
     """
@@ -57,6 +55,10 @@ def check_zlmdb_flatbuffers_version_in_sync() -> str:
         print(f"FlatBuffers version: {version}")
     """
     import zlmdb.flatbuffers
+
+    # imported here, not at module level: importing autobahn must not load
+    # the FlatBuffers runtime (and with it numpy), see #1983
+    from autobahn import flatbuffers
 
     autobahn_version = flatbuffers.__version__
     zlmdb_version = zlmdb.flatbuffers.__version__
