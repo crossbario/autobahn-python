@@ -44,6 +44,7 @@ Contents
    overview
    installation
    wheels-inventory
+   memory-footprint
    getting-started
    programming-guide/index
    architecture/statically-typed-region-lifecycle-python.md
