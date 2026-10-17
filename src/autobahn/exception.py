@@ -40,8 +40,9 @@ class PayloadExceededError(RuntimeError):
 @public
 class PayloadCorruptError(RuntimeError):
     """
-    Exception raised when a compressed (eg WebSocket permessage-*) payload
-    cannot be decompressed, because it is corrupt or truncated.
+    Exception raised when a compressed payload (eg of a WebSocket per-message
+    compression extension) cannot be decompressed, because it is corrupt or
+    truncated.
     """
 
 

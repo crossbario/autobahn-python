@@ -14,6 +14,7 @@ Changelog
 * Add ``autobahn.exception.PayloadCorruptError``: every compression extension now raises it for input it cannot decompress (corrupt, truncated, or not the extension's format), instead of the library's own exception (``zlib.error``, ``OSError``, ``brotli.error``, ...), and snappy no longer accepts such input silently. The protocol fails the connection with close code 1007 (invalid frame payload data), the same for every extension and on both Twisted and asyncio (#1986)
 * Fix ``permessage-brotli`` failing on the second message of a connection when context takeover was negotiated (the default): the compressor and decompressor were reused after their brotli stream had finished. Each message is now a new brotli stream, which is the wire format brotli used for the first message already, and for no context takeover (#1986)
 * Fix an asyncio WebSocket connection being left open, but no longer serviced, when an exception escaped the processing of received data: the connection is now dropped, as on Twisted (#1986)
+* Add a documentation page on WebSocket compression (``docs/websocket/compression.rst``): for each of the four extensions, which Python package and which compression library (and bundled version) it uses on CPython and on PyPy, plus context takeover, decompression limits and the handling of invalid data. The old, unpublished page under ``docs/work/`` did not cover ``permessage-brotli`` (#1986)
 
 **Build & CI/CD**
 
