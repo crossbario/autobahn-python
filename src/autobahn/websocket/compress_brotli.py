@@ -474,7 +474,16 @@ class PerMessageBrotli(PerMessageCompress, PerMessageBrotliMixin):
         return self._compressor.process(data)
 
     def end_compress_message(self):
-        return self._compressor.finish()
+        data = self._compressor.finish()
+
+        # Each message is one complete brotli stream, and a finished
+        # compressor must not be reused (as with bzip2). So there is no
+        # context takeover across messages, whatever was negotiated: the
+        # next message starts a new stream - which is also what the wire
+        # format with no context takeover is.
+        self._compressor = None
+
+        return data
 
     def start_decompress_message(self):
         if self._is_server:
@@ -512,6 +521,8 @@ class PerMessageBrotli(PerMessageCompress, PerMessageBrotliMixin):
 
     def end_decompress_message(self):
         # Each message is one complete brotli stream (end_compress_message()
-        # finishes it).
-        if not self._decompressor.is_finished():
+        # finishes it), and a finished decompressor must not be reused.
+        complete = self._decompressor.is_finished()
+        self._decompressor = None
+        if not complete:
             raise PayloadCorruptError("truncated permessage-brotli data")
