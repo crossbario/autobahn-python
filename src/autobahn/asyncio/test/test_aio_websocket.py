@@ -81,3 +81,61 @@ def test_async_on_connect_server():
 
     assert len(values) == 1
     assert values[0] == num * num
+
+
+@pytest.mark.skipif(
+    not os.environ.get("USE_ASYNCIO", False), reason="test runs on asyncio only"
+)
+def test_corrupt_compressed_frame_closes_connection():
+    # A compressed frame that does not decompress must fail the connection
+    # (#1986). It must not stop the asyncio receive loop and leave the
+    # connection open.
+    from autobahn.websocket.compress import (
+        PerMessageDeflateOffer,
+        PerMessageDeflateOfferAccept,
+    )
+
+    def accept(offers):
+        for offer in offers:
+            if isinstance(offer, PerMessageDeflateOffer):
+                return PerMessageDeflateOfferAccept(offer)
+
+    loop = asyncio.new_event_loop()
+    try:
+        factory = WebSocketServerFactory(loop=loop)
+        factory.setProtocolOptions(perMessageCompressionAccept=accept)
+        server = factory()
+        transport = Mock()
+        server.connection_made(transport)
+
+        server.data_received(
+            b"\r\n".join(
+                [
+                    b"GET /ws HTTP/1.1",
+                    b"Host: www.example.com",
+                    b"Sec-WebSocket-Version: 13",
+                    b"Sec-WebSocket-Extensions: permessage-deflate",
+                    b"Sec-WebSocket-Key: tXAxWFUqnhi86Ajj7dRY5g==",
+                    b"Connection: keep-alive, Upgrade",
+                    b"Upgrade: websocket",
+                    b"\r\n",  # last string doesn't get a \r\n from join()
+                ]
+            )
+        )
+        loop.run_until_complete(asyncio.sleep(0.1))
+        assert server.state == server.STATE_OPEN
+        assert server._perMessageCompress is not None
+
+        # masked, FIN, RSV1 (compressed), binary frame with a corrupt body
+        body = b"\xff" * 64
+        mask = b"\x11\x22\x33\x44"
+        frame = bytes([0x80 | 0x40 | 0x02, 0x80 | len(body)]) + mask
+        frame += bytes(b ^ mask[i % 4] for i, b in enumerate(body))
+        server.data_received(frame)
+        loop.run_until_complete(asyncio.sleep(0.1))
+
+        assert transport.close.called or transport.abort.called, (
+            "connection left open after a corrupt compressed frame"
+        )
+    finally:
+        loop.close()

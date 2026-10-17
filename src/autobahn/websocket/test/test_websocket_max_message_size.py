@@ -95,7 +95,14 @@ def _build_compressed_frame(client_compressor, payload, opcode=0x02):
     client_compressor.start_compress_message()
     body = client_compressor.compress_message_data(payload)
     body += client_compressor.end_compress_message()
+    return _build_compressed_body_frame(body, opcode)
 
+
+def _build_compressed_body_frame(body, opcode=0x02):
+    """
+    Encode a single masked, FIN client->server frame with RSV1 (compressed)
+    set, carrying `body` as is - e.g. a corrupt compressed body.
+    """
     mask = b"\x11\x22\x33\x44"
     masked = bytes(b ^ mask[i % 4] for i, b in enumerate(body))
     n = len(body)

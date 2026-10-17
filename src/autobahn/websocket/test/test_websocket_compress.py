@@ -29,8 +29,14 @@
 # permessage-compress backends are shared code, so bounded-decompression must
 # behave identically regardless of the networking backend.
 
+import random
 import unittest
 import zlib
+
+try:
+    import tracemalloc
+except ImportError:  # PyPy has no tracemalloc
+    tracemalloc = None
 
 from autobahn.exception import PayloadExceededError
 from autobahn.websocket.compress_deflate import PerMessageDeflate
@@ -169,6 +175,111 @@ class BoundedDecompressMaxOutputLenTests(unittest.TestCase):
                 out = decompressor.decompress_message_data(body)
                 self.assertEqual(out, self.BIG)
                 decompressor.end_decompress_message()
+
+
+class DecompressBudgetUniformTests(unittest.TestCase):
+    """
+    Every compression backend must enforce the ``max_output_len`` budget the
+    same way (#1986): "over budget" and "budget already 0" both raise
+    ``PayloadExceededError``, and the backend must stop inflating at the
+    budget instead of inflating a whole frame first and checking afterwards.
+    """
+
+    BUDGET = 64 * 1024
+    # A run of zeros inflates far beyond BUDGET from a few bytes on the wire
+    # (except snappy, whose format caps expansion at about 21:1).
+    BOMB = b"\0" * (32 * 1024 * 1024)
+    # Peak allocation allowed while rejecting BOMB: generous against BUDGET
+    # (library buffers, CPython brotli's block-granular output limit, one
+    # snappy framing chunk), and still a 32x margin below inflating BOMB.
+    PEAK_LIMIT = 1024 * 1024
+
+    @staticmethod
+    def _compress(compressor, payload):
+        compressor.start_compress_message()
+        body = compressor.compress_message_data(payload)
+        body += compressor.end_compress_message()
+        return body
+
+    def _pairs(self):
+        for codec in _CODECS:
+            pair = _make_compressor_pair(codec)
+            if pair is not None:
+                yield codec, pair
+
+    def test_budget_zero_rejects(self):
+        # No budget left: any further output is over budget - including a
+        # single octet, which a 1-octet output cap would let through.
+        for codec in _CODECS:
+            for size in (1, 16):
+                with self.subTest(codec=codec, size=size):
+                    pair = _make_compressor_pair(codec)
+                    if pair is None:
+                        continue
+                    compressor, decompressor = pair
+                    body = self._compress(compressor, b"x" * size)
+                    decompressor.start_decompress_message()
+                    self.assertRaises(
+                        PayloadExceededError,
+                        decompressor.decompress_message_data,
+                        body,
+                        max_output_len=0,
+                    )
+
+    def test_one_octet_over_budget_rejects(self):
+        payload = random.Random(1986).randbytes(4096)
+        for codec, (compressor, decompressor) in self._pairs():
+            with self.subTest(codec=codec):
+                body = self._compress(compressor, payload)
+                decompressor.start_decompress_message()
+                self.assertRaises(
+                    PayloadExceededError,
+                    decompressor.decompress_message_data,
+                    body,
+                    max_output_len=len(payload) - 1,
+                )
+
+    def test_over_budget_across_frames_rejects(self):
+        # The protocol passes the REMAINING budget for each frame of a message.
+        payload = b"x" * 8192
+        budget = 4096
+        for codec, (compressor, decompressor) in self._pairs():
+            with self.subTest(codec=codec):
+                body = self._compress(compressor, payload)
+                half = len(body) // 2
+                decompressor.start_decompress_message()
+                got = 0
+                with self.assertRaises(PayloadExceededError):
+                    for frame in (body[:half], body[half:]):
+                        out = decompressor.decompress_message_data(
+                            frame, max_output_len=budget - got
+                        )
+                        got += len(out)
+                self.assertLessEqual(got, budget)
+
+    @unittest.skipIf(tracemalloc is None, "tracemalloc not available (PyPy)")
+    def test_bomb_inflation_bounded_by_budget(self):
+        # Black-box check, independent of how a backend bounds its output:
+        # rejecting an over-budget frame must not allocate the inflated frame.
+        for codec, (compressor, decompressor) in self._pairs():
+            with self.subTest(codec=codec):
+                body = self._compress(compressor, self.BOMB)
+                decompressor.start_decompress_message()
+                tracemalloc.start()
+                try:
+                    with self.assertRaises(PayloadExceededError):
+                        decompressor.decompress_message_data(
+                            body, max_output_len=self.BUDGET
+                        )
+                    peak = tracemalloc.get_traced_memory()[1]
+                finally:
+                    tracemalloc.stop()
+                self.assertLess(
+                    peak,
+                    self.PEAK_LIMIT,
+                    f"{codec}: {len(body)} octets on the wire allocated "
+                    f"{peak} octets against a budget of {self.BUDGET}",
+                )
 
 
 class PerMessageDeflateMaxMessageSizeTests(unittest.TestCase):
