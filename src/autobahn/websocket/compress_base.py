@@ -73,9 +73,13 @@ class PerMessageCompress:
     ``max_output_len`` octets of decompressed output and raises
     :class:`autobahn.exception.PayloadExceededError` if the input would produce
     more - it never silently truncates. ``max_output_len=None`` (the default)
-    leaves decompression unbounded. Backends whose underlying library exposes an
-    incremental output limit (deflate, bzip2) enforce the bound before fully
-    inflating a frame; backends without one (snappy, brotli) inflate the frame
-    (already bounded on the wire by ``maxFramePayloadSize``) and then check,
-    a weaker but still-clean per-frame guarantee.
+    leaves decompression unbounded. Every backend stops decompressing near the
+    budget, instead of inflating a whole frame first: deflate and bzip2 at
+    exactly one octet over it, brotli at its library's output buffer
+    granularity, and snappy within one framing chunk (at most 64 KiB).
+
+    Input that cannot be decompressed (corrupt, truncated, or not the
+    extension's format) raises :class:`autobahn.exception.PayloadCorruptError`
+    from ``decompress_message_data`` or ``end_decompress_message``, never the
+    library's own exception.
     """

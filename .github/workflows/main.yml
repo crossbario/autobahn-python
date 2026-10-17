@@ -128,6 +128,78 @@ jobs:
       - name: Unit test - asyncio / pytest - WITHOUT NVX
         run: just test-asyncio cpy314 0
 
+  # The unit test suites on every supported Python run-time, with all four
+  # WebSocket compression extensions installed (#1986). quality-checks above
+  # additionally runs them on cpy314 with and without NVX, plus coverage.
+  unit-tests:
+    name: Unit Tests
+    needs: identifiers
+    runs-on: ubuntu-24.04
+
+    env:
+      BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
+      BASE_BRANCH: ${{ needs.identifiers.outputs.base_branch }}
+      PR_NUMBER: ${{ needs.identifiers.outputs.pr_number }}
+      PR_REPO: ${{ needs.identifiers.outputs.pr_repo }}
+      PR_BRANCH: ${{ needs.identifiers.outputs.pr_branch }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-env: [cpy314, cpy313, cpy312, cpy311, pypy311]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Install uv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          source $HOME/.cargo/env
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Verify toolchain installation
+        run: |
+          just --version
+          uv --version
+
+      - name: Setup uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key:
+            uv-cache-ubuntu-unit-${{ matrix.python-env }}-${{
+            hashFiles('pyproject.toml') }}
+          restore-keys: |
+            uv-cache-ubuntu-unit-${{ matrix.python-env }}-
+            uv-cache-ubuntu-unit-
+
+      - name: Create Python environment and install tools
+        run: |
+          just create ${{ matrix.python-env }}
+          just install-tools ${{ matrix.python-env }}
+
+      - name: Unit test - Twisted / trial
+        run: just test-twisted ${{ matrix.python-env }}
+
+      - name: Unit test - asyncio / pytest
+        run: just test-asyncio ${{ matrix.python-env }}
+
+      # Last: its "install" dependency replaces the editable install.
+      - name: All four WebSocket compression extensions available
+        run: just check-compressors ${{ matrix.python-env }}
+
   test-serdes:
     name: SerDes Conformance Tests
     needs: identifiers

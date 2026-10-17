@@ -112,7 +112,19 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
             while self.receive_queue:
                 data = self.receive_queue.popleft()
                 if self.transport:
-                    self._dataReceived(data)
+                    try:
+                        self._dataReceived(data)
+                    except Exception:
+                        # As Twisted does for an exception raised in
+                        # dataReceived(): log it and drop the connection.
+                        # Otherwise this receive loop would stop, and leave
+                        # the connection open but unserviced.
+                        self.log.error(
+                            "dropping connection: unhandled error while processing received data:\n{tb}",
+                            tb=txaio.failure_format_traceback(txaio.create_failure()),
+                        )
+                        self.receive_queue.clear()
+                        self._closeConnection(abort=True)
             self._consume()
 
         self.waiter.add_done_callback(process)

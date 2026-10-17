@@ -26,7 +26,7 @@
 
 import zlib
 
-from autobahn.exception import PayloadExceededError
+from autobahn.exception import PayloadCorruptError, PayloadExceededError
 from autobahn.util import public
 from autobahn.websocket.compress_base import (
     PerMessageCompress,
@@ -826,23 +826,27 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
             limits.append(self.max_message_size - self._decompress_message_size)
         if max_output_len is not None:
             limits.append(max_output_len)
-        if not limits:
-            return self._decompressor.decompress(data)
+        try:
+            if not limits:
+                return self._decompressor.decompress(data)
 
-        # Cap output at the tighter remaining budget. zlib treats a max_length
-        # of 0 as "unlimited", so once the budget is exhausted we cap the next
-        # call at 1 byte: any further real output then lands in unconsumed_tail
-        # and triggers the clean rejection below.
-        limit = min(limits)
-        data = self._decompressor.decompress(data, limit if limit > 0 else 1)
+            # Cap output at the tighter remaining budget. zlib treats a
+            # max_length of 0 as "unlimited", so once the budget is exhausted
+            # we cap the next call at 1 byte: any real output then exceeds the
+            # budget, and triggers the clean rejection below.
+            limit = min(limits)
+            data = self._decompressor.decompress(data, limit if limit > 0 else 1)
+        except zlib.error as e:
+            raise PayloadCorruptError(f"invalid permessage-deflate data: {e}") from e
         self._decompress_message_size += len(data)
 
-        # A non-empty unconsumed_tail means more output was available than the
-        # budget allowed, i.e. the message exceeds the limit. Reject cleanly
-        # instead of silently truncating - truncation both drops application
-        # data and corrupts the deflate stream, so the subsequent
-        # end_decompress_message() would raise "zlib error -3" on the trailer.
-        if self._decompressor.unconsumed_tail:
+        # More output than the budget allowed (a non-empty unconsumed_tail, or
+        # the 1 byte let through by an exhausted budget) means the message
+        # exceeds the limit. Reject cleanly instead of silently truncating -
+        # truncation both drops application data and corrupts the deflate
+        # stream, so the subsequent end_decompress_message() would raise
+        # "zlib error -3" on the trailer.
+        if self._decompressor.unconsumed_tail or len(data) > limit:
             raise PayloadExceededError(
                 "WebSocket message exceeds decompression limit "
                 f"(max_message_size={self.max_message_size}, "
@@ -853,4 +857,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
     def end_decompress_message(self):
         # Eat stripped LEN and NLEN field of a non-compressed block added
         # for Z_SYNC_FLUSH.
-        self._decompressor.decompress(b"\x00\x00\xff\xff")
+        try:
+            self._decompressor.decompress(b"\x00\x00\xff\xff")
+        except zlib.error as e:
+            raise PayloadCorruptError(f"invalid permessage-deflate data: {e}") from e

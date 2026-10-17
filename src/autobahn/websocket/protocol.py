@@ -46,7 +46,11 @@ import hyperlink
 import txaio
 
 from autobahn import __version__
-from autobahn.exception import Disconnected, PayloadExceededError
+from autobahn.exception import (
+    Disconnected,
+    PayloadCorruptError,
+    PayloadExceededError,
+)
 from autobahn.util import (
     ObservableMixin,
     Stopwatch,
@@ -1862,12 +1866,12 @@ class WebSocketProtocol(ObservableMixin):
                 # length to message_data_total_length, so subtracting it back
                 # out yields the uncompressed total of the preceding frames; the
                 # remainder up to maxMessagePayloadSize is what this frame may
-                # inflate to. Passing it as max_output_len lets backends with an
-                # incremental cap (deflate, bzip2) stop inflating at the limit
-                # instead of expanding the whole frame into memory first. A
-                # PayloadExceededError means the message exceeds the limit; the
-                # post-inflation check below is the backstop for backends that
-                # can only bound per-frame (snappy, brotli).
+                # inflate to. Passing it as max_output_len lets every backend
+                # stop inflating near the limit, instead of expanding the whole
+                # frame into memory first. A PayloadExceededError means the
+                # message exceeds the limit; the post-inflation check below is
+                # the backstop. A PayloadCorruptError means the frame cannot
+                # be decompressed.
                 if self.maxMessagePayloadSize > 0:
                     max_output_len = self.maxMessagePayloadSize - (
                         self.message_data_total_length - compressedLen
@@ -1885,6 +1889,14 @@ class WebSocketProtocol(ObservableMixin):
                             self.maxMessagePayloadSize,
                             self.maxMessagePayloadSize,
                             f"received WebSocket message exceeds payload limit of {self.maxMessagePayloadSize} octets after decompression",
+                        )
+                    return False
+                except PayloadCorruptError as e:
+                    # the same for every compression backend: fail the
+                    # connection with 1007 (invalid frame payload data)
+                    if not self.failedByMe:
+                        self._invalid_payload(
+                            f"received WebSocket message cannot be decompressed: {e}"
                         )
                     return False
                 uncompressedLen = len(payload)
@@ -1955,7 +1967,14 @@ class WebSocketProtocol(ObservableMixin):
                 # handle end of compressed message
                 #
                 if self._isMessageCompressed:
-                    self._perMessageCompress.end_decompress_message()
+                    try:
+                        self._perMessageCompress.end_decompress_message()
+                    except PayloadCorruptError as e:
+                        if not self.failedByMe:
+                            self._invalid_payload(
+                                f"received WebSocket message cannot be decompressed: {e}"
+                            )
+                        return False
 
                 # verify UTF8 has actually ended
                 #
