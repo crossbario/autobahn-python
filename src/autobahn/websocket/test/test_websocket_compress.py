@@ -42,7 +42,7 @@ from autobahn.exception import PayloadCorruptError, PayloadExceededError
 from autobahn.websocket.compress_deflate import PerMessageDeflate
 
 
-def _make_compressor_pair(name):
+def _make_compressor_pair(name, no_context_takeover=False):
     """
     Build a (client_compressor, server_decompressor) pair for the named
     permessage-compress extension, or return None if its optional dependency
@@ -50,13 +50,20 @@ def _make_compressor_pair(name):
     extension-level max_message_size, so the bounded-decompress behaviour under
     test is driven purely by the ``max_output_len`` argument.
 
+    ``no_context_takeover`` applies to both directions (permessage-bzip2 has
+    no such parameter: it never takes over context).
+
     Concrete per-codec imports (rather than the union-typed extension registry)
     keep the constructor call sites resolvable for the static type checker.
     """
     if name == "permessage-deflate":
         return (
-            PerMessageDeflate(False, False, False, 15, 15, 8),
-            PerMessageDeflate(True, False, False, 15, 15, 8),
+            PerMessageDeflate(
+                False, no_context_takeover, no_context_takeover, 15, 15, 8
+            ),
+            PerMessageDeflate(
+                True, no_context_takeover, no_context_takeover, 15, 15, 8
+            ),
         )
     if name == "permessage-bzip2":
         try:
@@ -70,8 +77,8 @@ def _make_compressor_pair(name):
         except ImportError:
             return None
         return (
-            PerMessageSnappy(False, False, False),
-            PerMessageSnappy(True, False, False),
+            PerMessageSnappy(False, no_context_takeover, no_context_takeover),
+            PerMessageSnappy(True, no_context_takeover, no_context_takeover),
         )
     if name == "permessage-brotli":
         try:
@@ -79,8 +86,8 @@ def _make_compressor_pair(name):
         except ImportError:
             return None
         return (
-            PerMessageBrotli(False, False, False),
-            PerMessageBrotli(True, False, False),
+            PerMessageBrotli(False, no_context_takeover, no_context_takeover),
+            PerMessageBrotli(True, no_context_takeover, no_context_takeover),
         )
     return None
 
@@ -370,6 +377,45 @@ class DecompressCorruptInputUniformTests(unittest.TestCase):
                             max_output_len,
                         )
                         self.assertEqual(out, payload)
+
+
+class MultiMessageRoundtripTests(unittest.TestCase):
+    """
+    One compressor / decompressor pair must carry any number of messages,
+    with and without context takeover (the default is context takeover).
+    The other tests in this module build a fresh pair per message, which
+    hides a backend that cannot be reused after its first message.
+    """
+
+    def test_messages_roundtrip_on_one_pair(self):
+        rng = random.Random(1986)
+        payloads = [
+            b"Hello, world! " * 100,
+            rng.randbytes(5000),
+            b"",
+            b"x" * 70000,
+            rng.randbytes(3),
+        ]
+        for codec in _CODECS:
+            for no_context_takeover in (False, True):
+                for max_output_len in (None, 1024 * 1024):
+                    with self.subTest(
+                        codec=codec,
+                        no_context_takeover=no_context_takeover,
+                        max_output_len=max_output_len,
+                    ):
+                        pair = _make_compressor_pair(codec, no_context_takeover)
+                        if pair is None:
+                            continue
+                        compressor, decompressor = pair
+                        for i, payload in enumerate(payloads):
+                            body = DecompressCorruptInputUniformTests._compress(
+                                compressor, payload
+                            )
+                            out = DecompressCorruptInputUniformTests._decompress(
+                                decompressor, [body], max_output_len
+                            )
+                            self.assertEqual(out, payload, f"message {i}")
 
 
 class PerMessageDeflateMaxMessageSizeTests(unittest.TestCase):
