@@ -118,8 +118,9 @@ decompressing a whole frame first:
 * ``permessage-snappy`` stops within one Snappy chunk (at most 64 KiB) of
   the budget.
 
-A message over the limit fails the connection with close code 1009 (message
-too big).
+A message over the limit raises ``autobahn.exception.PayloadExceededError``
+and fails the connection with close code 1009 (message too big). This is the
+same for all four extensions, on both Twisted and asyncio.
 
 Data an extension cannot decompress - corrupt, truncated, or not in the
 extension's format - raises ``autobahn.exception.PayloadCorruptError`` and
