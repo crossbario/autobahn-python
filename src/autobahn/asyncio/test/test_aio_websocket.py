@@ -139,3 +139,29 @@ def test_corrupt_compressed_frame_closes_connection():
         )
     finally:
         loop.close()
+
+
+@pytest.mark.skipif(
+    not os.environ.get("USE_ASYNCIO", False), reason="test runs on asyncio only"
+)
+def test_unhandled_error_in_received_data_drops_connection():
+    # Any exception escaping the protocol's data processing must drop the
+    # connection, as on Twisted (#1986) - not stop the asyncio receive loop
+    # and leave the connection open.
+    loop = asyncio.new_event_loop()
+    try:
+        factory = WebSocketServerFactory(loop=loop)
+        server = factory()
+        transport = Mock()
+        server.connection_made(transport)
+
+        def broken(data):
+            raise RuntimeError("bug in data processing")
+
+        server._dataReceived = broken
+        server.data_received(b"anything")
+        loop.run_until_complete(asyncio.sleep(0.1))
+
+        assert transport.abort.called
+    finally:
+        loop.close()

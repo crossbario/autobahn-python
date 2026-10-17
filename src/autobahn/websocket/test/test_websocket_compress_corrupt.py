@@ -30,6 +30,7 @@
 
 import unittest
 
+from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.websocket.test.test_websocket_max_message_size import (
     _CODECS,
     _build_compressed_body_frame,
@@ -45,13 +46,14 @@ class CorruptCompressedFrameTests(unittest.TestCase):
     """
     A compressed frame that does not decompress must fail the WebSocket
     connection cleanly, the same way for every compression backend (#1986):
-    no decoder exception escapes the protocol, the connection is failed, and
-    nothing is delivered to the application.
+    no decoder exception escapes the protocol, the connection is failed with
+    close code 1007 (invalid frame payload data), and nothing is delivered to
+    the application.
     """
 
     LIMIT = 1024 * 1024
 
-    def _assert_failed_cleanly(self, streaming):
+    def _assert_failed_cleanly(self, streaming, fail_by_drop=True):
         for codec in _CODECS:
             with self.subTest(codec=codec):
                 pair = _make_compressor_pair(codec)
@@ -61,6 +63,9 @@ class CorruptCompressedFrameTests(unittest.TestCase):
                 proto = _make_server(
                     server_decompressor, self.LIMIT, streaming=streaming
                 )
+                proto.failByDrop = fail_by_drop
+                # no closing-handshake timer: it would outlive the test
+                proto.closeHandshakeTimeout = 0
                 try:
                     proto._dataReceived(_build_compressed_body_frame(_CORRUPT_BODY))
                 except Exception as e:
@@ -68,7 +73,15 @@ class CorruptCompressedFrameTests(unittest.TestCase):
                         f"{codec}: decoder exception escaped the protocol: "
                         f"{type(e).__module__}.{type(e).__name__}: {e}"
                     )
-                self.assertTrue(proto.was_dropped, f"{codec}: connection not failed")
+                self.assertTrue(proto.failedByMe, f"{codec}: connection not failed")
+                if fail_by_drop:
+                    self.assertTrue(proto.was_dropped, f"{codec}: connection not dropped")
+                else:
+                    self.assertEqual(
+                        proto.localCloseCode,
+                        WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD,
+                        f"{codec}: wrong close code",
+                    )
                 self.assertEqual(proto.delivered, [], f"{codec}: message was delivered")
                 self.assertEqual(proto.streamed, [], f"{codec}: frame was delivered")
 
@@ -77,3 +90,8 @@ class CorruptCompressedFrameTests(unittest.TestCase):
 
     def test_streaming_mode_corrupt_frame_fails_connection(self):
         self._assert_failed_cleanly(streaming=True)
+
+    def test_corrupt_frame_closes_with_1007(self):
+        # failByDrop=False: the connection is failed with a closing handshake,
+        # which carries the close code.
+        self._assert_failed_cleanly(streaming=False, fail_by_drop=False)

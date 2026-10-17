@@ -221,8 +221,10 @@ class WebSocketMaxMessagePayloadSizeTests(unittest.TestCase):
     streaming processing modes.
     """
 
-    LIMIT = 128
-    BIG = b"x" * 4096  # inflates well beyond LIMIT, compresses to a few bytes
+    # The compressed frame must be under LIMIT, and its inflated size over it:
+    # BIG compresses to a few octets (snappy, at most about 21:1: 222 octets).
+    LIMIT = 1024
+    BIG = b"x" * 4096
 
     def _run(self, codec, streaming):
         pair = _make_compressor_pair(codec)

@@ -26,7 +26,7 @@
 
 import snappy
 
-from autobahn.exception import PayloadExceededError
+from autobahn.exception import PayloadCorruptError, PayloadExceededError
 from autobahn.websocket.compress_base import (
     PerMessageCompress,
     PerMessageCompressOffer,
@@ -34,6 +34,12 @@ from autobahn.websocket.compress_base import (
     PerMessageCompressResponse,
     PerMessageCompressResponseAccept,
 )
+
+# Snappy framing format: a stream identifier chunk (type 0xff) has length 6,
+# a data chunk (type 0x00 compressed, 0x01 uncompressed) is at most
+# 4 + 76490 octets long (CRC, plus the maximum compressed size of the 64 KiB
+# a chunk may hold), and chunk types 0x02-0x7f are reserved, not skippable.
+_SNAPPY_MAX_DATA_CHUNK_LENGTH = 4 + 76490
 
 __all__ = (
     "PerMessageSnappy",
@@ -444,6 +450,8 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
 
         self._compressor = None
         self._decompressor = None
+        # received input not yet fed to the decompressor (an incomplete chunk)
+        self._decompress_pending = bytearray()
 
     def __json__(self):
         return {
@@ -475,23 +483,60 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
         if self._is_server:
             if self._decompressor is None or self.client_no_context_takeover:
                 self._decompressor = snappy.StreamDecompressor()
+                self._decompress_pending = bytearray()
         else:
             if self._decompressor is None or self.server_no_context_takeover:
                 self._decompressor = snappy.StreamDecompressor()
+                self._decompress_pending = bytearray()
 
     def decompress_message_data(self, data, max_output_len=None):
         # python-snappy's StreamDecompressor has no output-length argument, so
-        # the frame is decompressed in full (bounded on the wire by
-        # maxFramePayloadSize) and then checked. This is a weaker,
-        # per-frame-granular guarantee than the incremental cap deflate/bzip2
-        # provide, but it still rejects an over-budget message cleanly.
-        data = self._decompressor.decompress(data)
-        if max_output_len is not None and len(data) > max_output_len:
-            raise PayloadExceededError(
-                "WebSocket message exceeds decompression limit of "
-                f"{max_output_len} octets"
-            )
-        return data
+        # it is fed one framing chunk (4-octet header: type, 24-bit length) at
+        # a time. A chunk decompresses to at most 64 KiB (the decoder rejects
+        # larger ones), so decompression stops within 64 KiB of the budget,
+        # instead of inflating the whole frame first.
+        # (A bytearray, so input trickling in over many calls is appended,
+        # not copied anew each time.)
+        buf = self._decompress_pending
+        buf += data
+        pos = 0
+        out = []
+        size = 0
+        while len(buf) - pos >= 4:
+            kind = buf[pos]
+            length = int.from_bytes(buf[pos + 1 : pos + 4], "little")
+            # reject a bad chunk header right away, instead of buffering a
+            # chunk that cannot be valid
+            if (
+                (kind == 0xFF and length != 6)
+                or (kind <= 0x01 and length > _SNAPPY_MAX_DATA_CHUNK_LENGTH)
+                or 0x02 <= kind <= 0x7F
+            ):
+                raise PayloadCorruptError(
+                    "invalid permessage-snappy data: bad chunk header "
+                    f"(type 0x{kind:02x}, length {length})"
+                )
+            end = pos + 4 + length
+            if end > len(buf):
+                break
+            try:
+                chunk = self._decompressor.decompress(bytes(buf[pos:end]))
+            except (OSError, snappy.UncompressError) as e:
+                raise PayloadCorruptError(f"invalid permessage-snappy data: {e}") from e
+            pos = end
+            size += len(chunk)
+            if max_output_len is not None and size > max_output_len:
+                raise PayloadExceededError(
+                    "WebSocket message exceeds decompression limit of "
+                    f"{max_output_len} octets"
+                )
+            out.append(chunk)
+        del buf[:pos]
+        return b"".join(out)
 
     def end_decompress_message(self):
-        pass
+        # A message ends on a chunk boundary: anything left over is a
+        # truncated chunk, or not snappy framing at all.
+        if self._decompress_pending:
+            self._decompress_pending = bytearray()
+            raise PayloadCorruptError("truncated permessage-snappy data")

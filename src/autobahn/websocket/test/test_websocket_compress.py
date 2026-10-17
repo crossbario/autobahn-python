@@ -38,7 +38,7 @@ try:
 except ImportError:  # PyPy has no tracemalloc
     tracemalloc = None
 
-from autobahn.exception import PayloadExceededError
+from autobahn.exception import PayloadCorruptError, PayloadExceededError
 from autobahn.websocket.compress_deflate import PerMessageDeflate
 
 
@@ -189,9 +189,10 @@ class DecompressBudgetUniformTests(unittest.TestCase):
     # A run of zeros inflates far beyond BUDGET from a few bytes on the wire
     # (except snappy, whose format caps expansion at about 21:1).
     BOMB = b"\0" * (32 * 1024 * 1024)
-    # Peak allocation allowed while rejecting BOMB: generous against BUDGET
-    # (library buffers, CPython brotli's block-granular output limit, one
-    # snappy framing chunk), and still a 32x margin below inflating BOMB.
+    # Peak allocation allowed while rejecting BOMB, on top of one copy of the
+    # input (snappy buffers it): generous against BUDGET (library buffers,
+    # CPython brotli's block-granular output limit, one snappy framing chunk),
+    # and still a 32x margin below inflating BOMB.
     PEAK_LIMIT = 1024 * 1024
 
     @staticmethod
@@ -276,10 +277,99 @@ class DecompressBudgetUniformTests(unittest.TestCase):
                     tracemalloc.stop()
                 self.assertLess(
                     peak,
-                    self.PEAK_LIMIT,
+                    self.PEAK_LIMIT + len(body),
                     f"{codec}: {len(body)} octets on the wire allocated "
                     f"{peak} octets against a budget of {self.BUDGET}",
                 )
+
+
+class DecompressCorruptInputUniformTests(unittest.TestCase):
+    """
+    Every compression backend must report input it cannot decompress the
+    same way (#1986): as ``PayloadCorruptError``, never as the library's own
+    exception (``zlib.error``, ``OSError``, ``brotli.error``, ...), and never
+    by silently returning nothing.
+    """
+
+    @staticmethod
+    def _compress(compressor, payload):
+        compressor.start_compress_message()
+        body = compressor.compress_message_data(payload)
+        body += compressor.end_compress_message()
+        return body
+
+    @staticmethod
+    def _decompress(decompressor, frames, max_output_len=None):
+        decompressor.start_decompress_message()
+        out = b"".join(
+            decompressor.decompress_message_data(f, max_output_len=max_output_len)
+            for f in frames
+        )
+        decompressor.end_decompress_message()
+        return out
+
+    def test_corrupt_input_raises_payload_corrupt(self):
+        for codec in _CODECS:
+            for max_output_len in (None, 1024 * 1024):
+                with self.subTest(codec=codec, max_output_len=max_output_len):
+                    pair = _make_compressor_pair(codec)
+                    if pair is None:
+                        continue
+                    _, decompressor = pair
+                    # raised when the data is processed, or - for a backend
+                    # that buffers incomplete input (snappy) - at message end
+                    self.assertRaises(
+                        PayloadCorruptError,
+                        self._decompress,
+                        decompressor,
+                        [b"\xff" * 64],
+                        max_output_len,
+                    )
+
+    def test_truncated_message_raises_payload_corrupt(self):
+        # bzip2, brotli and snappy send each message as complete streams or
+        # chunks, so a truncated message is detectable at message end. A
+        # deflate message ends with a sync flush, not a stream end, so
+        # truncation is not detectable there in general.
+        payload = random.Random(1986).randbytes(8192)
+        for codec in ("permessage-bzip2", "permessage-brotli", "permessage-snappy"):
+            for max_output_len in (None, 1024 * 1024):
+                with self.subTest(codec=codec, max_output_len=max_output_len):
+                    pair = _make_compressor_pair(codec)
+                    if pair is None:
+                        continue
+                    compressor, decompressor = pair
+                    body = self._compress(compressor, payload)
+                    self.assertRaises(
+                        PayloadCorruptError,
+                        self._decompress,
+                        decompressor,
+                        [body[:-8]],
+                        max_output_len,
+                    )
+
+    def test_split_frames_roundtrip(self):
+        # A message split over two frames at any octet, also inside a snappy
+        # chunk header, must decompress byte-exact.
+        payload = random.Random(1986).randbytes(2 * 65536 + 123)
+        for codec in _CODECS:
+            pair = _make_compressor_pair(codec)
+            if pair is None:
+                continue
+            compressor, _ = pair
+            body = self._compress(compressor, payload)
+            for split in (1, 3, 4, 5, 11, 12, 13, len(body) // 2, len(body) - 1):
+                for max_output_len in (None, len(payload)):
+                    with self.subTest(
+                        codec=codec, split=split, max_output_len=max_output_len
+                    ):
+                        _, decompressor = _make_compressor_pair(codec)
+                        out = self._decompress(
+                            decompressor,
+                            [body[:split], body[split:]],
+                            max_output_len,
+                        )
+                        self.assertEqual(out, payload)
 
 
 class PerMessageDeflateMaxMessageSizeTests(unittest.TestCase):
