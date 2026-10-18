@@ -27,10 +27,13 @@ jobs:
     # IMPORTANT: we still need .cicd as a Git submodule in the using repo though!
     # because e.g. identifiers.yml wants to access scripts/sanitize.sh !
 
+  # Built natively on GitHub-hosted ARM64 runners, not under QEMU on x86_64 (#1940):
+  # under emulation builds segfaulted intermittently (PyPy exit 139) and took up
+  # to 96 minutes. Same switch as zlmdb #183.
   build-wheels:
     name: Build ARM64 wheels (${{ matrix.target.name }})
     needs: identifiers
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
 
     env:
       BASE_REPO: ${{ needs.identifiers.outputs.base_repo }}
@@ -158,47 +161,29 @@ jobs:
         with:
           submodules: recursive
 
-      # ============================================================
-      # QEMU + Docker Buildx Setup
-      # ============================================================
-
-      - name: Install modern QEMU (tonistiigi/binfmt)
+      - name: Verify the runner is native ARM64
         run: |
-          echo "==> Installing modern QEMU 8.x via tonistiigi/binfmt"
-          echo "This provides much better stability for PyPy on ARM64 emulation"
-          docker run --rm --privileged tonistiigi/binfmt --install all
-          echo "✅ Modern QEMU installed"
+          echo "==> Runner architecture: $(uname -m)"
+          test "$(uname -m)" = "aarch64" || { echo "ERROR: expected a native aarch64 runner (#1940)"; exit 1; }
 
-      - name: Set up QEMU for ARM64 emulation
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/arm64
-
+      # Buildx builds the custom PyPy images below (natively, no emulation)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Verify QEMU setup
-        run: |
-          echo "==> QEMU platforms available:"
-          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-          docker buildx ls
 
       # ============================================================
       # Build custom PyPy images (only for build_type == custom)
       # ============================================================
 
-      - name: Build custom PyPy manylinux image (with retry for QEMU flakiness)
+      - name: Build custom PyPy manylinux image (with retry)
         if: matrix.target.build_type == 'custom'
         uses: nick-fields/retry@v3
         with:
-          # NVX (CFFI/flatc) AND autobahn's Rust base deps (cbor2 6.x, cryptography)
-          # all source-compile under QEMU ARM64 emulation — none ship a PyPy-aarch64
-          # wheel, so pip builds them from source, which is pathologically slow under
-          # emulation (a full run can exceed 60 min). Generous limits here are the
-          # interim, low-risk mitigation until we move ARM64 builds to native
-          # ubuntu-24.04-arm runners (removes emulation entirely). See #1947 and #1940.
-          timeout_minutes: 120
-          max_attempts: 9
+          # Under QEMU these builds took up to 96 minutes and segfaulted
+          # intermittently, hence 9 attempts of 120 minutes (#1947). Natively,
+          # keep the retry wrapper (as zlmdb #183) until native runs have been
+          # measured; then reduce (#1940). A timeout is not retried (retry_on: error).
+          timeout_minutes: 60
+          max_attempts: 3
           retry_on: error
           warning_on_retry: true
           command: |
@@ -217,17 +202,15 @@ jobs:
       # Build wheels inside ARM64 containers
       # ============================================================
 
-      - name: Build ARM64 wheels with NVX extension (with retry for QEMU flakiness)
+      - name: Build ARM64 wheels with NVX extension (with retry)
         uses: nick-fields/retry@v3
         with:
-          # NVX (CFFI/flatc) AND autobahn's Rust base deps (cbor2 6.x, cryptography)
-          # all source-compile under QEMU ARM64 emulation — none ship a PyPy-aarch64
-          # wheel, so pip builds them from source, which is pathologically slow under
-          # emulation (a full run can exceed 60 min). Generous limits here are the
-          # interim, low-risk mitigation until we move ARM64 builds to native
-          # ubuntu-24.04-arm runners (removes emulation entirely). See #1947 and #1940.
-          timeout_minutes: 120
-          max_attempts: 9
+          # Under QEMU these builds took up to 96 minutes and segfaulted
+          # intermittently, hence 9 attempts of 120 minutes (#1947). Natively,
+          # keep the retry wrapper (as zlmdb #183) until native runs have been
+          # measured; then reduce (#1940). A timeout is not retried (retry_on: error).
+          timeout_minutes: 60
+          max_attempts: 3
           retry_on: error
           warning_on_retry: true
           command: |
@@ -248,7 +231,8 @@ jobs:
             # Create wheelhouse directory on host
             mkdir -p wheelhouse
 
-            # Run build script inside ARM64 container via QEMU
+            # Run build script inside the ARM64 container (natively; the
+            # platform flag only asserts the image architecture)
             docker run --rm \
               --platform linux/arm64 \
               -v $PWD:/io \
@@ -462,7 +446,7 @@ jobs:
           echo "Platform Tag: ${{ matrix.target.manylinux_tag }}" >> $BUILD_INFO
           echo "glibc Version: ${{ matrix.target.glibc_version }}" >> $BUILD_INFO
           echo "Python Implementation: ${{ matrix.target.python_impl }}" >> $BUILD_INFO
-          echo "Build Method: GitHub Actions + QEMU + Docker (ARM64 emulation)" >> $BUILD_INFO
+          echo "Build Method: GitHub Actions native ARM64 runner (ubuntu-24.04-arm) + Docker" >> $BUILD_INFO
           echo "NVX Acceleration: ENABLED (binary wheels with native extensions)" >> $BUILD_INFO
           echo "" >> $BUILD_INFO
 
@@ -471,10 +455,6 @@ jobs:
           for whl in wheelhouse/*.whl; do
             echo "- $(basename "$whl")" >> $BUILD_INFO
           done
-
-          echo "" >> $BUILD_INFO
-          echo "Note: These wheels were built using QEMU emulation on x86_64 runners." >> $BUILD_INFO
-          echo "      They are fully functional native ARM64 binaries." >> $BUILD_INFO
 
           echo ""
           echo "==> Generated build-info.txt:"
