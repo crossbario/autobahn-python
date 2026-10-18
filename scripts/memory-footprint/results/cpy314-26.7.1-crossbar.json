@@ -19,7 +19,7 @@
     "numpy": "2.5.4",
     "cbor2": "6.1.5",
     "crossbar": "26.7.1",
-    "zlmdb": "26.7.1"
+    "zlmdb": "26.10.1"
   },
   "results": [
     {
@@ -27,13 +27,13 @@
       "label": "from crossbar.edge.worker.router import ExtRouterController",
       "code": "from crossbar.edge.worker.router import ExtRouterController",
       "available": true,
-      "maxrss_kib": 148136,
+      "maxrss_kib": 148644,
       "samples_kib": [
-        148280,
-        148136,
-        148136,
-        148132,
-        148016
+        148548,
+        148588,
+        148644,
+        148708,
+        148712
       ],
       "numpy": true
     }
