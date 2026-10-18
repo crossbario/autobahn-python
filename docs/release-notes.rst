@@ -8,6 +8,123 @@ Release Notes
 This page provides a high-level overview of important changes in each release.
 For detailed technical changes, see the :ref:`changelog <changelog>`.
 
+26.10.1
+-------
+
+**Release Type:** Stable release
+
+Highlights
+^^^^^^^^^^
+
+* **WebSocket compression**: all four per-message compression extensions
+  (``permessage-deflate``, ``-bzip2``, ``-brotli``, ``-snappy``) enforce the
+  ``maxMessagePayloadSize`` decompression budget the same way, and invalid
+  compressed data fails the connection with close code 1007
+  (``PayloadCorruptError``). ``permessage-brotli`` no longer fails on the second
+  message of a connection. New floors: ``brotli>=1.2.0`` / ``brotlicffi>=1.2.0``.
+  New page: :doc:`/websocket/compression`.
+
+* **Memory footprint**: importing autobahn no longer loads the FlatBuffers runtime
+  or numpy; it is loaded when a FlatBuffers message is first used. Every import
+  needs about 13-17 MB less on CPython and 18-24 MB less on PyPy. New page:
+  :ref:`memory-footprint`.
+
+* **CPython 3.14 / asyncio**: ``run()``, ``ApplicationRunner.run()``,
+  ``Component.start()`` and the asyncio WebSocket factories work when started from
+  synchronous code (no implicit event loop on 3.14).
+
+* **Windows ARM64**: native ``win_arm64`` wheels for CPython 3.11-3.14 (thanks
+  @ndabas). ARM64 Linux wheels are now built natively instead of under QEMU.
+
+* **Dependencies**: ``cbor2`` split by runtime (CPython ``>=6.1.0``, PyPy
+  ``==5.9.0``), ``cryptography>=50``, ``zope.interface>=6.2``.
+
+Release Links
+^^^^^^^^^^^^^
+
+* `PyPI Package <https://pypi.org/project/autobahn/26.10.1/>`__
+
+**Detailed Changes:** See :ref:`changelog` (26.10.1 section)
+
+26.7.1 (2026-07-15)
+-------------------
+
+**Release Type:** Stable release (security)
+
+Highlights
+^^^^^^^^^^
+
+* **Security**: WebSocket ``maxMessagePayloadSize`` is enforced against the
+  uncompressed message size when per-message compression is negotiated, not against
+  the compressed frame length (security advisory GHSA-hxp9-w8x3-p566). Decompression
+  is bounded for every compression extension, and the asyncio RawSocket receive
+  limit is configurable, at parity with Twisted.
+
+* **Alpine Linux**: ``musllinux_1_2`` wheels with NVX for CPython 3.11-3.14 on
+  x86_64 and aarch64.
+
+* **Wheels**: the aarch64 CPython 3.14 wheel no longer ships the free-threaded ABI
+  in the ``cp314`` slot; build and release gates reject a wrong-ABI wheel.
+
+Release Links
+^^^^^^^^^^^^^
+
+* `GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v26_7_1>`__
+* `PyPI Package <https://pypi.org/project/autobahn/26.7.1/>`__
+
+**Detailed Changes:** See :ref:`changelog` (26.7.1 section)
+
+26.6.2 (2026-06-19)
+-------------------
+
+**Release Type:** Stable release (bug fix)
+
+Highlights
+^^^^^^^^^^
+
+* **WAMP Cryptosign**: fix ``import autobahn.wamp.cryptosign`` raising ``TypeError``
+  on CPython 3.11-3.13 when ``nacl`` is installed (a regression in 26.6.1). An import
+  smoke test now covers every public submodule on all supported Pythons.
+
+Release Links
+^^^^^^^^^^^^^
+
+* `GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v26_6_2>`__
+* `PyPI Package <https://pypi.org/project/autobahn/26.6.2/>`__
+
+**Detailed Changes:** See :ref:`changelog` (26.6.2 section)
+
+26.6.1 (2026-06-18)
+-------------------
+
+**Release Type:** Stable release
+
+Highlights
+^^^^^^^^^^
+
+* **WAMP serialization**: ``py-ubjson`` is no longer a dependency; the ``ubjson``
+  serializer is backed by ``bjdata`` in the optional ``serialization`` extra
+  (CPython only). Note: bjdata's encoding is not byte-identical to py-ubjson's.
+
+* **FlatBuffers**: vendored FlatBuffers v25.12.19, in sync with zlmdb 26.6.1; the
+  binary schemas are committed, so building from the sdist no longer runs ``flatc``
+  (cross-compilation from the sdist works).
+
+* **RawSocket**: a failed opening handshake on Twisted (e.g. from a port scanner)
+  closes the connection cleanly instead of raising ``TransportLost``.
+
+* **Wheels**: the release fileset is symmetric across macOS arm64, Linux x86_64,
+  Linux aarch64 and Windows x86_64 for CPython 3.11-3.14 and PyPy 3.11 (the
+  aarch64 CPython 3.12 and 3.14 wheels were missing before).
+
+Release Links
+^^^^^^^^^^^^^
+
+* `GitHub Release <https://github.com/crossbario/autobahn-python/releases/tag/v26_6_1>`__
+* `PyPI Package <https://pypi.org/project/autobahn/26.6.1/>`__
+
+**Detailed Changes:** See :ref:`changelog` (26.6.1 section)
+
 25.12.2 (2025-12-15)
 --------------------
 
