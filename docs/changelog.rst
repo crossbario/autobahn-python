@@ -25,6 +25,7 @@ Changelog
 **asyncio**
 
 * Fix ``autobahn.asyncio.component.run()``, ``ApplicationRunner.run()``, ``Component.start()`` and the asyncio WebSocket factories failing on CPython 3.14 with ``RuntimeError: There is no current event loop`` when started from plain synchronous code (and the ``DeprecationWarning`` on 3.12 / 3.13): CPython no longer creates the loop implicitly in ``asyncio.get_event_loop()``. A new helper ``autobahn.asyncio.util.get_or_create_event_loop()`` returns the running loop, else the loop set for the thread, else a new one; ``run()`` was first fixed by Lukas Komischke (#1952, #1953), the remaining call sites follow, with a regression test that runs each case in a fresh interpreter (#1965)
+* Fix ``ApplicationSession.call()`` on asyncio raising ``AttributeError`` instead of the payload codec's exception when the payload codec fails to encode the call: the error was logged with ``log.failure()``, which only the Twisted logger has. It is now logged with ``log.error()`` and the traceback, on both Twisted and asyncio, and the codec's exception reaches the caller (#1988)
 
 **Dependencies**
 
