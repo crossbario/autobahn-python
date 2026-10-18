@@ -31,7 +31,7 @@ try:
 except ImportError:
     import brotlicffi as brotli
 
-from autobahn.exception import PayloadExceededError
+from autobahn.exception import PayloadCorruptError, PayloadExceededError
 from autobahn.websocket.compress_base import (
     PerMessageCompress,
     PerMessageCompressOffer,
@@ -474,7 +474,16 @@ class PerMessageBrotli(PerMessageCompress, PerMessageBrotliMixin):
         return self._compressor.process(data)
 
     def end_compress_message(self):
-        return self._compressor.finish()
+        data = self._compressor.finish()
+
+        # Each message is one complete brotli stream, and a finished
+        # compressor must not be reused (as with bzip2). So there is no
+        # context takeover across messages, whatever was negotiated: the
+        # next message starts a new stream - which is also what the wire
+        # format with no context takeover is.
+        self._compressor = None
+
+        return data
 
     def start_decompress_message(self):
         if self._is_server:
@@ -485,13 +494,25 @@ class PerMessageBrotli(PerMessageCompress, PerMessageBrotliMixin):
                 self._decompressor = brotli.Decompressor()
 
     def decompress_message_data(self, data, max_output_len=None):
-        # brotli's Decompressor.process() has no output-length argument, so the
-        # frame is decompressed in full (bounded on the wire by
-        # maxFramePayloadSize) and then checked. This is a weaker,
-        # per-frame-granular guarantee than the incremental cap deflate/bzip2
-        # provide, but it still rejects an over-budget message cleanly.
-        data = self._decompressor.process(data)
-        if max_output_len is not None and len(data) > max_output_len:
+        try:
+            if max_output_len is None:
+                return self._decompressor.process(data)
+            # Cap at one octet over the budget (brotli/brotlicffi >= 1.2.0),
+            # like bzip2. brotlicffi stops exactly there; CPython's brotli
+            # grows its output buffer block-wise and may return more, but
+            # either way decompression stops near the budget, instead of
+            # inflating the whole frame first. If the cap was hit, the
+            # decoder holds back the rest (can_accept_more_data() is False):
+            # the message is over budget either way.
+            data = self._decompressor.process(
+                data, output_buffer_limit=max(max_output_len, 0) + 1
+            )
+        except brotli.error as e:
+            raise PayloadCorruptError(f"invalid permessage-brotli data: {e}") from e
+        if (
+            len(data) > max_output_len
+            or not self._decompressor.can_accept_more_data()
+        ):
             raise PayloadExceededError(
                 "WebSocket message exceeds decompression limit of "
                 f"{max_output_len} octets"
@@ -499,4 +520,9 @@ class PerMessageBrotli(PerMessageCompress, PerMessageBrotliMixin):
         return data
 
     def end_decompress_message(self):
-        pass
+        # Each message is one complete brotli stream (end_compress_message()
+        # finishes it), and a finished decompressor must not be reused.
+        complete = self._decompressor.is_finished()
+        self._decompressor = None
+        if not complete:
+            raise PayloadCorruptError("truncated permessage-brotli data")

@@ -26,7 +26,7 @@
 
 from autobahn.util import public
 
-__all__ = ("PayloadExceededError",)
+__all__ = ("Disconnected", "PayloadCorruptError", "PayloadExceededError")
 
 
 @public
@@ -34,6 +34,15 @@ class PayloadExceededError(RuntimeError):
     """
     Exception raised when the serialized and framed (eg WebSocket/RawSocket) WAMP payload
     exceeds the transport message size limit.
+    """
+
+
+@public
+class PayloadCorruptError(RuntimeError):
+    """
+    Exception raised when a compressed payload (eg of a WebSocket per-message
+    compression extension) cannot be decompressed, because it is corrupt or
+    truncated.
     """
 
 

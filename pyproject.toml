@@ -102,8 +102,10 @@ accelerate = [
 # non-standard WebSocket compression support
 # Note: zlib/deflate is always available (Python stdlib)
 compress = [
-    "brotli>=1.0.0; platform_python_implementation == 'CPython'",  # CPyExt for CPython
-    "brotlicffi>=1.0.0; platform_python_implementation != 'CPython'",  # CFFI for PyPy
+    # >=1.2.0: Decompressor.process(output_buffer_limit=...), which the
+    # permessage-brotli receive path needs to bound decompression (#1986)
+    "brotli>=1.2.0; platform_python_implementation == 'CPython'",  # CPyExt for CPython
+    "brotlicffi>=1.2.0; platform_python_implementation != 'CPython'",  # CFFI for PyPy
     # python-snappy is optional - only available if installed separately
     # Users who need snappy: pip install python-snappy
 ]
@@ -178,6 +180,10 @@ dev = [
     "pytest-asyncio>=0.14.0",
     "pytest-runner>=2.11.1",
     "pytest>=3.4.2",
+    # Test-only: python-snappy is an optional, user-installed dependency of
+    # permessage-snappy (see the "compress" extra), installed here so the
+    # snappy test cases run in CI too (#1986).
+    "python-snappy>=0.7.3",
     "pyyaml>=4.2b4",
     "qualname>=0.1.0",
     "ruff>=0.12.1",

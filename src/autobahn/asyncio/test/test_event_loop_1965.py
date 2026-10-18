@@ -99,8 +99,19 @@ def test_run_from_sync_code(code):
     env = {
         k: v for k, v in os.environ.items() if k not in ("USE_TWISTED", "USE_ASYNCIO")
     }
+    # Deprecation warnings are errors in the child, except the one passlib
+    # triggers on Python < 3.13 by importing the stdlib "crypt" module (a later
+    # -W option takes precedence).
     result = subprocess.run(
-        [sys.executable, "-W", "error::DeprecationWarning", "-c", code],
+        [
+            sys.executable,
+            "-W",
+            "error::DeprecationWarning",
+            "-W",
+            "ignore:'crypt' is deprecated:DeprecationWarning",
+            "-c",
+            code,
+        ],
         capture_output=True,
         text=True,
         env=env,
