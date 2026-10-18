@@ -31,17 +31,16 @@
 # would hide a logger method that one backend lacks.
 
 import os
-
-if os.environ.get("USE_TWISTED", False):
-    from twisted.trial import unittest
-
-    from autobahn.twisted.wamp import ApplicationSession
-else:
-    import unittest
-
-    from autobahn.asyncio.wamp import ApplicationSession
+import unittest
 
 from autobahn.wamp.types import TransportDetails
+
+USE_TWISTED = bool(os.environ.get("USE_TWISTED", False))
+
+if USE_TWISTED:
+    from autobahn.twisted.wamp import ApplicationSession
+else:
+    from autobahn.asyncio.wamp import ApplicationSession
 
 
 class CodecError(Exception):
@@ -71,19 +70,32 @@ class MockTransport:
         pass
 
 
-class TestPayloadCodecError(unittest.TestCase):
-    def test_call_reraises_payload_codec_error(self):
-        session = ApplicationSession()
-        session._transport = MockTransport()
-        session._payload_codec = FailingPayloadCodec()
+def check_call_reraises_payload_codec_error(test: unittest.TestCase) -> None:
+    session = ApplicationSession()
+    session._transport = MockTransport()
+    session._payload_codec = FailingPayloadCodec()
 
-        with self.assertRaises(CodecError):
-            session.call("com.example.procedure", 1, 2)
+    with test.assertRaises(CodecError):
+        session.call("com.example.procedure", 1, 2)
 
-        # nothing went out on the wire
-        self.assertEqual(session._transport.messages, [])
+    # nothing went out on the wire
+    test.assertEqual(session._transport.messages, [])
 
-        # trial fails a test that logged a Failure; the error was logged on
-        # purpose (if it is logged as a Failure at all), so accept it
-        if hasattr(self, "flushLoggedErrors"):
+
+# One class per backend (a base class chosen at import time is a union type,
+# which the type checker cannot use as a base).
+if USE_TWISTED:
+    from twisted.trial import unittest as trial_unittest
+
+    class TestPayloadCodecError(trial_unittest.TestCase):
+        def test_call_reraises_payload_codec_error(self):
+            check_call_reraises_payload_codec_error(self)
+            # trial fails a test that logged a Failure; the error is logged
+            # on purpose (if it is logged as a Failure at all), so accept it
             self.flushLoggedErrors(CodecError)
+
+else:
+
+    class TestPayloadCodecError(unittest.TestCase):
+        def test_call_reraises_payload_codec_error(self):
+            check_call_reraises_payload_codec_error(self)
