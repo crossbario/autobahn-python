@@ -1280,11 +1280,6 @@ test-twisted venv="" use_nvx="": (install-tools venv) (install-dev venv)
 
     # IMPORTANT: Twisted trial doesn't allow to recurse-and-exclude, and hence we
     # need this looong explicit list of tests to run because we must exclude "asyncio"
-    #
-    # AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS=1:
-    #   This enables "autobahn/test/test_rng.py" (on Linux), which tests entropy depletion,
-    #   and tests how to correctly read _real_ entropy and block if not enough _real_ entropy
-    #   is currently available (see: https://github.com/crossbario/autobahn-python/issues/1275)
 
     USE_TWISTED=1 ${VENV_PYTHON} -m twisted.trial --no-recurse \
         autobahn.test \
