@@ -5,8 +5,17 @@
 Changelog
 =========
 
-26.9.1
-------
+26.10.1
+-------
+
+**General**
+
+* Load the vendored FlatBuffers runtime only when a FlatBuffers message is first built or parsed, instead of on every ``import autobahn``. The runtime imports numpy whenever numpy is installed, so up to 26.7.1 every process importing autobahn also loaded numpy, including WebSocket-only users such as Django Channels applications served by Daphne. Every autobahn import now needs about 13-17 MB less memory on CPython and 18-24 MB less on PyPy, and none loads numpy. A new documentation page (``docs/memory-footprint.rst``, ``just memory-footprint``) shows the import memory footprint per release on CPython and PyPy (#1983)
+
+**Wheels**
+
+* Publish native Windows ARM64 (``win_arm64``) wheels with NVX for CPython 3.11-3.14, built on GitHub's ``windows-11-arm`` runners (PyPy publishes no Windows ARM64 interpreter); thanks to @ndabas. ``cryptography`` currently publishes no ``win_arm64`` wheel, so the build compiles it against an OpenSSL from vcpkg (#1937, #1945)
+* Build ``cryptography`` against an OpenSSL from vcpkg on Windows x86_64 too: ``cryptography`` 50.0.2 publishes its Windows PyPy wheels for PyPy 8 (``pp80``) only, and the ``pypy311`` wheel build uses PyPy 7.3 (``pp73``), so pip builds it from source there (#1959)
 
 **WebSocket**
 
@@ -23,6 +32,10 @@ Changelog
 * Remove the opt-in entropy depletion tests (``autobahn/test/test_rng.py``, enabled by ``AUTOBAHN_CI_ENABLE_RNG_DEPLETION_TESTS``, never run in CI): they read ``/proc/sys/kernel/random/entropy_avail``, which has been a constant 256 since Linux 5.18, and ``/dev/random`` no longer blocks since Linux 5.6, so one test passed whatever happened and the other always failed (#1278)
 * Build the ARM64 Linux wheels natively on GitHub's ``ubuntu-24.04-arm`` runners instead of under QEMU emulation on x86_64 runners, as zlmdb does since #183. Under emulation the builds took around 40 minutes (up to 96) and segfaulted intermittently, so each build had 9 attempts of 120 minutes; the same container images and build script are used, and a build attempt now gets 60 minutes and 3 tries (#1940)
 * Build the bundled ``flatc`` on all cores: ``hatch_build.py`` ran ``cmake --build`` without ``--parallel``, so ``flatc`` was compiled on one core in every wheel build, editable install and ``just test-*`` run. It now passes ``--parallel <os.cpu_count()>``; an explicit ``CMAKE_BUILD_PARALLEL_LEVEL`` in the environment still wins. Measured on a 32-core host: 237 s serial, 25 s with 16 jobs. Skipping the build when ``flatc``'s inputs did not change is still open (#1985)
+* Install ``patchelf`` with pip, next to ``auditwheel``, in the custom PyPy ARM64 build images: Debian's ``patchelf`` 0.14.3 is older than the 0.14.5 that current ``auditwheel repair`` requires (#1941)
+* Remove dead code reported by ``ty`` (an unused ``_unique_list`` helper in both ``component.py`` modules, and an unreachable response-body block in the WebSocket server opening handshake) instead of adding it to the ignore list (#1938)
+* Adopt the WAMP fleet's shared developer workflow recipes from wamp-cicd (``just where``, ``what``, ``new-branch``, ``land``, ...); the release upload recipe ``publish`` is renamed ``publish-release`` (#1943)
+* Apply the fleet's shared ``python-package`` and ``way-a`` aspects (repository files kept in sync from wamp-cicd, with generated ``aspects.toml``), and bump ``.cicd`` accordingly (#1960, #1972, #1975, #1977, #1979, #1981)
 * Add an ``import-smoke-lowest`` CI job (``just test-imports-lowest``) that runs the import smoke test on CPython 3.11 with every direct dependency resolved to the lowest version ``pyproject.toml`` allows (``uv --resolution lowest-direct``), so stale version floors are caught. The import smoke test now also covers the Twisted and asyncio bindings, each module imported in a fresh interpreter (#1955)
 
 **asyncio**

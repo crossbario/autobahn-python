@@ -1,5 +1,5 @@
 {
-  "variant": "fix_1983",
+  "variant": "26.10.1",
   "python": {
     "implementation": "PyPy",
     "version": "3.11.15",
@@ -12,7 +12,7 @@
   },
   "runs": 5,
   "packages": {
-    "autobahn": "26.10.1.dev1",
+    "autobahn": "26.10.1",
     "txaio": "26.6.1",
     "twisted": "26.4.0",
     "cryptography": "50.0.2",
@@ -26,13 +26,13 @@
       "label": "bare interpreter",
       "code": "pass",
       "available": true,
-      "maxrss_kib": 65920,
+      "maxrss_kib": 66504,
       "samples_kib": [
-        65884,
-        65956,
-        65924,
-        65812,
-        65920
+        66560,
+        66316,
+        66528,
+        66504,
+        66368
       ],
       "numpy": false
     },
@@ -41,13 +41,13 @@
       "label": "import cryptography",
       "code": "import cryptography",
       "available": true,
-      "maxrss_kib": 65936,
+      "maxrss_kib": 66584,
       "samples_kib": [
-        65808,
-        65964,
-        65884,
-        65936,
-        66000
+        66320,
+        66584,
+        66668,
+        66376,
+        66664
       ],
       "numpy": false
     },
@@ -56,13 +56,13 @@
       "label": "from cryptography.hazmat.primitives import hashes",
       "code": "from cryptography.hazmat.primitives import hashes",
       "available": true,
-      "maxrss_kib": 73744,
+      "maxrss_kib": 74400,
       "samples_kib": [
-        73628,
-        73744,
-        73848,
-        73588,
-        73892
+        74448,
+        74400,
+        74528,
+        74372,
+        74252
       ],
       "numpy": false
     },
@@ -71,13 +71,13 @@
       "label": "import numpy",
       "code": "import numpy",
       "available": true,
-      "maxrss_kib": 90272,
+      "maxrss_kib": 90972,
       "samples_kib": [
-        90360,
-        90232,
-        90248,
-        90280,
-        90272
+        91024,
+        91032,
+        90972,
+        90956,
+        90940
       ],
       "numpy": true
     },
@@ -86,13 +86,13 @@
       "label": "import asyncio",
       "code": "import asyncio",
       "available": true,
-      "maxrss_kib": 80728,
+      "maxrss_kib": 81328,
       "samples_kib": [
-        80732,
-        80728,
-        80796,
-        80544,
-        80652
+        81328,
+        81460,
+        81328,
+        81196,
+        81348
       ],
       "numpy": false
     },
@@ -101,13 +101,13 @@
       "label": "from twisted.internet import reactor",
       "code": "from twisted.internet import reactor",
       "available": true,
-      "maxrss_kib": 108596,
+      "maxrss_kib": 109380,
       "samples_kib": [
-        108648,
-        108532,
-        108596,
-        108676,
-        108552
+        109420,
+        109380,
+        109356,
+        109544,
+        109356
       ],
       "numpy": false
     },
@@ -116,13 +116,13 @@
       "label": "import txaio",
       "code": "import txaio",
       "available": true,
-      "maxrss_kib": 65760,
+      "maxrss_kib": 66572,
       "samples_kib": [
-        65740,
-        65764,
-        65760,
-        65940,
-        65740
+        66472,
+        66672,
+        66572,
+        66524,
+        66572
       ],
       "numpy": false
     },
@@ -131,13 +131,13 @@
       "label": "import txaio; txaio.use_asyncio()",
       "code": "import txaio; txaio.use_asyncio()",
       "available": true,
-      "maxrss_kib": 81004,
+      "maxrss_kib": 81752,
       "samples_kib": [
-        81004,
-        81060,
-        81052,
-        80920,
-        80888
+        81768,
+        81760,
+        81752,
+        81572,
+        81704
       ],
       "numpy": false
     },
@@ -146,13 +146,13 @@
       "label": "import txaio; txaio.use_twisted()",
       "code": "import txaio; txaio.use_twisted()",
       "available": true,
-      "maxrss_kib": 90068,
+      "maxrss_kib": 90912,
       "samples_kib": [
-        90012,
-        90152,
-        90176,
-        90068,
-        89936
+        90728,
+        90944,
+        90912,
+        90876,
+        90968
       ],
       "numpy": false
     },
@@ -161,13 +161,13 @@
       "label": "import autobahn",
       "code": "import autobahn",
       "available": true,
-      "maxrss_kib": 65932,
+      "maxrss_kib": 66580,
       "samples_kib": [
-        65996,
-        65776,
-        65740,
-        65960,
-        65932
+        66704,
+        66332,
+        66580,
+        66584,
+        66388
       ],
       "numpy": false
     },
@@ -176,13 +176,13 @@
       "label": "txaio.use_asyncio(); import autobahn.wamp",
       "code": "import txaio; txaio.use_asyncio(); import autobahn.wamp",
       "available": true,
-      "maxrss_kib": 95900,
+      "maxrss_kib": 96624,
       "samples_kib": [
-        95904,
-        95768,
-        95872,
-        95900,
-        96100
+        96624,
+        96816,
+        96584,
+        96672,
+        96524
       ],
       "numpy": false
     },
@@ -191,13 +191,13 @@
       "label": "txaio.use_twisted(); import autobahn.wamp",
       "code": "import txaio; txaio.use_twisted(); import autobahn.wamp",
       "available": true,
-      "maxrss_kib": 102944,
+      "maxrss_kib": 103748,
       "samples_kib": [
-        102936,
-        103028,
-        102876,
-        103092,
-        102944
+        103796,
+        103692,
+        103748,
+        103692,
+        103852
       ],
       "numpy": false
     },
@@ -206,13 +206,13 @@
       "label": "import autobahn.asyncio.websocket",
       "code": "import autobahn.asyncio.websocket",
       "available": true,
-      "maxrss_kib": 101424,
+      "maxrss_kib": 102168,
       "samples_kib": [
-        101424,
-        101572,
-        101344,
-        101352,
-        101608
+        102160,
+        102128,
+        102356,
+        102336,
+        102168
       ],
       "numpy": false
     },
@@ -221,13 +221,13 @@
       "label": "import autobahn.twisted.websocket",
       "code": "import autobahn.twisted.websocket",
       "available": true,
-      "maxrss_kib": 116580,
+      "maxrss_kib": 117348,
       "samples_kib": [
-        116580,
-        116704,
-        116456,
-        116576,
-        116584
+        117456,
+        117276,
+        117348,
+        117352,
+        117244
       ],
       "numpy": false
     },
@@ -236,13 +236,13 @@
       "label": "from daphne.server import Server",
       "code": "from daphne.server import Server",
       "available": true,
-      "maxrss_kib": 118356,
+      "maxrss_kib": 119120,
       "samples_kib": [
-        118412,
-        118384,
-        118320,
-        118356,
-        118296
+        118920,
+        118944,
+        119120,
+        119192,
+        119236
       ],
       "numpy": false
     }
