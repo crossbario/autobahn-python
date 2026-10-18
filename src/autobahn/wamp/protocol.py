@@ -1947,7 +1947,13 @@ class ApplicationSession(BaseSession):
                     True, procedure, args, kwargs
                 )
             except:
-                self.log.failure()
+                # log.failure() exists on Twisted only, so log the traceback
+                # explicitly - this works on both Twisted and asyncio (#1988)
+                self.log.error(
+                    "payload codec failed to encode call to {procedure}:\n{tb}",
+                    procedure=procedure,
+                    tb=txaio.failure_format_traceback(txaio.create_failure()),
+                )
                 raise
 
         if encoded_payload:
