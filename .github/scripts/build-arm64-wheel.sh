@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build ARM64 wheels inside Docker container with QEMU emulation
+# Build ARM64 wheels inside Docker container on a native ARM64 runner (#1940)
 # This script runs INSIDE the manylinux ARM64 container
 set -ex
 
