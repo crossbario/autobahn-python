@@ -2733,25 +2733,20 @@ jobs:
             echo "======================================================================"
           fi
 
-      - name: Publish to PyPI using bleeding-edge twine
+      - name: Publish to PyPI (OIDC trusted publishing)
         if: steps.pypi_check.outputs.exists == 'false'
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          echo "==> Publishing to PyPI using twine from master..."
-          # Install bleeding-edge packaging and twine for PEP 639 support
-          # Use --break-system-packages for consistency (safe in CI)
-          python3 -m pip install --break-system-packages git+https://github.com/pypa/packaging.git
-          python3 -m pip install --break-system-packages git+https://github.com/pypa/twine.git
-
-          echo "Upload environment:"
-          echo "twine: $(twine --version)"
-          echo "packaging: $(python3 -m pip show packaging | grep '^Version:')"
-          echo ""
-
-          # Upload to PyPI
-          twine upload dist/*.whl dist/*.tar.gz --verbose
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Tokenless OIDC trusted publishing (no PYPI_API_TOKEN); also generates
+          # and uploads PEP 740 attestations. By this point the "Validate and
+          # clean release fileset for PyPI" step (keep-metadata: false) has
+          # stripped dist/ down to only .whl + .tar.gz, so the whole dir is
+          # publishable. Matches zlmdb / crossbar / cfxdb / wamp-xbr / txaio. See #1958.
+          packages-dir: dist/
+          verify-metadata: true
+          skip-existing: false
+          print-hash: true
+          attestations: true
 
       - name: Trigger RTD build
         env:

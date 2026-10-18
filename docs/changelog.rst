@@ -36,6 +36,7 @@ Changelog
 * Remove dead code reported by ``ty`` (an unused ``_unique_list`` helper in both ``component.py`` modules, and an unreachable response-body block in the WebSocket server opening handshake) instead of adding it to the ignore list (#1938)
 * Adopt the WAMP fleet's shared developer workflow recipes from wamp-cicd (``just where``, ``what``, ``new-branch``, ``land``, ...); the release upload recipe ``publish`` is renamed ``publish-release`` (#1943)
 * Apply the fleet's shared ``python-package`` and ``way-a`` aspects (repository files kept in sync from wamp-cicd, with generated ``aspects.toml``), and bump ``.cicd`` accordingly (#1960, #1972, #1975, #1977, #1979, #1981)
+* Publish to PyPI through Trusted Publishing (OIDC) with ``pypa/gh-action-pypi-publish``, as the other WAMP Python packages do, instead of ``twine upload`` with a ``PYPI_API_TOKEN`` secret. Every file on PyPI now carries a PEP 740 publish attestation (provenance), starting with 26.10.1 (#1958)
 * Add an ``import-smoke-lowest`` CI job (``just test-imports-lowest``) that runs the import smoke test on CPython 3.11 with every direct dependency resolved to the lowest version ``pyproject.toml`` allows (``uv --resolution lowest-direct``), so stale version floors are caught. The import smoke test now also covers the Twisted and asyncio bindings, each module imported in a fresh interpreter (#1955)
 
 **asyncio**
