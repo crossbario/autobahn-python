@@ -8,6 +8,41 @@ Release Notes
 This page provides a high-level overview of important changes in each release.
 For detailed technical changes, see the :ref:`changelog <changelog>`.
 
+26.10.2
+-------
+
+**Release Type:** Stable release (bug fix)
+
+Highlights
+^^^^^^^^^^
+
+* **WAMP over TLS**: the TLS peer certificate (``TransportDetails.peer_cert``) is
+  read again with pyOpenSSL 26.2.0 and later, and on Twisted WebSocket and
+  RawSocket connections it is read after the TLS handshake (it was always
+  ``None``), so TLS client certificate authentication works again. On asyncio,
+  ``peer_cert`` is filled, and a TLS server connection without a client
+  certificate is secure and has a channel ID. The certificate is read with
+  ``cryptography``, in the new ``autobahn.util.peer_certificate_details()``.
+
+* **⚠ TLS channel binding**: ``tls-unique`` on Twisted now follows RFC 5929, as
+  Python's ``ssl`` module does, so WAMP-cryptosign with channel binding works
+  between Twisted and asyncio peers. Twisted peers on 26.10.1 or older and on
+  26.10.2 no longer agree on the channel ID over WebSocket: upgrade both sides of
+  connections that use channel binding. On PyPy, autobahn works around a PyPy
+  ``ssl`` bug (`pypy/pypy#5676 <https://github.com/pypy/pypy/issues/5676>`__).
+
+* **⚠ peer_cert format**: ``extensions[].value`` is OpenSSL's text only for
+  subject and issuer alternative names, other extensions are given as
+  ``cryptography`` prints them; ``signature_algorithm`` is ``ed25519`` instead of
+  ``ED25519`` for Ed25519 certificates.
+
+Release Links
+^^^^^^^^^^^^^
+
+* `PyPI Package <https://pypi.org/project/autobahn/26.10.2/>`__
+
+**Detailed Changes:** See :ref:`changelog` (26.10.2 section)
+
 26.10.1
 -------
 
