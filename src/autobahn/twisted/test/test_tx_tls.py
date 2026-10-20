@@ -14,6 +14,9 @@ created for each test (see :mod:`autobahn.test.tlsutil`).
 """
 
 import binascii
+import hashlib
+import socket
+import ssl as stdlib_ssl
 
 import txaio
 
@@ -23,7 +26,9 @@ from OpenSSL import crypto
 from twisted.internet import reactor, ssl
 from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.internet.endpoints import SSL4ClientEndpoint, SSL4ServerEndpoint
-from twisted.internet.interfaces import ISSLTransport
+from twisted.internet.interfaces import IHandshakeListener, ISSLTransport
+from twisted.internet.protocol import Factory, Protocol
+from twisted.internet.threads import deferToThread
 from twisted.trial import unittest
 from zope.interface import implementer
 
@@ -35,13 +40,17 @@ from autobahn.test.tlsutil import (
 )
 from autobahn.twisted.rawsocket import (
     WampRawSocketClientFactory,
+    WampRawSocketClientProtocol,
     WampRawSocketServerFactory,
+    WampRawSocketServerProtocol,
 )
-from autobahn.twisted.util import extract_peer_certificate
+from autobahn.twisted.util import extract_peer_certificate, transport_channel_id
 from autobahn.twisted.wamp import ApplicationSession
 from autobahn.twisted.websocket import (
     WampWebSocketClientFactory,
+    WampWebSocketClientProtocol,
     WampWebSocketServerFactory,
+    WampWebSocketServerProtocol,
 )
 from autobahn.wamp import cryptosign
 from autobahn.wamp.auth import AuthCryptoSign
@@ -361,3 +370,147 @@ class TlsWebSocketTests(_TlsWampTests, unittest.TestCase):
 
 class TlsRawSocketTests(_TlsWampTests, unittest.TestCase):
     transport = "rawsocket"
+
+
+_STDLIB_TLS_VERSIONS = {
+    "1.2": stdlib_ssl.TLSVersion.TLSv1_2,
+    "1.3": stdlib_ssl.TLSVersion.TLSv1_3,
+}
+
+
+def _stdlib_channel_id(tls_socket):
+    # what autobahn uses on asyncio: Python's ssl module, which implements RFC 5929
+    return hashlib.sha256(tls_socket.get_channel_binding("tls-unique")).digest()
+
+
+class TlsUniqueTests(unittest.TestCase):
+    """
+    The TLS channel ID ``tls-unique`` (RFC 5929) is the first TLS Finished message of the
+    handshake, in a full handshake the client's. On both sides of a connection, Twisted must
+    compute the same channel ID as Python's ``ssl`` module (which autobahn uses on asyncio),
+    so that WAMP-cryptosign with channel binding works between Twisted and asyncio peers.
+    """
+
+    timeout = 20
+
+    def setUp(self):
+        self.pki = ExamplePKI(self.mktemp())
+
+    @inlineCallbacks
+    def _check_twisted_server(self, tls_version):
+        handshake = Deferred()
+        closed = Deferred()
+
+        @implementer(IHandshakeListener)
+        class Server(Protocol):
+            def handshakeCompleted(self_):
+                handshake.callback(
+                    transport_channel_id(self_.transport, True, "tls-unique")
+                )
+
+            def connectionLost(self_, reason):
+                closed.callback(None)
+
+        server = ssl.PrivateCertificate.loadPEM(
+            self.pki.pem("server", "crt") + self.pki.pem("server", "key")
+        )
+        version = _TLS_VERSIONS[tls_version]
+        options = ssl.CertificateOptions(
+            privateKey=server.privateKey.original,
+            certificate=server.original,
+            raiseMinimumTo=version,
+            lowerMaximumSecurityTo=version,
+        )
+        port = yield SSL4ServerEndpoint(
+            reactor, 0, options, interface="127.0.0.1"
+        ).listen(Factory.forProtocol(Server))
+        self.addCleanup(port.stopListening)
+
+        def stdlib_client():
+            ctx = stdlib_ssl.SSLContext(stdlib_ssl.PROTOCOL_TLS_CLIENT)
+            ctx.load_verify_locations(self.pki.path("ca", "crt"))
+            ctx.minimum_version = ctx.maximum_version = _STDLIB_TLS_VERSIONS[
+                tls_version
+            ]
+            with socket.create_connection(("127.0.0.1", port.getHost().port)) as sock:
+                with ctx.wrap_socket(sock, server_hostname="localhost") as tls_socket:
+                    # TLS 1.3: the server completes the handshake on the client's Finished
+                    tls_socket.sendall(b"x")
+                    return _stdlib_channel_id(tls_socket)
+
+        client_id = yield deferToThread(stdlib_client)
+        server_id = yield handshake
+        yield closed
+        self.assertEqual(server_id, client_id)
+
+    def test_twisted_server_tls12(self):
+        return self._check_twisted_server("1.2")
+
+    def test_twisted_server_tls13(self):
+        return self._check_twisted_server("1.3")
+
+    @inlineCallbacks
+    def _check_twisted_client(self, tls_version):
+        handshake = Deferred()
+        closed = Deferred()
+
+        @implementer(IHandshakeListener)
+        class Client(Protocol):
+            def handshakeCompleted(self_):
+                handshake.callback(
+                    transport_channel_id(self_.transport, False, "tls-unique")
+                )
+                self_.transport.loseConnection()
+
+            def connectionLost(self_, reason):
+                closed.callback(None)
+
+        ctx = stdlib_ssl.SSLContext(stdlib_ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(
+            self.pki.path("server", "crt"), self.pki.path("server", "key")
+        )
+        ctx.minimum_version = ctx.maximum_version = _STDLIB_TLS_VERSIONS[tls_version]
+        listener = socket.create_server(("127.0.0.1", 0))
+        self.addCleanup(listener.close)
+
+        def stdlib_server():
+            conn, _ = listener.accept()
+            with ctx.wrap_socket(conn, server_side=True) as tls_socket:
+                channel_id = _stdlib_channel_id(tls_socket)
+                # wait for the client to close the connection
+                while True:
+                    try:
+                        if not tls_socket.recv(1):
+                            break
+                    except (OSError, stdlib_ssl.SSLError):
+                        break
+                return channel_id
+
+        d_server = deferToThread(stdlib_server)
+        options = ssl.optionsForClientTLS(
+            "localhost", trustRoot=ssl.Certificate.loadPEM(self.pki.pem("ca", "crt"))
+        )
+        endpoint = SSL4ClientEndpoint(
+            reactor, "127.0.0.1", listener.getsockname()[1], options
+        )
+        yield endpoint.connect(Factory.forProtocol(Client))
+        client_id = yield handshake
+        server_id = yield d_server
+        yield closed
+        self.assertEqual(client_id, server_id)
+
+    def test_twisted_client_tls12(self):
+        return self._check_twisted_client("1.2")
+
+    def test_twisted_client_tls13(self):
+        return self._check_twisted_client("1.3")
+
+    def test_wamp_protocols_know_their_side(self):
+        """
+        The channel ID depends on the side of the connection, which the transport details take
+        from the protocol's ``is_server``.
+        """
+        self.assertIs(WampWebSocketServerProtocol.is_server, True)
+        self.assertIs(WampWebSocketClientProtocol.is_server, False)
+        self.assertIs(WampRawSocketServerProtocol.is_server, True)
+        self.assertIs(WampRawSocketClientProtocol.is_server, False)
