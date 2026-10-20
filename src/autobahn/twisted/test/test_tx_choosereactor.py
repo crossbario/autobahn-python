@@ -25,7 +25,7 @@
 ###############################################################################
 
 import sys
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import twisted.internet
 from autobahn.twisted import choosereactor
@@ -52,16 +52,13 @@ class ChooseReactorTests(unittest.TestCase):
         Patch ``sys.modules`` so that Twisted believes there is no
         installed reactor.
         """
-        old_modules = dict(sys.modules)
-
-        new_modules = dict(sys.modules)
-        del new_modules["twisted.internet.reactor"]
-
-        def _cleanup():
-            sys.modules = old_modules
-
-        self.addCleanup(_cleanup)
-        sys.modules = new_modules
+        # patch the sys.modules dict in place: rebinding sys.modules to a copy
+        # detaches it from the import system, and later lazy imports in the same
+        # process then fail (e.g. "KeyError: '_strptime'" in datetime.strptime)
+        patcher = patch.dict(sys.modules)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        del sys.modules["twisted.internet.reactor"]
 
     def test_unknown(self):
         """
