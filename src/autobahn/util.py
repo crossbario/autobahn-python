@@ -39,6 +39,7 @@ from array import array
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from pprint import pformat
+from typing import Any
 
 import txaio
 
@@ -70,7 +71,9 @@ __all__ = (
     "machine_id",
     "newid",
     "parse_keyfile",
+    "peer_certificate_details",
     "public",
+    "tls_unique",
     "rid",
     "rtime",
     "utcnow",
@@ -1079,3 +1082,126 @@ def parse_keyfile(key_path: str, private: bool = True) -> OrderedDict:
                     )
                 tags[tag] = value
     return tags
+
+
+def tls_unique(ssl_object) -> bytes | None:
+    """
+    The TLS channel binding ``tls-unique`` (RFC 5929) of a connection made with Python's
+    ``ssl`` module: the first TLS Finished message of the latest handshake, that is the
+    client's in a full handshake.
+
+    PyPy's ``ssl`` module (at least up to PyPy 7.3.23) returns the other Finished message
+    from ``get_channel_binding("tls-unique")`` (the server's in a full handshake), while its
+    SSL objects' own ``tls_unique_cb()`` returns the right one; on PyPy, this uses that.
+
+    :param ssl_object: The ``ssl.SSLObject`` (asyncio) or ``ssl.SSLSocket``.
+    :returns: The TLS Finished message, or ``None`` if the TLS handshake is not complete.
+    """
+    if sys.implementation.name == "pypy":
+        tls_unique_cb = getattr(getattr(ssl_object, "_sslobj", None), "tls_unique_cb", None)
+        if tls_unique_cb is not None:
+            return tls_unique_cb()
+    return ssl_object.get_channel_binding("tls-unique")
+
+
+def _oid_name(oid) -> str:
+    # OpenSSL's short name, or the dotted OID for an OID cryptography does not know
+    name = oid._name
+    return oid.dotted_string if name == "Unknown OID" else name
+
+
+def _x509_name(name) -> dict[str, str]:
+    # as pyOpenSSL's X509Name.get_components() gave them: OpenSSL short names, lower case
+    result = {}
+    for attr in name:
+        key = attr.rfc4514_attribute_name
+        if key[:1].isdigit():
+            # no RFC 4514 short name, e.g. emailAddress
+            key = _oid_name(attr.oid)
+        value = attr.value
+        if isinstance(value, bytes):
+            value = value.decode("utf8", errors="replace")
+        result[key.lower()] = value
+    return result
+
+
+def _general_name(gn) -> str:
+    # as OpenSSL prints a subject / issuer alternative name
+    from cryptography import x509
+
+    if isinstance(gn, x509.DNSName):
+        return f"DNS:{gn.value}"
+    if isinstance(gn, x509.RFC822Name):
+        return f"email:{gn.value}"
+    if isinstance(gn, x509.UniformResourceIdentifier):
+        return f"URI:{gn.value}"
+    if isinstance(gn, x509.IPAddress):
+        return f"IP Address:{gn.value}"
+    if isinstance(gn, x509.RegisteredID):
+        return f"Registered ID:{gn.value.dotted_string}"
+    if isinstance(gn, x509.DirectoryName):
+        return f"DirName:{gn.value.rfc4514_string()}"
+    return "othername:<unsupported>"
+
+
+def _x509_extension(ext) -> dict[str, Any]:
+    from cryptography import x509
+
+    if isinstance(ext.value, (x509.SubjectAlternativeName, x509.IssuerAlternativeName)):
+        value = ", ".join(_general_name(gn) for gn in ext.value)
+    else:
+        value = str(ext.value)
+    return {"name": _oid_name(ext.oid), "value": value, "critical": ext.critical}
+
+
+def peer_certificate_details(
+    cert, subject_name_hash: int | None = None
+) -> dict[str, Any]:
+    """
+    Information on a TLS peer certificate, as provided in
+    :attr:`autobahn.wamp.types.TransportDetails.peer_cert`.
+
+    The certificate is data the peer controls, read before authentication, so this
+    does not raise on certificate content that cannot be parsed: extensions, or a
+    subject or issuer, that cannot be read are left empty.
+
+    :param cert: The peer certificate (``cryptography.x509.Certificate``).
+    :param subject_name_hash: OpenSSL's hash of the subject name, when available.
+    :returns: Fingerprints (``md5``, ``sha1``, ``sha256``, as upper case hex with colons),
+        ``expired``, ``hash``, ``serial``, ``signature_algorithm``, ``version``,
+        ``not_before`` and ``not_after`` (``YYYYMMDDhhmmssZ``), ``subject`` and ``issuer``
+        (OpenSSL short names in lower case, e.g. ``cn``), and ``extensions``, a list of
+        ``name``, ``value`` and ``critical``. The value of a subject or issuer alternative
+        name is given as OpenSSL prints it (e.g. ``DNS:localhost, IP Address:127.0.0.1``),
+        that of other extensions as ``cryptography`` prints them.
+    """
+    from datetime import UTC
+
+    from cryptography.hazmat.primitives import hashes
+
+    def fingerprint(algorithm) -> str:
+        return ":".join(f"{b:02X}" for b in cert.fingerprint(algorithm))
+
+    result: dict[str, Any] = {
+        "md5": fingerprint(hashes.MD5()),  # noqa: S303 - a certificate ID, not for security
+        "sha1": fingerprint(hashes.SHA1()),  # noqa: S303 - a certificate ID, not for security
+        "sha256": fingerprint(hashes.SHA256()),
+        "expired": datetime.now(UTC) > cert.not_valid_after_utc,
+        "hash": subject_name_hash,
+        "serial": cert.serial_number,
+        "signature_algorithm": _oid_name(cert.signature_algorithm_oid),
+        "version": cert.version.value,
+        "not_before": cert.not_valid_before_utc.strftime("%Y%m%d%H%M%SZ"),
+        "not_after": cert.not_valid_after_utc.strftime("%Y%m%d%H%M%SZ"),
+    }
+    for entity in ["subject", "issuer"]:
+        try:
+            result[entity] = _x509_name(getattr(cert, entity))
+        except ValueError:
+            result[entity] = {}
+    try:
+        result["extensions"] = [_x509_extension(ext) for ext in cert.extensions]
+    except Exception:
+        # e.g. a duplicate extension (cryptography.x509.DuplicateExtension)
+        result["extensions"] = []
+    return result

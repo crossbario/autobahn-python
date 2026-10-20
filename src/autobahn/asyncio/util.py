@@ -29,8 +29,9 @@ import hashlib
 import warnings
 from asyncio import sleep  # noqa
 from subprocess import Popen
-from typing import Optional
+from typing import Any, Optional
 
+from autobahn.util import peer_certificate_details, tls_unique
 from autobahn.wamp.types import TransportDetails
 
 
@@ -70,6 +71,7 @@ __all = (
     "peer2str",
     "transport_channel_id",
     "create_transport_details",
+    "extract_peer_certificate",
 )
 
 
@@ -109,9 +111,9 @@ def transport_channel_id(
             "TLS transport channel_id for tls-unique requested, but get_channel_binding not found on ssl_obj"
         )
 
-    # https://python.readthedocs.io/en/latest/library/ssl.html#ssl.SSLSocket.get_channel_binding
-    # https://tools.ietf.org/html/rfc5929.html
-    tls_finished_msg: bytes = ssl_obj.get_channel_binding(cb_type="tls-unique")
+    # https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.get_channel_binding
+    # https://www.rfc-editor.org/rfc/rfc5929.html (and see tls_unique() on PyPy)
+    tls_finished_msg = tls_unique(ssl_obj)
 
     if type(tls_finished_msg) != bytes:
         return b"\x00" * 32
@@ -175,18 +177,43 @@ def get_serializers():
     return serializers
 
 
+def extract_peer_certificate(ssl_obj) -> dict[str, Any] | None:
+    """
+    Extract information on the TLS peer certificate (if the peer presented one) from the
+    SSL object of an asyncio TLS transport (see :func:`autobahn.util.peer_certificate_details`).
+
+    :param ssl_obj: The ``ssl.SSLObject`` of the TLS transport.
+    :returns: The certificate information, or ``None`` if the peer presented no certificate.
+    """
+    der = ssl_obj.getpeercert(binary_form=True)
+    if not der or not isinstance(der, bytes):
+        return None
+    from cryptography import x509
+
+    try:
+        cert = x509.load_der_x509_certificate(der)
+    except ValueError:
+        # OpenSSL accepted the certificate in the TLS handshake, but cryptography cannot parse it
+        return None
+    return peer_certificate_details(cert)
+
+
 def create_transport_details(transport, is_server: bool) -> TransportDetails:
     # Internal helper. Base class calls this to create a TransportDetails
     peer = peer2str(transport)
 
-    # https://docs.python.org/3.9/library/asyncio-protocol.html?highlight=get_extra_info#asyncio.BaseTransport.get_extra_info
-    is_secure = transport.get_extra_info("peercert", None) is not None
+    # https://docs.python.org/3/library/asyncio-protocol.html#asyncio.BaseTransport.get_extra_info
+    # a TLS connection has an SSL object, whether or not the peer presented a certificate
+    # ("peercert" is only set for a peer certificate, so a server without client certificate
+    # was not "secure" and had no channel ID, #2014)
+    ssl_obj = transport.get_extra_info("ssl_object", None)
+    is_secure = ssl_obj is not None
     if is_secure:
         channel_id = {
             "tls-unique": transport_channel_id(transport, is_server, "tls-unique"),
         }
         channel_type = TransportDetails.CHANNEL_TYPE_TLS
-        peer_cert = None
+        peer_cert = extract_peer_certificate(ssl_obj)
     else:
         channel_id = {}
         channel_type = TransportDetails.CHANNEL_TYPE_TCP

@@ -52,6 +52,7 @@ from autobahn.twisted.websocket import (
     WampWebSocketServerFactory,
     WampWebSocketServerProtocol,
 )
+from autobahn.util import tls_unique
 from autobahn.wamp import cryptosign
 from autobahn.wamp.auth import AuthCryptoSign
 from autobahn.wamp.types import ComponentConfig
@@ -380,7 +381,8 @@ _STDLIB_TLS_VERSIONS = {
 
 def _stdlib_channel_id(tls_socket):
     # what autobahn uses on asyncio: Python's ssl module, which implements RFC 5929
-    return hashlib.sha256(tls_socket.get_channel_binding("tls-unique")).digest()
+    # (on PyPy with a workaround, see autobahn.util.tls_unique())
+    return hashlib.sha256(tls_unique(tls_socket)).digest()
 
 
 class TlsUniqueTests(unittest.TestCase):
