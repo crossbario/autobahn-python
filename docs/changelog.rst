@@ -5,6 +5,24 @@
 Changelog
 =========
 
+26.10.2
+-------
+
+**WAMP over TLS**
+
+* Fix reading the TLS peer certificate (``TransportDetails.peer_cert``) with pyOpenSSL 26.2.0 and later: ``autobahn.twisted.util.extract_peer_certificate()`` raised ``AttributeError: 'X509' object has no attribute 'get_extension'`` for every certificate with extensions, as pyOpenSSL removed its X.509 extension API (and deprecates the rest of its ``X509`` API). The certificate is now read with ``cryptography``, in the new backend-neutral ``autobahn.util.peer_certificate_details()``, which also never raises on certificate content it cannot parse (it is peer data, read before authentication): extensions, or a subject or issuer, that cannot be read are left empty. The ``peer_cert`` dict keeps its keys and formats, except: **⚠** ``extensions[].value`` was OpenSSL's text; a subject or issuer alternative name is still given as OpenSSL prints it (``DNS:localhost, IP Address:127.0.0.1``), other extensions now as ``cryptography`` prints them; and ``signature_algorithm`` is ``ed25519`` instead of ``ED25519`` for Ed25519 certificates (#2014)
+* Fix the TLS peer certificate never being available on Twisted WebSocket and RawSocket connections: it was read when the TCP connection was made, before the TLS handshake, and so was always ``None``. It is now read when the TLS handshake is complete, together with the TLS channel ID. With this, TLS client certificate authentication (Crossbar.io authmethod ``tls``, and dynamic authenticators reading ``transport.peer_cert``) works again (#2014)
+* Fix asyncio: fill ``TransportDetails.peer_cert`` (it was always ``None``), and treat a TLS server connection without a client certificate as secure, with a TLS channel ID: ``is_secure`` was derived from the peer certificate, so WAMP-cryptosign with channel binding failed on asyncio servers (#2014)
+* **⚠ behaviour change** — the TLS channel ID ``tls-unique`` on Twisted now follows RFC 5929 (the first TLS Finished message of the handshake, in a full handshake the client's), as Python's ``ssl`` module, and so autobahn on asyncio, already did. Twisted used the server's Finished message, so WAMP-cryptosign with channel binding failed between Twisted and asyncio peers over WebSocket, and between Twisted RawSocket peers (whose protocols did not set ``is_server``, so the client side used the wrong message). Twisted peers on autobahn 26.10.1 or older and on 26.10.2 no longer agree on the channel ID over WebSocket: upgrade both sides of connections that use channel binding (#2014)
+* Work around a PyPy bug: PyPy's ``ssl`` module (up to at least PyPy 7.3.23) returns the server's TLS Finished message from ``get_channel_binding("tls-unique")`` instead of the first (the client's), so autobahn on asyncio on PyPy disagreed with all other peers on the channel ID. The new ``autobahn.util.tls_unique()`` uses PyPy's own ``tls_unique_cb()`` on PyPy, which returns the right message (#2014)
+* ``TransportDetails.is_server`` is now set on Twisted RawSocket and asyncio WebSocket connections (it was ``None``) (#2014)
+
+**Tests & CI/CD**
+
+* Add tests for WAMP over TLS on Twisted and asyncio, over WebSocket and RawSocket, on TLS 1.2 and 1.3, with certificates created per test: the peer certificate, TLS client certificate authentication, WAMP-cryptosign with channel binding, and ``tls-unique`` against Python's ``ssl`` module (#2014)
+* Fix ``test_tx_choosereactor`` replacing ``sys.modules`` with a copy, which broke later lazy imports in the same test process (``KeyError: '_strptime'``) (#2014)
+* CI runs the asyncio unit tests also when the Twisted unit tests fail, so that both backends always report (#2014)
+
 26.10.1
 -------
 

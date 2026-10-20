@@ -31,6 +31,7 @@ import os
 import threading
 from typing import Any
 
+from autobahn.util import peer_certificate_details
 from autobahn.wamp.types import TransportDetails
 from twisted.internet.address import IPv4Address, UNIXAddress
 from twisted.internet.defer import Deferred
@@ -183,21 +184,24 @@ else:
         connection: Connection = transport.getHandle()
         assert connection and isinstance(connection, Connection)
 
-        # Obtain latest TLS Finished message that we expected from peer, or None if handshake is not completed.
+        # tls-unique (RFC 5929, section 3.1) is the first TLS Finished message of the latest
+        # handshake: the client's in a full handshake, the server's in an abbreviated one
+        # (session resumption). This is what Python's ssl module returns (which autobahn uses
+        # on asyncio), so both backends agree (#2014). Twisted does not resume TLS sessions
+        # by default, and pyOpenSSL has no API to tell, so this assumes a full handshake.
         # http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_peer_finished
-        is_not_resumed = True
+        is_resumed = False
 
         if channel_id_type == "tls-unique":
             # see also: https://bugs.python.org/file22646/tls_channel_binding.patch
-            if is_server != is_not_resumed:
-                # for routers (=servers) XOR new sessions, the channel ID is based on the TLS Finished message we
-                # expected to receive from the client: contents of the message or None if the TLS handshake has
-                # not yet completed.
-                tls_finished_msg = connection.get_peer_finished()
-            else:
-                # for clients XOR resumed sessions, the channel ID is based on the TLS Finished message we sent
-                # to the router (=server): contents of the message or None if the TLS handshake has not yet completed.
+            if is_resumed != (not is_server):
+                # a client in a full handshake, or a server in a resumed one: the TLS Finished
+                # message we sent, or None if the TLS handshake has not yet completed
                 tls_finished_msg = connection.get_finished()
+            else:
+                # a server (router) in a full handshake, or a client in a resumed one: the TLS
+                # Finished message we received, or None if the TLS handshake has not yet completed
+                tls_finished_msg = connection.get_peer_finished()
 
             if tls_finished_msg is None:
                 # this can occur when:
@@ -237,7 +241,8 @@ else:
         TLS client certificate).
 
         :param transport: The secure transport from which to extract the peer certificate (if present).
-        :returns: If the peer provided a certificate, the parsed certificate information set.
+        :returns: If the peer provided a certificate, the parsed certificate information set
+            (see :func:`autobahn.util.peer_certificate_details`).
         """
         # check if the Twisted transport is a TLSMemoryBIOProtocol
         if not (
@@ -248,47 +253,18 @@ else:
 
         cert = transport.getPeerCertificate()
         if cert:
-            # extract x509 name components from an OpenSSL X509Name object
-            def maybe_bytes(_value):
-                if isinstance(_value, bytes):
-                    return _value.decode("utf8")
-                else:
-                    return _value
-
-            result = {
-                "md5": "{}".format(maybe_bytes(cert.digest("md5"))).upper(),
-                "sha1": "{}".format(maybe_bytes(cert.digest("sha1"))).upper(),
-                "sha256": "{}".format(maybe_bytes(cert.digest("sha256"))).upper(),
-                "expired": bool(cert.has_expired()),
-                "hash": maybe_bytes(cert.subject_name_hash()),
-                "serial": int(cert.get_serial_number()),
-                "signature_algorithm": maybe_bytes(cert.get_signature_algorithm()),
-                "version": int(cert.get_version()),
-                "not_before": maybe_bytes(cert.get_notBefore()),
-                "not_after": maybe_bytes(cert.get_notAfter()),
-                "extensions": [],
-            }
-
-            for i in range(cert.get_extension_count()):
-                ext = cert.get_extension(i)
-                ext_info = {
-                    "name": f"{maybe_bytes(ext.get_short_name())}",
-                    "value": f"{maybe_bytes(ext)}",
-                    "critical": ext.get_critical() != 0,
-                }
-                result["extensions"].append(ext_info)
-
-            for entity, name in [
-                ("subject", cert.get_subject()),
-                ("issuer", cert.get_issuer()),
-            ]:
-                result[entity] = {}
-                for key, value in name.get_components():
-                    key = maybe_bytes(key)
-                    value = maybe_bytes(value)
-                    result[entity][f"{key}".lower()] = f"{value}"
-
-            return result
+            # pyOpenSSL's X509 certificate API is deprecated, and partly removed
+            # (pyOpenSSL 26.2.0), so read the certificate with cryptography (#2014)
+            try:
+                crypto_cert = cert.to_cryptography()
+            except ValueError:
+                # OpenSSL accepted the certificate in the TLS handshake, but cryptography
+                # cannot parse it
+                return None
+            return peer_certificate_details(
+                crypto_cert, subject_name_hash=cert.subject_name_hash()
+            )
+        return None
 
 
 def create_transport_details(

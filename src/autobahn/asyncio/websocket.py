@@ -231,6 +231,8 @@ class WebSocketServerProtocol(
 
     log = txaio.make_logger()
 
+    is_server = True
+
 
 @public
 class WebSocketClientProtocol(
@@ -245,6 +247,8 @@ class WebSocketClientProtocol(
     """
 
     log = txaio.make_logger()
+
+    is_server = False
 
     def _onConnect(self, response):
         res = self.onConnect(response)
