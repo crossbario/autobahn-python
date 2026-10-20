@@ -193,7 +193,9 @@ jobs:
       - name: Unit test - Twisted / trial
         run: just test-twisted ${{ matrix.python-env }}
 
+      # run on a Twisted failure too, so that both backends always report
       - name: Unit test - asyncio / pytest
+        if: ${{ !cancelled() }}
         run: just test-asyncio ${{ matrix.python-env }}
 
       # Last: its "install" dependency replaces the editable install.
