@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "autobahn"
-version = "26.10.2"
+version = "26.11.1.dev1"
 description = "WebSocket client & server library, WAMP real-time framework"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -102,10 +102,12 @@ accelerate = [
 # non-standard WebSocket compression support
 # Note: zlib/deflate is always available (Python stdlib)
 compress = [
-    # >=1.2.0: Decompressor.process(output_buffer_limit=...), which the
-    # permessage-brotli receive path needs to bound decompression (#1986)
-    "brotli>=1.2.0; platform_python_implementation == 'CPython'",  # CPyExt for CPython
-    "brotlicffi>=1.2.0; platform_python_implementation != 'CPython'",  # CFFI for PyPy
+    # >=1.2.1 / >=1.2.1.0: fix for CVE-2026-111497, an out-of-bounds write in the
+    # brotli decoder (#2024). The 1.0.10 / 1.1.1 backports of the fix are not enough:
+    # the permessage-brotli receive path needs Decompressor.process(output_buffer_limit=...)
+    # to bound decompression, which first appeared in 1.2.0 (#1986)
+    "brotli>=1.2.1; platform_python_implementation == 'CPython'",  # CPyExt for CPython
+    "brotlicffi>=1.2.1.0; platform_python_implementation != 'CPython'",  # CFFI for PyPy
     # python-snappy is optional - only available if installed separately
     # Users who need snappy: pip install python-snappy
 ]
