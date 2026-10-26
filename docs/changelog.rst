@@ -5,6 +5,13 @@
 Changelog
 =========
 
+26.11.1
+-------
+
+**Dependencies**
+
+* **Security** — raise the floors of the ``compress`` extra (and so ``all``) to ``brotli>=1.2.1`` (CPython) and ``brotlicffi>=1.2.1.0`` (PyPy), the releases with the fix for **CVE-2026-111497**, an out-of-bounds write in the brotli decoder that permits remote code execution. ``permessage-brotli`` decodes data sent by the WebSocket peer; it is not used unless an application offers or accepts it. The brotli 1.0.10 and 1.1.1 backports of the fix are not enough, since the ``permessage-brotli`` receive path needs the decompression limit of brotli 1.2 (#1986). New tests check the declared floors and the installed version (#2024)
+
 26.10.2
 -------
 
