@@ -34,6 +34,7 @@ import json
 import os
 import pickle
 import random
+import re
 import struct
 import time
 from collections import deque
@@ -273,17 +274,48 @@ class FrameHeader:
         self.mask = mask
 
 
+# RFC 9110 section 5.1: field-name = token
+_HTTP_FIELD_NAME = re.compile(r"[!#$%&'*+\-.^_`|~0-9A-Za-z]+")
+
+# RFC 9110 section 5.5: a field value is made of VCHAR, obs-text (0x80-0xFF), SP
+# and HTAB. This matches any other character, i.e. CR, LF, NUL and all other
+# controls (CTL) and DEL.
+_HTTP_FIELD_VALUE_INVALID = re.compile(r"[\x00-\x08\x0a-\x1f\x7f]")
+
+# any control character (including HTAB) and DEL, not allowed in the start line
+_HTTP_START_LINE_INVALID = re.compile(r"[\x00-\x1f\x7f]")
+
+
 def parseHttpHeader(data: bytes) -> tuple[str, dict[str, str], dict[str, int]]:
     """
-    Parses the beginning of a HTTP request header (the data up to the \n\n line) into a pair
-    of status line and HTTP headers dictionary.
+    Parses the beginning of a HTTP request or response header (the data up to and
+    including the empty line, CRLF CRLF) into a pair of status line and HTTP
+    headers dictionary.
     Header keys are normalized to all-lower-case.
+
+    The header block is parsed strictly (#2034), and an invalid header block is
+    rejected as a whole:
+
+    - lines are separated by CRLF only;
+    - a bare CR or a bare LF anywhere is invalid;
+    - obs-fold (a line starting with SP or HTAB) is invalid;
+    - a header line must have a field name that is a token, followed directly
+      (without whitespace) by a colon;
+    - the field value may contain VCHAR, obs-text (0x80-0xFF), SP and HTAB only;
+    - the status line must not contain any control characters.
+
+    Note: RFC 9112 section 2.2 allows a recipient to accept a bare LF as a line
+    terminator. We deliberately do not: a front proxy that does not split on a
+    bare LF would see one header where autobahn sees two, which is exactly what
+    allows header smuggling (e.g. of ``X-Forwarded-For``).
 
     FOR INTERNAL USE ONLY!
 
-    :param data: The HTTP header data up to the \n\n line.
+    :param data: The HTTP header data up to and including the CRLF CRLF.
 
     :returns: Tuple of HTTP status line, headers and headers count.
+
+    :raises ValueError: If the header block is invalid.
     """
     # By default, message header field parameters in Hypertext Transfer
     # Protocol (HTTP) messages cannot carry characters outside the ISO-
@@ -293,27 +325,48 @@ def parseHttpHeader(data: bytes) -> tuple[str, dict[str, str], dict[str, int]]:
     #   - http://tools.ietf.org/html/rfc5987
     #   - https://github.com/crossbario/autobahn-python/issues/533
     #
-    raw = data.decode("iso-8859-1").splitlines()
-    http_status_line = raw[0].strip()
+    text = data.decode("iso-8859-1")
+
+    # strip the terminating empty line; do NOT use str.splitlines(), which also
+    # splits on VT, FF, FS, GS, RS, NEL and on a bare CR or LF (#2034)
+    if text.endswith("\r\n\r\n"):
+        text = text[:-4]
+    elif text.endswith("\r\n"):
+        text = text[:-2]
+    raw = text.split("\r\n")
+
+    http_status_line = raw[0]
+    if _HTTP_START_LINE_INVALID.search(http_status_line):
+        raise ValueError("invalid character in HTTP status line")
+    http_status_line = http_status_line.strip(" ")
+
     http_headers: dict[str, str] = {}
     http_headers_cnt: dict[str, int] = {}
     for h in raw[1:]:
+        if h[:1] in (" ", "\t"):
+            raise ValueError("obsolete line folding in HTTP header")
         i = h.find(":")
-        if i > 0:
-            # HTTP header keys are case-insensitive
-            key = h[:i].strip().lower()
-            value = h[i + 1 :].strip()
+        if i < 0:
+            raise ValueError("HTTP header line without colon")
+        name = h[:i]
+        if not _HTTP_FIELD_NAME.fullmatch(name):
+            raise ValueError("invalid HTTP header field name")
+        # strip optional whitespace (OWS = SP / HTAB) only: str.strip() would
+        # also strip obs-text such as NEL or NBSP
+        value = h[i + 1 :].strip(" \t")
+        if _HTTP_FIELD_VALUE_INVALID.search(value):
+            raise ValueError("invalid character in HTTP header field value")
 
-            # handle HTTP headers split across multiple lines
-            if key in http_headers:
-                http_headers[key] += f", {value}"
-                http_headers_cnt[key] += 1
-            else:
-                http_headers[key] = value
-                http_headers_cnt[key] = 1
+        # HTTP header keys are case-insensitive
+        key = name.lower()
+
+        # handle HTTP headers split across multiple lines
+        if key in http_headers:
+            http_headers[key] += f", {value}"
+            http_headers_cnt[key] += 1
         else:
-            # skip bad HTTP header
-            pass
+            http_headers[key] = value
+            http_headers_cnt[key] = 1
     return http_status_line, http_headers, http_headers_cnt
 
 
@@ -3993,9 +4046,14 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             # extract HTTP status line and headers
             #
-            (http_status_line, http_headers, http_headers_cnt) = parseHttpHeader(
-                http_response_data
-            )
+            try:
+                (http_status_line, http_headers, http_headers_cnt) = parseHttpHeader(
+                    http_response_data
+                )
+            except Exception as e:
+                return self.failProxyConnect(
+                    f"Error during parsing of HTTP status line / response headers : {e}"
+                )
 
             # validate proxy connect response
             #
@@ -4219,9 +4277,14 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             # extract HTTP status line and headers
             #
-            (self.http_status_line, self.http_headers, http_headers_cnt) = (
-                parseHttpHeader(self.http_response_data)
-            )
+            try:
+                (self.http_status_line, self.http_headers, http_headers_cnt) = (
+                    parseHttpHeader(self.http_response_data)
+                )
+            except Exception as e:
+                return self.failHandshake(
+                    f"Error during parsing of HTTP status line / response headers : {e}"
+                )
 
             # validate WebSocket opening handshake server response
             #

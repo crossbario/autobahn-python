@@ -8,6 +8,10 @@ Changelog
 26.11.1
 -------
 
+**WebSocket**
+
+* **Security** — parse the HTTP headers of the WebSocket opening handshake strictly (RFC 9112, RFC 9110). The header block was split with ``str.splitlines()``, which also splits on VT, FF, FS, GS, RS, NEL and on a bare CR or LF, so a peer could make autobahn see header lines that a front proxy treats as part of a header value, for example an ``X-Forwarded-For`` used with ``trustXForwardedFor``. Lines are now separated by CRLF only. **⚠ behaviour change** — a header block with a bare CR or LF, obs-fold, whitespace before the colon, an invalid header name, a header line without a colon (was skipped), or a control character in a header value or the status line is rejected: the server fails the handshake with HTTP 400, the client fails the handshake or the proxy CONNECT. A bare LF is rejected deliberately, although RFC 9112 allows accepting it as a line end. obs-text (0x80-0xFF) in header values is still allowed, and header values are trimmed of SP and HTAB only (#2034)
+
 **Dependencies**
 
 * **Security** — raise the floors of the ``compress`` extra (and so ``all``) to ``brotli>=1.2.1`` (CPython) and ``brotlicffi>=1.2.1.0`` (PyPy), the releases with the fix for **CVE-2026-111497**, an out-of-bounds write in the brotli decoder that permits remote code execution. ``permessage-brotli`` decodes data sent by the WebSocket peer; it is not used unless an application offers or accepts it. The brotli 1.0.10 and 1.1.1 backports of the fix are not enough, since the ``permessage-brotli`` receive path needs the decompression limit of brotli 1.2 (#1986). New tests check the declared floors and the installed version (#2024)
