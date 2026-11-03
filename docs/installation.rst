@@ -52,7 +52,9 @@ pre-built wheels published on PyPI when one is available for your Python
 version and platform. Platform-specific wheels may include native CFFI
 and NVX acceleration; the source distribution remains available for
 unsupported wheel combinations. See :doc:`wheels-inventory` for the full
-wheel matrix.
+wheel matrix, and :doc:`nvx-native-builds` for NVX's CPU ISA floors, how
+native and cross builds differ, and how to check what a given wheel or
+machine actually supports.
 
 To give you an idea of the performance you can expect, here is a `blog post <http://crossbario.com/blog/post/autobahn-pi-benchmark/>`_ benchmarking |ab| running on the `RaspberryPi <http://www.raspberrypi.org/>`_ (a tiny embedded computer) under `PyPy <http://pypy.org/>`_.
 

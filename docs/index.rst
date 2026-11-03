@@ -44,6 +44,7 @@ Contents
    overview
    installation
    wheels-inventory
+   nvx-native-builds
    memory-footprint
    getting-started
    programming-guide/index

@@ -290,6 +290,9 @@ NVX Acceleration
 
 NVX (Native Vector Extensions) provides hardware-accelerated XOR operations for WebSocket frame masking/unmasking, offering up to 100x performance improvement on supported CPUs.
 
+See :doc:`nvx-native-builds` for NVX's CPU ISA floors, native vs. cross builds,
+and how to check what a wheel or a machine actually supports.
+
 **NVX is automatically enabled** in binary wheels on:
 
 * ✅ macOS ARM64 (all wheels)

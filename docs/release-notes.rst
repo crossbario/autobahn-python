@@ -501,7 +501,7 @@ No breaking changes. This is a drop-in replacement for 25.9.1.
 
 **Major New Features**
 
-* **NVX Native XOR Masking Acceleration (#1697):** Up to 100x faster WebSocket frame masking/unmasking on supported CPUs through hardware-accelerated XOR operations. Automatically enabled on x86_64 CPUs with AVX2 support. Control via ``AUTOBAHN_USE_NVX`` environment variable.
+* **NVX Native XOR Masking Acceleration (#1697):** Up to 100x faster WebSocket frame masking/unmasking on supported CPUs through hardware-accelerated XOR operations. Enabled automatically whenever the NVX native extension was built and can be imported (``HAS_NVX``) - built to a fixed ``x86-64-v2`` floor (SSE4.2-era, not AVX2) on x86-64, not gated on any CPU feature check. Control via ``AUTOBAHN_USE_NVX`` environment variable. See :doc:`nvx-native-builds` for the ISA floor and the fallback semantics.
 
 * **ARM64 Wheel Building:** Full ARM64 support via QEMU emulation for CPython 3.11, 3.13 and PyPy 3.11. Docker-based multi-arch wheel building system supporting both manylinux_2_17 and manylinux_2_28.
 

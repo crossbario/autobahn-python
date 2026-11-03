@@ -140,7 +140,8 @@ Native Acceleration (NVX)
 
 Autobahn includes optional native acceleration called **NVX** (Native eXtensions)
 for improved WebSocket and WAMP performance on CPython and PyPy. See
-:doc:`../wheels-inventory` for details.
+:doc:`../wheels-inventory` for details, and :doc:`../nvx-native-builds` for
+NVX's CPU ISA floors and fallback behavior.
 
 When installing from PyPI wheels:
 

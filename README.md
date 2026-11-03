@@ -339,6 +339,11 @@ masking) and UTF-8 validation.
 > instrinsics, should compile with both GCC and Clang,and
 > interfaces with Python using CFFI, and hence runs fast on PyPy.
 
+See the [NVX, CPU ISA Levels, and Native/Cross Builds](https://autobahn.readthedocs.io/en/latest/nvx-native-builds.html)
+reference page for the current, checked-against-source picture: the published
+wheels' `-march` floors, native vs. cross builds, and how to check what a
+wheel or a machine actually supports.
+
 ---
 
 ### WAMP Serializers
