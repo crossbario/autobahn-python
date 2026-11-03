@@ -10,11 +10,17 @@ Changelog
 
 **WebSocket**
 
-* **Security** — parse the HTTP headers of the WebSocket opening handshake strictly (RFC 9112, RFC 9110). The header block was split with ``str.splitlines()``, which also splits on VT, FF, FS, GS, RS, NEL and on a bare CR or LF, so a peer could make autobahn see header lines that a front proxy treats as part of a header value, for example an ``X-Forwarded-For`` used with ``trustXForwardedFor``. Lines are now separated by CRLF only. **⚠ behaviour change** — a header block with a bare CR or LF, obs-fold, whitespace before the colon, an invalid header name, a header line without a colon (was skipped), or a control character in a header value or the status line is rejected: the server fails the handshake with HTTP 400, the client fails the handshake or the proxy CONNECT. A bare LF is rejected deliberately, although RFC 9112 allows accepting it as a line end. obs-text (0x80-0xFF) in header values is still allowed, and header values are trimmed of SP and HTAB only (#2034)
+* **Security** — parse the HTTP headers of the WebSocket opening handshake strictly (RFC 9112, RFC 9110). The header block was split with ``str.splitlines()``, which also splits on VT, FF, FS, GS, RS, NEL and on a bare CR or LF, so a peer could make autobahn see header lines that a front proxy treats as part of a header value, for example an ``X-Forwarded-For`` used with ``trustXForwardedFor``. Lines are now separated by CRLF only. **⚠ behaviour change** — a header block with a bare CR or LF, obs-fold, whitespace before the colon, an invalid header name, a header line without a colon (was skipped), or a control character in a header value or the status line is rejected: the server fails the handshake with HTTP 400, the client fails the handshake or the proxy CONNECT. A bare LF is rejected deliberately, although RFC 9112 allows accepting it as a line end. obs-text (0x80-0xFF) in header values is still allowed, and header values are trimmed of SP and HTAB only. This fixes advisory GHSA-2gqc-mwv3-66rp (#2034)
 
 **Dependencies**
 
 * **Security** — raise the floors of the ``compress`` extra (and so ``all``) to ``brotli>=1.2.1`` (CPython) and ``brotlicffi>=1.2.1.0`` (PyPy), the releases with the fix for **CVE-2026-111497**, an out-of-bounds write in the brotli decoder that permits remote code execution. ``permessage-brotli`` decodes data sent by the WebSocket peer; it is not used unless an application offers or accepts it. The brotli 1.0.10 and 1.1.1 backports of the fix are not enough, since the ``permessage-brotli`` receive path needs the decompression limit of brotli 1.2 (#1986). New tests check the declared floors and the installed version (#2024)
+
+**Tests & CI/CD**
+
+* Add tests for the HTTP header parsing of the WebSocket opening handshake, on the server, the client and the explicit proxy CONNECT, run on Twisted and asyncio (#2034)
+* CI: the uv install steps no longer source ``~/.cargo/env``, which the macos-15 arm64 runner image no longer provides; uv is found in ``~/.local/bin`` (#2034)
+* Release 26.11.1: changelog, release notes and version (#2037)
 
 26.10.2
 -------
@@ -49,7 +55,7 @@ Changelog
 
 **WebSocket**
 
-* Make all four per-message compression extensions (``permessage-deflate``, ``-bzip2``, ``-brotli``, ``-snappy``) enforce the decompression budget the same way: decompression stops near the remaining ``maxMessagePayloadSize`` budget instead of decompressing a whole frame first, and "over budget" as well as "budget already used up" raise ``PayloadExceededError``. brotli now bounds its output with ``Decompressor.process(output_buffer_limit=...)``, snappy is decompressed one framing chunk at a time, and deflate no longer lets one octet through once the budget is used up (#1986)
+* Make all four per-message compression extensions (``permessage-deflate``, ``-bzip2``, ``-brotli``, ``-snappy``) enforce the decompression budget the same way: decompression stops near the remaining ``maxMessagePayloadSize`` budget instead of decompressing a whole frame first, and "over budget" as well as "budget already used up" raise ``PayloadExceededError``. brotli now bounds its output with ``Decompressor.process(output_buffer_limit=...)``, snappy is decompressed one framing chunk at a time, and deflate no longer lets one octet through once the budget is used up. This fixes advisory GHSA-pjh6-c8mg-3x7m / **CVE-2026-116579** (#1986)
 * Add ``autobahn.exception.PayloadCorruptError``: every compression extension now raises it for input it cannot decompress (corrupt, truncated, or not the extension's format), instead of the library's own exception (``zlib.error``, ``OSError``, ``brotli.error``, ...), and snappy no longer accepts such input silently. The protocol fails the connection with close code 1007 (invalid frame payload data), the same for every extension and on both Twisted and asyncio (#1986)
 * Fix ``permessage-brotli`` failing on the second message of a connection when context takeover was negotiated (the default): the compressor and decompressor were reused after their brotli stream had finished. Each message is now a new brotli stream, which is the wire format brotli used for the first message already, and for no context takeover (#1986)
 * Fix an asyncio WebSocket connection being left open, but no longer serviced, when an exception escaped the processing of received data: the connection is now dropped, as on Twisted (#1986)
