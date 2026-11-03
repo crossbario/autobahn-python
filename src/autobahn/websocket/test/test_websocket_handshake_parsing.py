@@ -35,6 +35,9 @@ example a front proxy) treats as part of a field value.
 The expected behaviour follows RFC 9112 section 2.2 / 5 and RFC 9110 section 5.5:
 
 - lines are separated by CRLF only;
+- a bare LF is rejected too: RFC 9112 section 2.2 allows a recipient to accept
+  it as a line terminator, but we deliberately do not, since a front proxy that
+  does not split on it would see one header where autobahn sees two;
 - a header block with a bare CR, a bare LF, obs-fold, whitespace before the
   colon, or a control character in a field is rejected;
 - obs-text (0x80-0xFF) in field values stays allowed.
@@ -75,6 +78,7 @@ BAD_LINES = {
     "gs": b"X-Foo: a\x1d" + SMUGGLED,
     "rs": b"X-Foo: a\x1e" + SMUGGLED,
     "bare_cr": b"X-Foo: a\x0d" + SMUGGLED,
+    # deliberately rejected, although RFC 9112 2.2 allows accepting it (see above)
     "bare_lf": b"X-Foo: a\x0a" + SMUGGLED,
     "obs_fold_sp": b"X-Foo: a\x0d\x0a " + SMUGGLED,
     "obs_fold_htab": b"X-Foo: a\x0d\x0a\x09" + SMUGGLED,
@@ -85,6 +89,8 @@ BAD_LINES = {
     "soh_in_value": b"X-Foo: a\x01b",
     "del_in_value": b"X-Foo: a\x7fb",
     "ctl_in_name": b"X-F\x01oo: bar",
+    "no_colon": b"X-Foo bar",
+    "empty_name": b": bar",
 }
 
 REQUEST_LINE = b"GET /ws HTTP/1.1"
@@ -183,6 +189,7 @@ class ParseHttpHeaderInvalidTests(unittest.TestCase):
         self._assert_rejected(_request(BAD_LINES["bare_cr"]))
 
     def test_reject_bare_lf(self):
+        # deliberately stricter than RFC 9112 2.2 (see module docstring)
         self._assert_rejected(_request(BAD_LINES["bare_lf"]))
 
     def test_reject_obs_fold_sp(self):
@@ -211,6 +218,13 @@ class ParseHttpHeaderInvalidTests(unittest.TestCase):
 
     def test_reject_ctl_in_name(self):
         self._assert_rejected(_request(BAD_LINES["ctl_in_name"]))
+
+    def test_reject_no_colon(self):
+        # was silently skipped before #2034
+        self._assert_rejected(_request(BAD_LINES["no_colon"]))
+
+    def test_reject_empty_name(self):
+        self._assert_rejected(_request(BAD_LINES["empty_name"]))
 
     def test_reject_ctl_in_request_line(self):
         # the request line itself must not be able to start a header line
