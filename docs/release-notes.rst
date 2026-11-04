@@ -8,6 +8,38 @@ Release Notes
 This page provides a high-level overview of important changes in each release.
 For detailed technical changes, see the :ref:`changelog <changelog>`.
 
+26.11.1
+-------
+
+**Release Type:** Stable release (security fixes)
+
+Highlights
+^^^^^^^^^^
+
+* **⚠ WebSocket opening handshake**: the HTTP headers are parsed strictly (RFC
+  9112, RFC 9110). They were split with ``str.splitlines()``, which also splits on
+  VT, FF, FS, GS, RS, NEL and on a bare CR or LF, so a peer could make autobahn
+  see header lines that a front proxy treats as part of a header value, for
+  example an ``X-Forwarded-For`` used with ``trustXForwardedFor``
+  (GHSA-2gqc-mwv3-66rp). Header blocks that were accepted before are now
+  rejected: a bare CR or LF, obs-fold, whitespace before the colon, an invalid
+  header name, a header line without a colon, or a control character in a header
+  value or the status line. The server answers with HTTP 400, the client fails
+  the handshake or the proxy CONNECT. A bare LF is rejected deliberately, although
+  RFC 9112 allows accepting it as a line end. obs-text (0x80-0xFF) in header
+  values is still accepted.
+
+* **Dependencies**: the ``compress`` extra (and so ``all``) requires
+  ``brotli>=1.2.1`` (CPython) and ``brotlicffi>=1.2.1.0`` (PyPy), the releases
+  with the fix for CVE-2026-111497, an out-of-bounds write in the brotli decoder.
+
+Release Links
+^^^^^^^^^^^^^
+
+* `PyPI Package <https://pypi.org/project/autobahn/26.11.1/>`__
+
+**Detailed Changes:** See :ref:`changelog` (26.11.1 section)
+
 26.10.2
 -------
 
