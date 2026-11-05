@@ -693,7 +693,7 @@ jobs:
         run: just clean-fbs
 
       - name: Build FlatBuffers binary schema & Python wrappers
-        run: just build-fbs
+        run: just build-fbs ${{ matrix.python-env }}
 
       - name: List FlatBuffers artifacts
         run: |

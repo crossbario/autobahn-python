@@ -175,7 +175,8 @@ html_theme_options = {
     },
 }
 
-# Logo and favicon (optimized/generated from docs/_graphics/ by `just optimize-images`)
+# Logo and favicon: optimized/generated from docs/_graphics/ by `just optimize-images`
+# (a manual step) and committed to git, so Read the Docs ships them too.
 html_logo = "_static/img/autobahn_logo_blue.svg"
 html_favicon = "_static/favicon.ico"
 

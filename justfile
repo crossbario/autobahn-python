@@ -1689,7 +1689,15 @@ install-docs venv="": (create venv)
     echo "==> Installing documentation tools in ${VENV_NAME}..."
     ${VENV_PYTHON} -m pip install -e .[docs]
 
-# Build optimized SVGs from docs/_graphics/*.svg using scour and generate favicon
+# Build optimized SVGs from docs/_graphics/*.svg using scour and generate favicon.
+#
+# This is a MANUAL developer step, not part of `just docs`: its outputs
+# (docs/_static/img/*.svg and docs/_static/favicon.ico) are committed to git,
+# next to the authored sources in docs/_graphics/. The docs (and Read the Docs,
+# which does not run `just`) only use the committed optimized files.
+# After editing a source image: (1) run `just optimize-images`, (2) `git add`
+# the regenerated files. Note: ImageMagick output differs between versions, so
+# on another machine favicon.ico may show as changed even if the logo did not.
 optimize-images venv="": (install-docs venv)
     #!/usr/bin/env bash
     set -e
@@ -1741,8 +1749,9 @@ optimize-images venv="": (install-docs venv)
         fi
     fi
 
-# Build the HTML documentation using Sphinx
-docs venv="": (optimize-images venv)
+# Build the HTML documentation using Sphinx (uses the committed optimized
+# images; it does not run `optimize-images`, so the tree stays clean)
+docs venv="": (install-docs venv)
     #!/usr/bin/env bash
     set -e
     VENV_NAME="{{ venv }}"
