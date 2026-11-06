@@ -5,6 +5,13 @@
 Changelog
 =========
 
+26.11.2
+-------
+
+**Tests & CI/CD**
+
+* ``just check-typing`` passes again with ty 0.0.98 and later: ty 0.0.97 renamed the rule ``unresolved-import`` to ``import-not-found``, and since 0.0.98 the old name in the ``--ignore`` list is reported as ``renamed-rule``, which failed the check (#2046)
+
 26.11.1
 -------
 
