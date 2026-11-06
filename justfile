@@ -869,7 +869,7 @@ check-typing venv="": (install venv) (install-tools venv)
     # FIXME: Many ignores needed until type annotations are fixed
     ty check \
         --python "${VENV_PATH}/bin/python" \
-        --ignore unresolved-import \
+        --ignore import-not-found \
         --ignore unresolved-attribute \
         --ignore unresolved-reference \
         --ignore possibly-missing-attribute \
