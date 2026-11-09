@@ -13,8 +13,10 @@
 # ...then just run this script; it colors the output and runs each
 # frontend/backend pair for a few seconds.
 
-import platform
+import json
+import socket
 import sys
+import time
 from os import environ
 from os.path import exists, join
 
@@ -102,12 +104,56 @@ def start_crossbar():
     reactor.spawnProcess(protocol, exe, args, path=".", env=env)
 
     yield launched
-    if platform.python_implementation() == "PyPy":
-        DELAY = 10.0
-    else:
-        DELAY = 2.0
-    yield sleep(DELAY)
     return protocol
+
+
+def router_ports(cbdir="./router/.crossbar"):
+    """The TCP ports the router's config listens on (every transport endpoint)."""
+    ports = []
+
+    def walk(o):
+        if isinstance(o, dict):
+            if o.get("type") == "tcp" and isinstance(o.get("port"), int):
+                ports.append(o["port"])
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+
+    with open(join(cbdir, "config.json")) as f:
+        walk(json.load(f))
+    return sorted(set(ports))
+
+
+def _listening(port, host="127.0.0.1"):
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            return True
+    except OSError:
+        return False
+
+
+@inlineCallbacks
+def wait_for_router(cb_proto, ports, timeout):
+    """Wait until crossbar accepts connections on every port, instead of a fixed
+    sleep: on a slow machine crossbar takes far longer than a few seconds to
+    start, and an example started before it listens fails with "connection
+    refused" (#2049). Fails if crossbar exits or does not listen in time."""
+    deadline = time.monotonic() + timeout
+    waiting = list(ports)
+    while waiting:
+        if cb_proto.all_done.called:
+            raise RuntimeError(
+                "crossbar exited before it listened on {}".format(waiting)
+            )
+        if time.monotonic() > deadline:
+            raise RuntimeError(
+                "crossbar did not listen on {} within {:.0f}s".format(waiting, timeout)
+            )
+        waiting = [p for p in waiting if not _listening(p)]
+        if waiting:
+            yield sleep(0.5)
 
 
 @inlineCallbacks
@@ -264,9 +310,18 @@ def main(reactor):
 
     print_banner("Running crossbar.io instance")
     cb_proto = yield start_crossbar()
-    yield sleep(2)  # wait for sockets to be listening
-    if cb_proto.all_done.called:
-        raise RuntimeError("crossbar exited already")
+    ports = router_ports()
+    timeout = float(environ.get("AUTOBAHN_EXAMPLES_ROUTER_TIMEOUT", "120"))
+    t0 = time.monotonic()
+    try:
+        yield wait_for_router(cb_proto, ports, timeout)
+    except Exception:
+        try:
+            cb_proto.transport.signalProcess("KILL")
+        except ProcessExitedAlready:
+            pass
+        raise
+    print("crossbar listens on {} after {:.1f}s".format(ports, time.monotonic() - t0))
 
     results = []
     overall_success = True
@@ -326,8 +381,7 @@ def main(reactor):
             }
         )
 
-        if not overall_success:
-            break
+        # every example runs: the summary counts all of them, not up to the first failure
         yield sleep(1)
 
     print("Killing crossbar")
@@ -340,10 +394,11 @@ def main(reactor):
     # Print comprehensive summary
     print_summary(results)
 
-    if overall_success:
-        return 0
-    return 5
+    # react() exits 0 whenever main's Deferred succeeds, whatever it returns; only
+    # a failure reaches the exit code, and SystemExit's code is passed through.
+    if not overall_success:
+        raise SystemExit(5)
 
 
 if __name__ == "__main__":
-    sys.exit(react(main))
+    react(main)
