@@ -867,16 +867,25 @@ check-typing venv="": (install venv) (install-tools venv)
     echo "==> Running static type checks with ty (using ${VENV_NAME} for type stubs)..."
     # Note: Only check src/autobahn/, not src/flatbuffers/ (generated code)
     # FIXME: Many ignores needed until type annotations are fixed
+    #
+    # CI installs the newest ty, on purpose: we follow it as it moves (#2051). ty
+    # renames rules now and then, and an --ignore naming an old name then silences
+    # nothing, so the rule comes back with hundreds of errors and the one warning
+    # that explains them is lost among them. The warnings are repeated at the end.
+    echo "    ty: $(ty --version)"
+    TY_OUT=$(mktemp)
+    trap 'rm -f "${TY_OUT}" "${TY_OUT}.names"' EXIT
+    set +e
     ty check \
         --python "${VENV_PATH}/bin/python" \
         --ignore import-not-found \
-        --ignore unresolved-attribute \
+        --ignore missing-attribute \
         --ignore unresolved-reference \
         --ignore possibly-missing-attribute \
         --ignore call-non-callable \
         --ignore invalid-assignment \
         --ignore invalid-argument-type \
-        --ignore invalid-method-override \
+        --ignore incompatible-method-override \
         --ignore invalid-type-form \
         --ignore unsupported-operator \
         --ignore too-many-positional-arguments \
@@ -888,7 +897,19 @@ check-typing venv="": (install venv) (install-tools venv)
         --ignore deprecated \
         --ignore possibly-missing-submodule \
         --ignore unused-type-ignore-comment \
-        src/autobahn/
+        --ignore missing-union-attribute \
+        --ignore lost-keyword-for-regular-parameter \
+        src/autobahn/ 2>&1 | tee "${TY_OUT}"
+    rc=${PIPESTATUS[0]}
+    set -e
+    if grep -E '^warning\[(unknown-rule|renamed-rule|renamed-rule-in-ignore-comment)\]' "${TY_OUT}" > "${TY_OUT}.names"; then
+        echo ""
+        echo "==> ty does not know a rule name this recipe or a ty: ignore comment uses:"
+        sed 's/^/    /' "${TY_OUT}.names"
+        echo "    Rename it to ty's current name (the errors above may be that rule, back on)."
+        exit 1
+    fi
+    exit ${rc}
 
 # pyright --project pyproject-static-typing.toml src/autobahn/wamp/request.py
 # mypy --config-file pyproject-static-typing.toml src/autobahn/wamp/request.py
