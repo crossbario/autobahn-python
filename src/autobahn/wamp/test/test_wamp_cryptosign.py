@@ -28,6 +28,7 @@ import binascii
 import hashlib
 import os
 import unittest
+from typing import Any
 from unittest.mock import Mock
 
 import txaio
@@ -286,7 +287,7 @@ class TestAuthExtra(unittest.TestCase):
         )
 
     def test_parse(self):
-        data_original = {
+        data_original: dict[str, Any] = {
             "pubkey": "9019a424b040859c108edee02e64c1dcb32b253686d7b5db56c306e9bdb2fe7e",
             "challenge": "fe81c84e94a75a357c259d6b37361e43966a45f57dff181bb61b2f91a0f4ac88",
             "channel_binding": "tls-unique",
@@ -307,7 +308,8 @@ class TestAuthExtra(unittest.TestCase):
 
         # FIXME: marshal check-summed eth addresses
         data_original["trustroot"] = data_original["trustroot"].lower()
+        reservation: dict[str, Any] = data_original["reservation"]
         for k in ["realm", "delegate", "seeder"]:
-            data_original["reservation"][k] = data_original["reservation"][k].lower()
+            reservation[k] = reservation[k].lower()
 
         self.assertEqual(data_marshalled, data_original)

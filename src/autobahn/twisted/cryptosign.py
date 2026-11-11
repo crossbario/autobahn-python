@@ -124,7 +124,7 @@ if HAS_CRYPTOSIGN_SSHAGENT:
 
             return d.addCallback(on_connect)
 
-        def sign(self, challenge):
+        def sign(self, data):
             if "SSH_AUTH_SOCK" not in os.environ:
                 raise Exception("no ssh-agent is running!")
 
@@ -142,7 +142,7 @@ if HAS_CRYPTOSIGN_SSHAGENT:
                 blob = _pack([b"ssh-ed25519", self.public_key(binary=True)])
 
                 # now ask the agent
-                signature_blob = yield agent.signData(blob, challenge)
+                signature_blob = yield agent.signData(blob, data)
                 algo, signature = _unpack(signature_blob)
 
                 agent.transport.loseConnection()

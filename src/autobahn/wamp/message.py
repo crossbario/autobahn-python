@@ -49,6 +49,9 @@ def _lazy_import(name):
     if name in sys.modules:
         return sys.modules[name]
     spec = importlib.util.find_spec(name)
+    if spec is None or spec.loader is None:
+        # what a plain import raises (callers catch ImportError)
+        raise ModuleNotFoundError(f"No module named {name!r}", name=name)
     spec.loader = importlib.util.LazyLoader(spec.loader)
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module

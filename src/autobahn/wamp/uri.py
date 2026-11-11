@@ -291,6 +291,7 @@ class Pattern:
         if self._type == Pattern.URI_TYPE_EXACT:
             return args, kwargs
         elif self._type == Pattern.URI_TYPE_WILDCARD:
+            assert self._pattern is not None, "a wildcard pattern is compiled"
             match = self._pattern.match(uri)
             if match:
                 for key in self._names:

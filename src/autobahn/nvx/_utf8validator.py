@@ -41,6 +41,7 @@ except ImportError:
 
     _path = os.path.join(os.path.dirname(__file__), "_compile_args.py")
     spec = importlib.util.spec_from_file_location("autobahn.nvx._compile_args", _path)
+    assert spec is not None and spec.loader is not None, _path
     mod = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = mod
     spec.loader.exec_module(mod)

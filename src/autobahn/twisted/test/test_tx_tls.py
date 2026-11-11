@@ -149,7 +149,7 @@ class _Client(ApplicationSession):
 
     def onJoin(self, details):
         if not self._done.called:
-            self._done.callback(("joined", details, self._transport.transport_details))
+            self._done.callback(("joined", details, self._require_transport().transport_details))
         self.leave()
 
     def onLeave(self, details):
@@ -462,6 +462,7 @@ class TlsUniqueTests(unittest.TestCase):
                 handshake.callback(
                     transport_channel_id(self_.transport, False, "tls-unique")
                 )
+                assert self_.transport is not None
                 self_.transport.loseConnection()
 
             def connectionLost(self_, reason):

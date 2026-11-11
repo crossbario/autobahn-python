@@ -474,6 +474,7 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
                 self._compressor = snappy.StreamCompressor()
 
     def compress_message_data(self, data):
+        assert self._compressor is not None, "start_compress_message() was not called"
         return self._compressor.add_chunk(data)
 
     def end_compress_message(self):
@@ -497,6 +498,7 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
         # instead of inflating the whole frame first.
         # (A bytearray, so input trickling in over many calls is appended,
         # not copied anew each time.)
+        assert self._decompressor is not None, "start_decompress_message() was not called"
         buf = self._decompress_pending
         buf += data
         pos = 0

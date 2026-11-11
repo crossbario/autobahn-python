@@ -247,6 +247,7 @@ if os.environ.get("USE_TWISTED", False):
 
                 d0 = component.start(reactor=reactor)
                 assert component._delay_f is not None
+                assert component._done_f is not None
                 assert not component._done_f.called
 
                 d1 = component.stop()

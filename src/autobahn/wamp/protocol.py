@@ -29,6 +29,7 @@ from typing import Any, ClassVar, Union
 from collections.abc import Callable
 
 import txaio
+from txaio.interfaces import ILogger
 
 from autobahn import wamp
 from autobahn.exception import PayloadExceededError
@@ -83,7 +84,8 @@ class BaseSession(ObservableMixin):
     This class implements :class:`autobahn.wamp.interfaces.ISession`.
     """
 
-    log = None
+    # set in __init__
+    log: ILogger
 
     def __init__(self):
         self.log = txaio.make_logger()
@@ -143,6 +145,17 @@ class BaseSession(ObservableMixin):
         """
         # Note: self._transport (which is a WAMP ITransport) is different from self.transport (which
         # is a Twisted protocol when using Twisted)!
+        return self._transport
+
+    def _require_transport(self) -> ITransport:
+        """
+        The WAMP transport, for sending on it.
+
+        :raises TransportLost: when the session has no transport (not yet, or
+            not any more: the transport can go away while a reply is pending).
+        """
+        if self._transport is None:
+            raise exception.TransportLost()
         return self._transport
 
     @public
@@ -623,7 +636,7 @@ class ApplicationSession(BaseSession):
                         reply = message.Abort(
                             "wamp.error.cannot_authenticate", f"{res}"
                         )
-                        self._transport.send(reply)
+                        self._require_transport().send(reply)
                         return
 
                     if msg.realm:
@@ -644,8 +657,8 @@ class ApplicationSession(BaseSession):
                         authmethod=self._authmethod,
                         authprovider=self._authprovider,
                         authextra=msg.authextra,
-                        serializer=self._transport._serializer.SERIALIZER_ID,
-                        transport=self._transport.transport_details,
+                        serializer=self._require_transport()._serializer.SERIALIZER_ID,
+                        transport=self._require_transport().transport_details,
                         # FIXME
                         resumed=False,  # msg.resumed,
                         resumable=False,  # msg.resumable,
@@ -689,7 +702,7 @@ class ApplicationSession(BaseSession):
                         "wamp.error.cannot_authenticate",
                         "Error calling onWelcome handler",
                     )
-                    self._transport.send(reply)
+                    self._require_transport().send(reply)
                     return self._swallow_error(e, "While firing onWelcome")
 
                 txaio.add_callbacks(d, success, error)
@@ -733,14 +746,14 @@ class ApplicationSession(BaseSession):
                             f"signature must be unicode (was {type(signature)})"
                         )
                     reply = message.Authenticate(signature)
-                    self._transport.send(reply)
+                    self._require_transport().send(reply)
 
                 def error(err):
                     self.onUserError(err, "Authentication failed")
                     reply = message.Abort(
                         "wamp.error.cannot_authenticate", f"{err.value}"
                     )
-                    self._transport.send(reply)
+                    self._require_transport().send(reply)
                     # fire callback and close the transport
                     details = types.CloseDetails(reply.reason, reply.message)
                     d = txaio.as_future(self.onLeave, details)
@@ -771,7 +784,7 @@ class ApplicationSession(BaseSession):
                 if not self._goodbye_sent:
                     # the peer wants to close: send GOODBYE reply
                     reply = message.Goodbye()
-                    self._transport.send(reply)
+                    self._require_transport().send(reply)
 
                 self._session_id = None
 
@@ -1163,7 +1176,7 @@ class ApplicationSession(BaseSession):
                             reply = self._message_from_exception(
                                 message.Invocation.MESSAGE_TYPE, msg.request, enc_err
                             )
-                            self._transport.send(reply)
+                            self._require_transport().send(reply)
 
                         else:
                             if endpoint.obj is not None:
@@ -1215,7 +1228,7 @@ class ApplicationSession(BaseSession):
                                                 progress=True,
                                             )
 
-                                        self._transport.send(progress_msg)
+                                        self._require_transport().send(progress_msg)
 
                                 else:
                                     progress = None
@@ -1356,7 +1369,7 @@ class ApplicationSession(BaseSession):
                                 )
 
                                 try:
-                                    self._transport.send(reply)
+                                    self._require_transport().send(reply)
                                 except SerializationError as e:
                                     # the application-level payload returned from the invoked procedure can't be serialized
                                     reply = message.Error(
@@ -1367,7 +1380,7 @@ class ApplicationSession(BaseSession):
                                             f'error return value from invoked procedure "{registration.procedure}" could not be serialized: {e}'
                                         ],
                                     )
-                                    self._transport.send(reply)
+                                    self._require_transport().send(reply)
                                 except PayloadExceededError as e:
                                     # the application-level payload returned from the invoked procedure, when serialized and framed
                                     # for the transport, exceeds the transport message/frame size limit
@@ -1379,7 +1392,7 @@ class ApplicationSession(BaseSession):
                                             f'success return value from invoked procedure "{registration.procedure}" exceeds transport size limit: {e}'
                                         ],
                                     )
-                                    self._transport.send(reply)
+                                    self._require_transport().send(reply)
 
                                 # we have handled the error, so we eat it
                                 return None
@@ -1636,9 +1649,10 @@ class ApplicationSession(BaseSession):
         """
         if details.reason != CloseDetails.REASON_DEFAULT:
             self.log.warn(
-                "session closed with reason {reason} [{message}]",
+                "session closed with reason {reason} [{close_message}]",
                 reason=details.reason,
-                message=details.message,
+                # not message=: ILogger.warn() names its first parameter so
+                close_message=details.message,
             )
 
         # fire ApplicationError on any currently outstanding requests
@@ -1665,7 +1679,7 @@ class ApplicationSession(BaseSession):
             if not reason:
                 reason = "wamp.close.normal"
             msg = wamp.message.Goodbye(reason=reason, message=message)
-            self._transport.send(msg)
+            self._require_transport().send(msg)
             self._goodbye_sent = True
         else:
             self.log.warn(
@@ -1841,7 +1855,7 @@ class ApplicationSession(BaseSession):
                 if options.correlation_is_last is not None:
                     msg.correlation_is_last = options.correlation_is_last
 
-            self._transport.send(msg)
+            self._require_transport().send(msg)
             return on_reply
 
         if callable(handler):
@@ -2000,7 +2014,7 @@ class ApplicationSession(BaseSession):
 
         def canceller(d):
             cancel_msg = message.Cancel(request_id)
-            self._transport.send(cancel_msg)
+            self._require_transport().send(cancel_msg)
             # since we announced support for cancelling, we should
             # definitely get an Error back for our Cancel which will
             # clean up this invocation
@@ -2081,7 +2095,7 @@ class ApplicationSession(BaseSession):
                 if options.correlation_is_last is not None:
                     msg.correlation_is_last = options.correlation_is_last
 
-            self._transport.send(msg)
+            self._require_transport().send(msg)
             return on_reply
 
         if callable(endpoint):
@@ -2174,11 +2188,13 @@ class _SessionShim(ApplicationSession):
             self.on_connect()
 
     def onChallenge(self, challenge):
+        # no authenticator added is the same as none for this authmethod
+        authenticators = self._authenticators or {}
         try:
-            authenticator = self._authenticators[challenge.method]
+            authenticator = authenticators[challenge.method]
         except KeyError:
             raise RuntimeError(
-                f"Received challenge for unknown authmethod '{challenge.method}' [authenticators={str(sorted(self._authenticators.keys()))}]"
+                f"Received challenge for unknown authmethod '{challenge.method}' [authenticators={str(sorted(authenticators.keys()))}]"
             )
         return authenticator.on_challenge(self, challenge)
 
@@ -2206,6 +2222,7 @@ class _SessionShim(ApplicationSession):
         assert isinstance(authenticator, IAuthenticator)
         if self._authenticators is None:
             self._authenticators = {}
+        authenticators = self._authenticators
 
         # before adding this authenticator we need to validate that
         # it's consistent with any other authenticators we may have --
@@ -2216,7 +2233,7 @@ class _SessionShim(ApplicationSession):
             uni = set(
                 [
                     a._args[name]
-                    for a in list(self._authenticators.values()) + [authenticator]
+                    for a in list(authenticators.values()) + [authenticator]
                     if name in a._args
                 ]
             )
@@ -2245,7 +2262,7 @@ class _SessionShim(ApplicationSession):
                 )
 
         # validation complete, add it
-        self._authenticators[authenticator.name] = authenticator
+        authenticators[authenticator.name] = authenticator
 
     def _merged_authextra(self):
         """
@@ -2258,7 +2275,7 @@ class _SessionShim(ApplicationSession):
         that any keys it does contain has the same value as any
         existing authextra.
         """
-        authextras = [a.authextra for a in self._authenticators.values()]
+        authextras = [a.authextra for a in (self._authenticators or {}).values()]
 
         def extract_keys(x, y):
             return x | set(y.keys())

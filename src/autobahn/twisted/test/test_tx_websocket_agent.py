@@ -32,8 +32,8 @@ class TestAgent(unittest.TestCase):
     @inlineCallbacks
     def test_echo_server(self):
         class EchoServer(WebSocketServerProtocol):
-            def onMessage(self, msg, is_binary):
-                self.sendMessage(msg)
+            def onMessage(self, payload, isBinary):
+                self.sendMessage(payload)
 
         agent = create_memory_agent(self.reactor, self.pumper, EchoServer)
         proto = yield agent.open("ws://localhost:1234/ws", dict())

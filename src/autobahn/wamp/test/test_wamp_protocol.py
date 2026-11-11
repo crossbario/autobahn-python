@@ -927,10 +927,11 @@ if os.environ.get("USE_TWISTED", False):
 
             @inlineCallbacks
             def bing(details=None):
-                self.assertTrue(details is not None)
-                self.assertTrue(details.progress is not None)
+                assert details is not None
+                progress = details.progress
+                assert progress is not None
                 for i in range(10):
-                    details.progress(i)
+                    progress(i)
                     yield succeed(i)
                 return 42
 
@@ -962,11 +963,12 @@ if os.environ.get("USE_TWISTED", False):
 
             @inlineCallbacks
             def bing(arg, details=None, key=None):
-                self.assertTrue(details is not None)
-                self.assertTrue(details.progress is not None)
+                assert details is not None
+                progress = details.progress
+                assert progress is not None
                 self.assertEqual(key, "word")
                 self.assertEqual("arg", arg)
-                details.progress("life", something="nothing")
+                progress("life", something="nothing")
                 yield succeed("meaning of")
                 return 42
 
@@ -1014,9 +1016,10 @@ if os.environ.get("USE_TWISTED", False):
 
             @inlineCallbacks
             def bing(details=None):
-                self.assertTrue(details is not None)
-                self.assertTrue(details.progress is not None)
-                details.progress()
+                assert details is not None
+                progress = details.progress
+                assert progress is not None
+                progress()
                 yield succeed(True)
                 return 42
 
@@ -1046,9 +1049,10 @@ if os.environ.get("USE_TWISTED", False):
 
             @inlineCallbacks
             def bing(details=None):
-                self.assertTrue(details is not None)
-                self.assertTrue(details.progress is not None)
-                details.progress(key="word")
+                assert details is not None
+                progress = details.progress
+                assert progress is not None
+                progress(key="word")
                 yield succeed(True)
                 return 42
 
