@@ -62,6 +62,7 @@ if os.environ.get("USE_TWISTED", False):
         factory.protocol = WebSocketClientProtocol
         factory.doStart()
         proto = factory.buildProtocol(IPv4Address("TCP", "127.0.0.9", 65534))
+        assert proto is not None
         proto.transport = FakeTransport()
         proto.connectionMade()
         proto.data = mock_handshake_server
@@ -91,6 +92,7 @@ if os.environ.get("USE_TWISTED", False):
             self.proto = self.factory.buildProtocol(
                 IPv4Address("TCP", "127.0.0.1", 65534)
             )
+            assert self.proto is not None
             self.transport = FakeTransport()
             self.proto.transport = self.transport
             self.proto.connectionMade()
@@ -160,6 +162,7 @@ if os.environ.get("USE_TWISTED", False):
             self.proto = self.factory.buildProtocol(
                 IPv4Address("TCP", "127.0.0.1", 65534)
             )
+            assert self.proto is not None
             self.transport = MagicMock()
             self.proto.transport = self.transport
             self.proto.connectionMade()

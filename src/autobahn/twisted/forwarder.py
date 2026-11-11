@@ -48,11 +48,13 @@ class DestEndpointForwardingProtocol(Protocol):
             data=data,
         )
         if self.factory._sourceProtocol:
+            assert self.factory._sourceProtocol.transport is not None
             self.factory._sourceProtocol.transport.write(data)
 
     def connectionLost(self, reason):
         self.log.debug("DestEndpointForwardingProtocol.connectionLost")
         if self.factory._sourceProtocol:
+            assert self.factory._sourceProtocol.transport is not None
             self.factory._sourceProtocol.transport.loseConnection()
 
 
@@ -85,11 +87,13 @@ class EndpointForwardingProtocol(Protocol):
             data=data,
         )
         if self._destFactory._proto:
+            assert self._destFactory._proto.transport is not None
             self._destFactory._proto.transport.write(data)
 
     def connectionLost(self, reason):
         self.log.debug("EndpointForwardingProtocol.connectionLost")
         if self._destFactory._proto:
+            assert self._destFactory._proto.transport is not None
             self._destFactory._proto.transport.loseConnection()
 
 

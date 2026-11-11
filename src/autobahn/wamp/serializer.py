@@ -406,16 +406,16 @@ else:
                 self._use_binary_hex_encoding = False
             json.JSONEncoder.__init__(self, *args, **kwargs)
 
-        def default(self, obj):
-            if isinstance(obj, bytes):
+        def default(self, o):
+            if isinstance(o, bytes):
                 if self._use_binary_hex_encoding:
-                    return "0x" + b2a_hex(obj).decode("ascii")
+                    return "0x" + b2a_hex(o).decode("ascii")
                 else:
-                    return "\x00" + base64.b64encode(obj).decode("ascii")
-            elif isinstance(obj, decimal.Decimal):
-                return str(obj)
+                    return "\x00" + base64.b64encode(o).decode("ascii")
+            elif isinstance(o, decimal.Decimal):
+                return str(o)
             else:
-                return json.JSONEncoder.default(self, obj)
+                return json.JSONEncoder.default(self, o)
 
     #
     # the following is a hack. see http://bugs.python.org/issue29992

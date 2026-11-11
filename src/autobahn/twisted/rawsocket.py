@@ -129,6 +129,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
         # RawSocket connection established. Now let the user WAMP session factory
         # create a new WAMP session and fire off session open callback.
         try:
+            assert self._transport_details is not None, "set by connectionMade()"
             if self._transport_details.is_secure:
                 # now that the TLS opening handshake is complete, the actual TLS channel ID
                 # and the peer certificate will be available. make sure to set them!
@@ -186,20 +187,23 @@ class WampRawSocketProtocol(Int32StringReceiver):
             )
         self._session = None
 
-    def stringReceived(self, payload):
+    def stringReceived(self, string):
         self.log.trace(
             "{klass}.stringReceived(): RX {octets} octets",
             klass=self.__class__.__name__,
-            octets=_LazyHexFormatter(payload),
+            octets=_LazyHexFormatter(string),
         )
         try:
-            for msg in self._serializer.unserialize(payload):
+            assert self._serializer is not None, "opening handshake not complete"
+            for msg in self._serializer.unserialize(string):
                 self.log.trace(
                     "{klass}.stringReceived: RX WAMP message: {msg}",
                     klass=self.__class__.__name__,
                     msg=msg,
                 )
-                self._session.onMessage(msg)
+                session = self._session
+                assert session is not None, "no session (any more)"
+                session.onMessage(msg)
 
         except CancelledError as e:
             self.log.debug(
@@ -261,6 +265,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
                 serializer=self._serializer,
             )
             try:
+                assert self._serializer is not None, "opening handshake not complete"
                 payload, _ = self._serializer.serialize(msg)
             except SerializationError as e:
                 # all exceptions raised from above should be serialization errors ..
@@ -294,6 +299,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
         Implements :func:`autobahn.wamp.interfaces.ITransport.close`
         """
         if self.isOpen():
+            assert self.transport is not None
             self.transport.loseConnection()
         else:
             raise TransportLost()
@@ -403,9 +409,11 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
                         ]
                     )
                 )
-                self.transport.write(b"\x7f")  # magic byte
-                self.transport.write(reply_octet2)  # max length / serializer
-                self.transport.write(b"\x00\x00")  # reserved octets
+                transport = self.transport
+                assert transport is not None
+                transport.write(b"\x7f")  # magic byte
+                transport.write(reply_octet2)  # max length / serializer
+                transport.write(b"\x00\x00")  # reserved octets
 
                 self._handshake_complete = True
 
@@ -457,9 +465,11 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
                 ]
             )
         )
-        self.transport.write(b"\x7f")  # magic byte
-        self.transport.write(request_octet2)  # max length / serializer
-        self.transport.write(b"\x00\x00")  # reserved octets
+        transport = self.transport
+        assert transport is not None
+        transport.write(b"\x7f")  # magic byte
+        transport.write(request_octet2)  # max length / serializer
+        transport.write(b"\x00\x00")  # reserved octets
 
     def dataReceived(self, data):
         if self._handshake_complete:
@@ -493,6 +503,7 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
                 # client wants to speak this serialization format
                 #
                 ser_id = ord(self._handshake_bytes[1:2]) & 0x0F
+                assert self._serializer is not None, "set by connectionMade()"
                 if ser_id != self._serializer.RAWSOCKET_SERIALIZER_ID:
                     self.log.error(
                         "WampRawSocketClientProtocol: opening handshake - no suitable serializer found (server replied {serializer}, and we requested {serializers})",
@@ -567,6 +578,8 @@ class WampRawSocketFactory(Factory):
             addr=addr,
         )
         p = self.protocol()
+        # the server and client factories set protocol to a subclass
+        assert isinstance(p, WampRawSocketProtocol), p
         p.factory = self
         p.MAX_LENGTH = self._max_message_size
         p._max_message_size = self._max_message_size

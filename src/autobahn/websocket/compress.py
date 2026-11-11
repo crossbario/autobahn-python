@@ -24,6 +24,8 @@
 #
 ###############################################################################
 
+from typing import TypedDict
+
 from autobahn.websocket.compress_base import (
     PerMessageCompress,
     PerMessageCompressOffer,
@@ -56,8 +58,21 @@ __all__ = [
     "PerMessageDeflateResponseAccept",
 ]
 
+
+class PerMessageCompressionClasses(TypedDict):
+    """
+    The classes implementing one permessage-compress extension.
+    """
+
+    Offer: type[PerMessageCompressOffer]
+    OfferAccept: type[PerMessageCompressOfferAccept]
+    Response: type[PerMessageCompressResponse]
+    ResponseAccept: type[PerMessageCompressResponseAccept]
+    PMCE: type[PerMessageCompress]
+
+
 # map of available compression extensions
-PERMESSAGE_COMPRESSION_EXTENSION = {
+PERMESSAGE_COMPRESSION_EXTENSION: dict[str, PerMessageCompressionClasses] = {
     # class for 'permessage-deflate' is always available
     PerMessageDeflateMixin.EXTENSION_NAME: {
         "Offer": PerMessageDeflateOffer,
@@ -84,7 +99,7 @@ else:
         PerMessageBzip2ResponseAccept,
     )
 
-    PMCE = {
+    PMCE: PerMessageCompressionClasses = {
         "Offer": PerMessageBzip2Offer,
         "OfferAccept": PerMessageBzip2OfferAccept,
         "Response": PerMessageBzip2Response,
@@ -120,7 +135,7 @@ else:
         PerMessageSnappyResponseAccept,
     )
 
-    PMCE = {
+    PMCE: PerMessageCompressionClasses = {
         "Offer": PerMessageSnappyOffer,
         "OfferAccept": PerMessageSnappyOfferAccept,
         "Response": PerMessageSnappyResponse,
@@ -163,7 +178,7 @@ else:
         PerMessageBrotliResponseAccept,
     )
 
-    PMCE = {
+    PMCE: PerMessageCompressionClasses = {
         "Offer": PerMessageBrotliOffer,
         "OfferAccept": PerMessageBrotliOfferAccept,
         "Response": PerMessageBrotliResponse,

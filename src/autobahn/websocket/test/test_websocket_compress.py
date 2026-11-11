@@ -273,6 +273,7 @@ class DecompressBudgetUniformTests(unittest.TestCase):
             with self.subTest(codec=codec):
                 body = self._compress(compressor, self.BOMB)
                 decompressor.start_decompress_message()
+                assert tracemalloc is not None
                 tracemalloc.start()
                 try:
                     with self.assertRaises(PayloadExceededError):

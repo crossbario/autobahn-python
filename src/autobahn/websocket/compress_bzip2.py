@@ -508,9 +508,11 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
                 self._compressor = bz2.BZ2Compressor(self.client_max_compress_level)
 
     def compress_message_data(self, data):
+        assert self._compressor is not None, "start_compress_message() was not called"
         return self._compressor.compress(data)
 
     def end_compress_message(self):
+        assert self._compressor is not None, "start_compress_message() was not called"
         data = self._compressor.flush()
 
         # there seems to be no "flush without close stream", and after
@@ -524,6 +526,7 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
             self._decompressor = bz2.BZ2Decompressor()
 
     def decompress_message_data(self, data, max_output_len=None):
+        assert self._decompressor is not None, "start_decompress_message() was not called"
         try:
             if max_output_len is None:
                 return self._decompressor.decompress(data)
@@ -547,6 +550,7 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
 
     def end_decompress_message(self):
         # Each message is one complete bzip2 stream.
+        assert self._decompressor is not None, "start_decompress_message() was not called"
         complete = self._decompressor.eof
         self._decompressor = None
         if not complete:

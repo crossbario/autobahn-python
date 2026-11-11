@@ -49,7 +49,7 @@ def _create_utf8_test_sequences():
 
     # 1 Some correct UTF-8 text
     vss = b"\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5"
-    vs = [b"Some valid UTF-8 sequences", []]
+    vs = (b"Some valid UTF-8 sequences", [])
     vs[1].append((True, b"hello\x24world"))  # U+0024
     vs[1].append((True, b"hello\xc2\xa2world"))  # U+00A2
     vs[1].append((True, b"hello\xe2\x82\xacworld"))  # U+20AC
@@ -58,10 +58,10 @@ def _create_utf8_test_sequences():
     UTF8_TEST_SEQUENCES.append(vs)
 
     # All prefixes of correct UTF-8 text
-    vs = [
+    vs = (
         b"All prefixes of a valid UTF-8 string that contains multi-byte code points",
         [],
-    ]
+    )
     v = StandardUtf8Validator()
     for i in range(1, len(vss) + 1):
         v.reset()
@@ -70,7 +70,7 @@ def _create_utf8_test_sequences():
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 2.1 First possible sequence of a certain length
-    vs = [b"First possible sequence of a certain length", []]
+    vs = (b"First possible sequence of a certain length", [])
     vs[1].append((True, b"\x00"))
     vs[1].append((True, b"\xc2\x80"))
     vs[1].append((True, b"\xe0\xa0\x80"))
@@ -79,13 +79,13 @@ def _create_utf8_test_sequences():
 
     # the following conform to the UTF-8 integer encoding scheme, but
     # valid UTF-8 only allows for Unicode code points up to U+10FFFF
-    vs = [b"First possible sequence length 5/6 (invalid codepoints)", []]
+    vs = (b"First possible sequence length 5/6 (invalid codepoints)", [])
     vs[1].append((False, b"\xf8\x88\x80\x80\x80"))
     vs[1].append((False, b"\xfc\x84\x80\x80\x80\x80"))
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 2.2 Last possible sequence of a certain length
-    vs = [b"Last possible sequence of a certain length", []]
+    vs = (b"Last possible sequence of a certain length", [])
     vs[1].append((True, b"\x7f"))
     vs[1].append((True, b"\xdf\xbf"))
     vs[1].append((True, b"\xef\xbf\xbf"))
@@ -94,14 +94,14 @@ def _create_utf8_test_sequences():
 
     # the following conform to the UTF-8 integer encoding scheme, but
     # valid UTF-8 only allows for Unicode code points up to U+10FFFF
-    vs = [b"Last possible sequence length 4/5/6 (invalid codepoints)", []]
+    vs = (b"Last possible sequence length 4/5/6 (invalid codepoints)", [])
     vs[1].append((False, b"\xf7\xbf\xbf\xbf"))
     vs[1].append((False, b"\xfb\xbf\xbf\xbf\xbf"))
     vs[1].append((False, b"\xfd\xbf\xbf\xbf\xbf\xbf"))
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 2.3 Other boundary conditions
-    vs = [b"Other boundary conditions", []]
+    vs = (b"Other boundary conditions", [])
     vs[1].append((True, b"\xed\x9f\xbf"))
     vs[1].append((True, b"\xee\x80\x80"))
     vs[1].append((True, b"\xef\xbf\xbd"))
@@ -110,7 +110,7 @@ def _create_utf8_test_sequences():
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 3.1  Unexpected continuation bytes
-    vs = [b"Unexpected continuation bytes", []]
+    vs = (b"Unexpected continuation bytes", [])
     vs[1].append((False, b"\x80"))
     vs[1].append((False, b"\xbf"))
     vs[1].append((False, b"\x80\xbf"))
@@ -121,7 +121,7 @@ def _create_utf8_test_sequences():
     s = b""
 
     # 3.2  Lonely start characters
-    vs = [b"Lonely start characters", []]
+    vs = (b"Lonely start characters", [])
     m = [(0xC0, 0xDF), (0xE0, 0xEF), (0xF0, 0xF7), (0xF8, 0xFB), (0xFC, 0xFD)]
     for mm in m:
         s = b""
@@ -133,7 +133,7 @@ def _create_utf8_test_sequences():
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 3.3  Sequences with last continuation byte missing
-    vs = [b"Sequences with last continuation byte missing", []]
+    vs = (b"Sequences with last continuation byte missing", [])
     k = [
         b"\xc0",
         b"\xe0\x80",
@@ -151,19 +151,19 @@ def _create_utf8_test_sequences():
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 3.4  Concatenation of incomplete sequences
-    vs = [b"Concatenation of incomplete sequences", []]
+    vs = (b"Concatenation of incomplete sequences", [])
     vs[1].append((False, b"".join(k)))
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 3.5  Impossible bytes
-    vs = [b"Impossible bytes", []]
+    vs = (b"Impossible bytes", [])
     vs[1].append((False, b"\xfe"))
     vs[1].append((False, b"\xff"))
     vs[1].append((False, b"\xfe\xfe\xff\xff"))
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 4.1  Examples of an overlong ASCII character
-    vs = [b"Examples of an overlong ASCII character", []]
+    vs = (b"Examples of an overlong ASCII character", [])
     vs[1].append((False, b"\xc0\xaf"))
     vs[1].append((False, b"\xe0\x80\xaf"))
     vs[1].append((False, b"\xf0\x80\x80\xaf"))
@@ -172,7 +172,7 @@ def _create_utf8_test_sequences():
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 4.2  Maximum overlong sequences
-    vs = [b"Maximum overlong sequences", []]
+    vs = (b"Maximum overlong sequences", [])
     vs[1].append((False, b"\xc1\xbf"))
     vs[1].append((False, b"\xe0\x9f\xbf"))
     vs[1].append((False, b"\xf0\x8f\xbf\xbf"))
@@ -181,7 +181,7 @@ def _create_utf8_test_sequences():
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 4.3  Overlong representation of the NUL character
-    vs = [b"Overlong representation of the NUL character", []]
+    vs = (b"Overlong representation of the NUL character", [])
     vs[1].append((False, b"\xc0\x80"))
     vs[1].append((False, b"\xe0\x80\x80"))
     vs[1].append((False, b"\xf0\x80\x80\x80"))
@@ -190,7 +190,7 @@ def _create_utf8_test_sequences():
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 5.1 Single UTF-16 surrogates
-    vs = [b"Single UTF-16 surrogates", []]
+    vs = (b"Single UTF-16 surrogates", [])
     vs[1].append((False, b"\xed\xa0\x80"))
     vs[1].append((False, b"\xed\xad\xbf"))
     vs[1].append((False, b"\xed\xae\x80"))
@@ -201,7 +201,7 @@ def _create_utf8_test_sequences():
     UTF8_TEST_SEQUENCES.append(vs)
 
     # 5.2 Paired UTF-16 surrogates
-    vs = [b"Paired UTF-16 surrogates", []]
+    vs = (b"Paired UTF-16 surrogates", [])
     vs[1].append((False, b"\xed\xa0\x80\xed\xb0\x80"))
     vs[1].append((False, b"\xed\xa0\x80\xed\xbf\xbf"))
     vs[1].append((False, b"\xed\xad\xbf\xed\xb0\x80"))
@@ -214,7 +214,7 @@ def _create_utf8_test_sequences():
 
     # 5.3 Other illegal code positions
     # Those are non-character code points and valid UTF-8 by RFC 3629
-    vs = [b"Non-character code points (valid UTF-8)", []]
+    vs = (b"Non-character code points (valid UTF-8)", [])
     # https://bug686312.bugzilla.mozilla.org/attachment.cgi?id=561257
     # non-characters: EF BF [BE-BF]
     vs[1].append((True, b"\xef\xbf\xbe"))
@@ -235,7 +235,7 @@ def _create_utf8_test_sequences():
 
     # Unicode "specials", such as replacement char etc
     # http://en.wikipedia.org/wiki/Specials_%28Unicode_block%29
-    vs = [b"Unicode specials (i.e. replacement char)", []]
+    vs = (b"Unicode specials (i.e. replacement char)", [])
     vs[1].append((True, b"\xef\xbf\xb9"))
     vs[1].append((True, b"\xef\xbf\xba"))
     vs[1].append((True, b"\xef\xbf\xbb"))

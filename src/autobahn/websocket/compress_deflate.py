@@ -800,9 +800,11 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                 )
 
     def compress_message_data(self, data):
+        assert self._compressor is not None, "start_compress_message() was not called"
         return self._compressor.compress(data)
 
     def end_compress_message(self):
+        assert self._compressor is not None, "start_compress_message() was not called"
         data = self._compressor.flush(zlib.Z_SYNC_FLUSH)
         return data[:-4]
 
@@ -821,6 +823,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
         # extension-level max_message_size (negotiated, cumulative across all
         # frames of the message) and the per-call max_output_len (the remaining
         # protocol-level budget). If neither is set, decompression is unbounded.
+        assert self._decompressor is not None, "start_decompress_message() was not called"
         limits = []
         if self.max_message_size is not None:
             limits.append(self.max_message_size - self._decompress_message_size)
@@ -857,6 +860,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
     def end_decompress_message(self):
         # Eat stripped LEN and NLEN field of a non-compressed block added
         # for Z_SYNC_FLUSH.
+        assert self._decompressor is not None, "start_decompress_message() was not called"
         try:
             self._decompressor.decompress(b"\x00\x00\xff\xff")
         except zlib.error as e:

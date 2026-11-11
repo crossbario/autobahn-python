@@ -38,6 +38,14 @@ class PerMessageCompressOffer:
     Base class for WebSocket compression parameter client offers.
     """
 
+    @classmethod
+    def parse(cls, params):
+        """
+        Parse a client offer from the extension parameters of the client's
+        opening handshake. Implemented by each extension.
+        """
+        raise NotImplementedError()
+
 
 class PerMessageCompressOfferAccept:
     """
@@ -49,6 +57,14 @@ class PerMessageCompressResponse:
     """
     Base class for WebSocket compression parameter server responses.
     """
+
+    @classmethod
+    def parse(cls, params):
+        """
+        Parse a server response from the extension parameters of the
+        server's opening handshake. Implemented by each extension.
+        """
+        raise NotImplementedError()
 
 
 class PerMessageCompressResponseAccept:
@@ -83,3 +99,19 @@ class PerMessageCompress:
     from ``decompress_message_data`` or ``end_decompress_message``, never the
     library's own exception.
     """
+
+    @classmethod
+    def create_from_offer_accept(cls, is_server, accept):
+        """
+        Create the negotiated compression from the server's accept of a
+        client offer. Implemented by each extension.
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def create_from_response_accept(cls, is_server, accept):
+        """
+        Create the negotiated compression from the client's accept of a
+        server response. Implemented by each extension.
+        """
+        raise NotImplementedError()

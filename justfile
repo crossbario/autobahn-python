@@ -897,8 +897,6 @@ check-typing venv="": (install venv) (install-tools venv)
         --ignore deprecated \
         --ignore possibly-missing-submodule \
         --ignore unused-type-ignore-comment \
-        --ignore missing-union-attribute \
-        --ignore lost-keyword-for-regular-parameter \
         src/autobahn/ 2>&1 | tee "${TY_OUT}"
     rc=${PIPESTATUS[0]}
     set -e

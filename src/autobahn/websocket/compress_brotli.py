@@ -471,9 +471,11 @@ class PerMessageBrotli(PerMessageCompress, PerMessageBrotliMixin):
                 self._compressor = brotli.Compressor()
 
     def compress_message_data(self, data):
+        assert self._compressor is not None, "start_compress_message() was not called"
         return self._compressor.process(data)
 
     def end_compress_message(self):
+        assert self._compressor is not None, "start_compress_message() was not called"
         data = self._compressor.finish()
 
         # Each message is one complete brotli stream, and a finished
@@ -494,6 +496,7 @@ class PerMessageBrotli(PerMessageCompress, PerMessageBrotliMixin):
                 self._decompressor = brotli.Decompressor()
 
     def decompress_message_data(self, data, max_output_len=None):
+        assert self._decompressor is not None, "start_decompress_message() was not called"
         try:
             if max_output_len is None:
                 return self._decompressor.process(data)
@@ -522,6 +525,7 @@ class PerMessageBrotli(PerMessageCompress, PerMessageBrotliMixin):
     def end_decompress_message(self):
         # Each message is one complete brotli stream (end_compress_message()
         # finishes it), and a finished decompressor must not be reused.
+        assert self._decompressor is not None, "start_decompress_message() was not called"
         complete = self._decompressor.is_finished()
         self._decompressor = None
         if not complete:

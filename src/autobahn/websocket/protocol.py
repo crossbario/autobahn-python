@@ -719,9 +719,13 @@ class WebSocketProtocol(ObservableMixin):
                         self.maxMessagePayloadSize,
                         f"received (partial) WebSocket message size {self.message_data_total_length} (already) exceeds payload limit of {self.maxMessagePayloadSize} octets",
                     )
-                self.message_data.append(payload)
+                message_data = self.message_data
+                assert message_data is not None, "onMessageBegin() was not called"
+                message_data.append(payload)
             else:
-                self.frame_data.append(payload)
+                frame_data = self.frame_data
+                assert frame_data is not None, "onMessageFrameBegin() was not called"
+                frame_data.append(payload)
 
     def onMessageFrameEnd(self) -> None:
         """
@@ -1856,6 +1860,7 @@ class WebSocketProtocol(ObservableMixin):
         """
         Begin of receive new frame.
         """
+        assert self.current_frame is not None
         if self.current_frame.opcode > 7:
             self.control_frame_data = []
         else:
@@ -1901,7 +1906,9 @@ class WebSocketProtocol(ObservableMixin):
         """
         New data received within frame.
         """
+        assert self.current_frame is not None
         if self.current_frame.opcode > 7:
+            assert self.control_frame_data is not None
             self.control_frame_data.append(payload)
         else:
             # decompress frame payload
@@ -1932,6 +1939,7 @@ class WebSocketProtocol(ObservableMixin):
                 else:
                     max_output_len = None
                 try:
+                    assert self._perMessageCompress is not None
                     payload = self._perMessageCompress.decompress_message_data(
                         payload, max_output_len=max_output_len
                     )
@@ -1998,6 +2006,7 @@ class WebSocketProtocol(ObservableMixin):
         """
         End of frame received.
         """
+        assert self.current_frame is not None
         if self.current_frame.opcode > 7:
             if self.logFrames:
                 self.logRxFrame(self.current_frame, self.control_frame_data)
@@ -2021,6 +2030,7 @@ class WebSocketProtocol(ObservableMixin):
                 #
                 if self._isMessageCompressed:
                     try:
+                        assert self._perMessageCompress is not None
                         self._perMessageCompress.end_decompress_message()
                     except PayloadCorruptError as e:
                         if not self.failedByMe:
@@ -2050,6 +2060,7 @@ class WebSocketProtocol(ObservableMixin):
         """
         Process a completely received control frame.
         """
+        assert self.current_frame is not None
         payload = b"".join(self.control_frame_data)
         self.control_frame_data = None
 
@@ -2280,8 +2291,9 @@ class WebSocketProtocol(ObservableMixin):
         that will drop connection. See https://github.com/crossbario/autobahn-python/issues/1327
         """
         self.log.debug("Cancelling autoPingTimeoutCall due to incoming data")
-        self.autoPingTimeoutCall.cancel()
-        self.autoPingTimeoutCall = None
+        if self.autoPingTimeoutCall is not None:
+            self.autoPingTimeoutCall.cancel()
+            self.autoPingTimeoutCall = None
         # clear pending auto ping data, as current ping must be discarded
         self.autoPingPending = None
 
@@ -2585,6 +2597,7 @@ class WebSocketProtocol(ObservableMixin):
         #   raise Exception('WebSocketProtocol.endMessage invalid in current sending state [{}]'.format(self.send_state))
 
         if self.send_compressed:
+            assert self._perMessageCompress is not None
             payload = self._perMessageCompress.end_compress_message()
             self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
         else:
@@ -2603,6 +2616,7 @@ class WebSocketProtocol(ObservableMixin):
 
         if self.send_compressed:
             self.trafficStats.outgoingOctetsAppLevel += len(payload)
+            assert self._perMessageCompress is not None
             payload = self._perMessageCompress.compress_message_data(payload)
 
         self.beginMessageFrame(len(payload))
@@ -4134,6 +4148,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         """
         Start WebSocket opening handshake.
         """
+        assert self._transport_details is not None, "connectionMade() sets the transport details"
         self.log.debug(
             "{meth}: starting handshake with transport_details=\n{transport_details}",
             meth=hltype(self.startHandshake),

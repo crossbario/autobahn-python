@@ -67,7 +67,7 @@ if os.environ.get("USE_ASYNCIO", False):
         def onJoin(self, details):
             if not self._done.done():
                 self._done.set_result(
-                    ("joined", details, self._transport.transport_details)
+                    ("joined", details, self._require_transport().transport_details)
                 )
             self.leave()
 

@@ -101,7 +101,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         self._connectionLost(exc)
         # according to asyncio docs, connection_lost(None) is called
         # if something else called transport.close()
-        if exc is not None:
+        if exc is not None and self.transport is not None:
             self.transport.close()
         self.transport = None
 
@@ -135,6 +135,9 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
             self.waiter.set_result(None)
 
     def _closeConnection(self, abort=False):
+        if self.transport is None:
+            # already closed: connection_lost() ran
+            return
         if abort and hasattr(self.transport, "abort"):
             self.transport.abort()
         else:

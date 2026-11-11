@@ -429,7 +429,9 @@ class Vector(Sized):
 
   __slots__ = ()
 
-  def __getitem__(self, index):
+  # autobahn adaptation: positional-only, as subscripting is, so Map can name
+  # it `key` (autobahn-python#2053).
+  def __getitem__(self, index, /):
     if index < 0 or index >= len(self):
       raise IndexError(
           'vector index %s is out of [0, %d) range' % (index, len(self))

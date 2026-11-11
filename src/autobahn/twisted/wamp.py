@@ -231,12 +231,15 @@ class ApplicationRunner:
         """
         self.log.debug("{klass}.run()", klass=self.__class__.__name__)
 
+        if start_reactor or reactor is None:
+            # the global reactor: started below when asked to, and in any case
+            # the one to clean up on at shutdown (also with an endpoint given)
+            from twisted.internet import reactor
+
         if start_reactor:
             # only select framework, set loop and start logging when we are asked
             # start the reactor - otherwise we are running in a program that likely
             # already tool care of all this.
-            from twisted.internet import reactor
-
             txaio.use_twisted()
             txaio.config.loop = reactor
             txaio.start_logging(level=log_level)

@@ -71,6 +71,7 @@ class TestSessionDetails(unittest.TestCase):
         sd1.resumable = True
         sd1.resume_token = "8713e25a-d4f5-48b7-9d6d-eda66603a1ab"
         data = sd1.marshal()
+        assert sd1.transport is not None
         self.assertEqual(
             data,
             {
