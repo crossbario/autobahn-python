@@ -157,7 +157,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
@@ -168,7 +168,7 @@ jobs:
 
       # Buildx builds the custom PyPy images below (natively, no emulation)
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       # ============================================================
       # Build custom PyPy images (only for build_type == custom)
@@ -176,7 +176,7 @@ jobs:
 
       - name: Build custom PyPy manylinux image (with retry)
         if: matrix.target.build_type == 'custom'
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
         with:
           # Under QEMU these builds took up to 96 minutes and segfaulted
           # intermittently, hence 9 attempts of 120 minutes (#1947). Natively,
@@ -203,7 +203,7 @@ jobs:
       # ============================================================
 
       - name: Build ARM64 wheels with NVX extension (with retry)
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
         with:
           # Under QEMU these builds took up to 96 minutes and segfaulted
           # intermittently, hence 9 attempts of 120 minutes (#1947). Natively,

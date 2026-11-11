@@ -254,13 +254,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
       - name: Find wstest workflow run ID
         id: find-wstest
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const commitSha = context.payload.workflow_run.head_sha;
@@ -432,13 +432,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
       - name: Find wstest workflow run ID
         id: find-wstest
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const commitSha = context.payload.workflow_run.head_sha;
@@ -533,7 +533,7 @@ jobs:
           cat discussion-post.md
 
       - name: Post to GitHub Discussions
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         env:
           DISCUSSION_CATEGORY_ID: ${{ github.event.inputs.discussion_category_id || 'DIC_kwDOACA_5s4Cxk-W' }}
         with:
