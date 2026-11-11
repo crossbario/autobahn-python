@@ -120,7 +120,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
@@ -136,7 +136,7 @@ jobs:
       # we need to use this install wrapper on inheritently broken platforms (windows/powershell).
       - name: Install Just (Windows)
         if: runner.os == 'Windows'
-        uses: extractions/setup-just@v4
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
         with:
           just-version: "1.42.3"
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -157,7 +157,7 @@ jobs:
       # Unpinned, like the Linux/macOS path.
       - name: Install uv (Windows)
         if: runner.os == 'Windows'
-        uses: astral-sh/setup-uv@v10.0.1
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -180,7 +180,7 @@ jobs:
         # skip broken platform ("Error: The template is not valid. .github/workflows/wheels.yml (Line: 182, Col: 13):
         # hashFiles('pyproject.toml') failed. Fail to hash files under directory '/Users/runner/work/autobahn-python/autobahn-python'")
         if: matrix.platform != 'macos'
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ env.UV_CACHE_DIR }}
           key:
