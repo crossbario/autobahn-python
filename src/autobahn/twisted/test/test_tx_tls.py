@@ -149,7 +149,9 @@ class _Client(ApplicationSession):
 
     def onJoin(self, details):
         if not self._done.called:
-            self._done.callback(("joined", details, self._require_transport().transport_details))
+            self._done.callback(
+                ("joined", details, self._require_transport().transport_details)
+            )
         self.leave()
 
     def onLeave(self, details):
@@ -517,3 +519,84 @@ class TlsUniqueTests(unittest.TestCase):
         self.assertIs(WampWebSocketClientProtocol.is_server, False)
         self.assertIs(WampRawSocketServerProtocol.is_server, True)
         self.assertIs(WampRawSocketClientProtocol.is_server, False)
+
+
+# RFC 9266 label and length for the "tls-exporter" channel binding.
+_TLS_EXPORTER_LABEL = b"EXPORTER-Channel-Binding"
+_TLS_EXPORTER_LENGTH = 32
+
+
+class TlsExporterTests(unittest.TestCase):
+    """
+    The TLS channel ID ``tls-exporter`` (RFC 9266) is the exported keying material for the
+    label ``EXPORTER-Channel-Binding``. Unlike ``tls-unique`` it is symmetric (client and
+    server derive the same value) and defined for TLS 1.3. On the Twisted (pyOpenSSL) side
+    autobahn must derive the same value a peer computes directly via
+    ``OpenSSL.SSL.Connection.export_keying_material()`` (#1584).
+    """
+
+    timeout = 20
+
+    def setUp(self):
+        self.pki = ExamplePKI(self.mktemp())
+
+    @inlineCallbacks
+    def test_twisted_server_tls13(self):
+        handshake = Deferred()
+        closed = Deferred()
+
+        @implementer(IHandshakeListener)
+        class Server(Protocol):
+            def handshakeCompleted(self_):
+                handshake.callback(
+                    transport_channel_id(self_.transport, True, "tls-exporter")
+                )
+
+            def connectionLost(self_, reason):
+                closed.callback(None)
+
+        server = ssl.PrivateCertificate.loadPEM(
+            self.pki.pem("server", "crt") + self.pki.pem("server", "key")
+        )
+        version = _TLS_VERSIONS["1.3"]
+        options = ssl.CertificateOptions(
+            privateKey=server.privateKey.original,
+            certificate=server.original,
+            raiseMinimumTo=version,
+            lowerMaximumSecurityTo=version,
+        )
+        port = yield SSL4ServerEndpoint(
+            reactor, 0, options, interface="127.0.0.1"
+        ).listen(Factory.forProtocol(Server))
+        self.addCleanup(port.stopListening)
+
+        def pyopenssl_client():
+            from OpenSSL import SSL
+
+            ctx = SSL.Context(SSL.TLS_CLIENT_METHOD)
+            ctx.set_min_proto_version(SSL.TLS1_3_VERSION)
+            ctx.set_max_proto_version(SSL.TLS1_3_VERSION)
+            ctx.load_verify_locations(self.pki.path("ca", "crt"))
+            ctx.set_verify(SSL.VERIFY_PEER)
+            with socket.create_connection(("127.0.0.1", port.getHost().port)) as sock:
+                conn = SSL.Connection(ctx, sock)
+                conn.set_tlsext_host_name(b"localhost")
+                conn.set_connect_state()
+                conn.do_handshake()
+                # TLS 1.3: let the server see application data so it finishes the handshake
+                conn.send(b"x")
+                exporter = conn.export_keying_material(
+                    _TLS_EXPORTER_LABEL, _TLS_EXPORTER_LENGTH, b""
+                )
+                try:
+                    conn.shutdown()
+                except SSL.Error:
+                    pass
+                sock.close()
+                return exporter
+
+        client_id = yield deferToThread(pyopenssl_client)
+        server_id = yield handshake
+        yield closed
+        self.assertEqual(len(server_id), _TLS_EXPORTER_LENGTH)
+        self.assertEqual(server_id, client_id)

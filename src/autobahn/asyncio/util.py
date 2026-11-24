@@ -26,6 +26,7 @@
 
 import asyncio
 import hashlib
+import ssl
 import warnings
 from asyncio import sleep  # noqa
 from subprocess import Popen
@@ -90,11 +91,40 @@ def transport_channel_id(
 
     :param transport: The asyncio TLS transport to extract the TLS channel ID from.
     :param is_server: Flag indicating the transport is for a server.
-    :param channel_id_type: TLS channel ID type, currently only "tls-unique" is supported.
+    :param channel_id_type: TLS channel ID type: ``"tls-unique"`` (RFC 5929, TLS <= 1.2)
+        is supported. ``"tls-exporter"`` (RFC 9266, TLS 1.3) is not available on the
+        asyncio backend - the Python stdlib ``ssl`` module does not expose it - and
+        raises ``NotImplementedError``; use the Twisted backend for TLS 1.3 +
+        ``tls-exporter``. See :ref:`tls-channel-binding` for the full support matrix.
     :returns: The TLS channel id (32 bytes).
     """
     if channel_id_type is None:
         return b"\x00" * 32
+
+    if channel_id_type == "tls-exporter":
+        # tls-exporter (RFC 9266) is TLS 1.3 exported keying material. The Python
+        # stdlib ssl module exposes only "tls-unique" in ssl.CHANNEL_BINDING_TYPES
+        # (through CPython 3.14), so the asyncio backend cannot compute it: fail fast
+        # and point at the Twisted backend (pyOpenSSL), which does support it. Should
+        # a future CPython add "tls-exporter" to ssl.CHANNEL_BINDING_TYPES, use it
+        # directly - the exporter is already a 32-byte value per RFC 9266, so (unlike
+        # tls-unique) it is returned raw, without hashing, matching the Twisted backend.
+        if "tls-exporter" not in ssl.CHANNEL_BINDING_TYPES:
+            raise NotImplementedError(
+                "tls-exporter channel binding (RFC 9266) is not available on the "
+                "asyncio backend: the Python stdlib ssl module exposes only "
+                f"{list(ssl.CHANNEL_BINDING_TYPES)}. Use the Twisted backend for "
+                "TLS 1.3 + tls-exporter."
+            )
+        ssl_obj = transport.get_extra_info("ssl_object")
+        if ssl_obj is None:
+            raise Exception(
+                "TLS transport channel_id for tls-exporter requested, but ssl_obj not found on transport"
+            )
+        cb = ssl_obj.get_channel_binding("tls-exporter")
+        if type(cb) != bytes:
+            return b"\x00" * 32
+        return cb
 
     # ssl.CHANNEL_BINDING_TYPES
     if channel_id_type not in ["tls-unique"]:

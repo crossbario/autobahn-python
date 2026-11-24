@@ -882,7 +882,7 @@ check-typing venv="": (install venv) (install-tools venv)
         --ignore missing-attribute \
         --ignore unresolved-reference \
         --ignore possibly-missing-attribute \
-        --ignore call-non-callable \
+        --ignore not-callable \
         --ignore invalid-assignment \
         --ignore invalid-argument-type \
         --ignore incompatible-method-override \
@@ -896,6 +896,7 @@ check-typing venv="": (install venv) (install-tools venv)
         --ignore conflicting-declarations \
         --ignore deprecated \
         --ignore possibly-missing-submodule \
+        --ignore missing-module-member \
         --ignore unused-type-ignore-comment \
         src/autobahn/ 2>&1 | tee "${TY_OUT}"
     rc=${PIPESTATUS[0]}

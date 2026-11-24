@@ -270,3 +270,26 @@ async def test_cryptosign_channel_binding(setup, transport, tls_version, client)
     assert server_td.is_secure
     assert server_td.channel_id["tls-unique"] == client_td.channel_id["tls-unique"]
     assert server_td.channel_id["tls-unique"] != FakeRouterSession.ZERO_CHANNEL_ID
+
+
+# tls-exporter (RFC 9266) on the asyncio backend: fail fast
+
+
+@pytest.mark.skipif(
+    "tls-exporter" in ssl.CHANNEL_BINDING_TYPES,
+    reason="stdlib ssl exposes tls-exporter on this build; the fail-fast path no longer applies",
+)
+def test_tls_exporter_not_implemented_on_asyncio():
+    """
+    The asyncio backend uses the Python stdlib ssl module, which (through 3.14)
+    exposes only "tls-unique" in ``ssl.CHANNEL_BINDING_TYPES`` and never
+    "tls-exporter" (RFC 9266). Requesting tls-exporter on asyncio must therefore
+    fail fast with ``NotImplementedError`` (pointing at the Twisted backend), rather
+    than raise a generic error or silently fall back. The skip above lets the real
+    support path take over automatically should a future CPython add tls-exporter to
+    ``ssl.CHANNEL_BINDING_TYPES``.
+    """
+    from autobahn.asyncio.util import transport_channel_id
+
+    with pytest.raises(NotImplementedError):
+        transport_channel_id(None, False, "tls-exporter")
