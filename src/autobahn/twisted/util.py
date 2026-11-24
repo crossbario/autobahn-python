@@ -169,7 +169,7 @@ else:
         if channel_id_type is None:
             return b"\x00" * 32
 
-        if channel_id_type not in ["tls-unique"]:
+        if channel_id_type not in ["tls-unique", "tls-exporter"]:
             raise RuntimeError(
                 f'invalid TLS channel ID type "{channel_id_type}" requested'
             )
@@ -213,6 +213,17 @@ else:
                 m = hashlib.sha256()
                 m.update(tls_finished_msg)
                 return m.digest()
+        elif channel_id_type == "tls-exporter":
+            # tls-exporter (RFC 9266) is exported keying material for the label
+            # "EXPORTER-Channel-Binding". Unlike tls-unique it is symmetric (client and
+            # server derive the same value) and independent of session resumption, and it
+            # is the channel binding defined for TLS 1.3. The 32-octet result is used as
+            # the channel ID directly (no hashing). export_keying_material() raises if the
+            # TLS handshake has not completed, which cannot happen on this code path (it is
+            # reached only after handshakeCompleted / a completed opening handshake).
+            return connection.export_keying_material(
+                b"EXPORTER-Channel-Binding", 32, b""
+            )
         else:
             raise NotImplementedError(
                 f'should not arrive here (unhandled channel_id_type "{channel_id_type}")'
