@@ -305,6 +305,9 @@ class FakeRouterSession:
             self._abort("wamp.error.not_authorized", "unknown public key")
             return
         channel_binding = msg.authextra.get("channel_binding")
+        # record the channel-binding type the client selected and sent in HELLO
+        # (what the router binds the signature to), for test introspection
+        self.observed.append(("channel_binding", channel_binding))
         challenge = os.urandom(32)
         if channel_binding == "tls-unique":
             channel_id = td.channel_id.get("tls-unique") if td.channel_id else None

@@ -405,6 +405,35 @@ class _TlsWampTests:
     def test_tls_exporter_not_populated_tls12(self):
         return self._check_tls_exporter_populated("1.2", expect_exporter=False)
 
+    # WAMP-cryptosign selects the channel-binding type by negotiated TLS version (#2078)
+
+    def _channel_binding_sent(self):
+        # the channel-binding type the client put in HELLO.authextra, as recorded by
+        # FakeRouterSession (i.e. what the router binds the client's signature to)
+        return [cb for event, cb in self.observed if event == "channel_binding"][0]
+
+    @inlineCallbacks
+    def _check_cryptosign_binding_selected(self, tls_version, expected_binding):
+        # the client requests channel binding with the legacy explicit "tls-unique";
+        # autobahn must select the version-correct type and send that in HELLO:
+        # tls-exporter on TLS 1.3, tls-unique on TLS <= 1.2 (hard split).
+        authenticator = AuthCryptoSign(
+            privkey=binascii.b2a_hex(b"\x01" * 32).decode(),
+            authextra={"channel_binding": "tls-unique"},
+        )
+        outcome, details, _ = yield self._join(
+            None, "cryptosign", authenticator, tls_version=tls_version
+        )
+        self.assertEqual(self._aborts(), [])
+        self.assertEqual(outcome, "joined")
+        self.assertEqual(self._channel_binding_sent(), expected_binding)
+
+    def test_cryptosign_binding_selected_tls13(self):
+        return self._check_cryptosign_binding_selected("1.3", "tls-exporter")
+
+    def test_cryptosign_binding_selected_tls12(self):
+        return self._check_cryptosign_binding_selected("1.2", "tls-unique")
+
 
 class TlsWebSocketTests(_TlsWampTests, unittest.TestCase):
     transport = "websocket"
