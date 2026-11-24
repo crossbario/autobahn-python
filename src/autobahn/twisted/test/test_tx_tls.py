@@ -366,6 +366,45 @@ class _TlsWampTests:
         self.assertEqual(self._aborts(), [])
         self.assertEqual(outcome, "joined")
 
+    # tls-exporter (RFC 9266) populated into TransportDetails.channel_id on TLS 1.3 (#2078)
+
+    @inlineCallbacks
+    def _check_tls_exporter_populated(self, tls_version, expect_exporter):
+        authenticator = AuthCryptoSign(
+            privkey=binascii.b2a_hex(b"\x01" * 32).decode(),
+            authextra={"channel_binding": "tls-unique"},
+        )
+        outcome, details, client_td = yield self._join(
+            None, "cryptosign", authenticator, tls_version=tls_version
+        )
+        self.assertEqual(self._aborts(), [])
+        self.assertEqual(outcome, "joined")
+        server_td = self._hello_details()
+
+        # tls-unique is always populated on a TLS connection
+        self.assertIn("tls-unique", server_td.channel_id)
+        self.assertIn("tls-unique", client_td.channel_id)
+
+        if expect_exporter:
+            # on TLS 1.3, tls-exporter is populated too: 32 bytes, symmetric (both ends equal)
+            self.assertIn("tls-exporter", server_td.channel_id)
+            self.assertIn("tls-exporter", client_td.channel_id)
+            self.assertEqual(len(server_td.channel_id["tls-exporter"]), 32)
+            self.assertEqual(
+                server_td.channel_id["tls-exporter"],
+                client_td.channel_id["tls-exporter"],
+            )
+        else:
+            # on TLS <= 1.2, tls-exporter is not applicable and must not be populated
+            self.assertNotIn("tls-exporter", server_td.channel_id)
+            self.assertNotIn("tls-exporter", client_td.channel_id)
+
+    def test_tls_exporter_populated_tls13(self):
+        return self._check_tls_exporter_populated("1.3", expect_exporter=True)
+
+    def test_tls_exporter_not_populated_tls12(self):
+        return self._check_tls_exporter_populated("1.2", expect_exporter=False)
+
 
 class TlsWebSocketTests(_TlsWampTests, unittest.TestCase):
     transport = "websocket"
