@@ -163,7 +163,10 @@ else:
             TLS based, and non-empty ``channel_id_type`` is requested, ``None`` will be returned. If the transport
             is indeed TLS based, an empty ``channel_id_type`` of ``None`` is requested, 32 NUL bytes will be returned.
         :param is_server: Flag indicating that the transport is a server transport.
-        :param channel_id_type: TLS channel ID type, if set currently only ``"tls-unique"`` is supported.
+        :param channel_id_type: TLS channel ID type: ``"tls-unique"`` (RFC 5929, TLS
+            <= 1.2) or ``"tls-exporter"`` (RFC 9266, TLS 1.3). Both are supported on the
+            Twisted backend (pyOpenSSL). See :ref:`tls-channel-binding` for the full
+            support matrix.
         :returns: The TLS channel ID (32 bytes).
         """
         if channel_id_type is None:

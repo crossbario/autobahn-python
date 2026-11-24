@@ -91,7 +91,11 @@ def transport_channel_id(
 
     :param transport: The asyncio TLS transport to extract the TLS channel ID from.
     :param is_server: Flag indicating the transport is for a server.
-    :param channel_id_type: TLS channel ID type, currently only "tls-unique" is supported.
+    :param channel_id_type: TLS channel ID type: ``"tls-unique"`` (RFC 5929, TLS <= 1.2)
+        is supported. ``"tls-exporter"`` (RFC 9266, TLS 1.3) is not available on the
+        asyncio backend - the Python stdlib ``ssl`` module does not expose it - and
+        raises ``NotImplementedError``; use the Twisted backend for TLS 1.3 +
+        ``tls-exporter``. See :ref:`tls-channel-binding` for the full support matrix.
     :returns: The TLS channel id (32 bytes).
     """
     if channel_id_type is None:

@@ -47,6 +47,7 @@ Contents
    memory-footprint
    getting-started
    programming-guide/index
+   tls
    architecture/statically-typed-region-lifecycle-python.md
    release-notes
    changelog

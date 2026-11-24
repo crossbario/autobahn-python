@@ -8,9 +8,18 @@ Changelog
 26.11.2
 -------
 
+**WAMP over TLS**
+
+* Add TLS 1.3 channel binding ``tls-exporter`` (RFC 9266). On the **Twisted** backend (pyOpenSSL), ``autobahn.twisted.util.transport_channel_id()`` now supports ``"tls-exporter"`` — exported keying material for the label ``EXPORTER-Channel-Binding`` (32 bytes, used raw), symmetric for client and server and independent of session resumption — in addition to ``"tls-unique"`` (RFC 5929, TLS <= 1.2). On the **asyncio** backend, ``tls-exporter`` raises ``NotImplementedError``: the Python stdlib ``ssl`` module exposes only ``tls-unique`` (``ssl.CHANNEL_BINDING_TYPES``) through CPython 3.14, so TLS 1.3 + ``tls-exporter`` requires the Twisted backend. The asyncio path is gated on ``ssl.CHANNEL_BINDING_TYPES`` and activates automatically should a future CPython add ``tls-exporter`` (#1584)
+
+**Documentation**
+
+* New page :ref:`tls-channel-binding` (``docs/tls.rst``) documenting TLS channel binding, with a backend / role / TLS-version support matrix and code examples (#1584)
+
 **Tests & CI/CD**
 
 * ``just check-typing`` passes again with ty 0.0.98 and later: ty 0.0.97 renamed the rule ``unresolved-import`` to ``import-not-found``, and since 0.0.98 the old name in the ``--ignore`` list is reported as ``renamed-rule``, which failed the check (#2046)
+* Keep up with ty 0.0.109: the rule ``call-non-callable`` was renamed to ``not-callable``, and ``missing-module-member`` is now reported for members the stubs lack; both are handled in the ``check-typing`` ignore list (#1584)
 
 26.11.1
 -------
