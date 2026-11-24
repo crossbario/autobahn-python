@@ -333,3 +333,34 @@ def create_transport_details(
     )
 
     return td
+
+
+def create_tls_channel_id(transport, is_server: bool) -> dict[str, bytes | None]:
+    """
+    Build the TLS channel-binding map for a transport whose TLS opening handshake has
+    completed: always ``tls-unique`` (RFC 5929), plus ``tls-exporter`` (RFC 9266) on a
+    TLS 1.3 connection so a peer can select the binding by negotiated version.
+
+    Call this only *after* the TLS opening handshake is complete: ``tls-exporter`` export
+    requires the key schedule to be derived and errors otherwise, unlike ``tls-unique``
+    which tolerates an incomplete handshake (returning NUL bytes). See
+    :ref:`tls-channel-binding` for the per-backend / per-version support matrix.
+
+    :param transport: The Twisted TLS transport (post-handshake).
+    :param is_server: Flag indicating this transport side is a server.
+    :return: Channel-binding map, e.g. ``{"tls-unique": ...}`` on TLS <= 1.2 or
+        ``{"tls-unique": ..., "tls-exporter": ...}`` on TLS 1.3.
+    """
+    channel_id = {
+        "tls-unique": transport_channel_id(transport, is_server, "tls-unique"),
+    }
+    if _HAS_TLS and isinstance(transport, TLSMemoryBIOProtocol):
+        try:
+            negotiated_version = transport.getHandle().get_protocol_version_name()
+        except Exception:
+            negotiated_version = None
+        if negotiated_version == "TLSv1.3":
+            channel_id["tls-exporter"] = transport_channel_id(
+                transport, is_server, "tls-exporter"
+            )
+    return channel_id

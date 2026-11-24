@@ -242,6 +242,18 @@ def create_transport_details(transport, is_server: bool) -> TransportDetails:
         channel_id = {
             "tls-unique": transport_channel_id(transport, is_server, "tls-unique"),
         }
+        # tls-exporter (RFC 9266) is the TLS 1.3 channel binding. The stdlib ssl module
+        # does not expose it (CHANNEL_BINDING_TYPES is tls-unique only through CPython
+        # 3.14), so it cannot be populated on the asyncio backend today; guard on both
+        # the negotiated version and stdlib support so this activates automatically if a
+        # future CPython adds it (symmetric with the Twisted backend).
+        if (
+            ssl_obj.version() == "TLSv1.3"
+            and "tls-exporter" in ssl.CHANNEL_BINDING_TYPES
+        ):
+            channel_id["tls-exporter"] = transport_channel_id(
+                transport, is_server, "tls-exporter"
+            )
         channel_type = TransportDetails.CHANNEL_TYPE_TLS
         peer_cert = extract_peer_certificate(ssl_obj)
     else:
