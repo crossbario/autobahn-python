@@ -2173,6 +2173,13 @@ class _SessionShim(ApplicationSession):
             authrole = [
                 x._args.get("authrole", None) for x in self._authenticators.values()
             ][-1]
+            # let authenticators finalize their authextra against the now-connected
+            # transport before we build the merged HELLO authextra - e.g. cryptosign
+            # selects the TLS channel-binding type by the negotiated TLS version (#2078)
+            for authenticator in self._authenticators.values():
+                on_connect = getattr(authenticator, "on_connect", None)
+                if on_connect is not None:
+                    on_connect(self)
             # we need a "merged" authextra here because we can send a
             # list of acceptable authmethods, but only a single
             # authextra dict

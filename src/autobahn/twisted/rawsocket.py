@@ -32,9 +32,9 @@ import txaio
 
 from autobahn.exception import PayloadExceededError
 from autobahn.twisted.util import (
+    create_tls_channel_id,
     create_transport_details,
     extract_peer_certificate,
-    transport_channel_id,
 )
 from autobahn.util import _LazyHexFormatter, public
 from autobahn.wamp.exception import (
@@ -133,12 +133,9 @@ class WampRawSocketProtocol(Int32StringReceiver):
             if self._transport_details.is_secure:
                 # now that the TLS opening handshake is complete, the actual TLS channel ID
                 # and the peer certificate will be available. make sure to set them!
-                channel_id = {
-                    "tls-unique": transport_channel_id(
-                        self.transport, self._transport_details.is_server, "tls-unique"
-                    ),
-                }
-                self._transport_details.channel_id = channel_id
+                self._transport_details.channel_id = create_tls_channel_id(
+                    self.transport, self._transport_details.is_server
+                )
                 self._transport_details.peer_cert = extract_peer_certificate(
                     self.transport
                 )

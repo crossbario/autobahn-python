@@ -139,6 +139,12 @@ class _Client(ApplicationSession):
     def onConnect(self):
         authextra = None
         if self._authenticator:
+            # mirror Session.onConnect: let the authenticator finalize its authextra
+            # against the connected transport (cryptosign selects the channel-binding
+            # type by negotiated TLS version) before reading authextra for HELLO (#2078)
+            on_connect = getattr(self._authenticator, "on_connect", None)
+            if on_connect is not None:
+                on_connect(self)
             authextra = self._authenticator.authextra
         self.join(
             self.config.realm, authmethods=[self._authmethod], authextra=authextra
@@ -334,14 +340,16 @@ class _TlsWampTests:
         self.assertEqual(outcome, "joined")
         self.assertEqual((details.authid, details.authmethod), ("alice", "cryptosign"))
 
-        # both ends of the connection have the same, non-zero channel ID
+        # both ends of the connection have the same, non-zero channel ID, bound under the
+        # version-correct type (tls-unique on TLS <= 1.2, tls-exporter on TLS 1.3, #2078)
         server_td = self._hello_details()
         self.assertTrue(server_td.is_secure)
+        (binding_type,) = server_td.channel_id.keys()
         self.assertEqual(
-            server_td.channel_id["tls-unique"], client_td.channel_id["tls-unique"]
+            server_td.channel_id[binding_type], client_td.channel_id[binding_type]
         )
         self.assertNotEqual(
-            server_td.channel_id["tls-unique"], FakeRouterSession.ZERO_CHANNEL_ID
+            server_td.channel_id[binding_type], FakeRouterSession.ZERO_CHANNEL_ID
         )
 
     def test_cryptosign_channel_binding(self):
@@ -365,6 +373,79 @@ class _TlsWampTests:
         outcome, details, _ = yield self._join("client_0", "cryptosign", authenticator)
         self.assertEqual(self._aborts(), [])
         self.assertEqual(outcome, "joined")
+
+    # the channel-binding map in TransportDetails.channel_id follows the negotiated TLS
+    # version (hard split, #2078): tls-unique (RFC 5929) on TLS <= 1.2, tls-exporter
+    # (RFC 9266) on TLS 1.3 - and only that one; the other must be absent.
+
+    @inlineCallbacks
+    def _check_tls_exporter_populated(self, tls_version, expect_exporter):
+        authenticator = AuthCryptoSign(
+            privkey=binascii.b2a_hex(b"\x01" * 32).decode(),
+            authextra={"channel_binding": "tls-unique"},
+        )
+        outcome, details, client_td = yield self._join(
+            None, "cryptosign", authenticator, tls_version=tls_version
+        )
+        self.assertEqual(self._aborts(), [])
+        self.assertEqual(outcome, "joined")
+        server_td = self._hello_details()
+
+        if expect_exporter:
+            # TLS 1.3: tls-exporter is the only valid binding (32 bytes, symmetric, both
+            # ends equal); tls-unique (RFC 5929) is not defined for TLS 1.3 and the version
+            # guard (#2078) keeps it out of the map entirely (no non-standard binding).
+            self.assertNotIn("tls-unique", server_td.channel_id)
+            self.assertNotIn("tls-unique", client_td.channel_id)
+            self.assertIn("tls-exporter", server_td.channel_id)
+            self.assertIn("tls-exporter", client_td.channel_id)
+            self.assertEqual(len(server_td.channel_id["tls-exporter"]), 32)
+            self.assertEqual(
+                server_td.channel_id["tls-exporter"],
+                client_td.channel_id["tls-exporter"],
+            )
+        else:
+            # TLS <= 1.2: tls-unique is the only valid binding; tls-exporter (RFC 9266)
+            # is not applicable and must not be populated.
+            self.assertIn("tls-unique", server_td.channel_id)
+            self.assertIn("tls-unique", client_td.channel_id)
+            self.assertNotIn("tls-exporter", server_td.channel_id)
+            self.assertNotIn("tls-exporter", client_td.channel_id)
+
+    def test_tls_exporter_populated_tls13(self):
+        return self._check_tls_exporter_populated("1.3", expect_exporter=True)
+
+    def test_tls_exporter_not_populated_tls12(self):
+        return self._check_tls_exporter_populated("1.2", expect_exporter=False)
+
+    # WAMP-cryptosign selects the channel-binding type by negotiated TLS version (#2078)
+
+    def _channel_binding_sent(self):
+        # the channel-binding type the client put in HELLO.authextra, as recorded by
+        # FakeRouterSession (i.e. what the router binds the client's signature to)
+        return [cb for event, cb in self.observed if event == "channel_binding"][0]
+
+    @inlineCallbacks
+    def _check_cryptosign_binding_selected(self, tls_version, expected_binding):
+        # the client requests channel binding with the legacy explicit "tls-unique";
+        # autobahn must select the version-correct type and send that in HELLO:
+        # tls-exporter on TLS 1.3, tls-unique on TLS <= 1.2 (hard split).
+        authenticator = AuthCryptoSign(
+            privkey=binascii.b2a_hex(b"\x01" * 32).decode(),
+            authextra={"channel_binding": "tls-unique"},
+        )
+        outcome, details, _ = yield self._join(
+            None, "cryptosign", authenticator, tls_version=tls_version
+        )
+        self.assertEqual(self._aborts(), [])
+        self.assertEqual(outcome, "joined")
+        self.assertEqual(self._channel_binding_sent(), expected_binding)
+
+    def test_cryptosign_binding_selected_tls13(self):
+        return self._check_cryptosign_binding_selected("1.3", "tls-exporter")
+
+    def test_cryptosign_binding_selected_tls12(self):
+        return self._check_cryptosign_binding_selected("1.2", "tls-unique")
 
 
 class TlsWebSocketTests(_TlsWampTests, unittest.TestCase):
@@ -401,16 +482,20 @@ class TlsUniqueTests(unittest.TestCase):
         self.pki = ExamplePKI(self.mktemp())
 
     @inlineCallbacks
-    def _check_twisted_server(self, tls_version):
+    def _check_twisted_server(self, tls_version, expect_reject=False):
         handshake = Deferred()
         closed = Deferred()
 
         @implementer(IHandshakeListener)
         class Server(Protocol):
             def handshakeCompleted(self_):
-                handshake.callback(
-                    transport_channel_id(self_.transport, True, "tls-unique")
-                )
+                try:
+                    channel_id = transport_channel_id(
+                        self_.transport, True, "tls-unique"
+                    )
+                    handshake.callback(("ok", channel_id))
+                except Exception as e:
+                    handshake.callback(("raised", e))
 
             def connectionLost(self_, reason):
                 closed.callback(None)
@@ -443,27 +528,38 @@ class TlsUniqueTests(unittest.TestCase):
                     return _stdlib_channel_id(tls_socket)
 
         client_id = yield deferToThread(stdlib_client)
-        server_id = yield handshake
+        kind, server_result = yield handshake
         yield closed
-        self.assertEqual(server_id, client_id)
+        if expect_reject:
+            # on TLS 1.3, tls-unique is not a valid channel binding and must be rejected
+            # (#2078 version guard), rather than return the (non-standard) TLS 1.3 Finished
+            self.assertEqual(kind, "raised")
+            self.assertIsInstance(server_result, RuntimeError)
+        else:
+            self.assertEqual(kind, "ok")
+            self.assertEqual(server_result, client_id)
 
     def test_twisted_server_tls12(self):
         return self._check_twisted_server("1.2")
 
     def test_twisted_server_tls13(self):
-        return self._check_twisted_server("1.3")
+        return self._check_twisted_server("1.3", expect_reject=True)
 
     @inlineCallbacks
-    def _check_twisted_client(self, tls_version):
+    def _check_twisted_client(self, tls_version, expect_reject=False):
         handshake = Deferred()
         closed = Deferred()
 
         @implementer(IHandshakeListener)
         class Client(Protocol):
             def handshakeCompleted(self_):
-                handshake.callback(
-                    transport_channel_id(self_.transport, False, "tls-unique")
-                )
+                try:
+                    channel_id = transport_channel_id(
+                        self_.transport, False, "tls-unique"
+                    )
+                    handshake.callback(("ok", channel_id))
+                except Exception as e:
+                    handshake.callback(("raised", e))
                 assert self_.transport is not None
                 self_.transport.loseConnection()
 
@@ -499,16 +595,23 @@ class TlsUniqueTests(unittest.TestCase):
             reactor, "127.0.0.1", listener.getsockname()[1], options
         )
         yield endpoint.connect(Factory.forProtocol(Client))
-        client_id = yield handshake
+        kind, client_result = yield handshake
         server_id = yield d_server
         yield closed
-        self.assertEqual(client_id, server_id)
+        if expect_reject:
+            # on TLS 1.3, tls-unique is not a valid channel binding and must be rejected
+            # (#2078 version guard), rather than return the (non-standard) TLS 1.3 Finished
+            self.assertEqual(kind, "raised")
+            self.assertIsInstance(client_result, RuntimeError)
+        else:
+            self.assertEqual(kind, "ok")
+            self.assertEqual(client_result, server_id)
 
     def test_twisted_client_tls12(self):
         return self._check_twisted_client("1.2")
 
     def test_twisted_client_tls13(self):
-        return self._check_twisted_client("1.3")
+        return self._check_twisted_client("1.3", expect_reject=True)
 
     def test_wamp_protocols_know_their_side(self):
         """

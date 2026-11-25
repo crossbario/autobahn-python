@@ -16,7 +16,9 @@ the loopback interface, with certificates created for each test (see autobahn.te
 import asyncio
 import binascii
 import os
+import socket
 import ssl
+import threading
 
 import pytest
 
@@ -248,12 +250,14 @@ async def test_tls_auth_no_certificate(setup, transport):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("client", [None, "client_0"])
-@pytest.mark.parametrize("tls_version", _TLS_VERSIONS)
+@pytest.mark.parametrize("tls_version", ["1.2"])
 @pytest.mark.parametrize("transport", _TRANSPORTS)
 async def test_cryptosign_channel_binding(setup, transport, tls_version, client):
     """
-    With and without a TLS client certificate: the router side of a TLS connection is secure
-    and has the same, non-zero channel ID as the client side.
+    With and without a TLS client certificate: on TLS <= 1.2 the router side of a TLS
+    connection is secure and has the same, non-zero tls-unique channel ID as the client
+    side. The asyncio backend can channel-bind only on TLS <= 1.2 (tls-unique): on TLS 1.3
+    it cannot (the stdlib ssl module has no tls-exporter), see the test below (#2078).
     """
     authenticator = AuthCryptoSign(
         privkey=binascii.b2a_hex(_PRIVKEY).decode(),
@@ -270,6 +274,30 @@ async def test_cryptosign_channel_binding(setup, transport, tls_version, client)
     assert server_td.is_secure
     assert server_td.channel_id["tls-unique"] == client_td.channel_id["tls-unique"]
     assert server_td.channel_id["tls-unique"] != FakeRouterSession.ZERO_CHANNEL_ID
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("client", [None, "client_0"])
+@pytest.mark.parametrize("transport", _TRANSPORTS)
+async def test_cryptosign_channel_binding_unavailable_on_tls13(setup, transport, client):
+    """
+    On the asyncio backend, WAMP-cryptosign channel binding is not available on TLS 1.3:
+    tls-unique (RFC 5929) is rejected on TLS 1.3 (#2078 version guard) and tls-exporter
+    (RFC 9266) is not exposed by the stdlib ssl module, so TransportDetails.channel_id is
+    empty. A client that requests channel binding therefore fails closed - the router
+    denies it for want of a TLS channel ID - rather than silently binding to a bogus value
+    (a TLS 1.3 asyncio peer must use the Twisted backend, or TLS <= 1.2, to channel-bind).
+    """
+    authenticator = AuthCryptoSign(
+        privkey=binascii.b2a_hex(_PRIVKEY).decode(),
+        authextra={"channel_binding": "tls-unique"},
+    )
+    outcome, _, _ = await setup.join(
+        transport, client, "cryptosign", authenticator, "1.3"
+    )
+    # fail closed: the router aborts because it has no TLS channel ID to bind to
+    assert outcome != "joined"
+    assert setup.aborts() == ["channel binding requested, but no TLS channel ID"]
 
 
 # tls-exporter (RFC 9266) on the asyncio backend: fail fast
@@ -293,3 +321,78 @@ def test_tls_exporter_not_implemented_on_asyncio():
 
     with pytest.raises(NotImplementedError):
         transport_channel_id(None, False, "tls-exporter")
+
+
+# tls-unique (RFC 5929) on TLS 1.3: the version guard (#2078)
+
+
+class _FakeAsyncioTLSTransport:
+    """
+    Just enough of an asyncio TLS transport for transport_channel_id(): it exposes the
+    SSL object under ``get_extra_info("ssl_object")``, as a real asyncio TLS transport does.
+    """
+
+    def __init__(self, ssl_object):
+        self._ssl_object = ssl_object
+
+    def get_extra_info(self, name, default=None):
+        return self._ssl_object if name == "ssl_object" else default
+
+
+def _tls13_loopback_server_ssl_object(pki):
+    """
+    Complete a real TLS 1.3 handshake on the loopback interface and return the server
+    side SSL socket (whose ``version()`` is ``"TLSv1.3"``), so a channel-binding
+    extraction can be exercised against a genuine TLS 1.3 connection.
+    """
+    server_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_ctx.load_cert_chain(pki.path("server", "crt"), pki.path("server", "key"))
+    server_ctx.minimum_version = server_ctx.maximum_version = ssl.TLSVersion.TLSv1_3
+
+    client_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    client_ctx.load_verify_locations(pki.path("ca", "crt"))
+    client_ctx.minimum_version = client_ctx.maximum_version = ssl.TLSVersion.TLSv1_3
+
+    listener = socket.create_server(("127.0.0.1", 0))
+    holder = {}
+
+    def serve():
+        conn, _ = listener.accept()
+        tls_conn = server_ctx.wrap_socket(conn, server_side=True)
+        # TLS 1.3: exchange application data so both ends settle post-handshake
+        tls_conn.sendall(b"x")
+        tls_conn.recv(1)
+        holder["ssl"] = tls_conn
+
+    thread = threading.Thread(target=serve)
+    thread.start()
+    with socket.create_connection(listener.getsockname()) as sock:
+        with client_ctx.wrap_socket(sock, server_hostname="localhost") as tls_socket:
+            tls_socket.recv(1)
+            tls_socket.sendall(b"x")
+    thread.join(timeout=10)
+    listener.close()
+    return holder["ssl"]
+
+
+def test_tls_unique_rejected_on_tls13(tmp_path):
+    """
+    On TLS 1.3, tls-unique (RFC 5929) is not a valid channel binding: the stdlib
+    ``ssl`` module's ``get_channel_binding("tls-unique")`` does not fail there, it
+    silently returns the (longer) TLS 1.3 Finished message, which would yield a
+    non-standard binding that only happens to match between two stdlib peers. autobahn
+    must reject tls-unique on a TLS 1.3 connection (#2078 version guard) so a TLS 1.3
+    peer uses tls-exporter (Twisted) or no binding, never a bogus tls-unique.
+    """
+    from autobahn.test.tlsutil import ExamplePKI
+    from autobahn.asyncio.util import transport_channel_id
+
+    pki = ExamplePKI(str(tmp_path / "certs"))
+    ssl_object = _tls13_loopback_server_ssl_object(pki)
+    try:
+        assert ssl_object.version() == "TLSv1.3"
+        transport = _FakeAsyncioTLSTransport(ssl_object)
+        with pytest.raises(RuntimeError):
+            transport_channel_id(transport, True, "tls-unique")
+    finally:
+        ssl_object.close()

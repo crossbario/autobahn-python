@@ -87,7 +87,11 @@ What ``transport_channel_id()`` returns for each backend, role and TLS scenario:
 
 On asyncio the stdlib handles the client/server role and resumption itself, so both roles
 compute the same value. ``tls-unique`` on TLS 1.3 and ``tls-exporter`` on TLS 1.2 are not
-supported combinations (the hard split above).
+supported combinations (the hard split above): requesting ``tls-unique`` on a TLS 1.3
+connection **raises** (it is not a valid binding there — the TLS Finished message no
+longer carries the needed semantics — and the underlying libraries would otherwise return
+a non-standard value silently), so a TLS 1.3 peer uses ``tls-exporter`` (Twisted) or no
+binding at all, never ``tls-unique`` (#2078).
 
 Usage
 -----
@@ -124,14 +128,17 @@ Reading the channel ID that AutobahnPython populates on the transport details:
 
 .. code-block:: python
 
-    # on both backends, TransportDetails.channel_id currently carries "tls-unique"
+    # the key follows the negotiated TLS version (hard split): "tls-unique" on TLS <= 1.2,
+    # "tls-exporter" on TLS 1.3 (Twisted); on asyncio there is no channel binding on TLS 1.3
     details = session._transport.transport_details
-    channel_id = details.channel_id.get("tls-unique")
+    channel_id = details.channel_id.get("tls-exporter") or details.channel_id.get(
+        "tls-unique"
+    )
 
 .. note::
 
-   This page documents the channel-ID *extraction* layer. Populating ``tls-exporter``
-   into ``TransportDetails.channel_id``, enforcing the TLS-version split (rejecting
-   ``tls-unique`` on TLS 1.3), and WAMP-cryptosign selecting the binding type from the
-   negotiated TLS version are tracked as follow-up work in the same effort (see issue
-   #1584).
+   The channel-ID *extraction* documented here is used by AutobahnPython to populate
+   ``TransportDetails.channel_id`` by negotiated TLS version (``tls-unique`` on TLS <= 1.2,
+   ``tls-exporter`` on TLS 1.3 where available, and nothing on asyncio TLS 1.3), and by
+   WAMP-cryptosign, which selects and advertises the binding type from the negotiated TLS
+   version and rejects ``tls-unique`` on TLS 1.3 (#1584, #2078).
