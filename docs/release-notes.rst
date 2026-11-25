@@ -8,6 +8,45 @@ Release Notes
 This page provides a high-level overview of important changes in each release.
 For detailed technical changes, see the :ref:`changelog <changelog>`.
 
+26.11.2
+-------
+
+**Release Type:** Stable release (feature: TLS 1.3 channel binding)
+
+Highlights
+^^^^^^^^^^
+
+* **TLS 1.3 channel binding (RFC 9266)**: autobahn now extracts the
+  ``tls-exporter`` channel ID on TLS 1.3 — exported keying material for the
+  label ``EXPORTER-Channel-Binding`` (32 bytes, used raw), symmetric for client
+  and server and independent of session resumption — on the **Twisted** backend
+  (pyOpenSSL). WAMP-cryptosign selects the binding by the negotiated TLS
+  version: ``tls-unique`` (RFC 5929) on TLS <= 1.2, ``tls-exporter`` (RFC 9266)
+  on TLS 1.3. A client configured with the legacy ``channel_binding="tls-unique"``
+  is transparently upgraded to ``tls-exporter`` on TLS 1.3 and keeps working.
+  This closes a credential-forwarding gap on TLS 1.3, where no standard channel
+  binding was used before.
+
+* **⚠ behaviour change**: ``tls-unique`` is now **rejected on TLS 1.3**.
+  ``transport_channel_id(…, "tls-unique")`` raises on a TLS 1.3 connection
+  (Twisted and asyncio), and ``tls-unique`` is absent from
+  ``TransportDetails.channel_id`` on TLS 1.3. Previously the stdlib / OpenSSL
+  silently returned the TLS 1.3 Finished message there — a non-standard binding
+  that only matched between two like peers. A TLS 1.3 peer must use
+  ``tls-exporter`` (Twisted) or no binding; the **asyncio** backend has no
+  ``tls-exporter`` (Python stdlib ``ssl`` exposes only ``tls-unique``), so it
+  cannot channel-bind on TLS 1.3 — use the Twisted backend, or TLS <= 1.2.
+
+* **New documentation**: :ref:`tls-channel-binding` (``docs/tls.rst``), with a
+  backend / role / TLS-version support matrix and code examples.
+
+Release Links
+^^^^^^^^^^^^^
+
+* `PyPI Package <https://pypi.org/project/autobahn/26.11.2/>`__
+
+**Detailed Changes:** See :ref:`changelog` (26.11.2 section)
+
 26.11.1
 -------
 

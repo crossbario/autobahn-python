@@ -21,6 +21,7 @@ Changelog
 
 * ``just check-typing`` passes again with ty 0.0.98 and later: ty 0.0.97 renamed the rule ``unresolved-import`` to ``import-not-found``, and since 0.0.98 the old name in the ``--ignore`` list is reported as ``renamed-rule``, which failed the check (#2046)
 * Keep up with ty 0.0.109: the rule ``call-non-callable`` was renamed to ``not-callable``, and ``missing-module-member`` is now reported for members the stubs lack; both are handled in the ``check-typing`` ignore list (#1584)
+* Release 26.11.2: changelog, release notes and version (#2080)
 
 26.11.1
 -------
