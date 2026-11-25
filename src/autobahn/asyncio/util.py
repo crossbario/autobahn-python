@@ -141,6 +141,18 @@ def transport_channel_id(
             "TLS transport channel_id for tls-unique requested, but get_channel_binding not found on ssl_obj"
         )
 
+    # tls-unique (RFC 5929) is only defined for TLS <= 1.2. On TLS 1.3 the stdlib ssl
+    # module does not fail get_channel_binding("tls-unique"): it returns the (longer)
+    # TLS 1.3 Finished message, which forms a non-standard binding that only happens to
+    # match between two stdlib peers. Reject it explicitly on TLS 1.3 (#2078), so a TLS
+    # 1.3 peer uses tls-exporter (RFC 9266, not available on the asyncio backend) or no
+    # binding - never a bogus tls-unique.
+    if ssl_obj.version() == "TLSv1.3":
+        raise RuntimeError(
+            "tls-unique channel binding (RFC 5929) is not defined for TLS 1.3; "
+            "use tls-exporter (RFC 9266) on TLS 1.3"
+        )
+
     # https://docs.python.org/3/library/ssl.html#ssl.SSLSocket.get_channel_binding
     # https://www.rfc-editor.org/rfc/rfc5929.html (and see tls_unique() on PyPy)
     tls_finished_msg = tls_unique(ssl_obj)
@@ -152,6 +164,36 @@ def transport_channel_id(
         m.update(tls_finished_msg)
         channel_id = m.digest()
         return channel_id
+
+
+def create_tls_channel_id(transport, is_server: bool) -> dict[str, bytes]:
+    """
+    Build the TLS channel-binding map for an asyncio transport whose TLS opening handshake
+    has completed, following the negotiated TLS version (hard split, #2078): tls-unique
+    (RFC 5929) on TLS <= 1.2, tls-exporter (RFC 9266) on TLS 1.3.
+
+    On the asyncio backend tls-exporter is not available (the stdlib ``ssl`` module exposes
+    only tls-unique in ``ssl.CHANNEL_BINDING_TYPES`` through CPython 3.14), so on TLS 1.3 the
+    map is empty today - an asyncio peer cannot channel-bind on TLS 1.3; use the Twisted
+    backend (pyOpenSSL), or TLS <= 1.2. The ``ssl.CHANNEL_BINDING_TYPES`` guard activates
+    tls-exporter automatically should a future CPython add it (symmetric with Twisted).
+
+    :param transport: The asyncio TLS transport (post-handshake).
+    :param is_server: Flag indicating this transport side is a server.
+    :return: Channel-binding map: ``{"tls-unique": ...}`` on TLS <= 1.2 or ``{}`` (or
+        ``{"tls-exporter": ...}`` on a future stdlib) on TLS 1.3.
+    """
+    ssl_obj = transport.get_extra_info("ssl_object", None)
+    if ssl_obj is not None and ssl_obj.version() == "TLSv1.3":
+        channel_id: dict[str, bytes] = {}
+        if "tls-exporter" in ssl.CHANNEL_BINDING_TYPES:
+            channel_id["tls-exporter"] = transport_channel_id(
+                transport, is_server, "tls-exporter"
+            )
+        return channel_id
+    return {
+        "tls-unique": transport_channel_id(transport, is_server, "tls-unique"),
+    }
 
 
 def peer2str(transport: asyncio.transports.BaseTransport) -> str:
@@ -239,21 +281,9 @@ def create_transport_details(transport, is_server: bool) -> TransportDetails:
     ssl_obj = transport.get_extra_info("ssl_object", None)
     is_secure = ssl_obj is not None
     if is_secure:
-        channel_id = {
-            "tls-unique": transport_channel_id(transport, is_server, "tls-unique"),
-        }
-        # tls-exporter (RFC 9266) is the TLS 1.3 channel binding. The stdlib ssl module
-        # does not expose it (CHANNEL_BINDING_TYPES is tls-unique only through CPython
-        # 3.14), so it cannot be populated on the asyncio backend today; guard on both
-        # the negotiated version and stdlib support so this activates automatically if a
-        # future CPython adds it (symmetric with the Twisted backend).
-        if (
-            ssl_obj.version() == "TLSv1.3"
-            and "tls-exporter" in ssl.CHANNEL_BINDING_TYPES
-        ):
-            channel_id["tls-exporter"] = transport_channel_id(
-                transport, is_server, "tls-exporter"
-            )
+        # select the channel binding by negotiated TLS version (tls-unique on TLS <= 1.2,
+        # tls-exporter on TLS 1.3 where available; empty on asyncio TLS 1.3 today, #2078)
+        channel_id = create_tls_channel_id(transport, is_server)
         channel_type = TransportDetails.CHANNEL_TYPE_TLS
         peer_cert = extract_peer_certificate(ssl_obj)
     else:

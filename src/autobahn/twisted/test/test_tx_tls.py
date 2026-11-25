@@ -340,14 +340,16 @@ class _TlsWampTests:
         self.assertEqual(outcome, "joined")
         self.assertEqual((details.authid, details.authmethod), ("alice", "cryptosign"))
 
-        # both ends of the connection have the same, non-zero channel ID
+        # both ends of the connection have the same, non-zero channel ID, bound under the
+        # version-correct type (tls-unique on TLS <= 1.2, tls-exporter on TLS 1.3, #2078)
         server_td = self._hello_details()
         self.assertTrue(server_td.is_secure)
+        (binding_type,) = server_td.channel_id.keys()
         self.assertEqual(
-            server_td.channel_id["tls-unique"], client_td.channel_id["tls-unique"]
+            server_td.channel_id[binding_type], client_td.channel_id[binding_type]
         )
         self.assertNotEqual(
-            server_td.channel_id["tls-unique"], FakeRouterSession.ZERO_CHANNEL_ID
+            server_td.channel_id[binding_type], FakeRouterSession.ZERO_CHANNEL_ID
         )
 
     def test_cryptosign_channel_binding(self):

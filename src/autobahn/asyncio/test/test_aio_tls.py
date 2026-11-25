@@ -250,12 +250,14 @@ async def test_tls_auth_no_certificate(setup, transport):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("client", [None, "client_0"])
-@pytest.mark.parametrize("tls_version", _TLS_VERSIONS)
+@pytest.mark.parametrize("tls_version", ["1.2"])
 @pytest.mark.parametrize("transport", _TRANSPORTS)
 async def test_cryptosign_channel_binding(setup, transport, tls_version, client):
     """
-    With and without a TLS client certificate: the router side of a TLS connection is secure
-    and has the same, non-zero channel ID as the client side.
+    With and without a TLS client certificate: on TLS <= 1.2 the router side of a TLS
+    connection is secure and has the same, non-zero tls-unique channel ID as the client
+    side. The asyncio backend can channel-bind only on TLS <= 1.2 (tls-unique): on TLS 1.3
+    it cannot (the stdlib ssl module has no tls-exporter), see the test below (#2078).
     """
     authenticator = AuthCryptoSign(
         privkey=binascii.b2a_hex(_PRIVKEY).decode(),
@@ -272,6 +274,30 @@ async def test_cryptosign_channel_binding(setup, transport, tls_version, client)
     assert server_td.is_secure
     assert server_td.channel_id["tls-unique"] == client_td.channel_id["tls-unique"]
     assert server_td.channel_id["tls-unique"] != FakeRouterSession.ZERO_CHANNEL_ID
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("client", [None, "client_0"])
+@pytest.mark.parametrize("transport", _TRANSPORTS)
+async def test_cryptosign_channel_binding_unavailable_on_tls13(setup, transport, client):
+    """
+    On the asyncio backend, WAMP-cryptosign channel binding is not available on TLS 1.3:
+    tls-unique (RFC 5929) is rejected on TLS 1.3 (#2078 version guard) and tls-exporter
+    (RFC 9266) is not exposed by the stdlib ssl module, so TransportDetails.channel_id is
+    empty. A client that requests channel binding therefore fails closed - the router
+    denies it for want of a TLS channel ID - rather than silently binding to a bogus value
+    (a TLS 1.3 asyncio peer must use the Twisted backend, or TLS <= 1.2, to channel-bind).
+    """
+    authenticator = AuthCryptoSign(
+        privkey=binascii.b2a_hex(_PRIVKEY).decode(),
+        authextra={"channel_binding": "tls-unique"},
+    )
+    outcome, _, _ = await setup.join(
+        transport, client, "cryptosign", authenticator, "1.3"
+    )
+    # fail closed: the router aborts because it has no TLS channel ID to bind to
+    assert outcome != "joined"
+    assert setup.aborts() == ["channel binding requested, but no TLS channel ID"]
 
 
 # tls-exporter (RFC 9266) on the asyncio backend: fail fast

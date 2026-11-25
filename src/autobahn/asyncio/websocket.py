@@ -34,9 +34,9 @@ import txaio
 txaio.use_asyncio()  # noqa
 
 from autobahn.asyncio.util import (
+    create_tls_channel_id,
     create_transport_details,
     get_or_create_event_loop,
-    transport_channel_id,
 )
 from autobahn.util import hltype, public
 from autobahn.wamp import websocket
@@ -146,13 +146,10 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
     def _onOpen(self):
         if self._transport_details.is_secure:
             # now that the TLS opening handshake is complete, the actual TLS channel ID
-            # will be available. make sure to set it!
-            channel_id = {
-                "tls-unique": transport_channel_id(
-                    self.transport, self._transport_details.is_server, "tls-unique"
-                ),
-            }
-            self._transport_details.channel_id = channel_id
+            # will be available. make sure to set it (by negotiated TLS version, #2078)!
+            self._transport_details.channel_id = create_tls_channel_id(
+                self.transport, self._transport_details.is_server
+            )
 
         res = self.onOpen()
         if yields(res):
