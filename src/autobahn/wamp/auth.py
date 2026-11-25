@@ -184,6 +184,30 @@ class AuthCryptoSign:
     def authextra(self):
         return self._args.get("authextra", dict())
 
+    def on_connect(self, session):
+        # Resolve the channel-binding type by the negotiated TLS version before HELLO is
+        # sent: tls-exporter (RFC 9266) on TLS 1.3, tls-unique (RFC 5929) on TLS <= 1.2
+        # (hard split, #2078). The user only has to *request* channel binding; autobahn
+        # selects and advertises the version-correct type (so a client configured with the
+        # legacy "tls-unique" is transparently upgraded to tls-exporter on TLS 1.3). A
+        # transport with no TLS channel ID (plain TCP) leaves the request unchanged - the
+        # router then denies it, as before.
+        if not self._channel_binding:
+            return
+        transport = getattr(session, "_transport", None)
+        transport_details = getattr(transport, "transport_details", None)
+        channel_id = (
+            transport_details.channel_id if transport_details is not None else None
+        ) or {}
+        if "tls-exporter" in channel_id:
+            resolved = "tls-exporter"
+        elif "tls-unique" in channel_id:
+            resolved = "tls-unique"
+        else:
+            resolved = self._channel_binding
+        self._channel_binding = resolved
+        self._args.setdefault("authextra", dict())["channel_binding"] = resolved
+
     def on_challenge(self, session, challenge):
         channel_id = session._transport.transport_details.channel_id.get(
             self._channel_binding, None

@@ -1765,7 +1765,7 @@ class TransportDetails:
                 )
             channel_id = {}
             for binding_type in data["channel_id"]:
-                if binding_type not in ["tls-unique"]:
+                if binding_type not in ["tls-unique", "tls-exporter"]:
                     raise ValueError(
                         f'invalid binding type "{binding_type}" in "channel_id" map'
                     )

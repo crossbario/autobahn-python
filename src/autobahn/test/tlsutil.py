@@ -309,8 +309,10 @@ class FakeRouterSession:
         # (what the router binds the signature to), for test introspection
         self.observed.append(("channel_binding", channel_binding))
         challenge = os.urandom(32)
-        if channel_binding == "tls-unique":
-            channel_id = td.channel_id.get("tls-unique") if td.channel_id else None
+        if channel_binding:
+            # bind the signature to the TLS channel ID of the type the client selected
+            # (tls-unique on TLS <= 1.2, tls-exporter on TLS 1.3, #2078)
+            channel_id = td.channel_id.get(channel_binding) if td.channel_id else None
             if not channel_id or channel_id == self.ZERO_CHANNEL_ID:
                 self._abort(
                     "wamp.error.not_authorized",

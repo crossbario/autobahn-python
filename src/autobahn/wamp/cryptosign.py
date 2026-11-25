@@ -398,9 +398,9 @@ if HAS_CRYPTOSIGN:
         Format the challenge based on provided parameters
 
         :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
-        :param channel_id_raw: The channel ID when channel_id_type is 'tls-unique'.
-        :param channel_id_type: The type of the channel id, currently handles 'tls-unique' and
-            ignores otherwise.
+        :param channel_id_raw: The 32-byte TLS channel ID, when channel_id_type is set.
+        :param channel_id_type: The type of the channel id: 'tls-unique' (RFC 5929, TLS
+            <= 1.2), 'tls-exporter' (RFC 9266, TLS 1.3), or None for no channel binding.
         """
         if not isinstance(challenge, Challenge):
             raise Exception(
@@ -426,13 +426,14 @@ if HAS_CRYPTOSIGN:
         # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
         challenge_raw = binascii.a2b_hex(challenge_hex)
 
-        if channel_id_type == "tls-unique":
+        if channel_id_type in ("tls-unique", "tls-exporter"):
             assert len(channel_id_raw) == 32, (
                 f"unexpected TLS transport channel ID length (was {len(channel_id_raw)}, but expected 32)"
             )
 
-            # with TLS channel binding of type "tls-unique", the message to be signed by the client actually
-            # is the XOR of the challenge and the TLS channel ID
+            # with TLS channel binding (tls-unique RFC 5929 on TLS <= 1.2, tls-exporter
+            # RFC 9266 on TLS 1.3), the message to be signed by the client actually is the
+            # XOR of the challenge and the 32-byte TLS channel ID
             data = util.xor(challenge_raw, channel_id_raw)
         elif channel_id_type is None:
             # when no channel binding was requested, the message to be signed by the client is the challenge only
@@ -809,7 +810,7 @@ if HAS_CRYPTOSIGN:
             if challenge:
                 assert len(challenge) == 32
             if channel_binding:
-                assert channel_binding in ["tls-unique"]
+                assert channel_binding in ["tls-unique", "tls-exporter"]
             if channel_id:
                 assert len(channel_id) == 32
             if realm:
@@ -866,7 +867,7 @@ if HAS_CRYPTOSIGN:
 
         @channel_binding.setter
         def channel_binding(self, value: str | None):
-            assert value is None or value in ["tls-unique"]
+            assert value is None or value in ["tls-unique", "tls-exporter"]
             self._channel_binding = value
 
         @property
@@ -971,7 +972,7 @@ if HAS_CRYPTOSIGN:
                     raise ValueError(
                         f"invalid type {type(channel_binding)} for channel_binding"
                     )
-                if channel_binding not in ["tls-unique"]:
+                if channel_binding not in ["tls-unique", "tls-exporter"]:
                     raise ValueError(
                         f'invalid value "{channel_binding}" for channel_binding'
                     )

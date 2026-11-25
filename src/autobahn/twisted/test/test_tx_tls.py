@@ -139,6 +139,12 @@ class _Client(ApplicationSession):
     def onConnect(self):
         authextra = None
         if self._authenticator:
+            # mirror Session.onConnect: let the authenticator finalize its authextra
+            # against the connected transport (cryptosign selects the channel-binding
+            # type by negotiated TLS version) before reading authextra for HELLO (#2078)
+            on_connect = getattr(self._authenticator, "on_connect", None)
+            if on_connect is not None:
+                on_connect(self)
             authextra = self._authenticator.authextra
         self.join(
             self.config.realm, authmethods=[self._authmethod], authextra=authextra
